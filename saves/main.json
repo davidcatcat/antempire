@@ -14,13 +14,20 @@
     "number": 4,
     "title": "自治採食的代價",
     "elapsed_player_minutes": 1150,
-    "phase": "v2世界規格已建立，尚未推進新科學世界時間"
+    "phase": "科學生態世界 Day 1 完成；v1歷史第1150分鐘完整停表"
   },
   "colony": {
     "queen": {
       "id": "Q001",
       "count": 1,
-      "status": "健康"
+      "status": "健康",
+      "v2_latest": {
+        "day": 1,
+        "alive": true,
+        "new_eggs": 0,
+        "health_metrics_unknown": true,
+        "role": "reproductive_not_commander"
+      }
     },
     "workers": {
       "confirmed_born": 17,
@@ -49,72 +56,274 @@
         {
           "id": "W004",
           "status": "alive",
-          "condition": "健康，育幼"
+          "condition": "健康，育幼",
+          "v2_latest": {
+            "day": 1,
+            "site_sequence": [
+              "N00"
+            ],
+            "activity": [
+              "幼蟲接觸與梳理",
+              "短暫整理巢室"
+            ],
+            "injury_followup": "未見新傷",
+            "physiological_age_days": null,
+            "actual_energy_state": null,
+            "current_location_at_day_end": "N00"
+          }
         },
         {
           "id": "W005",
           "status": "alive",
-          "condition": "挖掘擦傷已癒合，可正常工作"
+          "condition": "挖掘擦傷已癒合，可正常工作",
+          "v2_latest": {
+            "day": 1,
+            "site_sequence": [
+              "N00",
+              "F01",
+              "N00"
+            ],
+            "activity": [
+              "東北葉背小量蜜露探索",
+              "返回後經接觸分享採食訊號"
+            ],
+            "injury_followup": "舊擦傷無新異常",
+            "physiological_age_days": null,
+            "actual_energy_state": null,
+            "current_location_at_day_end": "N00"
+          }
         },
         {
           "id": "W006",
           "status": "alive",
-          "condition": "健康；於落果與陌生蟻遭遇後主動退避，無傷"
+          "condition": "健康；於落果與陌生蟻遭遇後主動退避，無傷",
+          "v2_latest": {
+            "day": 1,
+            "site_sequence": [
+              "N00",
+              "F03外緣",
+              "N00"
+            ],
+            "activity": [
+              "落果方向探索",
+              "察覺陌生工蟻後迴避"
+            ],
+            "injury_followup": "未見新傷",
+            "physiological_age_days": null,
+            "actual_energy_state": null,
+            "current_location_at_day_end": "N00"
+          }
         },
         {
           "id": "W007",
           "status": "alive",
-          "condition": "後腳舊傷，留巢養傷並輔助育幼"
+          "condition": "後腳舊傷，留巢養傷並輔助育幼",
+          "v2_latest": {
+            "day": 1,
+            "site_sequence": [
+              "N00"
+            ],
+            "activity": [
+              "巢內整理",
+              "短暫接觸幼體"
+            ],
+            "injury_followup": "後腳舊傷仍在；行動改善程度未知",
+            "physiological_age_days": null,
+            "actual_energy_state": null,
+            "current_location_at_day_end": "N00"
+          }
         },
         {
           "id": "W008",
           "status": "alive",
-          "condition": "腳傷明顯改善，仍限巢內工作，需持續觀察"
+          "condition": "腳傷明顯改善，仍限巢內工作，需持續觀察",
+          "v2_latest": {
+            "day": 1,
+            "site_sequence": [
+              "N00"
+            ],
+            "activity": [
+              "幼體周圍清潔",
+              "巢室內移動"
+            ],
+            "injury_followup": "腳傷未宣告痊癒；嚴重度未知",
+            "physiological_age_days": null,
+            "actual_energy_state": null,
+            "current_location_at_day_end": "N00"
+          }
         },
         {
           "id": "W009",
           "status": "alive",
-          "condition": "前足舊傷，留巢養傷並輔助巢內清潔"
+          "condition": "前足舊傷，留巢養傷並輔助巢內清潔",
+          "v2_latest": {
+            "day": 1,
+            "site_sequence": [
+              "N00"
+            ],
+            "activity": [
+              "巢內碎屑整理"
+            ],
+            "injury_followup": "前足舊傷仍須觀察",
+            "physiological_age_days": null,
+            "actual_energy_state": null,
+            "current_location_at_day_end": "N00"
+          }
         },
         {
           "id": "W010",
           "status": "alive",
-          "condition": "健康，入口警戒時與陌生工蟻短暫對峙，無傷"
+          "condition": "健康，入口警戒時與陌生工蟻短暫對峙，無傷",
+          "v2_latest": {
+            "day": 1,
+            "site_sequence": [
+              "N00",
+              "F10外緣",
+              "N00"
+            ],
+            "activity": [
+              "回應外緣探索刺激",
+              "發現蟾蜍活動後折返"
+            ],
+            "injury_followup": "未見新傷",
+            "physiological_age_days": null,
+            "actual_energy_state": null,
+            "current_location_at_day_end": "N00"
+          }
         },
         {
           "id": "W011",
           "status": "alive",
-          "condition": "健康；北側偵察遇深褐色陌生工蟻，繞路撤退，無新增傷勢"
+          "condition": "健康；北側偵察遇深褐色陌生工蟻，繞路撤退，無新增傷勢",
+          "v2_latest": {
+            "day": 1,
+            "site_sequence": [
+              "N00",
+              "F07",
+              "N00"
+            ],
+            "activity": [
+              "枯葉檢查未收穫"
+            ],
+            "injury_followup": "未見新傷",
+            "physiological_age_days": null,
+            "actual_energy_state": null,
+            "current_location_at_day_end": "N00"
+          }
         },
         {
           "id": "W012",
           "status": "alive",
-          "condition": "前足輕微擦傷恢復中，留巢協助育幼"
+          "condition": "前足輕微擦傷恢復中，留巢協助育幼",
+          "v2_latest": {
+            "day": 1,
+            "site_sequence": [
+              "N00"
+            ],
+            "activity": [
+              "幼蟲照料接觸",
+              "短程巢室整理"
+            ],
+            "injury_followup": "前足擦傷未宣告痊癒",
+            "physiological_age_days": null,
+            "actual_energy_state": null,
+            "current_location_at_day_end": "N00"
+          }
         },
         {
           "id": "W013",
           "status": "alive",
-          "condition": "在潮葉邊緣遇蟾蜍時後足擦傷，移動減慢，暫留巢"
+          "condition": "在潮葉邊緣遇蟾蜍時後足擦傷，移動減慢，暫留巢",
+          "v2_latest": {
+            "day": 1,
+            "site_sequence": [
+              "N00"
+            ],
+            "activity": [
+              "巢口附近短距活動",
+              "休止與自我梳理"
+            ],
+            "injury_followup": "後足傷仍影響移動；未強制完全停工",
+            "physiological_age_days": null,
+            "actual_energy_state": null,
+            "current_location_at_day_end": "N00"
+          }
         },
         {
           "id": "W014",
           "status": "alive",
-          "condition": "前足擦傷，留巢休養"
+          "condition": "前足擦傷，留巢休養",
+          "v2_latest": {
+            "day": 1,
+            "site_sequence": [
+              "N00"
+            ],
+            "activity": [
+              "巢內梳理與整理"
+            ],
+            "injury_followup": "前足傷仍在，未見感染證據但感染狀態未知",
+            "physiological_age_days": null,
+            "actual_energy_state": null,
+            "current_location_at_day_end": "N00"
+          }
         },
         {
           "id": "W015",
           "status": "alive",
-          "condition": "外骨骼已硬化，健康，協助巢內警戒與短程搬運"
+          "condition": "外骨骼已硬化，健康，協助巢內警戒與短程搬運",
+          "v2_latest": {
+            "day": 1,
+            "site_sequence": [
+              "N00",
+              "巢口附近"
+            ],
+            "activity": [
+              "短程入口巡察",
+              "返回巢內照料接觸"
+            ],
+            "injury_followup": "未見新傷",
+            "physiological_age_days": null,
+            "actual_energy_state": null,
+            "current_location_at_day_end": "N00"
+          }
         },
         {
           "id": "W016",
           "status": "alive",
-          "condition": "羽化後外骨骼已硬化，健康但年幼，以巢內清潔育幼為主"
+          "condition": "羽化後外骨骼已硬化，健康但年幼，以巢內清潔育幼為主",
+          "v2_latest": {
+            "day": 1,
+            "site_sequence": [
+              "N00"
+            ],
+            "activity": [
+              "幼蟲照料",
+              "巢室清潔"
+            ],
+            "injury_followup": "未見新傷",
+            "physiological_age_days": null,
+            "actual_energy_state": null,
+            "current_location_at_day_end": "N00"
+          }
         },
         {
           "id": "W017",
           "status": "alive",
-          "condition": "第1127分鐘羽化，外骨骼尚軟，留巢"
+          "condition": "第1127分鐘羽化，外骨骼尚軟，留巢",
+          "v2_latest": {
+            "day": 1,
+            "site_sequence": [
+              "N00"
+            ],
+            "activity": [
+              "巢內接觸與整理",
+              "間歇休止"
+            ],
+            "injury_followup": "舊敘事的外骨骼狀態保留，v2生理年齡未知",
+            "physiological_age_days": null,
+            "actual_energy_state": null,
+            "current_location_at_day_end": "N00"
+          }
         }
       ]
     },
@@ -122,7 +331,32 @@
       "eggs": 0,
       "larvae": 2,
       "pupae": 0,
-      "total": 2
+      "total": 2,
+      "individuals": [
+        {
+          "id": "L001",
+          "stage": "larva",
+          "living": true,
+          "actual_stage_age_days": null,
+          "elapsed_under_v2_days": 1,
+          "individual_nutritional_intake_mg": null
+        },
+        {
+          "id": "L002",
+          "stage": "larva",
+          "living": true,
+          "actual_stage_age_days": null,
+          "elapsed_under_v2_days": 1,
+          "individual_nutritional_intake_mg": null
+        }
+      ],
+      "v2_latest": {
+        "day": 1,
+        "stage_transitions": 0,
+        "deaths": 0,
+        "new_eggs": 0,
+        "unknown_species_development_rate": true
+      }
     },
     "food": {
       "sugar_units": 3,
@@ -196,6 +430,42 @@
         "type": "新發現的少量蜜露",
         "status": "根際蜜露受潮葉區蟾蜍干擾，工蟻縮短採集，取得糖3",
         "risk": "第1142分鐘有蟾蜍靠近，W013後足擦傷，其他工蟻撤離"
+      },
+      "legacy_checkpoint_only": true,
+      "legacy_checkpoint_explanation": "sugar_units=3 / protein_units=3只代表v1第1150分鐘歷史餘額，不是v2 Day1物理或抽象已結算存量",
+      "v2_latest_ledger": {
+        "day": 1,
+        "legacy_checkpoint_snapshot": {
+          "sugar_units": 3,
+          "protein_units": 3,
+          "unit": "v1抽象遊戲單位",
+          "valid_for": "Day0歷史存量參考，Day1不作物理量結算"
+        },
+        "v2_physical": {
+          "initial_carbohydrate_mg": null,
+          "foraged_carbohydrate_mg": null,
+          "delivered_carbohydrate_mg": null,
+          "metabolized_carbohydrate_mg": null,
+          "final_carbohydrate_mg": null,
+          "initial_protein_mg": null,
+          "foraged_protein_mg": null,
+          "delivered_protein_mg": null,
+          "metabolized_protein_mg": null,
+          "final_protein_mg": null,
+          "available_water_uL": null,
+          "water_intake_uL": null,
+          "water_used_uL": null
+        },
+        "qualitative_flow": {
+          "F01": "微量蜜露成功帶回；物理量不明",
+          "F07": "出行未回收可食物",
+          "F03": "競爭蟻存在而迴避，未回收可核實食物",
+          "F10": "捕食風險迴避，未回收可核實食物",
+          "metabolism": "所有活體持續有營養及水分需求；沒有可信換算係數，淨收支未知",
+          "storage": "既有v1數值保持歷史快照，不表示Day1結束仍精確是糖3／蛋白質3"
+        },
+        "evidence": "qualitative_scenario_not_measurement",
+        "balance_status": "unquantified; no fabricated numeric conversion"
       }
     },
     "water": {
@@ -1412,9 +1682,9 @@
   ],
   "pending": {
     "event_id": null,
-    "title": "觀察者自治模式：等待使用者要求模擬下一天",
+    "title": "Day 1 完成；觀察者完全自治",
     "decision_required": false,
-    "next": "科學世界 Day0→Day1（須使用者說繼續）",
+    "next": "等待觀察者下次要求模擬 Day 1→Day 2",
     "options": {},
     "legacy_pending_event_id": "117"
   },
@@ -1428,7 +1698,7 @@
   "simulation": {
     "version": "v2.0-science-inspired",
     "mode": "observer_autonomous",
-    "status": "initialized_not_advanced",
+    "status": "day_1_completed",
     "effective_after_legacy_elapsed_player_minutes": 1150,
     "scientific_clock_ref": "saves/world-state.json#/time/scientific_clock",
     "world_state_path": "saves/world-state.json",
@@ -1445,7 +1715,29 @@
       "docs/species-calibration.md",
       "docs/references.md",
       "docs/migration-v2.md"
-    ]
+    ],
+    "latest_completed_day": 1,
+    "elapsed_sim_hours": 24,
+    "latest_journal": "journal/v2-day-0001.md",
+    "latest_seed": 3138995752,
+    "latest_seed_material": "antempire-garden-v2|Day0->Day1|34b621be9b80c99b408a4e494ff7f17d8b1487f0",
+    "latest_day_summary": {
+      "worker_births": 0,
+      "worker_deaths": 0,
+      "new_eggs": 0,
+      "larvae": 2,
+      "pupae": 0,
+      "food_balance_quantified": false,
+      "events": [
+        "V2D1-E01",
+        "V2D1-E02",
+        "V2D1-E03",
+        "V2D1-E04",
+        "V2D1-E05",
+        "V2D1-E06"
+      ]
+    },
+    "automatic_worker_decisions": true
   },
   "migration_log": [
     {

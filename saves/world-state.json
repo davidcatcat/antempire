@@ -9,14 +9,21 @@
   "time": {
     "legacy_elapsed_player_minutes": 1150,
     "scientific_clock": {
-      "day": 0,
-      "elapsed_sim_hours": 0,
+      "day": 1,
+      "elapsed_sim_hours": 24,
       "calendar_date": null,
       "absolute_utc": null,
       "default_advance_hours": 24,
       "substep_minutes_for_behavior": 20
     },
-    "note": "v1 的1150分鐘非真實生理分鐘，v2從獨立時鐘開始"
+    "note": "v1 的1150分鐘非真實生理分鐘，v2從獨立時鐘開始",
+    "last_transition": {
+      "from_day": 0,
+      "to_day": 1,
+      "advance_hours": 24,
+      "journal": "journal/v2-day-0001.md",
+      "previous_head_sha": "34b621be9b80c99b408a4e494ff7f17d8b1487f0"
+    }
   },
   "biome": {
     "name": "架空住宅花園",
@@ -177,10 +184,12 @@
         "resource_class": "honeydew_declining",
         "legacy_note": "舊蜜露點產量下降",
         "evidence": "observed_in_story",
-        "current_accessibility": "unverified",
+        "current_accessibility": "locally_reached_on_day1",
         "edible_mass_mg": null,
         "replenishment_per_day_mg": null,
-        "known_to_every_worker": false
+        "known_to_every_worker": false,
+        "day1_observation": "W005發現少量蜜露；僅局部路徑已接觸，補充量未知",
+        "last_local_visit_sim_day": 1
       },
       {
         "id": "F02",
@@ -205,10 +214,12 @@
         "resource_class": "fallen_fruit",
         "legacy_note": "陌生蟻曾取食，剩餘資源未知",
         "evidence": "observed_in_story",
-        "current_accessibility": "unverified",
+        "current_accessibility": "locally_approached_on_day1",
         "edible_mass_mg": null,
         "replenishment_per_day_mg": null,
-        "known_to_every_worker": false
+        "known_to_every_worker": false,
+        "day1_observation": "W006在落果外緣接觸競爭蟻跡象後折返",
+        "last_local_visit_sim_day": 1
       },
       {
         "id": "F04",
@@ -261,10 +272,12 @@
         "resource_class": "detritus",
         "legacy_note": "飛蛾殘骸耗盡，零碎食物不定期存在",
         "evidence": "observed_in_story",
-        "current_accessibility": "unverified",
+        "current_accessibility": "locally_reached_on_day1",
         "edible_mass_mg": null,
         "replenishment_per_day_mg": null,
-        "known_to_every_worker": false
+        "known_to_every_worker": false,
+        "day1_observation": "W011搜索但沒有可帶回的可食殘片",
+        "last_local_visit_sim_day": 1
       },
       {
         "id": "F08",
@@ -303,10 +316,12 @@
         "resource_class": "root_honeydew",
         "legacy_note": "蟾蜍在潮葉旁活動；W013於1142分鐘擦傷",
         "evidence": "observed_in_story",
-        "current_accessibility": "unverified",
+        "current_accessibility": "boundary_approached_on_day1",
         "edible_mass_mg": null,
         "replenishment_per_day_mg": null,
-        "known_to_every_worker": false
+        "known_to_every_worker": false,
+        "day1_observation": "W010見蟾蜍活動而折返；蜜露是否可用仍未知",
+        "last_local_visit_sim_day": 1
       },
       {
         "id": "F11",
@@ -349,7 +364,8 @@
         "current_trail_strength": null,
         "currently_safe": null,
         "blocked_by_rain": null,
-        "individual_knowledge_only": true
+        "individual_knowledge_only": true,
+        "day1_trail_qualitative": "W005返巢後可能有弱短時招募訊號，濃度未知"
       },
       {
         "from": "N00",
@@ -375,7 +391,8 @@
         "current_trail_strength": null,
         "currently_safe": null,
         "blocked_by_rain": null,
-        "individual_knowledge_only": true
+        "individual_knowledge_only": true,
+        "day1_trail_qualitative": "W006迴避後沒有建立穩定採食路線"
       },
       {
         "from": "N00",
@@ -427,7 +444,8 @@
         "current_trail_strength": null,
         "currently_safe": null,
         "blocked_by_rain": null,
-        "individual_knowledge_only": true
+        "individual_knowledge_only": true,
+        "day1_trail_qualitative": "未見食物回饋，原路線可能衰減"
       },
       {
         "from": "N00",
@@ -466,7 +484,8 @@
         "current_trail_strength": null,
         "currently_safe": null,
         "blocked_by_rain": null,
-        "individual_knowledge_only": true
+        "individual_knowledge_only": true,
+        "day1_trail_qualitative": "蟾蜍風險接觸後本次未建立採集路線"
       },
       {
         "from": "N00",
@@ -501,7 +520,15 @@
     "humidity_percent": null,
     "temperature_c": null,
     "water_intrusion_probability": null,
-    "soil_stability": null
+    "soil_stability": null,
+    "latest_assessment": {
+      "day": 1,
+      "observed_in_simulation": "沒有顯著新浸水事件；巢內整理與育幼持續",
+      "humidity_percent": null,
+      "temperature_c": null,
+      "storm_resilience_tested": false,
+      "soil_stability": null
+    }
   },
   "ecology": {
     "plants": {
@@ -551,21 +578,66 @@
     ],
     "decomposers": "known_from_story_but_unidentified",
     "pathogens": null,
-    "parasitoids": "previously observed near leaf aphids"
+    "parasitoids": "previously observed near leaf aphids",
+    "last_day_qualitative": {
+      "plants": "F09舊斷莖滲液依枯竭機制持續衰減；F08開花補充速率未知；未憑空恢復已乾涸F02。",
+      "sap_feeders": "F01仍有少量蜜露可接觸，蚜蟲族群變動率未知；F10吸汁昆蟲存續與蜜露量未核實。",
+      "detritus": "F07舊殘骸不保證重新出現；分解持續可能性存在但沒有量測。",
+      "rival_ants": "F03外緣一次陌生蟻局部遭遇；至少兩群的歷史下限維持，未證實新巢址或族群歸屬。",
+      "predators": "F10外緣蟾蜍時空重疊而工蟻迴避；F02/F05等歷史蜘蛛活動不代表當天確實目擊。",
+      "human_disturbance": "未觸發大型干擾情境，不等於證明無人類活動。",
+      "water_and_soil": "微氣候僅方向性情境推演；未測巢室濕度、入水量與土壤穩定度。"
+    }
   },
   "resources": {
     "legacy_units_ref": "saves/main.json#/colony/food",
     "legacy_conversion_to_mg": null,
     "water_supply_amount": null,
-    "food_nodes_renewable_only_if_evidence": true
+    "food_nodes_renewable_only_if_evidence": true,
+    "v2_latest_ledger": {
+      "day": 1,
+      "legacy_checkpoint_snapshot": {
+        "sugar_units": 3,
+        "protein_units": 3,
+        "unit": "v1抽象遊戲單位",
+        "valid_for": "Day0歷史存量參考，Day1不作物理量結算"
+      },
+      "v2_physical": {
+        "initial_carbohydrate_mg": null,
+        "foraged_carbohydrate_mg": null,
+        "delivered_carbohydrate_mg": null,
+        "metabolized_carbohydrate_mg": null,
+        "final_carbohydrate_mg": null,
+        "initial_protein_mg": null,
+        "foraged_protein_mg": null,
+        "delivered_protein_mg": null,
+        "metabolized_protein_mg": null,
+        "final_protein_mg": null,
+        "available_water_uL": null,
+        "water_intake_uL": null,
+        "water_used_uL": null
+      },
+      "qualitative_flow": {
+        "F01": "微量蜜露成功帶回；物理量不明",
+        "F07": "出行未回收可食物",
+        "F03": "競爭蟻存在而迴避，未回收可核實食物",
+        "F10": "捕食風險迴避，未回收可核實食物",
+        "metabolism": "所有活體持續有營養及水分需求；沒有可信換算係數，淨收支未知",
+        "storage": "既有v1數值保持歷史快照，不表示Day1結束仍精確是糖3／蛋白質3"
+      },
+      "evidence": "qualitative_scenario_not_measurement",
+      "balance_status": "unquantified; no fabricated numeric conversion"
+    }
   },
   "model_controls": {
     "control_mode": "observer_autonomous",
     "task_assignment": "local_response_thresholds_not_permanent_jobs",
-    "random_seed": null,
+    "random_seed": 3138995752,
     "model_parameter_set": "unidentified_species_v2",
     "uncertainty_tracking": true,
-    "auto_advance_on_chat_request": true
+    "auto_advance_on_chat_request": true,
+    "last_rng_algorithm": "mulberry32_from_fnv1a_seed",
+    "last_simulated_day": 1
   },
   "source_docs": [
     "docs/science-model.md",
@@ -578,6 +650,381 @@
     "historic_map": "observed_in_story_not_field_measurement",
     "route_graph": "inferred",
     "biological_parameters": "unknown",
-    "quantitative_resource_calibration": "not_done"
+    "quantitative_resource_calibration": "not_done",
+    "day1_simulation": "seeded_qualitative_scenario_not_field_observation",
+    "physical_resources": "unknown_all_day1_mg_and_uL_null"
+  },
+  "day_log_latest": {
+    "day": 1,
+    "elapsed_hours_start": 0,
+    "elapsed_hours_end": 24,
+    "relative_date": "Day1（架空花園；非2026-10-31實地天氣）",
+    "model": "v2.0-science-inspired / qualitative-scenario-1",
+    "rng": {
+      "algorithm": "FNV-1a 32-bit seed; mulberry32 draws",
+      "seed_material": "antempire-garden-v2|Day0->Day1|34b621be9b80c99b408a4e494ff7f17d8b1487f0",
+      "seed": 3138995752,
+      "rolls": {
+        "microclimate_scenario": 0.412839,
+        "F01_find_honeydew": 0.248262,
+        "F07_edible_debris": 0.917625,
+        "F03_competitor_contact": 0.108227,
+        "F10_toad_spatial_overlap": 0.118872,
+        "F10_find_honeydew": 0.710886,
+        "F01_injury_contact": 0.445417,
+        "F10_injury_contact": 0.061706
+      },
+      "scenario_thresholds_hypothetical": {
+        "microclimate": "[0,.33) 乾燥; [.33,.66) 無顯著新進水且遮蔽潮濕; [.66,1) 輕微潤濕",
+        "F01_find_honeydew": 0.5,
+        "F07_edible_debris": 0.35,
+        "F03_competitor_contact": 0.4,
+        "F10_toad_spatial_overlap": 0.2,
+        "F10_find_honeydew": 0.45
+      },
+      "caution": "抽樣閾值是遊戲情境假設，不是蟻種實測遭遇率／每日氣象機率；傷亡事件必須先有直接暴露，本日無直接攻擊，受傷抽樣不適用"
+    },
+    "behavior": {
+      "substep_minutes": 20,
+      "substeps_in_day": 72,
+      "mechanism": "日內局部反應由事件窗口與巢內需求描述，非完整校準逐蟻運動數值積分",
+      "autonomous": true,
+      "permanent_roles": false,
+      "omniscient_map": false
+    },
+    "environment": {
+      "scenario": "no_major_wetting_pulse_with_damp_shade",
+      "measured_weather": false,
+      "temperature_c": null,
+      "relative_humidity_percent": null,
+      "rainfall_mm": null,
+      "wind_speed_m_per_s": null,
+      "soil_moisture_percent": null,
+      "nest_water_intrusion_observed": false,
+      "nest_flood_capacity_verified": false,
+      "interpretation": "僅模型情境：無新顯著浸水、陰處根際較濕、曝露地表可能略乾；所有精確物理量未知"
+    },
+    "ecological_changes": {
+      "plants": "F09舊斷莖滲液依枯竭機制持續衰減；F08開花補充速率未知；未憑空恢復已乾涸F02。",
+      "sap_feeders": "F01仍有少量蜜露可接觸，蚜蟲族群變動率未知；F10吸汁昆蟲存續與蜜露量未核實。",
+      "detritus": "F07舊殘骸不保證重新出現；分解持續可能性存在但沒有量測。",
+      "rival_ants": "F03外緣一次陌生蟻局部遭遇；至少兩群的歷史下限維持，未證實新巢址或族群歸屬。",
+      "predators": "F10外緣蟾蜍時空重疊而工蟻迴避；F02/F05等歷史蜘蛛活動不代表當天確實目擊。",
+      "human_disturbance": "未觸發大型干擾情境，不等於證明無人類活動。",
+      "water_and_soil": "微氣候僅方向性情境推演；未測巢室濕度、入水量與土壤穩定度。"
+    },
+    "encounters": [
+      {
+        "id": "V2D1-E01",
+        "window_hours": [
+          0,
+          6
+        ],
+        "node": "N00",
+        "kind": "environment",
+        "detail": "抽樣情境沒有顯著新的浸水脈衝；遮蔽根際保有潮濕，曝露地表相對乾燥。未設定真實氣象數字。",
+        "evidence": "model_assumption"
+      },
+      {
+        "id": "V2D1-E02",
+        "window_hours": [
+          7,
+          10
+        ],
+        "node": "F01",
+        "workers": [
+          "W005"
+        ],
+        "kind": "foraging",
+        "detail": "W005循舊路徑的局部記憶探索東北葉背，接觸少量蜜露並帶回微量含糖液；實際質量和可利用熱量未知。",
+        "evidence": "simulated_local_observation"
+      },
+      {
+        "id": "V2D1-E03",
+        "window_hours": [
+          9,
+          12
+        ],
+        "node": "F07",
+        "workers": [
+          "W011"
+        ],
+        "kind": "foraging_failure",
+        "detail": "W011查看東側枯葉，未找到可辨認且可搬回的可食昆蟲殘片；不代表整個區域沒有食物。",
+        "evidence": "simulated_local_observation"
+      },
+      {
+        "id": "V2D1-E04",
+        "window_hours": [
+          11,
+          15
+        ],
+        "node": "F03",
+        "workers": [
+          "W006"
+        ],
+        "kind": "competition_avoidance",
+        "detail": "W006靠近東側落果時於可見範圍內察覺一隻陌生工蟻，避免近距接觸後退回；未能確認敵巢位置或同巢身分，未發生交戰。",
+        "evidence": "simulated_local_observation"
+      },
+      {
+        "id": "V2D1-E05",
+        "window_hours": [
+          13,
+          17
+        ],
+        "node": "F10",
+        "workers": [
+          "W010"
+        ],
+        "kind": "predator_avoidance",
+        "detail": "W010短程探索根際外緣時察覺近旁蟾蜍活動，未進入直接捕食接觸範圍而折返；當次沒有採得可核實蜜露。",
+        "evidence": "simulated_local_observation"
+      },
+      {
+        "id": "V2D1-E06",
+        "window_hours": [
+          16,
+          24
+        ],
+        "node": "N00",
+        "kind": "colony_care",
+        "detail": "工蟻以接觸刺激調整巢內育幼、清潔及短程警戒；兩隻幼蟲留在幼蟲期，沒有可辨認新卵、蛹、工蟻羽化或死亡。",
+        "evidence": "simulated_local_observation"
+      }
+    ],
+    "worker_activity": {
+      "W004": {
+        "locations": [
+          "N00"
+        ],
+        "behaviors": [
+          "幼蟲接觸與梳理",
+          "短暫整理巢室"
+        ],
+        "injury_followup": "未見新傷"
+      },
+      "W005": {
+        "locations": [
+          "N00",
+          "F01",
+          "N00"
+        ],
+        "behaviors": [
+          "東北葉背小量蜜露探索",
+          "返回後經接觸分享採食訊號"
+        ],
+        "injury_followup": "舊擦傷無新異常"
+      },
+      "W006": {
+        "locations": [
+          "N00",
+          "F03外緣",
+          "N00"
+        ],
+        "behaviors": [
+          "落果方向探索",
+          "察覺陌生工蟻後迴避"
+        ],
+        "injury_followup": "未見新傷"
+      },
+      "W007": {
+        "locations": [
+          "N00"
+        ],
+        "behaviors": [
+          "巢內整理",
+          "短暫接觸幼體"
+        ],
+        "injury_followup": "後腳舊傷仍在；行動改善程度未知"
+      },
+      "W008": {
+        "locations": [
+          "N00"
+        ],
+        "behaviors": [
+          "幼體周圍清潔",
+          "巢室內移動"
+        ],
+        "injury_followup": "腳傷未宣告痊癒；嚴重度未知"
+      },
+      "W009": {
+        "locations": [
+          "N00"
+        ],
+        "behaviors": [
+          "巢內碎屑整理"
+        ],
+        "injury_followup": "前足舊傷仍須觀察"
+      },
+      "W010": {
+        "locations": [
+          "N00",
+          "F10外緣",
+          "N00"
+        ],
+        "behaviors": [
+          "回應外緣探索刺激",
+          "發現蟾蜍活動後折返"
+        ],
+        "injury_followup": "未見新傷"
+      },
+      "W011": {
+        "locations": [
+          "N00",
+          "F07",
+          "N00"
+        ],
+        "behaviors": [
+          "枯葉檢查未收穫"
+        ],
+        "injury_followup": "未見新傷"
+      },
+      "W012": {
+        "locations": [
+          "N00"
+        ],
+        "behaviors": [
+          "幼蟲照料接觸",
+          "短程巢室整理"
+        ],
+        "injury_followup": "前足擦傷未宣告痊癒"
+      },
+      "W013": {
+        "locations": [
+          "N00"
+        ],
+        "behaviors": [
+          "巢口附近短距活動",
+          "休止與自我梳理"
+        ],
+        "injury_followup": "後足傷仍影響移動；未強制完全停工"
+      },
+      "W014": {
+        "locations": [
+          "N00"
+        ],
+        "behaviors": [
+          "巢內梳理與整理"
+        ],
+        "injury_followup": "前足傷仍在，未見感染證據但感染狀態未知"
+      },
+      "W015": {
+        "locations": [
+          "N00",
+          "巢口附近"
+        ],
+        "behaviors": [
+          "短程入口巡察",
+          "返回巢內照料接觸"
+        ],
+        "injury_followup": "未見新傷"
+      },
+      "W016": {
+        "locations": [
+          "N00"
+        ],
+        "behaviors": [
+          "幼蟲照料",
+          "巢室清潔"
+        ],
+        "injury_followup": "未見新傷"
+      },
+      "W017": {
+        "locations": [
+          "N00"
+        ],
+        "behaviors": [
+          "巢內接觸與整理",
+          "間歇休止"
+        ],
+        "injury_followup": "舊敘事的外骨骼狀態保留，v2生理年齡未知"
+      }
+    },
+    "queen": {
+      "id": "Q001",
+      "alive": true,
+      "new_eggs": 0,
+      "oviposition_rate_per_day": null,
+      "hydration": null,
+      "nutritional_status": null,
+      "explanation": "本次情境沒有新卵；未以固定產卵速率抽樣或推定蟻后能量足夠"
+    },
+    "brood": {
+      "initial": {
+        "eggs": 0,
+        "larvae": 2,
+        "pupae": 0
+      },
+      "final": {
+        "eggs": 0,
+        "larvae": 2,
+        "pupae": 0
+      },
+      "newly_laid": 0,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "brood_deaths": 0,
+      "stage_age_days": null,
+      "elapsed_under_v2_days": 1
+    },
+    "colony": {
+      "queen_alive": 1,
+      "workers_initial": 14,
+      "worker_eclosions": 0,
+      "worker_deaths": 0,
+      "workers_final": 14,
+      "cumulative_worker_births": 17,
+      "cumulative_worker_deaths": 3
+    },
+    "resources": {
+      "day": 1,
+      "legacy_checkpoint_snapshot": {
+        "sugar_units": 3,
+        "protein_units": 3,
+        "unit": "v1抽象遊戲單位",
+        "valid_for": "Day0歷史存量參考，Day1不作物理量結算"
+      },
+      "v2_physical": {
+        "initial_carbohydrate_mg": null,
+        "foraged_carbohydrate_mg": null,
+        "delivered_carbohydrate_mg": null,
+        "metabolized_carbohydrate_mg": null,
+        "final_carbohydrate_mg": null,
+        "initial_protein_mg": null,
+        "foraged_protein_mg": null,
+        "delivered_protein_mg": null,
+        "metabolized_protein_mg": null,
+        "final_protein_mg": null,
+        "available_water_uL": null,
+        "water_intake_uL": null,
+        "water_used_uL": null
+      },
+      "qualitative_flow": {
+        "F01": "微量蜜露成功帶回；物理量不明",
+        "F07": "出行未回收可食物",
+        "F03": "競爭蟻存在而迴避，未回收可核實食物",
+        "F10": "捕食風險迴避，未回收可核實食物",
+        "metabolism": "所有活體持續有營養及水分需求；沒有可信換算係數，淨收支未知",
+        "storage": "既有v1數值保持歷史快照，不表示Day1結束仍精確是糖3／蛋白質3"
+      },
+      "evidence": "qualitative_scenario_not_measurement",
+      "balance_status": "unquantified; no fabricated numeric conversion"
+    },
+    "injuries": {
+      "old_injuries_preserved": [
+        "W007",
+        "W008",
+        "W009",
+        "W012",
+        "W013",
+        "W014"
+      ],
+      "new_injuries": [],
+      "observed_infections": [],
+      "unknown_infection_status_preserved": true
+    },
+    "confidence": "fictional_calibratable_structure; no taxon identification or measured rates"
   }
 }
