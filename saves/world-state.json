@@ -11,10 +11,20 @@
     "scientific_clock": {
       "day": 1,
       "elapsed_sim_hours": 24,
-      "calendar_date": null,
+      "calendar_date": "2026-10-31",
       "absolute_utc": null,
       "default_advance_hours": 24,
-      "substep_minutes_for_behavior": 20
+      "substep_minutes_for_behavior": 20,
+      "calendar_timezone": "Asia/Taipei",
+      "calendar_alignment": {
+        "anchor_day": 1,
+        "anchor_date": "2026-10-31",
+        "date_rule": "date(Day N)=2026-10-31+(N-1)天（Asia/Taipei）",
+        "day0_date_backfill": false,
+        "simulation_advance_only_on_user_request": true,
+        "real_weather_data_not_automatically_snapshotted_during_idle_time": true,
+        "previous_day1_scenario_is_not_observed_weather": true
+      }
     },
     "note": "v1 的1150分鐘非真實生理分鐘，v2從獨立時鐘開始",
     "last_transition": {
@@ -23,16 +33,54 @@
       "advance_hours": 24,
       "journal": "journal/v2-day-0001.md",
       "previous_head_sha": "34b621be9b80c99b408a4e494ff7f17d8b1487f0"
-    }
+    },
+    "setting_changes": [
+      {
+        "changed_at_local": "2026-10-31",
+        "effective_from_v2_day": 1,
+        "affects_past_simulation": false,
+        "day1_remains_hypothetical_weather": true,
+        "first_new_day_using_real_weather_source": 2,
+        "day1_calendar_mapping": "Day1對應2026-10-31；Day0歷史過渡日不依據此設定補造天氣",
+        "reason": "使用者將先前的架空地理環境指定為台中西屯虛構別墅，要求年月日／季節／氣候用真實外部資料；不重演已完成Day1",
+        "requested_by": "observer"
+      }
+    ]
   },
   "biome": {
-    "name": "架空住宅花園",
-    "geo": null,
+    "name": "臺灣臺中市西屯區・虛構獨棟別墅花園",
+    "geo": {
+      "country": "Taiwan",
+      "city": "臺中市",
+      "district": "西屯區",
+      "district_cwa_town_code": "66000060",
+      "timezone": "Asia/Taipei",
+      "location_kind": "fictional_private_villa_garden_with_real_district_weather",
+      "precise_address": null,
+      "parcel_coordinates": null,
+      "site_not_measured": true,
+      "note": "獨棟花園別墅為虛構地點；僅行政區、年月日、氣候產品採真實公開資料；不能將西屯氣象資料當成院內微氣候實測"
+    },
     "latitude": null,
     "longitude": null,
-    "season": null,
-    "climate_profile": "unknown",
-    "human_watering_schedule": null
+    "season": "autumn",
+    "climate_profile": "real_Xitun_district_weather_CWA_observation_or_forecast_with_provenance",
+    "human_watering_schedule": null,
+    "villa_garden": {
+      "fictional": true,
+      "exact_address": null,
+      "possible_habitats": [
+        "花盆及盆底土丘",
+        "草坪與草根",
+        "花圃與低矮灌木",
+        "落葉腐植層",
+        "石板通道及排水縫",
+        "盆栽與樹蔭"
+      ],
+      "habitat_mapping": "沿用既有N00-F11節點與敘事相對距離；這些元素是場景設定，非真實房屋植栽調查",
+      "new_resource_nodes_created": 0,
+      "human_watering_schedule": "unknown"
+    }
   },
   "ant_population": {
     "taxon": null,
@@ -510,7 +558,53 @@
     "solar_phase": null,
     "wind_speed_m_per_s": null,
     "soil_temperature_c": null,
-    "soil_moisture_percent": null
+    "soil_moisture_percent": null,
+    "latest_external_reference": {
+      "date": "2026-10-31",
+      "timezone": "Asia/Taipei",
+      "is_complete_daily_observation": false,
+      "district_snapshot": {
+        "valid_at_local": "2026-10-31T14:00:00+08:00",
+        "temperature_c": 29,
+        "relative_humidity_percent": 58,
+        "wind_speed_m_per_s": 2.7,
+        "daily_rainfall_so_far_mm": 0,
+        "weather_text": "晴",
+        "rain_probability_percent": 0,
+        "source": "https://www.twipcam.com/weather?town=66000060",
+        "provenance": "第三方彙整頁面，標示交通部中央氣象署為氣象資料來源；非別墅微氣候實測",
+        "distinction": "累積雨量0mm是截至資料時間的顯示值，不是10/31結束的全天觀測；0%降雨機率是預報而非實測"
+      },
+      "city_forecast": {
+        "issued_local": "2026-10-31T17:00:00+08:00",
+        "area": "臺中市（市域預報，非別墅院內測站）",
+        "tonight": {
+          "calendar_date": "2026-10-31",
+          "min_temperature_c": 23,
+          "max_temperature_c": 27,
+          "weather_text": "晴時多雲"
+        },
+        "tomorrow_daytime": {
+          "calendar_date": "2026-11-01",
+          "min_temperature_c": 23,
+          "max_temperature_c": 31,
+          "weather_text": "晴時多雲"
+        },
+        "source": "https://news.pchome.com.tw/living/cwb/20261031/index-79343715455144211009.html",
+        "provenance": "中央氣象署縣市預報經PChome轉載；未來天氣屬預報非實際測量"
+      },
+      "missing_daily_observations": {
+        "actual_full_day_rainfall_mm": null,
+        "actual_full_day_min_temperature_c": null,
+        "actual_full_day_max_temperature_c": null,
+        "soil_moisture_percent": null,
+        "nest_air_temperature_c": null
+      }
+    },
+    "source_policy_ref": "docs/weather-data-policy.md",
+    "active_date": "2026-10-31",
+    "last_actual_weather_simulation_day": null,
+    "next_day_weather_policy": "Day2=2026-11-01，優先該日已發布實測；未來時間用有時間戳的預報並標註forecast，不確定或缺失標null"
   },
   "nest_microclimate": {
     "nursery_count_legacy": 2,
@@ -528,7 +622,8 @@
       "temperature_c": null,
       "storm_resilience_tested": false,
       "soil_stability": null
-    }
+    },
+    "external_weather_is_not_nest_observation": true
   },
   "ecology": {
     "plants": {
@@ -637,14 +732,22 @@
     "uncertainty_tracking": true,
     "auto_advance_on_chat_request": true,
     "last_rng_algorithm": "mulberry32_from_fnv1a_seed",
-    "last_simulated_day": 1
+    "last_simulated_day": 1,
+    "weather_source_mode": "real_geography_real_weather_with_provenance_and_missing_values",
+    "weather_source_requirements": {
+      "observed_vs_forecast_distinguished": true,
+      "no_guess_of_missing_values": true,
+      "no_user_location_substitution": true,
+      "no_weather_backfill_to_prior_day1": true
+    }
   },
   "source_docs": [
     "docs/science-model.md",
     "docs/ecosystem-world.md",
     "docs/simulation-engine.md",
     "docs/species-calibration.md",
-    "docs/references.md"
+    "docs/references.md",
+    "docs/weather-data-policy.md"
   ],
   "source_quality": {
     "historic_map": "observed_in_story_not_field_measurement",
@@ -652,7 +755,10 @@
     "biological_parameters": "unknown",
     "quantitative_resource_calibration": "not_done",
     "day1_simulation": "seeded_qualitative_scenario_not_field_observation",
-    "physical_resources": "unknown_all_day1_mg_and_uL_null"
+    "physical_resources": "unknown_all_day1_mg_and_uL_null",
+    "geography": "administrative_district_real_private_villa_fictional",
+    "weather": "external_public_district_snapshot_and_forecast_not_garden_measurement",
+    "day1_weather": "historical_simulated_scenario_not_retroactively_replaced"
   },
   "day_log_latest": {
     "day": 1,

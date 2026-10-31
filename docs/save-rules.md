@@ -4,7 +4,7 @@
 
 ## 權威資料與唯讀歷史
 - `saves/main.json`：蟻后／工蟻／幼體數量、狀態、舊v1歷史、模式及模型版本。仍是蟻群狀態的唯一權威。
-- `saves/world-state.json`：模擬時鐘、環境、空間節點、資源／掠食者／競爭者及未知參數。世界狀態權威。
+- `saves/world-state.json`：模擬時鐘、環境、空間節點、資源／掠食者／競爭者及未知參數；另保存西屯區真實天氣資料來源、有效時間、觀測／預報分類。世界狀態權威。
 - `journal/chronicle.md` 與 `journal/chronicle_<range>.md`：舊v1故事歸檔，不修改過往結果，不把歷史糖單位當物理測量。
 - 新v2回合紀錄建議 `journal/v2-day-0001.md`、`journal/v2-day-0002.md`，以遊戲生態日序編號；若短於一天則在同日檔累加帶時間標記事件。
 - `docs/science-model.md`、`docs/ecosystem-world.md`、`docs/simulation-engine.md` 是 v2 模擬權威機制；參數來源看 `docs/references.md`、`docs/species-calibration.md`。
@@ -31,3 +31,9 @@
 - v1舊章節停在1150分鐘，工蟻14，蟻后1，幼蟲2，卵0、蛹0，糖3蛋白質3（抽象單位）。
 - v2世界Day0尚未前進；新模擬從用戶下一次要求「繼續」開始。
 - 遷移依據：`docs/migration-v2.md`。
+
+## 2026-10-31 地點與真實日期設定
+- 既有v1歷史及Day1科學事件**不得**因變更地點而改寫。只是把後續舞台設為台灣台中市西屯區的**虛構花園別墅**。
+- v2 Day1 錨定 2026-10-31、時區 Asia/Taipei、秋季；Day2 = 2026-11-01，後續逐天對照。
+- 每次續玩先讀 `docs/weather-data-policy.md` 再查真實資料，保存來源URL、發布與有效時間、觀測／預報身份；絕不將未來預報當成實際天氣、將降雨機率當雨量，或拿城市氣溫偽裝巢內實測。
+- 新資料的設定變更日誌在 `journal/v2-setting-xitun-2026-10-31.md`。只更動地理與外部氣象，不增加工蟻、幼體、死亡或科學時間。

@@ -5,10 +5,26 @@
   "updated_at": "2026-10-31",
   "continuity": "v1敘事保留（1150 fictional minutes）；v2另起科學生態時鐘Day 0，使用科學機制啟發、未鑑種與未校準的自動蟻群模擬",
   "setting": {
-    "biome": "住宅花園",
+    "biome": "臺灣臺中市西屯區・虛構花園別墅",
     "species": "黑色地棲型螞蟻（虛構綜合生態模型）",
     "original_nest_site": "石板底下",
-    "current_nest_site": "西北花盆邊緣土丘（臨時巢）"
+    "current_nest_site": "西北花盆邊緣土丘（臨時巢）",
+    "geography": {
+      "country": "Taiwan",
+      "city": "臺中市",
+      "district": "西屯區",
+      "district_cwa_town_code": "66000060",
+      "timezone": "Asia/Taipei",
+      "location_kind": "fictional_private_villa_garden_with_real_district_weather",
+      "precise_address": null,
+      "parcel_coordinates": null,
+      "site_not_measured": true,
+      "note": "獨棟花園別墅為虛構地點；僅行政區、年月日、氣候產品採真實公開資料；不能將西屯氣象資料當成院內微氣候實測"
+    },
+    "season": "autumn",
+    "weather_mode": "real_public_data_CWA_preferred",
+    "effective_calendar_date": "2026-10-31",
+    "weather_source_policy": "docs/weather-data-policy.md"
   },
   "chapter": {
     "number": 4,
@@ -1693,12 +1709,13 @@
     "水量（未建立資源單位）",
     "陌生巢道是否屬於其他蟻群",
     "蟻后與幼體真實生理年齡",
-    "蟻群實際物種與體型、每日營養消耗、世界氣候及病原參數尚未校準"
+    "蟻群實際物種與體型、每日營養消耗、世界氣候及病原參數尚未校準",
+    "別墅精確地址、院內測站資料與地表／巢內微氣候未量測"
   ],
   "simulation": {
     "version": "v2.0-science-inspired",
     "mode": "observer_autonomous",
-    "status": "day_1_completed",
+    "status": "day_1_completed_waiting_day_2_real_weather",
     "effective_after_legacy_elapsed_player_minutes": 1150,
     "scientific_clock_ref": "saves/world-state.json#/time/scientific_clock",
     "world_state_path": "saves/world-state.json",
@@ -1714,7 +1731,8 @@
       "docs/simulation-engine.md",
       "docs/species-calibration.md",
       "docs/references.md",
-      "docs/migration-v2.md"
+      "docs/migration-v2.md",
+      "docs/weather-data-policy.md"
     ],
     "latest_completed_day": 1,
     "elapsed_sim_hours": 24,
@@ -1737,7 +1755,29 @@
         "V2D1-E06"
       ]
     },
-    "automatic_worker_decisions": true
+    "automatic_worker_decisions": true,
+    "calendar_timezone": "Asia/Taipei",
+    "calendar_anchor": {
+      "day": 1,
+      "date": "2026-10-31",
+      "day0_unmapped": true,
+      "past_day1_weather_status": "uncalibrated_hypothetical",
+      "next_day": 2,
+      "next_calendar_date": "2026-11-01"
+    },
+    "weather_mode": "real_weather_prefer_observation_then_forecast_with_source_timestamps",
+    "setting_history": [
+      {
+        "changed_at_local": "2026-10-31",
+        "effective_from_v2_day": 1,
+        "affects_past_simulation": false,
+        "day1_remains_hypothetical_weather": true,
+        "first_new_day_using_real_weather_source": 2,
+        "day1_calendar_mapping": "Day1對應2026-10-31；Day0歷史過渡日不依據此設定補造天氣",
+        "reason": "使用者將先前的架空地理環境指定為台中西屯虛構別墅，要求年月日／季節／氣候用真實外部資料；不重演已完成Day1",
+        "requested_by": "observer"
+      }
+    ]
   },
   "migration_log": [
     {
