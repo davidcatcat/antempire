@@ -3,74 +3,193 @@
   "save_id": "main",
   "game": "螞蟻帝國",
   "updated_at": "2026-10-31",
-  "continuity": "以已知對話為準；未確認事項不視為既定事實",
+  "continuity": "以本次對話實際推演為準；遊戲事件與資源數值是虛構模擬",
   "setting": {
     "biome": "住宅花園",
-    "nest_site": "石板底下",
-    "species": "黑色地棲型螞蟻（未指定實際物種）"
+    "species": "黑色地棲型螞蟻（虛構綜合生態模型）",
+    "original_nest_site": "石板底下",
+    "current_nest_site": "草根高地"
   },
   "chapter": {
-    "number": 2,
-    "title": "優先尋找食物",
-    "phase": "等待第二章事件推演／下一次玩家決策"
+    "number": 3,
+    "title": "草根高地與腐植質層",
+    "elapsed_player_minutes": 210,
+    "phase": "等待玩家選擇事件 #023"
   },
   "colony": {
     "queen": {
+      "id": "Q001",
       "count": 1,
-      "status": "存活（依開局延續，尚未另行驗證）"
+      "status": "健康"
     },
     "workers": {
-      "confirmed_born": 4,
-      "current_alive": null
+      "confirmed_born": 8,
+      "current_alive": 6,
+      "cumulative_deaths": 2,
+      "individuals": [
+        {
+          "id": "W001",
+          "status": "dead",
+          "cause": "蜘蛛捕食",
+          "at_minute": 75
+        },
+        {
+          "id": "W002",
+          "status": "alive",
+          "condition": "觸角輕傷，探索效率降低"
+        },
+        {
+          "id": "W003",
+          "status": "dead",
+          "cause": "土壤坍塌",
+          "at_minute": 68
+        },
+        {
+          "id": "W004",
+          "status": "alive",
+          "condition": "健康，育幼"
+        },
+        {
+          "id": "W005",
+          "status": "alive",
+          "condition": "挖掘擦傷，活動效率稍降"
+        },
+        {
+          "id": "W006",
+          "status": "alive",
+          "condition": "健康，探索"
+        },
+        {
+          "id": "W007",
+          "status": "alive",
+          "condition": "健康，探索"
+        },
+        {
+          "id": "W008",
+          "status": "alive",
+          "condition": "健康，巢內工作"
+        }
+      ]
     },
     "brood": {
-      "current_count": null
+      "eggs": 2,
+      "larvae": 3,
+      "pupae": 0,
+      "total": 5
     },
     "food": {
-      "amount": null
+      "sugar_units": 3,
+      "protein_units": 5,
+      "units": "抽象遊戲單位"
     },
     "water": {
       "amount": null
     },
     "nest": {
-      "nursery": "已遷移至較高育幼區",
-      "other_chambers": "未確認"
-    }
+      "usable_nurseries": 2,
+      "crowding_percent": 46,
+      "condition": "草根高地兩間育幼室；原石板巢廢棄"
+    },
+    "known_other_colonies": 2,
+    "worker_deaths_cumulative": 2
   },
   "history": [
     {
       "id": "E001",
-      "chapter": 1,
-      "type": "start",
-      "summary": "住宅花園石板底下開局"
+      "minute": 0,
+      "summary": "住宅花園石板下，單蟻后建群"
     },
     {
       "id": "E002",
-      "chapter": 1,
-      "type": "player_choice",
-      "summary": "午後雷雨時選擇遷移到較高的育幼區"
+      "minute": 16,
+      "summary": "午後雷雨，選高處育幼區，成功；四隻初代工蟻出生"
     },
     {
       "id": "E003",
-      "chapter": 1,
-      "type": "outcome",
-      "summary": "育幼區遷移成功；四隻初代工蟻誕生"
+      "minute": 30,
+      "summary": "玩家決定優先尋找食物"
     },
     {
       "id": "E004",
-      "chapter": 2,
-      "type": "player_choice",
-      "summary": "優先尋找食物"
+      "minute": 50,
+      "summary": "發現競爭蟻群，玩家選C繞路找食物"
+    },
+    {
+      "id": "E005",
+      "minute": 68,
+      "summary": "W003因草根坍塌受傷死亡"
+    },
+    {
+      "id": "E006",
+      "minute": 70,
+      "summary": "玩家選A冒險取蛛網果蠅"
+    },
+    {
+      "id": "E007",
+      "minute": 75,
+      "summary": "W001被蜘蛛捕食；W002帶回蛋白質"
+    },
+    {
+      "id": "E008",
+      "minute": 90,
+      "summary": "人類澆水，玩家選A全巢遷移"
+    },
+    {
+      "id": "E009",
+      "minute": 110,
+      "summary": "蟻后、四工蟻、五幼體遷至草根高地成功"
+    },
+    {
+      "id": "E010",
+      "minute": 110,
+      "summary": "玩家選A優先取得糖分"
+    },
+    {
+      "id": "E011",
+      "minute": 130,
+      "summary": "W007羽化，找到水果但遭其他蟻群佔用；玩家選A另覓糖源"
+    },
+    {
+      "id": "E012",
+      "minute": 150,
+      "summary": "找到蚜蟲蜜露與瓢蟲威脅，蟻后另產兩卵；玩家選A錯時共享蜜露"
+    },
+    {
+      "id": "E013",
+      "minute": 170,
+      "summary": "W008羽化；W002觸角輕傷；玩家選A擴建第二育幼室"
+    },
+    {
+      "id": "E014",
+      "minute": 190,
+      "summary": "第二育幼室完成；兩卵轉為幼蟲；W005挖掘擦傷"
+    },
+    {
+      "id": "E015",
+      "minute": 190,
+      "summary": "玩家選A探索腐植質層"
+    },
+    {
+      "id": "E016",
+      "minute": 210,
+      "summary": "W006、W007探索腐植質層，取得3單位蛋白質；一顆卵孵化，剩三幼蟲兩卵；無新增死亡；遇見短暫土壤滲水與掠食者痕跡"
     }
   ],
   "pending": {
-    "next": "推演第二章尋找食物後的20分鐘；呈現蟻群變化、隨機事件、可能損失與下一次玩家決策",
-    "decision_required": false
+    "event_id": "023",
+    "title": "腐植質層的陌生巢道",
+    "decision_required": true,
+    "next": "第210–230分鐘；玩家須選定行動",
+    "options": {
+      "A": "沿腐植質層深入，追查地下空隙與食物",
+      "B": "轉向尋找新的糖分來源，補足下降的糖類",
+      "C": "封閉腐植質層近巢通道，優先防禦",
+      "D": "先觀察並短程試探陌生巢道，不深入"
+    }
   },
   "unknowns": [
-    "目前精確食物／水資源",
-    "卵、幼蟲、蛹數量",
-    "工蟻目前存活數（僅確認曾出生4隻）",
-    "第二章20分鐘推演結果"
+    "確切物種",
+    "水量（未建立資源單位）",
+    "陌生巢道是否屬於其他蟻群"
   ]
 }
