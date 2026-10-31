@@ -337,8 +337,152 @@
         "known_to_every_worker": false
       }
     ],
-    "route_edges": [],
-    "route_discovery": "individual_partial_knowledge"
+    "route_edges": [
+      {
+        "from": "N00",
+        "to": "F01",
+        "legacy_approx_distance_cm": 48,
+        "verified_route_length_cm": null,
+        "substrate": "葉片與地表碎石",
+        "legacy_hazard": "寄生蜂及蜜露下降",
+        "evidence": "inferred_link_from_story",
+        "current_trail_strength": null,
+        "currently_safe": null,
+        "blocked_by_rain": null,
+        "individual_knowledge_only": true
+      },
+      {
+        "from": "N00",
+        "to": "F02",
+        "legacy_approx_distance_cm": 38,
+        "verified_route_length_cm": null,
+        "substrate": "盆栽莖葉與蛛絲",
+        "legacy_hazard": "蜘蛛",
+        "evidence": "inferred_link_from_story",
+        "current_trail_strength": null,
+        "currently_safe": null,
+        "blocked_by_rain": null,
+        "individual_knowledge_only": true
+      },
+      {
+        "from": "N00",
+        "to": "F03",
+        "legacy_approx_distance_cm": 64,
+        "verified_route_length_cm": null,
+        "substrate": "果皮與土面",
+        "legacy_hazard": "競爭蟻",
+        "evidence": "inferred_link_from_story",
+        "current_trail_strength": null,
+        "currently_safe": null,
+        "blocked_by_rain": null,
+        "individual_knowledge_only": true
+      },
+      {
+        "from": "N00",
+        "to": "F04",
+        "legacy_approx_distance_cm": 92,
+        "verified_route_length_cm": null,
+        "substrate": "石牆縫及硬土",
+        "legacy_hazard": "競爭蟻",
+        "evidence": "inferred_link_from_story",
+        "current_trail_strength": null,
+        "currently_safe": null,
+        "blocked_by_rain": null,
+        "individual_knowledge_only": true
+      },
+      {
+        "from": "N00",
+        "to": "F05",
+        "legacy_approx_distance_cm": 73,
+        "verified_route_length_cm": null,
+        "substrate": "草根及葉片",
+        "legacy_hazard": "跳蛛",
+        "evidence": "inferred_link_from_story",
+        "current_trail_strength": null,
+        "currently_safe": null,
+        "blocked_by_rain": null,
+        "individual_knowledge_only": true
+      },
+      {
+        "from": "N00",
+        "to": "F06",
+        "legacy_approx_distance_cm": 23,
+        "verified_route_length_cm": null,
+        "substrate": "潮濕石縫",
+        "legacy_hazard": "少量殘留汁液",
+        "evidence": "inferred_link_from_story",
+        "current_trail_strength": null,
+        "currently_safe": null,
+        "blocked_by_rain": null,
+        "individual_knowledge_only": true
+      },
+      {
+        "from": "N00",
+        "to": "F07",
+        "legacy_approx_distance_cm": 31,
+        "verified_route_length_cm": null,
+        "substrate": "腐葉與石底",
+        "legacy_hazard": "食物腐敗",
+        "evidence": "inferred_link_from_story",
+        "current_trail_strength": null,
+        "currently_safe": null,
+        "blocked_by_rain": null,
+        "individual_knowledge_only": true
+      },
+      {
+        "from": "N00",
+        "to": "F08",
+        "legacy_approx_distance_cm": 83,
+        "verified_route_length_cm": null,
+        "substrate": "雜草及花梗",
+        "legacy_hazard": "伏守捕食昆蟲",
+        "evidence": "inferred_link_from_story",
+        "current_trail_strength": null,
+        "currently_safe": null,
+        "blocked_by_rain": null,
+        "individual_knowledge_only": true
+      },
+      {
+        "from": "N00",
+        "to": "F09",
+        "legacy_approx_distance_cm": 19,
+        "verified_route_length_cm": null,
+        "substrate": "斷莖及低石",
+        "legacy_hazard": "獵食甲蟲",
+        "evidence": "inferred_link_from_story",
+        "current_trail_strength": null,
+        "currently_safe": null,
+        "blocked_by_rain": null,
+        "individual_knowledge_only": true
+      },
+      {
+        "from": "N00",
+        "to": "F10",
+        "legacy_approx_distance_cm": 42,
+        "verified_route_length_cm": null,
+        "substrate": "潮葉與植物根際",
+        "legacy_hazard": "蟾蜍",
+        "evidence": "inferred_link_from_story",
+        "current_trail_strength": null,
+        "currently_safe": null,
+        "blocked_by_rain": null,
+        "individual_knowledge_only": true
+      },
+      {
+        "from": "N00",
+        "to": "F11",
+        "legacy_approx_distance_cm": 35,
+        "verified_route_length_cm": null,
+        "substrate": "腐葉及潮土",
+        "legacy_hazard": "分解者及食源耗竭",
+        "evidence": "inferred_link_from_story",
+        "current_trail_strength": null,
+        "currently_safe": null,
+        "blocked_by_rain": null,
+        "individual_knowledge_only": true
+      }
+    ],
+    "route_discovery": "個體對不同路線的認識不同；邊只是故事出現過的潛在通路，並非可無條件直接通行"
   },
   "weather": {
     "air_temp_c": null,
@@ -429,5 +573,11 @@
     "docs/simulation-engine.md",
     "docs/species-calibration.md",
     "docs/references.md"
-  ]
+  ],
+  "source_quality": {
+    "historic_map": "observed_in_story_not_field_measurement",
+    "route_graph": "inferred",
+    "biological_parameters": "unknown",
+    "quantitative_resource_calibration": "not_done"
+  }
 }
