@@ -12,9 +12,9 @@
   },
   "chapter": {
     "number": 4,
-    "title": "陌生蟻群的斥候",
-    "elapsed_player_minutes": 610,
-    "phase": "等待事件 #063"
+    "title": "葉背的甜泉",
+    "elapsed_player_minutes": 630,
+    "phase": "等待事件 #065"
   },
   "colony": {
     "queen": {
@@ -59,7 +59,7 @@
         {
           "id": "W006",
           "status": "alive",
-          "condition": "健康，探索"
+          "condition": "健康；曾在葉背採糖時躲避寄生蜂"
         },
         {
           "id": "W007",
@@ -100,9 +100,16 @@
       "total": 2
     },
     "food": {
-      "sugar_units": 1,
-      "protein_units": 4,
-      "units": "抽象遊戲單位"
+      "sugar_units": 5,
+      "protein_units": 3,
+      "units": "抽象遊戲單位",
+      "new_source": {
+        "name": "花盆東北方葉背蜜露",
+        "distance_cm": 48,
+        "type": "少量蚜蟲蜜露",
+        "stability": "尚不穩定，觀察到寄生蜂活動",
+        "competitors": "尚未目擊敵蟻直接佔據"
+      }
     },
     "water": {
       "amount": null
@@ -124,7 +131,7 @@
       "previous_site": "草根高地（棄守）",
       "second_nursery": {
         "progress_percent": 65,
-        "status": "施工中，外層泥土已加固，尚不可使用"
+        "status": "施工暫停，進度65%，尚不可用"
       }
     },
     "known_other_colonies": 2,
@@ -656,18 +663,38 @@
       "id": "E107",
       "minute": 610,
       "summary": "糖2+2-3=1，蛋白質4+2-2=4；工蟻9卵1蛹1，敵蟻逼近，死亡不變"
+    },
+    {
+      "id": "E108",
+      "minute": 610,
+      "summary": "玩家選A，暫停第二育幼室施工，W006/W011外出探索新糖源，W012協助近巢運輸"
+    },
+    {
+      "id": "E109",
+      "minute": 617,
+      "summary": "發現花盆東北方48公分植物葉背有少量蚜蟲蜜露"
+    },
+    {
+      "id": "E110",
+      "minute": 623,
+      "summary": "小型寄生蜂靠近葉面，W006/W011撤至莖下避開，無傷亡；採集縮短"
+    },
+    {
+      "id": "E111",
+      "minute": 630,
+      "summary": "糖1+7-3=5；蛋白質4-1=3；工蟻9、卵1蛹1，第二育幼室維持65%；新蜜露點需評估"
     }
   ],
   "pending": {
-    "event_id": "063",
-    "title": "陌生蟻逼近12公分，糖分只剩1",
+    "event_id": "065",
+    "title": "新糖源發現，但葉面有寄生蜂",
     "decision_required": true,
-    "next": "610–630分鐘",
+    "next": "630–650分鐘",
     "options": {
-      "A": "集中尋找新的糖源，避免耗盡能源",
-      "B": "縮減第二室施工，集中巢口防守",
-      "C": "派健康工蟻保持距離偵察深褐色陌生蟻來源",
-      "D": "延續均衡發展，但糖分與防禦風險持續累積"
+      "A": "固定採集葉背蜜露，增加糖分儲備",
+      "B": "改以小隊輪流取蜜露，降低集中暴露風險",
+      "C": "重新投入第二育幼室施工，利用現有糖分儲備",
+      "D": "派W005與W010監視近巢陌生蟻，避免新巢被發現"
     }
   },
   "unknowns": [
