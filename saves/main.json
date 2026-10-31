@@ -12,9 +12,9 @@
   },
   "chapter": {
     "number": 3,
-    "title": "家門口的獵場",
-    "elapsed_player_minutes": 290,
-    "phase": "等待事件 #031"
+    "title": "甜蜜之路的危機",
+    "elapsed_player_minutes": 310,
+    "phase": "等待事件 #033 玩家決策"
   },
   "colony": {
     "queen": {
@@ -67,24 +67,24 @@
         {
           "id": "W008",
           "status": "alive",
-          "condition": "健康，巢內工作"
+          "condition": "修剪藤蔓時跌落，腳部輕傷"
         },
         {
           "id": "W009",
           "status": "alive",
-          "condition": "新羽化，外骨骼未硬化"
+          "condition": "健康，已完成硬化"
         }
       ]
     },
     "brood": {
       "eggs": 3,
-      "larvae": 3,
-      "pupae": 0,
+      "larvae": 2,
+      "pupae": 1,
       "total": 6
     },
     "food": {
-      "sugar_units": 7,
-      "protein_units": 7,
+      "sugar_units": 8,
+      "protein_units": 6,
       "units": "抽象遊戲單位"
     },
     "water": {
@@ -263,18 +263,38 @@
       "id": "E033",
       "minute": 290,
       "summary": "糖7蛋白質7，工蟻7，卵3幼蟲3；短距食物趨於耗盡"
+    },
+    {
+      "id": "E034",
+      "minute": 290,
+      "summary": "玩家選B，恢復圍牆藤蔓蜜露採集"
+    },
+    {
+      "id": "E035",
+      "minute": 298,
+      "summary": "人類修剪藤蔓，W008跌落腳部輕傷，工蟻無死亡，採集路線部分阻斷"
+    },
+    {
+      "id": "E036",
+      "minute": 306,
+      "summary": "一隻幼蟲進入蛹期"
+    },
+    {
+      "id": "E037",
+      "minute": 310,
+      "summary": "一隻深褐色工蟻經過距巢25公分處；糖8蛋白質6，工蟻7，四隻帶傷"
     }
   ],
   "pending": {
-    "event_id": "031",
-    "title": "近巢食物逐漸耗盡",
+    "event_id": "033",
+    "title": "斷裂的藤蔓與近巢陌生工蟻",
     "decision_required": true,
-    "next": "290–310分鐘",
+    "next": "第310–330分鐘，等待玩家決策",
     "options": {
-      "A": "擴大探索到50公分",
-      "B": "恢復藤蔓蜜露採集",
-      "C": "探索腐植質層",
-      "D": "減少外出並育幼"
+      "A": "修復藤蔓採集路線並持續補糖",
+      "B": "讓受傷工蟻休養，優先育幼與巢穴安全",
+      "C": "監視25公分外的陌生螞蟻，不主動交戰",
+      "D": "放棄藤蔓，重新尋找低風險食物"
     }
   },
   "unknowns": [
