@@ -8,13 +8,13 @@
     "biome": "住宅花園",
     "species": "黑色地棲型螞蟻（虛構綜合生態模型）",
     "original_nest_site": "石板底下",
-    "current_nest_site": "草根高地"
+    "current_nest_site": "西北花盆邊緣土丘（臨時巢）"
   },
   "chapter": {
-    "number": 3,
-    "title": "最後一條甜蜜補給線",
-    "elapsed_player_minutes": 450,
-    "phase": "等待事件 #047 玩家決策"
+    "number": 4,
+    "title": "花盆土丘遷巢",
+    "elapsed_player_minutes": 470,
+    "phase": "等待事件 #049"
   },
   "colony": {
     "queen": {
@@ -95,27 +95,28 @@
       "total": 3
     },
     "food": {
-      "sugar_units": 5,
-      "protein_units": 1,
+      "sugar_units": 1,
+      "protein_units": 0,
       "units": "抽象遊戲單位"
     },
     "water": {
       "amount": null
     },
     "nest": {
-      "usable_nurseries": 2,
-      "crowding_percent": 65,
-      "condition": "草根高地兩間育幼室；主入口已縮窄，東側淺縫以泥粒堵塞；原石板巢廢棄",
+      "usable_nurseries": 1,
+      "crowding_percent": 90,
+      "condition": "蟻后與所有幼體已搬入花盆土丘臨時巢室，入口防禦薄弱、排水未知；草根高地已棄守",
       "entrance_defense": "縮窄主入口，側縫封堵約80%；出入速度下降",
       "backup_site": {
         "location": "西北側倒置花盆邊緣下的土丘",
         "distance_cm": 60,
         "elevation_relative_cm": 4,
         "assessment": "僅找到候選位置；排水表現尚未確認，無巢室，不能立即全巢遷入",
-        "status": "施工41%，排水側通道初成但局部塌方；無育幼室不可遷入",
-        "progress_percent": 41,
+        "status": "已轉為主巢，工程74%，只有一間臨時育幼室",
+        "progress_percent": 74,
         "drainage": "局部滲水改善，尚需觀察"
-      }
+      },
+      "previous_site": "草根高地（棄守）"
     },
     "known_other_colonies": 2,
     "worker_deaths_cumulative": 3,
@@ -466,18 +467,38 @@
       "id": "E069",
       "minute": 450,
       "summary": "採糖7，消耗3，糖1→5；蛋白質2→1；蟻后1工蟻8，卵2幼蟲1；巢口陌生氣味加強"
+    },
+    {
+      "id": "E070",
+      "minute": 450,
+      "summary": "玩家指定搬家，並處理周邊另一蟻群威脅：採避開衝突策略"
+    },
+    {
+      "id": "E071",
+      "minute": 460,
+      "summary": "W005與W011建成臨時巢室，W006確認舊巢附近仍有兩隻深褐色工蟻活動"
+    },
+    {
+      "id": "E072",
+      "minute": 465,
+      "summary": "蟻后、兩顆卵、一隻幼蟲由工蟻護送搬到西北花盆土丘"
+    },
+    {
+      "id": "E073",
+      "minute": 470,
+      "summary": "八隻工蟻全數安全抵達；新巢74%，糖1、蛋白質0；敵蟻仍在周邊"
     }
   ],
   "pending": {
-    "event_id": "047",
-    "title": "蜜露來源衰退，蛋白質再度告急",
+    "event_id": "049",
+    "title": "遷巢成功但缺糧",
     "decision_required": true,
-    "next": "450–470分鐘等待玩家選擇",
+    "next": "470–490分鐘",
     "options": {
-      "A": "派健康工蟻短程尋找蛋白質，讓W009留巢",
-      "B": "偵察敵蟻活動，確認藤蔓及巢口是否受同一蟻群威脅",
-      "C": "調整採集策略，尋找不同糖源與蛋白質來源",
-      "D": "重啟備用巢工程，建立遷巢退路"
+      "A": "緊急採集糖與蛋白質",
+      "B": "優先修築新巢，承擔飢餓",
+      "C": "偵察敵蟻是否追蹤",
+      "D": "分兵採集與修巢"
     }
   },
   "unknowns": [
