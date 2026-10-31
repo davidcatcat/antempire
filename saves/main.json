@@ -30,7 +30,7 @@
     "number": 4,
     "title": "自治採食的代價",
     "elapsed_player_minutes": 1150,
-    "phase": "科學生態世界 Day 3 完成（2026-11-02）；v1第1150分鐘停表"
+    "phase": "科學生態世界 Day 4 完成（2026-11-03）；v1歷史第1150分鐘完整停表"
   },
   "colony": {
     "queen": {
@@ -38,12 +38,11 @@
       "count": 1,
       "status": "健康",
       "v2_latest": {
-        "day": 3,
+        "day": 4,
         "alive": true,
         "new_eggs": 0,
         "health_metrics_unknown": true,
-        "role": "reproductive_not_commander",
-        "previous_egg_E001_alive": true
+        "role": "reproductive_not_commander"
       }
     },
     "workers": {
@@ -75,19 +74,19 @@
           "status": "alive",
           "condition": "健康，育幼",
           "v2_latest": {
-            "day": 3,
+            "day": 4,
             "site_sequence": [
               "N00"
             ],
             "activity": [
-              "接觸E001與兩幼蟲，短時清理，沒有永久專職"
+              "照料E001及兩幼蟲，見表土潮濕後與同伴調整幼體位置"
             ],
+            "current_location_at_day_end": "N00",
             "physiological_age_days": null,
             "actual_energy_state": null,
-            "current_location_at_day_end": "N00",
             "new_injury": false,
             "preexisting_injury_preserved": false,
-            "locally_informed_only": true
+            "local_information_only": true
           }
         },
         {
@@ -95,21 +94,21 @@
           "status": "alive",
           "condition": "挖掘擦傷已癒合，可正常工作",
           "v2_latest": {
-            "day": 3,
+            "day": 4,
             "site_sequence": [
               "N00",
               "F01",
               "N00"
             ],
             "activity": [
-              "少量蜜露帶回；舊路線招募未長期維持"
+              "回訪葉背，有蜜露跡象但沒有可核實的糖液入巢"
             ],
+            "current_location_at_day_end": "N00",
             "physiological_age_days": null,
             "actual_energy_state": null,
-            "current_location_at_day_end": "N00",
             "new_injury": false,
             "preexisting_injury_preserved": false,
-            "locally_informed_only": true
+            "local_information_only": true
           }
         },
         {
@@ -117,21 +116,21 @@
           "status": "alive",
           "condition": "健康；於落果與陌生蟻遭遇後主動退避，無傷",
           "v2_latest": {
-            "day": 3,
+            "day": 4,
             "site_sequence": [
               "N00",
               "F11",
               "N00"
             ],
             "activity": [
-              "與W011探索腐葉堆，未確認自己帶回另一份食物"
+              "從既有腐屑區回收一小片殘骸碎屑"
             ],
+            "current_location_at_day_end": "N00",
             "physiological_age_days": null,
             "actual_energy_state": null,
-            "current_location_at_day_end": "N00",
             "new_injury": false,
             "preexisting_injury_preserved": false,
-            "locally_informed_only": true
+            "local_information_only": true
           }
         },
         {
@@ -139,19 +138,19 @@
           "status": "alive",
           "condition": "後腳舊傷，留巢養傷並輔助育幼",
           "v2_latest": {
-            "day": 3,
+            "day": 4,
             "site_sequence": [
               "N00"
             ],
             "activity": [
-              "巢內清理與休息，後腳舊傷情況未知"
+              "後足舊傷持續；清潔或休息，沒有宣告完全癒合"
             ],
+            "current_location_at_day_end": "N00",
             "physiological_age_days": null,
             "actual_energy_state": null,
-            "current_location_at_day_end": "N00",
             "new_injury": false,
             "preexisting_injury_preserved": true,
-            "locally_informed_only": true
+            "local_information_only": true
           }
         },
         {
@@ -159,19 +158,19 @@
           "status": "alive",
           "condition": "腳傷明顯改善，仍限巢內工作，需持續觀察",
           "v2_latest": {
-            "day": 3,
+            "day": 4,
             "site_sequence": [
               "N00"
             ],
             "activity": [
-              "幼體周圍清理與休息，腳傷未完全確認恢復"
+              "配合局部幼體向內調整，原腳傷恢復程度未知"
             ],
+            "current_location_at_day_end": "N00",
             "physiological_age_days": null,
             "actual_energy_state": null,
-            "current_location_at_day_end": "N00",
             "new_injury": false,
             "preexisting_injury_preserved": true,
-            "locally_informed_only": true
+            "local_information_only": true
           }
         },
         {
@@ -179,19 +178,19 @@
           "status": "alive",
           "condition": "前足舊傷，留巢養傷並輔助巢內清潔",
           "v2_latest": {
-            "day": 3,
+            "day": 4,
             "site_sequence": [
               "N00"
             ],
             "activity": [
-              "巢口微小鬆土整理，前足舊傷仍列追蹤"
+              "巢口表面輕微搬土與通道疏理，前足舊傷仍在"
             ],
+            "current_location_at_day_end": "N00",
             "physiological_age_days": null,
             "actual_energy_state": null,
-            "current_location_at_day_end": "N00",
             "new_injury": false,
             "preexisting_injury_preserved": true,
-            "locally_informed_only": true
+            "local_information_only": true
           }
         },
         {
@@ -199,21 +198,19 @@
           "status": "alive",
           "condition": "健康，入口警戒時與陌生工蟻短暫對峙，無傷",
           "v2_latest": {
-            "day": 3,
+            "day": 4,
             "site_sequence": [
-              "N00",
-              "F05外緣",
               "N00"
             ],
             "activity": [
-              "察覺蜘蛛後從矮草路線折返"
+              "巢口短時探察後停留巢旁；沒有和F05蜘蛛直接接觸"
             ],
+            "current_location_at_day_end": "N00",
             "physiological_age_days": null,
             "actual_energy_state": null,
-            "current_location_at_day_end": "N00",
             "new_injury": false,
             "preexisting_injury_preserved": false,
-            "locally_informed_only": true
+            "local_information_only": true
           }
         },
         {
@@ -221,21 +218,21 @@
           "status": "alive",
           "condition": "健康；北側偵察遇深褐色陌生工蟻，繞路撤退，無新增傷勢",
           "v2_latest": {
-            "day": 3,
+            "day": 4,
             "site_sequence": [
               "N00",
               "F11",
               "N00"
             ],
             "activity": [
-              "找到極小節肢動物遺骸並搬運返回"
+              "與W006搜索舊腐葉，不另計第二塊食物入庫"
             ],
+            "current_location_at_day_end": "N00",
             "physiological_age_days": null,
             "actual_energy_state": null,
-            "current_location_at_day_end": "N00",
             "new_injury": false,
             "preexisting_injury_preserved": false,
-            "locally_informed_only": true
+            "local_information_only": true
           }
         },
         {
@@ -243,19 +240,19 @@
           "status": "alive",
           "condition": "前足輕微擦傷恢復中，留巢協助育幼",
           "v2_latest": {
-            "day": 3,
+            "day": 4,
             "site_sequence": [
               "N00"
             ],
             "activity": [
-              "幼體整理與接觸，前足輕傷狀態不宣告痊癒"
+              "清理幼體附近碎屑，前足傷持續追蹤"
             ],
+            "current_location_at_day_end": "N00",
             "physiological_age_days": null,
             "actual_energy_state": null,
-            "current_location_at_day_end": "N00",
             "new_injury": false,
             "preexisting_injury_preserved": true,
-            "locally_informed_only": true
+            "local_information_only": true
           }
         },
         {
@@ -263,21 +260,19 @@
           "status": "alive",
           "condition": "在潮葉邊緣遇蟾蜍時後足擦傷，移動減慢，暫留巢",
           "v2_latest": {
-            "day": 3,
+            "day": 4,
             "site_sequence": [
-              "N00",
-              "F06邊緣",
               "N00"
             ],
             "activity": [
-              "後足舊傷下短程活動；未有可核實食物入庫"
+              "巢口微濕時短程搬土，後足舊傷仍限制活動"
             ],
+            "current_location_at_day_end": "N00",
             "physiological_age_days": null,
             "actual_energy_state": null,
-            "current_location_at_day_end": "N00",
             "new_injury": false,
             "preexisting_injury_preserved": true,
-            "locally_informed_only": true
+            "local_information_only": true
           }
         },
         {
@@ -285,19 +280,19 @@
           "status": "alive",
           "condition": "前足擦傷，留巢休養",
           "v2_latest": {
-            "day": 3,
+            "day": 4,
             "site_sequence": [
               "N00"
             ],
             "activity": [
-              "短時清理與自我梳理；感染風險仍未知"
+              "自我梳理與巢內接觸，前足傷／感染情況未知"
             ],
+            "current_location_at_day_end": "N00",
             "physiological_age_days": null,
             "actual_energy_state": null,
-            "current_location_at_day_end": "N00",
             "new_injury": false,
             "preexisting_injury_preserved": true,
-            "locally_informed_only": true
+            "local_information_only": true
           }
         },
         {
@@ -305,23 +300,21 @@
           "status": "alive",
           "condition": "外骨骼已硬化，健康，協助巢內警戒與短程搬運",
           "v2_latest": {
-            "day": 3,
+            "day": 4,
             "site_sequence": [
               "N00",
-              "F01外緣",
-              "N00",
-              "F03外緣",
+              "F08",
               "N00"
             ],
             "activity": [
-              "探索F01局部氣味，後查落果外緣並迴避陌生蟻"
+              "自主探索小白花，沒有確認花蜜收穫"
             ],
+            "current_location_at_day_end": "N00",
             "physiological_age_days": null,
             "actual_energy_state": null,
-            "current_location_at_day_end": "N00",
             "new_injury": false,
             "preexisting_injury_preserved": false,
-            "locally_informed_only": true
+            "local_information_only": true
           }
         },
         {
@@ -329,19 +322,19 @@
           "status": "alive",
           "condition": "羽化後外骨骼已硬化，健康但年幼，以巢內清潔育幼為主",
           "v2_latest": {
-            "day": 3,
+            "day": 4,
             "site_sequence": [
               "N00"
             ],
             "activity": [
-              "短時幼體接觸與巢室整理"
+              "巢內清理，接觸幼體，未固定在單一工作"
             ],
+            "current_location_at_day_end": "N00",
             "physiological_age_days": null,
             "actual_energy_state": null,
-            "current_location_at_day_end": "N00",
             "new_injury": false,
             "preexisting_injury_preserved": false,
-            "locally_informed_only": true
+            "local_information_only": true
           }
         },
         {
@@ -349,19 +342,19 @@
           "status": "alive",
           "condition": "第1127分鐘羽化，外骨骼尚軟，留巢",
           "v2_latest": {
-            "day": 3,
+            "day": 4,
             "site_sequence": [
               "N00"
             ],
             "activity": [
-              "巢內接觸、休止，實際生理年齡未知"
+              "移動細碎土屑與休息，生理年齡未知"
             ],
+            "current_location_at_day_end": "N00",
             "physiological_age_days": null,
             "actual_energy_state": null,
-            "current_location_at_day_end": "N00",
             "new_injury": false,
             "preexisting_injury_preserved": false,
-            "locally_informed_only": true
+            "local_information_only": true
           }
         }
       ]
@@ -377,7 +370,7 @@
           "stage": "larva",
           "living": true,
           "actual_stage_age_days": null,
-          "elapsed_under_v2_days": 3,
+          "elapsed_under_v2_days": 4,
           "individual_nutritional_intake_mg": null
         },
         {
@@ -385,7 +378,7 @@
           "stage": "larva",
           "living": true,
           "actual_stage_age_days": null,
-          "elapsed_under_v2_days": 3,
+          "elapsed_under_v2_days": 4,
           "individual_nutritional_intake_mg": null
         },
         {
@@ -395,18 +388,18 @@
           "laid_on_sim_day": 2,
           "calendar_date": "2026-11-01",
           "actual_stage_age_days": null,
-          "stage_elapsed_v2_days": 1,
+          "stage_elapsed_v2_days": 2,
           "individual_nutritional_intake_mg": null,
           "model_evidence": "scenario_only"
         }
       ],
       "v2_latest": {
-        "day": 3,
+        "day": 4,
         "new_eggs": 0,
         "stage_transitions": 0,
         "deaths": 0,
-        "larvae": 2,
         "eggs": 1,
+        "larvae": 2,
         "pupae": 0,
         "unknown_species_development_rate": true
       }
@@ -487,12 +480,12 @@
       "legacy_checkpoint_only": true,
       "legacy_checkpoint_explanation": "sugar_units=3 / protein_units=3只代表v1第1150分鐘歷史餘額，不是v2 Day1物理或抽象已結算存量",
       "v2_latest_ledger": {
-        "day": 3,
+        "day": 4,
         "legacy_checkpoint_snapshot": {
           "sugar_units": 3,
           "protein_units": 3,
-          "unit": "v1第1150分鐘抽象單位",
-          "valid_for": "歷史唯讀數據，絕不可視為Day3物理量"
+          "unit": "舊v1抽象遊戲單位",
+          "valid_for": "第1150分鐘歷史值，非Day4餘量"
         },
         "v2_physical": {
           "initial_carbohydrate_mg": null,
@@ -510,22 +503,20 @@
           "water_used_uL": null
         },
         "qualitative_flow": {
-          "F01": "W005帶回極少蜜露，回程氣味訊號隨時間衰退；微量但未校準",
-          "F08": "當日局部採食窗口未帶回蜜滴，並不代表花卉完全枯萎",
-          "F11": "W011帶回一小片節肢動物遺骸；量與營養價值未知",
-          "F06": "W013只接觸到快枯竭的殘液跡象；未核實可食物入庫",
-          "F03": "陌生蟻近旁活動使W015停止採食試探；無新帶回",
-          "F04": "其他蟻群自有取食活動，非主巢資源",
-          "metabolism": "所有個體持續有能量與水分需求；未鑑種無法給日消耗量",
-          "water": "雨量未實測、巢內水源未量測，不能從0%降雨機率推導零水源或水足夠",
-          "storage": "當日食物帶回為定性記錄；總收支不明，不以v1糖3／蛋白3當現值"
+          "F01": "W005發現薄蜜露痕跡，但澆水擾動與低產使本次沒有可確認的醣類入庫；不可寫+糖",
+          "F08": "W015尋找花蜜但沒有可核實入庫",
+          "F11": "W006回收前次舊腐屑中尚未分解的一小片殘骸；不能當成新大量蛋白庫",
+          "F03": "異巢工蟻獨立活動，主巢沒遇到也沒收穫",
+          "F04": "北側競爭蟻自行取食，主巢不知其詳細情況",
+          "water": "情境有花盆附近人為局部澆水，但實際輸入水量、蟻巢可利用水與排水量未知",
+          "metabolism": "Q001、14隻工蟻、2幼蟲及E001仍有代謝需求，但每隻攝入/耗能無科學校準",
+          "storage": "糖沒有可確認新入庫；蛋白只有極少碎屑。總營養收支與期末餘量null，不能推出確切飢餓程度"
         },
-        "balance_status": "physical_nutrients_unquantified_preserved_null",
-        "delivered_qualitatively": [
-          "F01少量蜜露",
-          "F11小型節肢動物遺骸"
+        "balance_status": "unquantified_unknown_do_not_use_legacy_3_3_as_current",
+        "observed_simulated_deliveries": [
+          "F11既有腐屑中一小片節肢動物殘骸"
         ],
-        "evidence": "simulated_collection_not_field_measurement"
+        "evidence": "qualitative_seeded_ecology_not_field_measurement"
       }
     },
     "water": {
@@ -1742,9 +1733,9 @@
   ],
   "pending": {
     "event_id": null,
-    "title": "Day 3 完成；自然自治",
+    "title": "Day 4 完成；完全自治",
     "decision_required": false,
-    "next": "下次使用者要求繼續則Day3→Day4（2026-11-03）",
+    "next": "觀察者下次要求繼續則推進Day4→Day5（2026-11-04）",
     "options": {},
     "legacy_pending_event_id": "117"
   },
@@ -1759,7 +1750,7 @@
   "simulation": {
     "version": "v2.0-science-inspired",
     "mode": "observer_autonomous",
-    "status": "day_3_completed_waiting_day_4",
+    "status": "day_4_completed_waiting_day_5",
     "effective_after_legacy_elapsed_player_minutes": 1150,
     "scientific_clock_ref": "saves/world-state.json#/time/scientific_clock",
     "world_state_path": "saves/world-state.json",
@@ -1778,11 +1769,11 @@
       "docs/migration-v2.md",
       "docs/weather-data-policy.md"
     ],
-    "latest_completed_day": 3,
-    "elapsed_sim_hours": 72,
-    "latest_journal": "journal/v2-day-0003.md",
-    "latest_seed": 1118408410,
-    "latest_seed_material": "antempire-garden-v2|Day2->Day3|42e129d46f4fbb36846428c276a2f19c94b52ac5|2026-11-02",
+    "latest_completed_day": 4,
+    "elapsed_sim_hours": 96,
+    "latest_journal": "journal/v2-day-0004.md",
+    "latest_seed": 2015981996,
+    "latest_seed_material": "antempire-garden-v2|Day3->Day4|7fea4d8cd465724297765bcdc9e0c5b51ff41e5e|2026-11-03",
     "latest_day_summary": {
       "worker_births": 0,
       "worker_deaths": 0,
@@ -1791,16 +1782,20 @@
       "larvae": 2,
       "pupae": 0,
       "food_balance_quantified": false,
+      "qualitative_delivery": [
+        "F11舊殘屑小片"
+      ],
+      "fictional_human_watering": true,
       "events": [
-        "V2D3-E01",
-        "V2D3-E02",
-        "V2D3-E03",
-        "V2D3-E04",
-        "V2D3-E05",
-        "V2D3-E06",
-        "V2D3-E07",
-        "V2D3-E08",
-        "V2D3-E09"
+        "V2D4-E01",
+        "V2D4-E02",
+        "V2D4-E03",
+        "V2D4-E04",
+        "V2D4-E05",
+        "V2D4-E06",
+        "V2D4-E07",
+        "V2D4-E08",
+        "V2D4-E09"
       ]
     },
     "automatic_worker_decisions": true,
@@ -1810,8 +1805,8 @@
       "date": "2026-10-31",
       "day0_unmapped": true,
       "past_day1_weather_status": "uncalibrated_hypothetical",
-      "next_day": 4,
-      "next_calendar_date": "2026-11-03"
+      "next_day": 5,
+      "next_calendar_date": "2026-11-04"
     },
     "weather_mode": "real_weather_prefer_observation_then_forecast_with_source_timestamps",
     "setting_history": [
@@ -1827,12 +1822,12 @@
       }
     ],
     "latest_weather_source": {
-      "date": "2026-11-02",
+      "date": "2026-11-03",
       "type": "forecast",
       "issued_local": "2026-10-31T17:00:00+08:00",
+      "coverage": "臺中市市級，非西屯庭院實測",
       "source_url": "https://news.pchome.com.tw/living/cwb/20261031/index-79343715455144211009.html",
-      "pop_source_url": "https://life.tw/weather/taichung",
-      "coverage": "臺中市，不是西屯別墅實測"
+      "precipitation_probability_source_url": "https://life.tw/weather/taichung"
     }
   },
   "migration_log": [
