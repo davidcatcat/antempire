@@ -12,9 +12,9 @@
   },
   "chapter": {
     "number": 4,
-    "title": "根鬚旁的競爭",
-    "elapsed_player_minutes": 590,
-    "phase": "等待事件 #061"
+    "title": "陌生蟻群的斥候",
+    "elapsed_player_minutes": 610,
+    "phase": "等待事件 #063"
   },
   "colony": {
     "queen": {
@@ -69,7 +69,7 @@
         {
           "id": "W008",
           "status": "alive",
-          "condition": "腳傷恢復中；此次覓食返程失去部分食物，無新增傷口"
+          "condition": "舊腳傷恢復中，撤離陌生蟻時輕微拉傷，短期不宜長途採集"
         },
         {
           "id": "W009",
@@ -95,12 +95,12 @@
     },
     "brood": {
       "eggs": 1,
-      "larvae": 1,
-      "pupae": 0,
+      "larvae": 0,
+      "pupae": 1,
       "total": 2
     },
     "food": {
-      "sugar_units": 2,
+      "sugar_units": 1,
       "protein_units": 4,
       "units": "抽象遊戲單位"
     },
@@ -109,7 +109,7 @@
     },
     "nest": {
       "usable_nurseries": 1,
-      "crowding_percent": 74,
+      "crowding_percent": 73,
       "condition": "花盆土丘主巢工程達100%基礎標準，已加固入口、完成淺排水溝及育幼室；連續暴雨未驗證",
       "entrance_defense": "入口設擋土脊，單蟻通道，短期可延緩積水及陌生工蟻進入",
       "backup_site": {
@@ -123,8 +123,8 @@
       },
       "previous_site": "草根高地（棄守）",
       "second_nursery": {
-        "progress_percent": 48,
-        "status": "施工中；發現根鬚障礙，尚不可用"
+        "progress_percent": 65,
+        "status": "施工中，外層泥土已加固，尚不可使用"
       }
     },
     "known_other_colonies": 2,
@@ -631,18 +631,43 @@
       "id": "E102",
       "minute": 590,
       "summary": "糖2+3-3=2，蛋白質3+3-2=4；蟻后1工蟻9卵1幼蟲1，死亡不變；第二育幼室48%"
+    },
+    {
+      "id": "E103",
+      "minute": 590,
+      "summary": "玩家選D，保持覓食、警戒、第二育幼室施工平衡"
+    },
+    {
+      "id": "E104",
+      "minute": 597,
+      "summary": "W006與W008採得糖2、蛋白質2；附近食物點逐漸耗盡"
+    },
+    {
+      "id": "E105",
+      "minute": 602,
+      "summary": "三隻深褐色陌生工蟻接近巢外12公分，W008繞路撤離時腳部拉傷，未交戰"
+    },
+    {
+      "id": "E106",
+      "minute": 607,
+      "summary": "W005與W011施工至65%，現有幼蟲進入蛹期"
+    },
+    {
+      "id": "E107",
+      "minute": 610,
+      "summary": "糖2+2-3=1，蛋白質4+2-2=4；工蟻9卵1蛹1，敵蟻逼近，死亡不變"
     }
   ],
   "pending": {
-    "event_id": "061",
-    "title": "陌生蟻路逼近花盆巢",
+    "event_id": "063",
+    "title": "陌生蟻逼近12公分，糖分只剩1",
     "decision_required": true,
-    "next": "590–610分鐘",
+    "next": "610–630分鐘",
     "options": {
-      "A": "集中覓食，趁外圍資源尚有供應",
-      "B": "集中施工，盡快完成第二育幼室",
-      "C": "強化警戒並追蹤距巢18公分的陌生蟻路",
-      "D": "維持採集、警戒、施工平衡，採取保守發展"
+      "A": "集中尋找新的糖源，避免耗盡能源",
+      "B": "縮減第二室施工，集中巢口防守",
+      "C": "派健康工蟻保持距離偵察深褐色陌生蟻來源",
+      "D": "延續均衡發展，但糖分與防禦風險持續累積"
     }
   },
   "unknowns": [
