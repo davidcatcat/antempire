@@ -12,9 +12,9 @@
   },
   "chapter": {
     "number": 3,
-    "title": "泥土築起的城牆",
-    "elapsed_player_minutes": 370,
-    "phase": "等待事件 #039 決策"
+    "title": "雙線行動：覓食與備用巢址",
+    "elapsed_player_minutes": 390,
+    "phase": "等待事件 #041 決策"
   },
   "colony": {
     "queen": {
@@ -79,12 +79,12 @@
         {
           "id": "W010",
           "status": "alive",
-          "condition": "外骨骼硬化完成，開始參與巢內工作"
+          "condition": "回程被濕泥阻礙，後足輕度扭傷；可自行移動"
         },
         {
           "id": "W011",
           "status": "alive",
-          "condition": "新羽化，外骨骼尚未硬化"
+          "condition": "外骨骼已硬化，可執行巢內工作"
         }
       ]
     },
@@ -95,8 +95,8 @@
       "total": 4
     },
     "food": {
-      "sugar_units": 4,
-      "protein_units": 1,
+      "sugar_units": 1,
+      "protein_units": 3,
       "units": "抽象遊戲單位"
     },
     "water": {
@@ -106,7 +106,14 @@
       "usable_nurseries": 2,
       "crowding_percent": 65,
       "condition": "草根高地兩間育幼室；主入口已縮窄，東側淺縫以泥粒堵塞；原石板巢廢棄",
-      "entrance_defense": "縮窄主入口，側縫封堵約80%；出入速度下降"
+      "entrance_defense": "縮窄主入口，側縫封堵約80%；出入速度下降",
+      "backup_site": {
+        "location": "西北側倒置花盆邊緣下的土丘",
+        "distance_cm": 60,
+        "elevation_relative_cm": 4,
+        "assessment": "僅找到候選位置；排水表現尚未確認，無巢室，不能立即全巢遷入",
+        "status": "勘察完成初步標記，未施工"
+      }
     },
     "known_other_colonies": 2,
     "worker_deaths_cumulative": 3
@@ -371,18 +378,43 @@
       "id": "E052",
       "minute": 370,
       "summary": "無外部食物收穫，糖7-3=4、蛋白質3-2=1；蟻后1工蟻8卵2幼蟲2；外部敵蟻可能再度集結"
+    },
+    {
+      "id": "E053",
+      "minute": 370,
+      "summary": "玩家同時選A+D：蛋白質採集優先，並行小規模備用巢址勘察"
+    },
+    {
+      "id": "E054",
+      "minute": 376,
+      "summary": "W006和W010在25公分內找到死亡小型甲蟲殘骸"
+    },
+    {
+      "id": "E055",
+      "minute": 380,
+      "summary": "W005找到西北方60公分倒置花盆邊緣下候選巢址，但無巢室且排水未知"
+    },
+    {
+      "id": "E056",
+      "minute": 384,
+      "summary": "回程遇局部滲水，W010後足輕傷，仍與W006帶回4單位蛋白質；無死亡"
+    },
+    {
+      "id": "E057",
+      "minute": 390,
+      "summary": "糖4-3=1，蛋白質1+4-2=3；蟻后1工蟻8卵2幼蟲2；W011硬化完成；兩巢址仍僅一處可住"
     }
   ],
   "pending": {
-    "event_id": "039",
-    "title": "巢口防禦成功，但蛋白質即將耗盡",
+    "event_id": "041",
+    "title": "找到備用地點，糖分只剩1",
     "decision_required": true,
-    "next": "第370–390分鐘等待玩家選擇",
+    "next": "第390–410分鐘等待玩家選擇",
     "options": {
-      "A": "讓W006與W010採取短程低風險蛋白質採集",
-      "B": "以W006偵察敵蟻來源並避開其路線",
-      "C": "進一步封閉入口並儲備防禦，承擔斷糧",
-      "D": "準備撤離至備用巢址，減少被圍困風險"
+      "A": "優先恢復糖分採集，容許小隊遠赴藤蔓",
+      "B": "先修整備用巢址，建立可搬遷的初步空間",
+      "C": "分工維持短程覓食和巢內警戒，減少遠行",
+      "D": "冒險將幼體與蟻后遷往尚未完成的候選巢址"
     }
   },
   "unknowns": [
