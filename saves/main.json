@@ -12,9 +12,9 @@
   },
   "chapter": {
     "number": 3,
-    "title": "休養中的蟻國",
-    "elapsed_player_minutes": 330,
-    "phase": "等待事件 #035 玩家決策"
+    "title": "蜜露與巢口突襲",
+    "elapsed_player_minutes": 350,
+    "phase": "等待事件 #037 玩家決策"
   },
   "colony": {
     "queen": {
@@ -24,8 +24,8 @@
     },
     "workers": {
       "confirmed_born": 10,
-      "current_alive": 8,
-      "cumulative_deaths": 2,
+      "current_alive": 7,
+      "cumulative_deaths": 3,
       "individuals": [
         {
           "id": "W001",
@@ -35,8 +35,10 @@
         },
         {
           "id": "W002",
-          "status": "alive",
-          "condition": "觸角損傷持續，適合近巢任務"
+          "status": "dead",
+          "condition": "死亡",
+          "cause": "近巢陌生工蟻襲擊，觸角舊傷影響撤離",
+          "at_minute": 347
         },
         {
           "id": "W003",
@@ -77,19 +79,19 @@
         {
           "id": "W010",
           "status": "alive",
-          "condition": "剛羽化，外骨骼尚未硬化，留巢"
+          "condition": "外骨骼硬化完成，開始參與巢內工作"
         }
       ]
     },
     "brood": {
-      "eggs": 3,
-      "larvae": 1,
+      "eggs": 2,
+      "larvae": 2,
       "pupae": 1,
       "total": 5
     },
     "food": {
-      "sugar_units": 5,
-      "protein_units": 4,
+      "sugar_units": 7,
+      "protein_units": 3,
       "units": "抽象遊戲單位"
     },
     "water": {
@@ -97,11 +99,11 @@
     },
     "nest": {
       "usable_nurseries": 2,
-      "crowding_percent": 63,
+      "crowding_percent": 61,
       "condition": "草根高地兩間育幼室；原石板巢廢棄"
     },
     "known_other_colonies": 2,
-    "worker_deaths_cumulative": 2
+    "worker_deaths_cumulative": 3
   },
   "history": [
     {
@@ -313,18 +315,43 @@
       "id": "E042",
       "minute": 330,
       "summary": "巢口附近出現陌生工蟻化學訊號，未直接衝突；糖8→5、蛋白質6→4；卵3幼蟲1蛹1"
+    },
+    {
+      "id": "E043",
+      "minute": 330,
+      "summary": "玩家選C，恢復藤蔓蜜露採集，W006與W009出巢"
+    },
+    {
+      "id": "E044",
+      "minute": 338,
+      "summary": "原採集路線受修剪影響，W006與W009繞行後取得蜜露"
+    },
+    {
+      "id": "E045",
+      "minute": 342,
+      "summary": "陌生深褐色工蟻靠近巢口，W002與W005遭遇，W005驅退敵蟻"
+    },
+    {
+      "id": "E046",
+      "minute": 347,
+      "summary": "W002因交戰傷勢死亡；巢內一顆卵孵化成幼蟲；蟻后未受傷"
+    },
+    {
+      "id": "E047",
+      "minute": 350,
+      "summary": "採蜜露得5糖，消耗3，糖5→7；蛋白質4→3；工蟻8→7，累計死亡3；卵2幼蟲2蛹1"
     }
   ],
   "pending": {
-    "event_id": "035",
-    "title": "巢口的陌生氣味",
+    "event_id": "037",
+    "title": "巢口的防衛缺口",
     "decision_required": true,
-    "next": "330–350分鐘，等待玩家決策",
+    "next": "第350–370分鐘，等待玩家決策",
     "options": {
-      "A": "封低風險側隙並加強近巢警戒",
-      "B": "派W006短程偵察陌生工蟻活動",
-      "C": "恢復藤蔓蜜露採集補充糖類",
-      "D": "繼續育幼休整，承擔資源下降風險"
+      "A": "縮小巢口並加強警戒，優先保護蟻后與幼體",
+      "B": "派W006追蹤入侵工蟻來源，確認威脅方向",
+      "C": "保持蜜露採集，利用糖分支持後續發展",
+      "D": "啟動小規模巢室搬遷準備，評估第二處安全巢址"
     }
   },
   "unknowns": [
