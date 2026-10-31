@@ -39,8 +39,10 @@
 - [科學參考文獻](docs/references.md) — 研究出處及外推限制
 - [版本遷移紀錄](docs/migration-v2.md) — 舊故事如何不改寫地銜接新世界
 - [存檔規則](docs/save-rules.md) — 續玩、寫入、驗證與故障修復
+- [驗收情境與反例](docs/verification-scenarios.md) — 20 個極端案例、資料守恆與寫入檢查
 
 ### 歷史
+- [v2世界切換紀事](journal/v2-transition.md) — 第1150分鐘存檔停表，科學Day0初始化，未推進時間
 - [原始遊戲紀事](journal/chronicle.md) 與 `journal/chronicle_*.md`：保留舊加速遊戲的事件，不當作生物實測數據。
 
 ## 如何繼續
