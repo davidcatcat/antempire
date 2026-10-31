@@ -12,9 +12,9 @@
   },
   "chapter": {
     "number": 3,
-    "title": "蜜露與巢口突襲",
-    "elapsed_player_minutes": 350,
-    "phase": "等待事件 #037 玩家決策"
+    "title": "泥土築起的城牆",
+    "elapsed_player_minutes": 370,
+    "phase": "等待事件 #039 決策"
   },
   "colony": {
     "queen": {
@@ -23,8 +23,8 @@
       "status": "健康"
     },
     "workers": {
-      "confirmed_born": 10,
-      "current_alive": 7,
+      "confirmed_born": 11,
+      "current_alive": 8,
       "cumulative_deaths": 3,
       "individuals": [
         {
@@ -74,24 +74,29 @@
         {
           "id": "W009",
           "status": "alive",
-          "condition": "健康，已完成硬化"
+          "condition": "巢口防禦時前足輕傷，仍能行走"
         },
         {
           "id": "W010",
           "status": "alive",
           "condition": "外骨骼硬化完成，開始參與巢內工作"
+        },
+        {
+          "id": "W011",
+          "status": "alive",
+          "condition": "新羽化，外骨骼尚未硬化"
         }
       ]
     },
     "brood": {
       "eggs": 2,
       "larvae": 2,
-      "pupae": 1,
-      "total": 5
+      "pupae": 0,
+      "total": 4
     },
     "food": {
-      "sugar_units": 7,
-      "protein_units": 3,
+      "sugar_units": 4,
+      "protein_units": 1,
       "units": "抽象遊戲單位"
     },
     "water": {
@@ -99,8 +104,9 @@
     },
     "nest": {
       "usable_nurseries": 2,
-      "crowding_percent": 61,
-      "condition": "草根高地兩間育幼室；原石板巢廢棄"
+      "crowding_percent": 65,
+      "condition": "草根高地兩間育幼室；主入口已縮窄，東側淺縫以泥粒堵塞；原石板巢廢棄",
+      "entrance_defense": "縮窄主入口，側縫封堵約80%；出入速度下降"
     },
     "known_other_colonies": 2,
     "worker_deaths_cumulative": 3
@@ -340,18 +346,43 @@
       "id": "E047",
       "minute": 350,
       "summary": "採蜜露得5糖，消耗3，糖5→7；蛋白質4→3；工蟻8→7，累計死亡3；卵2幼蟲2蛹1"
+    },
+    {
+      "id": "E048",
+      "minute": 350,
+      "summary": "玩家選A加強巢穴防禦，W005/W009/W010進行巢口縮窄，W004留巢育幼"
+    },
+    {
+      "id": "E049",
+      "minute": 358,
+      "summary": "東側淺縫封堵約80%，主入口縮窄；外出效率下降"
+    },
+    {
+      "id": "E050",
+      "minute": 361,
+      "summary": "三隻深褐色陌生工蟻接近巢口，兩隻短暫嘗試進入，遭W005與W009抵擋；W009前足輕傷，敵蟻退出，無死亡"
+    },
+    {
+      "id": "E051",
+      "minute": 366,
+      "summary": "原有蛹羽化為W011，工蟻7→8，尚未硬化"
+    },
+    {
+      "id": "E052",
+      "minute": 370,
+      "summary": "無外部食物收穫，糖7-3=4、蛋白質3-2=1；蟻后1工蟻8卵2幼蟲2；外部敵蟻可能再度集結"
     }
   ],
   "pending": {
-    "event_id": "037",
-    "title": "巢口的防衛缺口",
+    "event_id": "039",
+    "title": "巢口防禦成功，但蛋白質即將耗盡",
     "decision_required": true,
-    "next": "第350–370分鐘，等待玩家決策",
+    "next": "第370–390分鐘等待玩家選擇",
     "options": {
-      "A": "縮小巢口並加強警戒，優先保護蟻后與幼體",
-      "B": "派W006追蹤入侵工蟻來源，確認威脅方向",
-      "C": "保持蜜露採集，利用糖分支持後續發展",
-      "D": "啟動小規模巢室搬遷準備，評估第二處安全巢址"
+      "A": "讓W006與W010採取短程低風險蛋白質採集",
+      "B": "以W006偵察敵蟻來源並避開其路線",
+      "C": "進一步封閉入口並儲備防禦，承擔斷糧",
+      "D": "準備撤離至備用巢址，減少被圍困風險"
     }
   },
   "unknowns": [
