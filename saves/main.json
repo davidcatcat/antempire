@@ -1827,7 +1827,13 @@
       "coverage": "臺中市（不是西屯花園巢穴實測）",
       "source_url": "https://news.pchome.com.tw/living/cwb/20261031/index-79343715455144211009.html",
       "pop_source_url": "https://life.tw/weather/taichung"
-    }
+    },
+    "foraging_rules_ref": "docs/foraging-food-economy.md",
+    "foraging_state_ref": "saves/world-state.json#/foraging_economy",
+    "foraging_rules_effective_sim_day": 6,
+    "foraging_research_updated_at_local": "2026-11-01",
+    "foraging_model_status": "literature_backed_mechanisms_uncalibrated_unknown_species",
+    "foraging_research_does_not_advance_time": true
   },
   "migration_log": [
     {
