@@ -1,0 +1,433 @@
+{
+  "schema_version": 2,
+  "world_id": "antempire-garden-v2",
+  "design_status": "science_inspired_uncalibrated",
+  "effective_from": {
+    "legacy_elapsed_player_minutes": 1150,
+    "legacy_event_id": "117"
+  },
+  "time": {
+    "legacy_elapsed_player_minutes": 1150,
+    "scientific_clock": {
+      "day": 0,
+      "elapsed_sim_hours": 0,
+      "calendar_date": null,
+      "absolute_utc": null,
+      "default_advance_hours": 24,
+      "substep_minutes_for_behavior": 20
+    },
+    "note": "v1 的1150分鐘非真實生理分鐘，v2從獨立時鐘開始"
+  },
+  "biome": {
+    "name": "架空住宅花園",
+    "geo": null,
+    "latitude": null,
+    "longitude": null,
+    "season": null,
+    "climate_profile": "unknown",
+    "human_watering_schedule": null
+  },
+  "ant_population": {
+    "taxon": null,
+    "model_guild": "黑色地棲、單蟻后創巢之架空綜合類型",
+    "queen_id": "Q001",
+    "workers_alive": 14,
+    "brood": {
+      "eggs": 0,
+      "larvae": 2,
+      "pupae": 0
+    },
+    "legacy_worker_births_confirmed": 17,
+    "legacy_worker_deaths": 3,
+    "legacy_brood_deaths": 1,
+    "ages_days_unknown": true
+  },
+  "queen_physiology": {
+    "id": "Q001",
+    "fertility": "established_by_legacy_story",
+    "age_days": null,
+    "hydration": null,
+    "nutrient_status": null,
+    "oviposition_rate_per_day": null,
+    "stress": null,
+    "brood_care_directly": "not_assumed",
+    "queen_as_commander": false
+  },
+  "injuries": [
+    {
+      "worker_id": "W007",
+      "body_part": "後腳",
+      "legacy_description": "舊傷",
+      "mobility_penalty_fraction": null,
+      "open_wound": null,
+      "infection_status": "unknown",
+      "irreversible_damage": null,
+      "days_since_injury": null,
+      "work_prohibition": false
+    },
+    {
+      "worker_id": "W008",
+      "body_part": "腳部",
+      "legacy_description": "舊傷改善中",
+      "mobility_penalty_fraction": null,
+      "open_wound": null,
+      "infection_status": "unknown",
+      "irreversible_damage": null,
+      "days_since_injury": null,
+      "work_prohibition": false
+    },
+    {
+      "worker_id": "W009",
+      "body_part": "前足",
+      "legacy_description": "舊傷",
+      "mobility_penalty_fraction": null,
+      "open_wound": null,
+      "infection_status": "unknown",
+      "irreversible_damage": null,
+      "days_since_injury": null,
+      "work_prohibition": false
+    },
+    {
+      "worker_id": "W012",
+      "body_part": "前足",
+      "legacy_description": "輕微擦傷",
+      "mobility_penalty_fraction": null,
+      "open_wound": null,
+      "infection_status": "unknown",
+      "irreversible_damage": null,
+      "days_since_injury": null,
+      "work_prohibition": false
+    },
+    {
+      "worker_id": "W013",
+      "body_part": "後足",
+      "legacy_description": "1142分鐘擦傷",
+      "mobility_penalty_fraction": null,
+      "open_wound": null,
+      "infection_status": "unknown",
+      "irreversible_damage": null,
+      "days_since_injury": null,
+      "work_prohibition": false
+    },
+    {
+      "worker_id": "W014",
+      "body_part": "前足",
+      "legacy_description": "遠征擦傷",
+      "mobility_penalty_fraction": null,
+      "open_wound": null,
+      "infection_status": "unknown",
+      "irreversible_damage": null,
+      "days_since_injury": null,
+      "work_prohibition": false
+    }
+  ],
+  "world_map": {
+    "coordinate_origin": "N00入口",
+    "distance_unit": "cm",
+    "precision": "敘事近似值非實測",
+    "locations": [
+      {
+        "id": "N00",
+        "name": "現任花盆土丘主巢",
+        "bearing": "中心",
+        "distance_cm": 0,
+        "coordinates_cm": null,
+        "resource_class": "occupied_nest",
+        "legacy_note": "兩育幼空間、一儲藏空間、完工外圍泥脊；暴雨未驗證",
+        "evidence": "observed_in_story",
+        "current_accessibility": "unverified",
+        "edible_mass_mg": null,
+        "replenishment_per_day_mg": null,
+        "known_to_every_worker": false
+      },
+      {
+        "id": "N01",
+        "name": "原石板下",
+        "bearing": "未定",
+        "distance_cm": null,
+        "coordinates_cm": null,
+        "resource_class": "abandoned_nest",
+        "legacy_note": "曾因雨水風險遷離",
+        "evidence": "observed_in_story",
+        "current_accessibility": "unverified",
+        "edible_mass_mg": null,
+        "replenishment_per_day_mg": null,
+        "known_to_every_worker": false
+      },
+      {
+        "id": "N02",
+        "name": "草根高地舊巢",
+        "bearing": "未定",
+        "distance_cm": null,
+        "coordinates_cm": null,
+        "resource_class": "abandoned_nest",
+        "legacy_note": "歷史發生敵蟻衝突",
+        "evidence": "observed_in_story",
+        "current_accessibility": "unverified",
+        "edible_mass_mg": null,
+        "replenishment_per_day_mg": null,
+        "known_to_every_worker": false
+      },
+      {
+        "id": "F01",
+        "name": "東北葉背蚜蟲",
+        "bearing": "東北",
+        "distance_cm": 48,
+        "coordinates_cm": null,
+        "resource_class": "honeydew_declining",
+        "legacy_note": "舊蜜露點產量下降",
+        "evidence": "observed_in_story",
+        "current_accessibility": "unverified",
+        "edible_mass_mg": null,
+        "replenishment_per_day_mg": null,
+        "known_to_every_worker": false
+      },
+      {
+        "id": "F02",
+        "name": "西南植物傷口",
+        "bearing": "西南",
+        "distance_cm": 38,
+        "coordinates_cm": null,
+        "resource_class": "drying_sap",
+        "legacy_note": "蜘蛛活動，近乎乾涸",
+        "evidence": "observed_in_story",
+        "current_accessibility": "unverified",
+        "edible_mass_mg": null,
+        "replenishment_per_day_mg": null,
+        "known_to_every_worker": false
+      },
+      {
+        "id": "F03",
+        "name": "東側破損落果",
+        "bearing": "東",
+        "distance_cm": 64,
+        "coordinates_cm": null,
+        "resource_class": "fallen_fruit",
+        "legacy_note": "陌生蟻曾取食，剩餘資源未知",
+        "evidence": "observed_in_story",
+        "current_accessibility": "unverified",
+        "edible_mass_mg": null,
+        "replenishment_per_day_mg": null,
+        "known_to_every_worker": false
+      },
+      {
+        "id": "F04",
+        "name": "北側石牆介殼蟲",
+        "bearing": "北",
+        "distance_cm": 92,
+        "coordinates_cm": null,
+        "resource_class": "scale_insects",
+        "legacy_note": "陌生蟻曾採集蜜露",
+        "evidence": "observed_in_story",
+        "current_accessibility": "unverified",
+        "edible_mass_mg": null,
+        "replenishment_per_day_mg": null,
+        "known_to_every_worker": false
+      },
+      {
+        "id": "F05",
+        "name": "東南矮草蚜蟲",
+        "bearing": "東南",
+        "distance_cm": 73,
+        "coordinates_cm": null,
+        "resource_class": "honeydew_declining",
+        "legacy_note": "跳蛛曾活動，產量下降",
+        "evidence": "observed_in_story",
+        "current_accessibility": "unverified",
+        "edible_mass_mg": null,
+        "replenishment_per_day_mg": null,
+        "known_to_every_worker": false
+      },
+      {
+        "id": "F06",
+        "name": "東南潮濕石縫",
+        "bearing": "東南",
+        "distance_cm": 23,
+        "coordinates_cm": null,
+        "resource_class": "sap_nearly_gone",
+        "legacy_note": "短期甜液",
+        "evidence": "observed_in_story",
+        "current_accessibility": "unverified",
+        "edible_mass_mg": null,
+        "replenishment_per_day_mg": null,
+        "known_to_every_worker": false
+      },
+      {
+        "id": "F07",
+        "name": "東側石塊與枯葉",
+        "bearing": "東",
+        "distance_cm": 31,
+        "coordinates_cm": null,
+        "resource_class": "detritus",
+        "legacy_note": "飛蛾殘骸耗盡，零碎食物不定期存在",
+        "evidence": "observed_in_story",
+        "current_accessibility": "unverified",
+        "edible_mass_mg": null,
+        "replenishment_per_day_mg": null,
+        "known_to_every_worker": false
+      },
+      {
+        "id": "F08",
+        "name": "西北小白花",
+        "bearing": "西北",
+        "distance_cm": 83,
+        "coordinates_cm": null,
+        "resource_class": "flower_nectar_declining",
+        "legacy_note": "花梗伏守捕食者曾出現",
+        "evidence": "observed_in_story",
+        "current_accessibility": "unverified",
+        "edible_mass_mg": null,
+        "replenishment_per_day_mg": null,
+        "known_to_every_worker": false
+      },
+      {
+        "id": "F09",
+        "name": "東南野草斷莖",
+        "bearing": "東南",
+        "distance_cm": 19,
+        "coordinates_cm": null,
+        "resource_class": "sap_nearly_gone",
+        "legacy_note": "斷莖汁液逐漸乾涸",
+        "evidence": "observed_in_story",
+        "current_accessibility": "unverified",
+        "edible_mass_mg": null,
+        "replenishment_per_day_mg": null,
+        "known_to_every_worker": false
+      },
+      {
+        "id": "F10",
+        "name": "南側根際吸汁昆蟲",
+        "bearing": "南",
+        "distance_cm": 42,
+        "coordinates_cm": null,
+        "resource_class": "root_honeydew",
+        "legacy_note": "蟾蜍在潮葉旁活動；W013於1142分鐘擦傷",
+        "evidence": "observed_in_story",
+        "current_accessibility": "unverified",
+        "edible_mass_mg": null,
+        "replenishment_per_day_mg": null,
+        "known_to_every_worker": false
+      },
+      {
+        "id": "F11",
+        "name": "南側腐葉堆",
+        "bearing": "南",
+        "distance_cm": 35,
+        "coordinates_cm": null,
+        "resource_class": "detritus_declining",
+        "legacy_note": "蛋白質舊源已部分耗盡",
+        "evidence": "observed_in_story",
+        "current_accessibility": "unverified",
+        "edible_mass_mg": null,
+        "replenishment_per_day_mg": null,
+        "known_to_every_worker": false
+      },
+      {
+        "id": "U00",
+        "name": "未探索的住宅花園",
+        "bearing": "未知",
+        "distance_cm": null,
+        "coordinates_cm": null,
+        "resource_class": "unknown",
+        "legacy_note": "無已知食物或敵巢資訊",
+        "evidence": "observed_in_story",
+        "current_accessibility": "unverified",
+        "edible_mass_mg": null,
+        "replenishment_per_day_mg": null,
+        "known_to_every_worker": false
+      }
+    ],
+    "route_edges": [],
+    "route_discovery": "individual_partial_knowledge"
+  },
+  "weather": {
+    "air_temp_c": null,
+    "relative_humidity_percent": null,
+    "rainfall_mm_per_day": null,
+    "solar_phase": null,
+    "wind_speed_m_per_s": null,
+    "soil_temperature_c": null,
+    "soil_moisture_percent": null
+  },
+  "nest_microclimate": {
+    "nursery_count_legacy": 2,
+    "storage_count_legacy": 1,
+    "defense_earthworks_legacy_completed": true,
+    "climate_validated_in_storm": false,
+    "humidity_percent": null,
+    "temperature_c": null,
+    "water_intrusion_probability": null,
+    "soil_stability": null
+  },
+  "ecology": {
+    "plants": {
+      "species": [],
+      "flowering_state": "partially_known_from_story",
+      "next_regeneration": null
+    },
+    "hemipterans": {
+      "species": [],
+      "honeydew_mg_per_day": null
+    },
+    "other_ant_colonies": {
+      "legacy_distinct_groups_min": 2,
+      "actual_colony_identification": null,
+      "known_nest_sites": []
+    },
+    "predators": [
+      {
+        "type": "spider",
+        "last_observed_legacy_minute": null,
+        "locations": [
+          "F02",
+          "F05"
+        ]
+      },
+      {
+        "type": "ambush_arthropod",
+        "last_observed_legacy_minute": 1023,
+        "locations": [
+          "F08"
+        ]
+      },
+      {
+        "type": "toad",
+        "last_observed_legacy_minute": 1142,
+        "locations": [
+          "F10"
+        ]
+      },
+      {
+        "type": "predatory_beetle",
+        "last_observed_legacy_minute": 1002,
+        "locations": [
+          "F09"
+        ]
+      }
+    ],
+    "decomposers": "known_from_story_but_unidentified",
+    "pathogens": null,
+    "parasitoids": "previously observed near leaf aphids"
+  },
+  "resources": {
+    "legacy_units_ref": "saves/main.json#/colony/food",
+    "legacy_conversion_to_mg": null,
+    "water_supply_amount": null,
+    "food_nodes_renewable_only_if_evidence": true
+  },
+  "model_controls": {
+    "control_mode": "observer_autonomous",
+    "task_assignment": "local_response_thresholds_not_permanent_jobs",
+    "random_seed": null,
+    "model_parameter_set": "unidentified_species_v2",
+    "uncertainty_tracking": true,
+    "auto_advance_on_chat_request": true
+  },
+  "source_docs": [
+    "docs/science-model.md",
+    "docs/ecosystem-world.md",
+    "docs/simulation-engine.md",
+    "docs/species-calibration.md",
+    "docs/references.md"
+  ]
+}
