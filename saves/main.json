@@ -12,9 +12,9 @@
   },
   "chapter": {
     "number": 4,
-    "title": "葉背的甜泉",
-    "elapsed_player_minutes": 630,
-    "phase": "等待事件 #065"
+    "title": "輪班蜜露與新育幼室",
+    "elapsed_player_minutes": 650,
+    "phase": "等待事件 #067"
   },
   "colony": {
     "queen": {
@@ -23,8 +23,8 @@
       "status": "健康"
     },
     "workers": {
-      "confirmed_born": 12,
-      "current_alive": 9,
+      "confirmed_born": 13,
+      "current_alive": 10,
       "cumulative_deaths": 3,
       "individuals": [
         {
@@ -90,24 +90,29 @@
           "id": "W012",
           "status": "alive",
           "condition": "外骨骼硬化，健康"
+        },
+        {
+          "id": "W013",
+          "status": "alive",
+          "condition": "第647分鐘羽化，外骨骼尚未硬化"
         }
       ]
     },
     "brood": {
       "eggs": 1,
       "larvae": 0,
-      "pupae": 1,
-      "total": 2
+      "pupae": 0,
+      "total": 1
     },
     "food": {
-      "sugar_units": 5,
-      "protein_units": 3,
+      "sugar_units": 6,
+      "protein_units": 2,
       "units": "抽象遊戲單位",
       "new_source": {
         "name": "花盆東北方葉背蜜露",
         "distance_cm": 48,
         "type": "少量蚜蟲蜜露",
-        "stability": "尚不穩定，觀察到寄生蜂活動",
+        "stability": "輪流採集帶回糖5，葉背蚜蟲數量略減；供應不穩定",
         "competitors": "尚未目擊敵蟻直接佔據"
       }
     },
@@ -116,7 +121,7 @@
     },
     "nest": {
       "usable_nurseries": 1,
-      "crowding_percent": 73,
+      "crowding_percent": 78,
       "condition": "花盆土丘主巢工程達100%基礎標準，已加固入口、完成淺排水溝及育幼室；連續暴雨未驗證",
       "entrance_defense": "入口設擋土脊，單蟻通道，短期可延緩積水及陌生工蟻進入",
       "backup_site": {
@@ -130,8 +135,8 @@
       },
       "previous_site": "草根高地（棄守）",
       "second_nursery": {
-        "progress_percent": 65,
-        "status": "施工暫停，進度65%，尚不可用"
+        "progress_percent": 88,
+        "status": "巢室主體已成形，入口尚需加固與除濕，暫不可正式育幼"
       }
     },
     "known_other_colonies": 2,
@@ -683,18 +688,43 @@
       "id": "E111",
       "minute": 630,
       "summary": "糖1+7-3=5；蛋白質4-1=3；工蟻9、卵1蛹1，第二育幼室維持65%；新蜜露點需評估"
+    },
+    {
+      "id": "E112",
+      "minute": 630,
+      "summary": "玩家選B+C：小隊輪流採蜜露，同時恢復第二育幼室施工"
+    },
+    {
+      "id": "E113",
+      "minute": 638,
+      "summary": "W006/W011輪流前往葉背，分批取得糖5；見到寄生蜂在附近徘徊但未接觸"
+    },
+    {
+      "id": "E114",
+      "minute": 641,
+      "summary": "W005/W012施工發現側室局部潮氣，改向上方開挖並加固，工程65%→88%"
+    },
+    {
+      "id": "E115",
+      "minute": 647,
+      "summary": "現有蛹羽化為W013，存活工蟻9→10；新工蟻外骨骼未硬化"
+    },
+    {
+      "id": "E116",
+      "minute": 650,
+      "summary": "糖5+5-4=6，蛋白質3-1=2；蟻后1工蟻10卵1，累計工蟻死亡3、幼體死亡1"
     }
   ],
   "pending": {
-    "event_id": "065",
-    "title": "新糖源發現，但葉面有寄生蜂",
+    "event_id": "067",
+    "title": "新工蟻羽化，第二育幼室接近完成",
     "decision_required": true,
-    "next": "630–650分鐘",
+    "next": "650–670分鐘",
     "options": {
-      "A": "固定採集葉背蜜露，增加糖分儲備",
-      "B": "改以小隊輪流取蜜露，降低集中暴露風險",
-      "C": "重新投入第二育幼室施工，利用現有糖分儲備",
-      "D": "派W005與W010監視近巢陌生蟻，避免新巢被發現"
+      "A": "集中尋找蛋白質，補充新工蟻與蟻后營養",
+      "B": "完成第二育幼室最後加固與除濕",
+      "C": "偵察陌生蟻群，評估蜜露路線安全",
+      "D": "繼續輪流採蜜露，同時緩慢完成第二育幼室"
     }
   },
   "unknowns": [
