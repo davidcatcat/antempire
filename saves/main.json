@@ -12,9 +12,9 @@
   },
   "chapter": {
     "number": 4,
-    "title": "花盆土丘遷巢",
-    "elapsed_player_minutes": 470,
-    "phase": "等待事件 #049"
+    "title": "新巢的第一餐",
+    "elapsed_player_minutes": 490,
+    "phase": "等待事件 #051 玩家決策"
   },
   "colony": {
     "queen": {
@@ -69,7 +69,7 @@
         {
           "id": "W008",
           "status": "alive",
-          "condition": "跌落造成的腳部傷勢好轉，暫不安排長程採集"
+          "condition": "腳傷恢復中；此次覓食返程失去部分食物，無新增傷口"
         },
         {
           "id": "W009",
@@ -95,8 +95,8 @@
       "total": 3
     },
     "food": {
-      "sugar_units": 1,
-      "protein_units": 0,
+      "sugar_units": 3,
+      "protein_units": 1,
       "units": "抽象遊戲單位"
     },
     "water": {
@@ -104,7 +104,7 @@
     },
     "nest": {
       "usable_nurseries": 1,
-      "crowding_percent": 90,
+      "crowding_percent": 91,
       "condition": "蟻后與所有幼體已搬入花盆土丘臨時巢室，入口防禦薄弱、排水未知；草根高地已棄守",
       "entrance_defense": "縮窄主入口，側縫封堵約80%；出入速度下降",
       "backup_site": {
@@ -487,18 +487,38 @@
       "id": "E073",
       "minute": 470,
       "summary": "八隻工蟻全數安全抵達；新巢74%，糖1、蛋白質0；敵蟻仍在周邊"
+    },
+    {
+      "id": "E075",
+      "minute": 470,
+      "summary": "玩家選A，緊急尋找糖與蛋白質"
+    },
+    {
+      "id": "E076",
+      "minute": 476,
+      "summary": "W006/W009在花盆托盤邊緣找到少量含糖殘液；W005/W008在枯葉下發現小昆蟲殘骸"
+    },
+    {
+      "id": "E077",
+      "minute": 482,
+      "summary": "螞蟻競爭者現身於食物周邊，W008撤退並遺失部分蛋白質；沒有傷亡"
+    },
+    {
+      "id": "E078",
+      "minute": 490,
+      "summary": "糖取得4消耗2，1→3；蛋白質取得2消耗1，0→1；工蟻8、卵2、幼蟲1；新巢74%未繼續施工"
     }
   ],
   "pending": {
-    "event_id": "049",
-    "title": "遷巢成功但缺糧",
+    "event_id": "051",
+    "title": "新巢附近的水滴與陌生蟻路",
     "decision_required": true,
-    "next": "470–490分鐘",
+    "next": "第490–510分鐘，等待玩家決策",
     "options": {
-      "A": "緊急採集糖與蛋白質",
-      "B": "優先修築新巢，承擔飢餓",
-      "C": "偵察敵蟻是否追蹤",
-      "D": "分兵採集與修巢"
+      "A": "繼續附近覓食，優先補充蛋白質",
+      "B": "修築巢口與排水、減少外出風險",
+      "C": "偵察周圍陌生螞蟻的活動路線",
+      "D": "分組覓食與有限度加固新巢"
     }
   },
   "unknowns": [
