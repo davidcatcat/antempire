@@ -12,9 +12,9 @@
   },
   "chapter": {
     "number": 4,
-    "title": "狹窄巢口的防線",
-    "elapsed_player_minutes": 530,
-    "phase": "等待事件 #055"
+    "title": "花盆堡壘完成",
+    "elapsed_player_minutes": 550,
+    "phase": "等待事件 #057"
   },
   "colony": {
     "queen": {
@@ -23,8 +23,8 @@
       "status": "健康"
     },
     "workers": {
-      "confirmed_born": 11,
-      "current_alive": 8,
+      "confirmed_born": 12,
+      "current_alive": 9,
       "cumulative_deaths": 3,
       "individuals": [
         {
@@ -85,14 +85,19 @@
           "id": "W011",
           "status": "alive",
           "condition": "前次擦傷已癒合，健康"
+        },
+        {
+          "id": "W012",
+          "status": "alive",
+          "condition": "第546分鐘羽化，外骨骼尚未完全硬化，留巢"
         }
       ]
     },
     "brood": {
       "eggs": 2,
       "larvae": 0,
-      "pupae": 1,
-      "total": 3
+      "pupae": 0,
+      "total": 2
     },
     "food": {
       "sugar_units": 2,
@@ -104,17 +109,17 @@
     },
     "nest": {
       "usable_nurseries": 1,
-      "crowding_percent": 77,
-      "condition": "花盆土丘主巢：育幼室加深，入口擋土脊和排水溝改善，兩側有壓實泥土屏障；仍僅一間育幼室",
+      "crowding_percent": 80,
+      "condition": "花盆土丘主巢工程達100%基礎標準，已加固入口、完成淺排水溝及育幼室；連續暴雨未驗證",
       "entrance_defense": "入口設擋土脊，單蟻通道，短期可延緩積水及陌生工蟻進入",
       "backup_site": {
         "location": "西北側倒置花盆邊緣下的土丘",
         "distance_cm": 60,
         "elevation_relative_cm": 4,
         "assessment": "僅找到候選位置；排水表現尚未確認，無巢室，不能立即全巢遷入",
-        "status": "現任主巢完成92%，仍需雨水與敵蟻壓力驗證",
-        "progress_percent": 92,
-        "drainage": "短時滲水及表面積水測試通過，連續暴雨未驗證"
+        "status": "現任主巢已完成基礎工程，後續仍可擴建",
+        "progress_percent": 100,
+        "drainage": "輕度流入可引離，暴雨未知"
       },
       "previous_site": "草根高地（棄守）"
     },
@@ -552,18 +557,43 @@
       "id": "E087",
       "minute": 530,
       "summary": "糖2+3-3=2，蛋白質2+3-2=3，工蟻8存活、卵2蛹1；陌生蟻仍在巢外活動"
+    },
+    {
+      "id": "E088",
+      "minute": 530,
+      "summary": "玩家選D，W006/W008覓食、W005/W011修巢、W010警戒"
+    },
+    {
+      "id": "E089",
+      "minute": 538,
+      "summary": "採集到糖3與蛋白質2；W010在巢外發現陌生蟻行經較外側，沒有接觸"
+    },
+    {
+      "id": "E090",
+      "minute": 543,
+      "summary": "入口和排水結構完成，主巢基礎工程92%→100%，一間育幼室保留"
+    },
+    {
+      "id": "E091",
+      "minute": 546,
+      "summary": "一隻蛹羽化為W012，工蟻8→9，外骨骼尚未硬化"
+    },
+    {
+      "id": "E092",
+      "minute": 550,
+      "summary": "糖2+3-3=2，蛋白質3+2-2=3；卵2，工蟻9，累計工蟻死亡3、幼體死亡1；巢房擁擠80%"
     }
   ],
   "pending": {
-    "event_id": "055",
-    "title": "新巢趨於完善，食物點遭陌生蟻試探",
+    "event_id": "057",
+    "title": "新巢完工，是否擴大覓食或整頓蟻群",
     "decision_required": true,
-    "next": "530–550分鐘",
+    "next": "550–570分鐘",
     "options": {
-      "A": "專注探索新的蛋白質與糖分食物點",
-      "B": "加強警戒並確認陌生蟻可能的進入方向",
-      "C": "完成最後的巢穴防禦與雨水排放工程",
-      "D": "保持覓食、警戒與修巢三項平衡，進展較慢"
+      "A": "擴大採集半徑，增加糖與蛋白質儲備",
+      "B": "集中照顧新工蟻與蟻后，為下一輪繁殖準備",
+      "C": "偵察附近競爭蟻群的主要活動區",
+      "D": "維持採集與警戒，並規劃第二間育幼室"
     }
   },
   "unknowns": [
