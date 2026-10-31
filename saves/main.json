@@ -12,9 +12,9 @@
   },
   "chapter": {
     "number": 4,
-    "title": "第二育幼室的藍圖",
-    "elapsed_player_minutes": 570,
-    "phase": "等待事件 #059"
+    "title": "根鬚旁的競爭",
+    "elapsed_player_minutes": 590,
+    "phase": "等待事件 #061"
   },
   "colony": {
     "queen": {
@@ -101,7 +101,7 @@
     },
     "food": {
       "sugar_units": 2,
-      "protein_units": 3,
+      "protein_units": 4,
       "units": "抽象遊戲單位"
     },
     "water": {
@@ -109,7 +109,7 @@
     },
     "nest": {
       "usable_nurseries": 1,
-      "crowding_percent": 76,
+      "crowding_percent": 74,
       "condition": "花盆土丘主巢工程達100%基礎標準，已加固入口、完成淺排水溝及育幼室；連續暴雨未驗證",
       "entrance_defense": "入口設擋土脊，單蟻通道，短期可延緩積水及陌生工蟻進入",
       "backup_site": {
@@ -123,8 +123,8 @@
       },
       "previous_site": "草根高地（棄守）",
       "second_nursery": {
-        "progress_percent": 20,
-        "status": "施工中，不可用"
+        "progress_percent": 48,
+        "status": "施工中；發現根鬚障礙，尚不可用"
       }
     },
     "known_other_colonies": 2,
@@ -606,18 +606,43 @@
       "id": "E096",
       "minute": 570,
       "summary": "糖2+3-3=2；蛋白質3+2-2=3；工蟻9，卵1幼蟲1，死亡不變"
+    },
+    {
+      "id": "E098",
+      "minute": 570,
+      "summary": "玩家選D，W006/W008採集，W005/W011第二育幼室施工，其他工蟻照顧與警戒"
+    },
+    {
+      "id": "E099",
+      "minute": 578,
+      "summary": "採集隊發現小型死亡蚊蟲與少量植物汁液，帶回蛋白質3、糖3"
+    },
+    {
+      "id": "E100",
+      "minute": 582,
+      "summary": "施工碰到植物根鬚，開挖路線偏轉；第二育幼室20%→48%"
+    },
+    {
+      "id": "E101",
+      "minute": 586,
+      "summary": "兩隻深褐色陌生工蟻追蹤到花盆邊緣外側約18公分，W010警戒，未接觸"
+    },
+    {
+      "id": "E102",
+      "minute": 590,
+      "summary": "糖2+3-3=2，蛋白質3+3-2=4；蟻后1工蟻9卵1幼蟲1，死亡不變；第二育幼室48%"
     }
   ],
   "pending": {
-    "event_id": "059",
-    "title": "第二育幼室開工，食物供應仍薄弱",
+    "event_id": "061",
+    "title": "陌生蟻路逼近花盆巢",
     "decision_required": true,
-    "next": "570–590分鐘",
+    "next": "590–610分鐘",
     "options": {
-      "A": "集中覓食累積糖與蛋白質",
-      "B": "集中開挖第二育幼室",
-      "C": "調查外圍陌生螞蟻",
-      "D": "延續覓食、警戒、擴巢平衡"
+      "A": "集中覓食，趁外圍資源尚有供應",
+      "B": "集中施工，盡快完成第二育幼室",
+      "C": "強化警戒並追蹤距巢18公分的陌生蟻路",
+      "D": "維持採集、警戒、施工平衡，採取保守發展"
     }
   },
   "unknowns": [
