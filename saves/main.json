@@ -12,9 +12,9 @@
   },
   "chapter": {
     "number": 3,
-    "title": "兩個家園的賭注",
-    "elapsed_player_minutes": 410,
-    "phase": "等待事件 #043 玩家決策"
+    "title": "地下工程與飢餓邊緣",
+    "elapsed_player_minutes": 430,
+    "phase": "等待事件 #045 玩家決策"
   },
   "colony": {
     "queen": {
@@ -84,19 +84,19 @@
         {
           "id": "W011",
           "status": "alive",
-          "condition": "外骨骼已硬化，可執行巢內工作"
+          "condition": "塌方脫困，無明顯外傷，短期行動較慢"
         }
       ]
     },
     "brood": {
       "eggs": 2,
-      "larvae": 2,
+      "larvae": 1,
       "pupae": 0,
-      "total": 4
+      "total": 3
     },
     "food": {
-      "sugar_units": 3,
-      "protein_units": 1,
+      "sugar_units": 1,
+      "protein_units": 2,
       "units": "抽象遊戲單位"
     },
     "water": {
@@ -112,13 +112,14 @@
         "distance_cm": 60,
         "elevation_relative_cm": 4,
         "assessment": "僅找到候選位置；排水表現尚未確認，無巢室，不能立即全巢遷入",
-        "status": "施工35%，有單蟻通道與未完成小室；潮濕且未驗證排水，不能立即遷入",
-        "progress_percent": 35,
-        "drainage": "潮濕，尚未驗證"
+        "status": "施工41%，排水側通道初成但局部塌方；無育幼室不可遷入",
+        "progress_percent": 41,
+        "drainage": "局部滲水改善，尚需觀察"
       }
     },
     "known_other_colonies": 2,
-    "worker_deaths_cumulative": 3
+    "worker_deaths_cumulative": 3,
+    "brood_deaths_cumulative": 1
   },
   "history": [
     {
@@ -425,18 +426,38 @@
       "id": "E061",
       "minute": 410,
       "summary": "藤蔓蜜露收入糖6，總消耗糖4，糖1→3；蛋白質3→1；備用巢施工35%，全部8工蟻存活"
+    },
+    {
+      "id": "E062",
+      "minute": 410,
+      "summary": "玩家選C，W006單獨採蛋白質，W005/W011改善備用巢排水"
+    },
+    {
+      "id": "E063",
+      "minute": 419,
+      "summary": "備用巢濕土塌方，W011受困後脫困，工程46%退回41%，無工蟻死亡"
+    },
+    {
+      "id": "E064",
+      "minute": 423,
+      "summary": "長期營養不足的幼蟲死亡一隻，幼體首次死亡記錄"
+    },
+    {
+      "id": "E065",
+      "minute": 430,
+      "summary": "取得蛋白質3、消耗2：蛋白質1→2；糖3-2=1；工蟻8、卵2幼蟲1，備用巢41%"
     }
   ],
   "pending": {
-    "event_id": "043",
-    "title": "雙巢計畫與蛋白質短缺",
+    "event_id": "045",
+    "title": "糖分見底與不完整的備用巢",
     "decision_required": true,
-    "next": "第410–430分鐘，等待玩家選擇",
+    "next": "第430–450分鐘等待玩家選擇",
     "options": {
-      "A": "暫停備用巢施工，集中採集蛋白質",
-      "B": "繼續開挖備用巢，承擔幼蟲營養風險",
-      "C": "同時小規模採蛋白質和完善排水，兩項進度都較慢",
-      "D": "停止工程，維持蜜露採集並提高原巢警戒"
+      "A": "停止備用巢施工，派健康工蟻優先採集藤蔓蜜露",
+      "B": "繼續雙線策略，少量採糖與改善備用巢排水",
+      "C": "全面停工並收縮活動，保護蟻后與剩餘幼體",
+      "D": "放棄備用巢，把人力集中在原巢防禦與尋找近距離糖源"
     }
   },
   "unknowns": [
