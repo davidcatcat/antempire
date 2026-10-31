@@ -12,9 +12,9 @@
   },
   "chapter": {
     "number": 4,
-    "title": "甜源探索與入口封鎖",
-    "elapsed_player_minutes": 730,
-    "phase": "等待事件 #075"
+    "title": "蛛絲與腐葉雙線採集",
+    "elapsed_player_minutes": 750,
+    "phase": "等待事件 #077"
   },
   "colony": {
     "queen": {
@@ -23,8 +23,8 @@
       "status": "健康"
     },
     "workers": {
-      "confirmed_born": 13,
-      "current_alive": 10,
+      "confirmed_born": 14,
+      "current_alive": 11,
       "cumulative_deaths": 3,
       "individuals": [
         {
@@ -89,24 +89,29 @@
         {
           "id": "W012",
           "status": "alive",
-          "condition": "外骨骼硬化，健康"
+          "condition": "西南採糖時避開小型蜘蛛，前足輕微擦傷，能行動但需減少遠行"
         },
         {
           "id": "W013",
           "status": "alive",
           "condition": "外骨骼已硬化，健康，開始參與巢內工作"
+        },
+        {
+          "id": "W014",
+          "status": "alive",
+          "condition": "第746分鐘羽化，外骨骼尚軟，留巢"
         }
       ]
     },
     "brood": {
       "eggs": 2,
       "larvae": 0,
-      "pupae": 1,
-      "total": 3
+      "pupae": 0,
+      "total": 2
     },
     "food": {
       "sugar_units": 4,
-      "protein_units": 3,
+      "protein_units": 6,
       "units": "抽象遊戲單位",
       "new_source": {
         "name": "花盆東北方葉背蜜露",
@@ -119,8 +124,8 @@
         "name": "花盆西南側盆栽嫩莖甜液",
         "distance_cm": 38,
         "type": "植物傷口滲出含糖液",
-        "stability": "短期來源，可能乾涸",
-        "hazards": "附近有小蜘蛛絲，尚未發現蜘蛛"
+        "stability": "植物傷口正在乾涸，本回合只入庫糖4，未來可能更少",
+        "hazards": "已目擊小型蜘蛛在蛛絲旁巡行，採集需繞路"
       }
     },
     "water": {
@@ -820,18 +825,43 @@
       "id": "E136",
       "minute": 730,
       "summary": "糖2+5-3=4，蛋白質5-2=3；工蟻10、卵2、蛹1，死亡不變"
+    },
+    {
+      "id": "E137",
+      "minute": 730,
+      "summary": "玩家選A+C，W006/W012查西南糖源，W005/W011採集南側蛋白質，巢內留防衛"
+    },
+    {
+      "id": "E138",
+      "minute": 738,
+      "summary": "西南甜液採得糖4；W012在蛛絲旁躲避小型蜘蛛時擦傷前足，成功撤出"
+    },
+    {
+      "id": "E139",
+      "minute": 743,
+      "summary": "南側腐葉取得蛋白質5，遇分解者爭食但未交戰，採集隊安全返巢"
+    },
+    {
+      "id": "E140",
+      "minute": 746,
+      "summary": "一隻蛹成功羽化為W014，存活工蟻10增至11；蜘蛛仍靠近甜液點"
+    },
+    {
+      "id": "E141",
+      "minute": 750,
+      "summary": "糖4+4-4=4；蛋白質3+5-2=6；卵2、工蟻11，累計死亡不變"
     }
   ],
   "pending": {
-    "event_id": "075",
-    "title": "新糖源有蛛絲，巢口暫時守住",
+    "event_id": "077",
+    "title": "蜘蛛佔據甜液點，蛋白質庫存回升",
     "decision_required": true,
-    "next": "730–750分鐘",
+    "next": "750–770分鐘",
     "options": {
-      "A": "繼續探索西南甜液，判定蜘蛛風險並補糖",
-      "B": "保持守巢，加強防禦與出入口監控",
-      "C": "尋找蛋白質，避免繁殖期不足",
-      "D": "小隊採糖、蛋白質與守巢並行，減少單項效率"
+      "A": "停止接近蜘蛛，尋找其他糖源",
+      "B": "利用蟻群優勢驅離小蜘蛛，嘗試保住甜液點",
+      "C": "減少外出，照顧新工蟻並整頓防禦",
+      "D": "持續小隊採糖與採蛋白質，但需承擔蜘蛛接觸風險"
     }
   },
   "unknowns": [
