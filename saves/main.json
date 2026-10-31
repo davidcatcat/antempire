@@ -12,9 +12,9 @@
   },
   "chapter": {
     "number": 4,
-    "title": "花盆堡壘完成",
-    "elapsed_player_minutes": 550,
-    "phase": "等待事件 #057"
+    "title": "第二育幼室的藍圖",
+    "elapsed_player_minutes": 570,
+    "phase": "等待事件 #059"
   },
   "colony": {
     "queen": {
@@ -89,13 +89,13 @@
         {
           "id": "W012",
           "status": "alive",
-          "condition": "第546分鐘羽化，外骨骼尚未完全硬化，留巢"
+          "condition": "外骨骼硬化，健康"
         }
       ]
     },
     "brood": {
-      "eggs": 2,
-      "larvae": 0,
+      "eggs": 1,
+      "larvae": 1,
       "pupae": 0,
       "total": 2
     },
@@ -109,7 +109,7 @@
     },
     "nest": {
       "usable_nurseries": 1,
-      "crowding_percent": 80,
+      "crowding_percent": 76,
       "condition": "花盆土丘主巢工程達100%基礎標準，已加固入口、完成淺排水溝及育幼室；連續暴雨未驗證",
       "entrance_defense": "入口設擋土脊，單蟻通道，短期可延緩積水及陌生工蟻進入",
       "backup_site": {
@@ -121,7 +121,11 @@
         "progress_percent": 100,
         "drainage": "輕度流入可引離，暴雨未知"
       },
-      "previous_site": "草根高地（棄守）"
+      "previous_site": "草根高地（棄守）",
+      "second_nursery": {
+        "progress_percent": 20,
+        "status": "施工中，不可用"
+      }
     },
     "known_other_colonies": 2,
     "worker_deaths_cumulative": 3,
@@ -582,18 +586,38 @@
       "id": "E092",
       "minute": 550,
       "summary": "糖2+3-3=2，蛋白質3+2-2=3；卵2，工蟻9，累計工蟻死亡3、幼體死亡1；巢房擁擠80%"
+    },
+    {
+      "id": "E093",
+      "minute": 550,
+      "summary": "選D，維持採集與警戒，規劃第二間育幼室"
+    },
+    {
+      "id": "E094",
+      "minute": 560,
+      "summary": "採得糖3、蛋白質2；其他螞蟻出現在外圍，未交戰"
+    },
+    {
+      "id": "E095",
+      "minute": 566,
+      "summary": "第二育幼室開挖20%，一顆卵孵化為幼蟲；W012成熟"
+    },
+    {
+      "id": "E096",
+      "minute": 570,
+      "summary": "糖2+3-3=2；蛋白質3+2-2=3；工蟻9，卵1幼蟲1，死亡不變"
     }
   ],
   "pending": {
-    "event_id": "057",
-    "title": "新巢完工，是否擴大覓食或整頓蟻群",
+    "event_id": "059",
+    "title": "第二育幼室開工，食物供應仍薄弱",
     "decision_required": true,
-    "next": "550–570分鐘",
+    "next": "570–590分鐘",
     "options": {
-      "A": "擴大採集半徑，增加糖與蛋白質儲備",
-      "B": "集中照顧新工蟻與蟻后，為下一輪繁殖準備",
-      "C": "偵察附近競爭蟻群的主要活動區",
-      "D": "維持採集與警戒，並規劃第二間育幼室"
+      "A": "集中覓食累積糖與蛋白質",
+      "B": "集中開挖第二育幼室",
+      "C": "調查外圍陌生螞蟻",
+      "D": "延續覓食、警戒、擴巢平衡"
     }
   },
   "unknowns": [
