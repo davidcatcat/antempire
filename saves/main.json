@@ -12,9 +12,9 @@
   },
   "chapter": {
     "number": 4,
-    "title": "新巢的第一餐",
-    "elapsed_player_minutes": 490,
-    "phase": "等待事件 #051 玩家決策"
+    "title": "花盆下的第一道排水溝",
+    "elapsed_player_minutes": 510,
+    "phase": "等待事件 #053"
   },
   "colony": {
     "queen": {
@@ -84,7 +84,7 @@
         {
           "id": "W011",
           "status": "alive",
-          "condition": "塌方脫困，無明顯外傷，短期行動較慢"
+          "condition": "巢室施工時受少量濕泥擦傷，仍可正常行走"
         }
       ]
     },
@@ -95,8 +95,8 @@
       "total": 3
     },
     "food": {
-      "sugar_units": 3,
-      "protein_units": 1,
+      "sugar_units": 2,
+      "protein_units": 2,
       "units": "抽象遊戲單位"
     },
     "water": {
@@ -104,17 +104,17 @@
     },
     "nest": {
       "usable_nurseries": 1,
-      "crowding_percent": 91,
-      "condition": "蟻后與所有幼體已搬入花盆土丘臨時巢室，入口防禦薄弱、排水未知；草根高地已棄守",
-      "entrance_defense": "縮窄主入口，側縫封堵約80%；出入速度下降",
+      "crowding_percent": 82,
+      "condition": "花盆邊緣土丘：一間育幼室拓寬，入口擋土脊與淺排水溝完成；暴雨防護仍未驗證",
+      "entrance_defense": "入口設擋土脊，單蟻通道，短期可延緩積水及陌生工蟻進入",
       "backup_site": {
         "location": "西北側倒置花盆邊緣下的土丘",
         "distance_cm": 60,
         "elevation_relative_cm": 4,
         "assessment": "僅找到候選位置；排水表現尚未確認，無巢室，不能立即全巢遷入",
-        "status": "已轉為主巢，工程74%，只有一間臨時育幼室",
-        "progress_percent": 74,
-        "drainage": "局部滲水改善，尚需觀察"
+        "status": "現任主巢工程85%，育幼室拓寬，淺排水溝已成",
+        "progress_percent": 85,
+        "drainage": "輕度滲水測試有效，持續大雨未知"
       },
       "previous_site": "草根高地（棄守）"
     },
@@ -507,18 +507,38 @@
       "id": "E078",
       "minute": 490,
       "summary": "糖取得4消耗2，1→3；蛋白質取得2消耗1，0→1；工蟻8、卵2、幼蟲1；新巢74%未繼續施工"
+    },
+    {
+      "id": "E079",
+      "minute": 490,
+      "summary": "玩家選D，W006/W008短程覓食，W005/W011加固巢口與排水，其他工蟻留巢"
+    },
+    {
+      "id": "E080",
+      "minute": 498,
+      "summary": "W006/W008找到小型死蟲與少量甜液，運回蛋白質3和糖2"
+    },
+    {
+      "id": "E081",
+      "minute": 502,
+      "summary": "局部水滴沿花盆邊緣流入，淺排水溝將水引離育幼室；W011搬泥時輕微擦傷"
+    },
+    {
+      "id": "E082",
+      "minute": 510,
+      "summary": "巢工程74%→85%，擁擠91%→82%；糖3+2-3=2，蛋白質1+3-2=2；8工蟻與3幼體存活"
     }
   ],
   "pending": {
-    "event_id": "051",
-    "title": "新巢附近的水滴與陌生蟻路",
+    "event_id": "053",
+    "title": "排水初步奏效，陌生蟻留下新路徑",
     "decision_required": true,
-    "next": "第490–510分鐘，等待玩家決策",
+    "next": "510–530分鐘",
     "options": {
-      "A": "繼續附近覓食，優先補充蛋白質",
-      "B": "修築巢口與排水、減少外出風險",
-      "C": "偵察周圍陌生螞蟻的活動路線",
-      "D": "分組覓食與有限度加固新巢"
+      "A": "加強近巢食物採集，恢復蛋白質儲備",
+      "B": "繼續擴建育幼室與防禦入口",
+      "C": "偵察花盆下新出現的陌生蟻活動路徑",
+      "D": "保持採集與防禦各半，逐步完成主巢"
     }
   },
   "unknowns": [
