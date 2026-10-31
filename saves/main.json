@@ -1,9 +1,9 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "save_id": "main",
   "game": "螞蟻帝國",
   "updated_at": "2026-10-31",
-  "continuity": "以本次對話實際推演為準；遊戲事件與資源數值是虛構模擬",
+  "continuity": "v1敘事保留（1150 fictional minutes）；v2另起科學生態時鐘Day 0，使用科學機制啟發、未鑑種與未校準的自動蟻群模擬",
   "setting": {
     "biome": "住宅花園",
     "species": "黑色地棲型螞蟻（虛構綜合生態模型）",
@@ -14,7 +14,7 @@
     "number": 4,
     "title": "自治採食的代價",
     "elapsed_player_minutes": 1150,
-    "phase": "等待事件 #117"
+    "phase": "v2世界規格已建立，尚未推進新科學世界時間"
   },
   "colony": {
     "queen": {
@@ -1411,20 +1411,70 @@
     }
   ],
   "pending": {
-    "event_id": "117",
-    "title": "糖蛋白質各剩3，蟾蜍活動造成W013擦傷",
-    "decision_required": true,
-    "next": "1150–1170分鐘",
-    "options": {
-      "A": "繼續完全自治，由工蟻自行調整路線與工作",
-      "B": "優先探索不經潮濕落葉的新糖源",
-      "C": "限制南側活動，集中養傷與育幼",
-      "D": "增加其他區域的蛋白質探索，保留少量蜜露採集"
-    }
+    "event_id": null,
+    "title": "觀察者自治模式：等待使用者要求模擬下一天",
+    "decision_required": false,
+    "next": "科學世界 Day0→Day1（須使用者說繼續）",
+    "options": {},
+    "legacy_pending_event_id": "117"
   },
   "unknowns": [
     "確切物種",
     "水量（未建立資源單位）",
-    "陌生巢道是否屬於其他蟻群"
+    "陌生巢道是否屬於其他蟻群",
+    "蟻后與幼體真實生理年齡",
+    "蟻群實際物種與體型、每日營養消耗、世界氣候及病原參數尚未校準"
+  ],
+  "simulation": {
+    "version": "v2.0-science-inspired",
+    "mode": "observer_autonomous",
+    "status": "initialized_not_advanced",
+    "effective_after_legacy_elapsed_player_minutes": 1150,
+    "scientific_clock_ref": "saves/world-state.json#/time/scientific_clock",
+    "world_state_path": "saves/world-state.json",
+    "default_advance_hours_on_request": 24,
+    "does_not_run_in_background": true,
+    "physiological_development": "species_dependent_day_to_week_scale",
+    "species_id": null,
+    "quantitative_calibration": "not_validated",
+    "legacy_resource_units": "abstract_not_mg",
+    "references": [
+      "docs/science-model.md",
+      "docs/ecosystem-world.md",
+      "docs/simulation-engine.md",
+      "docs/species-calibration.md",
+      "docs/references.md",
+      "docs/migration-v2.md"
+    ]
+  },
+  "migration_log": [
+    {
+      "date": "2026-10-31",
+      "from_schema": 1,
+      "to_schema": 2,
+      "type": "rules_and_world_only_no_game_time_advance",
+      "legacy_pending_at_transition": {
+        "event_id": "117",
+        "title": "糖蛋白質各剩3，蟾蜍活動造成W013擦傷",
+        "decision_required": true,
+        "next": "1150–1170分鐘",
+        "options": {
+          "A": "繼續完全自治，由工蟻自行調整路線與工作",
+          "B": "優先探索不經潮濕落葉的新糖源",
+          "C": "限制南側活動，集中養傷與育幼",
+          "D": "增加其他區域的蛋白質探索，保留少量蜜露採集"
+        }
+      },
+      "legacy_chapter_minute": 1150,
+      "worker_deaths_preserved": 3,
+      "worker_population_preserved": 14,
+      "brood_preserved": {
+        "eggs": 0,
+        "larvae": 2,
+        "pupae": 0,
+        "total": 2
+      },
+      "note": "No past story rewritten or scientific birth dates retroactively invented"
+    }
   ]
 }
