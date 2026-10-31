@@ -12,9 +12,9 @@
   },
   "chapter": {
     "number": 3,
-    "title": "腐葉下的獵場",
-    "elapsed_player_minutes": 270,
-    "phase": "等待玩家選擇事件 #029"
+    "title": "家門口的獵場",
+    "elapsed_player_minutes": 290,
+    "phase": "等待事件 #031"
   },
   "colony": {
     "queen": {
@@ -23,8 +23,8 @@
       "status": "健康"
     },
     "workers": {
-      "confirmed_born": 8,
-      "current_alive": 6,
+      "confirmed_born": 9,
+      "current_alive": 7,
       "cumulative_deaths": 2,
       "individuals": [
         {
@@ -68,18 +68,23 @@
           "id": "W008",
           "status": "alive",
           "condition": "健康，巢內工作"
+        },
+        {
+          "id": "W009",
+          "status": "alive",
+          "condition": "新羽化，外骨骼未硬化"
         }
       ]
     },
     "brood": {
-      "eggs": 1,
+      "eggs": 3,
       "larvae": 3,
-      "pupae": 1,
-      "total": 5
+      "pupae": 0,
+      "total": 6
     },
     "food": {
-      "sugar_units": 8,
-      "protein_units": 6,
+      "sugar_units": 7,
+      "protein_units": 7,
       "units": "抽象遊戲單位"
     },
     "water": {
@@ -87,7 +92,7 @@
     },
     "nest": {
       "usable_nurseries": 2,
-      "crowding_percent": 50,
+      "crowding_percent": 56,
       "condition": "草根高地兩間育幼室；原石板巢廢棄"
     },
     "known_other_colonies": 2,
@@ -233,18 +238,43 @@
       "id": "E028",
       "minute": 270,
       "summary": "W006見到陌生巢道有深褐色工蟻經過；糖8、蛋白質6、存活工蟻6、卵1幼蟲3蛹1"
+    },
+    {
+      "id": "E029",
+      "minute": 270,
+      "summary": "選D，縮小覓食半徑30公分"
+    },
+    {
+      "id": "E030",
+      "minute": 275,
+      "summary": "找到昆蟲碎片並搬回"
+    },
+    {
+      "id": "E031",
+      "minute": 277,
+      "summary": "鼠婦靠近入口後離去，無傷亡"
+    },
+    {
+      "id": "E032",
+      "minute": 284,
+      "summary": "W009羽化，蟻后產2顆卵"
+    },
+    {
+      "id": "E033",
+      "minute": 290,
+      "summary": "糖7蛋白質7，工蟻7，卵3幼蟲3；短距食物趨於耗盡"
     }
   ],
   "pending": {
-    "event_id": "029",
-    "title": "受傷的勞動力與陌生巢道",
+    "event_id": "031",
+    "title": "近巢食物逐漸耗盡",
     "decision_required": true,
-    "next": "第270–290分鐘，等待玩家決策",
+    "next": "290–310分鐘",
     "options": {
-      "A": "降低風險，讓受傷工蟻留巢，優先育幼",
-      "B": "派健康工蟻維持藤蔓蜜露補給線",
-      "C": "派W006遠距觀察陌生巢道，蒐集情報",
-      "D": "改用短距探索採集，盡量避開腐葉深處"
+      "A": "擴大探索到50公分",
+      "B": "恢復藤蔓蜜露採集",
+      "C": "探索腐植質層",
+      "D": "減少外出並育幼"
     }
   },
   "unknowns": [
