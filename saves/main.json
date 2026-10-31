@@ -12,9 +12,9 @@
   },
   "chapter": {
     "number": 4,
-    "title": "儲藏室工程與外圍防線",
-    "elapsed_player_minutes": 910,
-    "phase": "等待事件 #093"
+    "title": "儲藏室落成與警戒路徑",
+    "elapsed_player_minutes": 930,
+    "phase": "等待事件 #095"
   },
   "colony": {
     "queen": {
@@ -109,13 +109,13 @@
       ]
     },
     "brood": {
-      "eggs": 2,
-      "larvae": 1,
+      "eggs": 1,
+      "larvae": 2,
       "pupae": 0,
       "total": 3
     },
     "food": {
-      "sugar_units": 5,
+      "sugar_units": 4,
       "protein_units": 7,
       "units": "抽象遊戲單位",
       "new_source": {
@@ -155,7 +155,7 @@
         "name": "南東側矮草內側葉背蜜露",
         "distance_cm": 73,
         "type": "少量蚜蟲蜜露",
-        "stability": "W006/W013結伴採得糖5；蚜蟲少量持續",
+        "stability": "本回合回收糖4，蚜蟲蜜露產量略降；雙蟻採集",
         "competitors": "單次偵察未發現其他蟻群痕跡；不能保證無人知悉",
         "hazards": "跳蛛仍在外側葉尖，工蟻採草根低路線且互相警戒，未遭接觸"
       },
@@ -173,7 +173,7 @@
       "usable_nurseries": 2,
       "crowding_percent": 57,
       "condition": "花盆土丘兩間育幼室可用，北側裂縫封閉並設雙道泥脊；排水維持，暴雨未知",
-      "entrance_defense": "原雙道泥脊維持；W010增築外圍低泥脊與觀察轉角，工程35%",
+      "entrance_defense": "雙道泥脊、北側裂縫封堵及外圍低泥脊62%；警戒轉角尚未完工",
       "backup_site": {
         "location": "西北側倒置花盆邊緣下的土丘",
         "distance_cm": 60,
@@ -190,16 +190,17 @@
       },
       "expansion": {
         "project": "主巢擴大：第三儲藏室與橫向通道",
-        "progress_percent": 72,
-        "status": "W005與W014持續施工，第三儲藏室72%，尚未可用",
+        "progress_percent": 100,
+        "status": "第三儲藏室主體完工並通過短期乾燥檢查，正式可用；暴雨未驗證",
         "risk": "花盆下層潮濕與根鬚鬆土"
       },
       "defense_works": {
         "worker": "W010",
         "project": "入口外圍低矮泥脊與警戒轉角",
-        "progress_percent": 35,
-        "status": "外圍防禦工事已動工，出入較慢，不能保證阻止敵蟻"
-      }
+        "progress_percent": 62,
+        "status": "外圍低泥脊連續段完成，警戒轉角仍在施工；入口通行略慢"
+      },
+      "usable_storage_rooms": 1
     },
     "known_other_colonies": 2,
     "worker_deaths_cumulative": 3,
@@ -1100,18 +1101,43 @@
       "id": "E181",
       "minute": 910,
       "summary": "糖6+5-6=5，蛋白質6+3-2=7；蟻后1工蟻12，卵2幼蟲1，無新傷亡"
+    },
+    {
+      "id": "E182",
+      "minute": 910,
+      "summary": "玩家選A：W006/W013結伴採蜜，W011先查蛋白質後W015採集，W005/W014繼續築巢，W010防禦，傷蟻養傷"
+    },
+    {
+      "id": "E183",
+      "minute": 918,
+      "summary": "蜜露葉背採得糖4，近巢偵察到昆蟲殘片後帶回蛋白質2；採集點產量下降"
+    },
+    {
+      "id": "E184",
+      "minute": 922,
+      "summary": "W010施工時有深褐色陌生蟻靠近外緣，工蟻退守觀察轉角，無交戰；外圍防線35%→62%"
+    },
+    {
+      "id": "E185",
+      "minute": 927,
+      "summary": "W005/W014完成第三儲藏室72%→100%，短期乾燥檢查通過；原有一顆卵孵化，幼蟲增至2"
+    },
+    {
+      "id": "E186",
+      "minute": 930,
+      "summary": "糖5+4-5=4，蛋白質7+2-2=7；工蟻12、卵1幼蟲2，無新傷亡"
     }
   ],
   "pending": {
-    "event_id": "093",
-    "title": "防禦工事施工中，人口增加帶來糖消耗",
+    "event_id": "095",
+    "title": "儲藏室啟用，蜜露產量下降且敵蟻靠近",
     "decision_required": true,
-    "next": "910–930分鐘",
+    "next": "930–950分鐘",
     "options": {
-      "A": "維持兩蟻採蜜、先偵察再採蛋白質、兩蟻擴巢、一蟻防禦、傷蟻養傷",
-      "B": "加派工蟻完成防禦工事，降低採集效率",
-      "C": "優先完成第三儲藏室，將防禦維持現況",
-      "D": "集中探索更穩定的糖源，暫緩部分施工"
+      "A": "維持雙蟻蜜露、偵察後採蛋白質、單蟻防禦與傷蟻養傷",
+      "B": "優先完成入口外圍防禦工事，暫減採集",
+      "C": "尋找第二處長期糖源，減少依賴跳蛛區蜜露",
+      "D": "調整新儲藏室用途並加強育幼，維持少量採集"
     }
   },
   "unknowns": [
