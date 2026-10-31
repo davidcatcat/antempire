@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "save_id": "main",
+  "game": "螞蟻帝國",
+  "updated_at": "2026-10-31",
+  "continuity": "以已知對話為準；未確認事項不視為既定事實",
+  "setting": {
+    "biome": "住宅花園",
+    "nest_site": "石板底下",
+    "species": "黑色地棲型螞蟻（未指定實際物種）"
+  },
+  "chapter": {
+    "number": 2,
+    "title": "優先尋找食物",
+    "phase": "等待第二章事件推演／下一次玩家決策"
+  },
+  "colony": {
+    "queen": {
+      "count": 1,
+      "status": "存活（依開局延續，尚未另行驗證）"
+    },
+    "workers": {
+      "confirmed_born": 4,
+      "current_alive": null
+    },
+    "brood": {
+      "current_count": null
+    },
+    "food": {
+      "amount": null
+    },
+    "water": {
+      "amount": null
+    },
+    "nest": {
+      "nursery": "已遷移至較高育幼區",
+      "other_chambers": "未確認"
+    }
+  },
+  "history": [
+    {
+      "id": "E001",
+      "chapter": 1,
+      "type": "start",
+      "summary": "住宅花園石板底下開局"
+    },
+    {
+      "id": "E002",
+      "chapter": 1,
+      "type": "player_choice",
+      "summary": "午後雷雨時選擇遷移到較高的育幼區"
+    },
+    {
+      "id": "E003",
+      "chapter": 1,
+      "type": "outcome",
+      "summary": "育幼區遷移成功；四隻初代工蟻誕生"
+    },
+    {
+      "id": "E004",
+      "chapter": 2,
+      "type": "player_choice",
+      "summary": "優先尋找食物"
+    }
+  ],
+  "pending": {
+    "next": "推演第二章尋找食物後的20分鐘；呈現蟻群變化、隨機事件、可能損失與下一次玩家決策",
+    "decision_required": false
+  },
+  "unknowns": [
+    "目前精確食物／水資源",
+    "卵、幼蟲、蛹數量",
+    "工蟻目前存活數（僅確認曾出生4隻）",
+    "第二章20分鐘推演結果"
+  ]
+}
