@@ -9,9 +9,9 @@
   "time": {
     "legacy_elapsed_player_minutes": 1150,
     "scientific_clock": {
-      "day": 2,
-      "elapsed_sim_hours": 48,
-      "calendar_date": "2026-11-01",
+      "day": 3,
+      "elapsed_sim_hours": 72,
+      "calendar_date": "2026-11-02",
       "absolute_utc": null,
       "default_advance_hours": 24,
       "substep_minutes_for_behavior": 20,
@@ -28,11 +28,11 @@
     },
     "note": "v1 的1150分鐘非真實生理分鐘，v2從獨立時鐘開始",
     "last_transition": {
-      "from_day": 1,
-      "to_day": 2,
+      "from_day": 2,
+      "to_day": 3,
       "advance_hours": 24,
-      "journal": "journal/v2-day-0002.md",
-      "previous_head_sha": "eb83b66d91af9631246b6622a13d893421e66bc8",
+      "journal": "journal/v2-day-0003.md",
+      "previous_head_sha": "42e129d46f4fbb36846428c276a2f19c94b52ac5",
       "weather_source_ref": "docs/weather-data-policy.md"
     },
     "setting_changes": [
@@ -114,6 +114,13 @@
         "E001"
       ],
       "assumption_status": "scenario_only_uncalibrated"
+    },
+    "last_day_status": {
+      "day": 3,
+      "new_eggs": 0,
+      "nutrient_status": null,
+      "hydration": null,
+      "egg_E001_alive": true
     }
   },
   "injuries": [
@@ -240,13 +247,14 @@
         "resource_class": "honeydew_declining",
         "legacy_note": "舊蜜露點產量下降",
         "evidence": "observed_in_story",
-        "current_accessibility": "locally_reached_on_day2",
+        "current_accessibility": "locally_reached_on_day3",
         "edible_mass_mg": null,
         "replenishment_per_day_mg": null,
         "known_to_every_worker": false,
         "day1_observation": "W005發現少量蜜露；僅局部路徑已接觸，補充量未知",
-        "last_local_visit_sim_day": 2,
-        "day2_observation": "W005確認有限蜜露，W015曾跟隨部分路線；非固定蜜露產量"
+        "last_local_visit_sim_day": 3,
+        "day2_observation": "W005確認有限蜜露，W015曾跟隨部分路線；非固定蜜露產量",
+        "day3_observation": "W005少量蜜露；W015途經部分路線但未得確認額外收穫"
       },
       {
         "id": "F02",
@@ -271,12 +279,13 @@
         "resource_class": "fallen_fruit",
         "legacy_note": "陌生蟻曾取食，剩餘資源未知",
         "evidence": "observed_in_story",
-        "current_accessibility": "locally_approached_on_day1",
+        "current_accessibility": "approached_on_day3_with_rival",
         "edible_mass_mg": null,
         "replenishment_per_day_mg": null,
         "known_to_every_worker": false,
         "day1_observation": "W006在落果外緣接觸競爭蟻跡象後折返",
-        "last_local_visit_sim_day": 1
+        "last_local_visit_sim_day": 3,
+        "day3_observation": "W015察覺陌生蟻近旁，未直接碰撞即退出"
       },
       {
         "id": "F04",
@@ -287,11 +296,12 @@
         "resource_class": "scale_insects",
         "legacy_note": "陌生蟻曾採集蜜露",
         "evidence": "observed_in_story",
-        "current_accessibility": "unverified_to_main_colony",
+        "current_accessibility": "day3_rival_activity_main_colony_unverified",
         "edible_mass_mg": null,
         "replenishment_per_day_mg": null,
         "known_to_every_worker": false,
-        "day2_observation": "世界模型中異巢蟻覓食，主巢個體未目擊"
+        "day2_observation": "世界模型中異巢蟻覓食，主巢個體未目擊",
+        "day3_observation": "異巢蟻世界背景短時取食，主巢無直接知情"
       },
       {
         "id": "F05",
@@ -302,12 +312,13 @@
         "resource_class": "honeydew_declining",
         "legacy_note": "跳蛛曾活動，產量下降",
         "evidence": "observed_in_story",
-        "current_accessibility": "edge_reached_and_withdrew",
+        "current_accessibility": "edge_reached_on_day3",
         "edible_mass_mg": null,
         "replenishment_per_day_mg": null,
         "known_to_every_worker": false,
-        "last_local_visit_sim_day": 2,
-        "day2_observation": "W010發現近距蜘蛛跡象後退避，無攻擊接觸"
+        "last_local_visit_sim_day": 3,
+        "day2_observation": "W010發現近距蜘蛛跡象後退避，無攻擊接觸",
+        "day3_observation": "W010察覺蜘蛛活動後從低草根線退回"
       },
       {
         "id": "F06",
@@ -318,10 +329,12 @@
         "resource_class": "sap_nearly_gone",
         "legacy_note": "短期甜液",
         "evidence": "observed_in_story",
-        "current_accessibility": "unverified",
+        "current_accessibility": "edge_touched_day3_no_verified_food",
         "edible_mass_mg": null,
         "replenishment_per_day_mg": null,
-        "known_to_every_worker": false
+        "known_to_every_worker": false,
+        "last_local_visit_sim_day": 3,
+        "day3_observation": "W013觸及殘液痕跡，但沒有可靠食物入庫"
       },
       {
         "id": "F07",
@@ -348,12 +361,13 @@
         "resource_class": "flower_nectar_declining",
         "legacy_note": "花梗伏守捕食者曾出現",
         "evidence": "observed_in_story",
-        "current_accessibility": "locally_reached_on_day2",
+        "current_accessibility": "day3_resource_not_confirmed",
         "edible_mass_mg": null,
         "replenishment_per_day_mg": null,
         "known_to_every_worker": false,
         "last_local_visit_sim_day": 2,
-        "day2_observation": "W015少量蜜滴；花蜜來源衰退，不能假定持續"
+        "day2_observation": "W015少量蜜滴；花蜜來源衰退，不能假定持續",
+        "day3_observation": "模型花蜜窗口沒有帶回結果，不證明全年花期結束"
       },
       {
         "id": "F09",
@@ -378,13 +392,14 @@
         "resource_class": "root_honeydew",
         "legacy_note": "蟾蜍在潮葉旁活動；W013於1142分鐘擦傷",
         "evidence": "observed_in_story",
-        "current_accessibility": "not_verified_at_core",
+        "current_accessibility": "day3_main_colony_contact_not_observed",
         "edible_mass_mg": null,
         "replenishment_per_day_mg": null,
         "known_to_every_worker": false,
         "day1_observation": "W010見蟾蜍活動而折返；蜜露是否可用仍未知",
         "last_local_visit_sim_day": 2,
-        "day2_observation": "W006、W011從鄰接F11腐葉路段察覺蟾蜍振動並迴避，未到F10蜜露核心"
+        "day2_observation": "W006、W011從鄰接F11腐葉路段察覺蟾蜍振動並迴避，未到F10蜜露核心",
+        "day3_observation": "蟾蜍在局部區域活動；本巢工蟻沒有同時進入其近場"
       },
       {
         "id": "F11",
@@ -395,12 +410,13 @@
         "resource_class": "detritus_declining",
         "legacy_note": "蛋白質舊源已部分耗盡",
         "evidence": "observed_in_story",
-        "current_accessibility": "locally_reached_on_day2",
+        "current_accessibility": "locally_reached_day3",
         "edible_mass_mg": null,
         "replenishment_per_day_mg": null,
         "known_to_every_worker": false,
-        "last_local_visit_sim_day": 2,
-        "day2_observation": "W006與W011發現可搬回的小殘片，分解者活動使來源短期且品質未知"
+        "last_local_visit_sim_day": 3,
+        "day2_observation": "W006與W011發現可搬回的小殘片，分解者活動使來源短期且品質未知",
+        "day3_observation": "W011帶回一小片昆蟲殘骸；蛋白質量未知，來源不可無限使用"
       },
       {
         "id": "U00",
@@ -431,7 +447,8 @@
         "blocked_by_rain": null,
         "individual_knowledge_only": true,
         "day1_trail_qualitative": "W005返巢後可能有弱短時招募訊號，濃度未知",
-        "day2_trail_qualitative": "少量採蜜後殘留弱氣味，白天隨時衰退，濃度未知"
+        "day2_trail_qualitative": "少量採蜜後殘留弱氣味，白天隨時衰退，濃度未知",
+        "day3_trail_qualitative": "原弱路線曾使用，但費洛蒙隨白天蒸散及有限收穫而衰退，濃度未知"
       },
       {
         "from": "N00",
@@ -458,7 +475,8 @@
         "currently_safe": null,
         "blocked_by_rain": null,
         "individual_knowledge_only": true,
-        "day1_trail_qualitative": "W006迴避後沒有建立穩定採食路線"
+        "day1_trail_qualitative": "W006迴避後沒有建立穩定採食路線",
+        "day3_trail_qualitative": "W015偵察後迴避競爭者，未建成功採食線"
       },
       {
         "from": "N00",
@@ -485,7 +503,8 @@
         "currently_safe": null,
         "blocked_by_rain": null,
         "individual_knowledge_only": true,
-        "day2_trail_qualitative": "遭蜘蛛活動刺激後，原探索可能被放棄或迴避"
+        "day2_trail_qualitative": "遭蜘蛛活動刺激後，原探索可能被放棄或迴避",
+        "day3_trail_qualitative": "蜘蛛局部交會造成短暫避行，不等於永久阻斷"
       },
       {
         "from": "N00",
@@ -526,7 +545,8 @@
         "currently_safe": null,
         "blocked_by_rain": null,
         "individual_knowledge_only": true,
-        "day2_trail_qualitative": "回巢採蜜線索微弱；沒有大量招募"
+        "day2_trail_qualitative": "回巢採蜜線索微弱；沒有大量招募",
+        "day3_trail_qualitative": "本日無蜜滴回收，先前弱路線可衰退"
       },
       {
         "from": "N00",
@@ -567,7 +587,8 @@
         "currently_safe": null,
         "blocked_by_rain": null,
         "individual_knowledge_only": true,
-        "day2_trail_qualitative": "局部腐葉回程氣味訊號；沒有確證長期穩定食物"
+        "day2_trail_qualitative": "局部腐葉回程氣味訊號；沒有確證長期穩定食物",
+        "day3_trail_qualitative": "單次回巢少量蛋白質跡象，不能推定強招募"
       }
     ],
     "route_discovery": "個體對不同路線的認識不同；邊只是故事出現過的潛在通路，並非可無條件直接通行"
@@ -581,6 +602,57 @@
     "soil_temperature_c": null,
     "soil_moisture_percent": null,
     "latest_external_reference": {
+      "date": "2026-11-02",
+      "weekday": "Monday",
+      "season": "autumn",
+      "timezone": "Asia/Taipei",
+      "area": "臺中市市級預報（西屯區虛構花園的外部區域條件）",
+      "data_kind": "forecast",
+      "daytime": {
+        "local_date": "2026-11-02",
+        "temperature_min_c": 23,
+        "temperature_max_c": 30,
+        "weather_text": "晴時多雲",
+        "precipitation_probability_percent": 0
+      },
+      "nighttime": {
+        "local_date": "2026-11-02",
+        "temperature_min_c": 23,
+        "temperature_max_c": 27,
+        "weather_text": "晴時多雲",
+        "precipitation_probability_percent": null
+      },
+      "publication": {
+        "primary": {
+          "source": "中央氣象署臺中市一週預報（PChome轉載）",
+          "issued_local": "2026-10-31T17:00:00+08:00",
+          "url": "https://news.pchome.com.tw/living/cwb/20261031/index-79343715455144211009.html"
+        },
+        "pop_source": {
+          "source": "LIFE生活網中央氣象署開放資料彙整",
+          "page_last_updated_local": "2026-10-31T20:00:00+08:00",
+          "url": "https://life.tw/weather/taichung"
+        },
+        "synoptic": {
+          "source": "中央社2026-10-31 17:12 轉載中央氣象署說明",
+          "url": "https://money.udn.com/money/story/5648/9849094",
+          "message": "11/2東北季風增強，主要影響迎風面；中南部高溫仍可近30°C"
+        }
+      },
+      "provenance": "forecast_republished_with_timestamp_not_ground_truth",
+      "observed_rainfall_mm": null,
+      "observed_air_temp_c": null,
+      "observed_relative_humidity_percent": null,
+      "observed_wind_speed_m_per_s": null,
+      "nest_temp_c": null,
+      "soil_moisture_percent": null,
+      "validity_note": "11/2尚未到來。0%為市級白天降雨機率而非實際全天雨量0mm；不可視為西屯虛構花園測量值。"
+    },
+    "source_policy_ref": "docs/weather-data-policy.md",
+    "active_date": "2026-11-02",
+    "last_actual_weather_simulation_day": null,
+    "next_day_weather_policy": "Day2=2026-11-01，優先該日已發布實測；未來時間用有時間戳的預報並標註forecast，不確定或缺失標null",
+    "previous_external_reference": {
       "date": "2026-11-01",
       "area": "臺中市（市級預報，西屯區別墅僅作區域背景）",
       "season": "autumn",
@@ -613,55 +685,9 @@
       "actual_wind_speed_m_per_s": null,
       "caveat": "0%是預報降雨機率，非保證絕無降雨；最高31°C不是巢溫；11月1日未來日，觀測值尚不可取得"
     },
-    "source_policy_ref": "docs/weather-data-policy.md",
-    "active_date": "2026-11-01",
-    "last_actual_weather_simulation_day": null,
-    "next_day_weather_policy": "Day2=2026-11-01，優先該日已發布實測；未來時間用有時間戳的預報並標註forecast，不確定或缺失標null",
-    "previous_external_reference": {
-      "date": "2026-10-31",
-      "timezone": "Asia/Taipei",
-      "is_complete_daily_observation": false,
-      "district_snapshot": {
-        "valid_at_local": "2026-10-31T14:00:00+08:00",
-        "temperature_c": 29,
-        "relative_humidity_percent": 58,
-        "wind_speed_m_per_s": 2.7,
-        "daily_rainfall_so_far_mm": 0,
-        "weather_text": "晴",
-        "rain_probability_percent": 0,
-        "source": "https://www.twipcam.com/weather?town=66000060",
-        "provenance": "第三方彙整頁面，標示交通部中央氣象署為氣象資料來源；非別墅微氣候實測",
-        "distinction": "累積雨量0mm是截至資料時間的顯示值，不是10/31結束的全天觀測；0%降雨機率是預報而非實測"
-      },
-      "city_forecast": {
-        "issued_local": "2026-10-31T17:00:00+08:00",
-        "area": "臺中市（市域預報，非別墅院內測站）",
-        "tonight": {
-          "calendar_date": "2026-10-31",
-          "min_temperature_c": 23,
-          "max_temperature_c": 27,
-          "weather_text": "晴時多雲"
-        },
-        "tomorrow_daytime": {
-          "calendar_date": "2026-11-01",
-          "min_temperature_c": 23,
-          "max_temperature_c": 31,
-          "weather_text": "晴時多雲"
-        },
-        "source": "https://news.pchome.com.tw/living/cwb/20261031/index-79343715455144211009.html",
-        "provenance": "中央氣象署縣市預報經PChome轉載；未來天氣屬預報非實際測量"
-      },
-      "missing_daily_observations": {
-        "actual_full_day_rainfall_mm": null,
-        "actual_full_day_min_temperature_c": null,
-        "actual_full_day_max_temperature_c": null,
-        "soil_moisture_percent": null,
-        "nest_air_temperature_c": null
-      }
-    },
     "forecast_temperature_range_day_c": [
       23,
-      31
+      30
     ],
     "forecast_temperature_range_night_c": [
       23,
@@ -670,7 +696,7 @@
     "forecast_pop_percent": 0,
     "forecast_weather_text": "晴時多雲",
     "weather_data_kind": "forecast",
-    "last_weather_driven_sim_day": 2
+    "last_weather_driven_sim_day": 3
   },
   "nest_microclimate": {
     "nursery_count_legacy": 2,
@@ -682,8 +708,8 @@
     "water_intrusion_probability": null,
     "soil_stability": null,
     "latest_assessment": {
-      "day": 2,
-      "observed_in_simulation": "巢口清理與少量鬆土整理，並無強制遷巢；巢內水分與實測溫濕仍未知",
+      "day": 3,
+      "observed_in_simulation": "巢口泥脊有輕微磨損與整理；無實測入水、土壤穩定度、巢室溫度或濕度",
       "humidity_percent": null,
       "temperature_c": null,
       "storm_resilience_tested": false,
@@ -741,17 +767,15 @@
     "pathogens": null,
     "parasitoids": "previously observed near leaf aphids",
     "last_day_qualitative": {
-      "open_ground": "可能因較強白天日照而表層略乾，僅模型假設",
-      "shaded_roots": "遮蔽根際濕度和土壤實際含水量未知，不做數值斷言",
-      "observed_rainfall_mm": null,
-      "actual_soil_moisture_percent": null,
-      "actual_nest_temp_c": null,
-      "plants": "F01持續有少量蜜露但蚜蟲數量未實測；F08小白花蜜滴有限；F02/F09枯竭傷口不重置",
-      "hemipterans": "蚜蟲／介殼蟲活動為先前敘事生態類型，族群增減率未知；F04異巢蟻可能佔用部分蜜露",
-      "decomposers": "F11腐葉分解與小型殘片情境並存，物質轉化量未知",
-      "competitors": "異巢蟻F04本日覓食情境未被本巢目擊；F03無新的直接碰面，但不等於敵蟻消失",
-      "predators": "蟾蜍F10與蜘蛛F05活動造成局部迴避；F02和F08的歷史捕食者仍保留為風險",
-      "human_watering": "本次情境抽樣未觸發新的人工澆水，不代表真實別墅有任何灌溉記錄"
+      "plants": "F08本日無明確收穫；F02/F09仍近枯竭；F01蚜蟲少量蜜露仍可能產出",
+      "hemipterans": "F01少量蜜露，F04介殼蟲資源受異巢蟻局部取食；數量與再生速率未知",
+      "detritus": "F11可找到單次極小昆蟲殘片但後續分解與競爭耗損；F07原大飛蛾不復活",
+      "predators": "F05蜘蛛近距交會後W010迴避，未攻擊；F10蟾蜍獨立活動，無同巢工蟻直接重疊",
+      "other_ant_colonies": "F03出現陌生蟻局部活動，W015避免接觸；F04另有異巢取食，不證實兩者屬同一巢",
+      "decomposers": "腐葉持續分解與營養循環，反映食物網而非無限蛋白來源",
+      "soil": "是否有顯著乾燥、雨後滲水未知；巢口泥脊局部輕微磨損，少量整理不代表暴雨通過驗證",
+      "human": "本日情境未觸發澆水事件；這不等於真實別墅住戶沒有澆水",
+      "real_world_data": "只有外部臺中市氣象預報屬真實公開資料；其他全部是虛構科學生態推演"
     },
     "day2_latent_rival_activity": [
       {
@@ -761,6 +785,36 @@
         "evidence": "simulated_world_event",
         "actual_colony_id": null
       }
+    ],
+    "day3_rival_activities": [
+      {
+        "node": "F03",
+        "activity": "rival_present_near_W015",
+        "observed_by_main_colony": true,
+        "identified_colony": null
+      },
+      {
+        "node": "F04",
+        "activity": "rival_local_honeydew_search",
+        "observed_by_main_colony": false,
+        "identified_colony": null
+      }
+    ],
+    "day3_predator_activities": [
+      {
+        "node": "F05",
+        "type": "spider",
+        "main_colony_overlap": true,
+        "attack": false,
+        "worker_involved": "W010"
+      },
+      {
+        "node": "F10",
+        "type": "toad",
+        "main_colony_overlap": false,
+        "attack": false,
+        "worker_involved": null
+      }
     ]
   },
   "resources": {
@@ -769,12 +823,12 @@
     "water_supply_amount": null,
     "food_nodes_renewable_only_if_evidence": true,
     "v2_latest_ledger": {
-      "day": 2,
+      "day": 3,
       "legacy_checkpoint_snapshot": {
         "sugar_units": 3,
         "protein_units": 3,
-        "unit": "v1抽象遊戲單位",
-        "valid_for": "舊第1150分鐘，只是歷史參考，不代表Day2"
+        "unit": "v1第1150分鐘抽象單位",
+        "valid_for": "歷史唯讀數據，絕不可視為Day3物理量"
       },
       "v2_physical": {
         "initial_carbohydrate_mg": null,
@@ -792,34 +846,33 @@
         "water_used_uL": null
       },
       "qualitative_flow": {
-        "F01": "W005接觸與帶回少量蜜露；產量未校準",
-        "F08": "W015接觸與帶回很少蜜滴；不能視為穩定食源",
-        "F11": "W006找到小型昆蟲殘片、W011協助搬回，品質與質量未校準",
-        "F07": "舊飛蛾已耗盡，今天沒有觀測到新的大型屍體",
-        "F10": "局部蟾蜍風險，沒有可核實的新採收",
-        "F04": "異巢蟻獨立取食石牆蜜露，不能計入本巢食物",
-        "water": "園內水分來源與巢內可用水仍未知；不可把降雨機率0%當作零可用水",
-        "metabolism": "成年工蟻、蟻后與幼體仍有生物代謝與水分需求，但無物種校準與投入量可作物理收支",
-        "storage": "Day2可食資源的淨結餘無法定量；舊糖3蛋白3保持歷史快照"
+        "F01": "W005帶回極少蜜露，回程氣味訊號隨時間衰退；微量但未校準",
+        "F08": "當日局部採食窗口未帶回蜜滴，並不代表花卉完全枯萎",
+        "F11": "W011帶回一小片節肢動物遺骸；量與營養價值未知",
+        "F06": "W013只接觸到快枯竭的殘液跡象；未核實可食物入庫",
+        "F03": "陌生蟻近旁活動使W015停止採食試探；無新帶回",
+        "F04": "其他蟻群自有取食活動，非主巢資源",
+        "metabolism": "所有個體持續有能量與水分需求；未鑑種無法給日消耗量",
+        "water": "雨量未實測、巢內水源未量測，不能從0%降雨機率推導零水源或水足夠",
+        "storage": "當日食物帶回為定性記錄；總收支不明，不以v1糖3／蛋白3當現值"
       },
-      "balance_status": "unknown_physical_balance_no_fabricated_units",
-      "observed_simulated_deliveries": [
-        "F01微量蜜露",
-        "F08極少蜜滴",
-        "F11小型昆蟲殘片"
+      "balance_status": "physical_nutrients_unquantified_preserved_null",
+      "delivered_qualitatively": [
+        "F01少量蜜露",
+        "F11小型節肢動物遺骸"
       ],
-      "evidence": "model_scenario_not_measured_mg_or_kcal"
+      "evidence": "simulated_collection_not_field_measurement"
     }
   },
   "model_controls": {
     "control_mode": "observer_autonomous",
     "task_assignment": "local_response_thresholds_not_permanent_jobs",
-    "random_seed": 3826204570,
+    "random_seed": 1118408410,
     "model_parameter_set": "unidentified_species_v2",
     "uncertainty_tracking": true,
     "auto_advance_on_chat_request": true,
     "last_rng_algorithm": "mulberry32_from_fnv1a_seed",
-    "last_simulated_day": 2,
+    "last_simulated_day": 3,
     "weather_source_mode": "real_geography_real_weather_with_provenance_and_missing_values",
     "weather_source_requirements": {
       "observed_vs_forecast_distinguished": true,
@@ -847,214 +900,285 @@
     "weather": "external_public_district_snapshot_and_forecast_not_garden_measurement",
     "day1_weather": "historical_simulated_scenario_not_retroactively_replaced",
     "day2_weather": "city_forecast_from_CWA_republished_not_day2_observation",
-    "day2_biology": "unvalidated_seeded_qualitative_simulation"
+    "day2_biology": "unvalidated_seeded_qualitative_simulation",
+    "day3_weather": "issued_CWA_city_forecast_republished_not_observed",
+    "day3_biology": "seeded_qualitative_fictional_scenario_no_species_calibration"
   },
   "day_log_latest": {
-    "day": 2,
-    "calendar_date": "2026-11-01",
-    "weekday": "Sunday",
+    "day": 3,
+    "calendar_date": "2026-11-02",
+    "weekday": "Monday",
     "season": "autumn",
     "timezone": "Asia/Taipei",
-    "elapsed_hours_start": 24,
-    "elapsed_hours_end": 48,
-    "model": "v2.0-science-inspired / seeded-qualitative-scenario-real-forecast-v1",
+    "elapsed_hours_start": 48,
+    "elapsed_hours_end": 72,
+    "model": "v2.0-science-inspired-seeded-qualitative-with-real_weather_forecast",
     "weather": {
-      "date": "2026-11-01",
-      "area": "臺中市（市級預報，西屯區別墅僅作區域背景）",
+      "date": "2026-11-02",
+      "weekday": "Monday",
       "season": "autumn",
       "timezone": "Asia/Taipei",
+      "area": "臺中市市級預報（西屯區虛構花園的外部區域條件）",
       "data_kind": "forecast",
-      "issue_time_local": "2026-10-31T17:00:00+08:00",
       "daytime": {
-        "valid_local_date": "2026-11-01",
+        "local_date": "2026-11-02",
         "temperature_min_c": 23,
-        "temperature_max_c": 31,
+        "temperature_max_c": 30,
         "weather_text": "晴時多雲",
         "precipitation_probability_percent": 0
       },
       "nighttime": {
-        "valid_local_date": "2026-11-01",
+        "local_date": "2026-11-02",
         "temperature_min_c": 23,
         "temperature_max_c": 27,
         "weather_text": "晴時多雲",
-        "precipitation_probability_percent": 0
+        "precipitation_probability_percent": null
       },
-      "source_url": "https://news.pchome.com.tw/living/cwb/20261031/index-79343715443086211009.html",
-      "supporting_source_url": "https://news.pchome.com.tw/living/cwb/20261031/index-79343715455144211009.html",
-      "original_forecast_provider": "中央氣象署",
-      "access_channel": "PChome Online新聞轉載之中央氣象署市級預報",
-      "verified_by_web_on": "2026-10-31",
-      "is_local_garden_measurement": false,
-      "actual_day_rainfall_mm": null,
-      "actual_air_temperature_c": null,
-      "actual_relative_humidity_percent": null,
-      "actual_wind_speed_m_per_s": null,
-      "caveat": "0%是預報降雨機率，非保證絕無降雨；最高31°C不是巢溫；11月1日未來日，觀測值尚不可取得",
-      "model_hypothesis": "依晴時多雲、日間預報最高31°C，假設部分裸露區域活動較受日照與乾燥限制；這是機制導向的定性推演，不是實測土壤乾旱或巢溫。"
+      "publication": {
+        "primary": {
+          "source": "中央氣象署臺中市一週預報（PChome轉載）",
+          "issued_local": "2026-10-31T17:00:00+08:00",
+          "url": "https://news.pchome.com.tw/living/cwb/20261031/index-79343715455144211009.html"
+        },
+        "pop_source": {
+          "source": "LIFE生活網中央氣象署開放資料彙整",
+          "page_last_updated_local": "2026-10-31T20:00:00+08:00",
+          "url": "https://life.tw/weather/taichung"
+        },
+        "synoptic": {
+          "source": "中央社2026-10-31 17:12 轉載中央氣象署說明",
+          "url": "https://money.udn.com/money/story/5648/9849094",
+          "message": "11/2東北季風增強，主要影響迎風面；中南部高溫仍可近30°C"
+        }
+      },
+      "provenance": "forecast_republished_with_timestamp_not_ground_truth",
+      "observed_rainfall_mm": null,
+      "observed_air_temp_c": null,
+      "observed_relative_humidity_percent": null,
+      "observed_wind_speed_m_per_s": null,
+      "nest_temp_c": null,
+      "soil_moisture_percent": null,
+      "validity_note": "11/2尚未到來。0%為市級白天降雨機率而非實際全天雨量0mm；不可視為西屯虛構花園測量值。",
+      "simulated_microclimate_direction": "因日間晴時多雲及最高30°C預報，曝露路段可能較不利久留；未抽中明確土壤水分變化，巢內實際溫度／水分仍null"
     },
     "rng": {
-      "algorithm": "FNV-1a32 seed + mulberry32",
-      "seed_material": "antempire-garden-v2|Day1->Day2|eb83b66d91af9631246b6622a13d893421e66bc8|2026-11-01",
-      "seed": 3826204570,
+      "algorithm": "FNV-1a 32-bit string seed + mulberry32 pseudorandom draw",
+      "seed_material": "antempire-garden-v2|Day2->Day3|42e129d46f4fbb36846428c276a2f19c94b52ac5|2026-11-02",
+      "seed": 1118408410,
       "rolls": {
-        "surface_drying_response": 0.181194,
-        "F01_honeydew_trace": 0.382502,
-        "F07_large_carrion": 0.618806,
-        "F03_rival_direct_contact": 0.658405,
-        "F10_toad_overlap": 0.143508,
-        "F05_spider_proximity": 0.441704,
-        "F05_attack_given_proximity": 0.998687,
-        "F05_escape_given_attack": 0.132428,
-        "F08_flower_drop": 0.360025,
-        "F04_rival_activity": 0.441275,
-        "nest_maintenance": 0.509057,
-        "queen_lays_egg": 0.073581,
-        "F11_small_edible_fragment": 0.23997,
-        "human_watering": 0.69914,
-        "F01_trail_decay": 0.425452
+        "surface_moisture_response": 0.793131,
+        "human_watering": 0.531081,
+        "F01_honeydew_found": 0.076597,
+        "F08_flower_nectar_found": 0.483293,
+        "F11_fragment_found": 0.268481,
+        "F03_rival_local_presence": 0.581535,
+        "F03_worker_overlap": 0.398372,
+        "F03_direct_contact_if_overlap": 0.823106,
+        "F05_spider_presence": 0.174731,
+        "F05_worker_overlap": 0.265698,
+        "F05_attack_if_overlap": 0.785494,
+        "F05_escape_if_attack": 0.530888,
+        "F10_toad_presence": 0.053537,
+        "F10_worker_overlap": 0.551321,
+        "F10_toad_attack_if_overlap": 0.271982,
+        "F04_rival_honeydew_exploitation": 0.619538,
+        "F06_sap_remnant": 0.040326,
+        "queen_lays_egg": 0.977512,
+        "E001_egg_survives": 0.889514,
+        "L001_development_progress": 0.790297,
+        "L002_development_progress": 0.044895,
+        "injured_w013_short_forage": 0.211021,
+        "nest_earthwork_mild_wear": 0.660257,
+        "F01_pheromone_decay": 0.323629
       },
       "thresholds": {
-        "surface_drying_response": 0.65,
-        "F01_honeydew_trace": 0.55,
-        "F07_large_carrion": 0.25,
-        "F03_rival_direct_contact": 0.4,
-        "F10_toad_overlap": 0.25,
-        "F05_spider_proximity": 0.5,
-        "F05_attack_given_proximity": 0.3,
-        "F05_escape_given_attack": 0.8,
-        "F08_flower_drop": 0.4,
-        "F04_rival_activity": 0.6,
-        "nest_maintenance": 0.7,
-        "queen_lays_egg": 0.1,
-        "F11_small_edible_fragment": 0.3,
+        "surface_moisture_response": 0.55,
         "human_watering": 0.2,
-        "F01_trail_decay": 0.6
+        "F01_honeydew_found": 0.5,
+        "F08_flower_nectar_found": 0.35,
+        "F11_fragment_found": 0.32,
+        "F03_rival_local_presence": 0.65,
+        "F03_worker_overlap": 0.45,
+        "F03_direct_contact_if_overlap": 0.4,
+        "F05_spider_presence": 0.55,
+        "F05_worker_overlap": 0.5,
+        "F05_attack_if_overlap": 0.28,
+        "F05_escape_if_attack": 0.7,
+        "F10_toad_presence": 0.5,
+        "F10_worker_overlap": 0.35,
+        "F10_toad_attack_if_overlap": 0.25,
+        "F04_rival_honeydew_exploitation": 0.65,
+        "F06_sap_remnant": 0.12,
+        "queen_lays_egg": 0.1,
+        "E001_egg_survives": 0.96,
+        "L001_development_progress": 0.15,
+        "L002_development_progress": 0.15,
+        "injured_w013_short_forage": 0.35,
+        "nest_earthwork_mild_wear": 0.7,
+        "F01_pheromone_decay": 0.6
       },
-      "meaning": "每項閾值僅為未校準的遊戲情境參數，不是生物學實測概率",
-      "attack_conditional": "只有F05同時進入蜘蛛距離且觸發攻擊才使用逃脫抽樣；本日未觸發攻擊",
-      "day_substeps_configured": 72,
-      "behavior_integration": "時間窗口敘事模型，非72次逐蟻座標積分"
+      "effects": {
+        "superficial_moisture_change": false,
+        "irrigation": false,
+        "honeydew": true,
+        "flower_nectar": false,
+        "F11_fragment": true,
+        "competitor_F03": true,
+        "direct_competitor_contact": false,
+        "spider_F05": true,
+        "spider_attack": false,
+        "toad_F10": true,
+        "toad_overlap": false,
+        "rival_F04": true,
+        "sap_F06": true,
+        "new_egg": false,
+        "egg_survives": true,
+        "injured_W013_short_forage": true,
+        "mild_earthworks_wear": true,
+        "trail_decay": true
+      },
+      "warning": "所有事件閾值均是未校準模型假設，不代表台中地棲蟻的實測遭遇率；逃脫抽樣僅攻擊發生才可啟用，本日無蜘蛛攻擊"
     },
     "environment": {
-      "open_ground": "可能因較強白天日照而表層略乾，僅模型假設",
-      "shaded_roots": "遮蔽根際濕度和土壤實際含水量未知，不做數值斷言",
-      "observed_rainfall_mm": null,
-      "actual_soil_moisture_percent": null,
-      "actual_nest_temp_c": null,
-      "plants": "F01持續有少量蜜露但蚜蟲數量未實測；F08小白花蜜滴有限；F02/F09枯竭傷口不重置",
-      "hemipterans": "蚜蟲／介殼蟲活動為先前敘事生態類型，族群增減率未知；F04異巢蟻可能佔用部分蜜露",
-      "decomposers": "F11腐葉分解與小型殘片情境並存，物質轉化量未知",
-      "competitors": "異巢蟻F04本日覓食情境未被本巢目擊；F03無新的直接碰面，但不等於敵蟻消失",
-      "predators": "蟾蜍F10與蜘蛛F05活動造成局部迴避；F02和F08的歷史捕食者仍保留為風險",
-      "human_watering": "本次情境抽樣未觸發新的人工澆水，不代表真實別墅有任何灌溉記錄"
+      "plants": "F08本日無明確收穫；F02/F09仍近枯竭；F01蚜蟲少量蜜露仍可能產出",
+      "hemipterans": "F01少量蜜露，F04介殼蟲資源受異巢蟻局部取食；數量與再生速率未知",
+      "detritus": "F11可找到單次極小昆蟲殘片但後續分解與競爭耗損；F07原大飛蛾不復活",
+      "predators": "F05蜘蛛近距交會後W010迴避，未攻擊；F10蟾蜍獨立活動，無同巢工蟻直接重疊",
+      "other_ant_colonies": "F03出現陌生蟻局部活動，W015避免接觸；F04另有異巢取食，不證實兩者屬同一巢",
+      "decomposers": "腐葉持續分解與營養循環，反映食物網而非無限蛋白來源",
+      "soil": "是否有顯著乾燥、雨後滲水未知；巢口泥脊局部輕微磨損，少量整理不代表暴雨通過驗證",
+      "human": "本日情境未觸發澆水事件；這不等於真實別墅住戶沒有澆水",
+      "real_world_data": "只有外部臺中市氣象預報屬真實公開資料；其他全部是虛構科學生態推演"
     },
     "events": [
       {
-        "id": "V2D2-E01",
-        "hours": [
-          0,
-          8
+        "id": "V2D3-E01",
+        "window_local": "00:00–07:00",
+        "nodes": [
+          "N00",
+          "U00"
         ],
-        "node": "N00",
-        "type": "weather_driver",
-        "workers": [],
-        "description": "台中市11/1預報晴時多雲、白天23–31°C；模型以較高日間曝露溫度啟動巢口活動避熱與裸露地表略乾的定性假設。雨量、真實土壤與巢室溫度仍未知。",
-        "evidence": "external_forecast_plus_model_assumption"
+        "actors": [
+          "air",
+          "soil",
+          "plants"
+        ],
+        "type": "forecast_driven_environment",
+        "evidence": "forecast_plus_model_assumption",
+        "description": "以臺中市11/2晴時多雲、白天預報23–30°C及降雨機率0%作環境驅動；日照可能使曝露路線的活動時機偏向遮蔽處。地表含水與巢室溫濕度無實測，不判定確實乾旱；此情境未抽中突發澆水。"
       },
       {
-        "id": "V2D2-E02",
-        "hours": [
-          7,
-          11
+        "id": "V2D3-E02",
+        "window_local": "07:00–10:30",
+        "nodes": [
+          "N00",
+          "F01"
         ],
-        "node": "F01",
-        "type": "limited_honeydew_collection",
-        "workers": [
+        "actors": [
           "W005",
           "W015"
         ],
-        "description": "W005回到曾訪的東北葉背，接觸少量新蜜露並帶回；W015在巢口接觸後跟隨一部分弱路線，未證實同等收穫。蜜露量少、軌跡會衰退，未假定無限再生。",
-        "evidence": "simulated_local_observation"
+        "type": "honeydew_and_trail_decay",
+        "evidence": "simulated_local_observation",
+        "description": "W005再訪東北葉背（F01），少量蜜露仍可取用並帶回；W015短距查看既有路線卻未得到可確認的另一份收穫，回巢後氣味路徑逐漸淡去，未形成永久採蜜隊。"
       },
       {
-        "id": "V2D2-E03",
-        "hours": [
-          8,
-          12
+        "id": "V2D3-E03",
+        "window_local": "09:00–12:00",
+        "nodes": [
+          "N00",
+          "F11"
         ],
-        "node": "F11",
-        "type": "scavenging_and_decomposition",
-        "workers": [
+        "actors": [
           "W006",
           "W011"
         ],
-        "description": "W006及W011在南側腐葉堆近地表搜索，W006取得一小塊可搬運的昆蟲殘片，W011協助回巢；同處腐葉中分解者活動，該殘片的蛋白質含量和安全性未知。",
-        "evidence": "simulated_local_observation"
+        "type": "detritus_foraging",
+        "evidence": "simulated_local_observation",
+        "description": "兩隻工蟻再到南側腐葉堆（F11），W011找到一小片可搬運的節肢動物遺骸並帶回；W006接觸周圍潮腐屑後離開。遺骸質量、可食比例、病原負擔仍未知，腐敗與其他分解者消耗不會停止。"
       },
       {
-        "id": "V2D2-E04",
-        "hours": [
-          10,
-          14
+        "id": "V2D3-E04",
+        "window_local": "10:00–14:00",
+        "nodes": [
+          "F03"
         ],
-        "node": "F04",
-        "type": "rival_foraging_latent",
-        "workers": [],
-        "description": "在世界模型中，異巢螞蟻沿北側石牆介殼蟲區域進行低量搜尋與取食；這一行為沒有被主巢工蟻直接觀測，不能轉成其全知記憶。",
-        "evidence": "model_world_event_unobserved_by_colony"
+        "actors": [
+          "W015",
+          "rival_unknown"
+        ],
+        "type": "rival_proximity_avoidance",
+        "evidence": "simulated_local_observation",
+        "description": "W015沿東側落果舊路線試探，在局部範圍聞到並短暫察覺陌生工蟻活動；兩者路線相鄰但沒有直接碰撞，W015轉回主巢。無法確認陌生個體是否屬於此前的同一蟻群。"
       },
       {
-        "id": "V2D2-E05",
-        "hours": [
-          11,
-          15
+        "id": "V2D3-E05",
+        "window_local": "11:00–15:00",
+        "nodes": [
+          "F04"
         ],
-        "node": "F10",
-        "type": "toad_spatial_overlap",
-        "workers": [
-          "W006",
-          "W011"
+        "actors": [
+          "rival_unknown"
         ],
-        "description": "南側根際外圍有蟾蜍短暫活動，採食中的W006及W011在相鄰腐葉路段對局部振動作出迴避，未發生蟾蜍直接捕食接觸；F10並未完成蜜露採集。",
-        "evidence": "simulated_local_observation"
+        "type": "latent_other_colony_foraging",
+        "evidence": "model_world_event_not_known_to_colony",
+        "description": "世界背景中的另一組蟻群訊號仍在北側介殼蟲區域（F04）形成短時蜜露取食壓力；本巢工蟻未親眼目擊，不會神奇獲知對方的巢址或行動。"
       },
       {
-        "id": "V2D2-E06",
-        "hours": [
-          13,
-          17
+        "id": "V2D3-E06",
+        "window_local": "13:00–16:30",
+        "nodes": [
+          "F05"
         ],
-        "node": "F05",
-        "type": "spider_avoidance",
-        "workers": [
-          "W010"
+        "actors": [
+          "W010",
+          "spider"
         ],
-        "description": "W010沿東南矮草路段接近葉背時遭遇一隻活動蜘蛛的近距跡象，減少裸露移動並折返；本情境未觸發攻擊，無新增傷勢。",
-        "evidence": "simulated_local_observation"
+        "type": "spider_proximity_without_attack",
+        "evidence": "simulated_local_observation",
+        "description": "W010在東南矮草（F05）附近偵察時與活動蜘蛛的空間範圍短暫重疊，察覺蛛絲／動靜後改走低處草根路線；本日沒有攻擊接觸，所以不觸發傷亡。"
       },
       {
-        "id": "V2D2-E07",
-        "hours": [
-          16,
-          19
+        "id": "V2D3-E07",
+        "window_local": "14:00–17:00",
+        "nodes": [
+          "F10",
+          "F06"
         ],
-        "node": "F08",
-        "type": "small_nectar_trace",
-        "workers": [
-          "W015"
+        "actors": [
+          "toad",
+          "W013"
         ],
-        "description": "W015在西北小白花附近接觸有限蜜滴並返回；花蜜來源仍衰退，沒有建立持久或大規模招募路線，未確認伏守獵食者當天是否在場。",
-        "evidence": "simulated_local_observation"
+        "type": "predator_and_minor_sap_trace",
+        "evidence": "simulated_world_event_and_local_observation_distinct",
+        "description": "蟾蜍在F10根際附近活動，但未與外出的本巢工蟻時空重疊；W013僅在近巢通路短距活動，於F06潮濕石縫邊緣碰到極薄殘留汁液跡象，沒有可核實的食物入庫。W013後足舊傷未判定痊癒。"
       },
       {
-        "id": "V2D2-E08",
-        "hours": [
-          18,
-          24
+        "id": "V2D3-E08",
+        "window_local": "16:00–19:00",
+        "nodes": [
+          "F08",
+          "F11"
         ],
-        "node": "N00",
-        "type": "brood_and_oviposition",
-        "workers": [
+        "actors": [
+          "flowering_plants",
+          "decomposers"
+        ],
+        "type": "resource_decay",
+        "evidence": "model_world_event",
+        "description": "F08小白花在本日搜尋窗口沒有可供帶回的蜜滴；F11腐屑持續被分解者處理，已帶回的小殘片不意味著可無限重採。吸汁昆蟲與植物的精確族群變化仍未知。"
+      },
+      {
+        "id": "V2D3-E09",
+        "window_local": "18:00–24:00",
+        "nodes": [
+          "N00"
+        ],
+        "actors": [
+          "Q001",
+          "E001",
+          "L001",
+          "L002",
           "W004",
           "W007",
           "W008",
@@ -1065,265 +1189,253 @@
           "W016",
           "W017"
         ],
-        "description": "蟻后Q001在巢室中產下新卵E001一顆（物種未校準的低頻情境抽樣），周圍工蟻以接觸刺激調整育幼、清潔與休止；L001/L002仍處幼蟲期，沒有羽化或死亡。",
-        "evidence": "simulated_queen_event_with_uncalibrated_threshold"
-      },
-      {
-        "id": "V2D2-E09",
-        "hours": [
-          17,
-          23
-        ],
-        "node": "N00",
-        "type": "nest_repair",
-        "workers": [
-          "W009",
-          "W013"
-        ],
-        "description": "巢口與幼蟲室附近的少量鬆土、細碎屑在日常清理中被搬運；不宣稱擴建固定百分比或完成暴雨防護。",
-        "evidence": "simulated_local_observation"
+        "type": "brood_and_nest_care",
+        "evidence": "simulated_local_observation",
+        "description": "蟻后Q001在此情境未再產卵；E001持續為卵，L001/L002仍是幼蟲，真實生理年齡不明。巢室有接觸照護、清理及輕微泥脊整理，無可驗證的幼體轉期、工蟻羽化、嚴重傷害或工蟻死亡。"
       }
     ],
     "worker_activity": {
       "W004": {
-        "day": 2,
+        "day": 3,
         "site_sequence": [
           "N00"
         ],
         "activity": [
-          "幼體接觸與清潔；協助新卵留在巢室"
+          "接觸E001與兩幼蟲，短時清理，沒有永久專職"
         ],
         "physiological_age_days": null,
         "actual_energy_state": null,
         "current_location_at_day_end": "N00",
         "new_injury": false,
         "preexisting_injury_preserved": false,
-        "local_information_only": true
+        "locally_informed_only": true
       },
       "W005": {
-        "day": 2,
+        "day": 3,
         "site_sequence": [
           "N00",
           "F01",
           "N00"
         ],
         "activity": [
-          "沿熟悉路線採取微量蜜露並返回"
+          "少量蜜露帶回；舊路線招募未長期維持"
         ],
         "physiological_age_days": null,
         "actual_energy_state": null,
         "current_location_at_day_end": "N00",
         "new_injury": false,
         "preexisting_injury_preserved": false,
-        "local_information_only": true
+        "locally_informed_only": true
       },
       "W006": {
-        "day": 2,
+        "day": 3,
         "site_sequence": [
           "N00",
           "F11",
           "N00"
         ],
         "activity": [
-          "腐葉堆拾取小型昆蟲殘片；對蟾蜍鄰近振動迴避"
+          "與W011探索腐葉堆，未確認自己帶回另一份食物"
         ],
         "physiological_age_days": null,
         "actual_energy_state": null,
         "current_location_at_day_end": "N00",
         "new_injury": false,
         "preexisting_injury_preserved": false,
-        "local_information_only": true
+        "locally_informed_only": true
       },
       "W007": {
-        "day": 2,
+        "day": 3,
         "site_sequence": [
           "N00"
         ],
         "activity": [
-          "後腳舊傷仍在；與幼體有短時接觸"
+          "巢內清理與休息，後腳舊傷情況未知"
         ],
         "physiological_age_days": null,
         "actual_energy_state": null,
         "current_location_at_day_end": "N00",
         "new_injury": false,
         "preexisting_injury_preserved": true,
-        "local_information_only": true
+        "locally_informed_only": true
       },
       "W008": {
-        "day": 2,
+        "day": 3,
         "site_sequence": [
           "N00"
         ],
         "activity": [
-          "腳傷恢復程度未知；巢室內照護接觸"
+          "幼體周圍清理與休息，腳傷未完全確認恢復"
         ],
         "physiological_age_days": null,
         "actual_energy_state": null,
         "current_location_at_day_end": "N00",
         "new_injury": false,
         "preexisting_injury_preserved": true,
-        "local_information_only": true
+        "locally_informed_only": true
       },
       "W009": {
-        "day": 2,
+        "day": 3,
         "site_sequence": [
           "N00"
         ],
         "activity": [
-          "整理巢室與短時巢口鬆土，前足舊傷保留"
+          "巢口微小鬆土整理，前足舊傷仍列追蹤"
         ],
         "physiological_age_days": null,
         "actual_energy_state": null,
         "current_location_at_day_end": "N00",
         "new_injury": false,
         "preexisting_injury_preserved": true,
-        "local_information_only": true
+        "locally_informed_only": true
       },
       "W010": {
-        "day": 2,
+        "day": 3,
         "site_sequence": [
           "N00",
-          "F05邊緣",
+          "F05外緣",
           "N00"
         ],
         "activity": [
-          "矮草探索後察覺蜘蛛跡象折返"
+          "察覺蜘蛛後從矮草路線折返"
         ],
         "physiological_age_days": null,
         "actual_energy_state": null,
         "current_location_at_day_end": "N00",
         "new_injury": false,
         "preexisting_injury_preserved": false,
-        "local_information_only": true
+        "locally_informed_only": true
       },
       "W011": {
-        "day": 2,
+        "day": 3,
         "site_sequence": [
           "N00",
           "F11",
           "N00"
         ],
         "activity": [
-          "與W006協力搬回昆蟲殘片，沒有進入F10"
+          "找到極小節肢動物遺骸並搬運返回"
         ],
         "physiological_age_days": null,
         "actual_energy_state": null,
         "current_location_at_day_end": "N00",
         "new_injury": false,
         "preexisting_injury_preserved": false,
-        "local_information_only": true
+        "locally_informed_only": true
       },
       "W012": {
-        "day": 2,
+        "day": 3,
         "site_sequence": [
           "N00"
         ],
         "activity": [
-          "幼體接觸與清潔，前足傷未宣告痊癒"
+          "幼體整理與接觸，前足輕傷狀態不宣告痊癒"
         ],
         "physiological_age_days": null,
         "actual_energy_state": null,
         "current_location_at_day_end": "N00",
         "new_injury": false,
         "preexisting_injury_preserved": true,
-        "local_information_only": true
+        "locally_informed_only": true
       },
       "W013": {
-        "day": 2,
+        "day": 3,
         "site_sequence": [
+          "N00",
+          "F06邊緣",
           "N00"
         ],
         "activity": [
-          "巢口近距搬運和休止，後足傷未宣告痊癒"
+          "後足舊傷下短程活動；未有可核實食物入庫"
         ],
         "physiological_age_days": null,
         "actual_energy_state": null,
         "current_location_at_day_end": "N00",
         "new_injury": false,
         "preexisting_injury_preserved": true,
-        "local_information_only": true
+        "locally_informed_only": true
       },
       "W014": {
-        "day": 2,
+        "day": 3,
         "site_sequence": [
           "N00"
         ],
         "activity": [
-          "巢內梳理與停歇，傷口感染狀態未知"
+          "短時清理與自我梳理；感染風險仍未知"
         ],
         "physiological_age_days": null,
         "actual_energy_state": null,
         "current_location_at_day_end": "N00",
         "new_injury": false,
         "preexisting_injury_preserved": true,
-        "local_information_only": true
+        "locally_informed_only": true
       },
       "W015": {
-        "day": 2,
+        "day": 3,
         "site_sequence": [
           "N00",
-          "F01",
+          "F01外緣",
           "N00",
-          "F08",
+          "F03外緣",
           "N00"
         ],
         "activity": [
-          "早期弱招募跟隨；傍晚小白花少量蜜滴"
+          "探索F01局部氣味，後查落果外緣並迴避陌生蟻"
         ],
         "physiological_age_days": null,
         "actual_energy_state": null,
         "current_location_at_day_end": "N00",
         "new_injury": false,
         "preexisting_injury_preserved": false,
-        "local_information_only": true
+        "locally_informed_only": true
       },
       "W016": {
-        "day": 2,
+        "day": 3,
         "site_sequence": [
           "N00"
         ],
         "activity": [
-          "幼體周圍清理，非永久專職"
+          "短時幼體接觸與巢室整理"
         ],
         "physiological_age_days": null,
         "actual_energy_state": null,
         "current_location_at_day_end": "N00",
         "new_injury": false,
         "preexisting_injury_preserved": false,
-        "local_information_only": true
+        "locally_informed_only": true
       },
       "W017": {
-        "day": 2,
+        "day": 3,
         "site_sequence": [
           "N00"
         ],
         "activity": [
-          "短時巢內整理與休止，生理年齡仍未知"
+          "巢內接觸、休止，實際生理年齡未知"
         ],
         "physiological_age_days": null,
         "actual_energy_state": null,
         "current_location_at_day_end": "N00",
         "new_injury": false,
         "preexisting_injury_preserved": false,
-        "local_information_only": true
+        "locally_informed_only": true
       }
     },
     "queen": {
       "id": "Q001",
       "alive": true,
-      "new_eggs": 1,
+      "new_eggs": 0,
       "oviposition_rate_per_day": null,
       "hydration": null,
       "nutritional_status": null,
-      "interpretation": "本次模型情境在夜間產下E001；這是未校準機率所抽出的單一劇情事件，不能據此推論真實未知蟻種每日產卵率或身體儲備"
+      "prior_egg_E001_remains": true
     },
     "brood": {
       "initial": {
-        "eggs": 0,
+        "eggs": 1,
         "larvae": 2,
         "pupae": 0
       },
-      "newly_laid": 1,
+      "laid": 0,
       "hatched": 0,
       "pupated": 0,
       "eclosed": 0,
@@ -1338,15 +1450,15 @@
         "L001",
         "L002"
       ],
-      "physiological_age_unknown": true
+      "physiological_stage_age_unknown": true
     },
     "colony": {
-      "queen": 1,
+      "queen_alive": 1,
       "workers_initial": 14,
       "worker_eclosions": 0,
       "worker_deaths": 0,
       "workers_final": 14,
-      "confirmed_worker_births": 17,
+      "confirmed_births_from_v1": 17,
       "cumulative_worker_deaths": 3
     },
     "injuries": {
@@ -1359,16 +1471,16 @@
         "W014"
       ],
       "new_injuries": [],
-      "new_worker_deaths": 0,
-      "all_old_injuries_preserved": true
+      "infection_status": "unknown",
+      "worker_deaths": 0
     },
     "resources": {
-      "day": 2,
+      "day": 3,
       "legacy_checkpoint_snapshot": {
         "sugar_units": 3,
         "protein_units": 3,
-        "unit": "v1抽象遊戲單位",
-        "valid_for": "舊第1150分鐘，只是歷史參考，不代表Day2"
+        "unit": "v1第1150分鐘抽象單位",
+        "valid_for": "歷史唯讀數據，絕不可視為Day3物理量"
       },
       "v2_physical": {
         "initial_carbohydrate_mg": null,
@@ -1386,29 +1498,29 @@
         "water_used_uL": null
       },
       "qualitative_flow": {
-        "F01": "W005接觸與帶回少量蜜露；產量未校準",
-        "F08": "W015接觸與帶回很少蜜滴；不能視為穩定食源",
-        "F11": "W006找到小型昆蟲殘片、W011協助搬回，品質與質量未校準",
-        "F07": "舊飛蛾已耗盡，今天沒有觀測到新的大型屍體",
-        "F10": "局部蟾蜍風險，沒有可核實的新採收",
-        "F04": "異巢蟻獨立取食石牆蜜露，不能計入本巢食物",
-        "water": "園內水分來源與巢內可用水仍未知；不可把降雨機率0%當作零可用水",
-        "metabolism": "成年工蟻、蟻后與幼體仍有生物代謝與水分需求，但無物種校準與投入量可作物理收支",
-        "storage": "Day2可食資源的淨結餘無法定量；舊糖3蛋白3保持歷史快照"
+        "F01": "W005帶回極少蜜露，回程氣味訊號隨時間衰退；微量但未校準",
+        "F08": "當日局部採食窗口未帶回蜜滴，並不代表花卉完全枯萎",
+        "F11": "W011帶回一小片節肢動物遺骸；量與營養價值未知",
+        "F06": "W013只接觸到快枯竭的殘液跡象；未核實可食物入庫",
+        "F03": "陌生蟻近旁活動使W015停止採食試探；無新帶回",
+        "F04": "其他蟻群自有取食活動，非主巢資源",
+        "metabolism": "所有個體持續有能量與水分需求；未鑑種無法給日消耗量",
+        "water": "雨量未實測、巢內水源未量測，不能從0%降雨機率推導零水源或水足夠",
+        "storage": "當日食物帶回為定性記錄；總收支不明，不以v1糖3／蛋白3當現值"
       },
-      "balance_status": "unknown_physical_balance_no_fabricated_units",
-      "observed_simulated_deliveries": [
-        "F01微量蜜露",
-        "F08極少蜜滴",
-        "F11小型昆蟲殘片"
+      "balance_status": "physical_nutrients_unquantified_preserved_null",
+      "delivered_qualitatively": [
+        "F01少量蜜露",
+        "F11小型節肢動物遺骸"
       ],
-      "evidence": "model_scenario_not_measured_mg_or_kcal"
+      "evidence": "simulated_collection_not_field_measurement"
     },
-    "confidence": {
-      "biological_parameters": "uncalibrated",
-      "location": "district_real_garden_fictional",
-      "external_weather": "issued_forecast_not_observation",
-      "qualitative_events": "fictional_simulated_local_observations"
-    }
+    "evidence_classes": [
+      "external_forecast",
+      "simulated_local_observation",
+      "simulated_world_event_not_known_to_colony",
+      "model_assumption",
+      "unknown"
+    ]
   }
 }
