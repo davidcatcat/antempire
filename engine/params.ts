@@ -101,6 +101,7 @@ export function resolveSpecies(file: ParamFile) {
     predation: {
       ...section(file, 'predation', ['live_prey_encounter_probability', 'large_prey_min_team', 'live_prey_capture_probability', 'large_prey_escape_while_recruiting_probability', 'large_prey_max_team'] as const),
       simultaneous_site_group_hunting: bool(file, 'predation.simultaneous_site_group_hunting'),
+      late_arrivals_join_waiting_prey: bool(file, 'predation.late_arrivals_join_waiting_prey'),
     },
   };
   if (!Number.isInteger(p.predation.large_prey_max_team) || p.predation.large_prey_max_team < p.predation.large_prey_min_team) {
