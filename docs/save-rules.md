@@ -62,3 +62,6 @@
 新增[advanced-ecology-integration.md](advanced-ecology-integration.md)與`world-state.json#/advanced_ecology`：涵蓋12機制、14個體狀態、四蜜露候選節點、外蟻/掠食、巢衛生和Day6模板。**世界狀態內只記跨系統引用與待更新容器**；主巢生死仍以`colony`為唯一權威、食物以`foraging_economy`為唯一權威、路徑以`world_map`為唯一權威。
 個體病原暴露、已感染、臨床症狀、死亡分開記，不因R103病毒野外檢出就倒填W004–W017感染。屍體ID需真死亡時新建；已死W001–W003位置未知不補造。F01/F04/F05/F10已有吸汁蟲故事而非已鑑定Coccus viridis；不要新增體量與人口數。
 [pheromone-model-evidence.md](pheromone-model-evidence.md)最新更正優先於舊「雙費洛蒙已證實」文字：**單/雙模型並存，confirmed_chemical_component_count=null**；原故事的Day5弱路線不回填濃度。Day5 120h與所有過去事件不動。
+
+## 2026-11-01 群體成長到100、1000以上的存檔規格
+權威規則：[colony-demography-scaling.md](colony-demography-scaling.md)。人口成長時將`individuals`的明細與cohort統計分層，**不讓count和詳細個體重複計算**；出生、羽化、死亡、遷移、母后/巢群及食物入庫使用獨立唯一事件ID。報表可用分齡/形態/巢區計數，個體細節採稀疏記錄。遷移前保留當前名冊為唯一權威，採新資料結構前需驗收14/100/1000/10000假設情境並保持舊存檔可讀。此項純規格更新，Day6存檔及全部日誌不變。
