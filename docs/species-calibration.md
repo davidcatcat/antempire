@@ -50,3 +50,6 @@ P3：以文獻或專家資料進行敏感度測試、蒙地卡羅多次模擬與
 
 ## 2026-11-01 Pheidole megacephala校準里程碑
 研究種已選定：工蟻minor/major雙態、二通道招募費洛蒙（濃度未知）、口對口分食能力、雜食、通常多蟻后也有單后創巢報告。R94廣西實驗室28±1°C、70±5%RH卵孵化7.69±0.63天，非繁殖卵至成蟻28.73±2.83天、繁殖37.60±3.20天，**只能作實驗參考，不能等同本巢實際發育速度**。待校準：W004–W017實際體型、Q001卵巢活動／交配與產卵日率、巢內溫濕、卵E001／幼蟲L001-L002生理齡、食量／嗉囊與訊號濃度、工蟻走速、巢內結構；沒有資料保持null。
+
+## 2026-11-01 進階12系統與費洛蒙證據更正
+優先讀[pheromone-model-evidence.md](pheromone-model-evidence.md) R102：P. megacephala雖有招募行為，**兩種招募分子的物質數量未被唯一證明**；應並列single/dual模型、化學成分數null。參照[advanced-ecology-integration.md](advanced-ecology-integration.md) R103–R114，病毒序列存在不等於病症或病死率、互利研究種的介殼蟲不等於Fxx已鑑定、獵物捕捉率／工蟻休息比率／神經記憶退化／巢群競爭／蟻道擁擠均需本地資料。除已知機制的**可能性**外，所有`infection_rate`、`mortality_rate`、`worker_idle_fraction`、`prey_catch_probability`、`traffic_flow`、`hemipteran_abundance`為null。

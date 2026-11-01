@@ -71,3 +71,8 @@
 
 ## 2026-11-01 正式指定Pheidole megacephala（Day6起）
 本虛構蟻群物種已定為**熱帶大頭家蟻 Pheidole megacephala**，不再泛用「黑色地棲未知蟻」作研究基線；參照[species-pheidole-megacephala.md](species-pheidole-megacephala.md)、R93–R101。確認這個物種有minor／major雙態工蟻、雜食、特定雙費洛蒙招募及分食能力；單蟻后創巢可作本巢Q001×1的合理背景，儘管多蟻后殖群常見。**14隻既有工蟻個別major/minor仍null**；不得將過去守衛W010硬改兵蟻。生理量、卵生長等採R94的實驗**參考參數**而不是未知N00巢溫的硬倒數。
+
+## 2026-11-01 進階社會／生態完整整合（Day6起）
+新增[advanced-ecology-integration.md](advanced-ecology-integration.md)、[social-immunity-waste.md](social-immunity-waste.md)、[mutualism-predation.md](mutualism-predation.md)、[worker-activity-memory-traffic.md](worker-activity-memory-traffic.md)、[colony-networks-eco-cascades.md](colony-networks-eco-cascades.md)。涵蓋12項病原/衛生/共生/捕獵/休息/學習/群體競爭/幼體營養/道路/連鎖/交通/繁殖衝突。此為**跨模型因果規則**，不必每天出現每類事件。
+**重要修正**：[pheromone-model-evidence.md](pheromone-model-evidence.md) R102：單與雙費洛蒙皆是能解釋研究資料的候選模型，兩種不同招募化學分子未被確證；此前「已確證雙化學通道」敘述以新證據為準。
+病原、感染、體溫、虛構花園物種量、體力、任務替補速率、捕獵成效等未知保留null；14隻工蟻、Q001和幼體沒有憑空增減。

@@ -92,4 +92,7 @@
 參照 [exploration-dynamic-ecology.md](exploration-dynamic-ecology.md)。某工蟻若在U00新探得外部世界線索，只有**本人**當下得知；可被分享的只有它實際回巢或同地感知到的局部訊號。費洛蒙只在實際走過且物種適用的路段可能沉積，不能自動延伸到X01–X04候選區域；無測量濃度保持null。背景蜘蛛與其他蟻群活動不得觸發遠端全巢警報。
 
 ## 2026-11-01 本世界主蟻群已選定Pheidole megacephala
-按[species-pheidole-megacephala.md](species-pheidole-megacephala.md)，R96同舊R21原始實驗已證明本物種招募行為符合**兩種費洛蒙訊號**，因此species capability從未知條件式改為`supported_two_channel`；但具體分子濃度、半衰期、接收者與F01歷史路線仍未知。UF/IFAS R95已報告大小工蟻或小工蟻之間**可以口對口分食**，不代表每次W005回巢都分食。警戒化學成分與特定基材摩擦發聲器官未由本次研究確認，維持unknown。
+按[species-pheidole-megacephala.md](species-pheidole-megacephala.md)的R96研究支持雙費洛蒙**模型**與覓食結果相容；2023年R102單費洛蒙模型同樣能重現部分資料，**不能宣稱已有兩種招募化學分子被化學鑑定**，目前只可開啟定性局部招募，具體成分與通道數待證。
+
+## 2026-11-01 單／雙訊號競爭假說優先更正
+參照[pheromone-model-evidence.md](pheromone-model-evidence.md) R102及[advanced-ecology-integration.md](advanced-ecology-integration.md)。2009雙招募訊號是可解釋數據的假說，2023單一費洛蒙+感知決策亦成立；不強制**兩條已確認化學物質**。Day6起路徑費洛蒙的物質數量保持null、單雙並列，不憑空給任何路段兩條濃度。捕獵可能局部警戒招募，另需真實獵物/工蟻同地接觸，屬行為路徑而非定量物質鑑定。

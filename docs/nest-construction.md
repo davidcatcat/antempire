@@ -62,3 +62,6 @@
 
 ## 2026-11-01 物種專屬巢址選擇（Day6起）
 主巢物種已設定Pheidole megacephala；[species-pheidole-megacephala.md](species-pheidole-megacephala.md) R93/R94記載本種可在土中、石板下、倒木及陰涼潮濕的縫隙築巢。2026廣西樣本更多利用原有空腔，不常製成大型外露土堆；**保留故事既有N00花盆下兩育幼空間、一儲藏空間與外泥脊，不能反推這是本物種通用巢型**。未測花盆土質、微氣候、通風與工蟻實際挖掘量仍null；研究設定本身不新建巢室。
+
+## 2026-11-01 衛生、垃圾、覆蓋覓食通道與工程成本
+參照[social-immunity-waste.md](social-immunity-waste.md)、[worker-activity-memory-traffic.md](worker-activity-memory-traffic.md)。若日後出現屍體、垃圾或巢口被阻塞，工蟻可能短程搬運/另設垃圾點，但**須實際搬運事件**。本種可利用地表覆蓋通道（R95），但不是每次覓食就自動生出封閉道路；建材、土粒來源、工蟻時間及入口空間須守恆。N00原兩育幼空間、一儲藏空間與泥脊完全保留。

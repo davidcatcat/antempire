@@ -35,7 +35,7 @@
 | R18 | (2021), *Effect of constant and fluctuating temperature on the circadian foraging rhythm of the red imported fire ant*. [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC7783663/) | 火蟻晝夜節律及地表溫度效應；**Solenopsis invicta** 的活動峰值不可移植 |
 | R19 | Mailleux, Deneubourg & Detrain (2000), *How do ants assess food volume?* [PubMed](https://pubmed.ncbi.nlm.nih.gov/10860533/), DOI 10.1006/anbe.2000.1396 | **Lasius niger** 偵察者採食量影響招募；實驗滴量/比例不可套本蟻 |
 | R20 | Mailleux, Deneubourg & Detrain (2003), *Regulation of ants' foraging to resource productivity*. [PubMed](https://pubmed.ncbi.nlm.nih.gov/12908982/), DOI 10.1098/rspb.2003.2398 | 蜜露產量與招募回饋；本花園無實測產量 |
-| R21 | Dussutour et al. (2009), *The role of multiple pheromones in food recruitment by ants*. [PubMed](https://pubmed.ncbi.nlm.nih.gov/19617426/), DOI 10.1242/jeb.029827 | **Pheidole megacephala** 特定雙費洛蒙模式，未知物種不強制啟用 |
+| R21 | Dussutour et al. (2009), *The role of multiple pheromones in food recruitment by ants*. [PubMed](https://pubmed.ncbi.nlm.nih.gov/19617426/), DOI 10.1242/jeb.029827 | **Pheidole megacephala** 特定雙費洛蒙模式，未知物種不強制啟用；**2023年R102單費洛蒙替代模型可解釋部分相同資料，不得把雙分子視為唯一證據** |
 | R22 | Greenwald, Baltiansky & Feinerman (2018), *Individual crop loads provide local control for collective food intake in ant colonies*. [eLife](https://elifesciences.org/articles/31730), DOI 10.7554/eLife.31730 | **Camponotus sanctus** 嗉囊、口對口分食和出巢頻率的局部回饋；個體負載容量不通用 |
 | R23 | Dussutour & Simpson (2009), *Communal nutrition in ants*. [PubMed](https://pubmed.ncbi.nlm.nih.gov/19345104/), DOI 10.1016/j.cub.2009.03.015 | 碳水／蛋白需求受幼體存在影響，營養攝取非一種單位可概括 |
 | R24 | Christensen et al. (2010), *Nutrient compensatory foraging in a free-living social insect*. [PubMed](https://pubmed.ncbi.nlm.nih.gov/20689904/), DOI 10.1007/s00114-010-0705-8 | **Iridomyrmex suchieri** 之前營養供應影響後續招募偏好 |
@@ -146,10 +146,29 @@
 | R93 | [臺灣生命大百科：熱帶大頭家蟻 Pheidole megacephala](https://taieol.tw/pages/97561/articles) | 本種臺灣分布、森林邊緣／都市綠地及土、石下生活、雜食和大／小工蟻二態；尺寸按來源族群，**不是本群個體測量**。 |
 | R94 | Yuan et al. (2026), *Life History of the Invasive Big-Headed Ant Pheidole megacephala*. *Insects* 17(10), 992. [DOI](https://doi.org/10.3390/insects17100992) | 廣西28±1°C、70±5%RH完整實驗：卵孵化7.69±0.63天、非繁殖卵→成蟻28.73±2.83天、繁殖蟻37.60±3.20天；幼蟲三齡、卵批次產、生殖多后/單后創巢既有報告、偏好濕陰縫隙。數值**不直接設成本巢速率**。 |
 | R95 | University of Florida IFAS, *Bigheaded Ant, Pheidole megacephala*. [UF Extension](https://ask.ifas.ufl.edu/publication/IN712) | 此物種的覓食招募、種子／昆蟲／蜜露飲食、大小工蟻口對口交換、可多蟻后；引述較早／其他溫度的較長階段發育研究，不和R94的28°C總日數混合。 |
-| R96 | Dussutour et al. (2009), *The role of multiple pheromones in food recruitment by ants*. *J Exp Biol* 212:2337–2348. [PubMed](https://pubmed.ncbi.nlm.nih.gov/19617426/) | P. megacephala原始實驗：覓食招募符合**兩種信號**，可啟用雙通道，未測濃度與分子不填數值；同R21。 |
+| R96 | Dussutour et al. (2009), *The role of multiple pheromones in food recruitment by ants*. *J Exp Biol* 212:2337–2348. [PubMed](https://pubmed.ncbi.nlm.nih.gov/19617426/) | P. megacephala覓食資料**與雙費洛蒙行為模型一致**；R102 (2023) 提出單費洛蒙替代模型也能解釋關鍵資料，**沒有證實招募必然使用兩種不同化學分子**；同R21。 |
 | R97 | *Body size variation and caste ratios in geographically distinct populations of invasive Pheidole megacephala* (2014). [Oxford Academic](https://academic.oup.com/biolinnean/article/113/2/423/2416021) | 大小工蟻形態與角色、比例依族群環境變動；不拿研究比例隨機替14隻老工蟻派「major」。 |
 | R98 | Dejean et al. (2007), *The predatory behavior of Pheidole megacephala*. [Comptes Rendus Biologies](https://doi.org/10.1016/j.crvi.2007.06.005) | 此種minor/major不同採食與捕食角色；特定喀麥隆族群不能當本花園工蟻體重實測。 |
 | R99 | Sarnat et al. (2015), *Introduced Pheidole of the world: taxonomy, biology and distribution*. [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC4714327/) | 種名鑑別、入侵多巢／分巢和已知地理記錄；學術物種資料，不是本巢的實測鑑定。 |
 | R100 | San Juan et al. (2025), *Pheidole megacephala: An invasive ant that raids colonies of Solenopsis invicta*. [Ecology](https://doi.org/10.1002/ecy.70113) | 部分大型／入侵殖群可襲擊敵巢；不代表本巢14工蟻必與F03外蟻開戰或獲勝。 |
 | R101 | *Genetic Structure, Nestmate Recognition and Behaviour of Two Cryptic Species of the Invasive Big-Headed Ant Pheidole megacephala* (2012). [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC3284284/) | 隱蔽複合物種與繁殖分巢、同巢辨識／遺傳差異；不能把本巢想像成與全球Pheidole都同巢的無敵超殖群。 |
+
+## 2026-11-01 進階蟻群社會／生態文獻 R102–R114（與既有R23/R95/R96/R98/R100/R101配合）
+> 新規格 [advanced-ecology-integration.md](advanced-ecology-integration.md)；訊號證據[pheromone-model-evidence.md](pheromone-model-evidence.md)。來源特別區分**熱帶大頭家蟻直接研究**／**其他蟻種研究**／**跨物種綜述**。參考數值未校準為N00實際速率。
+
+| ID | 論文及來源 | 直接支持與外推限制 |
+|---|---|---|
+| R102 | (2023), *A single-pheromone model accounts for empirical patterns of ant colony foraging previously modeled using two pheromones*. *Cognitive Systems Research* 80:81–89. [DOI](https://doi.org/10.1016/j.cogsys.2023.02.005) | **針對P. megacephala相同招募實驗資料**可由單一費洛蒙模型重現；原雙費洛蒙為相容假說而非已化學證實兩種物質。 |
+| R103 | Hartle et al. (2025), *Five novel RNA viruses of the invasive big-headed ant (Pheidole megacephala)*. *Archives of Virology* 170:190. [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC12328527/) | **本物種**臺灣/夏威夷檢出PmV1–5、25個台灣樣本殖群17群陽性；**無臨床症狀/致死率的直接量化外推**。 |
+| R104 | Bach (1991), *Direct and indirect interactions between ants (Pheidole megacephala), scales (Coccus viridis) and plants (Pluchea indica)*. *Oecologia* 87:233–239. [PubMed](https://pubmed.ncbi.nlm.nih.gov/28313840/) | **本物種**保護綠介殼蟲、移除瓢蟲幼蟲、植物回饋；不是Fxx已被鑑為`Coccus viridis`。 |
+| R105 | Diez et al. (2014), *Keep the nest clean: survival advantages of corpse removal in ants*. *Biology Letters*. [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC4126623/) | **Myrmica rubra**遺體移除有長期存活好處；不可給本物種搬屍體的固定百分比死亡風險。 |
+| R106 | Charbonneau et al. (2017), *Who needs ‘lazy’ workers? Inactive workers act as a ‘reserve’ labor force...*. *PLOS ONE*. [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC5587300/) | **Temnothorax rugatulus**停工工蟻可能填補活躍勞動力損失；不可給本群固定20%後備率。 |
+| R107 | Dejean et al. (2007), *The predatory behavior of Pheidole megacephala*. *Comptes Rendus Biologies* 330:701–709. [PubMed](https://pubmed.ncbi.nlm.nih.gov/17720587/) | **本物種**單蟻捕食與大型獵物局部招募協作；同R98，非14隻小群捕獲保證。 |
+| R108 | Poissonnier et al. (2019), *Experimental investigation of ant traffic under crowded conditions*. *eLife* 8:e48945. [eLife](https://elifesciences.org/articles/48945) | **Linepithema humile**大型群交通自調速度／接觸，不能直接套Pheidole 14工蟻的壅塞閾值。 |
+| R109 | (2023/2024), *Ants evade harmful food by active abandonment*. *Communications Biology*. [Nature](https://www.nature.com/articles/s42003-023-05729-7) | 螞蟻能調整對危險食源的接近／撤離；實驗不等於本種所有工蟻有相同記憶衰退率。 |
+| R110 | Fournier et al. (2012), *Genetic Structure, Nestmate Recognition and Behaviour of Two Cryptic Species of the Invasive Big-Headed Ant Pheidole megacephala*. *PLOS ONE* 7:e31480. [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC3284284/) | **本物種複合群**不同超殖群辨識與攻擊差異；同R101，外蟻未經辨識不是固定敵人。 |
+| R111 | Kamaru et al. (2024), *Disruption of an ant-plant mutualism shapes interactions between lions and their primary prey*. *Science* 383:433–438. [PubMed](https://pubmed.ncbi.nlm.nih.gov/38271503/) | **P. megacephala**生態擾動可產生跨營養階級連鎖；**台中不模擬非洲象、獅、斑馬**。 |
+| R112 | Dussutour & Simpson (2009), *Communal nutrition in ants*. *Current Biology* 19:740–744. [PubMed](https://pubmed.ncbi.nlm.nih.gov/19345104/) | 幼體存在改變群體營養調節（同R23）；是**其他研究蟻種/條件**，不可當本群幼體每日mg需求。 |
+| R113 | Fournier et al. (2009), *Genetics, behaviour and chemical recognition of the invading ant Pheidole megacephala*. *Molecular Ecology* 18:186–199. [PubMed](https://pubmed.ncbi.nlm.nih.gov/19192175/) | 澳洲本物種跨巢同種低侵略性；不能推斷台中所有同種個體互相容忍。 |
+| R114 | Rosset & Chapuisat (2006), *Sex allocation conflict in ants: when the queen rules*. *Current Biology* 16:328–331. [PubMed](https://pubmed.ncbi.nlm.nih.gov/16461288/) | **Formica selysi**性別投資衝突；不等於本種已觀察工蟻移除雄卵或群體內部衝突。 |
 

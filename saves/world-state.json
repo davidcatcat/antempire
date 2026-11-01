@@ -992,7 +992,13 @@
     "docs/references.md",
     "docs/weather-data-policy.md",
     "docs/exploration-dynamic-ecology.md",
-    "docs/species-pheidole-megacephala.md"
+    "docs/species-pheidole-megacephala.md",
+    "docs/advanced-ecology-integration.md",
+    "docs/social-immunity-waste.md",
+    "docs/mutualism-predation.md",
+    "docs/worker-activity-memory-traffic.md",
+    "docs/colony-networks-eco-cascades.md",
+    "docs/pheromone-model-evidence.md"
   ],
   "source_quality": {
     "historic_map": "observed_in_story_not_field_measurement",
@@ -1015,7 +1021,9 @@
     "day5_biology": "mechanism_inspired_seeded_uncalibrated_narrative",
     "exploration_dynamic_world": "literature_mechanism_with_unvalidated_stochastic_scenarios_not_observed_garden_ecology",
     "species_selection": "player_chosen_simulated_P_megacephala_not_field_observation_or_lab_identification",
-    "species_development_benchmark": "2026_guangxi_lab_28C_reference_not_N00_microclimate"
+    "species_development_benchmark": "2026_guangxi_lab_28C_reference_not_N00_microclimate",
+    "advanced_ecology": "mechanistic_evidence_supported_not_species_specific_site_calibrated_no_day5_backfill",
+    "pheromone_component_count": "R96_dual_model_compatible_R102_single_alternative_chemical_count_unresolved"
   },
   "day_log_latest": {
     "day": 5,
@@ -2100,8 +2108,8 @@
       "microclimate_temperature": "unknown_not_city_air_temperature",
       "departure": "individual_crop_local_contact_memory_injury_fatigue_risk",
       "search": "local_detection_route_memory_unknown_unexplored_not_automatic_food",
-      "recruitment": "P_megacephala_dual_chemical_signal_recruitment_real_food_event_required",
-      "multiple_pheromones": "supported_two_signal_foraging_P_megacephala_R96_not_numerically_calibrated",
+      "recruitment": "P_megacephala_local_chemical_recruitment_supported_actual_component_count_unresolved",
+      "multiple_pheromones": "unresolved_1v2_chemical_model_both_fit_empirical_data_R96_R102",
       "trophallaxis": "species_supported_requires_observed_local_interaction_and_food",
       "nutrition_types": [
         "carbohydrate",
@@ -2126,7 +2134,12 @@
         "end_stock"
       ],
       "internal_transfer_not_new_external_income": true,
-      "no_assumed_starvation_death_from_no_new_delivery": true
+      "no_assumed_starvation_death_from_no_new_delivery": true,
+      "recruitment_chemical_count_confirmed": null,
+      "recruitment_hypotheses": [
+        "single_pheromone_decision",
+        "dual_pheromone"
+      ]
     },
     "day6_template": {
       "sim_day": 6,
@@ -2160,13 +2173,20 @@
     "quantitative_calibration": "none",
     "channels": {
       "trail_pheromone": {
-        "species_capability": "documented_two_recruitment_signals_P_megacephala_R96",
+        "species_capability": "species_recruitment_supported_chemical_component_count_unresolved_R96_R102",
         "composition": null,
         "deposition_rate": null,
         "half_life": null,
         "default_broadcast": false,
-        "chemical_signal_count_supported_by_study": 2,
-        "exact_pheromone_composition_unknown": true
+        "chemical_signal_count_supported_by_study": null,
+        "exact_pheromone_composition_unknown": true,
+        "confirmed_distinct_recruitment_chemical_count": null,
+        "competing_models": [
+          "single_pheromone_sensory_choice",
+          "dual_pheromone"
+        ],
+        "selected_model": "unresolved",
+        "signal_type_models_not_chemical_facts": true
       },
       "local_alarm_chemical": {
         "species_capability": "unknown_conditional",
@@ -2714,7 +2734,8 @@
       "template_only_no_sim_time_advanced": true
     },
     "provenance": "published_experiments_and_reviews_mechanistic_not_species_calibrated",
-    "verification_note": "Day5 logs/events not changed; Day6 should integrate with foraging_economy rather than adding daily signal lottery."
+    "verification_note": "Day5 logs/events not changed; Day6 should integrate with foraging_economy rather than adding daily signal lottery.",
+    "pheromone_evidence_ref": "docs/pheromone-model-evidence.md"
   },
   "caste_reproduction_system": {
     "schema_version": "v2-colony-sex-caste-reproduction-v1",
@@ -3985,5 +4006,868 @@
       "template_only_not_day6_simulation": true
     },
     "verification_notes": "Day5 W015 explored only U00 edge; no new event, route, food, ant or insect has been spawned by this rules-only commit."
+  },
+  "advanced_ecology": {
+    "schema_version": "v2-advanced-social-ecology-literature-v1",
+    "species_taxon": "Pheidole megacephala",
+    "effective_from_sim_day": 6,
+    "baseline_completed_day": 5,
+    "updated_real_date": "2026-11-01",
+    "research_only_no_simulation_advance": true,
+    "rules_ref": "docs/advanced-ecology-integration.md",
+    "subsidiary_docs": [
+      "docs/social-immunity-waste.md",
+      "docs/mutualism-predation.md",
+      "docs/worker-activity-memory-traffic.md",
+      "docs/colony-networks-eco-cascades.md",
+      "docs/pheromone-model-evidence.md"
+    ],
+    "science_references": "docs/references.md#R102-R114",
+    "modules": [
+      {
+        "id": "social_immunity",
+        "priority": "P0",
+        "status": "conditional_supported_species_virus_detection_no_local_infection",
+        "params_known": false
+      },
+      {
+        "id": "hemipteran_mutualism",
+        "priority": "P0",
+        "status": "species_direct_experiment_causal_possible_no_hemipteran_species_confirmed_local",
+        "params_known": false
+      },
+      {
+        "id": "cooperative_predation",
+        "priority": "P0",
+        "status": "species_direct_experiment_requires_live_prey_encounter",
+        "params_known": false
+      },
+      {
+        "id": "corpse_and_waste",
+        "priority": "P0",
+        "status": "ant_general_mechanism_species_specific_rates_unknown",
+        "params_known": false
+      },
+      {
+        "id": "rest_and_backup_labor",
+        "priority": "P0",
+        "status": "other_species_experiment_conditional_no_fixed_idle_fraction",
+        "params_known": false
+      },
+      {
+        "id": "individual_learning",
+        "priority": "P1",
+        "status": "ant_general_local_only_memory_decay_unknown",
+        "params_known": false
+      },
+      {
+        "id": "territoriality_and_budding",
+        "priority": "P1",
+        "status": "species_documented_requires_real_individuals_and_site",
+        "params_known": false
+      },
+      {
+        "id": "brood_nutrient_feedback",
+        "priority": "P1",
+        "status": "ant_general_cannot_assume_numeric_requirements",
+        "params_known": false
+      },
+      {
+        "id": "covered_foraging_galleries",
+        "priority": "P1",
+        "status": "species_observed_needs_excavation_event",
+        "params_known": false
+      },
+      {
+        "id": "delayed_ecological_cascades",
+        "priority": "P1",
+        "status": "species_direct_ecosystem_case_local_only_species_present",
+        "params_known": false
+      },
+      {
+        "id": "traffic_and_transport",
+        "priority": "P2",
+        "status": "other_species_large_colony_results_not_small_colony_calibrated",
+        "params_known": false
+      },
+      {
+        "id": "reproductive_conflict",
+        "priority": "P2",
+        "status": "unverified_for_species_interface_only_disabled",
+        "params_known": false
+      }
+    ],
+    "health_and_hygiene": {
+      "current_clinical_infections_confirmed": null,
+      "individual_virus_statuses_unknown": true,
+      "species_virus_study_positive_colonies_tw_sample": {
+        "positive": 17,
+        "total": 25,
+        "source": "R103",
+        "field_site_extrapolation_forbidden": true
+      },
+      "pathogen_presence_at_N00": null,
+      "known_pathogen_load": null,
+      "new_pathogen_exposure_events": [],
+      "new_infection_events": [],
+      "new_symptom_events": [],
+      "new_social_grooming_events": [],
+      "new_protective_care_events": [],
+      "new_pathogen_deaths": [],
+      "cadaver_records_since_activation": {},
+      "new_cadavers": [],
+      "waste_sources": [],
+      "midden_locations": [],
+      "historic_W001_W002_W003_cadaver_locations": null,
+      "new_garbage_transport_events": [],
+      "ant_social_immunity_qualitative_only": true,
+      "no_automatic_virus_infection_from_study_prevalence": true
+    },
+    "plant_hemipteran_mutualism": {
+      "existing_node_hypotheses": {
+        "F01": {
+          "existing_node_id": "F01",
+          "historical_name": "東北葉背蚜蟲",
+          "host_plant_taxon": null,
+          "hemipteran_taxon": null,
+          "hemipteran_count": null,
+          "ladybird_larva_present": null,
+          "other_predators_present": null,
+          "honeydew_production_mg_day": null,
+          "plant_damage_level": null,
+          "sooty_mold_present": null,
+          "active_ant_tending_event_ids": [],
+          "new_defense_or_predation_events": [],
+          "state": "hypothesis_mutualism_possible_existing_story_node_not_new_species_observation"
+        },
+        "F04": {
+          "existing_node_id": "F04",
+          "historical_name": "北側石牆介殼蟲",
+          "host_plant_taxon": null,
+          "hemipteran_taxon": null,
+          "hemipteran_count": null,
+          "ladybird_larva_present": null,
+          "other_predators_present": null,
+          "honeydew_production_mg_day": null,
+          "plant_damage_level": null,
+          "sooty_mold_present": null,
+          "active_ant_tending_event_ids": [],
+          "new_defense_or_predation_events": [],
+          "state": "hypothesis_mutualism_possible_existing_story_node_not_new_species_observation"
+        },
+        "F05": {
+          "existing_node_id": "F05",
+          "historical_name": "東南矮草蚜蟲",
+          "host_plant_taxon": null,
+          "hemipteran_taxon": null,
+          "hemipteran_count": null,
+          "ladybird_larva_present": null,
+          "other_predators_present": null,
+          "honeydew_production_mg_day": null,
+          "plant_damage_level": null,
+          "sooty_mold_present": null,
+          "active_ant_tending_event_ids": [],
+          "new_defense_or_predation_events": [],
+          "state": "hypothesis_mutualism_possible_existing_story_node_not_new_species_observation"
+        },
+        "F10": {
+          "existing_node_id": "F10",
+          "historical_name": "南側根際吸汁昆蟲",
+          "host_plant_taxon": null,
+          "hemipteran_taxon": null,
+          "hemipteran_count": null,
+          "ladybird_larva_present": null,
+          "other_predators_present": null,
+          "honeydew_production_mg_day": null,
+          "plant_damage_level": null,
+          "sooty_mold_present": null,
+          "active_ant_tending_event_ids": [],
+          "new_defense_or_predation_events": [],
+          "state": "hypothesis_mutualism_possible_existing_story_node_not_new_species_observation"
+        }
+      },
+      "new_real_hemipteran_populations_identified": [],
+      "tending_events": [],
+      "ladybird_contact_events": [],
+      "plant_effect_events": [],
+      "coccineus_viridis_species_identification_at_sites": null,
+      "source_productivity_event_ids": [],
+      "external_food_income_only_foraging_economy": true
+    },
+    "predation": {
+      "new_live_prey_instances_since_activation": {},
+      "new_predation_encounters": [],
+      "new_prey_capture_events": [],
+      "new_escape_events": [],
+      "new_ant_injuries_from_prey": [],
+      "new_prey_death_event_ids": [],
+      "transported_prey_deliveries_refs": [],
+      "individual_major_identities_still_unknown": true,
+      "actual_catch_probability": null,
+      "large_prey_cooperation_success_probability": null,
+      "captured_live_prey_is_not_auto_delivered_food": true
+    },
+    "rest_learning_traffic": {
+      "individual_worker_states": {
+        "W004": {
+          "worker_id": "W004",
+          "life_record_ref": "saves/main.json#/colony/workers/individuals",
+          "preexisting_condition": "健康，育幼",
+          "health": {
+            "pathogen_exposure": null,
+            "pathogen_identification": null,
+            "infection_confirmed": null,
+            "clinical_symptoms": null,
+            "contagiousness": null,
+            "clinical_mortality_risk": null,
+            "grooming_event_ids_since_activation": [],
+            "no_new_infection_assumed": true
+          },
+          "task_activity": {
+            "actual_rest_fraction": null,
+            "rest_duration_minutes": null,
+            "activity_level": null,
+            "fatigue_level": null,
+            "instantaneous_task": null,
+            "response_threshold": null,
+            "work_substitution_capacity": null,
+            "available_minutes": null
+          },
+          "memory": {
+            "personal_foraging_memory_ref": "saves/world-state.json#/exploration_dynamic_world/worker_exploration_states/W004",
+            "personal_signal_memory_ref": "saves/world-state.json#/communication_system/individual_receiver_states/W004",
+            "new_learning_event_ids_since_activation": [],
+            "memory_decay_rate": null,
+            "global_awareness": false,
+            "historical_specific_cue": null
+          },
+          "transport": {
+            "observed_queue_time_seconds": null,
+            "congestion_multiplier": null,
+            "actual_covered_gallery_used": null,
+            "new_transport_event_ids_since_activation": []
+          },
+          "status": "research_baseline_no_day6_events_or_retroactive_worker_classification"
+        },
+        "W005": {
+          "worker_id": "W005",
+          "life_record_ref": "saves/main.json#/colony/workers/individuals",
+          "preexisting_condition": "挖掘擦傷已癒合，可正常工作",
+          "health": {
+            "pathogen_exposure": null,
+            "pathogen_identification": null,
+            "infection_confirmed": null,
+            "clinical_symptoms": null,
+            "contagiousness": null,
+            "clinical_mortality_risk": null,
+            "grooming_event_ids_since_activation": [],
+            "no_new_infection_assumed": true
+          },
+          "task_activity": {
+            "actual_rest_fraction": null,
+            "rest_duration_minutes": null,
+            "activity_level": null,
+            "fatigue_level": null,
+            "instantaneous_task": null,
+            "response_threshold": null,
+            "work_substitution_capacity": null,
+            "available_minutes": null
+          },
+          "memory": {
+            "personal_foraging_memory_ref": "saves/world-state.json#/exploration_dynamic_world/worker_exploration_states/W005",
+            "personal_signal_memory_ref": "saves/world-state.json#/communication_system/individual_receiver_states/W005",
+            "new_learning_event_ids_since_activation": [],
+            "memory_decay_rate": null,
+            "global_awareness": false,
+            "historical_specific_cue": null
+          },
+          "transport": {
+            "observed_queue_time_seconds": null,
+            "congestion_multiplier": null,
+            "actual_covered_gallery_used": null,
+            "new_transport_event_ids_since_activation": []
+          },
+          "status": "research_baseline_no_day6_events_or_retroactive_worker_classification"
+        },
+        "W006": {
+          "worker_id": "W006",
+          "life_record_ref": "saves/main.json#/colony/workers/individuals",
+          "preexisting_condition": "健康；於落果與陌生蟻遭遇後主動退避，無傷",
+          "health": {
+            "pathogen_exposure": null,
+            "pathogen_identification": null,
+            "infection_confirmed": null,
+            "clinical_symptoms": null,
+            "contagiousness": null,
+            "clinical_mortality_risk": null,
+            "grooming_event_ids_since_activation": [],
+            "no_new_infection_assumed": true
+          },
+          "task_activity": {
+            "actual_rest_fraction": null,
+            "rest_duration_minutes": null,
+            "activity_level": null,
+            "fatigue_level": null,
+            "instantaneous_task": null,
+            "response_threshold": null,
+            "work_substitution_capacity": null,
+            "available_minutes": null
+          },
+          "memory": {
+            "personal_foraging_memory_ref": "saves/world-state.json#/exploration_dynamic_world/worker_exploration_states/W006",
+            "personal_signal_memory_ref": "saves/world-state.json#/communication_system/individual_receiver_states/W006",
+            "new_learning_event_ids_since_activation": [],
+            "memory_decay_rate": null,
+            "global_awareness": false,
+            "historical_specific_cue": "story_F03_other_ants_encounter_no_distance_quantified"
+          },
+          "transport": {
+            "observed_queue_time_seconds": null,
+            "congestion_multiplier": null,
+            "actual_covered_gallery_used": null,
+            "new_transport_event_ids_since_activation": []
+          },
+          "status": "research_baseline_no_day6_events_or_retroactive_worker_classification"
+        },
+        "W007": {
+          "worker_id": "W007",
+          "life_record_ref": "saves/main.json#/colony/workers/individuals",
+          "preexisting_condition": "後腳舊傷，留巢養傷並輔助育幼",
+          "health": {
+            "pathogen_exposure": null,
+            "pathogen_identification": null,
+            "infection_confirmed": null,
+            "clinical_symptoms": null,
+            "contagiousness": null,
+            "clinical_mortality_risk": null,
+            "grooming_event_ids_since_activation": [],
+            "no_new_infection_assumed": true
+          },
+          "task_activity": {
+            "actual_rest_fraction": null,
+            "rest_duration_minutes": null,
+            "activity_level": null,
+            "fatigue_level": null,
+            "instantaneous_task": null,
+            "response_threshold": null,
+            "work_substitution_capacity": null,
+            "available_minutes": null
+          },
+          "memory": {
+            "personal_foraging_memory_ref": "saves/world-state.json#/exploration_dynamic_world/worker_exploration_states/W007",
+            "personal_signal_memory_ref": "saves/world-state.json#/communication_system/individual_receiver_states/W007",
+            "new_learning_event_ids_since_activation": [],
+            "memory_decay_rate": null,
+            "global_awareness": false,
+            "historical_specific_cue": null
+          },
+          "transport": {
+            "observed_queue_time_seconds": null,
+            "congestion_multiplier": null,
+            "actual_covered_gallery_used": null,
+            "new_transport_event_ids_since_activation": []
+          },
+          "status": "research_baseline_no_day6_events_or_retroactive_worker_classification"
+        },
+        "W008": {
+          "worker_id": "W008",
+          "life_record_ref": "saves/main.json#/colony/workers/individuals",
+          "preexisting_condition": "腳傷明顯改善，仍限巢內工作，需持續觀察",
+          "health": {
+            "pathogen_exposure": null,
+            "pathogen_identification": null,
+            "infection_confirmed": null,
+            "clinical_symptoms": null,
+            "contagiousness": null,
+            "clinical_mortality_risk": null,
+            "grooming_event_ids_since_activation": [],
+            "no_new_infection_assumed": true
+          },
+          "task_activity": {
+            "actual_rest_fraction": null,
+            "rest_duration_minutes": null,
+            "activity_level": null,
+            "fatigue_level": null,
+            "instantaneous_task": null,
+            "response_threshold": null,
+            "work_substitution_capacity": null,
+            "available_minutes": null
+          },
+          "memory": {
+            "personal_foraging_memory_ref": "saves/world-state.json#/exploration_dynamic_world/worker_exploration_states/W008",
+            "personal_signal_memory_ref": "saves/world-state.json#/communication_system/individual_receiver_states/W008",
+            "new_learning_event_ids_since_activation": [],
+            "memory_decay_rate": null,
+            "global_awareness": false,
+            "historical_specific_cue": null
+          },
+          "transport": {
+            "observed_queue_time_seconds": null,
+            "congestion_multiplier": null,
+            "actual_covered_gallery_used": null,
+            "new_transport_event_ids_since_activation": []
+          },
+          "status": "research_baseline_no_day6_events_or_retroactive_worker_classification"
+        },
+        "W009": {
+          "worker_id": "W009",
+          "life_record_ref": "saves/main.json#/colony/workers/individuals",
+          "preexisting_condition": "前足舊傷，留巢養傷並輔助巢內清潔",
+          "health": {
+            "pathogen_exposure": null,
+            "pathogen_identification": null,
+            "infection_confirmed": null,
+            "clinical_symptoms": null,
+            "contagiousness": null,
+            "clinical_mortality_risk": null,
+            "grooming_event_ids_since_activation": [],
+            "no_new_infection_assumed": true
+          },
+          "task_activity": {
+            "actual_rest_fraction": null,
+            "rest_duration_minutes": null,
+            "activity_level": null,
+            "fatigue_level": null,
+            "instantaneous_task": null,
+            "response_threshold": null,
+            "work_substitution_capacity": null,
+            "available_minutes": null
+          },
+          "memory": {
+            "personal_foraging_memory_ref": "saves/world-state.json#/exploration_dynamic_world/worker_exploration_states/W009",
+            "personal_signal_memory_ref": "saves/world-state.json#/communication_system/individual_receiver_states/W009",
+            "new_learning_event_ids_since_activation": [],
+            "memory_decay_rate": null,
+            "global_awareness": false,
+            "historical_specific_cue": null
+          },
+          "transport": {
+            "observed_queue_time_seconds": null,
+            "congestion_multiplier": null,
+            "actual_covered_gallery_used": null,
+            "new_transport_event_ids_since_activation": []
+          },
+          "status": "research_baseline_no_day6_events_or_retroactive_worker_classification"
+        },
+        "W010": {
+          "worker_id": "W010",
+          "life_record_ref": "saves/main.json#/colony/workers/individuals",
+          "preexisting_condition": "健康，入口警戒時與陌生工蟻短暫對峙，無傷",
+          "health": {
+            "pathogen_exposure": null,
+            "pathogen_identification": null,
+            "infection_confirmed": null,
+            "clinical_symptoms": null,
+            "contagiousness": null,
+            "clinical_mortality_risk": null,
+            "grooming_event_ids_since_activation": [],
+            "no_new_infection_assumed": true
+          },
+          "task_activity": {
+            "actual_rest_fraction": null,
+            "rest_duration_minutes": null,
+            "activity_level": null,
+            "fatigue_level": null,
+            "instantaneous_task": null,
+            "response_threshold": null,
+            "work_substitution_capacity": null,
+            "available_minutes": null
+          },
+          "memory": {
+            "personal_foraging_memory_ref": "saves/world-state.json#/exploration_dynamic_world/worker_exploration_states/W010",
+            "personal_signal_memory_ref": "saves/world-state.json#/communication_system/individual_receiver_states/W010",
+            "new_learning_event_ids_since_activation": [],
+            "memory_decay_rate": null,
+            "global_awareness": false,
+            "historical_specific_cue": null
+          },
+          "transport": {
+            "observed_queue_time_seconds": null,
+            "congestion_multiplier": null,
+            "actual_covered_gallery_used": null,
+            "new_transport_event_ids_since_activation": []
+          },
+          "status": "research_baseline_no_day6_events_or_retroactive_worker_classification"
+        },
+        "W011": {
+          "worker_id": "W011",
+          "life_record_ref": "saves/main.json#/colony/workers/individuals",
+          "preexisting_condition": "健康；北側偵察遇深褐色陌生工蟻，繞路撤退，無新增傷勢",
+          "health": {
+            "pathogen_exposure": null,
+            "pathogen_identification": null,
+            "infection_confirmed": null,
+            "clinical_symptoms": null,
+            "contagiousness": null,
+            "clinical_mortality_risk": null,
+            "grooming_event_ids_since_activation": [],
+            "no_new_infection_assumed": true
+          },
+          "task_activity": {
+            "actual_rest_fraction": null,
+            "rest_duration_minutes": null,
+            "activity_level": null,
+            "fatigue_level": null,
+            "instantaneous_task": null,
+            "response_threshold": null,
+            "work_substitution_capacity": null,
+            "available_minutes": null
+          },
+          "memory": {
+            "personal_foraging_memory_ref": "saves/world-state.json#/exploration_dynamic_world/worker_exploration_states/W011",
+            "personal_signal_memory_ref": "saves/world-state.json#/communication_system/individual_receiver_states/W011",
+            "new_learning_event_ids_since_activation": [],
+            "memory_decay_rate": null,
+            "global_awareness": false,
+            "historical_specific_cue": null
+          },
+          "transport": {
+            "observed_queue_time_seconds": null,
+            "congestion_multiplier": null,
+            "actual_covered_gallery_used": null,
+            "new_transport_event_ids_since_activation": []
+          },
+          "status": "research_baseline_no_day6_events_or_retroactive_worker_classification"
+        },
+        "W012": {
+          "worker_id": "W012",
+          "life_record_ref": "saves/main.json#/colony/workers/individuals",
+          "preexisting_condition": "前足輕微擦傷恢復中，留巢協助育幼",
+          "health": {
+            "pathogen_exposure": null,
+            "pathogen_identification": null,
+            "infection_confirmed": null,
+            "clinical_symptoms": null,
+            "contagiousness": null,
+            "clinical_mortality_risk": null,
+            "grooming_event_ids_since_activation": [],
+            "no_new_infection_assumed": true
+          },
+          "task_activity": {
+            "actual_rest_fraction": null,
+            "rest_duration_minutes": null,
+            "activity_level": null,
+            "fatigue_level": null,
+            "instantaneous_task": null,
+            "response_threshold": null,
+            "work_substitution_capacity": null,
+            "available_minutes": null
+          },
+          "memory": {
+            "personal_foraging_memory_ref": "saves/world-state.json#/exploration_dynamic_world/worker_exploration_states/W012",
+            "personal_signal_memory_ref": "saves/world-state.json#/communication_system/individual_receiver_states/W012",
+            "new_learning_event_ids_since_activation": [],
+            "memory_decay_rate": null,
+            "global_awareness": false,
+            "historical_specific_cue": null
+          },
+          "transport": {
+            "observed_queue_time_seconds": null,
+            "congestion_multiplier": null,
+            "actual_covered_gallery_used": null,
+            "new_transport_event_ids_since_activation": []
+          },
+          "status": "research_baseline_no_day6_events_or_retroactive_worker_classification"
+        },
+        "W013": {
+          "worker_id": "W013",
+          "life_record_ref": "saves/main.json#/colony/workers/individuals",
+          "preexisting_condition": "在潮葉邊緣遇蟾蜍時後足擦傷，移動減慢，暫留巢",
+          "health": {
+            "pathogen_exposure": null,
+            "pathogen_identification": null,
+            "infection_confirmed": null,
+            "clinical_symptoms": null,
+            "contagiousness": null,
+            "clinical_mortality_risk": null,
+            "grooming_event_ids_since_activation": [],
+            "no_new_infection_assumed": true
+          },
+          "task_activity": {
+            "actual_rest_fraction": null,
+            "rest_duration_minutes": null,
+            "activity_level": null,
+            "fatigue_level": null,
+            "instantaneous_task": null,
+            "response_threshold": null,
+            "work_substitution_capacity": null,
+            "available_minutes": null
+          },
+          "memory": {
+            "personal_foraging_memory_ref": "saves/world-state.json#/exploration_dynamic_world/worker_exploration_states/W013",
+            "personal_signal_memory_ref": "saves/world-state.json#/communication_system/individual_receiver_states/W013",
+            "new_learning_event_ids_since_activation": [],
+            "memory_decay_rate": null,
+            "global_awareness": false,
+            "historical_specific_cue": null
+          },
+          "transport": {
+            "observed_queue_time_seconds": null,
+            "congestion_multiplier": null,
+            "actual_covered_gallery_used": null,
+            "new_transport_event_ids_since_activation": []
+          },
+          "status": "research_baseline_no_day6_events_or_retroactive_worker_classification"
+        },
+        "W014": {
+          "worker_id": "W014",
+          "life_record_ref": "saves/main.json#/colony/workers/individuals",
+          "preexisting_condition": "前足擦傷，留巢休養",
+          "health": {
+            "pathogen_exposure": null,
+            "pathogen_identification": null,
+            "infection_confirmed": null,
+            "clinical_symptoms": null,
+            "contagiousness": null,
+            "clinical_mortality_risk": null,
+            "grooming_event_ids_since_activation": [],
+            "no_new_infection_assumed": true
+          },
+          "task_activity": {
+            "actual_rest_fraction": null,
+            "rest_duration_minutes": null,
+            "activity_level": null,
+            "fatigue_level": null,
+            "instantaneous_task": null,
+            "response_threshold": null,
+            "work_substitution_capacity": null,
+            "available_minutes": null
+          },
+          "memory": {
+            "personal_foraging_memory_ref": "saves/world-state.json#/exploration_dynamic_world/worker_exploration_states/W014",
+            "personal_signal_memory_ref": "saves/world-state.json#/communication_system/individual_receiver_states/W014",
+            "new_learning_event_ids_since_activation": [],
+            "memory_decay_rate": null,
+            "global_awareness": false,
+            "historical_specific_cue": null
+          },
+          "transport": {
+            "observed_queue_time_seconds": null,
+            "congestion_multiplier": null,
+            "actual_covered_gallery_used": null,
+            "new_transport_event_ids_since_activation": []
+          },
+          "status": "research_baseline_no_day6_events_or_retroactive_worker_classification"
+        },
+        "W015": {
+          "worker_id": "W015",
+          "life_record_ref": "saves/main.json#/colony/workers/individuals",
+          "preexisting_condition": "外骨骼已硬化，健康，協助巢內警戒與短程搬運",
+          "health": {
+            "pathogen_exposure": null,
+            "pathogen_identification": null,
+            "infection_confirmed": null,
+            "clinical_symptoms": null,
+            "contagiousness": null,
+            "clinical_mortality_risk": null,
+            "grooming_event_ids_since_activation": [],
+            "no_new_infection_assumed": true
+          },
+          "task_activity": {
+            "actual_rest_fraction": null,
+            "rest_duration_minutes": null,
+            "activity_level": null,
+            "fatigue_level": null,
+            "instantaneous_task": null,
+            "response_threshold": null,
+            "work_substitution_capacity": null,
+            "available_minutes": null
+          },
+          "memory": {
+            "personal_foraging_memory_ref": "saves/world-state.json#/exploration_dynamic_world/worker_exploration_states/W015",
+            "personal_signal_memory_ref": "saves/world-state.json#/communication_system/individual_receiver_states/W015",
+            "new_learning_event_ids_since_activation": [],
+            "memory_decay_rate": null,
+            "global_awareness": false,
+            "historical_specific_cue": "story_U00_outer_edge_only"
+          },
+          "transport": {
+            "observed_queue_time_seconds": null,
+            "congestion_multiplier": null,
+            "actual_covered_gallery_used": null,
+            "new_transport_event_ids_since_activation": []
+          },
+          "status": "research_baseline_no_day6_events_or_retroactive_worker_classification"
+        },
+        "W016": {
+          "worker_id": "W016",
+          "life_record_ref": "saves/main.json#/colony/workers/individuals",
+          "preexisting_condition": "羽化後外骨骼已硬化，健康但年幼，以巢內清潔育幼為主",
+          "health": {
+            "pathogen_exposure": null,
+            "pathogen_identification": null,
+            "infection_confirmed": null,
+            "clinical_symptoms": null,
+            "contagiousness": null,
+            "clinical_mortality_risk": null,
+            "grooming_event_ids_since_activation": [],
+            "no_new_infection_assumed": true
+          },
+          "task_activity": {
+            "actual_rest_fraction": null,
+            "rest_duration_minutes": null,
+            "activity_level": null,
+            "fatigue_level": null,
+            "instantaneous_task": null,
+            "response_threshold": null,
+            "work_substitution_capacity": null,
+            "available_minutes": null
+          },
+          "memory": {
+            "personal_foraging_memory_ref": "saves/world-state.json#/exploration_dynamic_world/worker_exploration_states/W016",
+            "personal_signal_memory_ref": "saves/world-state.json#/communication_system/individual_receiver_states/W016",
+            "new_learning_event_ids_since_activation": [],
+            "memory_decay_rate": null,
+            "global_awareness": false,
+            "historical_specific_cue": null
+          },
+          "transport": {
+            "observed_queue_time_seconds": null,
+            "congestion_multiplier": null,
+            "actual_covered_gallery_used": null,
+            "new_transport_event_ids_since_activation": []
+          },
+          "status": "research_baseline_no_day6_events_or_retroactive_worker_classification"
+        },
+        "W017": {
+          "worker_id": "W017",
+          "life_record_ref": "saves/main.json#/colony/workers/individuals",
+          "preexisting_condition": "第1127分鐘羽化，外骨骼尚軟，留巢",
+          "health": {
+            "pathogen_exposure": null,
+            "pathogen_identification": null,
+            "infection_confirmed": null,
+            "clinical_symptoms": null,
+            "contagiousness": null,
+            "clinical_mortality_risk": null,
+            "grooming_event_ids_since_activation": [],
+            "no_new_infection_assumed": true
+          },
+          "task_activity": {
+            "actual_rest_fraction": null,
+            "rest_duration_minutes": null,
+            "activity_level": null,
+            "fatigue_level": null,
+            "instantaneous_task": null,
+            "response_threshold": null,
+            "work_substitution_capacity": null,
+            "available_minutes": null
+          },
+          "memory": {
+            "personal_foraging_memory_ref": "saves/world-state.json#/exploration_dynamic_world/worker_exploration_states/W017",
+            "personal_signal_memory_ref": "saves/world-state.json#/communication_system/individual_receiver_states/W017",
+            "new_learning_event_ids_since_activation": [],
+            "memory_decay_rate": null,
+            "global_awareness": false,
+            "historical_specific_cue": null
+          },
+          "transport": {
+            "observed_queue_time_seconds": null,
+            "congestion_multiplier": null,
+            "actual_covered_gallery_used": null,
+            "new_transport_event_ids_since_activation": []
+          },
+          "status": "research_baseline_no_day6_events_or_retroactive_worker_classification"
+        }
+      },
+      "idle_workers_critical_fraction": null,
+      "worker_replacement_rate": null,
+      "daily_recovery_mJ": null,
+      "observed_worker_memory_events_since_activation": [],
+      "traffic_route_loads": {},
+      "covered_gallery_projects_since_activation": [],
+      "known_route_widths_mm": null,
+      "ant_flow_ants_per_min": null,
+      "no_large_argentine_ant_congestion_inference": true
+    },
+    "colony_network": {
+      "existing_other_colonies_count_story": 2,
+      "actual_neighbour_colony_identity_profiles": null,
+      "supercolony_membership": null,
+      "CHC_relationships": null,
+      "neighbour_colony_queen_counts": null,
+      "known_brood_raids_since_activation": [],
+      "new_conflicts_since_activation": [],
+      "new_distinct_colonies_created_since_activation": [],
+      "new_budding_attempts": [],
+      "no_instant_colony_duplication": true,
+      "confirmed_main_queen_only": "Q001",
+      "species_compatible_budding_mechanism_not_automatic_events": true
+    },
+    "brood_and_ecology": {
+      "brood_ids": [
+        "E001",
+        "L001",
+        "L002"
+      ],
+      "protein_demand_mg_by_brood": null,
+      "carbohydrate_demand_mg_by_brood": null,
+      "nutrient_feedback_signals": [],
+      "actual_brood_feed_event_ids": [],
+      "slow_ecological_cascade_queue": [],
+      "new_cascade_outcome_events": [],
+      "new_cascade_species_added": [],
+      "actual_local_effect_rates": null,
+      "no_african_savanna_fauna_spawn": true,
+      "food_unique_authority": "saves/world-state.json#/foraging_economy",
+      "brood_unique_authority": "saves/main.json#/colony/brood"
+    },
+    "reproductive_conflict": {
+      "species_verified_worker_policing": null,
+      "worker_egg_laying_enabled": false,
+      "sex_allocation_conflict_active": false,
+      "worker_egg_removal_events": [],
+      "male_egg_events": [],
+      "not_activated_based_on_Formica_research": true
+    },
+    "pheromone_evidence_correction": {
+      "evidence_ref": "docs/pheromone-model-evidence.md",
+      "primary_2009_ref": "R96",
+      "alternative_2023_ref": "R102",
+      "confirmed_recruitment_behavior": true,
+      "confirmed_distinct_recruitment_chemical_count": null,
+      "competing_explanations": [
+        "single_pheromone_sensory_choice_model",
+        "dual_pheromone_model"
+      ],
+      "selected_chemical_model": "unresolved",
+      "qualitative_spatial_recruitment_allowed": true,
+      "observed_new_route_events_since_activation": [],
+      "historical_F01_trace_concentration": null,
+      "no_fixed_two_chemical_layers": true
+    },
+    "shared_event_ledger": {
+      "new_day6_events": [],
+      "event_refs_by_subsystem": {},
+      "total_new_external_food_income_events": 0,
+      "event_identity_cross_subsystem_unique": true,
+      "no_double_count_worker_minutes": true,
+      "no_double_count_cadavers": true,
+      "no_double_count_food_delivery": true,
+      "background_vs_observed_worker_knowledge_separate": true
+    },
+    "day6_template": {
+      "day": 6,
+      "calendar_date": "2026-11-05",
+      "worker_health_events": [],
+      "infection_and_contact_events": [],
+      "plant_mutualism_events": [],
+      "live_prey_encounters": [],
+      "predation_transport_events": [],
+      "waste_cadaver_events": [],
+      "worker_rest_task_changes": [],
+      "personal_learning_events": [],
+      "rival_colony_encounters": [],
+      "brood_nutritional_feedback_events": [],
+      "gallery_construction_events": [],
+      "ecosystem_cascade_events": [],
+      "traffic_events": [],
+      "reproductive_conflict_events": [],
+      "pheromone_model_comparison_event_ids": [],
+      "unverified_event_rates": null,
+      "unknown_site_infection_status": null,
+      "unverified_external_predator_counts": null,
+      "template_only_not_simulated": true
+    }
   }
 }

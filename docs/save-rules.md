@@ -57,3 +57,8 @@
 
 ## 2026-11-01 物種選擇與跨模組唯一權威
 本虛構殖群的玩家指定物種`Pheidole megacephala`，唯一主權威參照`docs/species-pheidole-megacephala.md`、`saves/main.json#/simulation/species_id`及`saves/world-state.json#/ant_population/taxon`；各模型同值只作**一致性標籤**。生效Day6，Day1–Day5歷史不倒填；物種選定≠本地實測鑑定。物種已知minor/major雙態，**個體未鑑別仍null**；物種已知雙訊號／口對口交換能力不等於已發生事件。Q001×1、14工蟻、1卵2幼蟲、0蛹、N00舊巢配置、物理食量與氣象全部不改；已選物種數據不自動產生精確日生育率或活動速度。
+
+## 2026-11-01 進階生態跨系統唯一帳與費洛蒙修正
+新增[advanced-ecology-integration.md](advanced-ecology-integration.md)與`world-state.json#/advanced_ecology`：涵蓋12機制、14個體狀態、四蜜露候選節點、外蟻/掠食、巢衛生和Day6模板。**世界狀態內只記跨系統引用與待更新容器**；主巢生死仍以`colony`為唯一權威、食物以`foraging_economy`為唯一權威、路徑以`world_map`為唯一權威。
+個體病原暴露、已感染、臨床症狀、死亡分開記，不因R103病毒野外檢出就倒填W004–W017感染。屍體ID需真死亡時新建；已死W001–W003位置未知不補造。F01/F04/F05/F10已有吸汁蟲故事而非已鑑定Coccus viridis；不要新增體量與人口數。
+[pheromone-model-evidence.md](pheromone-model-evidence.md)最新更正優先於舊「雙費洛蒙已證實」文字：**單/雙模型並存，confirmed_chemical_component_count=null**；原故事的Day5弱路線不回填濃度。Day5 120h與所有過去事件不動。

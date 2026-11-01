@@ -92,3 +92,6 @@ C. **觀察者報告層**：可以在日誌獨立呈現「背景生態變化（�
 
 ## 2026-11-01 選定Pheidole megacephala後的探索界線
 本種已有群體招募及競爭行為研究，參照[species-pheidole-megacephala.md](species-pheidole-megacephala.md) R93–R101；但**沒有本巢個體移速或台中這塊虛構花園的覓食半徑實測**，不可以沿用Temnothorax 8.3mm/s。小群14工蟻在外界探索時可使用已感知的兩通道化學招募，但未知區X01–X04仍不預設任何食源或敵巢，外巢大群具侵略性不代表本群自動擴張或必勝。
+
+## 2026-11-01 學習、疾病暴露與外部群體活動
+新增[worker-activity-memory-traffic.md](worker-activity-memory-traffic.md)、[mutualism-predation.md](mutualism-predation.md)、[colony-networks-eco-cascades.md](colony-networks-eco-cascades.md)。每隻工蟻記錄自己的舊外蟻威脅/食物收益線索，返巢回報只靠真實訊號或接觸；陌生區的病原與大型獵物必須有**被具體化、可達與同時在場**才可能接觸。外部瓢蟲與掠食者可在本巢不出門時持續變化；X01–X04仍不保證有新食物。

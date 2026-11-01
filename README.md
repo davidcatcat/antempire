@@ -35,7 +35,10 @@
 依據 R79–R92 **14篇研究／綜述**，新增[探索、移動速度、搜尋範圍與背景世界自治規格](docs/exploration-dynamic-ecology.md)和[研究紀事](journal/v2-research-exploration-world-2026-11-01.md)。不把研究蟻種8.3mm/s當Q001固定速度；W015只到U00外緣，X01–X04是未確定的抽象候選區，並非新食物點。新機制讓植物、昆蟲、蜘蛛、異巢蟻與人類虛構活動即使主巢不出門仍獨立變化，可重播且允許零事件；工蟻必須真的到場才能得知。**仍停Day5、120小時，14工蟻／1蟻后／1卵2幼蟲，下一回Day6才套用。**
 
 ## 2026-11-01 物種正式選定：熱帶大頭家蟻（**Day5仍不動**）
-玩家選定**熱帶大頭家蟻 Pheidole megacephala**為主蟻群的**模擬物種**，不等於現實花園採樣鑑定。新增[物種專屬科學規格](docs/species-pheidole-megacephala.md)、[文獻R93–R101](docs/references.md)與[變更紀事](journal/v2-species-selection-pheidole-megacephala-2026-11-01.md)，下一次Day6起套用。物種確認有minor／major雌性工蟻雙態、雙費洛蒙招募及口對口分食；2026年廣西28°C研究卵→成蟻非繁殖約28.73天、繁殖約37.60天，僅是**實驗參考而非本巢精準倒數**。成熟群多蟻后，但單后創巢已有文獻，故保留Q001×1。**14工蟻的各別minor／major未知不補造。Day5／120h歷史全部不改。**
+玩家選定**熱帶大頭家蟻 Pheidole megacephala**為主蟻群的**模擬物種**，不等於現實花園採樣鑑定。新增[物種專屬科學規格](docs/species-pheidole-megacephala.md)、[文獻R93–R101](docs/references.md)與[變更紀事](journal/v2-species-selection-pheidole-megacephala-2026-11-01.md)，下一次Day6起套用。物種確認有minor／major雌性工蟻雙態、具招募費洛蒙行為但單／雙化學物質模型尚未分辨，並有口對口分食；2026年廣西28°C研究卵→成蟻非繁殖約28.73天、繁殖約37.60天，僅是**實驗參考而非本巢精準倒數**。成熟群多蟻后，但單后創巢已有文獻，故保留Q001×1。**14工蟻的各別minor／major未知不補造。Day5／120h歷史全部不改。**
+
+## 2026-11-01 12項進階螞蟻科學整合 + 雙費洛蒙證據修正（**尚未推進Day5**）
+新增[整合規格](docs/advanced-ecology-integration.md)及12項跨系統的物種／群體機制：感染與社會免疫、介殼蟲/蜜露互利、真實捕獵、屍體與垃圾、閒置工蟻、個體記憶、其他蟻群/分巢、幼體營養、地表遮蔽通道、延遲生態連鎖、蟻道交通、條件式生殖利益衝突。參見新增文獻[R102–R114](docs/references.md)、[研究紀事](journal/v2-research-advanced-ecology-2026-11-01.md)。**重要科學更正**：[pheromone-model-evidence.md](docs/pheromone-model-evidence.md)指出2023單費洛蒙模型也能重現舊結果，因此不可將招募「兩種化學分子」視作已證實。所有新疾病、獵物、瓢蟲、額外蟻后、垃圾和事件均未被憑空加入現有Day5。**仍120小時、Q001×1、14工蟻、卵1幼蟲2**。
 
 ## 最新檢查點
 **2026-11-04 Day 5：** Q001存活、14隻工蟻、**1卵／2幼蟲／0蛹**；無新卵、羽化、死亡。**今日各採食路線皆無可確認新食物入巢**；W005在F01空載、W006/W011於F11/F07未找到可採殘屑、W015開始探索U00外緣但未證實新食源。花園中F03異巢蟻、F05蜘蛛與F10蟾蜍獨立活動，與主巢沒有直接接觸；受前日虛構澆水影響，遮蔽土表可能仍有潮濕。臺中市11/4**氣象預報**白天晴時多雲23–30°C／0%降雨機率，非實際觀測。物理存糧、水量未知。詳見 [Day 5日誌](journal/v2-day-0005.md)。
@@ -59,6 +62,12 @@
 
 ### 科學設計
 - [科學行為模型](docs/science-model.md) — 蟻后、工蟻、幼體、傷勢、資源與巢穴
+- [12項進階生態整合與日更新順序](docs/advanced-ecology-integration.md) — **Day6起**；跨模型唯一食物／事件／個體帳
+- [疾病與社會免疫、屍體及垃圾](docs/social-immunity-waste.md) — 接觸不等於感染
+- [吸汁蟲互利、活獵物與捕食](docs/mutualism-predation.md) — 共生與捕食必須同地有因果
+- [工蟻休息、記憶及交通](docs/worker-activity-memory-traffic.md) — 閒置合理、個體記憶不可全巢同步
+- [其他蟻群、分巢與生態連鎖](docs/colony-networks-eco-cascades.md) — 小群不自動變超殖群
+- [招募費洛蒙競爭模型科學更正](docs/pheromone-model-evidence.md) — 單/雙模型未分辨，化學成分數未知
 - [主蟻群專屬物種：熱帶大頭家蟻](docs/species-pheidole-megacephala.md) — **從Day6起**採用；實驗數據不是本巢實測
 - [未知世界探索與自治隨機生態](docs/exploration-dynamic-ecology.md) — **Day6起**：工蟻速度／路程／探索覆蓋、U00外圈候選區、背景生物獨立演化與可重播隨機事件
 - [蟻后產卵與幼體發育模型](docs/queen-brood-growth.md) — **Day6起**：產卵率、階段發育、育幼照護與繁殖資源成本（不硬套別種卵數）
@@ -76,6 +85,7 @@
 - [驗收情境與反例](docs/verification-scenarios.md) — 20 個極端案例、資料守恆與寫入檢查
 
 ### 歷史
+- [12項生態科學整合及證據更正紀事](journal/v2-research-advanced-ecology-2026-11-01.md) — 純規則更新，Day5不動
 - [物種選定與跨模型更新紀事](journal/v2-species-selection-pheidole-megacephala-2026-11-01.md) — 玩家指定P. megacephala，Day5不前進
 - [未知世界探索與動態生態研究紀事](journal/v2-research-exploration-world-2026-11-01.md) — 純規則更新，不推進Day5
 - [蟻后生殖與巢穴工程研究紀事](journal/v2-research-reproduction-nest-2026-11-01.md) — 純規則更新，遊戲時間不動
@@ -95,7 +105,7 @@
 在 ChatGPT 說**「繼續螞蟻帝國」**或**「模擬一天，觀察蟻群自然發展」**：
 1. 先讀 `saves/main.json`、`saves/world-state.json`、`docs/species-pheidole-megacephala.md`、`docs/weather-data-policy.md` 和 v2 規格；每次推進重新查該日西屯真實氣象資料。
 2. 從目前科學世界 Day5 繼續推進，**預設一次1個生態日**，短期採食與慢速幼體發育分開計算；不要求使用者逐隻指定工蟻。
-3. 依最新**未知地區探索／外界獨立演化與可重播隨機事件**、食物、訊號、階級、**蟻后產卵與逐階段幼體發育、巢穴實際挖土／微氣候**規格產生有因果的模擬，允許零事件／死亡／找不到食物，未知量維持null。
+3. 依最新**12項進階生態（疾病／衛生／互利／捕獵／休息／記憶／群體／營養／工程／連鎖／交通／生殖）**與**未知地區探索／外界獨立演化與可重播隨機事件**、食物、訊號、階級、**蟻后產卵與逐階段幼體發育、巢穴實際挖土／微氣候**規格產生有因果的模擬，允許零事件／死亡／找不到食物，未知量維持null。
 4. 寫當日紀事、更新兩份狀態並核對。**不會在聊天之外自動執行。**
 
 若只想觀察：「檢查蟻后」、「查看傷蟻」、「列出根際蜜露點的競爭者」，可不推進時間直接閱讀狀態與分析。

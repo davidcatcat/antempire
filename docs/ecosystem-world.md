@@ -81,3 +81,6 @@
 
 ## 2026-11-01 當前物種：熱帶大頭家蟻
 虛構主巢為**Pheidole megacephala**，臺灣中低海拔／都市花園可有本物種（R93）。花盆下N00主巢及所有已知Fxx節點與U00外緣的Day5舊資訊均保留。此蟻種會取食蜜露、昆蟲殘骸並影響競爭蟻群；但有競爭能力≠14隻小群能立即突襲遠端敵巢，仍要本地時空相遇。物種常多巢多蟻后而也有單后創巢紀錄；不宣告本巢已有未見的第二后。
+
+## 2026-11-01 外部世界的12項進階互動（Day6起）
+參照[advanced-ecology-integration.md](advanced-ecology-integration.md)、[mutualism-predation.md](mutualism-predation.md)及[colony-networks-eco-cascades.md](colony-networks-eco-cascades.md)。F01/F04/F05/F10舊蜜露點與植物/吸汁蟲群體、瓢蟲幼蟲與煤煙病**只作條件關係，不新增瓢蟲或確診某介殼蟲物種**；F03已知外蟻仍須辨識才交戰。昆蟲獵物真死亡才有屍體與一次性的物理蛋白來源。蜘蛛/蟾蜍/其他蟻群仍獨立生活；長期環境變化有延遲且可能沒有重大結果。未知X01–X04沒有發現前仍是候選區。

@@ -80,3 +80,6 @@
 
 ## 2026-11-01 物種確定：熱帶大頭家蟻
 新增[species-pheidole-megacephala.md](species-pheidole-megacephala.md) R93–R101，**已知本種具有minor和major/soldier雙態雌性工蟻**，大工蟻通常防禦與食物拆解，小工蟻通常出巢與照護；成年形態不是任務升級。本殖群W004–W017沒有個體量測，`physical_worker_subcaste=null`全保留。成熟殖群通常多蟻后，但文獻亦記單蟻后創巢，故Q001唯一已確認蟻后合理且不新增別隻；雄蟻／gyne沒有先前發育階段不能直接出現。R94在廣西28°C實驗所得發育日期是**參考值**，本花盆巢溫濕不明，不把本巢卵和幼蟲硬推成重大成長事件。
+
+## 2026-11-01 進階繁殖衝突僅保留模型接口
+參照[colony-networks-eco-cascades.md](colony-networks-eco-cascades.md) R114。某些`Formica`蟻種有蟻后—工蟻性別投資衝突，但**沒有本小群Pheidole megacephala工蟻產卵／移除雄卵的證據**；Day6起`worker_egg_laying_enabled=false`、`sex_allocation_conflict_active=false`，不憑空創造雄性卵或異種特殊社會行為。本群現有Q001唯一已確認蟻后與3隻幼體均不改。

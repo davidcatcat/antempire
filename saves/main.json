@@ -1770,7 +1770,9 @@
       "docs/references.md",
       "docs/migration-v2.md",
       "docs/weather-data-policy.md",
-      "docs/species-pheidole-megacephala.md"
+      "docs/species-pheidole-megacephala.md",
+      "docs/advanced-ecology-integration.md",
+      "docs/pheromone-model-evidence.md"
     ],
     "latest_completed_day": 5,
     "elapsed_sim_hours": 120,
@@ -1865,7 +1867,15 @@
     "species_selection_kind": "user_selected_simulation_species_not_field_diagnosis",
     "species_selection_real_date": "2026-11-01",
     "species_rules_effective_sim_day": 6,
-    "species_selection_does_not_advance_time": true
+    "species_selection_does_not_advance_time": true,
+    "advanced_ecology_rules_ref": "docs/advanced-ecology-integration.md",
+    "advanced_ecology_state_ref": "saves/world-state.json#/advanced_ecology",
+    "advanced_ecology_effective_sim_day": 6,
+    "advanced_ecology_research_date": "2026-11-01",
+    "advanced_ecology_research_only_no_clock_advance": true,
+    "pheromone_evidence_ref": "docs/pheromone-model-evidence.md",
+    "pheromone_chemical_component_count_confirmed": null,
+    "pheromone_model_status": "single_vs_dual_unresolved_recruitment_supported_R96_R102"
   },
   "migration_log": [
     {
