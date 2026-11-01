@@ -3,8 +3,7 @@
  *  1. dry run writes nothing (no lock, no transaction directory, no journal);
  *  2. Day14 -> Day15 with --confirm-advance --day 15: saves, journal and commit log committed together, in the
  *     repo's JSON format; conservation and commit consistency pass; result identical to the current engine
- *     and — while sim/ exists — main/world byte-identical to the v6 runner sim/run_day.cjs (Day15 is the
- *     first day after the migration) after normalising only intentional metadata;
+ *     and main/world byte-identical to projectDaily called directly (v6 equivalence: tests/differential.test.ts);
  *  3. Day15 -> Day20 chain with the frozen rules fingerprint: every day's saved engine state equals a direct
  *     engine call on the previous saved state; every journal exists and matches the commit log;
  *  4. --day must equal the next game day; a tampered fingerprint is refused; nothing is written in either case;
@@ -15,12 +14,11 @@ import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import assert from 'node:assert/strict';
-import { createRequire } from 'node:module';
 import { advance } from '../cli/advance.ts';
 import { checkSaves } from '../cli/lib/conservation.ts';
 import { commitConsistency, readCommitLog } from '../cli/lib/save-transaction.ts';
 import { rulesFingerprint } from '../cli/lib/fingerprint.ts';
-import { normaliseV6Projection } from './lib/v6-normalise.ts';
+import { projectDaily, DEFAULT_REFS } from '../cli/lib/project-day.ts';
 import { REPO_ROOT, readJson, loadBundle } from '../cli/lib/load.ts';
 import { migrationState, simulateDay } from '../engine/index.ts';
 
@@ -60,11 +58,11 @@ try {
   ok(!fs.existsSync(path.join(tmp, 'saves/.advance.lock')) && fs.readdirSync(path.join(tmp, 'saves/.txn')).join() === 'committed-day-0015', 'lock released; only the committed transaction (previous version) remains');
   const direct = simulateDay(migrationState(m14, w14, readJson('data/taichung-climatology-1991-2020.json', tmp), loadBundle()), loadBundle());
   ok(JSON.stringify(w15.day_log_latest.events) === JSON.stringify(direct.events) && JSON.stringify(w15.sim_engine_v2.population) === JSON.stringify(direct.state.population) && JSON.stringify(w15.sim_engine_v2.colony) === JSON.stringify(direct.state.colony), 'saved Day15 = direct engine result');
-  if (fs.existsSync(path.join(REPO_ROOT, 'sim/run_day.cjs'))) {
-    const require = createRequire(import.meta.url), fp = rulesFingerprint();
-    const o = require(path.join(REPO_ROOT, 'sim/run_day.cjs')).projectDaily(m14, w14, readJson('data/taichung-climatology-1991-2020.json', tmp), readJson('sim/params.json'), fp.engine, fp.params);
-    normaliseV6Projection(o, now);
-    ok(JSON.stringify(o.main, null, 2) + '\n' === mainText && JSON.stringify(o.world, null, 2) + '\n' === worldText && journal15.startsWith(o.journal), 'Day15 main/world byte-identical to v6 sim/run_day.cjs and its journal draft is the start of the committed journal');
+  // The save mapping itself is pinned against v6 by tests/differential.test.ts (approved changes undone);
+  // here the committed Day15 must equal the current mapping called directly, byte for byte.
+  {
+    const ref = projectDaily(m14, w14, readJson('data/taichung-climatology-1991-2020.json', tmp), loadBundle(), rulesFingerprint(), DEFAULT_REFS, now);
+    ok(JSON.stringify(ref.main, null, 2) + '\n' === mainText && JSON.stringify(ref.world, null, 2) + '\n' === worldText && journal15.startsWith(ref.journal), 'Day15 main/world byte-identical to projectDaily called directly; its journal draft starts the committed journal');
   }
 
   // 3. Day16..Day20; each saved engine state = direct engine call on the previous one

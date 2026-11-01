@@ -16,10 +16,12 @@ import { resolveBundle, type ParamBundle, type ResolvedParams, type SpeciesParam
 import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from './types.ts';
 
 /**
- * Behaviour version. v2-review.7 = v6 physical foraging + nest-temperature memory fix (rules update,
- * effective from the next game day). Any change of simulation output must bump this.
+ * Behaviour version. Any change of simulation output must bump this (approved rules updates are listed in
+ * tests/golden/approved-rule-changes.json):
+ *   v2-review.7  nest-temperature memory fix (#6)
+ *   v2-review.8  injured workers: neutral task weights, forage ×1.0 and rest ×1.0 (#13)
  */
-export const ENGINE_VERSION = 'antempire.v2-review.7-nest-temperature-memory';
+export const ENGINE_VERSION = 'antempire.v2-review.8-injured-worker-neutral-tasks';
 /** Implementation of that behaviour (bumped for refactors that keep results byte-identical). */
 export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
 /** The v2 engine only applies to states at or after the completed Day14 checkpoint. */

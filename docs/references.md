@@ -188,3 +188,14 @@
 | R118 | Greenwald, Baltiansky & Feinerman (2018), *Individual crop loads provide local control for collective food intake in ant colonies*. *eLife* 7:e31730. [DOI](https://doi.org/10.7554/eLife.31730)；**Camponotus sanctus** | 局部嗉囊負載／接受者飽足與食物交換共同調節全群攝取，工蟻無須知道全巢庫存。**容量、轉食µL與出勤率不能照抄到本物種**。 |
 | R119 | Krabbe et al. (2019), *Using nutritional geometry to define the fundamental macronutrient niche of the widespread invasive ant Monomorium pharaonis*. *PLOS ONE* 14:e0218764. [DOI](https://doi.org/10.1371/journal.pone.0218764)；**Monomorium pharaonis** | 蛋白/醣/脂三維權衡，工蟻生存與繁殖幼體有不同飲食收益，**不能移植特定P:C:L最適值**。 |
 | R120 | Gutiérrez et al. (2020), *Growth and survival of the superorganism: Ant colony macronutrient intake and investment*. *Ecology and Evolution* 10:7901–7915. [DOI](https://doi.org/10.1002/ece3.6520)；**Lasius niger、Lasius neoniger** | 8個月飲食成分/供食頻率試驗：群體存活、幼體生產、個體體型與採集偏好存在資源取捨；不等於本物種在14或1000隻時的固定每日耗能與繁殖率。 |
+
+## 2026-11-01 受傷工蟻的任務傾向（R121–R125，規則更新 v2-review.8，#13）
+> 用途：判斷「受傷工蟻是否較少覓食」。**本種（*P. megacephala*）沒有直接研究**；以下只提供機制方向，不搬用任何數值（CLAUDE.md §4）。
+
+| ID | 來源、研究物種與條件 | 允許引入的機制及不能做的外推 |
+|---|---|---|
+| R121 | Moroń, Lenda, Skórka & Woyciechowski (2012), *Short-lived ants take greater risks during food collection*. *American Naturalist* 180(6):744–750. [DOI](https://doi.org/10.1086/668009)；資料 [Dryad](https://datadryad.org/dataset/doi:10.5061/dryad.p22p4)；**Myrmica scabrinodis**，實驗室 | 以移除前伸腹節刺或 CO₂ 縮短壽命的工蟻更常在高風險條件下覓食。只支持「受傷不會減少覓食」的方向；增加幅度不可搬用 |
+| R122 | Moroń, Witek & Woyciechowski (2008), *Division of labour among workers with different life expectancy in the ant Myrmica scabrinodis*. *Animal Behaviour*；**M. scabrinodis** | 壽命縮短的工蟻較早開始覓食。方向參考 |
+| R123 | Waxman, Muscedere & Traniello (2017), *Behavioral Performance and Neural Systems Are Robust to Sensory Injury in Workers of the Ant Pheidole dentata*. *Brain, Behavior and Evolution* 89(3):195–208；**同屬 P. dentata** | 切除單側觸角後大多數工作不受影響，唯一明顯缺陷是沿費洛蒙路徑行走。未來若區分傷勢類型可參考；目前引擎未區分 |
+| R124 | Chakka, Bao & Muscedere，SICB 年會摘要（約 2017），*Behavioral Acceleration After Injuries in the Ant Pheidole dentata is Accompanied by Changes in Brain Amine Levels*. [SICB](https://sicb.org/?p=11203)；**同屬 P. dentata**，**研討會摘要、非同儕審查** | 切除一根觸角或一隻後腳的工蟻較常在巢外、對競爭者與獵物較具攻擊性。證據等級低，只作方向佐證 |
+| R125 | Gilad, Dorfman, Subach & Scharf (2022), *Leg or antenna injury in Cataglyphis ants impairs survival but does not hinder searching for food*. *Current Zoology* 68(4):441–450. [PMC9450180](https://pmc.ncbi.nlm.nih.gov/articles/PMC9450180)；**Cataglyphis niger** | 斷腳或觸角不影響找食，但存活縮短（實驗室：對照 13.0 日、斷一腳 6.8 日）。支持「受傷提高死亡風險」的方向（`injury_mortality_multiplier` 1.4 為遊戲假設） |

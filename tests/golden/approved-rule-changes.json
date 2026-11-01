@@ -1,0 +1,43 @@
+{
+  "schema": "antempire.approved-rule-changes.v1",
+  "note": "Every intentional change of simulation behaviour since the v6 engine (sim/day_engine.cjs), in order. tests/differential.test.ts undoes exactly these changes and must then reproduce v6 byte-for-byte; tests/params-split.test.ts allows exactly the listed parameter changes. Adding an entry requires an approved rules-update PR.",
+  "changes": [
+    {
+      "rules_version": "antempire.v2-review.7-nest-temperature-memory",
+      "approved_in": "#6",
+      "kind": "engine",
+      "description": "nest temperature memory reads climate.prior_nest_temp_model_c",
+      "neutralise": {
+        "delete_state_path": "climate.prior_nest_temp_model_c"
+      }
+    },
+    {
+      "rules_version": "antempire.v2-review.8-injured-worker-neutral-tasks",
+      "approved_in": "#13",
+      "kind": "param",
+      "file": "species:pheidole-megacephala",
+      "path": "task_allocation.injured_task_forage_multiplier",
+      "from": 0.75,
+      "to": 1
+    },
+    {
+      "rules_version": "antempire.v2-review.8-injured-worker-neutral-tasks",
+      "approved_in": "#13",
+      "kind": "param",
+      "file": "species:pheidole-megacephala",
+      "path": "task_allocation.injured_rest_multiplier",
+      "from": 1.5,
+      "to": 1
+    },
+    {
+      "rules_version": "antempire.v2-review.8-injured-worker-neutral-tasks",
+      "approved_in": "#13",
+      "kind": "param_removed",
+      "file": "species:pheidole-megacephala",
+      "path": "task_allocation.injury_foraging_multiplier",
+      "legacy_path": "workers.injury_foraging_multiplier",
+      "from": 0.45,
+      "note": "declared but never used by any engine version"
+    }
+  ]
+}

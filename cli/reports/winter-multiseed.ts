@@ -11,8 +11,8 @@ import assert from 'node:assert/strict';
 import { ENGINE_VERSION, simulateDay, num, resolveSpecies, foragingTemperatureFactor as ftf, legacyColonyMeta } from '../../engine/index.ts';
 import { loadBundle, readJson, REPO_ROOT } from '../lib/load.ts';
 
-/** Report file tag of the current rules version (v7 = v2-review.7 nest-temperature memory fix). v6 files in reports/ are history. */
-export const RULES_TAG = 'v7';
+/** Report file tag of the current rules version (v8 = v2-review.8). Files of earlier tags in reports/ are history. */
+export const RULES_TAG = 'v8';
 
 export function generateWinterMultiseed(outDir, bundle = loadBundle(), initial = readJson('tests/fixtures/day14-projection.json'), tag = RULES_TAG) {
 const MAIN_SPECIES=legacyColonyMeta(bundle.world.scenario_colonies).species_id;
