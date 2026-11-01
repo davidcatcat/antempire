@@ -1,9 +1,8 @@
-# v2-review.5a 全部遊戲參數（依 sim/params.json 生成）
+# v6 所有參數（從 sim/params.json 即時生成）
 
-**共 140 個 value 參數；全數 `assumption: true`，不代表本種實測。**
-正式 Day14 336h 不變；只有 Day15+ 的隔離模型遵守這些參數。冬季代謝 Q10=2.0 / 蟻后產卵 Q10=2.5 / 無工蟻照護天數均為假設。更新資訊詳見 reports/day15-134-v5-20seeds-review.md。
+**共 157 組數值參數，全數 `assumption: true`；即使有機制的文獻來源也不是數值已實測。** 額外 `foraging_route_topology` 非數值情境拓樸亦標示 `assumption: true`。正式 Day14／336h 未推進。完整物理行為參見 `docs/foraging-physical-behavior-v6.md`。
 
-| 子系統 | 參數 | 值 | assumption | 說明 |
+| 子系統 | 參數 | 值 | assumption | 理由 |
 |---|---|---:|:---:|---|
 | development | `reference_c` | 25 | true | 以25°C為相對發育速率基準 |
 | development | `egg_days` | 10 | true | 25°C卵期標準長度，遊戲假設 |
@@ -145,3 +144,20 @@
 | model | `unit_precision` | 6 | true | 食物計算與存檔保留小數位數 |
 | model | `population_safety_cap_for_trial` | 200 | true | 僅驗收用的膨脹上限；正式模擬不直接使用此限制 |
 | model | `min_workers_alive_for_trial` | 1 | true | 30日驗收禁止無原因全巢滅亡；非遊戲免死設定 |
+| foraging_physics | `route_edge_minutes` | 25 | true | 路線圖每條邊單程步行分鐘，拓樸與距離皆遊戲假設；非實際花園量測 |
+| foraging_physics | `daily_window_minutes` | 360 | true | 假設單日可用覓食時段360分鐘，不是個體實測 |
+| foraging_physics | `trail_daily_retention` | 0.55 | true | 單一費洛蒙路徑每日殘留比例，數值假設；文獻僅支持揮發與強化方向 |
+| foraging_physics | `trail_deposit_per_success` | 0.35 | true | 每次成功運回食物的路段費洛蒙增加量，數值假設 |
+| foraging_physics | `trail_min_detectable` | 0.08 | true | 局部工蟻可察覺路段費洛蒙下限，數值假設 |
+| foraging_physics | `trail_max_strength` | 3 | true | 路段訊號飽和上限，數值假設 |
+| foraging_physics | `crop_capacity` | 0.8 | true | 小工蟻嗉囊可持有之遊戲份數上限，非物種實測 |
+| foraging_physics | `max_trophallaxis_contacts` | 3 | true | 回巢每次最多交哺接觸同伴數，數值假設 |
+| foraging_physics | `transfer_max_portions` | 0.28 | true | 每次交哺最多交付的遊戲糖份，數值假設 |
+| foraging_physics | `live_prey_encounter_probability` | 0.06 | true | 單次抵達F07/F11活昆蟲遇見率，遊戲假設 |
+| foraging_physics | `large_prey_fraction` | 0.25 | true | 遇見昆蟲屬大型獵物之假設比例，非實測 |
+| foraging_physics | `large_prey_min_team` | 2 | true | 大型獵物需同位置至少兩隻工蟻，遊戲假設 |
+| foraging_physics | `live_prey_capture_probability` | 0.48 | true | 符合條件後捕獲活昆蟲機率，遊戲假設 |
+| foraging_physics | `small_prey_protein` | 0.55 | true | 小型獵物蛋白遊戲份，非實測質量 |
+| foraging_physics | `large_prey_protein` | 1.5 | true | 大型獵物蛋白遊戲份，非實測質量 |
+| foraging_physics | `follow_intermediate_source_probability` | 0.55 | true | 工蟻抵達有食物的路線交叉點時，若仍嗅到前方費洛蒙，繼續追蹤的機率；遊戲假設，非實測 |
+| foraging_physics | `repeat_trip_probability` | 0.5 | true | 成功首趟後在時間允許時再試第二趟機率；遊戲假設，不是物種實測 |
