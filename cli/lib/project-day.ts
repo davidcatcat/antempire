@@ -3,8 +3,12 @@
  * (saves/main.json, saves/world-state.json) and drafts the day's journal. Pure function of its inputs
  * (the clock value `now` is injected); writing files is done by cli/advance.ts, never here.
  *
- * Differences from v6, all metadata only: engine/params reference strings (refs) and the rules
- * fingerprint now point at the TypeScript engine and the split species/world parameter files.
+ * Differences from v6 (save mapping only; simulation results unchanged):
+ *  - engine/params reference strings (refs) and the rules fingerprint point at the TypeScript engine and
+ *    the split species/world parameter files;
+ *  - the cumulative counters colony.workers.confirmed_born / cumulative_deaths and
+ *    colony.worker_deaths_cumulative / brood_deaths_cumulative are updated every day (Owner decision, PR #5);
+ *  - stage_ledger.flux.eggs_hatcing (v6 typo) is written as eggs_hatching (Owner decision, PR #5).
  */
 // @ts-nocheck -- verbatim port of an untyped save-mapping script; the engine API it calls is typed.
 import { simulateDay, migrationState, metadataPreview } from '../../engine/index.ts';
@@ -36,11 +40,15 @@ export function projectDaily(main, world, climatology, bundle, fingerprint, refs
  for(const wc of report.events.filter(x=>x.type==='worker_death')){let a=originals.get(wc.id);if(a){a.status='dead';a.death_sim_day=report.day;a.v2_death_reason=wc.reason;}}
  for(const ant of report.state.population.workers){let original=originals.get(ant.id);if(!original){original={id:ant.id,status:'alive'};m.colony.workers.individuals.push(original);originals.set(ant.id,original);}
   original.status='alive';original.v2_engine={age_days:ant.age_days,age_source:ant.age_origin,known_sources:ant.known_sources,task:ant.task,injured:ant.injured,last_sim_day:report.day};}
+ // Cumulative population counters (Owner decision on PR #5): maintained every day from the engine's own counts.
+ m.colony.workers.confirmed_born+=r.eclosions;m.colony.workers.cumulative_deaths+=r.worker_deaths;
+ if(typeof m.colony.worker_deaths_cumulative==='number')m.colony.worker_deaths_cumulative+=r.worker_deaths;
+ if(typeof m.colony.brood_deaths_cumulative==='number')m.colony.brood_deaths_cumulative+=r.brood_deaths;
  m.colony.brood.individuals=report.state.population.brood.map(x=>({id:x.id,stage:x.stage,living:true,laid_on_sim_day:x.laid_on_day??null,stage_elapsed_v2_days:x.age_days,developmental_progress_game_assumption:x.progress,origin:x.origin,individual_nutritional_intake_mg:null}));
  m.colony.brood.eggs=r.population.eggs;m.colony.brood.larvae=r.population.larvae;m.colony.brood.pupae=r.population.pupae;m.colony.brood.total=r.population.eggs+r.population.larvae+r.population.pupae;
  m.colony.brood.v2_latest={day:report.day,new_eggs:r.eggs_laid,stage_transitions:r.hatchings+r.pupations+r.eclosions,deaths:r.brood_deaths,eggs:r.population.eggs,larvae:r.population.larvae,pupae:r.population.pupae,notes:'v2 game assumed temperature-dependent stage rate; not a measured microclimate'};
  m.colony.population_demography.last_completed_day=report.day;
- m.colony.population_demography.stage_ledger={day:report.day,queen_alive:r.population.queen,workers_before:r.workers_before,worker_eclosions:r.eclosions,worker_deaths:r.worker_deaths,workers_after:r.population.workers,brood_before:r.brood_before,brood_after:{eggs:r.population.eggs,larvae:r.population.larvae,pupae:r.population.pupae},flux:{eggs_laid:r.eggs_laid,eggs_hatcing:r.hatchings,larvae_to_pupae:r.pupations,pupae_eclosed:r.eclosions,brood_deaths:r.brood_deaths}};
+ m.colony.population_demography.stage_ledger={day:report.day,queen_alive:r.population.queen,workers_before:r.workers_before,worker_eclosions:r.eclosions,worker_deaths:r.worker_deaths,workers_after:r.population.workers,brood_before:r.brood_before,brood_after:{eggs:r.population.eggs,larvae:r.population.larvae,pupae:r.population.pupae},flux:{eggs_laid:r.eggs_laid,eggs_hatching:r.hatchings,larvae_to_pupae:r.pupations,pupae_eclosed:r.eclosions,brood_deaths:r.brood_deaths}};
  m.colony.population_demography.explicit_worker_ids=report.state.population.workers.map(x=>x.id);
  w.ant_population.workers_alive=r.population.workers;w.ant_population.brood={eggs:r.population.eggs,larvae:r.population.larvae,pupae:r.population.pupae};
  w.foraging_economy.day_v2_latest={day:report.day,receipts:report.events.filter(x=>x.type==='food_delivered'),source_world_provenance:report.events.filter(x=>['new_food_source','source_batch_consumed'].includes(x.type)),source_persistent_state_ref:'saves/world-state.json#/sim_engine_v2/sources',food_ledger:r.mass_ledger,starvation:r.starvation};
