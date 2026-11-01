@@ -203,36 +203,6 @@
       0.04198684
     ]
   },
-  "decisions": {
-    "aphidsAccessible": false,
-    "W005Visit": true,
-    "W005Delivery": false,
-    "newDetritus": true,
-    "newDetritusSite": "F11",
-    "W011Visit": true,
-    "W011Delivery": false,
-    "flowerNectar": true,
-    "W017Visit": true,
-    "W017Delivery": true,
-    "W016Visited": true,
-    "W013Repair": true,
-    "rivalsAtF04": true,
-    "predatorSeen": true,
-    "newEggs": 1
-  },
-  "confirmed_delivery_count": 1,
-  "deliveries": [
-    {
-      "event_id": "V2D9-E06",
-      "worker_id": "W017",
-      "source_node": "F08",
-      "nutrient": "carbohydrate",
-      "confirmed_delivery_events": 1,
-      "delivered_mass_mg": null,
-      "qualitative_amount": "短時花蜜"
-    }
-  ],
-  "model_assumption_warning": "All daily event thresholds are uncalibrated, and no physical nutrient masses are measured",
   "weather": {
     "date": "2026-11-08",
     "weekday": "Sunday",
@@ -290,5 +260,35 @@
         0.6992303
       ]
     }
-  }
+  },
+  "decisions": {
+    "aphidsAccessible": false,
+    "W005Visit": true,
+    "W005Delivery": false,
+    "newDetritus": true,
+    "newDetritusSite": "F11",
+    "W011Visit": true,
+    "W011Delivery": false,
+    "flowerNectar": true,
+    "W017Visit": true,
+    "W017Delivery": true,
+    "W016Visited": true,
+    "W013Repair": true,
+    "rivalsAtF04": true,
+    "predatorSeen": true,
+    "newEggs": 1
+  },
+  "deliveries": [
+    {
+      "event_id": "V2D9-E06",
+      "worker_id": "W017",
+      "source_node": "F08",
+      "nutrient": "carbohydrate",
+      "confirmed_delivery_events": 1,
+      "delivered_mass_mg": null,
+      "qualitative_amount": "短時花蜜"
+    }
+  ],
+  "confirmed_delivery_count": 1,
+  "model_assumption_warning": "All daily causal event probabilities and nutrient flux magnitudes are uncalibrated/unknown"
 }
