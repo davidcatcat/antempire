@@ -199,3 +199,10 @@
 | R123 | Waxman, Muscedere & Traniello (2017), *Behavioral Performance and Neural Systems Are Robust to Sensory Injury in Workers of the Ant Pheidole dentata*. *Brain, Behavior and Evolution* 89(3):195–208；**同屬 P. dentata** | 切除單側觸角後大多數工作不受影響，唯一明顯缺陷是沿費洛蒙路徑行走。未來若區分傷勢類型可參考；目前引擎未區分 |
 | R124 | Chakka, Bao & Muscedere，SICB 年會摘要（約 2017），*Behavioral Acceleration After Injuries in the Ant Pheidole dentata is Accompanied by Changes in Brain Amine Levels*. [SICB](https://sicb.org/?p=11203)；**同屬 P. dentata**，**研討會摘要、非同儕審查** | 切除一根觸角或一隻後腳的工蟻較常在巢外、對競爭者與獵物較具攻擊性。證據等級低，只作方向佐證 |
 | R125 | Gilad, Dorfman, Subach & Scharf (2022), *Leg or antenna injury in Cataglyphis ants impairs survival but does not hinder searching for food*. *Current Zoology* 68(4):441–450. [PMC9450180](https://pmc.ncbi.nlm.nih.gov/articles/PMC9450180)；**Cataglyphis niger** | 斷腳或觸角不影響找食，但存活縮短（實驗室：對照 13.0 日、斷一腳 6.8 日）。支持「受傷提高死亡風險」的方向（`injury_mortality_multiplier` 1.4 為遊戲假設） |
+
+## 2026-11-01 合作捕獵的時間與招募（R126，規則更新 v2-review.9，#10）
+> 主要依據仍是**本物種**的 R98／R107（Dejean et al. 2007，已讀全文）：單隻 minor 可捕捉並搬回體重 9 倍以上的獵物；大型獵物（>10 mm）由發現者以警報費洛蒙做**短距招募**（第二隻工蟻在 6.8 ± 0.4 秒內到達），隊伍各咬住一處把獵物「四肢拉開」；另有**長距招募**（發現者回巢沿路留下費洛蒙，招募數量隨獵物大小增加）；大型獵物多由 2～10 隻工蟻共同搬回；50 隻蟑螂中 8 隻逃脫。原文是喀麥隆原生地、近巢、大群體、人工放置獵物的條件，**所有數字都不直接搬用**。
+
+| ID | 來源、研究物種與條件 | 允許引入的機制及不能做的外推 |
+|---|---|---|
+| R126 | Detrain & Deneubourg (1997), *Scavenging by Pheidole pallidula: a key for understanding decision-making systems in ants*. *Animal Behaviour* 53(3):537–547（DOI 10.1006/anbe.1996.0305，依圖書館書目紀錄）；**同屬 P. pallidula**，實驗室 | 工蟻以拖拉獵物時感受的**阻力**判斷獵物大小：小獵物個別搬運、招募弱；大獵物回巢途中留下較連續的路徑費洛蒙、招募強。只支持「大型獵物觸發長距路徑招募」的方向；招募強度、時間不可搬用到本種 |

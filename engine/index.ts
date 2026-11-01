@@ -16,7 +16,7 @@ export { foragingTemperatureFactor, localSignals, selectTask } from './workers.t
 export { routeTo, routeEdges, travel, goHome, adjacencyOf, edgeKey } from './routes.ts';
 export { decayTrails, depositTrail, fullTrail, followLocalTrail } from './trails.ts';
 export { handoff, settleCrops, consume, storageOverflow } from './nutrition.ts';
-export { prey, forageDay } from './foraging.ts';
+export { prey, forageDay, huntWindow, huntable, type Arrival, type Carry, type HuntContext } from './foraging.ts';
 export { growEcology, sourceSum } from './ecology.ts';
 export { calcWeather } from './weather.ts';
 export { hash32, rng, dice } from './rng.ts';

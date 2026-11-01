@@ -6,7 +6,7 @@ import { readJson } from '../../cli/lib/load.ts';
 import type { ParamBundle } from '../../engine/index.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
-export interface ApprovedChange { rules_version: string; approved_in: string; kind: 'engine' | 'param' | 'param_removed' | string; file?: string; path?: string; legacy_path?: string; from?: number; to?: number; neutralise?: { delete_state_path?: string } }
+export interface ApprovedChange { rules_version: string; approved_in: string; kind: 'engine' | 'param' | 'param_removed' | 'param_switch' | 'param_added' | string; file?: string; path?: string; legacy_path?: string; from?: number | boolean; to?: number | boolean; neutralise?: { delete_state_path?: string } }
 
 export const approvedChanges = (): ApprovedChange[] => readJson('tests/golden/approved-rule-changes.json').changes;
 
@@ -15,14 +15,24 @@ function fileOf(bundle: ParamBundle, file: string): Any {
   return kind === 'world' ? bundle.world : bundle.species[id];
 }
 
-/** Put every approved parameter change back to its v6 value (param_removed entries need no action: unused). */
-export function revertParams(bundle: ParamBundle): void {
-  for (const c of approvedChanges()) if (c.kind === 'param') {
-    let node = fileOf(bundle, c.file as string);
-    for (const k of (c.path as string).split('.')) node = node[k];
-    if (node.value !== c.to) throw Error(`approved change ${c.path}: expected current value ${c.to}, found ${node.value}`);
-    node.value = c.from;
+/** Undo one approved parameter change: a tagged value (kind param) or a boolean model switch (kind param_switch). */
+export function revertChange(bundle: ParamBundle, c: ApprovedChange): void {
+  if (c.kind !== 'param' && c.kind !== 'param_switch') return; // param_removed / param_added: unused by the previous rules
+  const keys = (c.path as string).split('.'), last = keys.pop() as string;
+  let parent = fileOf(bundle, c.file as string);
+  for (const k of keys) parent = parent[k];
+  if (c.kind === 'param_switch') {
+    if (parent[last] !== c.to) throw Error(`approved switch ${c.path}: expected current value ${c.to}, found ${parent[last]}`);
+    parent[last] = c.from;
+  } else {
+    if (parent[last].value !== c.to) throw Error(`approved change ${c.path}: expected current value ${c.to}, found ${parent[last].value}`);
+    parent[last].value = c.from;
   }
+}
+
+/** Put every approved parameter change back to its v6 value. */
+export function revertParams(bundle: ParamBundle): void {
+  for (const c of approvedChanges()) revertChange(bundle, c);
 }
 
 /** Undo approved engine changes on one day's input state (v7: nest-temperature memory). */
