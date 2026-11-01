@@ -9,9 +9,9 @@
   "time": {
     "legacy_elapsed_player_minutes": 1150,
     "scientific_clock": {
-      "day": 9,
-      "elapsed_sim_hours": 216,
-      "calendar_date": "2026-11-08",
+      "day": 10,
+      "elapsed_sim_hours": 240,
+      "calendar_date": "2026-11-09",
       "absolute_utc": null,
       "default_advance_hours": 24,
       "substep_minutes_for_behavior": 20,
@@ -28,16 +28,15 @@
     },
     "note": "v1 的1150分鐘非真實生理分鐘，v2從獨立時鐘開始",
     "last_transition": {
-      "from_day": 8,
-      "to_day": 9,
+      "from_day": 9,
+      "to_day": 10,
       "advance_hours": 24,
-      "journal": "journal/v2-day-0009.md",
-      "previous_head_sha": "bf7101a21d115788ed4d37d12dbeb210ab46ca05",
+      "journal": "journal/v2-day-0010.md",
+      "previous_head_sha": "dabad961b75b5b5989c0e08686005ae66d4c3378",
       "weather_source_ref": "docs/historical-climate-weather-engine.md",
       "nutrition_rules_ref": "docs/colony-nutrition-food-web.md",
-      "program_artifact": "sim/results/day9.json",
-      "runtime": "Node.js",
-      "program_ref": "sim/day_engine.cjs"
+      "program_ref": "sim/day_engine.cjs",
+      "program_output_ref": "sim/results/day10.json"
     },
     "setting_changes": [
       {
@@ -226,12 +225,13 @@
         "replenishment_per_day_mg": null,
         "known_to_every_worker": false,
         "day4_observation": "局部水滴使巢口表層潮濕，簡單整理，未侵入幼體室",
-        "last_local_visit_sim_day": 9,
+        "last_local_visit_sim_day": 10,
         "day5_observation": "育幼、短距清潔與修整，巢內水分未知",
         "day6_observation": "育幼、短距泥粒整理、W005回巢與W004分食；仍兩育幼一儲藏室",
         "day7_observation": "育幼/休息與表土微量整理，沒有新巢室或入口",
         "day8_observation": "W005帶回蜜露、虛構澆水使巢口土粒鬆動、W013整理表土；Q001新產兩卵，沒有新巢室",
-        "day9_observation": "W013在前一天澆水留下的鬆土附近整理少量土粒；沒有新巢室與實際巢內水分測量。"
+        "day9_observation": "W013在前一天澆水留下的鬆土附近整理少量土粒；沒有新巢室與實際巢內水分測量。",
+        "day10_observation": "兩筆不同新昆蟲殘骸搬入N00，孵育巢室結構沒有改變，巢內攝食實際質量未知"
       },
       {
         "id": "N01",
@@ -283,7 +283,8 @@
         "day6_observation": "W005從仍存續的蚜蟲所產少量蜜露中完成一次採食回巢（物理量未知）",
         "day7_observation": "W005找到原有葉背蚜蟲活動區，但本次無可及蜜露，空載返巢",
         "day8_observation": "清晨W005在園丁澆水前帶回蜜露，澆水後葉面及路線受水滴干擾；物理產量未知",
-        "day9_observation": "W005依熟悉路線回訪F01，沒有成功帶回糖液，空載安全回巢。"
+        "day9_observation": "W005依熟悉路線回訪F01，沒有成功帶回糖液，空載安全回巢。",
+        "day10_background_evidence": "原有蚜蟲有短暫可及蜜露，但W005今天沒有到場；食源仍在外面，主巢不能把這份糖當入巢庫存。"
       },
       {
         "id": "F02",
@@ -392,12 +393,13 @@
         "replenishment_per_day_mg": null,
         "known_to_every_worker": false,
         "day1_observation": "W011搜索但沒有可帶回的可食殘片",
-        "last_local_visit_sim_day": 9,
+        "last_local_visit_sim_day": 10,
         "day5_observation": "無新昆蟲遺骸採收，原飛蛾不復活",
         "day6_observation": "W011搜尋無新可搬回殘骸",
         "day7_observation": "W011找不到新可搬回死蟲；舊蛾屍不再生",
         "day8_observation": "W011尋找殘骸但沒有新蛋白採入",
-        "day9_observation": "W011搜尋既有F07死蟲位置，未找到新可搬運蛋白，空載返巢。"
+        "day9_observation": "W011搜尋既有F07死蟲位置，未找到新可搬運蛋白，空載返巢。",
+        "day10_observation": "W011回訪既有F07位置，實際發現今日新的殘骸，取得少量可搬運昆蟲物質並回巢；可消化蛋白質mg未知。"
       },
       {
         "id": "F08",
@@ -412,14 +414,15 @@
         "edible_mass_mg": null,
         "replenishment_per_day_mg": null,
         "known_to_every_worker": false,
-        "last_local_visit_sim_day": 9,
+        "last_local_visit_sim_day": 10,
         "day2_observation": "W015少量蜜滴；花蜜來源衰退，不能假定持續",
         "day3_observation": "模型花蜜窗口沒有帶回結果，不證明全年花期結束",
         "day4_observation": "W015搜尋但無蜜滴帶回",
         "day5_observation": "當日花蜜未入巢",
         "day6_observation": "既有小花短時泌蜜，未經本巢採集或觀察",
         "day7_observation": "W017探查既有小白花，今日沒有可確認收成",
-        "day9_observation": "F08小白花短暫有可及花蜜；W017到達、採得並成功帶回一筆液態糖源，重量與含糖量未知。"
+        "day9_observation": "F08小白花短暫有可及花蜜；W017到達、採得並成功帶回一筆液態糖源，重量與含糖量未知。",
+        "day10_observation": "W017重訪昨日有花蜜的F08小白花，但本日沒有可採花蜜窗口，空載折返；昨日已採的糖不會刷新。"
       },
       {
         "id": "F09",
@@ -471,7 +474,7 @@
         "edible_mass_mg": null,
         "replenishment_per_day_mg": null,
         "known_to_every_worker": false,
-        "last_local_visit_sim_day": 7,
+        "last_local_visit_sim_day": 10,
         "day2_observation": "W006與W011發現可搬回的小殘片，分解者活動使來源短期且品質未知",
         "day3_observation": "W011帶回一小片昆蟲殘骸；蛋白質量未知，來源不可無限使用",
         "day4_observation": "W006回收舊殘骸一小片；連續採食使可回收舊殘屑不可靠",
@@ -479,7 +482,8 @@
         "day6_observation": "W006搜索無可搬回的殘屑",
         "day7_observation": "W006搜尋被持續分解的殘屑，無可帶回蛋白",
         "day8_observation": "分解者持續耗用既有腐屑",
-        "day9_background_evidence": "F11附近自然出現一筆新的小型昆蟲殘骸（新的獨立來源事件），不同於先前已腐爛的舊殘片；主巢尚未取得。"
+        "day9_background_evidence": "F11附近自然出現一筆新的小型昆蟲殘骸（新的獨立來源事件），不同於先前已腐爛的舊殘片；主巢尚未取得。",
+        "day10_observation": "W006沿個體已知的F11腐葉碎屑路線搜尋，發現Day9才出現、未被主巢採收的昆蟲殘骸仍有小部分可搬運，帶回一筆蛋白來源；與F07不同來源，不重複計數。"
       },
       {
         "id": "U00",
@@ -738,7 +742,7 @@
     "soil_moisture_percent": null,
     "latest_external_reference": null,
     "source_policy_ref": "docs/historical-climate-weather-engine.md",
-    "active_date": "2026-11-08",
+    "active_date": "2026-11-09",
     "last_actual_weather_simulation_day": null,
     "next_day_weather_policy": "Day9起，依docs/historical-climate-weather-engine.md：當日完整觀測優先，有效官方預報次之，否則使用1991–2020臺中月氣候基準的可重播虛構天氣；不沿用過期預報。",
     "previous_external_reference": {
@@ -777,14 +781,14 @@
     "forecast_pop_percent": null,
     "forecast_weather_text": null,
     "weather_data_kind": "synthetic_climatology",
-    "last_weather_driven_sim_day": 9,
+    "last_weather_driven_sim_day": 10,
     "long_run_climatology_ref": "data/taichung-climatology-1991-2020.json",
     "long_run_weather_engine_ref": "saves/world-state.json#/climate_engine",
     "climate_weather_rules_effective_sim_day": 9,
     "day8_forecast_reference_frozen": true,
     "latest_daily_weather": {
-      "date": "2026-11-08",
-      "weekday": "Sunday",
+      "date": "2026-11-09",
+      "weekday": "Monday",
       "timezone": "Asia/Taipei",
       "season": "autumn",
       "weather_kind": "synthetic_climatology",
@@ -796,17 +800,17 @@
         "data/taichung-climatology-1991-2020.json"
       ],
       "forecast_issue_time": null,
-      "previous_day_weather_ref": "saves/world-state.json#/day_log_latest/weather Day8",
+      "previous_day_weather_ref": "saves/world-state.json#/day_log_latest/weather Day9",
       "synthetic_weather": {
         "wet": false,
         "precipitation_mm": 0,
-        "daily_mean_air_temperature_c": 23.41,
-        "relative_humidity_percent": 70.1,
-        "model_surface_wetness_index": 0.1625,
-        "model_shaded_soil_memory_index": 0.3044,
-        "climate_prior_rain_probability": 0.115634,
-        "rainfall_probability_model": 0.115634,
-        "temperature_anomaly_c": 0.058,
+        "daily_mean_air_temperature_c": 21.95,
+        "relative_humidity_percent": 69.5,
+        "model_surface_wetness_index": 0.0219,
+        "model_shaded_soil_memory_index": 0.2096,
+        "climate_prior_rain_probability": 0.115597,
+        "rainfall_probability_model": 0.063578,
+        "temperature_anomaly_c": -1.3065,
         "day_min_temperature_c": null,
         "day_max_temperature_c": null
       },
@@ -822,28 +826,28 @@
       },
       "model_assumptions": "uncalibrated seasonal stochastic scenario; NOT actual future weather",
       "seed_and_draws": {
-        "root_seed": 4190531011,
-        "named_weather_seed": 2009413875,
+        "root_seed": 4059926709,
+        "named_weather_seed": 2017018933,
         "weather_draws": [
-          0.95129741,
-          0.29281897,
-          0.01995925,
-          0.00623952,
-          0.35859094,
-          0.64597211,
-          0.25375494,
-          0.1977242,
-          0.78011641,
-          0.25468435,
-          0.76238359,
-          0.6992303
+          0.21988613,
+          0.634696,
+          0.19035399,
+          0.56308292,
+          0.09922115,
+          0.76845855,
+          0.29998471,
+          0.27461348,
+          0.73325238,
+          0.02443776,
+          0.02099842,
+          0.96877953
         ]
       }
     },
-    "synthetic_daily_mean_air_temp_c": 23.41,
+    "synthetic_daily_mean_air_temp_c": 21.95,
     "synthetic_daily_rainfall_mm": 0,
-    "synthetic_daily_rh_percent": 70.1,
-    "synthetic_soil_wetness_index": 0.1625
+    "synthetic_daily_rh_percent": 69.5,
+    "synthetic_soil_wetness_index": 0.0219
   },
   "nest_microclimate": {
     "nursery_count_legacy": 2,
@@ -854,7 +858,7 @@
     "temperature_c": null,
     "water_intrusion_probability": null,
     "soil_stability": null,
-    "latest_assessment": "Day9生成無雨、23.41°C日均溫；地表潮濕模型指數0.1625，實際巢溫濕與土壤%未知",
+    "latest_assessment": "Day10虛擬乾燥天日均溫21.95°C；地表濕潤指數0.0219，僅為無單位情境參數，實際巢內溫濕與水量未知",
     "external_weather_is_not_nest_observation": true
   },
   "ecology": {
@@ -907,15 +911,15 @@
     "pathogens": null,
     "parasitoids": "previously observed near leaf aphids",
     "last_day_qualitative": {
-      "weather": "Day9臺中長期氣候生成乾日、23.41°C，虛擬雨量0mm；不是當日實測",
-      "soil": "前一天園丁虛構澆水使土壤模型保有0.1625潮濕指數，非土壤含水%",
-      "plants": "蚜蟲仍在葉背，但本日沒有被抽中的可採蜜露窗口；不能說已滅絕。",
-      "other_insects": "F11附近自然出現一筆新的小型昆蟲殘骸（新的獨立來源事件），不同於先前已腐爛的舊殘片；主巢尚未取得。",
-      "competing_colonies": "異巢蟻在F04採集介殼蟲蜜露，F05蜘蛛仍有活動；未與主巢工蟻近距相遇。",
-      "predators": "異巢蟻在F04採集介殼蟲蜜露，F05蜘蛛仍有活動；未與主巢工蟻近距相遇。",
-      "colony_economy": "W017從F08帶回一筆花蜜；W005/W011空手，物理庫存與代謝未知；營養風險不可定量",
-      "new_exploration": "W016回訪Day8自己已探索的U01落葉石縫並原路返回；沒有找到食物或開拓新節點。",
-      "human": "無新園丁事件；前一日澆水只做情境記憶"
+      "weather": "Day10 2026-11-09 以臺中30年氣候模擬乾天、日均溫21.95°C；虛擬雨量0mm，非實際天氣",
+      "soil": "局部澆水2日前的情境記憶消退，無量綱地表水分模型指數0.0219，非實測含水%",
+      "plants": "原有蚜蟲有短暫可及蜜露，但W005今天沒有到場；食源仍在外面，主巢不能把這份糖當入巢庫存。",
+      "other_insects": "F07附近出現一筆新的小型昆蟲死亡殘骸，有獨立物理來源事件V2D10-E04；不是Day7已耗盡的舊飛蛾重新刷新。",
+      "competing_colonies": "F04今天沒有抽到可確認的異巢採集活動，但既有異巢不因此消失；F05蜘蛛仍在草根區自行活動，未與主巢工蟻近距遭遇。",
+      "predators": "F04今天沒有抽到可確認的異巢採集活動，但既有異巢不因此消失；F05蜘蛛仍在草根區自行活動，未與主巢工蟻近距遭遇。",
+      "colony_economy": "W011於F07採新殘骸與W006於F11採Day9新殘骸，各一筆蛋白來源搬回；質量與消耗未知",
+      "new_exploration": "W016今天沒有再進入U01，於已知巢外短程活動後回巢；未知X01～X04仍未探索，無新地圖節點。",
+      "human": "沒有新園丁行動或新澆水；此前澆水影響仍屬未校準地表指數"
     },
     "day2_latent_rival_activity": [
       {
@@ -1026,12 +1030,12 @@
     "water_supply_amount": null,
     "food_nodes_renewable_only_if_evidence": true,
     "v2_latest_ledger": {
-      "day": 9,
+      "day": 10,
       "legacy_checkpoint_snapshot": {
         "sugar_units": 3,
         "protein_units": 3,
         "unit": "v1抽象遊戲單位",
-        "valid_for": "v1第1150分鐘歷史，非今日營養"
+        "valid_for": "v1第1150分鐘歷史值，非Day10物理營養"
       },
       "v2_physical": {
         "initial_carbohydrate_mg": null,
@@ -1053,41 +1057,49 @@
         "water_used_uL": null
       },
       "qualitative_flow": {
-        "F01": "W005依熟悉路線回訪F01，沒有成功帶回糖液，空載安全回巢。",
-        "F07": "W011搜尋既有F07死蟲位置，未找到新可搬運蛋白，空載返巢。",
-        "F08": "F08小白花短暫有可及花蜜；W017到達、採得並成功帶回一筆液態糖源，重量與含糖量未知。",
-        "F11": "F11附近自然出現一筆新的小型昆蟲殘骸（新的獨立來源事件），不同於先前已腐爛的舊殘片；主巢尚未取得。",
-        "F04": "異巢蟻在F04採集介殼蟲蜜露，F05蜘蛛仍有活動；未與主巢工蟻近距相遇。",
-        "U01": "W016回訪Day8自己已探索的U01落葉石縫並原路返回；沒有找到食物或開拓新節點。",
-        "water": "虛構情境無雨，實際飲用水存量未知",
-        "consumption": "1后、14工蟻、2幼蟲的攝食及代謝需求存在，mg與mJ未知",
-        "storage": "不能從一次花蜜入巢推測剩餘食物"
+        "F01": "原有蚜蟲有短暫可及蜜露，但W005今天沒有到場；食源仍在外面，主巢不能把這份糖當入巢庫存。",
+        "F07": "W011回訪既有F07位置，實際發現今日新的殘骸，取得少量可搬運昆蟲物質並回巢；可消化蛋白質mg未知。",
+        "F08": "W017重訪昨日有花蜜的F08小白花，但本日沒有可採花蜜窗口，空載折返；昨日已採的糖不會刷新。",
+        "F11": "W006沿個體已知的F11腐葉碎屑路線搜尋，發現Day9才出現、未被主巢採收的昆蟲殘骸仍有小部分可搬運，帶回一筆蛋白來源；與F07不同來源，不重複計數。",
+        "rivals_predators": "F04今天沒有抽到可確認的異巢採集活動，但既有異巢不因此消失；F05蜘蛛仍在草根區自行活動，未與主巢工蟻近距遭遇。",
+        "water": "虛擬未下雨，但巢內飲水與水份攝取量仍未知",
+        "consumption": "工蟻14、蟻后1及幼蟲2有實際營養需求，mg/mJ未知",
+        "storage": "2筆蛋白來源帶入巢不代表蛋白含量有定量值，也不等於巢內儲糧已達安全"
       },
-      "balance_status": "qualitative_one_delivery_no_physical_stock_calibration",
+      "balance_status": "two_independent_protein_source_deliveries_no_calibrated_physical_stocks",
       "observed_simulated_deliveries": [
         {
-          "event_id": "V2D9-E06",
-          "worker_id": "W017",
-          "source_node": "F08",
-          "nutrient": "carbohydrate",
+          "event_id": "V2D10-E05",
+          "worker_id": "W011",
+          "source_node": "F07",
+          "nutrient": "protein",
           "confirmed_delivery_events": 1,
           "delivered_mass_mg": null,
-          "qualitative_amount": "短時花蜜"
+          "qualitative_amount": "獨立新事件的昆蟲殘片"
+        },
+        {
+          "event_id": "V2D10-E07",
+          "worker_id": "W006",
+          "source_node": "F11",
+          "nutrient": "protein",
+          "confirmed_delivery_events": 1,
+          "delivered_mass_mg": null,
+          "qualitative_amount": "新獨立昆蟲殘骸的小量可攜部分（可消化蛋白未知）"
         }
       ],
-      "evidence": "seeded_scenario_from_executable_JavaScript_day_engine_not_observation"
+      "evidence": "reproducible_seeded_qualitative_causal_scenario_not_real_measurement"
     }
   },
   "model_controls": {
     "control_mode": "observer_autonomous",
     "task_assignment": "local_response_thresholds_not_permanent_jobs",
-    "random_seed": 4190531011,
+    "random_seed": 4059926709,
     "model_parameter_set": "pheidole_megacephala_literature_v1_field_rates_uncalibrated",
     "uncertainty_tracking": true,
     "auto_advance_on_chat_request": true,
     "last_rng_algorithm": "FNV-1a32 + independently named mulberry32 streams",
-    "last_simulated_day": 9,
-    "weather_source_mode": "historical_climate_driven_synthetic_day9",
+    "last_simulated_day": 10,
+    "weather_source_mode": "synthetic_climatology_with_previous_day_persistence",
     "weather_source_requirements": {
       "observed_vs_forecast_distinguished": true,
       "no_guess_of_missing_values": true,
@@ -1138,17 +1150,17 @@
     "pheromone_component_count": "R96_dual_model_compatible_R102_single_alternative_chemical_count_unresolved"
   },
   "day_log_latest": {
-    "day": 9,
-    "calendar_date": "2026-11-08",
-    "weekday": "Sunday",
+    "day": 10,
+    "calendar_date": "2026-11-09",
+    "weekday": "Monday",
     "season": "autumn",
     "timezone": "Asia/Taipei",
-    "elapsed_hours_start": 192,
-    "elapsed_hours_end": 216,
-    "model": "v3-executable-node-scenario-climate-foraging-demography",
+    "elapsed_hours_start": 216,
+    "elapsed_hours_end": 240,
+    "model": "v3-executable_day_engine_v1_climatology_and_diet_sources",
     "weather": {
-      "date": "2026-11-08",
-      "weekday": "Sunday",
+      "date": "2026-11-09",
+      "weekday": "Monday",
       "timezone": "Asia/Taipei",
       "season": "autumn",
       "weather_kind": "synthetic_climatology",
@@ -1160,17 +1172,17 @@
         "data/taichung-climatology-1991-2020.json"
       ],
       "forecast_issue_time": null,
-      "previous_day_weather_ref": "saves/world-state.json#/day_log_latest/weather Day8",
+      "previous_day_weather_ref": "saves/world-state.json#/day_log_latest/weather Day9",
       "synthetic_weather": {
         "wet": false,
         "precipitation_mm": 0,
-        "daily_mean_air_temperature_c": 23.41,
-        "relative_humidity_percent": 70.1,
-        "model_surface_wetness_index": 0.1625,
-        "model_shaded_soil_memory_index": 0.3044,
-        "climate_prior_rain_probability": 0.115634,
-        "rainfall_probability_model": 0.115634,
-        "temperature_anomaly_c": 0.058,
+        "daily_mean_air_temperature_c": 21.95,
+        "relative_humidity_percent": 69.5,
+        "model_surface_wetness_index": 0.0219,
+        "model_shaded_soil_memory_index": 0.2096,
+        "climate_prior_rain_probability": 0.115597,
+        "rainfall_probability_model": 0.063578,
+        "temperature_anomaly_c": -1.3065,
         "day_min_temperature_c": null,
         "day_max_temperature_c": null
       },
@@ -1186,339 +1198,386 @@
       },
       "model_assumptions": "uncalibrated seasonal stochastic scenario; NOT actual future weather",
       "seed_and_draws": {
-        "root_seed": 4190531011,
-        "named_weather_seed": 2009413875,
+        "root_seed": 4059926709,
+        "named_weather_seed": 2017018933,
         "weather_draws": [
-          0.95129741,
-          0.29281897,
-          0.01995925,
-          0.00623952,
-          0.35859094,
-          0.64597211,
-          0.25375494,
-          0.1977242,
-          0.78011641,
-          0.25468435,
-          0.76238359,
-          0.6992303
+          0.21988613,
+          0.634696,
+          0.19035399,
+          0.56308292,
+          0.09922115,
+          0.76845855,
+          0.29998471,
+          0.27461348,
+          0.73325238,
+          0.02443776,
+          0.02099842,
+          0.96877953
         ]
       }
     },
     "rng": {
       "algorithm": "FNV-1a32 + independent named mulberry32 streams",
-      "seed_material": "antempire-garden-v3|Day8->Day9|bf7101a21d115788ed4d37d12dbeb210ab46ca05|2026-11-08",
-      "seed": 4190531011,
+      "seed_material": "antempire-garden-v3|Day9->Day10|dabad961b75b5b5989c0e08686005ae66d4c3378|2026-11-09",
+      "seed": 4059926709,
       "named_stream_seeds": {
-        "weather_climate": 2009413875,
-        "plants": 896094811,
-        "sap_hemipterans": 1887048382,
-        "insects_and_detritus": 2160390677,
-        "rivals": 3709074352,
-        "predators": 3915764747,
-        "terrain": 3195853094,
-        "worker_W005": 3817895096,
-        "worker_W011": 3817748001,
-        "worker_W017": 3851303239,
-        "worker_W016": 3834525620,
-        "worker_W013": 3784192763,
-        "queen_and_brood": 2529718654
+        "weather_climate": 2017018933,
+        "plants": 4051561177,
+        "sap_hemipterans": 1052219620,
+        "insects_and_detritus": 2788438583,
+        "rivals": 570999706,
+        "predators": 2110094453,
+        "terrain": 552468548,
+        "worker_W005": 1640176734,
+        "worker_W011": 1640029639,
+        "worker_W017": 1606474401,
+        "worker_W016": 1589696782,
+        "worker_W013": 1673584877,
+        "queen_and_brood": 1107100184,
+        "worker_W006": 1623399115
       },
       "draws_first_twelve_by_stream": {
         "weather_climate": [
-          0.95129741,
-          0.29281897,
-          0.01995925,
-          0.00623952,
-          0.35859094,
-          0.64597211,
-          0.25375494,
-          0.1977242,
-          0.78011641,
-          0.25468435,
-          0.76238359,
-          0.6992303
+          0.21988613,
+          0.634696,
+          0.19035399,
+          0.56308292,
+          0.09922115,
+          0.76845855,
+          0.29998471,
+          0.27461348,
+          0.73325238,
+          0.02443776,
+          0.02099842,
+          0.96877953
         ],
         "plants": [
-          0.2328841,
-          0.38985029,
-          0.76265309,
-          0.00402211,
-          0.20365026,
-          0.28846035,
-          0.72218452,
-          0.84387641,
-          0.72435713,
-          0.11901898,
-          0.46581229,
-          0.26681946
+          0.54459318,
+          0.91228991,
+          0.60365328,
+          0.00482929,
+          0.15703573,
+          0.01938248,
+          0.83468277,
+          0.05244693,
+          0.18288958,
+          0.18971266,
+          0.85790174,
+          0.46171538
         ],
         "sap_hemipterans": [
-          0.21046003,
-          0.68149269,
-          0.20467804,
-          0.46539597,
-          0.2131255,
-          0.47233812,
-          0.95023335,
-          0.97964897,
-          0.29064785,
-          0.84286534,
-          0.93395317,
-          0.80378609
+          0.2557772,
+          0.25895739,
+          0.84287507,
+          0.72268613,
+          0.10053701,
+          0.83344687,
+          0.14459784,
+          0.76654443,
+          0.95869817,
+          0.30080634,
+          0.76481007,
+          0.45006558
         ],
         "insects_and_detritus": [
-          0.20587176,
-          0.71871099,
-          0.21979544,
-          0.33130815,
-          0.74504883,
-          0.82200332,
-          0.09425498,
-          0.31980938,
-          0.09039649,
-          0.95670289,
-          0.08770502,
-          0.6128002
+          0.1222424,
+          0.34927802,
+          0.18446933,
+          0.27100337,
+          0.80737658,
+          0.40023854,
+          0.36509441,
+          0.99299566,
+          0.08293773,
+          0.53405373,
+          0.8222207,
+          0.75226147
         ],
         "rivals": [
-          0.01807388,
-          0.08157854,
-          0.02412756,
-          0.37711658,
-          0.91204938,
-          0.48353246,
-          0.91649795,
-          0.10572214,
-          0.21415947,
-          0.57338426,
-          0.78285511,
-          0.50715042
+          0.984272,
+          0.18029095,
+          0.06697482,
+          0.94973115,
+          0.97757107,
+          0.16265103,
+          0.05235492,
+          0.56759658,
+          0.67632595,
+          0.79807026,
+          0.4379172,
+          0.5694501
         ],
         "predators": [
-          0.55031624,
-          0.79868672,
-          0.05109912,
-          0.97103307,
-          0.01368486,
-          0.70834424,
-          0.82978111,
-          0.57169045,
-          0.9179945,
-          0.75631884,
-          0.67029235,
-          0.53684404
+          0.1057065,
+          0.42780571,
+          0.15612599,
+          0.83318091,
+          0.8148388,
+          0.02857766,
+          0.71392991,
+          0.6159259,
+          0.30049056,
+          0.87722281,
+          0.83994829,
+          0.95387129
         ],
         "terrain": [
-          0.73560199,
-          0.59696904,
-          0.96487402,
-          0.13225152,
-          0.0789115,
-          0.23437441,
-          0.44882697,
-          0.83026615,
-          0.74802515,
-          0.76525889,
-          0.8654099,
-          0.50369558
+          0.57636095,
+          0.72882856,
+          0.53575446,
+          0.16773164,
+          0.53492697,
+          0.77647189,
+          0.69966426,
+          0.4690507,
+          0.92971706,
+          0.72161323,
+          0.53108349,
+          0.16642091
         ],
         "worker_W005": [
-          0.56084825,
-          0.82718994,
-          0.08124731,
-          0.37146476,
-          0.80830324,
-          0.16970194,
-          0.59310372,
-          0.05151835,
-          0.85152339,
-          0.14721174,
-          0.14432484,
-          0.4384808
+          0.93595293,
+          0.54941038,
+          0.73106652,
+          0.30892268,
+          0.99444182,
+          0.71734633,
+          0.4296454,
+          0.74860605,
+          0.97257112,
+          0.55534815,
+          0.70927289,
+          0.74702358
         ],
         "worker_W011": [
-          0.12408648,
-          0.67922565,
-          0.1354507,
-          0.42449998,
-          0.30897222,
-          0.0097029,
-          0.821422,
-          0.12076016,
-          0.9044344,
-          0.08122442,
-          0.67600871,
-          0.04200468
+          0.36077929,
+          0.04087978,
+          0.21269456,
+          0.10721282,
+          0.61612355,
+          0.78908044,
+          0.69118263,
+          0.25097048,
+          0.53907502,
+          0.94978229,
+          0.04073596,
+          0.07847149
         ],
         "worker_W017": [
-          0.24710213,
-          0.52096923,
-          0.60235253,
-          0.43599698,
-          0.27229318,
-          0.30700974,
-          0.73555043,
-          0.25489357,
-          0.04587419,
-          0.3265765,
-          0.86025933,
-          0.29553786
+          0.35987515,
+          0.66551403,
+          0.04369474,
+          0.55591427,
+          0.14085403,
+          0.2440039,
+          0.03289336,
+          0.87906213,
+          0.66271622,
+          0.00369908,
+          0.86225037,
+          0.89762145
         ],
         "worker_W016": [
-          0.26171662,
-          0.70076725,
-          0.44917798,
-          0.54260868,
-          0.95539209,
-          0.5120936,
-          0.84851429,
-          0.83841326,
-          0.84928265,
-          0.87334845,
-          0.27706068,
-          0.45501128
+          0.63934706,
+          0.38097312,
+          0.98681951,
+          0.50564651,
+          0.38862645,
+          0.8362591,
+          0.7472516,
+          0.51268778,
+          0.83004395,
+          0.49277811,
+          0.65574098,
+          0.92298112
         ],
         "worker_W013": [
-          0.32734988,
-          0.49490236,
-          0.2564946,
-          0.31694875,
-          0.55365386,
-          0.72052656,
-          0.05363646,
-          0.06217362,
-          0.3545047,
-          0.93330552,
-          0.38045722,
-          0.56552799
+          0.96660773,
+          0.34584782,
+          0.38371963,
+          0.6391092,
+          0.94053727,
+          0.98662944,
+          0.86216298,
+          0.94475454,
+          0.0820834,
+          0.59117839,
+          0.57171459,
+          0.93658027
         ],
         "queen_and_brood": [
-          0.15825186,
-          0.01431503,
-          0.71225947,
-          0.70287965,
-          0.3696454,
-          0.84247875,
-          0.32592668,
-          0.46167128,
-          0.21046556,
-          0.59796721,
-          0.71351004,
-          0.04198684
+          0.21517055,
+          0.30207428,
+          0.55739105,
+          0.0130774,
+          0.33109406,
+          0.82289994,
+          0.30370364,
+          0.75038141,
+          0.58664398,
+          0.87922847,
+          0.72710993,
+          0.13067503
+        ],
+        "worker_W006": [
+          0.59179354,
+          0.18570803,
+          0.25328036,
+          0.2924205,
+          0.71014015,
+          0.60853633,
+          0.39726284,
+          0.41603952,
+          0.17422671,
+          0.50774643,
+          0.00853197,
+          0.2952684
         ]
       },
       "thresholds_scientifically_calibrated": false
     },
     "events": [
       {
-        "id": "V2D9-E01",
-        "time": "00:00–24:00",
+        "id": "V2D10-E01",
+        "time_start": "00:00",
+        "time_end": "24:00",
         "actor": "climate_engine",
         "location": "臺中西屯虛構花園",
-        "description": "歷史氣候生成虛擬無雨日，合成日均溫23.41°C、模擬雨量0mm；不是11/8真實觀測。",
+        "description": "延續前日虛擬乾天與土表水分記憶，生成無雨、21.95°C日均溫、虛擬雨量0mm（非2026年11月9日真實天氣）。",
         "background": true
       },
       {
-        "id": "V2D9-E02",
-        "time": "05:50–10:30",
-        "actor": "F01蚜蟲",
-        "location": "F01",
-        "description": "蚜蟲仍在葉背，但本日沒有被抽中的可採蜜露窗口；不能說已滅絕。",
+        "id": "V2D10-E02",
+        "time_start": "06:00",
+        "time_end": "10:00",
+        "actor": "F01蚜蟲與植物",
+        "location": "F01葉背",
+        "description": "原有蚜蟲有短暫可及蜜露，但W005今天沒有到場；食源仍在外面，主巢不能把這份糖當入巢庫存。",
         "background": true
       },
       {
-        "id": "V2D9-E03",
-        "time": "06:30–09:20",
+        "id": "V2D10-E03",
+        "time_start": "06:30",
+        "time_end": "09:10",
         "actor": "W005",
-        "location": "N00→F01→N00",
-        "description": "W005依熟悉路線回訪F01，沒有成功帶回糖液，空載安全回巢。",
+        "location": "N00",
+        "description": "W005留在巢內進行局部照護與休止，本日未前往F01；沒有新的蜜露收入。",
         "background": false
       },
       {
-        "id": "V2D9-E04",
-        "time": "06:00–18:00",
-        "actor": "昆蟲背景世界",
-        "location": "F11",
-        "description": "F11附近自然出現一筆新的小型昆蟲殘骸（新的獨立來源事件），不同於先前已腐爛的舊殘片；主巢尚未取得。",
+        "id": "V2D10-E04",
+        "time_start": "06:50",
+        "time_end": "08:50",
+        "actor": "外界昆蟲死亡事件",
+        "location": "F07近石塊落葉",
+        "description": "F07附近出現一筆新的小型昆蟲死亡殘骸，有獨立物理來源事件V2D10-E04；不是Day7已耗盡的舊飛蛾重新刷新。",
         "background": true
       },
       {
-        "id": "V2D9-E05",
-        "time": "10:50–13:30",
+        "id": "V2D10-E05",
+        "time_start": "10:30",
+        "time_end": "12:30",
         "actor": "W011",
         "location": "N00→F07→N00",
-        "description": "W011搜尋既有F07死蟲位置，未找到新可搬運蛋白，空載返巢。",
+        "description": "W011回訪既有F07位置，實際發現今日新的殘骸，取得少量可搬運昆蟲物質並回巢；可消化蛋白質mg未知。",
         "background": false
       },
       {
-        "id": "V2D9-E06",
-        "time": "08:20–11:50",
+        "id": "V2D10-E06",
+        "time_start": "13:00",
+        "time_end": "15:10",
         "actor": "W017",
         "location": "N00→F08→N00",
-        "description": "F08小白花短暫有可及花蜜；W017到達、採得並成功帶回一筆液態糖源，重量與含糖量未知。",
+        "description": "W017重訪昨日有花蜜的F08小白花，但本日沒有可採花蜜窗口，空載折返；昨日已採的糖不會刷新。",
         "background": false
       },
       {
-        "id": "V2D9-E07",
-        "time": "09:00–17:00",
-        "actor": "背景異巢蟻/蜘蛛",
-        "location": "F03/F04/F05/F10",
-        "description": "異巢蟻在F04採集介殼蟲蜜露，F05蜘蛛仍有活動；未與主巢工蟻近距相遇。",
+        "id": "V2D10-E07",
+        "time_start": "09:15",
+        "time_end": "11:30",
+        "actor": "W006",
+        "location": "N00→F11→N00",
+        "description": "W006沿個體已知的F11腐葉碎屑路線搜尋，發現Day9才出現、未被主巢採收的昆蟲殘骸仍有小部分可搬運，帶回一筆蛋白來源；與F07不同來源，不重複計數。",
+        "background": false
+      },
+      {
+        "id": "V2D10-E08",
+        "time_start": "09:00",
+        "time_end": "18:00",
+        "actor": "背景外巢蟻與蜘蛛",
+        "location": "F04／F05",
+        "description": "F04今天沒有抽到可確認的異巢採集活動，但既有異巢不因此消失；F05蜘蛛仍在草根區自行活動，未與主巢工蟻近距遭遇。",
         "background": true
       },
       {
-        "id": "V2D9-E08",
-        "time": "13:10–16:30",
+        "id": "V2D10-E09",
+        "time_start": "13:00",
+        "time_end": "16:20",
         "actor": "W016",
-        "location": "N00→U00→U01→N00",
-        "description": "W016回訪Day8自己已探索的U01落葉石縫並原路返回；沒有找到食物或開拓新節點。",
+        "location": "N00草根近旁",
+        "description": "W016今天沒有再進入U01，於已知巢外短程活動後回巢；未知X01～X04仍未探索，無新地圖節點。",
         "background": false
       },
       {
-        "id": "V2D9-E09",
-        "time": "11:20–14:00",
+        "id": "V2D10-E10",
+        "time_start": "11:20",
+        "time_end": "14:00",
         "actor": "W013",
         "location": "N00巢口",
-        "description": "W013在前一天澆水留下的鬆土附近整理少量土粒；沒有新巢室與實際巢內水分測量。",
+        "description": "前日澆水形成的地表濕潤記憶繼續衰減；W013今天沒有確認新的表土維護事件，巢室數仍然不變。",
         "background": false
       },
       {
-        "id": "V2D9-E10",
-        "time": "17:30–22:00",
-        "actor": "Q001與護幼工蟻",
+        "id": "V2D10-E11",
+        "time_start": "17:30",
+        "time_end": "22:00",
+        "actor": "Q001與巢內照護工蟻",
         "location": "N00育幼區",
-        "description": "Q001在未校準情境中新增E004一顆卵；既有E001/E002/E003未孵化，L001/L002仍為幼蟲。",
+        "description": "Q001今日未出現新產卵事件；既有E001～E004仍為卵，L001／L002仍是幼蟲，未強制孵化、化蛹或死亡。",
         "background": false
       },
       {
-        "id": "V2D9-E11",
-        "time": "22:00–24:00",
-        "actor": "營養結算",
+        "id": "V2D10-E12",
+        "time_start": "22:00",
+        "time_end": "24:00",
+        "actor": "nutrition_engine",
         "location": "N00",
-        "description": "外部食物成功收入1筆花蜜，沒有確認新蛋白入巢；質量、攝食及儲糧仍未知，不能斷定即將餓死或保證充足。",
+        "description": "本日確定兩筆獨立昆蟲來源成功帶回巢；食物蛋白可利用量、全群攝食、儲糧和代謝仍無可靠mg數據，營養壓力不能定量，也不硬判飢餓死亡。",
         "background": false
       }
     ],
     "food": {
-      "external_deliveries_count": 1,
-      "delivered_food_event_ids": [
-        "V2D9-E06"
+      "confirmed_delivery_count": 2,
+      "delivery_event_ids": [
+        "V2D10-E05",
+        "V2D10-E07"
       ],
-      "physical_mg_balance_quantified": false,
+      "source_event_ids": [
+        "V2D10-E04",
+        "V2D9-E04"
+      ],
+      "food_batches": [
+        "FB-V2D10-E05",
+        "FB-V2D10-E07"
+      ],
+      "actual_assimilable_protein_mg": null,
+      "metabolic_energy_mJ": null,
+      "physical_mass_balance_quantified": false,
       "nutritional_risk": "not_assessable"
     },
     "demography": {
       "queen": 1,
-      "workers": 14,
+      "workers_before": 14,
+      "workers_after": 14,
       "worker_eclosions": 0,
       "worker_deaths": 0,
-      "eggs_before": 3,
-      "new_eggs": 1,
+      "eggs_before": 4,
+      "new_eggs": 0,
       "eggs_after": 4,
       "larvae_after": 2,
       "pupae_after": 0
     },
-    "model_assumption_warning": "虛擬氣候及生態事件概率均是未校準情境；物理營養與生理參數未知"
+    "model_assumption_warning": "虛擬氣候與食源/生殖事件閾值均未以臺中本種實地資料校準。新昆蟲來源純模擬事件。養分物理量、巢內微氣候及死亡風險仍未知。"
   },
   "foraging_economy": {
     "schema_version": "literature_mechanism_v1",
@@ -1544,12 +1603,13 @@
         "source_species": null,
         "last_day5_local_evidence": "W005本日回訪未找到可收集蜜露；葉背蚜蟲不宣告全滅",
         "last_local_visit_sim_day": 8,
-        "current_qualitative_availability": "day9_no_confirmed_accessible_honeydew_not_absent",
+        "current_qualitative_availability": "day10_accessible_honeydew_window_not_collected_by_main_workers",
         "note": "一次探索空載只能說該次沒有確認帶回，不能斷言該點全天庫存為零。",
         "last_day6_local_evidence": "W005一次採得並帶回；該時間窗可及，其他時間庫存及分泌率未知",
         "last_day7_local_evidence": "W005到場、當次沒有採到可及蜜露，未認定整日完全沒有來源",
         "last_day8_local_evidence": "W005於園丁澆水前採到少量蜜露；澆水後可及程度未知，不假設每日固定補給",
-        "last_day9_local_evidence": "W005依熟悉路線回訪F01，沒有成功帶回糖液，空載安全回巢。"
+        "last_day9_local_evidence": "W005依熟悉路線回訪F01，沒有成功帶回糖液，空載安全回巢。",
+        "last_day10_background_evidence": "原有蚜蟲有短暫可及蜜露，但W005今天沒有到場；食源仍在外面，主巢不能把這份糖當入巢庫存。"
       },
       "F02": {
         "source_type": "plant_wound_sap",
@@ -1656,12 +1716,13 @@
         "source_species": null,
         "last_day5_local_evidence": "無新昆蟲遺骸採收，原飛蛾不復活",
         "last_local_visit_sim_day": 8,
-        "current_qualitative_availability": "unknown_not_reset_or_assumed_zero",
+        "current_qualitative_availability": "day10_new_carcass_partial_harvest_remaining_unknown",
         "note": "一次探索空載只能說該次沒有確認帶回，不能斷言該點全天庫存為零。",
         "last_day6_local_evidence": "W011搜尋，無新增可採屍體",
         "last_day7_local_evidence": "W011沒有新遺骸可搬回",
         "last_day8_local_evidence": "W011重訪沒有新昆蟲屍體",
-        "last_day9_local_evidence": "W011搜尋既有F07死蟲位置，未找到新可搬運蛋白，空載返巢。"
+        "last_day9_local_evidence": "W011搜尋既有F07死蟲位置，未找到新可搬運蛋白，空載返巢。",
+        "last_day10_local_evidence": "W011回訪既有F07位置，實際發現今日新的殘骸，取得少量可搬運昆蟲物質並回巢；可消化蛋白質mg未知。"
       },
       "F08": {
         "source_type": "flower_nectar",
@@ -1678,11 +1739,12 @@
         "source_species": null,
         "last_day5_local_evidence": "當日花蜜未入巢",
         "last_local_visit_sim_day": 7,
-        "current_qualitative_availability": "day9_brief_nectar_window_partly_harvested_unknown_remaining",
+        "current_qualitative_availability": "day10_no_confirmed_accessible_nectar",
         "note": "一次探索空載只能說該次沒有確認帶回，不能斷言該點全天庫存為零。",
         "last_day6_local_evidence": "背景世界短時泌蜜，沒有工蟻到場，非主巢收入",
         "last_day7_local_evidence": "W017本次未取得花蜜",
-        "last_day9_local_evidence": "F08小白花短暫有可及花蜜；W017到達、採得並成功帶回一筆液態糖源，重量與含糖量未知。"
+        "last_day9_local_evidence": "F08小白花短暫有可及花蜜；W017到達、採得並成功帶回一筆液態糖源，重量與含糖量未知。",
+        "last_day10_local_evidence": "W017重訪昨日有花蜜的F08小白花，但本日沒有可採花蜜窗口，空載折返；昨日已採的糖不會刷新。"
       },
       "F09": {
         "source_type": "damaged_stem_sap",
@@ -1736,11 +1798,12 @@
         "source_species": null,
         "last_day5_local_evidence": "腐葉殘屑搜尋未收穫，物質仍被分解者耗用",
         "last_local_visit_sim_day": 7,
-        "current_qualitative_availability": "day9_new_distinct_insect_carcass_unharvested_unknown_mass",
+        "current_qualitative_availability": "day9_new_carcass_day10_partly_harvested_decay_remaining_unknown",
         "note": "一次探索空載只能說該次沒有確認帶回，不能斷言該點全天庫存為零。",
         "last_day6_local_evidence": "W006搜尋，無舊殘片可搬回",
         "last_day7_local_evidence": "W006回訪腐屑無可回收蛋白",
-        "day9_new_independent_detritus_event": "V2D9-E04"
+        "day9_new_independent_detritus_event": "V2D9-E04",
+        "last_day10_local_evidence": "W006沿個體已知的F11腐葉碎屑路線搜尋，發現Day9才出現、未被主巢採收的昆蟲殘骸仍有小部分可搬運，帶回一筆蛋白來源；與F07不同來源，不重複計數。"
       },
       "U00": {
         "source_type": "unknown_unexplored",
@@ -1776,13 +1839,14 @@
         "last_day5_activity": [
           "與幼體接觸、清潔；依巢室局部需求而非固定職位"
         ],
-        "status": "living_day9_nutrition_unknown",
+        "status": "living_day10_nutritional_reserves_unknown",
         "last_day6_activity": [
           "育幼、巢內接觸；11:30與W005發生一次局部分食"
         ],
         "last_day7_activity": "育幼、接觸照護與間歇休息",
         "last_day8_activity": "照料既有幼體及兩顆新卵，間歇休息",
-        "last_day9_activity": "照護新舊卵及幼蟲，個體實際攝食量未知"
+        "last_day9_activity": "照護新舊卵及幼蟲，個體實際攝食量未知",
+        "last_day10_activity": "局部育幼及照護卵和幼蟲，未測得個體攝食量"
       },
       "W005": {
         "crop_load_uL": null,
@@ -1798,13 +1862,14 @@
         "last_day5_activity": [
           "沿舊氣味路徑查蜜露但空載折返"
         ],
-        "status": "living_day9_nutrition_unknown",
+        "status": "living_day10_nutritional_reserves_unknown",
         "last_day6_activity": [
           "採得F01既有蚜蟲少量蜜露，成功帶回一次；與W004觸角接觸及分食"
         ],
         "last_day7_activity": "回訪既知F01，蜜露窗口未出現，空載回巢",
         "last_day8_activity": "清晨F01採得少量蜜露，於園丁澆水前安全返回N00",
-        "last_day9_activity": "W005依熟悉路線回訪F01，沒有成功帶回糖液，空載安全回巢。"
+        "last_day9_activity": "W005依熟悉路線回訪F01，沒有成功帶回糖液，空載安全回巢。",
+        "last_day10_activity": "W005留在巢內進行局部照護與休止，本日未前往F01；沒有新的蜜露收入。"
       },
       "W006": {
         "crop_load_uL": null,
@@ -1820,13 +1885,14 @@
         "last_day5_activity": [
           "腐葉舊殘屑搜尋失敗，空載回巢"
         ],
-        "status": "living_day9_nutrition_unknown",
+        "status": "living_day10_nutritional_reserves_unknown",
         "last_day6_activity": [
           "搜尋舊腐葉殘屑，無可搬回食物，空載折返"
         ],
         "last_day7_activity": "在舊腐屑搜尋，因殘屑持續分解而無可帶回的新蛋白",
         "last_day8_activity": "巢內清理與休息，未製造新採食成果",
-        "last_day9_activity": "巢內清理與休息，沒有取得遠處F11新昆蟲殘骸"
+        "last_day9_activity": "巢內清理與休息，沒有取得遠處F11新昆蟲殘骸",
+        "last_day10_activity": "W006沿個體已知的F11腐葉碎屑路線搜尋，發現Day9才出現、未被主巢採收的昆蟲殘骸仍有小部分可搬運，帶回一筆蛋白來源；與F07不同來源，不重複計數。"
       },
       "W007": {
         "crop_load_uL": null,
@@ -1842,13 +1908,14 @@
         "last_day5_activity": [
           "後足舊傷仍在，巢內清理及休止"
         ],
-        "status": "living_day9_nutrition_unknown",
+        "status": "living_day10_nutritional_reserves_unknown",
         "last_day6_activity": [
           "後足舊傷保留，巢內輔助清理、休息"
         ],
         "last_day7_activity": "帶後足舊傷巢內清理與休止，傷情未判定康復",
         "last_day8_activity": "後足舊傷保留，休息與簡短清潔",
-        "last_day9_activity": "巢內清理、照護或休息，舊傷狀態保持"
+        "last_day9_activity": "巢內清理、照護或休息，舊傷狀態保持",
+        "last_day10_activity": "巢內短程清潔、育幼、休息及既有舊傷狀態維持"
       },
       "W008": {
         "crop_load_uL": null,
@@ -1864,13 +1931,14 @@
         "last_day5_activity": [
           "接觸幼體、保持巢室整潔，腳傷狀態未知"
         ],
-        "status": "living_day9_nutrition_unknown",
+        "status": "living_day10_nutritional_reserves_unknown",
         "last_day6_activity": [
           "以巢內幼體照護及間歇休息為主，舊傷未認定完全恢復"
         ],
         "last_day7_activity": "帶腿傷巢內育幼和休息",
         "last_day8_activity": "舊腿傷保留，協助育幼及休息",
-        "last_day9_activity": "巢內清理、照護或休息，舊傷狀態保持"
+        "last_day9_activity": "巢內清理、照護或休息，舊傷狀態保持",
+        "last_day10_activity": "巢內短程清潔、育幼、休息及既有舊傷狀態維持"
       },
       "W009": {
         "crop_load_uL": null,
@@ -1886,13 +1954,14 @@
         "last_day5_activity": [
           "少量巢口清潔與休止，前足舊傷不視為痊癒"
         ],
-        "status": "living_day9_nutrition_unknown",
+        "status": "living_day10_nutritional_reserves_unknown",
         "last_day6_activity": [
           "前足舊傷保留，局部清潔與休息"
         ],
         "last_day7_activity": "前足舊傷保留，協助清潔與休息",
         "last_day8_activity": "前足舊傷保留，局部清潔與休息",
-        "last_day9_activity": "巢內清理、照護或休息，舊傷狀態保持"
+        "last_day9_activity": "巢內清理、照護或休息，舊傷狀態保持",
+        "last_day10_activity": "巢內短程清潔、育幼、休息及既有舊傷狀態維持"
       },
       "W010": {
         "crop_load_uL": null,
@@ -1908,13 +1977,14 @@
         "last_day5_activity": [
           "短時入口周邊活動，本日未前往蜘蛛所在F05"
         ],
-        "status": "living_day9_nutrition_unknown",
+        "status": "living_day10_nutritional_reserves_unknown",
         "last_day6_activity": [
           "短時入口附近巡查，沒有與F05蜘蛛或F03外蟻接觸"
         ],
         "last_day7_activity": "近距發現既存蜘蛛，及時避讓，無接觸傷害，回巢",
         "last_day8_activity": "巢口短距巡查，沒有前往F05或遭蜘蛛攻擊",
-        "last_day9_activity": "巢內清理、照護或休息，舊傷狀態保持"
+        "last_day9_activity": "巢內清理、照護或休息，舊傷狀態保持",
+        "last_day10_activity": "巢內短程清潔、育幼、休息及既有舊傷狀態維持"
       },
       "W011": {
         "crop_load_uL": null,
@@ -1930,13 +2000,14 @@
         "last_day5_activity": [
           "腐葉與石塊邊搜索但無新遺骸可帶回"
         ],
-        "status": "living_day9_nutrition_unknown",
+        "status": "living_day10_nutritional_reserves_unknown",
         "last_day6_activity": [
           "搜尋石塊旁舊殘骸，未找到新昆蟲屍體，空載回巢"
         ],
         "last_day7_activity": "尋找舊飛蛾殘骸，未找到新可搬回蛋白",
         "last_day8_activity": "到舊殘骸點找蛋白但空載返回",
-        "last_day9_activity": "W011搜尋既有F07死蟲位置，未找到新可搬運蛋白，空載返巢。"
+        "last_day9_activity": "W011搜尋既有F07死蟲位置，未找到新可搬運蛋白，空載返巢。",
+        "last_day10_activity": "W011回訪既有F07位置，實際發現今日新的殘骸，取得少量可搬運昆蟲物質並回巢；可消化蛋白質mg未知。"
       },
       "W012": {
         "crop_load_uL": null,
@@ -1952,13 +2023,14 @@
         "last_day5_activity": [
           "幼體接觸與碎屑清潔，保留前足舊傷"
         ],
-        "status": "living_day9_nutrition_unknown",
+        "status": "living_day10_nutritional_reserves_unknown",
         "last_day6_activity": [
           "輕度前足擦傷保留，育幼接觸與巢內清理"
         ],
         "last_day7_activity": "前足擦傷保留，育幼及自我清潔",
         "last_day8_activity": "前足擦傷持續，照料幼體",
-        "last_day9_activity": "巢內清理、照護或休息，舊傷狀態保持"
+        "last_day9_activity": "巢內清理、照護或休息，舊傷狀態保持",
+        "last_day10_activity": "巢內短程清潔、育幼、休息及既有舊傷狀態維持"
       },
       "W013": {
         "crop_load_uL": null,
@@ -1974,13 +2046,14 @@
         "last_day5_activity": [
           "後足受傷但仍短距搬移巢口泥粒"
         ],
-        "status": "living_day9_nutrition_unknown",
+        "status": "living_day10_nutritional_reserves_unknown",
         "last_day6_activity": [
           "後足擦傷保留，短距整理入口附近既有泥粒，不新建巢室"
         ],
         "last_day7_activity": "後足擦傷下短距搬移巢口既有鬆土，沒有築新室",
         "last_day8_activity": "帶後足舊傷短距整理澆水後表面鬆土，未挖新室",
-        "last_day9_activity": "W013在前一天澆水留下的鬆土附近整理少量土粒；沒有新巢室與實際巢內水分測量。"
+        "last_day9_activity": "W013在前一天澆水留下的鬆土附近整理少量土粒；沒有新巢室與實際巢內水分測量。",
+        "last_day10_activity": "前日澆水形成的地表濕潤記憶繼續衰減；W013今天沒有確認新的表土維護事件，巢室數仍然不變。"
       },
       "W014": {
         "crop_load_uL": null,
@@ -1996,13 +2069,14 @@
         "last_day5_activity": [
           "巢內整理、自我梳理，前足傷與感染狀態未明"
         ],
-        "status": "living_day9_nutrition_unknown",
+        "status": "living_day10_nutritional_reserves_unknown",
         "last_day6_activity": [
           "前足擦傷保留，自我梳理與休止；病原感染未知"
         ],
         "last_day7_activity": "前足擦傷保留，梳理及休息，病原狀態未知",
         "last_day8_activity": "前足擦傷保留，巢內梳理與休息",
-        "last_day9_activity": "巢內清理、照護或休息，舊傷狀態保持"
+        "last_day9_activity": "巢內清理、照護或休息，舊傷狀態保持",
+        "last_day10_activity": "巢內短程清潔、育幼、休息及既有舊傷狀態維持"
       },
       "W015": {
         "crop_load_uL": null,
@@ -2018,13 +2092,14 @@
         "last_day5_activity": [
           "探索未知草根縫但沒有取得食物，返回巢穴"
         ],
-        "status": "living_day9_nutrition_unknown",
+        "status": "living_day10_nutritional_reserves_unknown",
         "last_day6_activity": [
           "沿Day5既知草根縫短距回訪，沒有擴張未知世界或採得食源"
         ],
         "last_day7_activity": "重訪已有F09草莖傷口，汁液無採入；U00未擴張",
         "last_day8_activity": "巢內休息；不會自動得知W016新發現的石縫",
-        "last_day9_activity": "巢內清理、照護或休息，舊傷狀態保持"
+        "last_day9_activity": "巢內清理、照護或休息，舊傷狀態保持",
+        "last_day10_activity": "巢內短程清潔、育幼、休息及既有舊傷狀態維持"
       },
       "W016": {
         "crop_load_uL": null,
@@ -2040,13 +2115,14 @@
         "last_day5_activity": [
           "幼體周圍整理與間歇休息"
         ],
-        "status": "living_day9_nutrition_unknown",
+        "status": "living_day10_nutritional_reserves_unknown",
         "last_day6_activity": [
           "巢內育幼、清潔與休息；生理年齡仍未知"
         ],
         "last_day7_activity": "參與巢內育幼及清潔，真正生理年齡未知",
         "last_day8_activity": "獨立探查草根縫，確認U01落葉底石縫並返巢，沒有找到新食源",
-        "last_day9_activity": "W016回訪Day8自己已探索的U01落葉石縫並原路返回；沒有找到食物或開拓新節點。"
+        "last_day9_activity": "W016回訪Day8自己已探索的U01落葉石縫並原路返回；沒有找到食物或開拓新節點。",
+        "last_day10_activity": "W016今天沒有再進入U01，於已知巢外短程活動後回巢；未知X01～X04仍未探索，無新地圖節點。"
       },
       "W017": {
         "crop_load_uL": null,
@@ -2062,13 +2138,14 @@
         "last_day5_activity": [
           "清潔與休止；生理年齡仍未確認"
         ],
-        "status": "living_day9_nutrition_unknown",
+        "status": "living_day10_nutritional_reserves_unknown",
         "last_day6_activity": [
           "留在巢內間歇清理及休息；不把v1羽化時間當真實齡級"
         ],
         "last_day7_activity": "搜索既有白花點，無可確認花蜜，空載返巢",
         "last_day8_activity": "局部育幼與休息；生理成年齡未知",
-        "last_day9_activity": "F08小白花短暫有可及花蜜；W017到達、採得並成功帶回一筆液態糖源，重量與含糖量未知。"
+        "last_day9_activity": "F08小白花短暫有可及花蜜；W017到達、採得並成功帶回一筆液態糖源，重量與含糖量未知。",
+        "last_day10_activity": "W017重訪昨日有花蜜的F08小白花，但本日沒有可採花蜜窗口，空載折返；昨日已採的糖不會刷新。"
       }
     },
     "colony_nutrition": {
@@ -2083,7 +2160,7 @@
       "brood_consumption_mg": null,
       "queen_consumption_mg": null,
       "unknown_stock_is_not_zero": true,
-      "latest_confirmed_delivery_event_count": 1
+      "latest_confirmed_delivery_event_count": 2
     },
     "model_gate": {
       "foraging_circadian_rhythm": "Taiwan_species_daily_foraging_reported_but_no_fixed_time_without_local_weather",
@@ -2351,10 +2428,10 @@
     },
     "nutrition_engine": {
       "schema_version": "antempire.nutrition_engine_v3",
-      "status": "day9_qualitative_reconciliation_completed_physical_calibration_missing",
+      "status": "day10_qualitative_food_event_reconciliation_completed_quantitative_physiology_missing",
       "effective_from_sim_day": 9,
-      "last_completed_sim_day": 9,
-      "last_accounted_day": 9,
+      "last_completed_sim_day": 10,
+      "last_accounted_day": 10,
       "source_archetype_ref": "data/pmegacephala-food-web-v1.json",
       "rules_ref": "docs/colony-nutrition-food-web.md",
       "species_id": "Pheidole megacephala",
@@ -2398,21 +2475,22 @@
       "current_stress_index_scenario": null,
       "current_assessment": {
         "category": "not_assessable",
-        "confidence": "physical_food_reserves_and_intake_unknown",
+        "confidence": "physical_initial_reserves_and_assimilation_unknown",
         "known_basis": [
-          "Day9 W017 one qualitative nectar delivery",
-          "Day9 no confirmed protein delivery",
-          "Day9 existing stores not measured",
-          "queen 1, workers 14, eggs 4, larvae 2"
+          "Day10 W011 one newly spawned F07 carcass batch with unique origin V2D10-E04",
+          "Day10 W006 one Day9 F11 residual carcass batch, source event V2D9-E04",
+          "Day10 carbohydrate collection confirmed 0 events; external F01 honeydew existed but not visited",
+          "Day9 W017 delivered one nectar batch",
+          "1 queen, 14 workers, 4 eggs, 2 larvae with physiological nutrient needs"
         ],
         "missing_measurements": [
-          "actual carbohydrate, digestible protein, lipid and water stocks",
-          "food chemistry and crop loads",
-          "worker, queen and larval daily consumption",
-          "nest microclimate"
+          "batch wet mass/dry mass and assimilable protein",
+          "current adult crop and queen/brood nutrition pools",
+          "individual metabolic costs and reserves",
+          "nest water and microclimate"
         ],
         "has_enough_evidence_for_specific_starvation_event": false,
-        "possible_nutrition_risk_not_quantifiable": true
+        "possible_protein_supply_improvement_unquantified": true
       },
       "nutritional_dimensions": [
         "carbohydrate_mg",
@@ -2426,15 +2504,21 @@
         "finite_carcass_does_not_respawn_without_new_event": true,
         "hemipteran_honeydew_requires_live_host": true,
         "weather_link_ref": "saves/world-state.json#/climate_engine",
-        "current_day9_weather": "saves/world-state.json#/weather/latest_daily_weather"
+        "current_day9_weather": "saves/world-state.json#/weather/latest_daily_weather",
+        "current_day10_weather": "saves/world-state.json#/weather/latest_daily_weather"
       },
       "reconciliation": {
-        "day": 9,
-        "external_deliveries_count": 1,
+        "day": 10,
+        "external_deliveries_count": 2,
         "external_consumption_count": null,
         "internal_transfer_count": 0,
         "unique_food_batch_ids": [
-          "food-v2d9-V2D9-E06"
+          "FB-V2D10-E05",
+          "FB-V2D10-E07"
+        ],
+        "income_event_ids": [
+          "V2D10-E05",
+          "V2D10-E07"
         ],
         "per_nutrient_closed": {
           "carbohydrate_mg": false,
@@ -2569,6 +2653,141 @@
       "end_lipid_stock_mg": null,
       "model_uncalibrated": true,
       "food_balance_quantitatively_closed": false
+    },
+    "day10_record": {
+      "sim_day": 10,
+      "calendar_date": "2026-11-09",
+      "trip_events": [
+        {
+          "event_id": "V2D10-E05",
+          "worker_id": "W011",
+          "route": [
+            "N00",
+            "F07",
+            "N00"
+          ],
+          "return_confirmed": true,
+          "confirmed_delivery_count": 1
+        },
+        {
+          "event_id": "V2D10-E06",
+          "worker_id": "W017",
+          "route": [
+            "N00",
+            "F08",
+            "N00"
+          ],
+          "return_confirmed": true,
+          "confirmed_delivery_count": 0
+        },
+        {
+          "event_id": "V2D10-E07",
+          "worker_id": "W006",
+          "route": [
+            "N00",
+            "F11",
+            "N00"
+          ],
+          "return_confirmed": true,
+          "confirmed_delivery_count": 1
+        }
+      ],
+      "source_events": [
+        {
+          "event_id": "V2D10-E04",
+          "source_node": "F07",
+          "category": "new_unique_insect_carcass_event",
+          "quantity_mg": null,
+          "not_old_moth_respawn": true
+        }
+      ],
+      "potential_unharvested_food_events": [
+        {
+          "event_id": "V2D10-E02",
+          "node": "F01",
+          "kind": "aphid_honeydew_window",
+          "worker_at_site": false,
+          "new_colony_income": false
+        }
+      ],
+      "collection_events": [
+        {
+          "event_id": "V2D10-E05",
+          "worker_id": "W011",
+          "source_node": "F07",
+          "nutrient": "insect_prey_material",
+          "raw_wet_mass_mg": null,
+          "protein_digestible_mg": null
+        },
+        {
+          "event_id": "V2D10-E07",
+          "worker_id": "W006",
+          "source_node": "F11",
+          "nutrient": "insect_prey_material",
+          "raw_wet_mass_mg": null,
+          "protein_digestible_mg": null
+        }
+      ],
+      "delivery_events": [
+        {
+          "event_id": "V2D10-E05",
+          "worker_id": "W011",
+          "source_node": "F07",
+          "destination": "N00",
+          "nutrient": "protein_source_mixed_insect_biomass",
+          "amount_mg": null,
+          "confirmed_external_income_count": 1
+        },
+        {
+          "event_id": "V2D10-E07",
+          "worker_id": "W006",
+          "source_node": "F11",
+          "destination": "N00",
+          "nutrient": "protein_source_mixed_insect_biomass",
+          "amount_mg": null,
+          "confirmed_external_income_count": 1
+        }
+      ],
+      "food_batches": [
+        {
+          "batch_id": "FB-V2D10-E05",
+          "source_event_id": "V2D10-E04",
+          "delivery_event_id": "V2D10-E05",
+          "source_node": "F07",
+          "collected_by": "W011",
+          "destination": "N00",
+          "wet_mass_mg": null,
+          "digestible_protein_mg": null,
+          "source_kind": "new_insect_death_Day10"
+        },
+        {
+          "batch_id": "FB-V2D10-E07",
+          "source_event_id": "V2D9-E04",
+          "delivery_event_id": "V2D10-E07",
+          "source_node": "F11",
+          "collected_by": "W006",
+          "destination": "N00",
+          "wet_mass_mg": null,
+          "digestible_protein_mg": null,
+          "source_kind": "residual_previous_day9_new_carcass"
+        }
+      ],
+      "transfer_events": [],
+      "consumption_events": [],
+      "confirmed_delivery_event_count": 2,
+      "carbohydrate_delivered_mg": null,
+      "protein_delivered_mg": null,
+      "lipid_delivered_mg": null,
+      "adult_consumed_mg": null,
+      "queen_consumed_mg": null,
+      "brood_consumed_mg": null,
+      "water_consumed_uL": null,
+      "end_carbohydrate_stock_mg": null,
+      "end_protein_stock_mg": null,
+      "end_lipid_stock_mg": null,
+      "model_uncalibrated": true,
+      "food_balance_quantitatively_closed": false,
+      "no_reported_intake_is_not_zero_intake": true
     }
   },
   "communication_system": {
@@ -3253,7 +3472,7 @@
     "schema_version": "v2-colony-sex-caste-reproduction-v1",
     "research_calendar_date": "2026-11-01",
     "effective_sim_day": 6,
-    "last_completed_sim_day": 9,
+    "last_completed_sim_day": 10,
     "rules_ref": "docs/castes-and-reproduction.md",
     "reference_ref": "docs/references.md",
     "update_type": "research_specification_only",
@@ -3650,6 +3869,14 @@
       "worker_eclosions": 0,
       "male_adults_new": 0,
       "gyne_adults_new": 0
+    },
+    "day10_reproductive_record": {
+      "sim_day": 10,
+      "eggs_laid": 0,
+      "new_egg_ids": [],
+      "new_confirmed_males": 0,
+      "new_confirmed_gynes": 0,
+      "worker_eclosions": 0
     }
   },
   "queen_brood_growth": {
@@ -3707,7 +3934,8 @@
         "elapsed_v2_days_at_day6": 6,
         "elapsed_v2_days_at_day7": 7,
         "elapsed_v2_days_at_day8": 8,
-        "elapsed_v2_days_at_day9": 9
+        "elapsed_v2_days_at_day9": 9,
+        "elapsed_v2_days_at_day10": 10
       },
       "L002": {
         "id": "L002",
@@ -3730,7 +3958,8 @@
         "elapsed_v2_days_at_day6": 6,
         "elapsed_v2_days_at_day7": 7,
         "elapsed_v2_days_at_day8": 8,
-        "elapsed_v2_days_at_day9": 9
+        "elapsed_v2_days_at_day9": 9,
+        "elapsed_v2_days_at_day10": 10
       },
       "E001": {
         "id": "E001",
@@ -3753,7 +3982,8 @@
         "elapsed_v2_days_at_day6": 4,
         "elapsed_v2_days_at_day7": 5,
         "elapsed_v2_days_at_day8": 6,
-        "elapsed_v2_days_at_day9": 7
+        "elapsed_v2_days_at_day9": 7,
+        "elapsed_v2_days_at_day10": 8
       },
       "E002": {
         "id": "E002",
@@ -3777,7 +4007,8 @@
         "body_mass_mg": null,
         "stage_duration_days_for_species": null,
         "source_evidence": "seeded_scenario_unvalidated_rate",
-        "elapsed_v2_days_at_day9": 1
+        "elapsed_v2_days_at_day9": 1,
+        "elapsed_v2_days_at_day10": 2
       },
       "E003": {
         "id": "E003",
@@ -3801,7 +4032,8 @@
         "body_mass_mg": null,
         "stage_duration_days_for_species": null,
         "source_evidence": "seeded_scenario_unvalidated_rate",
-        "elapsed_v2_days_at_day9": 1
+        "elapsed_v2_days_at_day9": 1,
+        "elapsed_v2_days_at_day10": 2
       },
       "E004": {
         "id": "E004",
@@ -3817,7 +4049,8 @@
         "hydration_uL_last_day": null,
         "estimated_thermal_age_degree_days": null,
         "elapsed_v2_days_at_day9": 0,
-        "model_evidence": "seeded_scenario_uncalibrated"
+        "model_evidence": "seeded_scenario_uncalibrated",
+        "elapsed_v2_days_at_day10": 1
       }
     },
     "population_context": {
@@ -3988,6 +4221,17 @@
       "worker_eclosions": 0,
       "brood_deaths": 0,
       "nutrition_cost_mg": null
+    },
+    "day10_record": {
+      "sim_day": 10,
+      "queen": "Q001",
+      "new_eggs": 0,
+      "egg_ids": [],
+      "egg_hatching": 0,
+      "pupation": 0,
+      "worker_eclosions": 0,
+      "brood_deaths": 0,
+      "nutrition_intake_mg": null
     }
   },
   "nest_construction_system": {
@@ -4254,6 +4498,13 @@
       "maintenance_event_id": "V2D9-E09",
       "new_rooms": 0,
       "nest_microclimate_real_measured": false
+    },
+    "day10_record": {
+      "day": 10,
+      "confirmed_maintenance": false,
+      "rooms_built": 0,
+      "new_tunnels_built": 0,
+      "physical_soil_mass_mg": null
     }
   },
   "exploration_dynamic_world": {
@@ -4468,6 +4719,12 @@
         ],
         "last_day9_activity": [
           "照護新舊卵及幼蟲，個體實際攝食量未知"
+        ],
+        "last_day10_path_nodes": [
+          "N00"
+        ],
+        "last_day10_activity": [
+          "局部育幼及照護卵和幼蟲，未測得個體攝食量"
         ]
       },
       "W005": {
@@ -4513,6 +4770,12 @@
         ],
         "last_day9_activity": [
           "W005依熟悉路線回訪F01，沒有成功帶回糖液，空載安全回巢。"
+        ],
+        "last_day10_path_nodes": [
+          "N00"
+        ],
+        "last_day10_activity": [
+          "W005留在巢內進行局部照護與休止，本日未前往F01；沒有新的蜜露收入。"
         ]
       },
       "W006": {
@@ -4554,6 +4817,14 @@
         ],
         "last_day9_activity": [
           "巢內清理與休息，沒有取得遠處F11新昆蟲殘骸"
+        ],
+        "last_day10_path_nodes": [
+          "N00",
+          "F11",
+          "N00"
+        ],
+        "last_day10_activity": [
+          "W006沿個體已知的F11腐葉碎屑路線搜尋，發現Day9才出現、未被主巢採收的昆蟲殘骸仍有小部分可搬運，帶回一筆蛋白來源；與F07不同來源，不重複計數。"
         ]
       },
       "W007": {
@@ -4591,6 +4862,12 @@
         ],
         "last_day9_activity": [
           "巢內清理、照護或休息，舊傷狀態保持"
+        ],
+        "last_day10_path_nodes": [
+          "N00"
+        ],
+        "last_day10_activity": [
+          "巢內短程清潔、育幼、休息及既有舊傷狀態維持"
         ]
       },
       "W008": {
@@ -4628,6 +4905,12 @@
         ],
         "last_day9_activity": [
           "巢內清理、照護或休息，舊傷狀態保持"
+        ],
+        "last_day10_path_nodes": [
+          "N00"
+        ],
+        "last_day10_activity": [
+          "巢內短程清潔、育幼、休息及既有舊傷狀態維持"
         ]
       },
       "W009": {
@@ -4665,6 +4948,12 @@
         ],
         "last_day9_activity": [
           "巢內清理、照護或休息，舊傷狀態保持"
+        ],
+        "last_day10_path_nodes": [
+          "N00"
+        ],
+        "last_day10_activity": [
+          "巢內短程清潔、育幼、休息及既有舊傷狀態維持"
         ]
       },
       "W010": {
@@ -4708,6 +4997,12 @@
         ],
         "last_day9_activity": [
           "巢內清理、照護或休息，舊傷狀態保持"
+        ],
+        "last_day10_path_nodes": [
+          "N00"
+        ],
+        "last_day10_activity": [
+          "巢內短程清潔、育幼、休息及既有舊傷狀態維持"
         ]
       },
       "W011": {
@@ -4754,6 +5049,14 @@
         ],
         "last_day9_activity": [
           "W011搜尋既有F07死蟲位置，未找到新可搬運蛋白，空載返巢。"
+        ],
+        "last_day10_path_nodes": [
+          "N00",
+          "F07",
+          "N00"
+        ],
+        "last_day10_activity": [
+          "W011回訪既有F07位置，實際發現今日新的殘骸，取得少量可搬運昆蟲物質並回巢；可消化蛋白質mg未知。"
         ]
       },
       "W012": {
@@ -4791,6 +5094,12 @@
         ],
         "last_day9_activity": [
           "巢內清理、照護或休息，舊傷狀態保持"
+        ],
+        "last_day10_path_nodes": [
+          "N00"
+        ],
+        "last_day10_activity": [
+          "巢內短程清潔、育幼、休息及既有舊傷狀態維持"
         ]
       },
       "W013": {
@@ -4832,6 +5141,12 @@
         ],
         "last_day9_activity": [
           "W013在前一天澆水留下的鬆土附近整理少量土粒；沒有新巢室與實際巢內水分測量。"
+        ],
+        "last_day10_path_nodes": [
+          "N00"
+        ],
+        "last_day10_activity": [
+          "前日澆水形成的地表濕潤記憶繼續衰減；W013今天沒有確認新的表土維護事件，巢室數仍然不變。"
         ]
       },
       "W014": {
@@ -4869,6 +5184,12 @@
         ],
         "last_day9_activity": [
           "巢內清理、照護或休息，舊傷狀態保持"
+        ],
+        "last_day10_path_nodes": [
+          "N00"
+        ],
+        "last_day10_activity": [
+          "巢內短程清潔、育幼、休息及既有舊傷狀態維持"
         ]
       },
       "W015": {
@@ -4918,6 +5239,12 @@
         ],
         "last_day9_activity": [
           "巢內清理、照護或休息，舊傷狀態保持"
+        ],
+        "last_day10_path_nodes": [
+          "N00"
+        ],
+        "last_day10_activity": [
+          "巢內短程清潔、育幼、休息及既有舊傷狀態維持"
         ]
       },
       "W016": {
@@ -4963,6 +5290,12 @@
         ],
         "last_day9_activity": [
           "W016回訪Day8自己已探索的U01落葉石縫並原路返回；沒有找到食物或開拓新節點。"
+        ],
+        "last_day10_path_nodes": [
+          "N00"
+        ],
+        "last_day10_activity": [
+          "W016今天沒有再進入U01，於已知巢外短程活動後回巢；未知X01～X04仍未探索，無新地圖節點。"
         ]
       },
       "W017": {
@@ -5004,6 +5337,14 @@
         ],
         "last_day9_activity": [
           "F08小白花短暫有可及花蜜；W017到達、採得並成功帶回一筆液態糖源，重量與含糖量未知。"
+        ],
+        "last_day10_path_nodes": [
+          "N00",
+          "F08",
+          "N00"
+        ],
+        "last_day10_activity": [
+          "W017重訪昨日有花蜜的F08小白花，但本日沒有可採花蜜窗口，空載折返；昨日已採的糖不會刷新。"
         ]
       }
     },
@@ -5354,6 +5695,13 @@
         "X03",
         "X04"
       ]
+    },
+    "day10_record": {
+      "day": 10,
+      "U01_revisited": false,
+      "confirmed_new_world_nodes": [],
+      "confirmed_new_food_source_nodes": [],
+      "unknown_X01_to_X04_not_instantiated": true
     }
   },
   "advanced_ecology": {
@@ -6381,7 +6729,52 @@
           "V2D9-E11"
         ]
       },
-      "day9_new_external_food_income_event_count": 1
+      "day9_new_external_food_income_event_count": 1,
+      "new_day10_events": [
+        "V2D10-E01",
+        "V2D10-E02",
+        "V2D10-E03",
+        "V2D10-E04",
+        "V2D10-E05",
+        "V2D10-E06",
+        "V2D10-E07",
+        "V2D10-E08",
+        "V2D10-E09",
+        "V2D10-E10",
+        "V2D10-E11",
+        "V2D10-E12"
+      ],
+      "day10_refs_by_subsystem": {
+        "weather": [
+          "V2D10-E01"
+        ],
+        "hemipterans": [
+          "V2D10-E02"
+        ],
+        "foraging": [
+          "V2D10-E03",
+          "V2D10-E05",
+          "V2D10-E06",
+          "V2D10-E07"
+        ],
+        "independent_world": [
+          "V2D10-E04",
+          "V2D10-E08"
+        ],
+        "exploration": [
+          "V2D10-E09"
+        ],
+        "nest": [
+          "V2D10-E10"
+        ],
+        "brood": [
+          "V2D10-E11"
+        ],
+        "nutrition": [
+          "V2D10-E12"
+        ]
+      },
+      "day10_new_external_food_income_event_count": 2
     },
     "day6_template": {
       "day": 6,
@@ -6555,11 +6948,19 @@
       "queen_new_eggs": 1,
       "worker_deaths": 0,
       "confirmed_predator_contacts": 0
+    },
+    "day10_record": {
+      "day": 10,
+      "independent_predator_at_F05": true,
+      "confirmed_predator_contacts_with_main_colony": 0,
+      "confirmed_infections": 0,
+      "queen_egg_events": 0,
+      "food_delivery_event_count": 2
     }
   },
   "climate_engine": {
     "schema_version": "historical_climate_weather_engine_v1",
-    "status": "day9_synthetic_climatology_generated_applied",
+    "status": "day10_synthetic_climatology_generated_and_applied",
     "effective_from_day": 9,
     "apply_on_or_after_calendar_date": "2026-11-08",
     "geographic_area": {
@@ -6584,25 +6985,25 @@
     "weather_kind_for_latest_completed_day8": "forecast",
     "baseline_read_only_monthly": true,
     "live_weather_generated_for_next_day": true,
-    "generated_day_count": 1,
-    "last_generated_synthetic_day": 9,
-    "last_generated_synthetic_date": "2026-11-08",
+    "generated_day_count": 2,
+    "last_generated_synthetic_day": 10,
+    "last_generated_synthetic_date": "2026-11-09",
     "last_synthetic_condition": {
       "wet_or_dry": "dry",
-      "synthetic_temp_anomaly_c": 0.058,
-      "synthetic_rh_percent": 70.1,
-      "model_surface_wetness_index": 0.1625,
-      "model_shaded_soil_memory_index": 0.3044,
+      "synthetic_temp_anomaly_c": -1.3065,
+      "synthetic_rh_percent": 69.5,
+      "model_surface_wetness_index": 0.0219,
+      "model_shaded_soil_memory_index": 0.2096,
       "initialized": true
     },
     "next_day_initialization_inputs": {
-      "from_completed_day": 9,
-      "date": "2026-11-08",
+      "from_completed_day": 10,
+      "date": "2026-11-09",
       "prior_weather_kind": "synthetic_climatology",
       "prior_wet": false,
-      "prior_synthetic_temp_anomaly_c": 0.058,
-      "prior_surface_index": 0.1625,
-      "prior_shaded_index": 0.3044
+      "prior_synthetic_temp_anomaly_c": -1.3065,
+      "prior_surface_index": 0.0219,
+      "prior_shaded_index": 0.2096
     },
     "weather_generator_settings": {
       "base_rain_prior_fit": {

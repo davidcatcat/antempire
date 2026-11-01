@@ -16,7 +16,7 @@ function simulateDay(input){
  if(day!==prevDay+1||monthly.length!==12||context.location!=="臺中市西屯區")throw Error("input invalid");
  const [y,mo,dd]=date.split("-").map(Number),dt=new Date(Date.UTC(y,mo-1,dd));if(dt.toISOString().slice(0,10)!==date)throw Error("date invalid");
  const material="antempire-garden-v3|Day"+prevDay+"->Day"+day+"|"+previousHead+"|"+date;
- const streams={},seeds={};for(const key of ["weather_climate","plants","sap_hemipterans","insects_and_detritus","rivals","predators","terrain","worker_W005","worker_W011","worker_W017","worker_W016","worker_W013","queen_and_brood"]){seeds[key]=fnv(material+"|"+key);const g=rng(seeds[key]);streams[key]=Array.from({length:12},()=>round(g(),8))}
+ const streams={},seeds={};const streamNames=["weather_climate","plants","sap_hemipterans","insects_and_detritus","rivals","predators","terrain","worker_W005","worker_W011","worker_W017","worker_W016","worker_W013","queen_and_brood"];if(day>=10)streamNames.push("worker_W006");for(const key of streamNames){seeds[key]=fnv(material+"|"+key);const g=rng(seeds[key]);streams[key]=Array.from({length:12},()=>round(g(),8))}
  const pByMonth=monthlyPrior(monthly,annualRainDays),p=interpolated(pByMonth,y,mo,dd);
  const prevWet=priorState.weather_kind==="synthetic_climatology"?priorState.wet:null;
  const wetProb=prevWet===null?p:prevWet?p+0.45*(1-p):p*(1-0.45);
@@ -37,14 +37,16 @@ function simulateDay(input){
  const W005Visit=s.worker_W005[0]<.75,W005Delivery=aphidsAccessible&&W005Visit&&s.worker_W005[1]<.92;
  const newDetritus=s.insects_and_detritus[0]<.28,newDetritusSite=s.insects_and_detritus[1]<.5?"F07":"F11";
  const W011Visit=s.worker_W011[0]<.77,W011Delivery=W011Visit&&newDetritus&&newDetritusSite==="F07"&&s.worker_W011[1]<.56;
- const flowerNectar=s.plants[0]<.42,W017Visit=s.worker_W017[0]<.53,W017Delivery=W017Visit&&flowerNectar&&s.worker_W017[1]<.80;
+ const flowerNectar=s.plants[0]<(context.previousDayF08NectarHarvested===true?0.18:0.42),W017Visit=s.worker_W017[0]<.53,W017Delivery=W017Visit&&flowerNectar&&s.worker_W017[1]<.80;
  const W016Visited=s.worker_W016[0]<.60&&s.terrain[0]>=.18,W013Repair=soil>=.12&&s.worker_W013[0]<.70;
- const rivalsAtF04=s.rivals[0]<.76,predatorSeen=s.predators[0]<.62,newEggs=s.queen_and_brood[0]<.16?1:0;
- const decisions={aphidsAccessible,W005Visit,W005Delivery,newDetritus,newDetritusSite,W011Visit,W011Delivery,flowerNectar,W017Visit,W017Delivery,W016Visited,W013Repair,rivalsAtF04,predatorSeen,newEggs};
+ const rivalsAtF04=s.rivals[0]<.76,predatorSeen=s.predators[0]<.62,newEggs=s.queen_and_brood[0]<(context.previousDayNewEggs>0?.08:.16)?1:0;
+ const W006Visit=day>=10&&s.worker_W006[0]<.68;const W006Edible=day>=10&&((context.priorDayF11NewCarcass===true&&s.insects_and_detritus[2]<.72)||(newDetritus&&newDetritusSite==="F11"&&s.insects_and_detritus[3]<.65));const W006Delivery=W006Visit&&W006Edible&&s.worker_W006[1]<.74;const decisions={aphidsAccessible,W005Visit,W005Delivery,newDetritus,newDetritusSite,W011Visit,W011Delivery,flowerNectar,W017Visit,W017Delivery,W016Visited,W013Repair,rivalsAtF04,predatorSeen,newEggs};
+ if(day>=10)Object.assign(decisions,{W006Visit,W006Edible,W006Delivery});
  const deliveries=[];
- if(W005Delivery)deliveries.push({event_id:"V2D9-E03",worker_id:"W005",source_node:"F01",nutrient:"carbohydrate",confirmed_delivery_events:1,delivered_mass_mg:null,qualitative_amount:"少量蜜露"});
- if(W011Delivery)deliveries.push({event_id:"V2D9-E05",worker_id:"W011",source_node:"F07",nutrient:"protein",confirmed_delivery_events:1,delivered_mass_mg:null,qualitative_amount:"獨立新事件的昆蟲殘片"});
- if(W017Delivery)deliveries.push({event_id:"V2D9-E06",worker_id:"W017",source_node:"F08",nutrient:"carbohydrate",confirmed_delivery_events:1,delivered_mass_mg:null,qualitative_amount:"短時花蜜"});
+ if(W005Delivery)deliveries.push({event_id:"V2D"+day+"-E03",worker_id:"W005",source_node:"F01",nutrient:"carbohydrate",confirmed_delivery_events:1,delivered_mass_mg:null,qualitative_amount:"少量蜜露"});
+ if(W011Delivery)deliveries.push({event_id:"V2D"+day+"-E05",worker_id:"W011",source_node:"F07",nutrient:"protein",confirmed_delivery_events:1,delivered_mass_mg:null,qualitative_amount:"獨立新事件的昆蟲殘片"});
+ if(W006Delivery)deliveries.push({event_id:"V2D"+day+"-E07",worker_id:"W006",source_node:"F11",nutrient:"protein",confirmed_delivery_events:1,delivered_mass_mg:null,qualitative_amount:"新獨立昆蟲殘骸的小量可攜部分（可消化蛋白未知）"});
+ if(W017Delivery)deliveries.push({event_id:"V2D"+day+"-E06",worker_id:"W017",source_node:"F08",nutrient:"carbohydrate",confirmed_delivery_events:1,delivered_mass_mg:null,qualitative_amount:"短時花蜜"});
  return {model:V,day,date,rootSeed:fnv(material),seedMaterial:material,named_stream_seeds:seeds,draws_first_twelve_by_stream:streams,weather,decisions,deliveries,confirmed_delivery_count:deliveries.length,model_assumption_warning:"All daily causal event probabilities and nutrient flux magnitudes are uncalibrated/unknown"};
 }
 module.exports={simulateDay};
