@@ -22,6 +22,7 @@ import { projectDaily, DEFAULT_REFS } from '../cli/lib/project-day.ts';
 import { rulesFingerprint } from '../cli/lib/fingerprint.ts';
 import { REPO_ROOT, readJson, loadBundle } from '../cli/lib/load.ts';
 import { SCENARIOS, applyNew, applyOld } from './lib/scenarios.ts';
+import { normaliseV6Projection } from './lib/v6-normalise.ts';
 
 if (!fs.existsSync(path.join(REPO_ROOT, 'sim/day_engine.cjs'))) { console.log(JSON.stringify({ skipped: 'sim/ archived; tests/golden.test.ts pins the v6 output instead' })); process.exit(0); }
 const require = createRequire(import.meta.url);
@@ -54,13 +55,10 @@ if (ms !== ns) fail('migrationState ' + firstDiff(ms, ns));
 const fp = rulesFingerprint(), now = '2026-11-01T00:00:00.000Z';
 const o = oldRun.projectDaily(structuredClone(main), structuredClone(world), clim, oldParams, fp.engine, fp.params);
 const n = projectDaily(structuredClone(main), structuredClone(world), clim, bundle, fp, DEFAULT_REFS, now);
-// Normalise ONLY the intentionally changed metadata of the old output.
-o.main.updated_at = now;
-o.main.simulation.next_engine_ref = DEFAULT_REFS.engine_ref; o.main.simulation.v2_params_ref = DEFAULT_REFS.params_ref; o.main.migration_log.at(-1).assumptions_in = DEFAULT_REFS.params_ref;
-o.main.simulation.latest_day_summary.engine_ref = DEFAULT_REFS.engine_ref; o.main.simulation.latest_day_summary.params_ref = DEFAULT_REFS.params_ref;
-o.world.time.last_transition.program_ref = DEFAULT_REFS.engine_ref; o.world.time.last_transition.params_ref = DEFAULT_REFS.params_ref;
+// Normalise ONLY the intentional save-mapping differences of the old output (see tests/lib/v6-normalise.ts).
+normaliseV6Projection(o, now);
 for (const [label, a, b] of [['main.json', o.main, n.main], ['world-state.json', o.world, n.world], ['journal', o.journal, n.journal]] as const) {
   const sa = JSON.stringify(a, null, 2), sb = JSON.stringify(b, null, 2);
   if (sa !== sb) fail(`projectDaily ${label} ${firstDiff(sa, sb)}`);
 }
-console.log(JSON.stringify({ passed: true, isolation_proof: 'v7 = v6 when only climate.prior_nest_temp_model_c is withheld', scenarios: SCENARIOS.length, simulated_days_compared: days, migration_state_identical: true, day15_projection_identical_after_metadata_normalisation: true, normalised_fields: ['main.updated_at', 'main.simulation.next_engine_ref', 'main.simulation.v2_params_ref', 'main.migration_log[-1].assumptions_in', 'main.simulation.latest_day_summary.{engine_ref,params_ref}', 'world.time.last_transition.{program_ref,params_ref}'], day15_population: n.report.summary.population }, null, 2));
+console.log(JSON.stringify({ passed: true, isolation_proof: 'v7 = v6 when only climate.prior_nest_temp_model_c is withheld', scenarios: SCENARIOS.length, simulated_days_compared: days, migration_state_identical: true, day15_projection_identical_after_metadata_normalisation: true, normalised: 'tests/lib/v6-normalise.ts (refs, timestamp, cumulative counters, eggs_hatching key)', day15_population: n.report.summary.population }, null, 2));

@@ -28,5 +28,5 @@ jobs:
         run: npm run test:naturalism
       - name: Save conservation (saves/main.json + saves/world-state.json)
         run: npm run check:saves
-      - name: All other tests (params split, platform purity, foraging physics, migration, local ecology incl. orphan queen, scaling, multi-colony, v6 isolation proof vs sim/, advance on a temp copy, nest temperature, save transaction fault injection, Day1-14 history integrity)
+      - name: All other tests (params split, platform purity, foraging physics, migration, local ecology incl. orphan queen, scaling, multi-colony, v6 isolation proof vs sim/, advance on a temp copy, nest temperature, save transaction fault injection, Day1-14 history integrity, cumulative save counters)
         run: npm run test:rest
