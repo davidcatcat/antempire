@@ -1988,7 +1988,9 @@
       "docs/weather-data-policy.md",
       "docs/species-pheidole-megacephala.md",
       "docs/advanced-ecology-integration.md",
-      "docs/pheromone-model-evidence.md"
+      "docs/pheromone-model-evidence.md",
+      "docs/historical-climate-weather-engine.md",
+      "data/taichung-climatology-1991-2020.json"
     ],
     "latest_completed_day": 8,
     "elapsed_sim_hours": 192,
@@ -2108,7 +2110,13 @@
     "demography_rules_ref": "docs/colony-demography-scaling.md",
     "demography_model_effective_from_sim_day": 7,
     "demography_model_state_ref": "saves/main.json#/colony/population_demography",
-    "age_survival_curve_calibrated": false
+    "age_survival_curve_calibrated": false,
+    "weather_policy_ref": "docs/historical-climate-weather-engine.md",
+    "weather_rules_effective_sim_day": 9,
+    "weather_climatology_data_ref": "data/taichung-climatology-1991-2020.json",
+    "weather_mode_policy": "auto_observation_or_valid_forecast_else_historical_climate_synthetic",
+    "weather_day8_historical_snapshot_frozen": true,
+    "weather_long_run_support": "seasonal_synthetic_daily_weather_with_persistence_pending_first_Day9_tick"
   },
   "migration_log": [
     {

@@ -65,3 +65,9 @@
 
 ## 2026-11-01 群體成長到100、1000以上的存檔規格
 權威規則：[colony-demography-scaling.md](colony-demography-scaling.md)。人口成長時將`individuals`的明細與cohort統計分層，**不讓count和詳細個體重複計算**；出生、羽化、死亡、遷移、母后/巢群及食物入庫使用獨立唯一事件ID。報表可用分齡/形態/巢區計數，個體細節採稀疏記錄。遷移前保留當前名冊為唯一權威，採新資料結構前需驗收14/100/1000/10000假設情境並保持舊存檔可讀。此項純規格更新，Day6存檔及全部日誌不變。
+
+## 2026-11-01 長期氣候生成規格與驗收（從Day9起）
+- 氣候資料：`data/taichung-climatology-1991-2020.json`（來源、月統計與相互不一致的年統計各自保留）。生成契約：`docs/historical-climate-weather-engine.md`，舊`docs/weather-data-policy.md`與新細則互補，遇長期未來日期以新細則為準。
+- 主存檔僅放模型參照/生效Day9與已完成Day8，不新增螞蟻。世界`climate_engine`保留**即將生效**的生成器版本與前日輸入，不把Day8先算成合成天氣。
+- Day9起**每次存檔測試**：氣象`active_date`、`last_weather_driven_sim_day`與world/main/journal一致；觀測/預報/合成各有清楚的來源類別及`previous_day_weather_ref`；同一次雨水只算一次；虛擬雨量不是實際降雨；原日誌與歷史seed不能倒改。
+- 無有效未來預報時以虛擬天氣替代，長期仍依真實臺中氣候季節變化推演。未知的微氣候物理量繼續null；假設土壤濕潤指數不可當實際含水率。

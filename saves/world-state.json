@@ -758,9 +758,9 @@
       ]
     },
     "source_policy_ref": "docs/weather-data-policy.md",
-    "active_date": "2026-11-04",
+    "active_date": "2026-11-07",
     "last_actual_weather_simulation_day": null,
-    "next_day_weather_policy": "Day2=2026-11-01，優先該日已發布實測；未來時間用有時間戳的預報並標註forecast，不確定或缺失標null",
+    "next_day_weather_policy": "Day9起，依docs/historical-climate-weather-engine.md：當日完整觀測優先，有效官方預報次之，否則使用1991–2020臺中月氣候基準的可重播虛構天氣；不沿用過期預報。",
     "previous_external_reference": {
       "date": "2026-11-03",
       "day_of_week": "Tuesday",
@@ -807,16 +807,20 @@
     },
     "forecast_temperature_range_day_c": [
       23,
-      30
+      31
     ],
     "forecast_temperature_range_night_c": [
       23,
       27
     ],
-    "forecast_pop_percent": 0,
+    "forecast_pop_percent": null,
     "forecast_weather_text": "晴時多雲",
     "weather_data_kind": "forecast",
-    "last_weather_driven_sim_day": 5
+    "last_weather_driven_sim_day": 8,
+    "long_run_climatology_ref": "data/taichung-climatology-1991-2020.json",
+    "long_run_weather_engine_ref": "saves/world-state.json#/climate_engine",
+    "climate_weather_rules_effective_sim_day": 9,
+    "day8_forecast_reference_frozen": true
   },
   "nest_microclimate": {
     "nursery_count_legacy": 2,
@@ -6912,6 +6916,80 @@
         "E003"
       ],
       "confirmed_new_cavities": 0
+    }
+  },
+  "climate_engine": {
+    "schema_version": "historical_climate_weather_engine_v1",
+    "status": "configured_waiting_for_next_user_advance_no_new_day_generated",
+    "effective_from_day": 9,
+    "apply_on_or_after_calendar_date": "2026-11-08",
+    "geographic_area": {
+      "country": "Taiwan",
+      "city": "臺中市",
+      "district": "西屯區",
+      "site": "fictional_villa_garden",
+      "district_code": "66000060",
+      "actual_site_address": null,
+      "actual_gps": null,
+      "cwa_station_reference": "臺中市氣象站（區域氣候參考）"
+    },
+    "climatology_ref": "data/taichung-climatology-1991-2020.json",
+    "normative_period": "1991-2020",
+    "engine_ref": "docs/historical-climate-weather-engine.md",
+    "model_id": "climate-generator-v1",
+    "source_priority": [
+      "complete_past_observation",
+      "valid_date_scope_forecast",
+      "synthetic_climatology"
+    ],
+    "weather_kind_for_latest_completed_day8": "forecast",
+    "baseline_read_only_monthly": true,
+    "live_weather_generated_for_next_day": false,
+    "generated_day_count": 0,
+    "last_generated_synthetic_day": null,
+    "last_generated_synthetic_date": null,
+    "last_synthetic_condition": {
+      "wet_or_dry": null,
+      "synthetic_temp_anomaly_c": null,
+      "synthetic_rh_percent": null,
+      "model_surface_wetness_index": null,
+      "model_shaded_soil_memory_index": null,
+      "initialized": false
+    },
+    "next_day_initialization_inputs": {
+      "from_completed_day": 8,
+      "date": "2026-11-07",
+      "last_weather_forecast_only": true,
+      "actual_observed_rain_mm": null,
+      "day8_fictional_gardener_watering": true,
+      "observed_soil_moisture_percent": null,
+      "qualitative_recent_surface_moisture": "day8_garden_watering_simulated",
+      "numeric_soil_index_is_hypothetical_only": true
+    },
+    "weather_generator_settings": {
+      "base_rain_prior_fit": {
+        "annual_rain_days_cwa_reference": 113.7,
+        "monthly_rainfall_weight_exponent_model_assumption": 0.6,
+        "p_base_max_model_assumption": 0.85,
+        "monthly_wet_days_actual": null,
+        "fit_k": "solve_bisection_each_revision_not_hardcoded"
+      },
+      "wet_day_markov_persistence_rho_model_assumption": 0.45,
+      "gamma_rain_intensity_shape_model_assumption": 1.6,
+      "temperature_anomaly_ar_rho_model_assumption": 0.65,
+      "temperature_anomaly_innovation_sigma_c_model_assumption": 1.8,
+      "wet_day_cooling_shift_model_assumption_c": -0.8,
+      "soil_index_memory_rho_model_assumption": 0.75,
+      "day_night_temperature_extremes_calibrated": false,
+      "locality_temperature_bias_calibrated": false,
+      "parameter_status": "uncalibrated_scenario_model_not_empirical_daily_forecast"
+    },
+    "source_separation": {
+      "published_cwa_monthly_normals_are_measured_climatology": true,
+      "synthetic_values_are_game_only": true,
+      "physical_nest_temperature_and_humidity_unmeasured": true,
+      "observation_and_forecast_not_synthetic": true,
+      "prior_daily_events_preserved": true
     }
   }
 }

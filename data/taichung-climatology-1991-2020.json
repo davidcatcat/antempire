@@ -1,0 +1,166 @@
+{
+  "schema": "antempire.taichung.climate_normals.v1",
+  "effective_from_sim_day": 9,
+  "station_or_reference_area": "臺中地區，臺中氣象站長期區域統計參考；不等於虛構西屯別墅的實測",
+  "calendar": "gregorian_months_asia_taipei",
+  "normative_period": "1991-2020",
+  "geographic_setting": {
+    "country": "Taiwan",
+    "city": "臺中市",
+    "district": "西屯區",
+    "is_fictional_villa": true,
+    "coordinates": null
+  },
+  "monthly_climatology": [
+    {
+      "month": 1,
+      "mean_air_temperature_c": 17,
+      "mean_relative_humidity_percent": 74.4,
+      "mean_monthly_precipitation_mm": 36.6,
+      "mean_wind_speed_m_per_s": 1.6,
+      "observed_rain_days_per_month": null,
+      "observed_daily_variance": null
+    },
+    {
+      "month": 2,
+      "mean_air_temperature_c": 17.7,
+      "mean_relative_humidity_percent": 75.2,
+      "mean_monthly_precipitation_mm": 63,
+      "mean_wind_speed_m_per_s": 1.6,
+      "observed_rain_days_per_month": null,
+      "observed_daily_variance": null
+    },
+    {
+      "month": 3,
+      "mean_air_temperature_c": 20.1,
+      "mean_relative_humidity_percent": 74.6,
+      "mean_monthly_precipitation_mm": 86.9,
+      "mean_wind_speed_m_per_s": 1.5,
+      "observed_rain_days_per_month": null,
+      "observed_daily_variance": null
+    },
+    {
+      "month": 4,
+      "mean_air_temperature_c": 23.5,
+      "mean_relative_humidity_percent": 75.1,
+      "mean_monthly_precipitation_mm": 126.8,
+      "mean_wind_speed_m_per_s": 1.4,
+      "observed_rain_days_per_month": null,
+      "observed_daily_variance": null
+    },
+    {
+      "month": 5,
+      "mean_air_temperature_c": 26.4,
+      "mean_relative_humidity_percent": 75.7,
+      "mean_monthly_precipitation_mm": 249.6,
+      "mean_wind_speed_m_per_s": 1.4,
+      "observed_rain_days_per_month": null,
+      "observed_daily_variance": null
+    },
+    {
+      "month": 6,
+      "mean_air_temperature_c": 28.1,
+      "mean_relative_humidity_percent": 76.2,
+      "mean_monthly_precipitation_mm": 329,
+      "mean_wind_speed_m_per_s": 1.5,
+      "observed_rain_days_per_month": null,
+      "observed_daily_variance": null
+    },
+    {
+      "month": 7,
+      "mean_air_temperature_c": 28.9,
+      "mean_relative_humidity_percent": 74.9,
+      "mean_monthly_precipitation_mm": 303.3,
+      "mean_wind_speed_m_per_s": 1.6,
+      "observed_rain_days_per_month": null,
+      "observed_daily_variance": null
+    },
+    {
+      "month": 8,
+      "mean_air_temperature_c": 28.4,
+      "mean_relative_humidity_percent": 77.4,
+      "mean_monthly_precipitation_mm": 340.8,
+      "mean_wind_speed_m_per_s": 1.4,
+      "observed_rain_days_per_month": null,
+      "observed_daily_variance": null
+    },
+    {
+      "month": 9,
+      "mean_air_temperature_c": 27.8,
+      "mean_relative_humidity_percent": 74.3,
+      "mean_monthly_precipitation_mm": 147.5,
+      "mean_wind_speed_m_per_s": 1.4,
+      "observed_rain_days_per_month": null,
+      "observed_daily_variance": null
+    },
+    {
+      "month": 10,
+      "mean_air_temperature_c": 25.5,
+      "mean_relative_humidity_percent": 70.8,
+      "mean_monthly_precipitation_mm": 25,
+      "mean_wind_speed_m_per_s": 1.6,
+      "observed_rain_days_per_month": null,
+      "observed_daily_variance": null
+    },
+    {
+      "month": 11,
+      "mean_air_temperature_c": 22.6,
+      "mean_relative_humidity_percent": 72.4,
+      "mean_monthly_precipitation_mm": 23.8,
+      "mean_wind_speed_m_per_s": 1.5,
+      "observed_rain_days_per_month": null,
+      "observed_daily_variance": null
+    },
+    {
+      "month": 12,
+      "mean_air_temperature_c": 18.7,
+      "mean_relative_humidity_percent": 72.6,
+      "mean_monthly_precipitation_mm": 30.5,
+      "mean_wind_speed_m_per_s": 1.6,
+      "observed_rain_days_per_month": null,
+      "observed_daily_variance": null
+    }
+  ],
+  "annual_from_monthly_table": {
+    "rainfall_sum_mm": 1762.8,
+    "temperature_mean_c": 23.7,
+    "mean_relative_humidity_percent": 74.5,
+    "precipitation_annual_rain_days": null,
+    "annual_reference_table_rainfall_mean_monthly_mm": 146.9
+  },
+  "independent_cwa_station_normals": {
+    "rainy_days_per_year": 113.7,
+    "annual_mean_temperature_c": 23.3,
+    "annual_precipitation_mm": 1773,
+    "note": "此項為氣象署臺中站介紹頁單獨公布的1991-2020氣候值，不可把與臺中市府表格有差異的氣溫/雨量靜默合併；雨日數僅用作模型年總雨日參考，不是逐月雨日數或實際未來天氣"
+  },
+  "provenance": {
+    "monthly_values": {
+      "provider": "臺中市政府都市計畫報告第6-1表：臺中地區歷年氣象資料統計表(歷年月平均)，依中央氣象局1991-2020年統計",
+      "url": "https://www.ud.taichung.gov.tw/media/1114487/%E8%AE%8A%E6%9B%B4%E8%87%BA%E4%B8%AD%E5%B8%82%E7%83%8F%E6%97%A5%E5%A4%A7%E8%82%9A%E5%9C%B0%E5%8D%80%E9%83%BD%E5%B8%82%E8%A6%8F%E5%8A%83%E4%B8%BB%E8%A6%81%E8%A8%88%E7%95%AB-%E9%85%8D%E5%90%88%E5%90%8C%E5%AE%89%E5%8E%9D%E6%8E%92%E6%B0%B4%E7%B3%BB%E7%B5%B1-%E5%90%8C%E5%AE%89%E5%8E%9D%E6%8E%92%E6%B0%B4%E6%B2%BB%E7%90%86%E8%A8%88%E7%95%AB-%E7%AC%AC%E4%B8%80%E6%AC%A1%E4%BF%AE%E6%AD%A3-%E6%A1%88-%E4%B8%8A%E7%B6%B2%E7%89%88.pdf",
+      "pdf_table": "表 6-1",
+      "scope": "臺中地區1991–2020歷年月平均，不是西屯巢穴測量",
+      "quality": "public_government_document_secondary_compilation_from_CWA"
+    },
+    "cwa_station_normals": {
+      "provider": "中央氣象署臺中氣象站",
+      "url": "https://etour.cwa.gov.tw/station_inpage.php?stn_id=8",
+      "quality": "primary_official_1991_2020_station_summary"
+    },
+    "cwa_historical_data": {
+      "provider": "中央氣象署地面觀測CODiS",
+      "url": "https://climate.cwa.gov.tw/GroundObservation",
+      "quality": "official_data_portal_daily_or_monthly_retrievable"
+    },
+    "cwa_longterm_stats": {
+      "provider": "中央氣象署氣候資料統計",
+      "url": "https://climate.cwa.gov.tw/MeasuringObservation",
+      "quality": "official_30_year_normals"
+    }
+  },
+  "no_future_weather_observed_values_in_this_file": true,
+  "daily_weather_samples_are_not_precomputed": true,
+  "no_precipitation_probability_extracted_from_monthly_total": true,
+  "source_date_checked": "2026-11-01",
+  "update_policy": "refresh only after verified source changes, version data and keep completed-day forecasts/observations/synthetic weather snapshots immutable"
+}
