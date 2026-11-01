@@ -1,16 +1,20 @@
 /**
  * Port of sim/test_naturalism.cjs (v6: 214 checks). No-god-mode regression. Never writes saves.
- * The check count must stay 214: same assertions, same 30-day trajectory.
+ * Two checks run per tracked insect death and one per physical scout visit in the 30-day trajectory, so the
+ * exact count depends on the rules version: v6–v2-review.8 = 214 (18 insect deaths, 1 scout visit);
+ * v2-review.9 (#10, simultaneous site-window hunting) = 213 (17 insect deaths, 2 scout visits). The count must
+ * equal the current version's expected value exactly; every assertion must pass.
  */
 import { simulateDay, foragingTemperatureFactor, resolveSpecies } from '../engine/index.ts';
 import { bundle, counter, fixture, MAIN_SPECIES, setParam, species } from './lib/harness.ts';
 
 const LEGACY_CHECK_COUNT = 214;
+const EXPECTED_CHECK_COUNT = 213; // v2-review.9
 const initial = fixture(), p = bundle(), sp = resolveSpecies(species(p));
 const clone = structuredClone;
 if (!(foragingTemperatureFactor(sp, 12) < foragingTemperatureFactor(sp, 20) && foragingTemperatureFactor(sp, 25) === 1)) throw Error('low temperature must suppress foraging');
 const c = counter(), { ok, denied } = c;
-const supportedTypes = new Set(['new_food_source', 'source_batch_consumed', 'food_delivered', 'insect_immigration', 'insect_natural_death', 'insect_population_birth', 'insect_background_death', 'physical_scout_visit', 'discovery', 'scouted_empty', 'nest_local_route_learning', 'local_contact_cue', 'local_brood_begging_contact', 'local_unloading_feedback', 'host_plant_death', 'hemipteran_colony_change', 'local_recruitment', 'route_step', 'route_timeout', 'trail_decay', 'trail_deposited', 'local_trail_choice', 'food_collected', 'trophallaxis', 'protein_cached_at_nest', 'live_prey_encounter', 'prey_escaped', 'local_alarm_signal', 'insect_predation', 'hatch', 'pupation', 'eclosion', 'egg_laid', 'worker_death', 'brood_death', 'injury_recovery', 'queen_death']);
+const supportedTypes = new Set(['new_food_source', 'source_batch_consumed', 'food_delivered', 'insect_immigration', 'insect_natural_death', 'insect_population_birth', 'insect_background_death', 'physical_scout_visit', 'discovery', 'scouted_empty', 'nest_local_route_learning', 'local_contact_cue', 'local_brood_begging_contact', 'local_unloading_feedback', 'host_plant_death', 'hemipteran_colony_change', 'local_recruitment', 'route_step', 'route_timeout', 'trail_decay', 'trail_deposited', 'local_trail_choice', 'food_collected', 'trophallaxis', 'protein_cached_at_nest', 'live_prey_encounter', 'prey_escaped', 'local_alarm_signal', 'long_range_recruitment_trail', 'hunt_recruitment', 'joint_prey_transport', 'insect_predation', 'hatch', 'pupation', 'eclosion', 'egg_laid', 'worker_death', 'brood_death', 'injury_recovery', 'queen_death']);
 const anyState = (x: unknown) => x as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 const withOverride = anyState(clone(initial)); withOverride.force_food = { site: 'N00', sugar: 100 }; denied(() => simulateDay(withOverride, p));
 const withDrama = anyState(clone(initial)); withDrama.make_sure_queen_survives = true; denied(() => simulateDay(withDrama, p));
@@ -80,6 +84,6 @@ const found = forcedSearchTrial.events.filter((e) => e.type === 'physical_scout_
 ok(found.every((e) => e.site === 'F10' && e.via === 'U01'), 'scouting can visit ONLY locally reachable F10 via U01, not remote F04/F05');
 ok(found.length >= 1, 'scout must actually traverse known neighbor under the high-search QA fixture');
 ok(insectDeaths === carcasses, 'background food and prey originates from distinct tracked insect deaths');
-const result = { passed: c.checks, legacy_v6_passed: LEGACY_CHECK_COUNT, days: 30, events_natural_only: true, seeded_replay: true, no_direct_interventions: true, insectDeaths, carcasses, workerDeaths, physicalScoutingEvents: scouts, canonical_save_changed: false };
+const result = { passed: c.checks, expected_v9: EXPECTED_CHECK_COUNT, legacy_v6_passed: LEGACY_CHECK_COUNT, days: 30, events_natural_only: true, seeded_replay: true, no_direct_interventions: true, insectDeaths, carcasses, workerDeaths, physicalScoutingEvents: scouts, canonical_save_changed: false };
 console.log(JSON.stringify(result, null, 2));
-if (c.checks !== LEGACY_CHECK_COUNT) { console.error(`naturalism check count ${c.checks} != v6 ${LEGACY_CHECK_COUNT}`); process.exit(1); }
+if (c.checks !== EXPECTED_CHECK_COUNT) { console.error(`naturalism check count ${c.checks} != expected ${EXPECTED_CHECK_COUNT} (v6: ${LEGACY_CHECK_COUNT})`); process.exit(1); }

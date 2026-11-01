@@ -64,11 +64,12 @@ export function prey(world: WorldState, sp: SpeciesParams, wp: WorldParams, site
 }
 
 /** Collection at the site the worker physically reached. Returns the crop/mandible load or null. */
-function collect(world: WorldState, colony: ColonyState, sp: SpeciesParams, wp: WorldParams, source: Source, worker: Worker, weather: Weather, events: SimEvent[], onsite: Worker[]): { macro: Macro; load: number } | null {
+function collect(world: WorldState, colony: ColonyState, sp: SpeciesParams, wp: WorldParams, source: Source, worker: Worker, weather: Weather, events: SimEvent[], onsite: Worker[] | null): { macro: Macro; load: number } | null {
   const fh = sp.food_handling;
   const g = colonyDice(world, colony, 'collect:' + worker.id + ':' + source.id);
   const rain = rainActivity(sp, weather);
-  if (source.type === 'carcass' && sourceSum(source) <= 1e-5) prey(world, sp, wp, source, worker, onsite, g, events);
+  // Legacy sequential model only (onsite !== null); v2-review.9 hunts in huntWindow() before collection.
+  if (onsite && source.type === 'carcass' && sourceSum(source) <= 1e-5) prey(world, sp, wp, source, worker, onsite, g, events);
   const presence = knowledge(colony, source.id)?.presence;
   if (presence === 'scouted_empty' || presence === 'potential' || sourceSum(source) <= 1e-5 || g() > rain * (source.type === 'carcass' ? fh.carcass_access_probability : fh.liquid_collection_probability)) return null;
   const macro = macroOf(source), min = fh[`crop_load_${macro}_min`], max = fh[`crop_load_${macro}_max`];
@@ -76,18 +77,128 @@ function collect(world: WorldState, colony: ColonyState, sp: SpeciesParams, wp: 
   const load = round(Math.min(sourceSum(source), min + (max - min) * g(), freeRoom));
   if (load <= 0) return null;
   if (macro === 'sugar') source.sugar = round(source.sugar - load);
-  else {
-    let needed = load;
-    for (const batch of source.batches) {
-      const take = Math.min(batch.protein, needed);
-      batch.protein = round(batch.protein - take); needed = round(needed - take);
-      if (take > 0) events.push({ type: 'source_batch_consumed', source_event_id: batch.event_id, location: source.id, worker: worker.id, quantity_portions: round(take) });
-      if (needed <= 1e-6) break;
-    }
-    syncSource(source);
-  }
+  else takeProtein(source, worker, load, events);
   events.push({ type: 'food_collected', worker: worker.id, site: source.id, macro, portions: load, location: source.id, assumption: true });
   return { macro, load };
+}
+
+/** Remove `load` protein portions from the site's batches in order, recording each batch it came from. */
+function takeProtein(source: Source, worker: Worker, load: number, events: SimEvent[]): void {
+  let needed = load;
+  for (const batch of source.batches) {
+    const take = Math.min(batch.protein, needed);
+    batch.protein = round(batch.protein - take); needed = round(needed - take);
+    if (take > 0) events.push({ type: 'source_batch_consumed', source_event_id: batch.event_id, location: source.id, worker: worker.id, quantity_portions: round(take) });
+    if (needed <= 1e-6) break;
+  }
+  syncSource(source);
+}
+
+// ---------------------------------------------------------------------------------------------------
+// v2-review.9 (#10): simultaneous site-window hunting (species switch predation.simultaneous_site_group_hunting).
+// Mechanism directions from Dejean et al. 2007 (R98/R107, this species): a lone minor captures and retrieves
+// small prey; for large prey the finder recruits nestmates within short range by alarm pheromone within
+// seconds, the team spread-eagles the prey (each worker holds one appendage, so one hunt per worker at a
+// time), the finder can also lay a trail back to the nest (long-range recruitment), and 2-10 workers retrieve
+// the prey together. All numbers are game assumptions (see species predation.*).
+// ---------------------------------------------------------------------------------------------------
+
+/** A worker physically arriving at a site at one minute of the day. */
+export interface Arrival { worker: Worker; route: string[]; arrive: number }
+/** What one hunt participant ends up carrying, and the minute it leaves the site for the nest. */
+export interface Carry { worker: Worker; route: string[]; load: number; home: number; recruited: boolean; event_id: string | null; led_by: string | null; walked_home?: boolean }
+
+export interface HuntContext {
+  world: WorldState; colony: ColonyState; sp: SpeciesParams; wp: WorldParams; events: SimEvent[]; summary: ColonySummary;
+  tripCost: () => void; byMacro: { sugar: Set<string>; protein: Set<string> };
+}
+
+/** Hunting is possible only at a carcass site whose carcass is empty on arrival and that holds living tracked insects. */
+export const huntable = (world: WorldState, source: Source): boolean => {
+  const pop = world.ecology.insects_by_site[source.id];
+  return source.type === 'carcass' && sourceSum(source) <= 1e-5 && !!pop && pop.living >= 1;
+};
+const byId = (a: Arrival, b: Arrival) => (a.worker.id < b.worker.id ? -1 : a.worker.id > b.worker.id ? 1 : 0);
+
+/**
+ * One hunting window: every worker in `arrivals` reached `source` at the same minute (the engine's time
+ * step is one route edge, far longer than the seconds-scale short-range recruitment), so they are present
+ * together. Result does NOT depend on the order of `arrivals`. Each worker takes part in at most one hunt
+ * per window (participation lock). Returns every participant, including long-range recruits (recruited:true),
+ * who still have to walk home; workers not in the result did not hunt and collect normally.
+ */
+export function huntWindow(ctx: HuntContext, source: Source, arrivals: Arrival[]): Map<string, Carry> {
+  const { world, colony, sp, wp, events, summary } = ctx, pr = sp.predation, nest = colony.nest_node;
+  const engaged = new Map<string, Carry>();
+  if (!arrivals.length) return engaged;
+  const minute = arrivals[0].arrive;
+  if (arrivals.some((a) => a.arrive !== minute || a.worker.last_location !== source.id || a.route.at(-1) !== source.id)) throw Error('NO_GOD_MODE: hunt window members must be at the site at the same minute');
+  const members = [...arrivals].sort(byId);
+  for (const finder of members) {
+    if (engaged.has(finder.worker.id) || !huntable(world, source)) continue;
+    const pop = world.ecology.insects_by_site[source.id];
+    const g = colonyDice(world, colony, 'hunt:' + finder.worker.id + ':' + source.id + ':' + minute);
+    if (g() >= pr.live_prey_encounter_probability) continue;
+    const large = g() < wp.prey.large_prey_fraction;
+    const free = members.filter((m) => !engaged.has(m.worker.id));
+    // Short-range recruitment: every unengaged nestmate at the site in this window joins a large-prey hunt.
+    let team: Arrival[] = large ? [finder, ...free.filter((m) => m !== finder)] : [finder];
+    events.push({ type: 'live_prey_encounter', site: source.id, worker: finder.worker.id, minute, prey_size: large ? 'large' : 'small', co_located_team: free.map((m) => m.worker.id), assumption: true });
+    let resolve = minute;
+    const recruits: Arrival[] = [];
+    const escape = (reason: string) => events.push({ type: 'prey_escaped', site: source.id, worker: finder.worker.id, minute: resolve, reason, participants: team.map((m) => m.worker.id), assumption: true });
+    const lock = (load: (a: Arrival) => number, eventId: string | null) => {
+      for (const m of team) engaged.set(m.worker.id, { worker: m.worker, route: m.route, load: load(m), home: resolve, recruited: recruits.includes(m), event_id: eventId, led_by: recruits.includes(m) ? finder.worker.id : null });
+    };
+    if (large && team.length < pr.large_prey_min_team) {
+      events.push({ type: 'local_alarm_signal', site: source.id, worker: finder.worker.id, minute, short_range_joiners: team.slice(1).map((m) => m.worker.id), assumption: true });
+      // Long-range recruitment: the finder walks home laying a trail and leads idle nestmates back; the prey
+      // is unattended (or held by too few short-range joiners) meanwhile.
+      const one = (finder.route.length - 1) * wp.routes.route_edge_minutes;
+      if (minute + 3 * one > sp.foraging_activity.daily_window_minutes) { escape('insufficient_team_no_time_to_recruit'); lock(() => 0, null); continue; }
+      goHome(wp, finder.worker, finder.route, events, 'hunt_recruit_trail_home', minute);
+      depositTrail(colony, sp, finder.route, finder.worker, events);
+      events.push({ type: 'long_range_recruitment_trail', worker: finder.worker.id, site: source.id, minute: minute + one, physical_route: finder.route, assumption: true });
+      // Candidate followers in id order, so the result does not depend on how the population list is stored.
+      const pool = colony.population.workers.filter((w) => w.last_location === nest && w.task !== 'forage' && w.task !== 'guard' && !w.recruited_today && w.age_days >= sp.task_allocation.newborn_nurse_days).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+      const n = pool.length ? 1 + Math.floor(g() * Math.min(pool.length, sp.recruitment.recruitment_max_followers)) : 0;
+      resolve = minute + 2 * one;
+      if (!n) { escape('insufficient_team_no_recruits'); lock(() => 0, null); Object.assign(engaged.get(finder.worker.id) as Carry, { walked_home: true, home: minute }); continue; }
+      travel(sp, wp, finder.worker, finder.route, events, 'hunt_recruit_lead', minute + one);
+      ctx.tripCost();
+      for (let i = 0; i < n; i++) {
+        const follower = pool.splice(Math.floor(g() * pool.length), 1)[0];
+        if (!follower) break;
+        if (!travel(sp, wp, follower, finder.route, events, 'hunt_recruit_follow_trail', minute + one)) continue;
+        follower.recruited_today = true; summary.tasks[follower.task as keyof typeof summary.tasks]--; follower.task = 'forage'; summary.tasks.forage++; summary.recruited++; ctx.tripCost();
+        events.push({ type: 'hunt_recruitment', by: finder.worker.id, to: follower.id, site: source.id, minute: minute + one, physical_route: finder.route, signal_dependent: true, assumption: true });
+        const k = knowledge(colony, source.id);
+        if (!follower.known_sources.includes(source.id)) follower.known_sources.push(source.id);
+        if (!k.known_by.includes(follower.id)) k.known_by.push(follower.id);
+        recruits.push({ worker: follower, route: finder.route, arrive: resolve });
+      }
+      team = [...team, ...recruits];
+      if (g() < pr.large_prey_escape_while_recruiting_probability) { escape('escaped_while_recruiting'); lock(() => 0, null); continue; }
+      if (team.length < pr.large_prey_min_team) { escape('insufficient_team_after_recruitment'); lock(() => 0, null); continue; }
+    }
+    if (g() > pr.live_prey_capture_probability) { escape('failed_capture'); lock(() => 0, null); continue; }
+    pop.living--; pop.cumulative_deaths++;
+    const quantity = large ? wp.prey.large_prey_protein : wp.prey.small_prey_protein, id = 'HUNT-D' + (world.sim_day + 1) + '-' + source.id + '-' + pop.cumulative_deaths;
+    source.batches.push({ event_id: id, original_day: world.sim_day + 1, protein: quantity, age_days: 0, origin: 'captured existing tracked insect; prey-size assumption' });
+    source.protein = round(source.batches.reduce((a, b) => a + b.protein, 0));
+    const participants = team.map((m) => m.worker.id);
+    events.push({ type: 'insect_predation', site: source.id, event_id: id, team: participants, minute: resolve, size: large ? 'large' : 'small', count_after: pop.living, assumption: true });
+    events.push({ type: 'new_food_source', id, site: source.id, protein_portions: quantity, caused_by_event_id: id, causal_basis: 'tracked live insect predation', assumption: true });
+    // Joint retrieval: the whole prey is carried home by the team, shared equally (mass conserved exactly).
+    const share = round(quantity / team.length), shares = new Map(team.map((m, i) => [m, i === team.length - 1 ? round(quantity - share * (team.length - 1)) : share]));
+    for (const m of team) {
+      takeProtein(source, m.worker, shares.get(m) as number, events);
+      events.push({ type: 'food_collected', worker: m.worker.id, site: source.id, macro: 'protein', portions: shares.get(m), location: source.id, minute: resolve, prey_event_id: id, assumption: true });
+    }
+    events.push({ type: 'joint_prey_transport', site: source.id, event_id: id, minute: resolve, carriers: team.map((m) => ({ worker: m.worker.id, portions: shares.get(m) })), assumption: true });
+    lock((m) => shares.get(m) as number, id);
+  }
+  return engaged;
 }
 
 interface Plan { worker: Worker; source: Source; route: string[]; trip: Trip; g: Rng }
@@ -161,32 +272,72 @@ export function forageDay(world: WorldState, colony: ColonyState, sp: SpeciesPar
     depositTrail(colony, sp, route, worker, events);
   };
 
-  for (const plan of plans) {
-    const { worker, source, route, trip, g } = plan;
-    if (worker.last_location !== source.id) continue;
-    const nearby = plans.filter((q) => q.source.id === source.id && q.worker.last_location === source.id).map((q) => q.worker);
-    tripCost();
-    const found = collect(world, colony, sp, wp, source, worker, weather, events, nearby);
-    byMacro[macroOf(source)].add(worker.id);
-    (worker.site_memory as Record<string, { last_success_portions: number; last_visit_day: number }>)[source.id] = { last_success_portions: found?.load || 0, last_visit_day: world.sim_day + 1 };
-    goHome(wp, worker, route, events, 'foraging_return', trip.arrive);
-    if (!found) continue;
-    unload(worker, source, route, found, g);
-    // Optional repeated trip with explicit travel time, never free instantaneous collection.
-    let finalReturn = trip.back;
-    if (g() < ft.repeat_trip_probability && ft.max_trips_per_forager >= 2) {
-      const again = travel(sp, wp, worker, route, events, 'repeat_depart', trip.back);
-      if (again) {
-        finalReturn = again.back; tripCost();
-        const more = collect(world, colony, sp, wp, source, worker, weather, events, [worker]);
-        (worker.site_memory as Record<string, { last_success_portions: number; last_visit_day: number }>)[source.id] = { last_success_portions: more?.load || 0, last_visit_day: world.sim_day + 1 };
-        goHome(wp, worker, route, events, 'repeat_return', again.arrive);
-        if (more) unload(worker, source, route, more, g);
+  /** v2-review.8 sequential model: each plan's whole day (collect, return, repeat trip, recruitment) in plan order. */
+  const sequential = (list: Plan[], hunting: boolean) => {
+    for (const plan of list) {
+      const { worker, source, route, trip, g } = plan;
+      if (worker.last_location !== source.id) continue;
+      const nearby = hunting ? list.filter((q) => q.source.id === source.id && q.worker.last_location === source.id).map((q) => q.worker) : null;
+      tripCost();
+      const found = collect(world, colony, sp, wp, source, worker, weather, events, nearby);
+      byMacro[macroOf(source)].add(worker.id);
+      (worker.site_memory as Record<string, { last_success_portions: number; last_visit_day: number }>)[source.id] = { last_success_portions: found?.load || 0, last_visit_day: world.sim_day + 1 };
+      goHome(wp, worker, route, events, 'foraging_return', trip.arrive);
+      if (!found) continue;
+      unload(worker, source, route, found, g);
+      // Optional repeated trip with explicit travel time, never free instantaneous collection.
+      let finalReturn = trip.back;
+      if (g() < ft.repeat_trip_probability && ft.max_trips_per_forager >= 2) {
+        const again = travel(sp, wp, worker, route, events, 'repeat_depart', trip.back);
+        if (again) {
+          finalReturn = again.back; tripCost();
+          const more = collect(world, colony, sp, wp, source, worker, weather, events, hunting ? [worker] : null);
+          (worker.site_memory as Record<string, { last_success_portions: number; last_visit_day: number }>)[source.id] = { last_success_portions: more?.load || 0, last_visit_day: world.sim_day + 1 };
+          goHome(wp, worker, route, events, 'repeat_return', again.arrive);
+          if (more) unload(worker, source, route, more, g);
+        }
+      }
+      // Local recruitment: only idle nestmates physically at the nest, along a still-detectable trail.
+      if (g() < rc.recruitment_probability && fullTrail(colony, sp, route)) {
+        const possible = colony.population.workers.filter((w) => w.id !== worker.id && w.last_location === nest && w.task !== 'forage' && w.task !== 'guard' && !w.recruited_today && w.age_days >= sp.task_allocation.newborn_nurse_days);
+        const n = possible.length ? 1 + Math.floor(g() * Math.min(possible.length, rc.recruitment_max_followers)) : 0;
+        for (let i = 0; i < n; i++) {
+          const follower = possible.splice(Math.floor(g() * possible.length), 1)[0];
+          if (!follower) break;
+          const follow = travel(sp, wp, follower, route, events, 'recruit_follow_trail', finalReturn);
+          if (!follow) continue;
+          follower.recruited_today = true; summary.tasks[follower.task as keyof typeof summary.tasks]--; follower.task = 'forage'; summary.tasks.forage++; summary.recruited++; tripCost();
+          events.push({ type: 'local_recruitment', by: worker.id, to: follower.id, site: source.id, physical_route: route, signal_dependent: true, assumption: true });
+          const k = knowledge(colony, source.id);
+          if (!follower.known_sources.includes(source.id)) follower.known_sources.push(source.id);
+          if (!k.known_by.includes(follower.id)) k.known_by.push(follower.id);
+          const cargo = collect(world, colony, sp, wp, source, follower, weather, events, hunting ? [follower] : null);
+          byMacro[macroOf(source)].add(follower.id);
+          follower.site_memory ??= {}; follower.site_memory[source.id] = { last_success_portions: cargo?.load || 0, last_visit_day: world.sim_day + 1 };
+          goHome(wp, follower, route, events, 'recruit_return', follow.arrive);
+          if (cargo) unload(follower, source, route, cargo, g);
+        }
       }
     }
-    // Local recruitment: only idle nestmates physically at the nest, along a still-detectable trail.
-    if (g() < rc.recruitment_probability && fullTrail(colony, sp, route)) {
-      const possible = colony.population.workers.filter((w) => w.id !== worker.id && w.last_location === nest && w.task !== 'forage' && w.task !== 'guard' && !w.recruited_today && w.age_days >= sp.task_allocation.newborn_nurse_days);
+  };
+
+  /**
+   * v2-review.9: every trip to a carcass site (first trip, repeat trip, recruited follower, long-range hunt
+   * recruit) runs on one clock; all workers arriving at the same site in the same minute form ONE hunting
+   * window. Within a minute, sites are taken in id order and workers in id order, so nothing depends on the
+   * order of the population list or of the plans.
+   */
+  const timedCarcassTrips = (list: Plan[]) => {
+    const ctx: HuntContext = { world, colony, sp, wp, events, summary, tripCost, byMacro };
+    interface Visit { arrival: Arrival; source: Source; kind: 'first' | 'repeat' | 'follow'; plan: Plan }
+    const queue: Visit[] = [];
+    const legOf = (route: string[]) => (route.length - 1) * wp.routes.route_edge_minutes;
+    const idOrder = (a: Worker, b: Worker) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+    for (const plan of list) if (plan.worker.last_location === plan.source.id) { tripCost(); queue.push({ arrival: { worker: plan.worker, route: plan.route, arrive: plan.trip.arrive }, source: plan.source, kind: 'first', plan }); }
+    const recruitFollowers = (plan: Plan, finalReturn: number) => {
+      const { worker, source, route, g } = plan;
+      if (!(g() < rc.recruitment_probability && fullTrail(colony, sp, route))) return;
+      const possible = colony.population.workers.filter((w) => w.id !== worker.id && w.last_location === nest && w.task !== 'forage' && w.task !== 'guard' && !w.recruited_today && w.age_days >= sp.task_allocation.newborn_nurse_days).sort(idOrder);
       const n = possible.length ? 1 + Math.floor(g() * Math.min(possible.length, rc.recruitment_max_followers)) : 0;
       for (let i = 0; i < n; i++) {
         const follower = possible.splice(Math.floor(g() * possible.length), 1)[0];
@@ -198,13 +349,56 @@ export function forageDay(world: WorldState, colony: ColonyState, sp: SpeciesPar
         const k = knowledge(colony, source.id);
         if (!follower.known_sources.includes(source.id)) follower.known_sources.push(source.id);
         if (!k.known_by.includes(follower.id)) k.known_by.push(follower.id);
-        const cargo = collect(world, colony, sp, wp, source, follower, weather, events, [follower]);
-        byMacro[macroOf(source)].add(follower.id);
-        follower.site_memory ??= {}; follower.site_memory[source.id] = { last_success_portions: cargo?.load || 0, last_visit_day: world.sim_day + 1 };
-        goHome(wp, follower, route, events, 'recruit_return', follow.arrive);
-        if (cargo) unload(follower, source, route, cargo, g);
+        queue.push({ arrival: { worker: follower, route, arrive: follow.arrive }, source, kind: 'follow', plan });
+      }
+    };
+    while (queue.length) {
+      const minute = Math.min(...queue.map((v) => v.arrival.arrive));
+      const now = queue.filter((v) => v.arrival.arrive === minute);
+      for (const v of now) queue.splice(queue.indexOf(v), 1);
+      for (const site of [...new Set(now.map((v) => v.source.id))].sort()) {
+        const visits = now.filter((v) => v.source.id === site).sort((x, y) => idOrder(x.arrival.worker, y.arrival.worker)), source = visits[0].source;
+        // Workers first take what is left of an existing carcass; those left empty-handed, if the carcass is now
+        // empty, search for live prey together (one window).
+        const pre = new Map<string, { macro: Macro; load: number } | null>();
+        if (sourceSum(source) > 1e-5) for (const v of visits) pre.set(v.arrival.worker.id, collect(world, colony, sp, wp, source, v.arrival.worker, weather, events, null));
+        const searchers = visits.filter((v) => !pre.get(v.arrival.worker.id)).map((v) => v.arrival);
+        const hw = searchers.length && huntable(world, source) ? huntWindow(ctx, source, searchers) : new Map<string, Carry>();
+        // Long-range hunt recruits walk home with the team and unload.
+        for (const carry of hw.values()) if (carry.recruited) {
+          const r = carry.worker;
+          byMacro.protein.add(r.id);
+          r.site_memory ??= {}; r.site_memory[source.id] = { last_success_portions: carry.load, last_visit_day: world.sim_day + 1 };
+          goHome(wp, r, carry.route, events, 'hunt_recruit_return', carry.home);
+          if (carry.load > 0) unload(r, source, carry.route, { macro: 'protein', load: carry.load }, colonyDice(world, colony, 'hunt-unload:' + r.id + ':' + source.id + ':' + minute));
+        }
+        for (const v of visits) {
+          const { worker, route } = v.arrival, carry = hw.get(worker.id);
+          const found = carry ? (carry.load > 0 ? { macro: 'protein' as Macro, load: carry.load } : null) : pre.has(worker.id) ? (pre.get(worker.id) as { macro: Macro; load: number } | null) : collect(world, colony, sp, wp, source, worker, weather, events, null);
+          const leave = carry ? carry.home : minute, back = leave + legOf(route);
+          byMacro[macroOf(source)].add(worker.id);
+          worker.site_memory ??= {}; worker.site_memory[source.id] = { last_success_portions: found?.load || 0, last_visit_day: world.sim_day + 1 };
+          if (!carry?.walked_home) goHome(wp, worker, route, events, v.kind === 'first' ? 'foraging_return' : v.kind === 'repeat' ? 'repeat_return' : 'recruit_return', leave);
+          if (found) unload(worker, source, route, found, v.plan.g);
+          if (v.kind === 'follow') continue;
+          if (v.kind === 'repeat') { recruitFollowers(v.plan, back); continue; }
+          if (!found) continue;
+          // First trip succeeded: optional repeated trip with explicit travel time, then local recruitment.
+          if (v.plan.g() < ft.repeat_trip_probability && ft.max_trips_per_forager >= 2) {
+            const again = travel(sp, wp, worker, route, events, 'repeat_depart', back);
+            if (again) { tripCost(); queue.push({ arrival: { worker, route, arrive: again.arrive }, source, kind: 'repeat', plan: v.plan }); continue; }
+          }
+          recruitFollowers(v.plan, back);
+        }
       }
     }
+  };
+
+  if (!sp.predation.simultaneous_site_group_hunting) sequential(plans, true);
+  else {
+    // Liquid-food plans keep the sequential order (nothing is hunted there); carcass trips run on the clock.
+    sequential(plans.filter((q) => q.source.type !== 'carcass'), false);
+    timedCarcassTrips(plans.filter((q) => q.source.type === 'carcass'));
   }
   for (const w of colony.population.workers) delete w.recruited_today;
 }

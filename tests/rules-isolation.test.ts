@@ -3,21 +3,28 @@
  * For parameter-only updates this is checked without the v6 engine: undo just that version's parameter
  * changes and the current engine must reproduce the previous version's golden trace hashes exactly.
  *   v2-review.8 (#13, injured-worker task weights) -> reproduces tests/golden/v7-trace-sha256.json
+ *   v2-review.9 (#10, simultaneous site-window hunting; model switch off) -> reproduces tests/golden/v8-trace-sha256.json
+ * Each step undoes its own changes AND every later step's, so step N is compared with the engine as it was.
  */
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { simulateDay } from '../engine/index.ts';
 import { loadBundle, readJson } from '../cli/lib/load.ts';
 import { SCENARIOS, applyNew } from './lib/scenarios.ts';
-import { approvedChanges } from './lib/approved-changes.ts';
+import { approvedChanges, revertChange } from './lib/approved-changes.ts';
 import type { ParamBundle } from '../engine/index.ts';
 
-const STEPS = [{ version: 'antempire.v2-review.8-injured-worker-neutral-tasks', previousGolden: 'tests/golden/v7-trace-sha256.json' }];
+const STEPS = [
+  { version: 'antempire.v2-review.8-injured-worker-neutral-tasks', previousGolden: 'tests/golden/v7-trace-sha256.json' },
+  { version: 'antempire.v2-review.9-simultaneous-site-hunting', previousGolden: 'tests/golden/v8-trace-sha256.json' },
+];
+const ORDER = STEPS.map((s) => s.version);
 const results: Record<string, string> = {};
 for (const step of STEPS) {
-  const changes = approvedChanges().filter((c) => c.rules_version === step.version);
-  assert.ok(changes.length > 0 && changes.every((c) => c.kind === 'param' || c.kind === 'param_removed'), `${step.version} must be a parameter-only update for this check`);
-  const revert = (b: ParamBundle) => { for (const c of changes) if (c.kind === 'param') { let n: any = c.file?.startsWith('world') ? b.world : b.species[(c.file as string).split(':')[1]]; for (const k of (c.path as string).split('.')) n = n[k]; n.value = c.from; } }; // eslint-disable-line @typescript-eslint/no-explicit-any
+  const own = approvedChanges().filter((c) => c.rules_version === step.version);
+  assert.ok(own.length > 0 && own.every((c) => ['param', 'param_removed', 'param_switch', 'param_added'].includes(c.kind)), `${step.version} must be a parameter/switch-only update for this check`);
+  const changes = approvedChanges().filter((c) => ORDER.indexOf(c.rules_version) >= ORDER.indexOf(step.version));
+  const revert = (b: ParamBundle) => { for (const c of [...changes].reverse()) revertChange(b, c); };
   const golden = readJson(step.previousGolden);
   for (const sc of SCENARIOS) {
     let state = readJson('tests/fixtures/day14-projection.json'); if (sc.seed) state.seed = sc.seed; sc.state(state);

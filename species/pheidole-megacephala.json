@@ -103,8 +103,8 @@
         "R98",
         "R107"
       ],
-      "summary": "單蟻捕食小型獵物、大型獵物需局部招募協作。",
-      "engine_status": "simulated：只捕食世界中已追蹤的活昆蟲，參數見 predation.*。"
+      "summary": "單蟻捕食並搬回小型獵物；大型獵物由短距（警報費洛蒙）與長距（路徑費洛蒙）招募的隊伍同時捕捉、共同搬回。",
+      "engine_status": "simulated：只捕食世界中已追蹤的活昆蟲；v2-review.9 起同地點同分鐘抵達者組成捕獵時間窗（參與鎖定、短距／長距招募、共同搬運），參數見 predation.*。"
     },
     "nesting": {
       "evidence": "文獻支持",
@@ -1406,6 +1406,24 @@
       "mechanism_basis": "文獻支持",
       "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
       "legacy_path": "sim/params.json#foraging_physics.live_prey_capture_probability"
-    }
+    },
+    "large_prey_escape_while_recruiting_probability": {
+      "value": 0.5,
+      "assumption": true,
+      "description": "大型獵物遇到時現場人手不足、發現者回巢做長距招募期間（往返一段路程），獵物逃脫的機率。v2-review.9 新增，遊戲假設",
+      "reference_for_mechanism_only": [
+        "Dejean2007"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向：Dejean et al. 2007（R98／R107，本種）記錄大型獵物由短距與長距招募的隊伍捕捉，且有獵物逃脫（50 隻蟑螂中 8 隻）。但原文的招募以秒～分鐘計，且是近巢、大群體條件；本引擎的長距招募要往返一段路程（數十分鐘），獵物無人看守或只有少數工蟻壓制，原文沒有可對應的數字。取 0.5 表示「逃脫與留下一樣可能」的最大不確定值；未依模擬結果調整。",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.9-simultaneous-site-hunting",
+        "approved_in": "#10"
+      }
+    },
+    "simultaneous_site_group_hunting": true,
+    "simultaneous_site_group_hunting_note": "模型開關（v2-review.9，#10 核准）：true＝同一地點、同一分鐘抵達的工蟻組成一個捕獵時間窗，一起處理遭遇、短距／長距招募與共同搬運，每隻工蟻同一時間窗只參與一次捕獵；false＝v2-review.8 以前的逐一處理模型（只供隔離證明 tests/rules-isolation.test.ts 使用）。改變此開關屬於規則更新。"
   }
 }

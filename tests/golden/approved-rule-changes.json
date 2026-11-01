@@ -38,6 +38,25 @@
       "legacy_path": "workers.injury_foraging_multiplier",
       "from": 0.45,
       "note": "declared but never used by any engine version"
+    },
+    {
+      "rules_version": "antempire.v2-review.9-simultaneous-site-hunting",
+      "approved_in": "#10",
+      "kind": "param_switch",
+      "file": "species:pheidole-megacephala",
+      "path": "predation.simultaneous_site_group_hunting",
+      "from": false,
+      "to": true,
+      "description": "hunting resolved per (site, arrival minute) window: order-independent teams, participation lock, short- then long-range recruitment for large prey, joint retrieval; false = v2-review.8 sequential model"
+    },
+    {
+      "rules_version": "antempire.v2-review.9-simultaneous-site-hunting",
+      "approved_in": "#10",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "predation.large_prey_escape_while_recruiting_probability",
+      "to": 0.5,
+      "note": "read only when simultaneous_site_group_hunting is true"
     }
   ]
 }
