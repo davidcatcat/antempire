@@ -1441,6 +1441,8 @@
       }
     },
     "simultaneous_site_group_hunting": true,
-    "simultaneous_site_group_hunting_note": "模型開關（v2-review.9，#10 核准）：true＝同一地點、同一分鐘抵達的工蟻組成一個捕獵時間窗，一起處理遭遇、短距／長距招募與共同搬運，每隻工蟻同一時間窗只參與一次捕獵；false＝v2-review.8 以前的逐一處理模型（只供隔離證明 tests/rules-isolation.test.ts 使用）。改變此開關屬於規則更新。"
+    "simultaneous_site_group_hunting_note": "模型開關（v2-review.9，#10 核准）：true＝同一地點、同一分鐘抵達的工蟻組成一個捕獵時間窗，一起處理遭遇、短距／長距招募與共同搬運，每隻工蟻同一時間窗只參與一次捕獵；false＝v2-review.8 以前的逐一處理模型（只供隔離證明 tests/rules-isolation.test.ts 使用）。改變此開關屬於規則更新。",
+    "late_arrivals_join_waiting_prey": true,
+    "late_arrivals_join_waiting_prey_note": "模型開關（v2-review.11，Owner 依 #15 決策 3 要求查文獻後修正）：true＝發現者回巢做長距招募時，大型獵物留在原地等待；在招募者到達前（含同一分鐘）抵達同地點、空手的工蟻加入這隻獵物（受 large_prey_max_team 限制），在招募者抵達時與整隊一起結算。目前只有一個巢、路線逐段行走，其他工蟻只可能在招募者抵達的同一分鐘到達。等待中的獵物不會被其他隊伍重複捕捉。機制：Dejean et al. 2007（R98／R107，本種）——發現者留在獵物身上並以腹部末端的訊號吸引附近同伴（第二隻 6.8 秒內到達），大型獵物由短距招募者壓制、部分工蟻回巢招募更多同伴，工蟻以接觸發現獵物。沒有新增數值參數。false＝v2-review.10 的立即結算（只供隔離證明使用）。改變此開關屬於規則更新。"
   }
 }

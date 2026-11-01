@@ -5,6 +5,7 @@
  *   v2-review.8 (#13, injured-worker task weights) -> reproduces tests/golden/v7-trace-sha256.json
  *   v2-review.9 (#10, simultaneous site-window hunting; model switch off) -> reproduces tests/golden/v8-trace-sha256.json
  *   v2-review.10 (large-prey team cap; cap set back to no limit) -> reproduces tests/golden/v9-trace-sha256.json
+ *   v2-review.11 (late arrivals join a waiting prey; switch off) -> reproduces tests/golden/v10-trace-sha256.json
  * Each step undoes its own changes AND every later step's, so step N is compared with the engine as it was.
  */
 import assert from 'node:assert/strict';
@@ -19,6 +20,7 @@ const STEPS = [
   { version: 'antempire.v2-review.8-injured-worker-neutral-tasks', previousGolden: 'tests/golden/v7-trace-sha256.json' },
   { version: 'antempire.v2-review.9-simultaneous-site-hunting', previousGolden: 'tests/golden/v8-trace-sha256.json' },
   { version: 'antempire.v2-review.10-hunt-team-cap', previousGolden: 'tests/golden/v9-trace-sha256.json' },
+  { version: 'antempire.v2-review.11-late-arrivals-join-waiting-prey', previousGolden: 'tests/golden/v10-trace-sha256.json' },
 ];
 const ORDER = STEPS.map((s) => s.version);
 const results: Record<string, string> = {};

@@ -67,6 +67,16 @@
       "from": 1000000000,
       "to": 10,
       "note": "from = no effective cap (v2-review.9 behaviour: every free co-located worker joins); used for the isolation proof"
+    },
+    {
+      "rules_version": "antempire.v2-review.11-late-arrivals-join-waiting-prey",
+      "approved_in": "owner request 2026-11-01 (#15 decision 3)",
+      "kind": "param_switch",
+      "file": "species:pheidole-megacephala",
+      "path": "predation.late_arrivals_join_waiting_prey",
+      "from": false,
+      "to": true,
+      "description": "long-range hunts wait at the site on the carcass-trip clock; empty-handed workers arriving by the time the recruits arrive join it (up to the team cap) and the hunt is concluded with all of them; the waiting insect is reserved; false = v2-review.10 immediate resolution"
     }
   ]
 }

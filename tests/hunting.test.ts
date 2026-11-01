@@ -4,7 +4,9 @@
  * happen; the game parameters are not changed. Checks:
  *  1. team composition and outcome do not depend on the order in which simultaneous arrivals are processed;
  *  2. a worker takes part in at most one hunt per window (participation lock), small prey is hunted alone;
- *  3. large prey with too few workers: long-range recruitment along a real trail, with walking times;
+ *  3. large prey with too few workers: long-range recruitment along a real trail, with walking times (called
+ *     directly, without a waiting list, huntWindow concludes the hunt at once as in v2-review.10; the waiting-prey
+ *     path of v2-review.11 is checked at day level in 9);
  *     escape while waiting, no recruits, no time left;
  *  4. time consistency: every team member is at the site at the event minute and walks home afterwards;
  *  5. joint retrieval conserves the captured prey exactly and every carried portion traces to its HUNT batch;
@@ -13,7 +15,10 @@
  *  7. a leftover carcass is taken first; only workers left empty-handed then hunt, as one window;
  *  8. v2-review.10 team cap (predation.large_prey_max_team): teams never exceed it, joiners are drawn at
  *     random but independent of arrival order, workers left out can hunt their own prey, long-range
- *     recruitment stops at the cap, and a cap below large_prey_min_team is rejected.
+ *     recruitment stops at the cap, and a cap below large_prey_min_team is rejected;
+ *  9. v2-review.11: a large prey waiting for long-range recruits is joined by empty-handed workers that reach
+ *     the site by the time the recruits arrive; the hunt is concluded with all of them at that minute (fixed
+ *     seeds, forced test-only probabilities); with the switch off nobody joins.
  */
 import assert from 'node:assert/strict';
 import { huntWindow, simulateDay, routeTo, legacyView, legacyColonyMeta, resolveBundle, type Arrival, type HuntContext, type LegacyV2State, type SimEvent, type Worker } from '../engine/index.ts';
@@ -196,4 +201,34 @@ let hunts = 0, recruitHunts = 0;
   assert.throws(() => resolveBundle(frac), /large_prey_max_team/);
   ok(true, 'a cap below large_prey_min_team or a non-integer cap is rejected');
 }
-console.log(JSON.stringify({ passed: true, checks: c.checks, baseline_120d_hunts: hunts, baseline_120d_hunt_recruitments: recruitHunts }, null, 2));
+// 9. late arrivals join a waiting prey
+function lateDays(on: boolean) {
+  const b = forced({ encounter: 0.5, team: 3 }); setParam(b, MAIN_SPECIES, 'scouting.scout_discovery_probability', 0); setParam(b, MAIN_SPECIES, 'task_allocation.forage_baseline_probability', 1000);
+  (b.species[MAIN_SPECIES] as Any).predation.late_arrivals_join_waiting_prey = on;
+  const out: SimEvent[][] = [];
+  for (let seed = 1; seed <= 40; seed++) {
+    const s: LegacyV2State = fixture(); s.seed = seed;
+    s.sources[SITE].batches = []; s.sources[SITE].protein = 0; s.ecology.insects_by_site[SITE].living = 10;
+    for (const w of s.population.workers) { w.known_sources = [SITE]; w.age_days = 20; w.site_memory = {}; }
+    out.push(simulateDay(s, b).events);
+  }
+  return out;
+}
+let joinedEvents = 0;
+{
+  const days = lateDays(true), edge = resolveBundle(bundle()).world.routes.route_edge_minutes;
+  for (const [i, ev] of days.entries()) {
+    invariants(ev, 'late-join seed ' + (i + 1));
+    for (const j of ev.filter((e) => e.type === 'waiting_prey_joined') as Any[]) {
+      joinedEvents++;
+      ok(j.joiners.every((id: string) => ev.some((e) => e.type === 'route_step' && e.worker === id && e.to === SITE && e.minute === j.minute)), 'joiners physically arrive at the site at the joining minute');
+      ok(ev.some((e) => e.type === 'long_range_recruitment_trail' && e.worker === j.finder && e.minute === j.minute - edge), 'the prey was waiting: its finder went home to recruit one leg before');
+      const end = ev.find((e) => (e.type === 'insect_predation' || e.type === 'prey_escaped') && e.minute === j.minute && ((e.team ?? e.participants) as string[]).includes(j.finder)) as Any;
+      ok(end && j.joiners.every((id: string) => (end.team ?? end.participants).includes(id)), 'the hunt is concluded at that minute with the finder, its recruits and the joiners');
+      ok(((end.team ?? end.participants) as string[]).length <= resolveBundle(bundle()).species[MAIN_SPECIES].predation.large_prey_max_team, 'joining respects the team cap');
+    }
+  }
+  ok(joinedEvents > 0, 'the fixed seeds produce late joiners to check (' + joinedEvents + ')');
+  ok(lateDays(false).every((ev) => !ev.some((e) => e.type === 'waiting_prey_joined')), 'switch off (v2-review.10): nobody joins a waiting prey');
+}
+console.log(JSON.stringify({ passed: true, checks: c.checks, late_joins: joinedEvents, baseline_120d_hunts: hunts, baseline_120d_hunt_recruitments: recruitHunts }, null, 2));
