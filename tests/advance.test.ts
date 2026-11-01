@@ -20,7 +20,7 @@ import { advance } from '../cli/advance.ts';
 import { checkSaves } from '../cli/lib/conservation.ts';
 import { commitConsistency, readCommitLog } from '../cli/lib/save-transaction.ts';
 import { rulesFingerprint } from '../cli/lib/fingerprint.ts';
-import { DEFAULT_REFS } from '../cli/lib/project-day.ts';
+import { normaliseV6Projection } from './lib/v6-normalise.ts';
 import { REPO_ROOT, readJson, loadBundle } from '../cli/lib/load.ts';
 import { migrationState, simulateDay } from '../engine/index.ts';
 
@@ -63,9 +63,7 @@ try {
   if (fs.existsSync(path.join(REPO_ROOT, 'sim/run_day.cjs'))) {
     const require = createRequire(import.meta.url), fp = rulesFingerprint();
     const o = require(path.join(REPO_ROOT, 'sim/run_day.cjs')).projectDaily(m14, w14, readJson('data/taichung-climatology-1991-2020.json', tmp), readJson('sim/params.json'), fp.engine, fp.params);
-    o.main.updated_at = now; o.main.simulation.latest_day_summary.engine_ref = DEFAULT_REFS.engine_ref; o.main.simulation.latest_day_summary.params_ref = DEFAULT_REFS.params_ref;
-    o.world.time.last_transition.program_ref = DEFAULT_REFS.engine_ref; o.world.time.last_transition.params_ref = DEFAULT_REFS.params_ref;
-    o.main.simulation.next_engine_ref = DEFAULT_REFS.engine_ref; o.main.simulation.v2_params_ref = DEFAULT_REFS.params_ref; o.main.migration_log.at(-1).assumptions_in = DEFAULT_REFS.params_ref;
+    normaliseV6Projection(o, now);
     ok(JSON.stringify(o.main, null, 2) + '\n' === mainText && JSON.stringify(o.world, null, 2) + '\n' === worldText && journal15.startsWith(o.journal), 'Day15 main/world byte-identical to v6 sim/run_day.cjs and its journal draft is the start of the committed journal');
   }
 
