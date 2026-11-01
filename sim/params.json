@@ -137,6 +137,22 @@
       "assumption": true,
       "description": "巢群本階段可存/處理之蛋白份上限，會隨規模擴張",
       "reference_for_mechanism_only": []
+    },
+    "metabolic_reference_c": {
+      "value": 25,
+      "assumption": true,
+      "description": "一般生理學 + 遊戲假設: 巢溫代謝基準25°C；非P. megacephala實測",
+      "reference_for_mechanism_only": [
+        "PMC11750369"
+      ]
+    },
+    "metabolic_q10": {
+      "value": 2,
+      "assumption": true,
+      "description": "一般生理學 + 遊戲假設: Q10=2.0 是研究標準化假設，非本物種實測",
+      "reference_for_mechanism_only": [
+        "PMC11750369"
+      ]
     }
   },
   "starvation": {
@@ -231,13 +247,31 @@
       "value": 0.24,
       "assumption": true,
       "rationale": "no workers plus prolonged food deficit elevates death risk; game assumption"
+    },
+    "unattended_larva_max_days": {
+      "value": 4,
+      "assumption": true,
+      "description": "一般生理學 + 遊戲假設: 無工蟻照護及餵食幼蟲最多4日，不是量測",
+      "reference_for_mechanism_only": []
+    },
+    "unattended_egg_max_days": {
+      "value": 10,
+      "assumption": true,
+      "description": "遊戲假設: 缺工蟻照護卵最多10日，非實測",
+      "reference_for_mechanism_only": []
+    },
+    "unattended_pupa_max_days": {
+      "value": 10,
+      "assumption": true,
+      "description": "遊戲假設: 缺工蟻照護蛹最多10日，非實測",
+      "reference_for_mechanism_only": []
     }
   },
   "queen": {
     "base_laying_probability": {
       "value": 0.38,
       "assumption": true,
-      "description": "無飢餓、卵數不太多時每日一卵機率，遊戲假設",
+      "description": "遊戲假設: 25°C、營養充足時每日發生產卵基礎機率，不等於每日必生一卵",
       "reference_for_mechanism_only": []
     },
     "max_eggs_per_day": {
@@ -262,6 +296,24 @@
       "value": 0.84,
       "assumption": true,
       "description": "若當日資源滿足比例低於此則產卵暫停",
+      "reference_for_mechanism_only": []
+    },
+    "laying_reference_c": {
+      "value": 25,
+      "assumption": true,
+      "description": "遊戲假設: 產卵參考巢溫25°C，非本物種實測",
+      "reference_for_mechanism_only": []
+    },
+    "laying_temperature_q10": {
+      "value": 2.5,
+      "assumption": true,
+      "description": "遊戲假設: 低溫降低產卵機率的Q10形狀，非本物種實測",
+      "reference_for_mechanism_only": []
+    },
+    "second_egg_given_laying_probability": {
+      "value": 0.2,
+      "assumption": true,
+      "description": "遊戲假設: 當日發生產卵後，追加第二顆卵之機率；不保證兩卵",
       "reference_for_mechanism_only": []
     }
   },
@@ -416,17 +468,20 @@
     "foraging_cold_limit_c": {
       "value": 10,
       "assumption": true,
-      "rationale": "below this synthetic outdoor mean temperature cold activity reaches its assumed minimum"
+      "rationale": "below this synthetic outdoor mean temperature cold activity reaches its assumed minimum",
+      "description": "遊戲假設: 白天最高氣溫10°C時活動權重下限，非本種實測"
     },
     "foraging_full_activity_c": {
       "value": 25,
       "assumption": true,
-      "rationale": "at this temperature or warmer there is no low-temperature penalty"
+      "rationale": "at this temperature or warmer there is no low-temperature penalty",
+      "description": "遊戲假設: 白天最高氣溫25°C時冷抑制解除，非地表最佳覓食溫度實測"
     },
     "foraging_cold_min_multiplier": {
       "value": 0.12,
       "assumption": true,
-      "rationale": "assumed minimum foraging attempts, collection success and recruitment in cold weather"
+      "rationale": "assumed minimum foraging attempts, collection success and recruitment in cold weather",
+      "description": "文獻支持方向+遊戲假設: 低溫係數只作用於白天覓食出勤權重一次，不再影響採集和招募"
     }
   },
   "sources": {
