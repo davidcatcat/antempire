@@ -661,14 +661,6 @@
       "basis": "遊戲假設",
       "legacy_path": "sim/params.json#workers.defence_baseline_probability"
     },
-    "injury_foraging_multiplier": {
-      "value": 0.45,
-      "assumption": true,
-      "description": "受傷個體覓食意願下降倍率",
-      "reference_for_mechanism_only": [],
-      "basis": "遊戲假設",
-      "legacy_path": "sim/params.json#workers.injury_foraging_multiplier"
-    },
     "newborn_nurse_days": {
       "value": 4,
       "assumption": true,
@@ -678,12 +670,27 @@
       "legacy_path": "sim/params.json#workers.newborn_nurse_days"
     },
     "injured_task_forage_multiplier": {
-      "value": 0.75,
+      "value": 1,
       "assumption": true,
       "basis": "遊戲假設",
-      "description": "受傷工蟻在任務抽選時的覓食權重倍率（注意：與未被引擎使用的 task_allocation.injury_foraging_multiplier=0.45 不同，見 PR 說明）",
+      "description": "受傷工蟻在任務抽選時的覓食權重倍率（v2-review.8 起為 1.0：受傷不改變任務傾向）",
       "legacy_path": null,
-      "moved_from_code": "sim/day_engine.cjs selectTask(): worker.injured?.75:1（原寫死於程式，數值原樣搬移，未修改）"
+      "moved_from_code": "sim/day_engine.cjs selectTask(): worker.injured?.75:1（原寫死於程式，數值原樣搬移，未修改）",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向：文獻支持「受傷不減少覓食」——同屬 P. dentata 受傷工蟻更常出巢（R124，研討會摘要）、觸角傷大多數工作不受影響（R123）；Myrmica 受傷／壽命縮短者更常從事高風險覓食（R121、R122）；Cataglyphis 受傷不影響找食（R125）。本種無直接資料，依 CLAUDE.md §4 不搬用其他物種的增加幅度，取中性值 1.0。 數值本身為遊戲假設。",
+      "reference_for_mechanism_only": [
+        "R121",
+        "R122",
+        "R123",
+        "R124",
+        "R125"
+      ],
+      "changed_in": {
+        "rules_version": "antempire.v2-review.8-injured-worker-neutral-tasks",
+        "approved_in": "#13",
+        "from": 0.75,
+        "to": 1
+      }
     },
     "newborn_forage_multiplier": {
       "value": 0.08,
@@ -734,12 +741,27 @@
       "moved_from_code": "sim/day_engine.cjs selectTask(): young?3:1（原寫死於程式，數值原樣搬移，未修改）"
     },
     "injured_rest_multiplier": {
-      "value": 1.5,
+      "value": 1,
       "assumption": true,
       "basis": "遊戲假設",
-      "description": "受傷工蟻休息權重倍率",
+      "description": "受傷工蟻在任務抽選時的休息權重倍率（v2-review.8 起為 1.0：受傷不改變任務傾向）",
       "legacy_path": null,
-      "moved_from_code": "sim/day_engine.cjs selectTask(): worker.injured?1.5:1（原寫死於程式，數值原樣搬移，未修改）"
+      "moved_from_code": "sim/day_engine.cjs selectTask(): worker.injured?1.5:1（原寫死於程式，數值原樣搬移，未修改）",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向：文獻支持「受傷不減少覓食」——同屬 P. dentata 受傷工蟻更常出巢（R124，研討會摘要）、觸角傷大多數工作不受影響（R123）；Myrmica 受傷／壽命縮短者更常從事高風險覓食（R121、R122）；Cataglyphis 受傷不影響找食（R125）。本種無直接資料，依 CLAUDE.md §4 不搬用其他物種的增加幅度，取中性值 1.0。 數值本身為遊戲假設。",
+      "reference_for_mechanism_only": [
+        "R121",
+        "R122",
+        "R123",
+        "R124",
+        "R125"
+      ],
+      "changed_in": {
+        "rules_version": "antempire.v2-review.8-injured-worker-neutral-tasks",
+        "approved_in": "#13",
+        "from": 1.5,
+        "to": 1
+      }
     },
     "soil_wetness_repair_boost": {
       "value": 0.8,
