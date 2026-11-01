@@ -3,7 +3,7 @@
  * No GitHub/clock access; deterministic pure one-day transition. Node 18+. No dependencies. */
 const crypto = require('node:crypto');
 const fs = require('node:fs');
-const ENGINE_VERSION = 'antempire.v2-review.4-insect-reproduction-cold-foraging';
+const ENGINE_VERSION = 'antempire.v2-review.5-winter-physiology-daytime-foraging';
 const clone=x=>structuredClone(x), round=x=>Math.round((x+Number.EPSILON)*1e6)/1e6;
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 function P(p,path){let v=p;for(const segment of path.split('.')){v=v?.[segment]}if(!v||v.assumption!==true||typeof v.value!=='number'||!Number.isFinite(v.value))throw Error('Missing/untagged assumption parameter '+path);return v.value;}
@@ -16,10 +16,10 @@ function monthDays(y,m){return new Date(Date.UTC(y,m,0)).getUTCDate();}
 function monthInterp(rows,y,m,day,key){let a,b,n;if(day>=15){a=rows[m-1][key];b=rows[m%12][key];n=(day-15)/monthDays(y,m);}else{const prev=m===1?12:m-1;a=rows[prev-1][key];b=rows[m-1][key];n=(monthDays(m===1?y-1:y,prev)-15+day)/monthDays(m===1?y-1:y,prev);}return a+(b-a)*n;}
 function rainPriors(s,p){const rows=s.climate.monthly;let weights=rows.map((x,i)=>Math.pow(x.mean_monthly_precipitation_mm/monthDays(2025,i+1),.6));let lo=0,hi=100;for(let i=0;i<70;i++){let mid=(lo+hi)/2,n=weights.reduce((sum,w,i)=>sum+monthDays(2025,i+1)*Math.min(.85,mid*w),0);if(n<P(p,'climate.annual_rain_days'))lo=mid;else hi=mid;}return weights.map(w=>Math.min(.85,(lo+hi)/2*w));}
 function calcWeather(s,p,date){let [y,m,day]=date.split('-').map(Number),rows=s.climate.monthly;let prior=rainPriors(s,p),rainProb=monthInterp(rows.map((x,i)=>({...x,prior:prior[i]})),y,m,day,'prior');let cw=P(p,'climate.wet_persistence');let pWet=s.climate.prior_wet?rainProb+cw*(1-rainProb):rainProb*(1-cw);const g=dice(s,'weather');let wet=g()<pWet;
- let tempMean=monthInterp(rows,y,m,day,'mean_air_temperature_c');let anomaly=round(P(p,'climate.temperature_ar')*s.climate.temp_anomaly_c+P(p,'climate.temperature_daily_sigma_c')*normal(g));let airTemp=round(tempMean+anomaly-.8*(Number(wet)-rainProb));let rh=round(clamp(monthInterp(rows,y,m,day,'mean_relative_humidity_percent')+(wet?5:-2)+.45*anomaly,0,100));let rainMean=monthInterp(rows,y,m,day,'mean_monthly_precipitation_mm')/monthDays(y,m)/Math.max(.001,rainProb);let rain=wet?round(gamma(P(p,'climate.rainfall_gamma_shape'),rainMean/P(p,'climate.rainfall_gamma_shape'),g)):0;
+ let tempMean=monthInterp(rows,y,m,day,'mean_air_temperature_c');let anomaly=round(P(p,'climate.temperature_ar')*s.climate.temp_anomaly_c+P(p,'climate.temperature_daily_sigma_c')*normal(g));let airTemp=round(tempMean+anomaly-.8*(Number(wet)-rainProb));const highNormal=monthInterp(rows,y,m,day,'mean_daily_maximum_air_temperature_c'),lowNormal=monthInterp(rows,y,m,day,'mean_daily_minimum_air_temperature_c');const maxAirTemp=round(Math.max(airTemp,highNormal+anomaly-.8*(Number(wet)-rainProb))),minAirTemp=round(Math.min(airTemp,lowNormal+anomaly-.8*(Number(wet)-rainProb)));let rh=round(clamp(monthInterp(rows,y,m,day,'mean_relative_humidity_percent')+(wet?5:-2)+.45*anomaly,0,100));let rainMean=monthInterp(rows,y,m,day,'mean_monthly_precipitation_mm')/monthDays(y,m)/Math.max(.001,rainProb);let rain=wet?round(gamma(P(p,'climate.rainfall_gamma_shape'),rainMean/P(p,'climate.rainfall_gamma_shape'),g)):0;
  let soil=round(clamp(s.climate.soil_index*P(p,'climate.soil_persistence')+rain*P(p,'climate.soil_rain_gain_per_mm')-P(p,'climate.soil_daily_loss'),0,1));let shade=round(clamp(s.climate.shade_index*P(p,'climate.soil_shade_persistence')+rain*P(p,'climate.soil_shade_rain_gain_per_mm')-P(p,'climate.soil_shade_daily_loss'),0,1));
  let nestTemp=round((s.climate.prior_nest_temp_c??s.climate.prior_air_temp_c)*P(p,'climate.nest_temp_memory')+airTemp*(1-P(p,'climate.nest_temp_memory')));
- return {day:s.sim_day+1,date,kind:'synthetic_climatology_game_assumption_not_real_weather',wet,air_temp_c:airTemp,nest_temp_model_c:nestTemp,relative_humidity_model_percent:rh,rain_mm:rain,soil_index:soil,shade_index:shade,temperature_anomaly_c:anomaly,rain_probability_model:round(pWet)};
+ return {day:s.sim_day+1,date,kind:'synthetic_climatology_game_assumption_not_real_weather',wet,air_temp_c:airTemp,daytime_air_temp_c:maxAirTemp,daily_max_air_temp_c:maxAirTemp,daily_min_air_temp_c:minAirTemp,daytime_proxy_basis:'synthetic_daily_air_maximum_NOT_measured_ground_surface',nest_temp_model_c:nestTemp,relative_humidity_model_percent:rh,rain_mm:rain,soil_index:soil,shade_index:shade,temperature_anomaly_c:anomaly,rain_probability_model:round(pWet)};
 }
 function sourceSum(src){if(src.type==='carcass')return round(src.batches.reduce((t,x)=>t+x.protein,0));return src.sugar;}
 function syncSource(src){if(src.type==='carcass'){src.protein=sourceSum(src);}else src.protein=0;src.sugar=round(src.sugar||0);}
@@ -109,7 +109,7 @@ function selectTask(worker,s,p,weather){
  const g=dice(s,'task:'+worker.id),age=worker.age_days,v=localSignals(worker);
  const injured=worker.injured?.75:1,young=age<P(p,'workers.newborn_nurse_days');
  const hunger=clamp((1-v.sugarSatiety)*.7+v.peerSugarHunger*.3,0,1);
- const forageBias=P(p,'workers.forage_baseline_probability')*(1+.9*hunger)*injured*(young?.08:1)*clamp(1-weather.rain_mm*P(p,'workers.rain_suppression_fraction'),P(p,'workers.min_rain_activity_multiplier'),1)*foragingTemperatureFactor(p,weather.air_temp_c);
+ const forageBias=P(p,'workers.forage_baseline_probability')*(1+.9*hunger)*injured*(young?.08:1)*clamp(1-weather.rain_mm*P(p,'workers.rain_suppression_fraction'),P(p,'workers.min_rain_activity_multiplier'),1)*foragingTemperatureFactor(p,weather.daytime_air_temp_c);
  const care=P(p,'workers.nurse_baseline_probability')*(1+.65*v.broodBegging)*(young?3:1),rest=P(p,'workers.rest_baseline_probability')*(worker.injured?1.5:1),repair=P(p,'workers.maintenance_baseline_probability')*(1+.8*weather.soil_index),guard=P(p,'workers.defence_baseline_probability');
  const entries=[['forage',forageBias],['nurse',care],['rest',rest],['repair',repair],['guard',guard]],total=entries.reduce((x,a)=>x+a[1],0);let roll=g()*total;
  for(const [task,weight] of entries){roll-=weight;if(roll<=0)return task;}return 'rest';
@@ -124,7 +124,7 @@ function discover(worker,s,p,events){let g=dice(s,'scout:'+worker.id);let choice
 }
 function collect(source,worker,s,p,weather,events,summary){
  let g=dice(s,`collect:${worker.id}:${source.id}`);let rainMult=clamp(1-weather.rain_mm*P(p,'workers.rain_suppression_fraction'),P(p,'workers.min_rain_activity_multiplier'),1);
- if(source.presence==='scouted_empty'||source.presence==='potential'||sourceSum(source)<=1e-5||g()>rainMult*foragingTemperatureFactor(p,weather.air_temp_c)*(source.type==='carcass'?P(p,'sources.carcass_access_probability'):.85))return 0;
+ if(source.presence==='scouted_empty'||source.presence==='potential'||sourceSum(source)<=1e-5||g()>rainMult*(source.type==='carcass'?P(p,'sources.carcass_access_probability'):.85))return 0;
  const macro=source.type==='carcass'?'protein':'sugar',min=P(p,`sources.crop_load_${macro}_min`),max=P(p,`sources.crop_load_${macro}_max`),load=round(Math.min(sourceSum(source),min+(max-min)*g()));if(load<=0)return 0;
  if(macro==='sugar')source.sugar=round(source.sugar-load);
  else{
@@ -197,7 +197,7 @@ function forage(s,p,weather,events,summary){
    last=result;worker.site_memory[target.id]={last_success_portions:result,last_visit_day:s.sim_day+1};
    if(result===0)break;
   }
-  if(last>0&&g()<P(p,'workers.recruitment_probability')*foragingTemperatureFactor(p,weather.air_temp_c)){
+  if(last>0&&g()<P(p,'workers.recruitment_probability')){
    const available=s.population.workers.filter(w=>w.id!==worker.id&&w.task!=='forage'&&!w.recruited_today&&w.task!=='guard'&&w.age_days>=P(p,'workers.newborn_nurse_days'));
    const n=available.length?1+Math.floor(g()*Math.min(available.length,P(p,'workers.recruitment_max_followers'))):0;
    for(let k=0;k<n;k++){
@@ -210,19 +210,23 @@ function forage(s,p,weather,events,summary){
  }
  for(const worker of s.population.workers)delete worker.recruited_today;
 }
-function consume(s,p,summary){
+function consume(s,p,summary,weather){
  const workers=s.population.workers.length, larvae=s.population.brood.filter(b=>b.stage==='larva');
- const demandS=round(workers*P(p,'nutrition.worker_sugar_daily')+(s.population.queen_alive?P(p,'nutrition.queen_sugar_daily'):0)+larvae.length*P(p,'nutrition.larva_sugar_daily')+summary.extra_sugar_cost);
- const demandP=round(workers*P(p,'nutrition.worker_protein_daily')+(s.population.queen_alive?P(p,'nutrition.queen_protein_daily'):0)+larvae.length*P(p,'nutrition.larva_protein_daily'));
+ // Ectotherm Q10=2 at 25C is explicit game assumption, NOT P. megacephala measurement.
+ const metabolicFactor=round(Math.pow(P(p,'nutrition.metabolic_q10'),(weather.nest_temp_model_c-P(p,'nutrition.metabolic_reference_c'))/10));
+ const servedQueen=s.population.queen_alive&&workers>0?1:0,servedLarvae=workers>0?larvae.length:0;
+ const demandS=round((workers*P(p,'nutrition.worker_sugar_daily')+servedQueen*P(p,'nutrition.queen_sugar_daily')+servedLarvae*P(p,'nutrition.larva_sugar_daily'))*metabolicFactor+summary.extra_sugar_cost);
+ const demandP=round((workers*P(p,'nutrition.worker_protein_daily')+servedQueen*P(p,'nutrition.queen_protein_daily')+servedLarvae*P(p,'nutrition.larva_protein_daily'))*metabolicFactor);
+ summary.metabolic_factor=metabolicFactor;summary.nurse_available=workers>0;
  const gotS=round(Math.min(s.colony.sugar,demandS)),gotP=round(Math.min(s.colony.protein,demandP));s.colony.sugar=round(Math.max(0,s.colony.sugar-gotS));s.colony.protein=round(Math.max(0,s.colony.protein-gotP));
- const sFraction=demandS>0?gotS/demandS:1,pFraction=demandP>0?gotP/demandP:1;
+ const unattendedQueen=s.population.queen_alive&&workers===0;const sFraction=unattendedQueen?0:(demandS>0?gotS/demandS:1),pFraction=unattendedQueen?0:(demandP>0?gotP/demandP:1);
  s.colony.sugar_gap_days=sFraction<.995?s.colony.sugar_gap_days+1:0;s.colony.protein_gap_days=pFraction<.995?s.colony.protein_gap_days+1:0;s.colony.stress_days=Math.max(s.colony.sugar_gap_days,s.colony.protein_gap_days);
  summary.demand={sugar:demandS,protein:demandP};summary.consumed={sugar:gotS,protein:gotP};summary.ratios={sugar:round(sFraction),protein:round(pFraction)};
  // Physical rationing occurs in the nest; each worker only learns what it ate.
  // Do NOT broadcast sFraction/pFraction (or s.colony.sugar/protein) to the behavioral functions.
- let budget=Math.max(0,gotS-(s.population.queen_alive?P(p,'nutrition.queen_sugar_daily'):0)-larvae.length*P(p,'nutrition.larva_sugar_daily')-summary.extra_sugar_cost);
+ let budget=Math.max(0,gotS-(servedQueen*P(p,'nutrition.queen_sugar_daily')+servedLarvae*P(p,'nutrition.larva_sugar_daily'))*metabolicFactor-summary.extra_sugar_cost);
  const order=[...s.population.workers];const g=dice(s,'nest_sugar_feeding_allocation');for(let k=order.length-1;k>0;k--){const j=Math.floor(g()*(k+1));[order[k],order[j]]=[order[j],order[k]];}
- for(const w of order){const need=P(p,'nutrition.worker_sugar_daily'),got=clamp(Math.min(need,budget),0,need);budget=Math.max(0,budget-got);w.local_sensory??={};const ls=w.local_sensory;
+ for(const w of order){const need=P(p,'nutrition.worker_sugar_daily')*metabolicFactor,got=clamp(Math.min(need,budget),0,need);budget=Math.max(0,budget-got);w.local_sensory??={};const ls=w.local_sensory;
   const full=need>0?got/need:1;ls.own_crop_sugar_fill=round(.3*(ls.own_crop_sugar_fill??.6)+.7*full);ls.own_feeding_fraction=round(full);
  }
  // Larval begging signal requires a real local nurse encounter to reach any worker.
@@ -297,7 +301,7 @@ function simulateDay(input,params){
  forage(s,params,weather,events,summary);summary.foraging_workers_by_macro={sugar:summary.foraging_workers_by_macro.sugar.size,protein:summary.foraging_workers_by_macro.protein.size};
  // Other colonymates carrying liquid do not duplicate colony external income.
  const storeOverflow={sugar:round(Math.max(0,s.colony.sugar-(P(params,'nutrition.max_sugar_store')+Math.max(0,s.population.workers.length-14)*.4))),protein:round(Math.max(0,s.colony.protein-(P(params,'nutrition.max_protein_store')+Math.max(0,s.population.workers.length-14)*.3)))};s.colony.sugar=round(s.colony.sugar-storeOverflow.sugar);s.colony.protein=round(s.colony.protein-storeOverflow.protein);
- const ratios=consume(s,params,summary);developmentalDay(s,params,weather,ratios,events,summary);deathAndQueen(s,params,ratios,events,summary);
+ const ratios=consume(s,params,summary,weather);developmentalDay(s,params,weather,ratios,events,summary);deathAndQueen(s,params,ratios,events,summary,weather);
  summary.population={queen:s.population.queen_alive?1:0,workers:s.population.workers.length,eggs:s.population.brood.filter(b=>b.stage==='egg').length,larvae:s.population.brood.filter(b=>b.stage==='larva').length,pupae:s.population.brood.filter(b=>b.stage==='pupa').length};
  summary.stock={sugar:round(s.colony.sugar),protein:round(s.colony.protein)};summary.starvation={sugar_gap_days:s.colony.sugar_gap_days,protein_gap_days:s.colony.protein_gap_days,stress_days:s.colony.stress_days};
  summary.mass_ledger={unit:'game_portions_NOT_mg',start:initial,foraged:summary.income,metabolized:summary.consumed,egg_laying:{sugar:round(summary.eggs_laid*P(params,'nutrition.egg_laying_sugar_cost')),protein:round(summary.eggs_laid*P(params,'nutrition.egg_laying_protein_cost'))},storage_overflow_not_retained:storeOverflow,note:'Nest mass conservation exact within 1e-5 game portions; source decomposition/replenishment separate'};
