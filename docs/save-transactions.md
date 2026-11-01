@@ -50,7 +50,12 @@
 - 讀取 `saves/` 之前，若存在 `saves/.txn/pending-day-*`、`*.advance-tmp` 或 `saves/.advance.lock`，**不要把存檔當成一致狀態**；先執行 `npm run advance -- --recover`（或等待推進完成）。
 - 只看 git repository 的讀取端（例如 ChatGPT、未來的網頁）：`.txn/`、鎖與暫存檔不會進 git（`.gitignore`），但任何混合狀態都會讓 CI 的 `npm run check:saves` 失敗（日期不一致、commit log 不符或日誌缺失）。
 - 網頁版應以 `saves/commit-log.json` 最後一筆的雜湊驗證所讀到的存檔與日誌。
-- 已提交的日誌是不可改寫的歷史。之後若要補充敘事，請另建新檔（例如另一份紀事），不要修改 `journal/v2-day-NNNN.md`；commit log 中的雜湊會檢查這一點。
+- 已提交的日誌是不可改寫的歷史；commit log 中的雜湊會檢查這一點。
+
+## 5a. 敘事檔與 git（Owner 2026-11-01 決定）
+
+- **敘事另建新檔**：`journal/v2-day-NNNN-narrative.md`。只能在 Day NNNN 已提交之後建立（`check:saves` 會把「尚未提交的日卻已有敘事檔」列為錯誤）；只新增、不覆寫。敘事中的數字以正式日誌 `journal/v2-day-NNNN.md` 為準；需要更正時另建 `journal/v2-day-NNNN-narrative-erratum-K.md`，不修改原檔。
+- **commit log 進 git**：`saves/commit-log.json` 必須和該日的 `saves/main.json`、`saves/world-state.json`、`journal/v2-day-NNNN.md` 放在**同一個 git commit**。`saves/.txn/`、`saves/.advance.lock`、`*.advance-tmp` 列在 `.gitignore`，永不提交。
 
 ## 6. 指令
 

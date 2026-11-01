@@ -156,6 +156,19 @@ try {
     advance({ root, confirm: true, expectDay: 15, now: NOW }); ok(state(root) === day15, 'after cleanup Day15 commits normally');
   }
 
+  // ---------------- G. narrative files (Owner decision): only after the day is committed ----------------
+  {
+    const root = fresh();
+    fs.writeFileSync(path.join(root, 'journal/v2-day-0015-narrative.md'), '# early\n');
+    ok(consistent(root).some((c) => c.name === 'journal: narrative files only for committed days'), 'a narrative for an uncommitted day is flagged');
+    fs.rmSync(path.join(root, 'journal/v2-day-0015-narrative.md'));
+    advance({ root, confirm: true, expectDay: 15, now: NOW });
+    fs.writeFileSync(path.join(root, 'journal/v2-day-0015-narrative.md'), '# 敘事\n');
+    ok(consistent(root).length === 0, 'a narrative after Day15 is committed is allowed and does not affect consistency');
+    fs.writeFileSync(path.join(root, 'journal/v2-day-0016-narrative.md'), '# early\n');
+    ok(consistent(root).some((c) => c.name === 'journal: narrative files only for committed days'), 'a narrative for the not-yet-committed Day16 is flagged');
+  }
+
   console.log(JSON.stringify({ passed: true, checks, fault_cases: matrix.length, commit_point_after: steps[commitPoint - 1], matrix }, null, 2));
 } finally {
   fs.rmSync(work, { recursive: true, force: true });

@@ -337,6 +337,8 @@ export function commitConsistency(root: string, main: { simulation: { latest_com
   const day = main.simulation.latest_completed_day, log = readCommitLog(root, io);
   if (!log) {
     add('commit log: absent only before the first transactional day (Day ≤ 14)', day <= 14, { day });
+    const early = io.readdir(path.join(root, 'journal')).filter((f) => /^v2-day-\d{4}-narrative/.test(f) && Number(f.slice(7, 11)) >= 15);
+    add('journal: narrative files only for committed days', early.length === 0, early.length ? early : undefined);
     return out;
   }
   const days = log.entries.map((e) => e.day);
@@ -345,6 +347,9 @@ export function commitConsistency(root: string, main: { simulation: { latest_com
   add('commit log: last committed day = saves day', last?.day === day, { log: last?.day, saves: day });
   if (last) for (const [rel, h] of Object.entries(last.files)) if (rel !== COMMIT_LOG_REL) add(`commit log: ${rel} = last committed version`, shaOf(root, rel, io) === h, { expected: h.slice(0, 16), actual: shaOf(root, rel, io)?.slice(0, 16) ?? 'missing' });
   for (const e of log.entries) for (const [rel, h] of Object.entries(e.files)) if (rel.startsWith('journal/')) add(`journal: ${rel} present and unchanged since Day ${e.day} commit`, shaOf(root, rel, io) === h, { expected: h.slice(0, 16), actual: shaOf(root, rel, io)?.slice(0, 16) ?? 'missing' });
+  const committed = new Set(log.entries.map((e) => e.day));
+  const earlyNarratives = io.readdir(path.join(root, 'journal')).filter((f) => /^v2-day-\d{4}-narrative/.test(f) && Number(f.slice(7, 11)) >= 15 && !committed.has(Number(f.slice(7, 11))));
+  add('journal: narrative files only for committed days', earlyNarratives.length === 0, earlyNarratives.length ? earlyNarratives : undefined);
   if (day >= 15) add('journal: latest_journal of main.json exists', !!main.simulation.latest_journal && io.exists(path.join(root, main.simulation.latest_journal)), main.simulation.latest_journal);
   return out;
 }
