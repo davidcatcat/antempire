@@ -51,7 +51,7 @@ for(let i=0;i<rows.length;i+=7){
 const report={scenario:'unchanged v2.1 corrected base world; no rescue tuning',range:'Day15-Day134',days:rows.length,authoritative_simulation_advanced:false,source:'sim/day14-projection.json',physical_foraging_version:'v6',game_assumptions:true,
  final:rows.at(-1),ecology:eventsTotal,
  budget:{sugar_income:round(sum(rows,'sugar_income')),sugar_consumed:round(sum(rows,'sugar_consumed')),protein_income:round(sum(rows,'protein_income')),protein_consumed:round(sum(rows,'protein_consumed'))},
- foraging:{worker_days:sum(rows,'foraging_workers_total'),daily_report:'reports/day15-134-daily.csv'},
+ foraging:{worker_days:sum(rows,'foraging_workers_total'),daily_report:'reports/day15-134-v6-daily.csv'},
  temperature:{minimum:Math.min(...rows.map(r=>r.air_temperature_c)),maximum:Math.max(...rows.map(r=>r.air_temperature_c)),days_below_20_c:rows.filter(r=>r.air_temperature_c<20).length},
  protein_days_without_income:rows.filter(r=>r.protein_income===0).length,
  validations:{replay_days:120,insect_population_balance_days:120,habitat_capacity_days:120,independent_of_colony_stocks:true,source_carcass_and_nutrient_conservation:'validated by simulateDay on all days'},
