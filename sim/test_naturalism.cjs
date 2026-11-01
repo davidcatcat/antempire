@@ -9,7 +9,7 @@ const clone=structuredClone;
 let checks=0;
 const ok=(condition,why)=>{assert.ok(condition,why);checks++};
 const denied=fn=>{assert.throws(fn,/NO_GOD_MODE/);checks++};
-const supportedTypes=new Set(['new_food_source','source_batch_consumed','food_delivered','insect_immigration','insect_natural_death','physical_scout_visit','discovery','scouted_empty','nest_local_route_learning','local_recruitment','hatch','pupation','eclosion','egg_laid','worker_death','brood_death','injury_recovery','queen_death']);
+const supportedTypes=new Set(['new_food_source','source_batch_consumed','food_delivered','insect_immigration','insect_natural_death','physical_scout_visit','discovery','scouted_empty','nest_local_route_learning','local_contact_cue','local_brood_begging_contact','local_unloading_feedback','host_plant_death','hemipteran_colony_change','local_recruitment','hatch','pupation','eclosion','egg_laid','worker_death','brood_death','injury_recovery','queen_death']);
 const withOverride=clone(initial);withOverride.force_food={site:'N00',sugar:100};denied(()=>simulateDay(withOverride,p));
 const withDrama=clone(initial);withDrama.make_sure_queen_survives=true;denied(()=>simulateDay(withDrama,p));
 const withForcedDeath=clone(initial);withForcedDeath.target_worker_death='W007';denied(()=>simulateDay(withForcedDeath,p));
@@ -18,6 +18,8 @@ denied(()=>simulateDay(initial,p,{giveFood:true}));
 const sameButStarving=clone(initial);sameButStarving.colony.sugar=0;sameButStarving.colony.protein=0;
 const x=simulateDay(initial,p),y=simulateDay(sameButStarving,p);
 ok(JSON.stringify(x.summary.tasks)===JSON.stringify(y.summary.tasks),'same prior feeding encounters and RNG must choose same tasks, even when hidden global stock is different');
+for(const id of ['F01','F04','F05','F10'])ok(JSON.stringify(x.state.sources[id].ecological_record)===JSON.stringify(y.state.sources[id].ecological_record),'hemipteran production independent of stored colony nutrients '+id);
+
 ok(JSON.stringify(initial)===JSON.stringify(load('day14-projection.json')),'no state input mutation');
 ok(JSON.stringify(x)===JSON.stringify(simulateDay(initial,p)),'fixed-seed replay exact');
 // A physically empty source population cannot produce a carcass from thin air.

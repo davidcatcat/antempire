@@ -17,7 +17,18 @@
         "injured": false,
         "task": "rest",
         "known_sources": [],
-        "last_location": "N00"
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
       },
       {
         "id": "W005",
@@ -29,7 +40,18 @@
         "known_sources": [
           "F01"
         ],
-        "last_location": "N00"
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
       },
       {
         "id": "W006",
@@ -41,7 +63,18 @@
         "known_sources": [
           "F11"
         ],
-        "last_location": "N00"
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
       },
       {
         "id": "W007",
@@ -51,7 +84,18 @@
         "injured": true,
         "task": "rest",
         "known_sources": [],
-        "last_location": "N00"
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
       },
       {
         "id": "W008",
@@ -61,7 +105,18 @@
         "injured": true,
         "task": "rest",
         "known_sources": [],
-        "last_location": "N00"
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
       },
       {
         "id": "W009",
@@ -71,7 +126,18 @@
         "injured": true,
         "task": "rest",
         "known_sources": [],
-        "last_location": "N00"
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
       },
       {
         "id": "W010",
@@ -81,7 +147,18 @@
         "injured": false,
         "task": "rest",
         "known_sources": [],
-        "last_location": "N00"
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
       },
       {
         "id": "W011",
@@ -93,7 +170,18 @@
         "known_sources": [
           "F07"
         ],
-        "last_location": "N00"
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
       },
       {
         "id": "W012",
@@ -103,7 +191,18 @@
         "injured": true,
         "task": "rest",
         "known_sources": [],
-        "last_location": "N00"
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
       },
       {
         "id": "W013",
@@ -113,7 +212,18 @@
         "injured": true,
         "task": "rest",
         "known_sources": [],
-        "last_location": "N00"
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
       },
       {
         "id": "W014",
@@ -123,7 +233,18 @@
         "injured": true,
         "task": "rest",
         "known_sources": [],
-        "last_location": "N00"
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
       },
       {
         "id": "W015",
@@ -135,7 +256,18 @@
         "known_sources": [
           "U00"
         ],
-        "last_location": "N00"
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
       },
       {
         "id": "W016",
@@ -147,7 +279,18 @@
         "known_sources": [
           "U01"
         ],
-        "last_location": "N00"
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
       },
       {
         "id": "W017",
@@ -159,7 +302,18 @@
         "known_sources": [
           "F08"
         ],
-        "last_location": "N00"
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
       }
     ],
     "brood": [
@@ -209,7 +363,8 @@
         "laid_on_day": null,
         "age_days": null,
         "progress": 0.5,
-        "origin": "Day15 one-time migration assumed mid-stage unknown actual larval age"
+        "origin": "Day15 one-time migration assumed mid-stage unknown actual larval age",
+        "begging_signal": 0.25
       },
       {
         "id": "L002",
@@ -217,7 +372,8 @@
         "laid_on_day": null,
         "age_days": null,
         "progress": 0.5,
-        "origin": "Day15 one-time migration assumed mid-stage unknown actual larval age"
+        "origin": "Day15 one-time migration assumed mid-stage unknown actual larval age",
+        "begging_signal": 0.25
       }
     ]
   },
@@ -227,12 +383,7 @@
     "sugar_gap_days": 0,
     "protein_gap_days": 0,
     "stress_days": 0,
-    "queen_laid_yesterday": false,
-    "local_cues": {
-      "last_sugar_feeding_fraction": 1,
-      "last_protein_feeding_fraction": 1,
-      "origin": "neutral in-nest perception scenario assumption"
-    }
+    "queen_laid_yesterday": false
   },
   "climate": {
     "monthly": [
@@ -323,14 +474,18 @@
       "sugar": 0.55,
       "protein": 0,
       "capacity": 5.2,
-      "production_per_day": 0.65,
+      "production_per_day": 0,
       "known_by": [
         "W005"
       ],
       "host_alive": true,
       "recruits": [],
       "id": "F01",
-      "presence": "confirmed_game_scenario"
+      "presence": "confirmed_game_scenario",
+      "host_plants": 2,
+      "hemipteran_kind": "aphid",
+      "hemipteran_colonies": 4,
+      "ecology_origin": "Day15 habitat census game assumption; independent of ant appetite"
     },
     "F08": {
       "type": "nectar",
@@ -406,13 +561,17 @@
       "sugar": 0.75,
       "protein": 0,
       "capacity": 3,
-      "production_per_day": 0.75,
+      "production_per_day": 0,
       "known_by": [],
       "recruits": [],
       "origin": "Unconfirmed garden food source FXX already in Day14 world, actual site viability game scenario",
       "access_from": [
         "F01"
-      ]
+      ],
+      "host_plants": 2,
+      "hemipteran_kind": "scale",
+      "hemipteran_colonies": 3,
+      "ecology_origin": "Day15 habitat census game assumption; independent of ant appetite"
     },
     "F05": {
       "id": "F05",
@@ -424,14 +583,18 @@
       "sugar": 0.4,
       "protein": 0,
       "capacity": 2.8,
-      "production_per_day": 0.55,
+      "production_per_day": 0,
       "known_by": [],
       "recruits": [],
       "origin": "Unconfirmed garden food source FXX already in Day14 world, actual site viability game scenario",
       "access_from": [
         "F08",
         "F04"
-      ]
+      ],
+      "host_plants": 1,
+      "hemipteran_kind": "aphid",
+      "hemipteran_colonies": 2,
+      "ecology_origin": "Day15 habitat census game assumption; independent of ant appetite"
     },
     "F10": {
       "id": "F10",
@@ -449,7 +612,11 @@
       "origin": "Unconfirmed garden food source FXX already in Day14 world, actual site viability game scenario",
       "access_from": [
         "U01"
-      ]
+      ],
+      "host_plants": 0,
+      "hemipteran_kind": "scale",
+      "hemipteran_colonies": 0,
+      "ecology_origin": "Day15 habitat census game assumption; independent of ant appetite"
     }
   },
   "active_signals": [],
@@ -463,6 +630,34 @@
       "larva_assumption": "L001/L002 original stage age unknown -> 0.5 larva stage progress",
       "food_assumption": "sugar=7.6 protein=2.3 game portions, not derived by event-count conversion",
       "notes": "Review fixture projected from authoritative Day14 state and qualitative food-source events; real migration script regenerates from main/world."
+    },
+    {
+      "type": "day15_ecological_census_fixture",
+      "day14_unmodified": true,
+      "host_counts": {
+        "F01": {
+          "host_plants": 2,
+          "hemipteran_kind": "aphid",
+          "hemipteran_colonies": 4
+        },
+        "F04": {
+          "host_plants": 2,
+          "hemipteran_kind": "scale",
+          "hemipteran_colonies": 3
+        },
+        "F05": {
+          "host_plants": 1,
+          "hemipteran_kind": "aphid",
+          "hemipteran_colonies": 2
+        },
+        "F10": {
+          "host_plants": 1,
+          "hemipteran_kind": "scale",
+          "hemipteran_colonies": 1
+        }
+      },
+      "stock_unchanged": true,
+      "provenance": "explicit one-time garden population assumptions independent of colony consumption"
     }
   ],
   "ecology": {

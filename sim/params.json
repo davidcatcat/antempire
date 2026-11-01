@@ -104,10 +104,9 @@
       "reference_for_mechanism_only": []
     },
     "larva_protein_daily": {
-      "value": 0.2,
+      "value": 0.08,
       "assumption": true,
-      "description": "每幼蟲日蛋白耗，單位份",
-      "reference_for_mechanism_only": []
+      "rationale": "game assumption 0.08 portions per larva per day; no mg conversion; replaces 0.2"
     },
     "egg_laying_protein_cost": {
       "value": 0.14,
@@ -222,6 +221,16 @@
       "assumption": true,
       "description": "有舊傷者自然死亡額外風險倍率",
       "reference_for_mechanism_only": []
+    },
+    "queen_zero_worker_hazard_after_days": {
+      "value": 3,
+      "assumption": true,
+      "rationale": "after losing all caretakers queen hazard rises especially when energy deficient"
+    },
+    "queen_zero_worker_starved_daily_hazard": {
+      "value": 0.24,
+      "assumption": true,
+      "rationale": "no workers plus prolonged food deficit elevates death risk; game assumption"
     }
   },
   "queen": {
@@ -374,13 +383,35 @@
         "R116"
       ]
     },
-    "protein_source_choice_bias": {
+    "local_peer_contact_probability": {
+      "value": 0.58,
+      "assumption": true,
+      "rationale": "local in-nest encounter likelihood, no global visibility"
+    },
+    "local_signal_smoothing": {
+      "value": 0.5,
+      "assumption": true,
+      "rationale": "fraction retained from own prior local encounters"
+    },
+    "sugar_hunger_priority_weight": {
       "value": 4.5,
       "assumption": true,
-      "description": "蛋白庫不足3日需求時，同時熟悉多處工蟻選已知蛋白來源的相對偏好",
-      "reference_for_mechanism_only": [
-        "R112"
-      ]
+      "rationale": "worker chooses sugar more often when own crop/encountered nestmates signal hunger"
+    },
+    "protein_begging_priority_weight": {
+      "value": 1.8,
+      "assumption": true,
+      "rationale": "only locally encountered hungry larvae or nurses can elevate protein foraging"
+    },
+    "unloading_success_memory_weight": {
+      "value": 1.4,
+      "assumption": true,
+      "rationale": "fast unloading reinforces same kind of forage; slow unloading suppresses it"
+    },
+    "scout_search_when_route_unproductive_probability": {
+      "value": 0.18,
+      "assumption": true,
+      "rationale": "local search triggered by own failed route, does not reveal distant sugar source"
     }
   },
   "sources": {
@@ -574,6 +605,51 @@
       "reference_for_mechanism_only": [
         "R95"
       ]
+    },
+    "honeydew_per_aphid_colony_per_day": {
+      "value": 0.32,
+      "assumption": true,
+      "rationale": "ecological production per aphid colony with living host plants, independent of ant population"
+    },
+    "honeydew_per_scale_colony_per_day": {
+      "value": 0.4,
+      "assumption": true,
+      "rationale": "ecological production per scale-insect colony with living host plants, independent of ant population"
+    },
+    "honeydew_productivity_multiplier": {
+      "value": 1.0,
+      "assumption": true,
+      "rationale": "baseline physical productivity; single-variable sugar sensitivity test changes ONLY this input"
+    },
+    "hemipteran_colony_daily_growth_probability": {
+      "value": 0.012,
+      "assumption": true,
+      "rationale": "natural hemipteran colony reproduction game assumption; depends on living host"
+    },
+    "hemipteran_colony_daily_collapse_probability": {
+      "value": 0.006,
+      "assumption": true,
+      "rationale": "natural daily mortality/reproductive collapse of a colony, independent of ant demand"
+    },
+    "host_plant_daily_death_probability": {
+      "value": 0.0007,
+      "assumption": true,
+      "rationale": "garden host plant mortality; not reactive to colony demand"
+    },
+    "max_hemipteran_colonies_per_host": {
+      "value": 4,
+      "assumption": true,
+      "rationale": "physical carrying capacity per host plant, distinct from honeydew stored capacity"
+    },
+    "rain_honeydew_secretion_suppression_per_mm": {
+      "value": 0.018,
+      "assumption": true,
+      "rationale": "rain suppresses feeding/secretion production as ecological assumption"
+    },
+    "rival_honeydew_harvest_fraction_F04": {
+      "value": 0.22,
+      "assumption": true,
+      "rationale": "F04 background rival ants consume a fixed ecological share; independent of main colony shortage"
     }
   },
   "climate": {
