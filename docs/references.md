@@ -172,3 +172,9 @@
 | R113 | Fournier et al. (2009), *Genetics, behaviour and chemical recognition of the invading ant Pheidole megacephala*. *Molecular Ecology* 18:186–199. [PubMed](https://pubmed.ncbi.nlm.nih.gov/19192175/) | 澳洲本物種跨巢同種低侵略性；不能推斷台中所有同種個體互相容忍。 |
 | R114 | Rosset & Chapuisat (2006), *Sex allocation conflict in ants: when the queen rules*. *Current Biology* 16:328–331. [PubMed](https://pubmed.ncbi.nlm.nih.gov/16461288/) | **Formica selysi**性別投資衝突；不等於本種已觀察工蟻移除雄卵或群體內部衝突。 |
 
+
+## 2026-11-01 人口規模、老化存活與分工模型（R115–R116）
+| ID | 科學來源 | 在蟻群人口模型中的用途與限制 |
+|---|---|---|
+| R115 | (2020), *Task allocation in a cooperative society: specialized castes or age-dependent switching among ant workers*. *Scientific Reports*. [PMID:32094370](https://pubmed.ncbi.nlm.nih.gov/32094370/) | 跨物種任務分配的理論比較：形態階級與齡級/外勤高死亡風險會影響最適分工，但不是P. megacephala的確定任務比率。 |
+| R116 | (2025), *Open and closed economies as possible alternative strategies to resource heterogeneity in ants*. [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC12147459/) | 包含P. megacephala數千小工蟻的存量實驗群，支持百/千隻為合理模擬尺度；實驗供食與群體數不等於台中N00的生命週期、死亡風險或營養效率。 |
