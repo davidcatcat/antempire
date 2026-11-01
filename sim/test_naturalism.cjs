@@ -2,14 +2,15 @@
 /** No-God-mode regression. Diagnostic only: never writes main/world saves. */
 const fs=require('node:fs');
 const assert=require('node:assert/strict');
-const {simulateDay}=require('./day_engine.cjs');
+const {simulateDay,foragingTemperatureFactor}=require('./day_engine.cjs');
 const load=n=>JSON.parse(fs.readFileSync(`${__dirname}/${n}`,'utf8'));
 const initial=load('day14-projection.json'),p=load('params.json');
 const clone=structuredClone;
+if(!(foragingTemperatureFactor(p,12)<foragingTemperatureFactor(p,20)&&foragingTemperatureFactor(p,25)===1))throw Error('low temperature must suppress foraging');
 let checks=0;
 const ok=(condition,why)=>{assert.ok(condition,why);checks++};
 const denied=fn=>{assert.throws(fn,/NO_GOD_MODE/);checks++};
-const supportedTypes=new Set(['new_food_source','source_batch_consumed','food_delivered','insect_immigration','insect_natural_death','physical_scout_visit','discovery','scouted_empty','nest_local_route_learning','local_contact_cue','local_brood_begging_contact','local_unloading_feedback','host_plant_death','hemipteran_colony_change','local_recruitment','hatch','pupation','eclosion','egg_laid','worker_death','brood_death','injury_recovery','queen_death']);
+const supportedTypes=new Set(['new_food_source','source_batch_consumed','food_delivered','insect_immigration','insect_natural_death','insect_population_birth','insect_background_death','physical_scout_visit','discovery','scouted_empty','nest_local_route_learning','local_contact_cue','local_brood_begging_contact','local_unloading_feedback','host_plant_death','hemipteran_colony_change','local_recruitment','hatch','pupation','eclosion','egg_laid','worker_death','brood_death','injury_recovery','queen_death']);
 const withOverride=clone(initial);withOverride.force_food={site:'N00',sugar:100};denied(()=>simulateDay(withOverride,p));
 const withDrama=clone(initial);withDrama.make_sure_queen_survives=true;denied(()=>simulateDay(withDrama,p));
 const withForcedDeath=clone(initial);withForcedDeath.target_worker_death='W007';denied(()=>simulateDay(withForcedDeath,p));
@@ -31,13 +32,15 @@ let state=initial,insectDeaths=0,carcasses=0,workerDeaths=0,scouts=0;
 for(let i=0;i<30;i++){
  const before=state,out=simulateDay(state,p);const after=out.state;
  const immigrants=out.events.filter(e=>e.type==='insect_immigration').reduce((n,e)=>n+e.individuals,0);
- ok(before.ecology.adjacent_garden_living_insects-immigrants===after.ecology.adjacent_garden_living_insects,'finite adjacent garden living insect reserve must decrease on immigration');
+ const neighborBirths=out.events.filter(e=>e.type==='insect_population_birth'&&e.site==='adjacent_garden_habitat').reduce((n,e)=>n+e.individuals,0);const neighborDeaths=out.events.filter(e=>e.type==='insect_background_death').reduce((n,e)=>n+e.individuals,0);
+ ok(before.ecology.adjacent_garden_living_insects+neighborBirths-neighborDeaths-immigrants===after.ecology.adjacent_garden_living_insects,'neighboring insects must conserve births, deaths and emigrants');
  ok(out.events.every(e=>supportedTypes.has(e.type)),'no supernatural or unspecified event types Day'+out.day);
  for(const loc of ['F07','F11']){
   const arrivals=out.events.filter(e=>e.type==='insect_immigration'&&e.site===loc).reduce((n,e)=>n+e.individuals,0);
   const deaths=out.events.filter(e=>e.type==='insect_natural_death'&&e.site===loc);
   const pre=before.ecology.insects_by_site[loc],post=after.ecology.insects_by_site[loc];
-  ok(pre.living+arrivals-deaths.length===post.living,'local insect population conservation '+loc+' Day'+out.day);
+  const localBirths=out.events.filter(e=>e.type==='insect_population_birth'&&e.site===loc).reduce((n,e)=>n+e.individuals,0);
+  ok(pre.living+localBirths+arrivals-deaths.length===post.living,'local insect births/deaths/migration conservation '+loc+' Day'+out.day);
   for(const d of deaths){
    const body=out.events.find(e=>e.type==='new_food_source'&&e.id===d.event_id&&e.site===loc);
    ok(body&&body.caused_by_event_id===d.event_id,'each carcass has causal insect death '+d.event_id);
