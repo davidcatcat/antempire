@@ -19,7 +19,7 @@ for(let i=0;i<120;i++){
  assert.deepEqual(output,replay,'exact deterministic daily replay');
  const {summary:x,events,state:next}=output,ec=next.ecology;
  const births=events.filter(e=>e.type==='insect_population_birth').reduce((a,e)=>a+e.individuals,0);
- const deaths=events.filter(e=>e.type==='insect_background_death').reduce((a,e)=>a+e.individuals,0)+events.filter(e=>e.type==='insect_natural_death').length;
+ const deaths=events.filter(e=>e.type==='insect_background_death').reduce((a,e)=>a+e.individuals,0)+events.filter(e=>e.type==='insect_natural_death').length+events.filter(e=>e.type==='insect_predation').length;
  const migrations=events.filter(e=>e.type==='insect_immigration').length;
  const insectsNow=ec.adjacent_garden_living_insects+Object.values(ec.insects_by_site).reduce((a,z)=>a+z.living,0);
  assert.equal(insectsNow,previousInsects+births-deaths,'world births - deaths conservation');

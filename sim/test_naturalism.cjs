@@ -10,7 +10,7 @@ if(!(foragingTemperatureFactor(p,12)<foragingTemperatureFactor(p,20)&&foragingTe
 let checks=0;
 const ok=(condition,why)=>{assert.ok(condition,why);checks++};
 const denied=fn=>{assert.throws(fn,/NO_GOD_MODE/);checks++};
-const supportedTypes=new Set(['new_food_source','source_batch_consumed','food_delivered','insect_immigration','insect_natural_death','insect_population_birth','insect_background_death','physical_scout_visit','discovery','scouted_empty','nest_local_route_learning','local_contact_cue','local_brood_begging_contact','local_unloading_feedback','host_plant_death','hemipteran_colony_change','local_recruitment','hatch','pupation','eclosion','egg_laid','worker_death','brood_death','injury_recovery','queen_death']);
+const supportedTypes=new Set(['new_food_source','source_batch_consumed','food_delivered','insect_immigration','insect_natural_death','insect_population_birth','insect_background_death','physical_scout_visit','discovery','scouted_empty','nest_local_route_learning','local_contact_cue','local_brood_begging_contact','local_unloading_feedback','host_plant_death','hemipteran_colony_change','local_recruitment','route_step','route_timeout','trail_decay','trail_deposited','local_trail_choice','food_collected','trophallaxis','protein_cached_at_nest','live_prey_encounter','prey_escaped','local_alarm_signal','insect_predation','hatch','pupation','eclosion','egg_laid','worker_death','brood_death','injury_recovery','queen_death']);
 const withOverride=clone(initial);withOverride.force_food={site:'N00',sugar:100};denied(()=>simulateDay(withOverride,p));
 const withDrama=clone(initial);withDrama.make_sure_queen_survives=true;denied(()=>simulateDay(withDrama,p));
 const withForcedDeath=clone(initial);withForcedDeath.target_worker_death='W007';denied(()=>simulateDay(withForcedDeath,p));
@@ -46,7 +46,7 @@ for(let i=0;i<30;i++){
  ok(out.events.every(e=>supportedTypes.has(e.type)),'no supernatural or unspecified event types Day'+out.day);
  for(const loc of ['F07','F11']){
   const arrivals=out.events.filter(e=>e.type==='insect_immigration'&&e.site===loc).reduce((n,e)=>n+e.individuals,0);
-  const deaths=out.events.filter(e=>e.type==='insect_natural_death'&&e.site===loc);
+  const deaths=out.events.filter(e=>(e.type==='insect_natural_death'||e.type==='insect_predation')&&e.site===loc);
   const pre=before.ecology.insects_by_site[loc],post=after.ecology.insects_by_site[loc];
   const localBirths=out.events.filter(e=>e.type==='insect_population_birth'&&e.site===loc).reduce((n,e)=>n+e.individuals,0);
   ok(pre.living+localBirths+arrivals-deaths.length===post.living,'local insect births/deaths/migration conservation '+loc+' Day'+out.day);
@@ -59,7 +59,7 @@ for(let i=0;i<30;i++){
  }
  const created=out.events.filter(e=>e.type==='new_food_source');
  carcasses+=created.length;
- ok(created.length===out.events.filter(e=>e.type==='insect_natural_death').length,'no unconditional new food Day'+out.day);
+ ok(created.length===out.events.filter(e=>e.type==='insect_natural_death'||e.type==='insect_predation').length,'no unconditional new food Day'+out.day);
  for(const d of out.events.filter(e=>e.type==='worker_death'))ok(before.population.workers.some(w=>w.id===d.id),'only previously alive ants can die');
  for(const v of out.events.filter(e=>e.type==='physical_scout_visit')){
   scouts++;ok(typeof v.via==='string'&&v.via.length>0,'a scout must physically traverse a known neighbor');
@@ -78,5 +78,5 @@ const forcedSearchTrial=simulateDay(scoutFixture,searchSettings);
 const found=forcedSearchTrial.events.filter(e=>e.type==='physical_scout_visit');
 ok(found.every(e=>e.site==='F10'&&e.via==='U01'),'scouting can visit ONLY locally reachable F10 via U01, not remote F04/F05');
 ok(found.length>=1,'scout must actually traverse known neighbor under the high-search QA fixture');
-ok(insectDeaths===carcasses,'background food originates from distinct natural deaths');
+ok(insectDeaths===carcasses,'background food and prey originates from distinct tracked insect deaths');
 console.log(JSON.stringify({passed:checks,days:30,events_natural_only:true,seeded_replay:true,no_direct_interventions:true,insectDeaths,carcasses,workerDeaths,physicalScoutingEvents:scouts,canonical_save_changed:false},null,2));

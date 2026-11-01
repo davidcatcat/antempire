@@ -47,7 +47,7 @@ for(const seed of seeds){
   const o=simulateDay(state,params),x=o.summary,z=o.state;
   if(k===0||k===119)assert.deepEqual(o,simulateDay(state,params),'replay endpoints per seed');
   const births=o.events.filter(e=>e.type==='insect_population_birth').reduce((t,e)=>t+e.individuals,0);
-  const deaths=o.events.filter(e=>e.type==='insect_background_death').reduce((t,e)=>t+e.individuals,0)+o.events.filter(e=>e.type==='insect_natural_death').length;
+  const deaths=o.events.filter(e=>e.type==='insect_background_death').reduce((t,e)=>t+e.individuals,0)+o.events.filter(e=>e.type==='insect_natural_death').length+o.events.filter(e=>e.type==='insect_predation').length;
   const now=z.ecology.adjacent_garden_living_insects+Object.values(z.ecology.insects_by_site).reduce((t,p)=>t+p.living,0);
   assert.equal(now,prevInsects+births-deaths,'insect births/deaths balance');
   assert.ok(z.ecology.adjacent_garden_living_insects<=params.sources.insect_boundary_carrying_capacity.value);
