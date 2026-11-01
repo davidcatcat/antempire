@@ -54,14 +54,16 @@ for(const seed of seeds){
   for(const loc of Object.values(z.ecology.insects_by_site))assert.ok(loc.living<=loc.carrying_capacity);
   prevInsects=now;totalInsectBirths+=births;totalInsectDeaths+=deaths;
   assert.equal(x.metabolic_factor,Math.round(Math.pow(2,(x.weather.nest_temp_model_c-25)/10)*1e6)/1e6);
+  assert.ok(Number.isFinite(x.ratios.sugar)&&x.ratios.sugar>=0&&x.ratios.sugar<=1,'valid sugar satisfied ratio');
+  assert.ok(Number.isFinite(x.ratios.protein)&&x.ratios.protein>=0&&x.ratios.protein<=1,'valid protein satisfied ratio');
   assert.ok(x.weather.daily_min_air_temp_c<=x.weather.air_temp_c&&x.weather.air_temp_c<=x.weather.daily_max_air_temp_c);
   const d={seed,day:o.day,date:x.date,month:x.date.slice(0,7),queen:x.population.queen,workers:x.population.workers,eggs:x.population.eggs,larvae:x.population.larvae,pupae:x.population.pupae,
    air_mean_c:x.weather.air_temp_c,daytime_max_air_c:x.weather.daytime_air_temp_c,air_min_c:x.weather.daily_min_air_temp_c,nest_temp_c:x.weather.nest_temp_model_c,
    expected_air_normal_c:round(normalAt(x.date,'mean_air_temperature_c')),temperature_residual_c:round(x.weather.air_temp_c-normalAt(x.date,'mean_air_temperature_c')),
    foraging_factor:foragingTemperatureFactor(params,x.weather.daytime_air_temp_c),metabolic_factor:x.metabolic_factor,laying_temp_factor:x.queen_laying_temperature_factor,
    route_steps:o.events.filter(e=>e.type==='route_step').length,trail_deposits:o.events.filter(e=>e.type==='trail_deposited').length,trail_decays:o.events.filter(e=>e.type==='trail_decay').length,active_trail_edges:Object.keys(z.ecology.trail_by_edge||{}).length,trophallaxis_events:o.events.filter(e=>e.type==='trophallaxis').length,trophallaxis_portions:round(o.events.filter(e=>e.type==='trophallaxis').reduce((a,e)=>a+e.portions,0)),live_prey_encounters:o.events.filter(e=>e.type==='live_prey_encounter').length,live_prey_kills:antPreyKills,local_recruits:o.events.filter(e=>e.type==='local_recruitment').length,foragers:x.tasks.forage,foraging_fraction_per_available_worker:round(x.workers_before>0?x.tasks.forage/x.workers_before:0),queen_laying_probability:x.queen_laying_probability_applied,foragers_sugar:x.foraging_workers_by_macro.sugar,foragers_protein:x.foraging_workers_by_macro.protein,
-   sugar_income:x.income.sugar,sugar_consumed:x.consumed.sugar,sugar_demand:x.demand.sugar,sugar_fraction:round(x.ratios.sFraction),sugar_store:x.stock.sugar,
-   protein_income:x.income.protein,protein_consumed:x.consumed.protein,protein_demand:x.demand.protein,protein_fraction:round(x.ratios.pFraction),protein_store:x.stock.protein,
+   sugar_income:x.income.sugar,sugar_consumed:x.consumed.sugar,sugar_demand:x.demand.sugar,sugar_fraction:round(x.ratios.sugar),sugar_store:x.stock.sugar,
+   protein_income:x.income.protein,protein_consumed:x.consumed.protein,protein_demand:x.demand.protein,protein_fraction:round(x.ratios.protein),protein_store:x.stock.protein,
    eggs_laid:x.eggs_laid,worker_deaths:x.worker_deaths,starvation_linked_worker_deaths:o.events.filter(e=>e.type==='worker_death'&&e.reason.includes('starvation')).length,
    queen_death_event:o.events.filter(e=>e.type==='queen_death').length,brood_deaths:x.brood_deaths,sugar_gap_days:x.starvation.sugar_gap_days,protein_gap_days:x.starvation.protein_gap_days,
    insects_F07:z.ecology.insects_by_site.F07.living,insects_F11:z.ecology.insects_by_site.F11.living,insects_adjacent:z.ecology.adjacent_garden_living_insects,insect_births:births,insect_deaths:deaths};

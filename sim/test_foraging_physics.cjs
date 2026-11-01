@@ -47,6 +47,7 @@ let sim=make(),delivered=0,pheromone=0,trophallaxis=0,hunts=0,allEvents=0;
 for(let day=0;day<60;day++){
  const out=simulateDay(sim,p),events=out.events;
  assert.deepEqual(out,simulateDay(sim,p),'deterministic rerun Day '+out.day);
+ ok(Number.isFinite(out.summary.ratios.sugar)&&Number.isFinite(out.summary.ratios.protein),'nutrition diagnostic ratios numeric and finite');
  for(const receipt of events.filter(e=>e.type==='food_delivered')){
   ok(events.some(c=>c.type==='food_collected'&&c.worker===receipt.worker&&c.site===receipt.site&&c.macro===receipt.macro&&c.portions===receipt.portions),'each delivery backed by collection');
   ok(events.some(t=>t.type==='route_step'&&t.worker===receipt.worker&&t.to==='N00'),'each delivery backed by actual nest return');
