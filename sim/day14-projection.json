@@ -658,6 +658,20 @@
       },
       "stock_unchanged": true,
       "provenance": "explicit one-time garden population assumptions independent of colony consumption"
+    },
+    {
+      "type": "post_v2_failed_trial_hidden_honeydew_census_disclosure",
+      "effective_day": 15,
+      "day14_unmodified": true,
+      "added_after_failed_v2_trial": true,
+      "sites": [
+        "F04",
+        "F05"
+      ],
+      "provenance": "F04/F05 hidden honeydew host plants and hemipteran colonies were added as a retroactive garden census only after the original v2 test failed; not confirmed Day1–14 observations",
+      "restrictions": "From Day15 onward fixed habitat definition and parameterization must never be altered in response to ant starvation, colony persistence, or review outcome; only autonomous ecological events may alter populations",
+      "world_definition_frozen_from_day15": true,
+      "assumption": true
     }
   ],
   "ecology": {
@@ -665,14 +679,17 @@
       "F07": {
         "living": 12,
         "cumulative_deaths": 0,
-        "origin": "baseline insect game assumption"
+        "origin": "baseline insect game assumption",
+        "carrying_capacity": 18
       },
       "F11": {
         "living": 9,
         "cumulative_deaths": 0,
-        "origin": "baseline insect game assumption"
+        "origin": "baseline insect game assumption",
+        "carrying_capacity": 18
       }
     },
-    "adjacent_garden_living_insects": 40
+    "adjacent_garden_living_insects": 40,
+    "adjacent_garden_carrying_capacity": 80
   }
 }
