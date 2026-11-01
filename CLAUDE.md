@@ -75,7 +75,14 @@
 - 未來的網頁版（`web/`）**只讀取結果**，不產生正式歷史，也不寫回 `saves/` 或 `journal/`。
 - 模擬核心必須是純函式、可重播：同一輸入＋同一參數＝同一輸出。
 
-## 9. 參考文件
+## 9. 程式結構與指令
+
+- `engine/`：純模擬核心（TypeScript，無 DOM／Node API）。`species/<id>.json` 物種參數、`world/<id>.json` 世界參數；程式中不寫死數值、不用物種名稱判斷。架構見 [`docs/engine-architecture.md`](docs/engine-architecture.md)。
+- `cli/`：Node 工具（讀檔、規則指紋、存檔映射、報告產生器）。`web/`：預留給只讀網頁。
+- `npm ci`、`npm run typecheck`、`npm test`（Node ≥ 22.18 原生執行 `.ts`）。
+- 純重構必須通過 `tests/golden.test.ts`（逐位元組）；改變輸出就是規則更新，要另開規則更新 PR。
+
+## 10. 參考文件
 
 - [`docs/gm-rules.md`](docs/gm-rules.md)：GM 規則卡（每日順序、守恆、遷移）。
 - [`docs/save-rules.md`](docs/save-rules.md)：存檔規則。

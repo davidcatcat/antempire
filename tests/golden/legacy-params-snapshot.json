@@ -1,0 +1,1100 @@
+{
+  "schema": "antempire.rules-v2.day15.proposal",
+  "effective_from_day": "Day15",
+  "all_tunable_numbers_are_game_assumptions": true,
+  "development": {
+    "reference_c": {
+      "value": 25,
+      "assumption": true,
+      "description": "以25°C為相對發育速率基準",
+      "reference_for_mechanism_only": [
+        "R94"
+      ]
+    },
+    "egg_days": {
+      "value": 10,
+      "assumption": true,
+      "description": "25°C卵期標準長度，遊戲假設",
+      "reference_for_mechanism_only": [
+        "R94"
+      ]
+    },
+    "larva_days": {
+      "value": 12,
+      "assumption": true,
+      "description": "25°C幼蟲期標準長度，遊戲假設，不等於實際野外幼蟲期",
+      "reference_for_mechanism_only": [
+        "R94"
+      ]
+    },
+    "pupa_days": {
+      "value": 10,
+      "assumption": true,
+      "description": "25°C蛹期標準長度，遊戲假設",
+      "reference_for_mechanism_only": [
+        "R94"
+      ]
+    },
+    "q10": {
+      "value": 1.55,
+      "assumption": true,
+      "description": "溫度每提高10°C之發育速度倍數，遊戲假設",
+      "reference_for_mechanism_only": []
+    },
+    "min_temp_factor": {
+      "value": 0.48,
+      "assumption": true,
+      "description": "環境低溫時發育減緩下限，遊戲假設",
+      "reference_for_mechanism_only": []
+    },
+    "max_temp_factor": {
+      "value": 1.9,
+      "assumption": true,
+      "description": "環境高溫時發育加速上限，遊戲假設",
+      "reference_for_mechanism_only": []
+    },
+    "nest_buffer_fraction": {
+      "value": 0.55,
+      "assumption": true,
+      "description": "巢內溫度相對外界均溫的緩衝權重，非實測",
+      "reference_for_mechanism_only": []
+    }
+  },
+  "nutrition": {
+    "starting_sugar": {
+      "value": 7.6,
+      "assumption": true,
+      "description": "Day14既有存糧不可測；作為Day15獨立情境起始糖儲備，約四天工蟻+蟻后基礎需求",
+      "reference_for_mechanism_only": []
+    },
+    "starting_protein": {
+      "value": 2.3,
+      "assumption": true,
+      "description": "Day14曾有兩次昆蟲來源帶回，作為Day15獨立情境的蛋白儲備假設，非由事件數換算",
+      "reference_for_mechanism_only": []
+    },
+    "worker_sugar_daily": {
+      "value": 0.1,
+      "assumption": true,
+      "description": "每工蟻日糖消耗，單位份",
+      "reference_for_mechanism_only": []
+    },
+    "worker_protein_daily": {
+      "value": 0.008,
+      "assumption": true,
+      "description": "每工蟻維生蛋白日耗，單位份",
+      "reference_for_mechanism_only": []
+    },
+    "queen_sugar_daily": {
+      "value": 0.22,
+      "assumption": true,
+      "description": "蟻后日糖消耗，單位份",
+      "reference_for_mechanism_only": []
+    },
+    "queen_protein_daily": {
+      "value": 0.045,
+      "assumption": true,
+      "description": "蟻后維生蛋白日耗，單位份",
+      "reference_for_mechanism_only": []
+    },
+    "larva_sugar_daily": {
+      "value": 0.025,
+      "assumption": true,
+      "description": "每幼蟲日糖日耗，單位份",
+      "reference_for_mechanism_only": []
+    },
+    "larva_protein_daily": {
+      "value": 0.08,
+      "assumption": true,
+      "rationale": "game assumption 0.08 portions per larva per day; no mg conversion; replaces 0.2"
+    },
+    "egg_laying_protein_cost": {
+      "value": 0.14,
+      "assumption": true,
+      "description": "每一顆卵的營養成本，單位份",
+      "reference_for_mechanism_only": []
+    },
+    "egg_laying_sugar_cost": {
+      "value": 0.08,
+      "assumption": true,
+      "description": "每一顆卵的營養成本，單位份",
+      "reference_for_mechanism_only": []
+    },
+    "brood_protein_min_fraction": {
+      "value": 0.45,
+      "assumption": true,
+      "description": "幼蟲吃到至少此比率的蛋白才可有效發育",
+      "reference_for_mechanism_only": []
+    },
+    "max_sugar_store": {
+      "value": 24,
+      "assumption": true,
+      "description": "巢群本階段可存/嗉囊攜帶之糖份上限，會隨規模擴張",
+      "reference_for_mechanism_only": []
+    },
+    "max_protein_store": {
+      "value": 12,
+      "assumption": true,
+      "description": "巢群本階段可存/處理之蛋白份上限，會隨規模擴張",
+      "reference_for_mechanism_only": []
+    },
+    "metabolic_reference_c": {
+      "value": 25,
+      "assumption": true,
+      "description": "一般生理學 + 遊戲假設: 巢溫代謝基準25°C；非P. megacephala實測",
+      "reference_for_mechanism_only": [
+        "PMC11750369"
+      ]
+    },
+    "metabolic_q10": {
+      "value": 2,
+      "assumption": true,
+      "description": "一般生理學 + 遊戲假設: Q10=2.0 是研究標準化假設，非本物種實測",
+      "reference_for_mechanism_only": [
+        "PMC11750369"
+      ]
+    }
+  },
+  "starvation": {
+    "queen_egg_pause_days": {
+      "value": 2,
+      "assumption": true,
+      "description": "任一營養缺口累計2天停止產卵",
+      "reference_for_mechanism_only": []
+    },
+    "worker_mortality_starts_days": {
+      "value": 4,
+      "assumption": true,
+      "description": "連續糖缺口到4天開始額外死亡風險",
+      "reference_for_mechanism_only": []
+    },
+    "larva_mortality_starts_days": {
+      "value": 5,
+      "assumption": true,
+      "description": "連續蛋白缺口到5天開始幼蟲死亡風險",
+      "reference_for_mechanism_only": []
+    },
+    "worker_daily_hazard_base": {
+      "value": 0.015,
+      "assumption": true,
+      "description": "飢餓門檻後每日每蟻額外基礎死亡機率",
+      "reference_for_mechanism_only": []
+    },
+    "worker_daily_hazard_slope": {
+      "value": 0.012,
+      "assumption": true,
+      "description": "缺口每延長一天死亡機率增幅",
+      "reference_for_mechanism_only": []
+    },
+    "larva_daily_hazard_base": {
+      "value": 0.05,
+      "assumption": true,
+      "description": "幼蟲營養不足的基礎死亡率",
+      "reference_for_mechanism_only": []
+    },
+    "larva_daily_hazard_slope": {
+      "value": 0.055,
+      "assumption": true,
+      "description": "幼蟲缺蛋白每延長一天之機率增幅",
+      "reference_for_mechanism_only": []
+    },
+    "queen_hazard_after_days": {
+      "value": 12,
+      "assumption": true,
+      "description": "極端連續飢餓後蟻后也受風險",
+      "reference_for_mechanism_only": []
+    },
+    "queen_daily_hazard": {
+      "value": 0.008,
+      "assumption": true,
+      "description": "極端營養不足後蟻后每日額外死亡機率",
+      "reference_for_mechanism_only": []
+    },
+    "worker_natural_daily_base_hazard": {
+      "value": 0.003,
+      "assumption": true,
+      "description": "假定日自然死亡基礎機率，非本種精確死亡率",
+      "reference_for_mechanism_only": [
+        "R94"
+      ]
+    },
+    "worker_age_risk_from_days": {
+      "value": 28,
+      "assumption": true,
+      "description": "超過假設成蟻年齡後死亡風險逐日增加",
+      "reference_for_mechanism_only": [
+        "R94"
+      ]
+    },
+    "worker_age_hazard_slope": {
+      "value": 0.00075,
+      "assumption": true,
+      "description": "假設老化危險率每日增加量",
+      "reference_for_mechanism_only": []
+    },
+    "injury_mortality_multiplier": {
+      "value": 1.4,
+      "assumption": true,
+      "description": "有舊傷者自然死亡額外風險倍率",
+      "reference_for_mechanism_only": []
+    },
+    "queen_zero_worker_hazard_after_days": {
+      "value": 3,
+      "assumption": true,
+      "rationale": "after losing all caretakers queen hazard rises especially when energy deficient"
+    },
+    "queen_zero_worker_starved_daily_hazard": {
+      "value": 0.24,
+      "assumption": true,
+      "rationale": "no workers plus prolonged food deficit elevates death risk; game assumption"
+    },
+    "unattended_larva_max_days": {
+      "value": 4,
+      "assumption": true,
+      "description": "一般生理學 + 遊戲假設: 無工蟻照護及餵食幼蟲最多4日，不是量測",
+      "reference_for_mechanism_only": []
+    },
+    "unattended_egg_max_days": {
+      "value": 10,
+      "assumption": true,
+      "description": "遊戲假設: 缺工蟻照護卵最多10日，非實測",
+      "reference_for_mechanism_only": []
+    },
+    "unattended_pupa_max_days": {
+      "value": 10,
+      "assumption": true,
+      "description": "遊戲假設: 缺工蟻照護蛹最多10日，非實測",
+      "reference_for_mechanism_only": []
+    }
+  },
+  "queen": {
+    "base_laying_probability": {
+      "value": 0.38,
+      "assumption": true,
+      "description": "遊戲假設: 25°C、營養充足時每日發生產卵基礎機率，不等於每日必生一卵",
+      "reference_for_mechanism_only": []
+    },
+    "max_eggs_per_day": {
+      "value": 2,
+      "assumption": true,
+      "description": "單日最大產卵數；本階段獨立情境人口控制",
+      "reference_for_mechanism_only": []
+    },
+    "existing_brood_pressure": {
+      "value": 0.011,
+      "assumption": true,
+      "description": "每一隻既有幼體增加的繁殖抑制因子",
+      "reference_for_mechanism_only": []
+    },
+    "previous_laying_penalty": {
+      "value": 0.6,
+      "assumption": true,
+      "description": "昨日有產卵時今日產卵機率倍率",
+      "reference_for_mechanism_only": []
+    },
+    "adequate_nutrition_threshold": {
+      "value": 0.84,
+      "assumption": true,
+      "description": "若當日資源滿足比例低於此則產卵暫停",
+      "reference_for_mechanism_only": []
+    },
+    "laying_reference_c": {
+      "value": 25,
+      "assumption": true,
+      "description": "遊戲假設: 產卵參考巢溫25°C，非本物種實測",
+      "reference_for_mechanism_only": []
+    },
+    "laying_temperature_q10": {
+      "value": 2.5,
+      "assumption": true,
+      "description": "遊戲假設: 低溫降低產卵機率的Q10形狀，非本物種實測",
+      "reference_for_mechanism_only": []
+    },
+    "second_egg_given_laying_probability": {
+      "value": 0.2,
+      "assumption": true,
+      "description": "遊戲假設: 當日發生產卵後，追加第二顆卵之機率；不保證兩卵",
+      "reference_for_mechanism_only": []
+    }
+  },
+  "workers": {
+    "newborn_initial_age_days": {
+      "value": 0,
+      "assumption": true,
+      "description": "新羽化成蟻年齡從零開始",
+      "reference_for_mechanism_only": []
+    },
+    "legacy_unknown_age_initial_days": {
+      "value": 7,
+      "assumption": true,
+      "description": "Day14舊工蟻真實成年年齡未知，Day15採遊戲假設7天",
+      "reference_for_mechanism_only": []
+    },
+    "rest_baseline_probability": {
+      "value": 0.22,
+      "assumption": true,
+      "description": "基礎休息比例，依飢餓狀態變動",
+      "reference_for_mechanism_only": []
+    },
+    "nurse_baseline_probability": {
+      "value": 0.25,
+      "assumption": true,
+      "description": "基礎育幼偏好",
+      "reference_for_mechanism_only": []
+    },
+    "maintenance_baseline_probability": {
+      "value": 0.12,
+      "assumption": true,
+      "description": "巢口維護基礎偏好",
+      "reference_for_mechanism_only": []
+    },
+    "forage_baseline_probability": {
+      "value": 0.36,
+      "assumption": true,
+      "description": "基礎覓食偏好，營養缺乏與招募將提高",
+      "reference_for_mechanism_only": []
+    },
+    "defence_baseline_probability": {
+      "value": 0.05,
+      "assumption": true,
+      "description": "巢口警戒偏好",
+      "reference_for_mechanism_only": []
+    },
+    "injury_foraging_multiplier": {
+      "value": 0.45,
+      "assumption": true,
+      "description": "受傷個體覓食意願下降倍率",
+      "reference_for_mechanism_only": []
+    },
+    "injury_repair_probability": {
+      "value": 0.05,
+      "assumption": true,
+      "description": "舊傷個體每日復原機率（需食物與休息）",
+      "reference_for_mechanism_only": []
+    },
+    "newborn_nurse_days": {
+      "value": 4,
+      "assumption": true,
+      "description": "新羽化頭幾日優先巢內工作，遊戲假設",
+      "reference_for_mechanism_only": []
+    },
+    "recruitment_probability": {
+      "value": 0.55,
+      "assumption": true,
+      "description": "成功覓食者在巢內接觸其他工蟻之招募機率",
+      "reference_for_mechanism_only": []
+    },
+    "recruitment_max_followers": {
+      "value": 3,
+      "assumption": true,
+      "description": "每筆成功食物資訊最多影響三隻同巢工蟻",
+      "reference_for_mechanism_only": []
+    },
+    "scout_discovery_probability": {
+      "value": 0.25,
+      "assumption": true,
+      "description": "無既知食源時探索新地點成功機率",
+      "reference_for_mechanism_only": []
+    },
+    "max_trips_per_forager": {
+      "value": 2,
+      "assumption": true,
+      "description": "每覓食工蟻單日最大外勤次數",
+      "reference_for_mechanism_only": []
+    },
+    "foraging_trip_sugar_cost": {
+      "value": 0.012,
+      "assumption": true,
+      "description": "覓食路線附加糖耗份數",
+      "reference_for_mechanism_only": []
+    },
+    "rain_suppression_fraction": {
+      "value": 0.035,
+      "assumption": true,
+      "description": "每mm雨對出勤/採集倍率的減損，上限截斷",
+      "reference_for_mechanism_only": []
+    },
+    "min_rain_activity_multiplier": {
+      "value": 0.35,
+      "assumption": true,
+      "description": "暴雨仍可能有部分微氣候遮蔽路線",
+      "reference_for_mechanism_only": []
+    },
+    "local_communication_retention_days": {
+      "value": 3,
+      "assumption": true,
+      "description": "招募訊號只保持短期局部記憶",
+      "reference_for_mechanism_only": []
+    },
+    "nest_contact_route_learning_probability": {
+      "value": 0.28,
+      "assumption": true,
+      "description": "每日同巢局部接觸，借由另一隻熟悉路線工蟻學到某已知食源路線的機率（非全知）",
+      "reference_for_mechanism_only": [
+        "R95",
+        "R116"
+      ]
+    },
+    "local_peer_contact_probability": {
+      "value": 0.58,
+      "assumption": true,
+      "rationale": "local in-nest encounter likelihood, no global visibility"
+    },
+    "local_signal_smoothing": {
+      "value": 0.5,
+      "assumption": true,
+      "rationale": "fraction retained from own prior local encounters"
+    },
+    "sugar_hunger_priority_weight": {
+      "value": 4.5,
+      "assumption": true,
+      "rationale": "worker chooses sugar more often when own crop/encountered nestmates signal hunger"
+    },
+    "protein_begging_priority_weight": {
+      "value": 1.8,
+      "assumption": true,
+      "rationale": "only locally encountered hungry larvae or nurses can elevate protein foraging"
+    },
+    "unloading_success_memory_weight": {
+      "value": 1.4,
+      "assumption": true,
+      "rationale": "fast unloading reinforces same kind of forage; slow unloading suppresses it"
+    },
+    "scout_search_when_route_unproductive_probability": {
+      "value": 0.18,
+      "assumption": true,
+      "rationale": "local search triggered by own failed route, does not reveal distant sugar source"
+    },
+    "foraging_cold_limit_c": {
+      "value": 10,
+      "assumption": true,
+      "rationale": "below this synthetic outdoor mean temperature cold activity reaches its assumed minimum",
+      "description": "遊戲假設: 白天最高氣溫10°C時活動權重下限，非本種實測"
+    },
+    "foraging_full_activity_c": {
+      "value": 25,
+      "assumption": true,
+      "rationale": "at this temperature or warmer there is no low-temperature penalty",
+      "description": "遊戲假設: 白天最高氣溫25°C時冷抑制解除，非地表最佳覓食溫度實測"
+    },
+    "foraging_cold_min_multiplier": {
+      "value": 0.12,
+      "assumption": true,
+      "rationale": "assumed minimum foraging attempts, collection success and recruitment in cold weather",
+      "description": "文獻支持方向+遊戲假設: 低溫係數只作用於白天覓食出勤權重一次，不再影響採集和招募"
+    }
+  },
+  "sources": {
+    "honeydew_max": {
+      "value": 5.2,
+      "assumption": true,
+      "description": "蜜露F01總可及糖份上限",
+      "reference_for_mechanism_only": []
+    },
+    "honeydew_daily_replenish": {
+      "value": 0.65,
+      "assumption": true,
+      "description": "寄主與蚜蟲仍活著時每日補充糖份",
+      "reference_for_mechanism_only": []
+    },
+    "honeydew_initial": {
+      "value": 0.55,
+      "assumption": true,
+      "description": "Day14 F01有蚜蟲但無可採蜜露；Day15起始少量保守情境",
+      "reference_for_mechanism_only": []
+    },
+    "nectar_max": {
+      "value": 2.4,
+      "assumption": true,
+      "description": "F08花蜜份數上限",
+      "reference_for_mechanism_only": []
+    },
+    "nectar_daily_replenish": {
+      "value": 0.35,
+      "assumption": true,
+      "description": "花仍在開放期時日補充量",
+      "reference_for_mechanism_only": []
+    },
+    "nectar_initial": {
+      "value": 0.18,
+      "assumption": true,
+      "description": "Day14無可確認花蜜之情境假設",
+      "reference_for_mechanism_only": []
+    },
+    "nectar_bloom_days_remaining": {
+      "value": 12,
+      "assumption": true,
+      "description": "Day15起餘下開花期假設",
+      "reference_for_mechanism_only": []
+    },
+    "honeydew_washoff_per_rain_mm": {
+      "value": 0.012,
+      "assumption": true,
+      "description": "每mm雨使蜜露減少的比例",
+      "reference_for_mechanism_only": []
+    },
+    "nectar_washoff_per_rain_mm": {
+      "value": 0.035,
+      "assumption": true,
+      "description": "每mm雨造成花蜜沖刷比例",
+      "reference_for_mechanism_only": []
+    },
+    "carcass_initial_F07": {
+      "value": 0.6,
+      "assumption": true,
+      "description": "保留Day11 F07 V2D11-E04屍體可能剩餘的蛋白份數；高不確定性",
+      "reference_for_mechanism_only": []
+    },
+    "carcass_initial_F11": {
+      "value": 0.07,
+      "assumption": true,
+      "description": "保留Day9 F11舊屍剩餘蛋白份數；已採部分且腐敗更久",
+      "reference_for_mechanism_only": []
+    },
+    "carcass_initial_F07_older": {
+      "value": 0.05,
+      "assumption": true,
+      "description": "保留Day10 F07舊殘骸少量假設",
+      "reference_for_mechanism_only": []
+    },
+    "carcass_daily_decay_fraction": {
+      "value": 0.14,
+      "assumption": true,
+      "description": "未採集殘骸每一日可食份數減少比例",
+      "reference_for_mechanism_only": []
+    },
+    "carcass_rain_decay_bonus": {
+      "value": 0.004,
+      "assumption": true,
+      "description": "每mm雨額外可食減少比例",
+      "reference_for_mechanism_only": []
+    },
+    "carcass_new_protein_min": {
+      "value": 1.45,
+      "assumption": true,
+      "description": "新屍體蛋白份數下界",
+      "reference_for_mechanism_only": []
+    },
+    "carcass_new_protein_max": {
+      "value": 2.6,
+      "assumption": true,
+      "description": "新屍體蛋白份數上界",
+      "reference_for_mechanism_only": []
+    },
+    "carcass_access_probability": {
+      "value": 0.7,
+      "assumption": true,
+      "description": "到達且食物剩餘時遇到/可採的機率",
+      "reference_for_mechanism_only": []
+    },
+    "carcass_max_lifetime_days": {
+      "value": 9,
+      "assumption": true,
+      "description": "殘骸來源最長保留9天；只刪除已腐化且無可食量來源",
+      "reference_for_mechanism_only": []
+    },
+    "crop_load_sugar_min": {
+      "value": 0.28,
+      "assumption": true,
+      "description": "每趟成功糖運輸下界份數",
+      "reference_for_mechanism_only": []
+    },
+    "crop_load_sugar_max": {
+      "value": 0.62,
+      "assumption": true,
+      "description": "每趟成功糖運輸上界份數",
+      "reference_for_mechanism_only": []
+    },
+    "crop_load_protein_min": {
+      "value": 0.3,
+      "assumption": true,
+      "description": "每趟成功昆蟲蛋白運輸下界份數",
+      "reference_for_mechanism_only": []
+    },
+    "crop_load_protein_max": {
+      "value": 0.64,
+      "assumption": true,
+      "description": "每趟成功昆蟲蛋白運輸上界份數",
+      "reference_for_mechanism_only": []
+    },
+    "new_plant_event_probability": {
+      "value": 0.035,
+      "assumption": true,
+      "description": "新花期或落果事件，用於後續世界擴充，未當前模型全實作",
+      "reference_for_mechanism_only": []
+    },
+    "insect_initial_living_F07": {
+      "value": 12,
+      "assumption": true,
+      "description": "在F07的獨立小型昆蟲局部初始存活數，過渡假設，不是新食物",
+      "reference_for_mechanism_only": [
+        "R95",
+        "R98"
+      ]
+    },
+    "insect_initial_living_F11": {
+      "value": 9,
+      "assumption": true,
+      "description": "在F11的獨立小型昆蟲局部初始存活數，過渡假設，不是新食物",
+      "reference_for_mechanism_only": [
+        "R95",
+        "R98"
+      ]
+    },
+    "insect_local_carrying_capacity": {
+      "value": 18,
+      "assumption": true,
+      "description": "局部昆蟲最大可容納數，依棲地而定的遊戲近似",
+      "reference_for_mechanism_only": [
+        "R95",
+        "R98"
+      ]
+    },
+    "insect_background_immigration_probability": {
+      "value": 0.08,
+      "assumption": true,
+      "description": "每日從相鄰花園棲地遷入1隻已存在昆蟲的情境機率，記錄來源事件",
+      "reference_for_mechanism_only": [
+        "R95",
+        "R98"
+      ]
+    },
+    "insect_local_daily_mortality_probability": {
+      "value": 0.22,
+      "assumption": true,
+      "description": "每處已有存活昆蟲每日產生一次自然死亡的場址近似機率，絕非直接生成食物",
+      "reference_for_mechanism_only": [
+        "R95",
+        "R98"
+      ]
+    },
+    "insect_initial_boundary_reservoir": {
+      "value": 40,
+      "assumption": true,
+      "description": "相鄰庭園初始已有40隻活昆蟲的有限情境族群；遷入F07/F11須從此扣減，沒有上帝視角無限出現",
+      "reference_for_mechanism_only": [
+        "R95"
+      ]
+    },
+    "honeydew_per_aphid_colony_per_day": {
+      "value": 0.32,
+      "assumption": true,
+      "rationale": "ecological production per aphid colony with living host plants, independent of ant population"
+    },
+    "honeydew_per_scale_colony_per_day": {
+      "value": 0.4,
+      "assumption": true,
+      "rationale": "ecological production per scale-insect colony with living host plants, independent of ant population"
+    },
+    "honeydew_productivity_multiplier": {
+      "value": 1,
+      "assumption": true,
+      "rationale": "baseline physical productivity; single-variable sugar sensitivity test changes ONLY this input"
+    },
+    "hemipteran_colony_daily_growth_probability": {
+      "value": 0.012,
+      "assumption": true,
+      "rationale": "natural hemipteran colony reproduction game assumption; depends on living host"
+    },
+    "hemipteran_colony_daily_collapse_probability": {
+      "value": 0.006,
+      "assumption": true,
+      "rationale": "natural daily mortality/reproductive collapse of a colony, independent of ant demand"
+    },
+    "host_plant_daily_death_probability": {
+      "value": 0.0007,
+      "assumption": true,
+      "rationale": "garden host plant mortality; not reactive to colony demand"
+    },
+    "max_hemipteran_colonies_per_host": {
+      "value": 4,
+      "assumption": true,
+      "rationale": "physical carrying capacity per host plant, distinct from honeydew stored capacity"
+    },
+    "rain_honeydew_secretion_suppression_per_mm": {
+      "value": 0.018,
+      "assumption": true,
+      "rationale": "rain suppresses feeding/secretion production as ecological assumption"
+    },
+    "rival_honeydew_harvest_fraction_F04": {
+      "value": 0.22,
+      "assumption": true,
+      "rationale": "F04 background rival ants consume a fixed ecological share; independent of main colony shortage"
+    },
+    "insect_site_logistic_daily_birth_rate": {
+      "value": 0.065,
+      "assumption": true,
+      "rationale": "per-capita daily local insect birth chance scaled by available habitat capacity; assumption, not empirical rate"
+    },
+    "insect_boundary_logistic_daily_birth_rate": {
+      "value": 0.055,
+      "assumption": true,
+      "rationale": "self-renewal in the adjacent habitat, independent of colony demands"
+    },
+    "insect_boundary_carrying_capacity": {
+      "value": 80,
+      "assumption": true,
+      "rationale": "fixed ecological carrying capacity of neighboring habitat"
+    },
+    "insect_boundary_per_capita_daily_death_probability": {
+      "value": 0.02,
+      "assumption": true,
+      "rationale": "natural per-capita mortality of neighboring insects, no recoverable local carcass"
+    },
+    "insect_reproduction_reference_c": {
+      "value": 25,
+      "assumption": true,
+      "rationale": "synthetic mean air temperature reference for insect reproduction"
+    },
+    "insect_reproduction_per_degree_c": {
+      "value": 0.035,
+      "assumption": true,
+      "rationale": "game temperature sensitivity of insect reproduction per degree from reference"
+    },
+    "insect_reproduction_min_multiplier": {
+      "value": 0.15,
+      "assumption": true,
+      "rationale": "cold suppression floor for insect reproduction"
+    },
+    "insect_reproduction_max_multiplier": {
+      "value": 1.25,
+      "assumption": true,
+      "rationale": "warm ceiling for insect reproduction"
+    },
+    "insect_local_death_reference_population": {
+      "value": 12,
+      "assumption": true,
+      "rationale": "abundance used to scale existing 0.22 site mortality to current insect abundance"
+    }
+  },
+  "climate": {
+    "annual_rain_days": {
+      "value": 113.7,
+      "assumption": true,
+      "description": "基準資料引用，但在模型中用於雨日prior，非特定日期實測",
+      "reference_for_mechanism_only": [
+        "CWA 1991-2020"
+      ]
+    },
+    "wet_persistence": {
+      "value": 0.45,
+      "assumption": true,
+      "description": "延續前日雨天的Markov額外持續係數",
+      "reference_for_mechanism_only": []
+    },
+    "temperature_ar": {
+      "value": 0.65,
+      "assumption": true,
+      "description": "溫度距平日相關係數",
+      "reference_for_mechanism_only": []
+    },
+    "temperature_daily_sigma_c": {
+      "value": 1.8,
+      "assumption": true,
+      "description": "日溫距平創新標準差，假設",
+      "reference_for_mechanism_only": []
+    },
+    "rainfall_gamma_shape": {
+      "value": 1.6,
+      "assumption": true,
+      "description": "降雨Gamma形狀係數，假設",
+      "reference_for_mechanism_only": []
+    },
+    "nest_temp_memory": {
+      "value": 0.6,
+      "assumption": true,
+      "description": "巢內緩衝溫度，不當真實巢溫",
+      "reference_for_mechanism_only": []
+    },
+    "soil_daily_loss": {
+      "value": 0.025,
+      "assumption": true,
+      "description": "土壤日淨乾燥扣減，降低舊程式固定0.1",
+      "reference_for_mechanism_only": []
+    },
+    "soil_rain_gain_per_mm": {
+      "value": 0.045,
+      "assumption": true,
+      "description": "每mm雨增加的無量綱土壤記憶",
+      "reference_for_mechanism_only": []
+    },
+    "soil_persistence": {
+      "value": 0.93,
+      "assumption": true,
+      "description": "前日土壤記憶保留倍率",
+      "reference_for_mechanism_only": []
+    },
+    "soil_shade_daily_loss": {
+      "value": 0.013,
+      "assumption": true,
+      "description": "遮蔽土每日扣減",
+      "reference_for_mechanism_only": []
+    },
+    "soil_shade_persistence": {
+      "value": 0.96,
+      "assumption": true,
+      "description": "遮蔽土記憶保留倍率",
+      "reference_for_mechanism_only": []
+    },
+    "soil_shade_rain_gain_per_mm": {
+      "value": 0.025,
+      "assumption": true,
+      "description": "遮蔽土每mm雨額外記憶",
+      "reference_for_mechanism_only": []
+    }
+  },
+  "model": {
+    "scenario_seed": {
+      "value": 15032026,
+      "assumption": true,
+      "description": "不受Git SHA影響的固定遊戲情境種子",
+      "reference_for_mechanism_only": []
+    },
+    "unit_precision": {
+      "value": 6,
+      "assumption": true,
+      "description": "食物計算與存檔保留小數位數",
+      "reference_for_mechanism_only": []
+    },
+    "population_safety_cap_for_trial": {
+      "value": 200,
+      "assumption": true,
+      "description": "僅驗收用的膨脹上限；正式模擬不直接使用此限制",
+      "reference_for_mechanism_only": []
+    },
+    "min_workers_alive_for_trial": {
+      "value": 1,
+      "assumption": true,
+      "description": "30日驗收禁止無原因全巢滅亡；非遊戲免死設定",
+      "reference_for_mechanism_only": []
+    }
+  },
+  "foraging_physics": {
+    "route_edge_minutes": {
+      "value": 25,
+      "assumption": true,
+      "description": "路線圖每條邊單程步行分鐘，拓樸與距離皆遊戲假設；非實際花園量測",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "daily_window_minutes": {
+      "value": 360,
+      "assumption": true,
+      "description": "假設單日可用覓食時段360分鐘，不是個體實測",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "trail_daily_retention": {
+      "value": 0.55,
+      "assumption": true,
+      "description": "單一費洛蒙路徑每日殘留比例，數值假設；文獻僅支持揮發與強化方向",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "trail_deposit_per_success": {
+      "value": 0.35,
+      "assumption": true,
+      "description": "每次成功運回食物的路段費洛蒙增加量，數值假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "trail_min_detectable": {
+      "value": 0.08,
+      "assumption": true,
+      "description": "局部工蟻可察覺路段費洛蒙下限，數值假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "trail_max_strength": {
+      "value": 3,
+      "assumption": true,
+      "description": "路段訊號飽和上限，數值假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "crop_capacity": {
+      "value": 0.8,
+      "assumption": true,
+      "description": "小工蟻嗉囊可持有之遊戲份數上限，非物種實測",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "max_trophallaxis_contacts": {
+      "value": 3,
+      "assumption": true,
+      "description": "回巢每次最多交哺接觸同伴數，數值假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "transfer_max_portions": {
+      "value": 0.28,
+      "assumption": true,
+      "description": "每次交哺最多交付的遊戲糖份，數值假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "live_prey_encounter_probability": {
+      "value": 0.06,
+      "assumption": true,
+      "description": "單次抵達F07/F11活昆蟲遇見率，遊戲假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "large_prey_fraction": {
+      "value": 0.25,
+      "assumption": true,
+      "description": "遇見昆蟲屬大型獵物之假設比例，非實測",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "large_prey_min_team": {
+      "value": 2,
+      "assumption": true,
+      "description": "大型獵物需同位置至少兩隻工蟻，遊戲假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "live_prey_capture_probability": {
+      "value": 0.48,
+      "assumption": true,
+      "description": "符合條件後捕獲活昆蟲機率，遊戲假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "small_prey_protein": {
+      "value": 0.55,
+      "assumption": true,
+      "description": "小型獵物蛋白遊戲份，非實測質量",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "large_prey_protein": {
+      "value": 1.5,
+      "assumption": true,
+      "description": "大型獵物蛋白遊戲份，非實測質量",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "follow_intermediate_source_probability": {
+      "value": 0.55,
+      "assumption": true,
+      "description": "工蟻抵達有食物的路線交叉點時，若仍嗅到前方費洛蒙，繼續追蹤的機率；遊戲假設，非實測",
+      "reference_for_mechanism_only": [
+        "SaundFriedman2023"
+      ]
+    },
+    "repeat_trip_probability": {
+      "value": 0.5,
+      "assumption": true,
+      "description": "成功首趟後在時間允許時再試第二趟機率；遊戲假設，不是物種實測",
+      "reference_for_mechanism_only": []
+    }
+  },
+  "foraging_route_topology": {
+    "assumption": true,
+    "evidence_type": "遊戲假設 assumption: true",
+    "description": "N00-F01/F08/F07/F11/U00/U01、F01-F04、F04-F05、F08-F05、U01-F10的假設可步行路線；不是庭園地理量測。只作環境物理圖；工蟻須親自走路、聞相鄰費洛蒙或已知路線，不能讀取全圖。",
+    "edges": [
+      [
+        "N00",
+        "F01"
+      ],
+      [
+        "N00",
+        "F08"
+      ],
+      [
+        "N00",
+        "F07"
+      ],
+      [
+        "N00",
+        "F11"
+      ],
+      [
+        "N00",
+        "U00"
+      ],
+      [
+        "N00",
+        "U01"
+      ],
+      [
+        "F01",
+        "F04"
+      ],
+      [
+        "F04",
+        "F05"
+      ],
+      [
+        "F08",
+        "F05"
+      ],
+      [
+        "U01",
+        "F10"
+      ]
+    ]
+  }
+}

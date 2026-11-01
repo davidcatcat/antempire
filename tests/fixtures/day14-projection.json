@@ -1,0 +1,720 @@
+{
+  "schema": "antempire.engine-v2",
+  "sim_day": 14,
+  "calendar_date": "2026-11-13",
+  "next_worker_number": 18,
+  "next_egg_number": 6,
+  "next_larva_number": 3,
+  "next_pupa_number": 1,
+  "population": {
+    "queen_alive": true,
+    "workers": [
+      {
+        "id": "W004",
+        "alive": true,
+        "age_days": 7,
+        "age_origin": "Day15 game assumption: unknown legacy worker age",
+        "injured": false,
+        "task": "rest",
+        "known_sources": [],
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
+      },
+      {
+        "id": "W005",
+        "alive": true,
+        "age_days": 7,
+        "age_origin": "Day15 game assumption: unknown legacy worker age",
+        "injured": false,
+        "task": "rest",
+        "known_sources": [
+          "F01"
+        ],
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
+      },
+      {
+        "id": "W006",
+        "alive": true,
+        "age_days": 7,
+        "age_origin": "Day15 game assumption: unknown legacy worker age",
+        "injured": false,
+        "task": "rest",
+        "known_sources": [
+          "F11"
+        ],
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
+      },
+      {
+        "id": "W007",
+        "alive": true,
+        "age_days": 7,
+        "age_origin": "Day15 game assumption: unknown legacy worker age",
+        "injured": true,
+        "task": "rest",
+        "known_sources": [],
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
+      },
+      {
+        "id": "W008",
+        "alive": true,
+        "age_days": 7,
+        "age_origin": "Day15 game assumption: unknown legacy worker age",
+        "injured": true,
+        "task": "rest",
+        "known_sources": [],
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
+      },
+      {
+        "id": "W009",
+        "alive": true,
+        "age_days": 7,
+        "age_origin": "Day15 game assumption: unknown legacy worker age",
+        "injured": true,
+        "task": "rest",
+        "known_sources": [],
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
+      },
+      {
+        "id": "W010",
+        "alive": true,
+        "age_days": 7,
+        "age_origin": "Day15 game assumption: unknown legacy worker age",
+        "injured": false,
+        "task": "rest",
+        "known_sources": [],
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
+      },
+      {
+        "id": "W011",
+        "alive": true,
+        "age_days": 7,
+        "age_origin": "Day15 game assumption: unknown legacy worker age",
+        "injured": false,
+        "task": "rest",
+        "known_sources": [
+          "F07"
+        ],
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
+      },
+      {
+        "id": "W012",
+        "alive": true,
+        "age_days": 7,
+        "age_origin": "Day15 game assumption: unknown legacy worker age",
+        "injured": true,
+        "task": "rest",
+        "known_sources": [],
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
+      },
+      {
+        "id": "W013",
+        "alive": true,
+        "age_days": 7,
+        "age_origin": "Day15 game assumption: unknown legacy worker age",
+        "injured": true,
+        "task": "rest",
+        "known_sources": [],
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
+      },
+      {
+        "id": "W014",
+        "alive": true,
+        "age_days": 7,
+        "age_origin": "Day15 game assumption: unknown legacy worker age",
+        "injured": true,
+        "task": "rest",
+        "known_sources": [],
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
+      },
+      {
+        "id": "W015",
+        "alive": true,
+        "age_days": 7,
+        "age_origin": "Day15 game assumption: unknown legacy worker age",
+        "injured": false,
+        "task": "rest",
+        "known_sources": [
+          "U00"
+        ],
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
+      },
+      {
+        "id": "W016",
+        "alive": true,
+        "age_days": 7,
+        "age_origin": "Day15 game assumption: unknown legacy worker age",
+        "injured": false,
+        "task": "rest",
+        "known_sources": [
+          "U01"
+        ],
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
+      },
+      {
+        "id": "W017",
+        "alive": true,
+        "age_days": 7,
+        "age_origin": "Day15 game assumption: unknown legacy worker age",
+        "injured": false,
+        "task": "rest",
+        "known_sources": [
+          "F08"
+        ],
+        "last_location": "N00",
+        "local_sensory": {
+          "own_crop_sugar_fill": 0.55,
+          "peer_sugar_hunger": 0.4,
+          "peer_protein_request": 0.25,
+          "direct_brood_begging": 0,
+          "unload_feedback": {
+            "sugar": 0.5,
+            "protein": 0.5
+          },
+          "origin": "unknown prior individual encounter; neutral assumed"
+        }
+      }
+    ],
+    "brood": [
+      {
+        "id": "E001",
+        "stage": "egg",
+        "laid_on_day": 2,
+        "age_days": 12,
+        "progress": 0.999,
+        "origin": "Day14 explicit laid_on_sim_day; progress scenario at 25C"
+      },
+      {
+        "id": "E002",
+        "stage": "egg",
+        "laid_on_day": 8,
+        "age_days": 6,
+        "progress": 0.6,
+        "origin": "Day14 explicit laid_on_sim_day; progress scenario at 25C"
+      },
+      {
+        "id": "E003",
+        "stage": "egg",
+        "laid_on_day": 8,
+        "age_days": 6,
+        "progress": 0.6,
+        "origin": "Day14 explicit laid_on_sim_day; progress scenario at 25C"
+      },
+      {
+        "id": "E004",
+        "stage": "egg",
+        "laid_on_day": 9,
+        "age_days": 5,
+        "progress": 0.5,
+        "origin": "Day14 explicit laid_on_sim_day; progress scenario at 25C"
+      },
+      {
+        "id": "E005",
+        "stage": "egg",
+        "laid_on_day": 13,
+        "age_days": 1,
+        "progress": 0.1,
+        "origin": "Day14 explicit laid_on_sim_day; progress scenario at 25C"
+      },
+      {
+        "id": "L001",
+        "stage": "larva",
+        "laid_on_day": null,
+        "age_days": null,
+        "progress": 0.5,
+        "origin": "Day15 one-time migration assumed mid-stage unknown actual larval age",
+        "begging_signal": 0.25
+      },
+      {
+        "id": "L002",
+        "stage": "larva",
+        "laid_on_day": null,
+        "age_days": null,
+        "progress": 0.5,
+        "origin": "Day15 one-time migration assumed mid-stage unknown actual larval age",
+        "begging_signal": 0.25
+      }
+    ]
+  },
+  "colony": {
+    "sugar": 7.6,
+    "protein": 2.3,
+    "sugar_gap_days": 0,
+    "protein_gap_days": 0,
+    "stress_days": 0,
+    "queen_laid_yesterday": false
+  },
+  "climate": {
+    "monthly": [
+      {
+        "month": 1,
+        "mean_air_temperature_c": 17,
+        "mean_relative_humidity_percent": 74.4,
+        "mean_monthly_precipitation_mm": 36.6,
+        "mean_daily_maximum_air_temperature_c": 22.3,
+        "mean_daily_minimum_air_temperature_c": 13.4
+      },
+      {
+        "month": 2,
+        "mean_air_temperature_c": 17.7,
+        "mean_relative_humidity_percent": 75.2,
+        "mean_monthly_precipitation_mm": 63,
+        "mean_daily_maximum_air_temperature_c": 22.9,
+        "mean_daily_minimum_air_temperature_c": 14.2
+      },
+      {
+        "month": 3,
+        "mean_air_temperature_c": 20.1,
+        "mean_relative_humidity_percent": 74.6,
+        "mean_monthly_precipitation_mm": 86.9,
+        "mean_daily_maximum_air_temperature_c": 25.2,
+        "mean_daily_minimum_air_temperature_c": 16.4
+      },
+      {
+        "month": 4,
+        "mean_air_temperature_c": 23.5,
+        "mean_relative_humidity_percent": 75.1,
+        "mean_monthly_precipitation_mm": 126.8,
+        "mean_daily_maximum_air_temperature_c": 28.1,
+        "mean_daily_minimum_air_temperature_c": 20.1
+      },
+      {
+        "month": 5,
+        "mean_air_temperature_c": 26.4,
+        "mean_relative_humidity_percent": 75.7,
+        "mean_monthly_precipitation_mm": 249.6,
+        "mean_daily_maximum_air_temperature_c": 30.7,
+        "mean_daily_minimum_air_temperature_c": 23.1
+      },
+      {
+        "month": 6,
+        "mean_air_temperature_c": 28.1,
+        "mean_relative_humidity_percent": 76.2,
+        "mean_monthly_precipitation_mm": 329,
+        "mean_daily_maximum_air_temperature_c": 32.3,
+        "mean_daily_minimum_air_temperature_c": 24.9
+      },
+      {
+        "month": 7,
+        "mean_air_temperature_c": 28.9,
+        "mean_relative_humidity_percent": 74.9,
+        "mean_monthly_precipitation_mm": 303.3,
+        "mean_daily_maximum_air_temperature_c": 33.3,
+        "mean_daily_minimum_air_temperature_c": 25.5
+      },
+      {
+        "month": 8,
+        "mean_air_temperature_c": 28.4,
+        "mean_relative_humidity_percent": 77.4,
+        "mean_monthly_precipitation_mm": 340.8,
+        "mean_daily_maximum_air_temperature_c": 32.7,
+        "mean_daily_minimum_air_temperature_c": 25.3
+      },
+      {
+        "month": 9,
+        "mean_air_temperature_c": 27.8,
+        "mean_relative_humidity_percent": 74.3,
+        "mean_monthly_precipitation_mm": 147.5,
+        "mean_daily_maximum_air_temperature_c": 32.2,
+        "mean_daily_minimum_air_temperature_c": 24.6
+      },
+      {
+        "month": 10,
+        "mean_air_temperature_c": 25.5,
+        "mean_relative_humidity_percent": 70.8,
+        "mean_monthly_precipitation_mm": 25,
+        "mean_daily_maximum_air_temperature_c": 30.3,
+        "mean_daily_minimum_air_temperature_c": 22.2
+      },
+      {
+        "month": 11,
+        "mean_air_temperature_c": 22.6,
+        "mean_relative_humidity_percent": 72.4,
+        "mean_monthly_precipitation_mm": 23.8,
+        "mean_daily_maximum_air_temperature_c": 27.6,
+        "mean_daily_minimum_air_temperature_c": 19
+      },
+      {
+        "month": 12,
+        "mean_air_temperature_c": 18.7,
+        "mean_relative_humidity_percent": 72.6,
+        "mean_monthly_precipitation_mm": 30.5,
+        "mean_daily_maximum_air_temperature_c": 23.9,
+        "mean_daily_minimum_air_temperature_c": 15.1
+      }
+    ],
+    "rain_days_per_year": 113.7,
+    "prior_wet": true,
+    "temp_anomaly_c": -1.5239,
+    "prior_air_temp_c": 20.56,
+    "soil_index": 0.29,
+    "shade_index": 0.2412,
+    "daytime_temperature_note": "Day15+ daily maximum air temperature is a synthetic daytime FORAGING PROXY only, not measured soil-surface temperature; baseline CWA Taichung 1991–2020 normals."
+  },
+  "sources": {
+    "F01": {
+      "type": "honeydew",
+      "renewable": true,
+      "sugar": 0.55,
+      "protein": 0,
+      "capacity": 5.2,
+      "production_per_day": 0,
+      "known_by": [
+        "W005"
+      ],
+      "host_alive": true,
+      "recruits": [],
+      "id": "F01",
+      "presence": "confirmed_game_scenario",
+      "host_plants": 2,
+      "hemipteran_kind": "aphid",
+      "hemipteran_colonies": 4,
+      "ecology_origin": "Day15 habitat census game assumption; independent of ant appetite"
+    },
+    "F08": {
+      "type": "nectar",
+      "renewable": true,
+      "sugar": 0.18,
+      "protein": 0,
+      "capacity": 2.4,
+      "production_per_day": 0.35,
+      "bloom_days_left": 12,
+      "known_by": [
+        "W017"
+      ],
+      "recruits": [],
+      "id": "F08",
+      "presence": "confirmed_game_scenario",
+      "host_alive": true
+    },
+    "F07": {
+      "type": "carcass",
+      "renewable": false,
+      "sugar": 0,
+      "protein": 0.65,
+      "known_by": [
+        "W011"
+      ],
+      "recruits": [],
+      "batches": [
+        {
+          "event_id": "V2D11-E04",
+          "original_day": 11,
+          "protein": 0.6,
+          "origin": "Day11 carcass retained; amount game assumption"
+        },
+        {
+          "event_id": "V2D10-E04",
+          "original_day": 10,
+          "protein": 0.05,
+          "origin": "Day10 older residual; amount game assumption"
+        }
+      ],
+      "id": "F07",
+      "presence": "confirmed_game_scenario",
+      "host_alive": true
+    },
+    "F11": {
+      "type": "carcass",
+      "renewable": false,
+      "sugar": 0,
+      "protein": 0.07,
+      "known_by": [
+        "W006"
+      ],
+      "recruits": [],
+      "batches": [
+        {
+          "event_id": "V2D9-E04",
+          "original_day": 9,
+          "protein": 0.07,
+          "origin": "Day9 older residual; amount game assumption"
+        }
+      ],
+      "id": "F11",
+      "presence": "confirmed_game_scenario",
+      "host_alive": true
+    },
+    "F04": {
+      "id": "F04",
+      "type": "honeydew",
+      "presence": "potential",
+      "scenario_exists_probability": 0.65,
+      "host_alive": true,
+      "renewable": true,
+      "sugar": 0.75,
+      "protein": 0,
+      "capacity": 3,
+      "production_per_day": 0,
+      "known_by": [],
+      "recruits": [],
+      "origin": "Unconfirmed garden food source FXX already in Day14 world, actual site viability game scenario",
+      "access_from": [
+        "F01"
+      ],
+      "host_plants": 2,
+      "hemipteran_kind": "scale",
+      "hemipteran_colonies": 3,
+      "ecology_origin": "Day15 habitat census game assumption; independent of ant appetite"
+    },
+    "F05": {
+      "id": "F05",
+      "type": "honeydew",
+      "presence": "potential",
+      "scenario_exists_probability": 0.8,
+      "host_alive": true,
+      "renewable": true,
+      "sugar": 0.4,
+      "protein": 0,
+      "capacity": 2.8,
+      "production_per_day": 0,
+      "known_by": [],
+      "recruits": [],
+      "origin": "Unconfirmed garden food source FXX already in Day14 world, actual site viability game scenario",
+      "access_from": [
+        "F08",
+        "F04"
+      ],
+      "host_plants": 1,
+      "hemipteran_kind": "aphid",
+      "hemipteran_colonies": 2,
+      "ecology_origin": "Day15 habitat census game assumption; independent of ant appetite"
+    },
+    "F10": {
+      "id": "F10",
+      "type": "honeydew",
+      "presence": "potential",
+      "scenario_exists_probability": 0.7,
+      "host_alive": false,
+      "renewable": true,
+      "sugar": 0,
+      "protein": 0,
+      "capacity": 2.8,
+      "production_per_day": 0,
+      "known_by": [],
+      "recruits": [],
+      "origin": "Unconfirmed garden food source FXX already in Day14 world, actual site viability game scenario",
+      "access_from": [
+        "U01"
+      ],
+      "host_plants": 0,
+      "hemipteran_kind": "scale",
+      "hemipteran_colonies": 0,
+      "ecology_origin": "Day15 habitat census game assumption; independent of ant appetite"
+    }
+  },
+  "active_signals": [],
+  "seed": 15032026,
+  "migration_log": [
+    {
+      "type": "day15_v2_rules_only_preview",
+      "effective_day": 15,
+      "day14_read_only": true,
+      "egg_age_rule": "age_days=14-laid_on_sim_day; egg development progress capped below 1 until Day15 tick",
+      "larva_assumption": "L001/L002 original stage age unknown -> 0.5 larva stage progress",
+      "food_assumption": "sugar=7.6 protein=2.3 game portions, not derived by event-count conversion",
+      "notes": "Review fixture projected from authoritative Day14 state and qualitative food-source events; real migration script regenerates from main/world."
+    },
+    {
+      "type": "day15_ecological_census_fixture",
+      "day14_unmodified": true,
+      "host_counts": {
+        "F01": {
+          "host_plants": 2,
+          "hemipteran_kind": "aphid",
+          "hemipteran_colonies": 4
+        },
+        "F04": {
+          "host_plants": 2,
+          "hemipteran_kind": "scale",
+          "hemipteran_colonies": 3
+        },
+        "F05": {
+          "host_plants": 1,
+          "hemipteran_kind": "aphid",
+          "hemipteran_colonies": 2
+        },
+        "F10": {
+          "host_plants": 1,
+          "hemipteran_kind": "scale",
+          "hemipteran_colonies": 1
+        }
+      },
+      "stock_unchanged": true,
+      "provenance": "explicit one-time garden population assumptions independent of colony consumption"
+    },
+    {
+      "type": "post_v2_failed_trial_hidden_honeydew_census_disclosure",
+      "effective_day": 15,
+      "day14_unmodified": true,
+      "added_after_failed_v2_trial": true,
+      "sites": [
+        "F04",
+        "F05"
+      ],
+      "provenance": "F04/F05 hidden honeydew host plants and hemipteran colonies were added as a retroactive garden census only after the original v2 test failed; not confirmed Day1–14 observations",
+      "restrictions": "From Day15 onward fixed habitat definition and parameterization must never be altered in response to ant starvation, colony persistence, or review outcome; only autonomous ecological events may alter populations",
+      "world_definition_frozen_from_day15": true,
+      "assumption": true
+    }
+  ],
+  "ecology": {
+    "insects_by_site": {
+      "F07": {
+        "living": 12,
+        "cumulative_deaths": 0,
+        "origin": "baseline insect game assumption",
+        "carrying_capacity": 18
+      },
+      "F11": {
+        "living": 9,
+        "cumulative_deaths": 0,
+        "origin": "baseline insect game assumption",
+        "carrying_capacity": 18
+      }
+    },
+    "adjacent_garden_living_insects": 40,
+    "adjacent_garden_carrying_capacity": 80
+  }
+}
