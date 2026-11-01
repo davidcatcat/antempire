@@ -55,7 +55,7 @@
   },
   "foraging": {
     "worker_days": 939,
-    "daily_report": "reports/day15-134-daily.csv"
+    "daily_report": "reports/day15-134-v6-daily.csv"
   },
   "temperature": {
     "minimum": 12.891114,
