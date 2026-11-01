@@ -141,8 +141,15 @@ export function huntWindow(ctx: HuntContext, source: Source, arrivals: Arrival[]
     if (g() >= pr.live_prey_encounter_probability) continue;
     const large = g() < wp.prey.large_prey_fraction;
     const free = members.filter((m) => !engaged.has(m.worker.id));
-    // Short-range recruitment: every unengaged nestmate at the site in this window joins a large-prey hunt.
-    let team: Arrival[] = large ? [finder, ...free.filter((m) => m !== finder)] : [finder];
+    // Short-range recruitment: unengaged nestmates at the site in this window join a large-prey hunt, up to
+    // predation.large_prey_max_team (v2-review.10: space around the prey limits the team). When more are
+    // available, joiners are drawn at random; the others stay free to find prey of their own.
+    let team: Arrival[] = [finder];
+    if (large) {
+      const others = free.filter((m) => m !== finder), room = pr.large_prey_max_team - 1;
+      if (others.length <= room) team.push(...others);
+      else for (let i = 0; i < room; i++) team.push(others.splice(Math.floor(g() * others.length), 1)[0]);
+    }
     events.push({ type: 'live_prey_encounter', site: source.id, worker: finder.worker.id, minute, prey_size: large ? 'large' : 'small', co_located_team: free.map((m) => m.worker.id), assumption: true });
     let resolve = minute;
     const recruits: Arrival[] = [];
@@ -161,7 +168,7 @@ export function huntWindow(ctx: HuntContext, source: Source, arrivals: Arrival[]
       events.push({ type: 'long_range_recruitment_trail', worker: finder.worker.id, site: source.id, minute: minute + one, physical_route: finder.route, assumption: true });
       // Candidate followers in id order, so the result does not depend on how the population list is stored.
       const pool = colony.population.workers.filter((w) => w.last_location === nest && w.task !== 'forage' && w.task !== 'guard' && !w.recruited_today && w.age_days >= sp.task_allocation.newborn_nurse_days).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-      const n = pool.length ? 1 + Math.floor(g() * Math.min(pool.length, sp.recruitment.recruitment_max_followers)) : 0;
+      const n = Math.min(pool.length ? 1 + Math.floor(g() * Math.min(pool.length, sp.recruitment.recruitment_max_followers)) : 0, pr.large_prey_max_team - team.length);
       resolve = minute + 2 * one;
       if (!n) { escape('insufficient_team_no_recruits'); lock(() => 0, null); Object.assign(engaged.get(finder.worker.id) as Carry, { walked_home: true, home: minute }); continue; }
       travel(sp, wp, finder.worker, finder.route, events, 'hunt_recruit_lead', minute + one);

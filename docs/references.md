@@ -206,3 +206,10 @@
 | ID | 來源、研究物種與條件 | 允許引入的機制及不能做的外推 |
 |---|---|---|
 | R126 | Detrain & Deneubourg (1997), *Scavenging by Pheidole pallidula: a key for understanding decision-making systems in ants*. *Animal Behaviour* 53(3):537–547（DOI 10.1006/anbe.1996.0305，依圖書館書目紀錄）；**同屬 P. pallidula**，實驗室 | 工蟻以拖拉獵物時感受的**阻力**判斷獵物大小：小獵物個別搬運、招募弱；大獵物回巢途中留下較連續的路徑費洛蒙、招募強。只支持「大型獵物觸發長距路徑招募」的方向；招募強度、時間不可搬用到本種 |
+
+## 2026-11-01 合作捕獵的隊伍上限（R127，規則更新 v2-review.10）
+> 用途：決定一隻大型獵物最多由幾隻工蟻同時壓制、搬運。本種數字來自 R98／R107（Dejean et al. 2007，已讀全文）：獵物被「四肢拉開」時，每隻工蟻咬住一處附肢；最大的白蟻兵蟻由 **2～10 隻**工蟻共同搬回；多數白蟻工蟻與 *Nasutitermes* 兵蟻由單隻搬回，「少數兩隻」。
+
+| ID | 來源、研究物種與條件 | 允許引入的機制及不能做的外推 |
+|---|---|---|
+| R127 | Czaczkes & Ratnieks (2013), *Cooperative transport in ants (Hymenoptera: Formicidae) and elsewhere*. *Myrmecological News* 18:1–11. [PDF](https://www.zobodat.at/pdf/MyrmeNews_018_0001-0011.pdf)；**綜述**（含同屬 *P. oxyops*、*P. pallidula*、*P. crassinoda*） | 已讀全文。①搬運隻數常依物品大小調整，但不是由發現者的招募強度決定；②物品周圍可站立的空間限制搬運隻數（引 Moffett 1988，*Pheidologeton diversus*，未讀原文）；③搬運者越多速度越快，但只到某個程度。只支持「隊伍有上限」的機制方向；上限數值與獵物大小的關係不可搬用 |

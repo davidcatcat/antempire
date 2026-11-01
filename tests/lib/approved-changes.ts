@@ -17,7 +17,9 @@ function fileOf(bundle: ParamBundle, file: string): Any {
 
 /** Undo one approved parameter change: a tagged value (kind param) or a boolean model switch (kind param_switch). */
 export function revertChange(bundle: ParamBundle, c: ApprovedChange): void {
-  if (c.kind !== 'param' && c.kind !== 'param_switch') return; // param_removed / param_added: unused by the previous rules
+  // param_removed, and param_added without `from`: unused by the previous rules. A param_added WITH `from` is
+  // read by the engine; `from` is the value that reproduces the previous rules.
+  if (c.kind !== 'param' && c.kind !== 'param_switch' && !(c.kind === 'param_added' && c.from !== undefined)) return;
   const keys = (c.path as string).split('.'), last = keys.pop() as string;
   let parent = fileOf(bundle, c.file as string);
   for (const k of keys) parent = parent[k];
