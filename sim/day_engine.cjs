@@ -238,6 +238,11 @@ function developmentalDay(s,p,weather,ratios,events,summary){
  let survived=[];
  for(const b of s.population.brood){
   if(!b.alive && b.alive!==undefined)continue;
+  // Orphan brood care dependency is basic biology; exact day limits are GAME assumptions.
+  b.no_caretaker_days=s.population.workers.length===0?(b.no_caretaker_days||0)+1:0;
+  const orphanLimit=b.stage==='larva'?P(p,'starvation.unattended_larva_max_days'):b.stage==='egg'?P(p,'starvation.unattended_egg_max_days'):P(p,'starvation.unattended_pupa_max_days');
+  if(b.no_caretaker_days>=orphanLimit){events.push({type:'brood_death',id:b.id,stage:b.stage,reason:'unattended_brood_no_worker_care_game_assumption',max_unattended_days_assumption:orphanLimit});summary.brood_deaths++;continue;}
+  if(s.population.workers.length===0&&b.stage==='larva'){b.age_days=typeof b.age_days==='number'?b.age_days+1:null;survived.push(b);continue;}
   b.progress=round((b.progress||0)+factor/P(p,`development.${b.stage}_days`)*(b.stage==='larva'?Math.max(.1,Math.min(ratios.pFraction,ratios.sFraction)):1));
   b.age_days=typeof b.age_days==='number'?b.age_days+1:null;
   if(b.stage==='larva'&&s.colony.protein_gap_days>=P(p,'starvation.larva_mortality_starts_days')){
@@ -257,7 +262,7 @@ function developmentalDay(s,p,weather,ratios,events,summary){
  }
  s.population.brood=survived;summary.development_factor=round(factor);
 }
-function deathAndQueen(s,p,ratios,events,summary){
+function deathAndQueen(s,p,ratios,events,summary,weather){
  let alive=[];
  for(const w of s.population.workers){let g=dice(s,'adult_survival:'+w.id),natural=P(p,'starvation.worker_natural_daily_base_hazard');
   natural+=Math.max(0,w.age_days-P(p,'starvation.worker_age_risk_from_days'))*P(p,'starvation.worker_age_hazard_slope');
@@ -268,15 +273,19 @@ function deathAndQueen(s,p,ratios,events,summary){
   else{if(w.injured&&w.task==='rest'&&s.colony.stress_days===0&&g()<P(p,'workers.injury_repair_probability')){w.injured=false;events.push({type:'injury_recovery',id:w.id});}alive.push(w);}
  }
  s.population.workers=alive;
- const zeroWorkers=s.population.workers.length===0&&s.colony.stress_days>=P(p,'starvation.queen_zero_worker_hazard_after_days');
+ s.colony.no_worker_days=s.population.workers.length===0?(s.colony.no_worker_days||0)+1:0;const zeroWorkers=s.colony.no_worker_days>=P(p,'starvation.queen_zero_worker_hazard_after_days');
  const queenRisk=zeroWorkers?Math.max(P(p,'starvation.queen_daily_hazard'),P(p,'starvation.queen_zero_worker_starved_daily_hazard')):P(p,'starvation.queen_daily_hazard');
  if(s.population.queen_alive&&((s.colony.stress_days>=P(p,'starvation.queen_hazard_after_days'))||zeroWorkers)&&dice(s,'queen_survival')()<queenRisk){s.population.queen_alive=false;events.push({type:'queen_death',id:'Q001',reason:'prolonged_energy_or_protein_deficit_scenario'});}
  // Egg production after maintenance, conditional on both nutrition and available reserves for producing the egg.
  const broodCount=s.population.brood.length;const enough=ratios.sFraction>=P(p,'queen.adequate_nutrition_threshold')&&ratios.pFraction>=P(p,'queen.adequate_nutrition_threshold')&&s.colony.sugar>=P(p,'nutrition.egg_laying_sugar_cost')&&s.colony.protein>=P(p,'nutrition.egg_laying_protein_cost');
  const pause=s.colony.sugar_gap_days>=P(p,'starvation.queen_egg_pause_days')||s.colony.protein_gap_days>=P(p,'starvation.queen_egg_pause_days');
- const probability=clamp(P(p,'queen.base_laying_probability')*(s.colony.queen_laid_yesterday?P(p,'queen.previous_laying_penalty'):1)*(1-P(p,'queen.existing_brood_pressure')*broodCount),0,.9);
- const laid=s.population.queen_alive&&enough&&!pause&&dice(s,'oviposition')()<probability?1:0;
- if(laid){s.colony.sugar=round(s.colony.sugar-P(p,'nutrition.egg_laying_sugar_cost'));s.colony.protein=round(s.colony.protein-P(p,'nutrition.egg_laying_protein_cost'));let id=`E${String(s.next_egg_number++).padStart(3,'0')}`;
+ const layingTemp=round(clamp(Math.pow(P(p,'queen.laying_temperature_q10'),(weather.nest_temp_model_c-P(p,'queen.laying_reference_c'))/10),0,1));
+ summary.queen_laying_temperature_factor=layingTemp;
+ const probability=clamp(P(p,'queen.base_laying_probability')*layingTemp*(s.colony.queen_laid_yesterday?P(p,'queen.previous_laying_penalty'):1)*(1-P(p,'queen.existing_brood_pressure')*broodCount),0,.9);
+ const eggDice=dice(s,'oviposition');let laid=s.population.queen_alive&&s.population.workers.length>0&&enough&&!pause&&eggDice()<probability?1:0;
+ // Max two eggs/day, secondary conditional egg probability is a game assumption.
+ if(laid&&P(p,'queen.max_eggs_per_day')>=2&&eggDice()<P(p,'queen.second_egg_given_laying_probability')&&s.colony.sugar>=2*P(p,'nutrition.egg_laying_sugar_cost')&&s.colony.protein>=2*P(p,'nutrition.egg_laying_protein_cost'))laid=2;
+ for(let i=0;i<laid;i++){s.colony.sugar=round(s.colony.sugar-P(p,'nutrition.egg_laying_sugar_cost'));s.colony.protein=round(s.colony.protein-P(p,'nutrition.egg_laying_protein_cost'));let id=`E${String(s.next_egg_number++).padStart(3,'0')}`;
  s.population.brood.push({id,stage:'egg',laid_on_day:s.sim_day+1,age_days:0,progress:0,origin:'v2_scenario_laying'});events.push({type:'egg_laid',id,queen:'Q001',sugar_cost_portions:P(p,'nutrition.egg_laying_sugar_cost'),protein_cost_portions:P(p,'nutrition.egg_laying_protein_cost')});summary.eggs_laid++;
  }
  s.colony.queen_laid_yesterday=Boolean(laid);
