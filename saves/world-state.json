@@ -4190,9 +4190,9 @@
       "tending_events": [],
       "ladybird_contact_events": [],
       "plant_effect_events": [],
-      "coccineus_viridis_species_identification_at_sites": null,
       "source_productivity_event_ids": [],
-      "external_food_income_only_foraging_economy": true
+      "external_food_income_only_foraging_economy": true,
+      "coccus_viridis_species_identification_at_sites": null
     },
     "predation": {
       "new_live_prey_instances_since_activation": {},

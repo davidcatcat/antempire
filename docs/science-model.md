@@ -70,7 +70,7 @@
 **世界背景先行自主變化**：植物、蚜蟲與蜜露、昆蟲殘骸、蜘蛛、蟾蜍、異巢蟻與虛構人類活動可在無本巢工蟻時繼續；必須有前置物種／棲地／時間證據才抽事件，允許全天零重大事件。真實區域天氣不許抽籤偽造實測。U00僅W015走到外緣；X01–X04是未具體化的外圈候選區，不自動加食源／路線。未知速度與概率保持null。
 
 ## 2026-11-01 正式指定Pheidole megacephala（Day6起）
-本虛構蟻群物種已定為**熱帶大頭家蟻 Pheidole megacephala**，不再泛用「黑色地棲未知蟻」作研究基線；參照[species-pheidole-megacephala.md](species-pheidole-megacephala.md)、R93–R101。確認這個物種有minor／major雙態工蟻、雜食、特定雙費洛蒙招募及分食能力；單蟻后創巢可作本巢Q001×1的合理背景，儘管多蟻后殖群常見。**14隻既有工蟻個別major/minor仍null**；不得將過去守衛W010硬改兵蟻。生理量、卵生長等採R94的實驗**參考參數**而不是未知N00巢溫的硬倒數。
+本虛構蟻群物種已定為**熱帶大頭家蟻 Pheidole megacephala**，不再泛用「黑色地棲未知蟻」作研究基線；參照[species-pheidole-megacephala.md](species-pheidole-megacephala.md)、R93–R101。確認這個物種有minor／major雙態工蟻、雜食、費洛蒙招募與口對口分食能力（招募化學物質數量仍待分辨）；單蟻后創巢可作本巢Q001×1的合理背景，儘管多蟻后殖群常見。**14隻既有工蟻個別major/minor仍null**；不得將過去守衛W010硬改兵蟻。生理量、卵生長等採R94的實驗**參考參數**而不是未知N00巢溫的硬倒數。
 
 ## 2026-11-01 進階社會／生態完整整合（Day6起）
 新增[advanced-ecology-integration.md](advanced-ecology-integration.md)、[social-immunity-waste.md](social-immunity-waste.md)、[mutualism-predation.md](mutualism-predation.md)、[worker-activity-memory-traffic.md](worker-activity-memory-traffic.md)、[colony-networks-eco-cascades.md](colony-networks-eco-cascades.md)。涵蓋12項病原/衛生/共生/捕獵/休息/學習/群體競爭/幼體營養/道路/連鎖/交通/繁殖衝突。此為**跨模型因果規則**，不必每天出現每類事件。
