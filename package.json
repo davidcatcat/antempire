@@ -10,7 +10,6 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json && tsc -p engine/tsconfig.json",
     "test": "node tests/run-all.ts",
-    "test:known": "node tests/run-all.ts --known",
     "test:golden": "node tests/golden.test.ts",
     "test:naturalism": "node tests/naturalism.test.ts",
     "test:rest": "node tests/run-all.ts --except golden,naturalism",

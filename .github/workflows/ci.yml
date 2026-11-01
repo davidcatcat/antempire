@@ -28,25 +28,5 @@ jobs:
         run: npm run test:naturalism
       - name: Save conservation (saves/main.json + saves/world-state.json)
         run: npm run check:saves
-      - name: All other tests (params split, platform purity, foraging physics, migration, local ecology, scaling, multi-colony, differential vs sim/, advance on a temp copy)
+      - name: All other tests (params split, platform purity, foraging physics, migration, local ecology incl. orphan queen, scaling, multi-colony, differential vs sim/, advance on a temp copy)
         run: npm run test:rest
-
-  known-preexisting-failures:
-    name: known pre-existing failure (non-blocking, awaiting decision)
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - run: npm ci
-      - name: local-ecology orphan-queen assertion (fails on main since v2-review.5; see PR)
-        run: |
-          if node tests/local-ecology-orphan-queen.test.ts; then
-            echo "::notice::orphan-queen assertion now passes"
-          else
-            echo "::warning title=Known pre-existing failure::tests/local-ecology-orphan-queen.test.ts fails exactly as sim/test_local_ecology.cjs does on main (0 vs 0 queen deaths). Kept verbatim pending the player's decision."
-            exit 1
-          fi
