@@ -99,10 +99,13 @@ export function resolveSpecies(file: ParamFile) {
     recruitment: section(file, 'recruitment', ['recruitment_probability', 'recruitment_max_followers', 'trail_daily_retention', 'trail_deposit_per_success', 'trail_min_detectable', 'trail_max_strength', 'follow_intermediate_source_probability', 'trail_follow_max_hops'] as const),
     trophallaxis: section(file, 'trophallaxis', ['crop_capacity', 'max_trophallaxis_contacts', 'transfer_max_portions'] as const),
     predation: {
-      ...section(file, 'predation', ['live_prey_encounter_probability', 'large_prey_min_team', 'live_prey_capture_probability', 'large_prey_escape_while_recruiting_probability'] as const),
+      ...section(file, 'predation', ['live_prey_encounter_probability', 'large_prey_min_team', 'live_prey_capture_probability', 'large_prey_escape_while_recruiting_probability', 'large_prey_max_team'] as const),
       simultaneous_site_group_hunting: bool(file, 'predation.simultaneous_site_group_hunting'),
     },
   };
+  if (!Number.isInteger(p.predation.large_prey_max_team) || p.predation.large_prey_max_team < p.predation.large_prey_min_team) {
+    throw Error(`Species ${p.species_id}: predation.large_prey_max_team must be an integer >= large_prey_min_team`);
+  }
   if (p.castes.major_worker_production_enabled) {
     throw Error(`Species ${p.species_id}: castes.major_worker_production_enabled=true is not implemented by this engine`);
   }

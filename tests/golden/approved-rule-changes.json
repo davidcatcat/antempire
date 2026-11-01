@@ -57,6 +57,16 @@
       "path": "predation.large_prey_escape_while_recruiting_probability",
       "to": 0.5,
       "note": "read only when simultaneous_site_group_hunting is true"
+    },
+    {
+      "rules_version": "antempire.v2-review.10-hunt-team-cap",
+      "approved_in": "owner request 2026-11-01 (#15 decision 1)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "predation.large_prey_max_team",
+      "from": 1000000000,
+      "to": 10,
+      "note": "from = no effective cap (v2-review.9 behaviour: every free co-located worker joins); used for the isolation proof"
     }
   ]
 }

@@ -1423,6 +1423,23 @@
         "approved_in": "#10"
       }
     },
+    "large_prey_max_team": {
+      "value": 10,
+      "assumption": true,
+      "description": "一隻大型獵物最多由幾隻工蟻同時壓制、搬運（含發現者）；超過時其餘到場工蟻不加入，可各自尋找獵物。v2-review.10 新增",
+      "reference_for_mechanism_only": [
+        "Dejean2007",
+        "CzaczkesRatnieks2013"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制：文獻支持。本種 Dejean et al. 2007（R98／R107）以『四肢拉開』壓制大型獵物，每隻工蟻咬住一處附肢；最大的白蟻兵蟻由 2～10 隻工蟻共同搬回。Czaczkes & Ratnieks 2013（R127，綜述）：搬運隻數隨物品大小調整，物品周圍可站立的空間限制搬運隻數（引 Moffett 1988），且搬運者多到某個程度後速度不再增加。數值：取本種觀察範圍的上限 10；原文只針對最大的白蟻兵蟻，本遊戲的『大型獵物』沒有對應的體型，也沒有依獵物大小調整上限，因此標為遊戲假設。未依模擬結果調整。",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.10-hunt-team-cap",
+        "approved_in": "owner request 2026-11-01 (#15 decision 1)"
+      }
+    },
     "simultaneous_site_group_hunting": true,
     "simultaneous_site_group_hunting_note": "模型開關（v2-review.9，#10 核准）：true＝同一地點、同一分鐘抵達的工蟻組成一個捕獵時間窗，一起處理遭遇、短距／長距招募與共同搬運，每隻工蟻同一時間窗只參與一次捕獵；false＝v2-review.8 以前的逐一處理模型（只供隔離證明 tests/rules-isolation.test.ts 使用）。改變此開關屬於規則更新。"
   }

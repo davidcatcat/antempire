@@ -10,7 +10,10 @@
  *  5. joint retrieval conserves the captured prey exactly and every carried portion traces to its HUNT batch;
  *  6. whole-day level: reversing the colony's worker order leaves every hunt identical; multi-day run keeps
  *     the lock and the time consistency on every day;
- *  7. a leftover carcass is taken first; only workers left empty-handed then hunt, as one window.
+ *  7. a leftover carcass is taken first; only workers left empty-handed then hunt, as one window;
+ *  8. v2-review.10 team cap (predation.large_prey_max_team): teams never exceed it, joiners are drawn at
+ *     random but independent of arrival order, workers left out can hunt their own prey, long-range
+ *     recruitment stops at the cap, and a cap below large_prey_min_team is rejected.
  */
 import assert from 'node:assert/strict';
 import { huntWindow, simulateDay, routeTo, legacyView, legacyColonyMeta, resolveBundle, type Arrival, type HuntContext, type LegacyV2State, type SimEvent, type Worker } from '../engine/index.ts';
@@ -19,13 +22,14 @@ import { bundle, counter, fixture, MAIN_SPECIES, setParam } from './lib/harness.
 const c = counter(), { ok } = c;
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 const SITE = 'F07';
-const forced = (o: { encounter?: number; large?: number; capture?: number; escape?: number; team?: number }) => {
+const forced = (o: { encounter?: number; large?: number; capture?: number; escape?: number; team?: number; cap?: number }) => {
   const b = bundle();
   setParam(b, MAIN_SPECIES, 'predation.live_prey_encounter_probability', o.encounter ?? 1);
   setParam(b, 'world', 'prey.large_prey_fraction', o.large ?? 1);
   setParam(b, MAIN_SPECIES, 'predation.live_prey_capture_probability', o.capture ?? 1);
   setParam(b, MAIN_SPECIES, 'predation.large_prey_escape_while_recruiting_probability', o.escape ?? 0);
   if (o.team !== undefined) setParam(b, MAIN_SPECIES, 'predation.large_prey_min_team', o.team);
+  if (o.cap !== undefined) setParam(b, MAIN_SPECIES, 'predation.large_prey_max_team', o.cap);
   return b;
 };
 const worker = (id: string, at: string, task = 'forage'): Worker => ({ id, last_location: at, known_sources: [SITE], crop_cargo_sugar: 0, age_days: 20, injured: false, task });
@@ -171,5 +175,25 @@ let hunts = 0, recruitHunts = 0;
   const first = ev.find((e) => e.type === 'insect_predation') as Any;
   ok(took.length === 1 && first && !first.team.includes(took[0]), 'the worker who took the leftover carcass is not counted in the hunt of the same window');
   ok(first.team.length >= 2 && first.minute === Math.min(...ev.filter((e) => e.type === 'route_step' && e.to === SITE).map((e) => e.minute as number)), 'the empty-handed workers hunt together in the same window');
+}
+// 8. team cap
+{
+  const ids = Array.from({ length: 15 }, (_, i) => 'K' + String(i).padStart(2, '0'));
+  const cap = run(forced({}), ids), t = teams(cap.events), max = cap.sp.predation.large_prey_max_team;
+  ok(max === 10, 'game parameter large_prey_max_team = 10 (upper end of the 2-10 retrieving workers in Dejean 2007)');
+  ok(t.length >= 2 && t.every((x) => x.length <= max) && t[0].length === max, '15 workers at one large prey: first team is capped at 10, the rest form their own hunt');
+  const all = t.flat(); ok(new Set(all).size === all.length, 'capped teams never share a worker');
+  ok(shape(run(forced({}), ids, [], (a) => [...a].reverse())) === shape(cap), 'random choice of joiners is independent of arrival order');
+  const two = run(forced({ cap: 2 }), ['H0', 'H1', 'H2']);
+  const inTeam = new Set(teams(two.events).flat()), left = ['H0', 'H1', 'H2'].filter((id) => !inTeam.has(id));
+  ok(teams(two.events).length === 1 && teams(two.events)[0].length === 2 && left.length === 1, 'cap = 2: two workers take the prey, one is left out');
+  ok(two.events.some((e) => e.type === 'live_prey_encounter' && e.worker === left[0]), 'the worker left out is free to encounter prey of its own in the same window');
+  const lr = run(forced({ cap: 2 }), ['H0'], ['N1', 'N2', 'N3']);
+  ok(lr.events.filter((e) => e.type === 'hunt_recruitment').length <= 1 && teams(lr.events).every((x) => x.length <= 2), 'long-range recruitment stops at the cap');
+  const bad = bundle(); setParam(bad, MAIN_SPECIES, 'predation.large_prey_max_team', 1);
+  assert.throws(() => resolveBundle(bad), /large_prey_max_team/);
+  const frac = bundle(); setParam(frac, MAIN_SPECIES, 'predation.large_prey_max_team', 2.5);
+  assert.throws(() => resolveBundle(frac), /large_prey_max_team/);
+  ok(true, 'a cap below large_prey_min_team or a non-integer cap is rejected');
 }
 console.log(JSON.stringify({ passed: true, checks: c.checks, baseline_120d_hunts: hunts, baseline_120d_hunt_recruitments: recruitHunts }, null, 2));

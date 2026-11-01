@@ -22,8 +22,9 @@ import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from '
  *   v2-review.8  injured workers: neutral task weights, forage ×1.0 and rest ×1.0 (#13)
  *   v2-review.9  simultaneous site-window hunting: order-independent teams, participation lock, short/long-range
  *                recruitment for large prey, joint retrieval (#10; species switch predation.simultaneous_site_group_hunting)
+ *   v2-review.10 large-prey team cap predation.large_prey_max_team = 10 (owner request, #15 decision 1)
  */
-export const ENGINE_VERSION = 'antempire.v2-review.9-simultaneous-site-hunting';
+export const ENGINE_VERSION = 'antempire.v2-review.10-hunt-team-cap';
 /** Implementation of that behaviour (bumped for refactors that keep results byte-identical). */
 export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
 /** The v2 engine only applies to states at or after the completed Day14 checkpoint. */
