@@ -49,3 +49,26 @@
 
 **可靠性標籤**：論文提供物種限定的實驗證據／一般方向；此遊戲未知的各蟻體重、嗉囊容量、巢內溫濕度、養分mg、日能耗、傷病／飢餓死亡率**仍一律null**。
 
+## 2026-11-01 新增：螞蟻訊號傳遞研究 R32–R48
+> [完整通訊模擬規則](ant-communication.md)。**高可信度**指研究物種內機制，**低／待校準**指未知花園蟻是否具該器官、媒介、費洛蒙種類、濃度與衰退速率。部分項目為綜述，不能當原始實驗。
+
+| ID | 經查證文獻／網址 | 對模型的實際支撐與外推限制 |
+|---|---|---|
+| R32 | Czaczkes, Grüter & Ratnieks (2015), *Trail Pheromones: An Integrative View of Their Role in Social Insect Colony Organization*. [Annual Review](https://doi.org/10.1146/annurev-ento-010814-020627) | 綜述：路徑訊號、記憶、正負回饋；**不能說所有螞蟻都用化學路徑**。 |
+| R33 | Czaczkes et al. (2013), *Ant foraging on complex trails: route learning and the role of trail pheromones in Lasius niger*. [PubMed](https://pubmed.ncbi.nlm.nih.gov/22972897/), DOI 10.1242/jeb.076570 | Lasius niger實驗：路線學習與氣味相互作用、釋放負回饋；實驗錯誤率不直接套用。 |
+| R34 | Czaczkes et al. (2013), *Negative feedback in ants: crowding results in less trail pheromone deposition*. [PubMed](https://pubmed.ncbi.nlm.nih.gov/23365196/) | Lasius niger擁擠使沉積訊號減少；不設未知物種的固定擁擠閾值。 |
+| R35 | van Oudenhove et al. (2011), *Temperature limits trail following behaviour through pheromone decay in ants*. [PubMed](https://pubmed.ncbi.nlm.nih.gov/22038287/), DOI 10.1007/s00114-011-0852-6 | Tapinoma nigerrimum 的溫度與路線衰減；不拿臺中市預報氣溫當土表實測。 |
+| R36 | van Oudenhove et al. (2012), *Substrate temperature constrains recruitment and trail following behavior in ants*. [PubMed](https://pubmed.ncbi.nlm.nih.gov/22573108/), DOI 10.1007/s10886-012-0130-x | Tapinoma與Aphaenogaster訊號熱穩定不同；半衰期不可跨種硬套。 |
+| R37 | Pinter-Wollman et al. (2013), *Harvester ants use interactions to regulate forager activation and availability*. [Animal Behaviour](https://doi.org/10.1016/j.anbehav.2013.05.012) | Pogonomyrmex barbatus回巢／待出巢接觸調控；無須使用路徑費洛蒙。 |
+| R38 | (2017), *Effect of Interactions between Harvester Ants on Forager Decisions*. [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC5531068/) | 收穫蟻個體出勤與觸角接觸統計研究；並非向所有工蟻全圖傳訊。 |
+| R39 | Neupert et al. (2018), *Learning Distinct Chemical Labels of Nestmates in Ants*. [PubMed](https://pubmed.ncbi.nlm.nih.gov/30210320/), DOI 10.3389/fnbeh.2018.00191 | Camponotus floridanus 體表碳氫化合物與多樣化同巢標籤學習。 |
+| R40 | (2009), *The scent of supercolonies: the discovery, synthesis and behavioural verification of ant colony recognition cues*. [PubMed](https://pubmed.ncbi.nlm.nih.gov/19863781/) | Linepithema humile 化學辨識標籤與攻擊行為；不套特定化合物。 |
+| R41 | Hart et al. (2023), *Sparse and stereotyped encoding implicates a core glomerulus for ant alarm behavior*. [PubMed](https://pubmed.ncbi.nlm.nih.gov/37321218/), DOI 10.1016/j.cell.2023.05.025 | Ooceraea biroi 警報費洛蒙嗅覺處理，物種限定，不能替本蟻設定腦神經閾值。 |
+| R42 | Lopes et al. (2023), *The Alarm Pheromone and Alarm Response of the Clonal Raider Ant*. [Journal of Chemical Ecology](https://doi.org/10.1007/s10886-023-01407-4) | Ooceraea biroi 的警戒反應可隨化學配方與濃度轉向／離開；**不等於聞警報就攻擊**。 |
+| R43 | (2017), *Social transmission of information about a mutualist via trophallaxis in ant colonies*. [PubMed](https://pubmed.ncbi.nlm.nih.gov/28855369/) | Tetramorium tsushimae研究：口對口交換可能傳遞辨識蚜蟲的社會資訊；未知蟻種不強制啟用。 |
+| R44 | LeBoeuf et al. (2016), *Oral transfer of chemical cues, growth proteins and hormones in social insects*. [eLife](https://elifesciences.org/articles/20375), DOI 10.7554/eLife.20375 | Camponotus floridanus 口對口轉移含化學與生長相關物質；不對本蟻推定激素、生長效應。 |
+| R45 | Markl (1965), *Stridulation in Leaf-Cutting Ants*. [PubMed](https://pubmed.ncbi.nlm.nih.gov/17741924/), DOI 10.1126/science.149.3690.1392 | 特定Atta切葉蟻透過基材傳遞受困訊號；非全蟻種通用「聲音求救」。 |
+| R46 | (2021), *Ants modulate stridulatory signals depending on the behavioural context*. [Scientific Reports](https://doi.org/10.1038/s41598-021-84925-z) | Crematogaster scutellaris 不同情境、蜂蜜量的摩擦震動有區別；未鑑種不啟用該發聲器官。 |
+| R47 | (2017), *Directional vibration sensing in the leafcutter ant Atta sexdens*. [PubMed](https://pubmed.ncbi.nlm.nih.gov/29247049/), DOI 10.1242/bio.029587 | Atta sexdens 感知基材震動方向，可能與化學訊號互動，屬物種特定能力。 |
+| R48 | (2020), *Interspecific Eavesdropping on Ant Chemical Communication*. [Frontiers](https://www.frontiersin.org/journals/ecology-and-evolution/articles/10.3389/fevo.2020.00024/full) | 綜述：異物種可能利用他蟻氣味，但**不得**預設他蟻能讀懂本巢所有訊號。 |
+

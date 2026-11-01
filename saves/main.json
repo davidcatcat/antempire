@@ -1833,7 +1833,13 @@
     "foraging_rules_effective_sim_day": 6,
     "foraging_research_updated_at_local": "2026-11-01",
     "foraging_model_status": "literature_backed_mechanisms_uncalibrated_unknown_species",
-    "foraging_research_does_not_advance_time": true
+    "foraging_research_does_not_advance_time": true,
+    "communication_rules_ref": "docs/ant-communication.md",
+    "communication_state_ref": "saves/world-state.json#/communication_system",
+    "communication_rules_effective_sim_day": 6,
+    "communication_research_updated_at_local": "2026-11-01",
+    "communication_model_status": "literature_grounded_multichannel_local_inference_not_species_calibrated",
+    "communication_research_does_not_advance_time": true
   },
   "migration_log": [
     {
