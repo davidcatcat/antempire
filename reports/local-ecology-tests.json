@@ -1,5 +1,5 @@
 {
-  "passed": 130,
+  "passed": 142,
   "orphan_queen_trial_count": 160,
   "queen_deaths_when_starved_and_workerless": 39,
   "queen_deaths_without_added_orphan_hazard": 1,
