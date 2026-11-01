@@ -40,8 +40,9 @@ export function checkSaves(main: Any, world: Any): Check[] {
   const bids = main.colony.brood.individuals.map((x: Any) => x.id);
   add('brood: IDs unique and distinct from workers', new Set(bids).size === bids.length && !bids.some((id: string) => ids.includes(id)));
   if (sl?.brood_before && sl?.brood_after && sl?.flux) {
-    const before = (sl.brood_before.eggs ?? 0) + (sl.brood_before.larvae ?? 0) + (sl.brood_before.prepupae ?? 0) + (sl.brood_before.pupae ?? 0);
-    const after = (sl.brood_after.eggs ?? 0) + (sl.brood_after.larvae ?? 0) + (sl.brood_after.prepupae ?? 0) + (sl.brood_after.pupae ?? 0);
+    // Day≤14 ledgers store per-stage objects; the v6 save mapping (Day15+) stores brood_before as a total.
+    const total = (x: Any) => typeof x === 'number' ? x : (x.eggs ?? 0) + (x.larvae ?? 0) + (x.prepupae ?? 0) + (x.pupae ?? 0);
+    const before = total(sl.brood_before), after = total(sl.brood_after);
     add('brood: stage ledger after = before + laid − eclosed − deaths', after === before + sl.flux.eggs_laid - sl.flux.pupae_eclosed - sl.flux.brood_deaths, { before, after, flux: sl.flux });
   }
 
