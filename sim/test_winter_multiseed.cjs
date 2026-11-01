@@ -59,7 +59,7 @@ for(const seed of seeds){
    air_mean_c:x.weather.air_temp_c,daytime_max_air_c:x.weather.daytime_air_temp_c,air_min_c:x.weather.daily_min_air_temp_c,nest_temp_c:x.weather.nest_temp_model_c,
    expected_air_normal_c:round(normalAt(x.date,'mean_air_temperature_c')),temperature_residual_c:round(x.weather.air_temp_c-normalAt(x.date,'mean_air_temperature_c')),
    foraging_factor:foragingTemperatureFactor(params,x.weather.daytime_air_temp_c),metabolic_factor:x.metabolic_factor,laying_temp_factor:x.queen_laying_temperature_factor,
-   foragers:x.tasks.forage,foragers_sugar:x.foraging_workers_by_macro.sugar,foragers_protein:x.foraging_workers_by_macro.protein,
+   foragers:x.tasks.forage,foraging_fraction_per_available_worker:round(x.workers_before>0?x.tasks.forage/x.workers_before:0),queen_laying_probability:x.queen_laying_probability_applied,foragers_sugar:x.foraging_workers_by_macro.sugar,foragers_protein:x.foraging_workers_by_macro.protein,
    sugar_income:x.income.sugar,sugar_consumed:x.consumed.sugar,sugar_demand:x.demand.sugar,sugar_fraction:round(x.ratios.sFraction),sugar_store:x.stock.sugar,
    protein_income:x.income.protein,protein_consumed:x.consumed.protein,protein_demand:x.demand.protein,protein_fraction:round(x.ratios.pFraction),protein_store:x.stock.protein,
    eggs_laid:x.eggs_laid,worker_deaths:x.worker_deaths,starvation_linked_worker_deaths:o.events.filter(e=>e.type==='worker_death'&&e.reason.includes('starvation')).length,
@@ -72,7 +72,7 @@ for(const seed of seeds){
   const a=records.slice(start,start+7),last=a.at(-1);
   weekly.push({seed,week:Math.floor(start/7)+1,start_day:a[0].day,end_day:last.day,from:a[0].date,to:last.date,queen:last.queen,workers:last.workers,eggs:last.eggs,larvae:last.larvae,pupae:last.pupae,
    mean_daytime_max_air_c:avg(a,'daytime_max_air_c'),mean_air_temperature_c:avg(a,'air_mean_c'),mean_nest_temperature_c:avg(a,'nest_temp_c'),mean_metabolic_factor:avg(a,'metabolic_factor'),
-   mean_daily_foragers:avg(a,'foragers'),foraging_worker_days:sum(a,'foragers'),eggs_laid:sum(a,'eggs_laid'),
+   mean_daily_foragers:avg(a,'foragers'),mean_worker_foraging_fraction:avg(a,'foraging_fraction_per_available_worker'),mean_queen_laying_probability:avg(a,'queen_laying_probability'),foraging_worker_days:sum(a,'foragers'),eggs_laid:sum(a,'eggs_laid'),
    sugar_income:round(sum(a,'sugar_income')),sugar_consumed:round(sum(a,'sugar_consumed')),mean_daily_sugar_consumed:avg(a,'sugar_consumed'),sugar_balance:round(sum(a,'sugar_income')-sum(a,'sugar_consumed')),sugar_store:last.sugar_store,
    protein_income:round(sum(a,'protein_income')),protein_consumed:round(sum(a,'protein_consumed')),mean_daily_protein_consumed:avg(a,'protein_consumed'),protein_balance:round(sum(a,'protein_income')-sum(a,'protein_consumed')),protein_store:last.protein_store,
    insects_F07:last.insects_F07,insects_F11:last.insects_F11,insects_adjacent:last.insects_adjacent,insect_births:sum(a,'insect_births'),insect_deaths:sum(a,'insect_deaths')});
@@ -100,7 +100,7 @@ for(const seed of seeds){
  }
 }
 const winter=seedResults.filter(x=>x.winter_extinct),allExtinct=seedResults.filter(x=>x.first_extinct_day!==null);
-const monthly=[];for(const month of [...new Set(daily.map(d=>d.month))].sort()){const rows=daily.filter(d=>d.month===month),alive=rows.filter(d=>d.queen>0);monthly.push({month,mean_air_c:avg(rows,'air_mean_c'),mean_daytime_air_c:avg(rows,'daytime_max_air_c'),mean_normal_c:avg(rows,'expected_air_normal_c'),mean_residual_c:avg(rows,'temperature_residual_c'),mean_daily_foragers_all_seeds:avg(rows,'foragers'),mean_daily_foragers_colonies_queen_alive:avg(alive,'foragers'),mean_daily_eggs_all_seeds:avg(rows,'eggs_laid'),mean_daily_eggs_queen_alive:avg(alive,'eggs_laid'),queen_alive_day_count:alive.length});}
+const monthly=[];for(const month of [...new Set(daily.map(d=>d.month))].sort()){const rows=daily.filter(d=>d.month===month),alive=rows.filter(d=>d.queen>0);monthly.push({month,mean_air_c:avg(rows,'air_mean_c'),mean_daytime_air_c:avg(rows,'daytime_max_air_c'),mean_normal_c:avg(rows,'expected_air_normal_c'),mean_residual_c:avg(rows,'temperature_residual_c'),mean_daily_foragers_all_seeds:avg(rows,'foragers'),mean_daily_foragers_colonies_queen_alive:avg(alive,'foragers'),mean_per_worker_foraging_fraction:avg(alive,'foraging_fraction_per_available_worker'),mean_laying_probability:avg(alive,'queen_laying_probability'),mean_daily_eggs_all_seeds:avg(rows,'eggs_laid'),mean_daily_eggs_queen_alive:avg(alive,'eggs_laid'),queen_alive_day_count:alive.length});}
 const report={schema:'antempire.winter.v5.multiseed',range:'Day15-134 2026-11-14 through 2027-03-13',official_day14_advanced:false,pr_merged:false,seeds,seed_count:seeds.length,
  assumptions:true,evidence_policy:'Q10=2.0 physiology reference is assumption; CWA normals measured station means; synthetic daily max air is proxy, NOT surface measurement; queen Q10 and unattended days are game assumptions.',
  winter_extinct_count:winter.length,winter_extinct_ratio:round(winter.length/seeds.length),extinct_by_Day134_count:allExtinct.length,

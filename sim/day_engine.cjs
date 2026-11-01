@@ -289,7 +289,7 @@ function deathAndQueen(s,p,ratios,events,summary,weather){
  s.population.brood.push({id,stage:'egg',laid_on_day:s.sim_day+1,age_days:0,progress:0,origin:'v2_scenario_laying'});events.push({type:'egg_laid',id,queen:'Q001',sugar_cost_portions:P(p,'nutrition.egg_laying_sugar_cost'),protein_cost_portions:P(p,'nutrition.egg_laying_protein_cost')});summary.eggs_laid++;
  }
  s.colony.queen_laid_yesterday=Boolean(laid);
- summary.queen_laying_probability_applied=s.population.queen_alive&&enough&&!pause?round(probability):0;
+ summary.queen_laying_probability_applied=s.population.queen_alive&&s.population.workers.length>0&&enough&&!pause?round(probability):0;
 }
 function validateState(s){if(!Number.isInteger(s.sim_day)||s.sim_day<14||!s.population?.workers||!s.population?.brood||!s.sources||!s.colony)throw Error('invalid engine v2 state');
  if(!s.ecology?.insects_by_site || !Number.isInteger(s.ecology.adjacent_garden_living_insects)||s.ecology.adjacent_garden_living_insects<0)throw Error('NO_GOD_MODE: missing causal ecology/local cues or finite neighbor insect population');
