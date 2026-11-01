@@ -15,8 +15,11 @@ import { oviposition, queenSurvival, workerSurvival } from './queen.ts';
 import { resolveBundle, type ParamBundle, type ResolvedParams, type SpeciesParams } from './params.ts';
 import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from './types.ts';
 
-/** Behaviour version: unchanged from v6 because the TypeScript port is output-identical. */
-export const ENGINE_VERSION = 'antempire.v2-review.6-physical-foraging-pheromone-trophallaxis';
+/**
+ * Behaviour version. v2-review.7 = v6 physical foraging + nest-temperature memory fix (rules update,
+ * effective from the next game day). Any change of simulation output must bump this.
+ */
+export const ENGINE_VERSION = 'antempire.v2-review.7-nest-temperature-memory';
 /** Implementation of that behaviour (bumped for refactors that keep results byte-identical). */
 export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
 /** The v2 engine only applies to states at or after the completed Day14 checkpoint. */

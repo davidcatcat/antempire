@@ -1,6 +1,6 @@
 # TypeScript 引擎架構（engine-ts.1）
 
-> 本文件說明 2026-11 的程式改寫。**行為完全不變**：引擎行為版本仍是 `antempire.v2-review.6-physical-foraging-pheromone-trophallaxis`，所有輸出與 `sim/day_engine.cjs` 逐位元組相同（見「驗證」）。沒有修改任何參數數值或生態規則，沒有推進遊戲日。
+> 本文件說明 2026-11 的程式改寫。TypeScript 移植本身**行為完全不變**：移植時的輸出與 `sim/day_engine.cjs`（v2-review.6）逐位元組相同。之後的**規則更新 v2-review.7**（巢溫記憶修正，見 `docs/gm-rules.md`）是唯一刻意的行為改變，`tests/differential.test.ts` 證明它只改了這一件事。
 
 ## 1. 目錄
 
@@ -64,10 +64,11 @@ F03、F04 的陌生蟻群目前在 `world/xitun-garden.json#background_colonies`
 
 | 測試 | 內容 |
 |---|---|
-| `tests/golden.test.ts` | ① 以新引擎重新產生 `reports/day15-134-v6-20seeds-{daily,weekly}.csv`、`-analysis.json` 與單一種子 `day15-134-v6-*`，**逐位元組**比對；② 28 個情境（20 種子 × 120 日、斷糧、增糖、豐食、孤兒幼蟲、無工蟻蟻后、高探索、100／1000 工蟻）完整每日輸出（summary＋events＋state）的雜湊鏈，比對由舊引擎產生的 `tests/golden/v6-trace-sha256.json`。 |
-| `tests/differential.test.ts` | 舊引擎仍在時，逐日直接比對 2618 個模擬日的完整 JSON；真實 Day14 存檔的遷移狀態逐位元組相同；Day15 存檔映射（main／world／日誌）在只正規化引擎參照字串、時間戳與規則指紋後逐位元組相同。 |
+| `tests/golden.test.ts` | 針對**目前規則版本**（`RULES_TAG`，現為 v7）：① 重新產生 `reports/day15-134-v7-20seeds-{daily,weekly}.csv`、`-analysis.json` 與單一種子 `day15-134-v7-*`，**逐位元組**比對；② 28 個情境（20 種子 × 120 日、斷糧、增糖、豐食、孤兒幼蟲、無工蟻蟻后、高探索、100／1000 工蟻）完整每日輸出（summary＋events＋state）的雜湊鏈，比對 `tests/golden/v7-trace-sha256.json`。v6 的報告與 `tests/golden/v6-trace-sha256.json`（由舊引擎產生，TS 移植時 28/28 相同）保留為歷史。 |
+| `tests/differential.test.ts` | 舊引擎仍在時：**隔離證明**——2618 個模擬日中，只要每天把輸入的 `climate.prior_nest_temp_model_c` 拿掉，新引擎就與 v6 逐位元組相同；真實 Day14 存檔的遷移狀態逐位元組相同；Day15 存檔映射在只正規化引擎參照字串與時間戳後逐位元組相同。 |
+| `tests/nest-temperature.test.ts` | v2-review.7 巢溫記憶公式與遷移後第一天的退回規則。 |
 | `tests/naturalism.test.ts` | 214 項（與 v6 相同數量）。 |
-| `tests/foraging-physics.test.ts` | 2149 項（與 v6 相同數量）。 |
+| `tests/foraging-physics.test.ts` | 全部通過；項數隨軌跡而定（v6 為 2149，v7 為 2132）。 |
 | `tests/migration.test.ts` | 21／21。 |
 | `tests/local-ecology.test.ts` | 靜態檢查生態與工蟻模組不讀巢內帳、參數標記、單變數對照；孤兒蟻后危險（fixture 已依玩家決定補上 `no_worker_days`，160 次 39 vs 1，與舊引擎及 `reports/local-ecology-tests.json` 相同）。 |
 | `tests/scaling.test.ts` | 14／100／1000 工蟻，結果與 v6 參考相同。 |
@@ -82,7 +83,7 @@ F03、F04 的陌生蟻群目前在 `world/xitun-garden.json#background_colonies`
 
 1. **保留不動**：`sim/results/day9*`～`day14*`（Day9～14 歷史輸出，存檔中有路徑引用）、`sim/day_engine_v1_day9_day14.cjs`（README 指定的 Day9～14 重播程式）。
 2. **封存**：把 `sim/day_engine.cjs`、`foraging_physics.cjs`、`migrate_day15.cjs`、`run_day.cjs`、`params.json`、`day14-projection.json`、`prepare_review_projection.cjs`、`export_review.py`、`test_*.cjs` 以 `git mv` 移到 `sim/archive-v6/`（或直接刪除，git 歷史仍可取回）。
-3. 封存後 `tests/differential.test.ts` 會自動略過；`tests/golden.test.ts`（含由舊引擎產生的完整輸出雜湊）與 `tests/golden/legacy-params-snapshot.json` 繼續鎖定行為。
+3. 封存後 `tests/differential.test.ts` 與 `cli/reports/compare-v6-v7.ts` 會無法執行（前者自動略過）；`tests/golden.test.ts` 與 `tests/golden/legacy-params-snapshot.json` 繼續鎖定行為。
 
 ## 7. 推進工具 `npm run advance`
 

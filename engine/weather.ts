@@ -59,10 +59,12 @@ export function calcWeather(world: { seed: number; sim_day: number; climate: Cli
   const rain = wet ? round(gamma(c.rainfall_gamma_shape, rainMean / c.rainfall_gamma_shape, g)) : 0;
   const soil = round(clamp(s.soil_index * c.soil_persistence + rain * c.soil_rain_gain_per_mm - c.soil_daily_loss, 0, 1));
   const shade = round(clamp(s.shade_index * c.soil_shade_persistence + rain * c.soil_shade_rain_gain_per_mm - c.soil_shade_daily_loss, 0, 1));
-  // v6 behaviour preserved: reads prior_nest_temp_c, but the state only ever stores prior_nest_temp_model_c,
-  // so nest temperature memory always starts from yesterday's AIR temperature. Reported in the PR, not fixed.
+  // Nest temperature = buffered memory of YESTERDAY'S NEST temperature plus today's air temperature
+  // (rules update v2-review.7). v6 read a key that was never written (prior_nest_temp_c), so it always
+  // started from yesterday's air temperature. Fallback to air temperature only when no nest temperature
+  // has been recorded yet (the first day after the Day15 migration).
   const memory = wp.nest_microclimate.nest_temp_memory;
-  const nestTemp = round((s.prior_nest_temp_c ?? s.prior_air_temp_c) * memory + airTemp * (1 - memory));
+  const nestTemp = round((s.prior_nest_temp_model_c ?? s.prior_air_temp_c) * memory + airTemp * (1 - memory));
   return {
     day: world.sim_day + 1, date, kind: 'synthetic_climatology_game_assumption_not_real_weather', wet,
     air_temp_c: airTemp, daytime_air_temp_c: maxAirTemp, daily_max_air_temp_c: maxAirTemp, daily_min_air_temp_c: minAirTemp,

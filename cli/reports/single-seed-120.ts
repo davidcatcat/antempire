@@ -1,15 +1,18 @@
 /**
  * Port of sim/test_120_days.cjs: single original seed Day15–134 (v6). Writes only to the output dir.
- * Golden test: byte-identical to reports/day15-134-v6-{daily,weekly}.csv and -analysis.json.
+ * Output files are tagged with the rules version (reports/day15-134-<tag>-*); golden test as above.
  */
 // @ts-nocheck -- verbatim port of an untyped report script; typed engine API is checked elsewhere.
 import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
-import { simulateDay, num, resolveSpecies, foragingTemperatureFactor, legacyColonyMeta } from '../../engine/index.ts';
+import { ENGINE_VERSION, simulateDay, num, resolveSpecies, foragingTemperatureFactor, legacyColonyMeta } from '../../engine/index.ts';
 import { loadBundle, readJson, REPO_ROOT } from '../lib/load.ts';
 
-export function generateSingleSeed120(outDir, bundle = loadBundle(), initial = readJson('tests/fixtures/day14-projection.json')) {
+/** Report file tag of the current rules version (v7 = v2-review.7 nest-temperature memory fix). v6 files in reports/ are history. */
+export const RULES_TAG = 'v7';
+
+export function generateSingleSeed120(outDir, bundle = loadBundle(), initial = readJson('tests/fixtures/day14-projection.json'), tag = RULES_TAG) {
 const sp=resolveSpecies(bundle.species[legacyColonyMeta(bundle.world.scenario_colonies).species_id]);
 const round=x=>Math.round(x*1e4)/1e4;
 const sum=(rows,k)=>rows.reduce((a,x)=>a+x[k],0);
@@ -54,18 +57,18 @@ for(let i=0;i<rows.length;i+=7){
  foraging_worker_days:sum(days,'foraging_workers_total'),mean_daily_foragers:round(sum(days,'foraging_workers_total')/days.length),
  mean_air_temperature_c:round(sum(days,'air_temperature_c')/days.length),mean_daytime_temperature_c:round(sum(days,'daytime_air_temperature_c')/days.length),mean_metabolic_factor:round(sum(days,'metabolic_factor')/days.length),mean_daily_sugar_consumed:round(sum(days,'sugar_consumed')/days.length),mean_daily_protein_consumed:round(sum(days,'protein_consumed')/days.length)});
 }
-const report={scenario:'unchanged v2.1 corrected base world; no rescue tuning',range:'Day15-Day134',days:rows.length,authoritative_simulation_advanced:false,source:'sim/day14-projection.json',physical_foraging_version:'v6',game_assumptions:true,
+const report={scenario:'unchanged v2.1 corrected base world; no rescue tuning',range:'Day15-Day134',days:rows.length,authoritative_simulation_advanced:false,source:'sim/day14-projection.json',physical_foraging_version:tag,engine_version:ENGINE_VERSION,game_assumptions:true,
  final:rows.at(-1),ecology:eventsTotal,
  budget:{sugar_income:round(sum(rows,'sugar_income')),sugar_consumed:round(sum(rows,'sugar_consumed')),protein_income:round(sum(rows,'protein_income')),protein_consumed:round(sum(rows,'protein_consumed'))},
- foraging:{worker_days:sum(rows,'foraging_workers_total'),daily_report:'reports/day15-134-v6-daily.csv'},
+ foraging:{worker_days:sum(rows,'foraging_workers_total'),daily_report:`reports/day15-134-${tag}-daily.csv`},
  temperature:{minimum:Math.min(...rows.map(r=>r.air_temperature_c)),maximum:Math.max(...rows.map(r=>r.air_temperature_c)),days_below_20_c:rows.filter(r=>r.air_temperature_c<20).length},
  protein_days_without_income:rows.filter(r=>r.protein_income===0).length,
  validations:{replay_days:120,insect_population_balance_days:120,habitat_capacity_days:120,independent_of_colony_stocks:true,source_carcass_and_nutrient_conservation:'validated by simulateDay on all days'},
  weeks};
 fs.mkdirSync(outDir,{recursive:true});
-fs.writeFileSync(path.join(outDir,'day15-134-v6-daily.csv'),csv(rows));
-fs.writeFileSync(path.join(outDir,'day15-134-v6-weekly.csv'),csv(weeks));
-fs.writeFileSync(path.join(outDir,'day15-134-v6-analysis.json'),JSON.stringify(report,null,2)+'\n');
+fs.writeFileSync(path.join(outDir,`day15-134-${tag}-daily.csv`),csv(rows));
+fs.writeFileSync(path.join(outDir,`day15-134-${tag}-weekly.csv`),csv(weeks));
+fs.writeFileSync(path.join(outDir,`day15-134-${tag}-analysis.json`),JSON.stringify(report,null,2)+'\n');
 return {report,summary:{report:report.final,ecology:report.ecology,budget:report.budget,validations:report.validations,week_count:weeks.length}};
 }
 

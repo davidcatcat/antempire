@@ -1,17 +1,20 @@
 /**
  * Port of sim/test_winter_multiseed.cjs: isolated 20-seed Day15–134 winter diagnostic (v6 physical foraging).
  * Writes ONLY to the given output directory; never touches saves/ or journal/.
- * Golden test: the three files must be byte-identical to reports/day15-134-v6-20seeds-*.
- * The literal provenance strings inside the report are kept verbatim from the v6 script.
+ * Output files are tagged with the rules version (reports/day15-134-<tag>-20seeds-*); the golden test
+ * requires the committed files of the CURRENT tag to be byte-identical. Older tags (v6) are history.
  */
 // @ts-nocheck -- verbatim port of an untyped report script; typed engine API is checked elsewhere.
 import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
-import { simulateDay, num, resolveSpecies, foragingTemperatureFactor as ftf, legacyColonyMeta } from '../../engine/index.ts';
+import { ENGINE_VERSION, simulateDay, num, resolveSpecies, foragingTemperatureFactor as ftf, legacyColonyMeta } from '../../engine/index.ts';
 import { loadBundle, readJson, REPO_ROOT } from '../lib/load.ts';
 
-export function generateWinterMultiseed(outDir, bundle = loadBundle(), initial = readJson('tests/fixtures/day14-projection.json')) {
+/** Report file tag of the current rules version (v7 = v2-review.7 nest-temperature memory fix). v6 files in reports/ are history. */
+export const RULES_TAG = 'v7';
+
+export function generateWinterMultiseed(outDir, bundle = loadBundle(), initial = readJson('tests/fixtures/day14-projection.json'), tag = RULES_TAG) {
 const MAIN_SPECIES=legacyColonyMeta(bundle.world.scenario_colonies).species_id;
 const sp=resolveSpecies(bundle.species[MAIN_SPECIES]);
 const foragingTemperatureFactor=ftf;
@@ -110,7 +113,7 @@ for(const seed of seeds){
 }
 const winter=seedResults.filter(x=>x.winter_extinct),allExtinct=seedResults.filter(x=>x.first_extinct_day!==null);
 const monthly=[];for(const month of [...new Set(daily.map(d=>d.month))].sort()){const rows=daily.filter(d=>d.month===month),alive=rows.filter(d=>d.queen>0);monthly.push({month,mean_air_c:avg(rows,'air_mean_c'),mean_daytime_air_c:avg(rows,'daytime_max_air_c'),mean_normal_c:avg(rows,'expected_air_normal_c'),mean_residual_c:avg(rows,'temperature_residual_c'),mean_daily_foragers_all_seeds:avg(rows,'foragers'),mean_daily_foragers_colonies_queen_alive:avg(alive,'foragers'),mean_per_worker_foraging_fraction:avg(alive,'foraging_fraction_per_available_worker'),mean_laying_probability:avg(alive,'queen_laying_probability'),mean_daily_eggs_all_seeds:avg(rows,'eggs_laid'),mean_daily_eggs_queen_alive:avg(alive,'eggs_laid'),queen_alive_day_count:alive.length});}
-const report={schema:'antempire.winter.v6.physical_foraging.multiseed',range:'Day15-134 2026-11-14 through 2027-03-13',official_day14_advanced:false,pr_merged:false,seeds,seed_count:seeds.length,
+const report={schema:`antempire.winter.${tag}.physical_foraging.multiseed`,engine_version:ENGINE_VERSION,range:'Day15-134 2026-11-14 through 2027-03-13',official_day14_advanced:false,pr_merged:false,seeds,seed_count:seeds.length,
  assumptions:true,evidence_policy:'Q10=2.0 physiology reference is assumption; CWA normals measured station means; synthetic daily max air is proxy, NOT surface measurement; queen Q10 and unattended days are game assumptions.',
  winter_extinct_count:winter.length,winter_extinct_ratio:round(winter.length/seeds.length),extinct_by_Day134_count:allExtinct.length,
  day74_workers:stat(seedResults.map(x=>x.workers_Day74)),day134_workers:stat(seedResults.map(x=>x.workers_Day134)),
@@ -121,9 +124,9 @@ const report={schema:'antempire.winter.v6.physical_foraging.multiseed',range:'Da
  validations:{days_per_seed:120,deterministic_first_last_per_seed:true,insect_balance_checked_each_day:true,capacity_checked_each_day:true,ecology_independent_of_colony_stock:true,orphan_larvae_die_within_four_assumed_days:true,unattended_stores_not_consumed:true},
  no_rescue_tuning:true,workforce_recovery_not_guaranteed:true,limitations:['One proxy daily maximum air temperature, not hour-by-hour ground-surface temperatures.','20 seeds share identical hypothetical Day14 garden and legacy ages.','Nectar flowering recurrence remains unmodeled. Live prey hunting now uses only existing insects at F07/F11; size and capture odds are assumed.','Minor worker natural lifespan differs from R94 ~26.25 days; current assumed untreated natural expectancy ~64.3 days, unchanged.','Garden route lengths are hypothetical and time is simplified into per-trip minutes, not observed trajectory.','Larval protein deliveries remain pooled nursing approximations.','No calibrated major/minor prey role differentiation.','This is a game scenario and cannot estimate real Taichung colony winter extinction probabilities.']};
 fs.mkdirSync(outDir,{recursive:true});
-fs.writeFileSync(path.join(outDir,'day15-134-v6-20seeds-daily.csv'),csv(daily));
-fs.writeFileSync(path.join(outDir,'day15-134-v6-20seeds-weekly.csv'),csv(weekly));
-fs.writeFileSync(path.join(outDir,'day15-134-v6-20seeds-analysis.json'),JSON.stringify(report,null,2)+'\n');
+fs.writeFileSync(path.join(outDir,`day15-134-${tag}-20seeds-daily.csv`),csv(daily));
+fs.writeFileSync(path.join(outDir,`day15-134-${tag}-20seeds-weekly.csv`),csv(weekly));
+fs.writeFileSync(path.join(outDir,`day15-134-${tag}-20seeds-analysis.json`),JSON.stringify(report,null,2)+'\n');
 return {report,summary:{seeds:seeds.length,winter_extinct:report.winter_extinct_count,by134:report.extinct_by_Day134_count,day74:report.day74_workers,day134:report.day134_workers,months:monthly,neighbors:neighbor365}};
 }
 

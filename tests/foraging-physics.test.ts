@@ -1,9 +1,13 @@
-/** Port of sim/test_foraging_physics.cjs (v6: 2149 checks). Model-structure regressions; no save edits. */
+/**
+ * Port of sim/test_foraging_physics.cjs. Model-structure regressions; no save edits.
+ * The number of checks depends on the trajectory (one check per delivery/trophallaxis/...): 2149 under v6,
+ * different under v7 (nest-temperature memory fix). Every check must pass; the count itself is reported.
+ */
 import assert from 'node:assert/strict';
 import { simulateDay, routeTo, travel, goHome, decayTrails, depositTrail, fullTrail, handoff, settleCrops, prey, legacyView, legacyColonyMeta, resolveBundle, type Worker, type LegacyV2State } from '../engine/index.ts';
 import { bundle, counter, fixture, MAIN_SPECIES } from './lib/harness.ts';
 
-const LEGACY_CHECK_COUNT = 2149;
+const V6_CHECK_COUNT = 2149;
 const p = bundle(), rp = resolveBundle(p), sp = rp.species[MAIN_SPECIES], wp = rp.world, initial = fixture();
 const meta = legacyColonyMeta(wp.scenario_colonies), nest = meta.nest_node;
 const view = (s: LegacyV2State) => legacyView(s, meta, (s.ecology.trail_by_edge ??= {}));
@@ -69,5 +73,4 @@ for (let day = 0; day < 60; day++) {
   sim = out.state;
 }
 ok(delivered > 0 && pheromone > 0 && trophallaxis > 0, 'multi-day history exhibits routes, trails and real handoffs');
-console.log(JSON.stringify({ checks: c.checks, legacy_v6_checks: LEGACY_CHECK_COUNT, days: 60, delivered, pheromone_deposits: pheromone, trophallaxis_contacts: trophallaxis, live_hunts: hunts, events: allEvents, source_provenance: 'tracked', official_save_advanced: false }, null, 2));
-if (c.checks !== LEGACY_CHECK_COUNT) { console.error(`check count ${c.checks} != v6 ${LEGACY_CHECK_COUNT}`); process.exit(1); }
+console.log(JSON.stringify({ checks: c.checks, v6_engine_checks_for_reference: V6_CHECK_COUNT, days: 60, delivered, pheromone_deposits: pheromone, trophallaxis_contacts: trophallaxis, live_hunts: hunts, events: allEvents, source_provenance: 'tracked', official_save_advanced: false }, null, 2));
