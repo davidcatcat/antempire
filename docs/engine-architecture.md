@@ -69,8 +69,7 @@ F03、F04 的陌生蟻群目前在 `world/xitun-garden.json#background_colonies`
 | `tests/naturalism.test.ts` | 214 項（與 v6 相同數量）。 |
 | `tests/foraging-physics.test.ts` | 2149 項（與 v6 相同數量）。 |
 | `tests/migration.test.ts` | 21／21。 |
-| `tests/local-ecology.test.ts` | 靜態檢查生態與工蟻模組不讀巢內帳、參數標記、單變數對照。 |
-| `tests/local-ecology-orphan-queen.test.ts` | v6 原有的孤兒蟻后斷言，**在 main 上本來就失敗**（見 PR 說明），原樣保留。 |
+| `tests/local-ecology.test.ts` | 靜態檢查生態與工蟻模組不讀巢內帳、參數標記、單變數對照；孤兒蟻后危險（fixture 已依玩家決定補上 `no_worker_days`，160 次 39 vs 1，與舊引擎及 `reports/local-ecology-tests.json` 相同）。 |
 | `tests/scaling.test.ts` | 14／100／1000 工蟻，結果與 v6 參考相同。 |
 | `tests/multi-colony.test.ts` | v3 多蟻群路徑＝v2 路徑；雙蟻群共存。 |
 | `tests/platform-purity.test.ts` | engine/ 無 Node／DOM API、無物種名稱與世界節點 ID 寫死；純 SHA-256 與 node:crypto 一致。 |
