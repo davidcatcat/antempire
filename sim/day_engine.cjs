@@ -3,7 +3,7 @@
  * No GitHub/clock access; deterministic pure one-day transition. Node 18+. No dependencies. */
 const crypto = require('node:crypto');
 const fs = require('node:fs');
-const ENGINE_VERSION = 'antempire.v2-review.5-winter-physiology-daytime-foraging';
+const ENGINE_VERSION = 'antempire.v2-review.5a-correct-forage-temperature-probability';
 const clone=x=>structuredClone(x), round=x=>Math.round((x+Number.EPSILON)*1e6)/1e6;
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 function P(p,path){let v=p;for(const segment of path.split('.')){v=v?.[segment]}if(!v||v.assumption!==true||typeof v.value!=='number'||!Number.isFinite(v.value))throw Error('Missing/untagged assumption parameter '+path);return v.value;}
@@ -109,10 +109,10 @@ function selectTask(worker,s,p,weather){
  const g=dice(s,'task:'+worker.id),age=worker.age_days,v=localSignals(worker);
  const injured=worker.injured?.75:1,young=age<P(p,'workers.newborn_nurse_days');
  const hunger=clamp((1-v.sugarSatiety)*.7+v.peerSugarHunger*.3,0,1);
- const forageBias=P(p,'workers.forage_baseline_probability')*(1+.9*hunger)*injured*(young?.08:1)*clamp(1-weather.rain_mm*P(p,'workers.rain_suppression_fraction'),P(p,'workers.min_rain_activity_multiplier'),1)*foragingTemperatureFactor(p,weather.daytime_air_temp_c);
+ const forageBias=P(p,'workers.forage_baseline_probability')*(1+.9*hunger)*injured*(young?.08:1)*clamp(1-weather.rain_mm*P(p,'workers.rain_suppression_fraction'),P(p,'workers.min_rain_activity_multiplier'),1);
  const care=P(p,'workers.nurse_baseline_probability')*(1+.65*v.broodBegging)*(young?3:1),rest=P(p,'workers.rest_baseline_probability')*(worker.injured?1.5:1),repair=P(p,'workers.maintenance_baseline_probability')*(1+.8*weather.soil_index),guard=P(p,'workers.defence_baseline_probability');
  const entries=[['forage',forageBias],['nurse',care],['rest',rest],['repair',repair],['guard',guard]],total=entries.reduce((x,a)=>x+a[1],0);let roll=g()*total;
- for(const [task,weight] of entries){roll-=weight;if(roll<=0)return task;}return 'rest';
+ for(const [task,weight] of entries){roll-=weight;if(roll<=0)return task==='forage'&&g()>=foragingTemperatureFactor(p,weather.daytime_air_temp_c)?'rest':task;}return 'rest';
 }
 function discover(worker,s,p,events){let g=dice(s,'scout:'+worker.id);let choices=Object.values(s.sources).filter(x=>x.presence==='potential'&&!worker.known_sources.includes(x.id)&&Array.isArray(x.access_from)&&x.access_from.some(node=>worker.known_sources.includes(node))); // locally reachable, no distant-target omniscience
  if(choices.length===0)return null;
