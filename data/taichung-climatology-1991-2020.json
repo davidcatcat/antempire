@@ -137,7 +137,7 @@
   "provenance": {
     "monthly_values": {
       "provider": "臺中市政府都市計畫報告第6-1表：臺中地區歷年氣象資料統計表(歷年月平均)，依中央氣象局1991-2020年統計",
-      "url": "https://www.ud.taichung.gov.tw/media/1114487/%E8%AE%8A%E6%9B%B4%E8%87%BA%E4%B8%AD%E5%B8%82%E7%83%8F%E6%97%A5%E5%A4%A7%E8%82%9A%E5%9C%B0%E5%8D%80%E9%83%BD%E5%B8%82%E8%A6%8F%E5%8A%83%E4%B8%BB%E8%A6%81%E8%A8%88%E7%95%AB-%E9%85%8D%E5%90%88%E5%90%8C%E5%AE%89%E5%8E%9D%E6%8E%92%E6%B0%B4%E7%B3%BB%E7%B5%B1-%E5%90%8C%E5%AE%89%E5%8E%9D%E6%8E%92%E6%B0%B4%E6%B2%BB%E7%90%86%E8%A8%88%E7%95%AB-%E7%AC%AC%E4%B8%80%E6%AC%A1%E4%BF%AE%E6%AD%A3-%E6%A1%88-%E4%B8%8A%E7%B6%B2%E7%89%88.pdf",
+      "url": "https://www.ud.taichung.gov.tw/media/1114487/%E8%AE%8A%E6%9B%B4%E8%87%BA%E4%B8%AD%E5%B8%82%E7%83%8F%E6%97%A5%E5%A4%A7%E8%82%9A%E5%9C%B0%E5%8D%80%E9%83%BD%E5%B8%82%E8%A8%88%E7%95%AB%E4%B8%BB%E8%A6%81%E8%A8%88%E7%95%AB-%E9%85%8D%E5%90%88%E5%90%8C%E5%AE%89%E5%8E%9D%E6%8E%92%E6%B0%B4%E7%B3%BB%E7%B5%B1-%E5%90%8C%E5%AE%89%E5%8E%9D%E6%8E%92%E6%B0%B4%E6%B2%BB%E7%90%86%E8%A8%88%E7%95%AB-%E7%AC%AC%E4%B8%80%E6%AC%A1%E4%BF%AE%E6%AD%A3-%E6%A1%88-%E4%B8%8A%E7%B6%B2%E7%89%88.pdf",
       "pdf_table": "表 6-1",
       "scope": "臺中地區1991–2020歷年月平均，不是西屯巢穴測量",
       "quality": "public_government_document_secondary_compilation_from_CWA"
