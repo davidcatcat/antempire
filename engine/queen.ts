@@ -22,7 +22,13 @@ export function workerSurvival(world: WorldState, colony: ColonyState, sp: Speci
     const risk = clamp(1 - (1 - natural) * (1 - starvation), 0, life.adult_total_daily_hazard_cap);
     if (g() < risk) { summary.worker_deaths++; events.push({ type: 'worker_death', id: w.id, reason: starvation > 0 ? 'starvation_or_natural_competing_hazards_scenario' : 'natural_or_injury_assumed', risk_assumption: round(risk) }); }
     else {
-      if (w.injured && w.task === 'rest' && stores.stress_days === 0 && g() < life.injury_repair_probability) { w.injured = false; events.push({ type: 'injury_recovery', id: w.id }); }
+      // v2-review.12: an abrasion can close, a lost or damaged appendage never regrows (adult insects do not
+      // moult); an unrecorded type keeps the earlier rule. A worker without injury_type is 'unknown'.
+      const repair = life.injury_repair_probability * life[`injury_repair_multiplier_${w.injury_type ?? 'unknown'}`];
+      if (w.injured && w.task === 'rest' && stores.stress_days === 0 && g() < repair) {
+        w.injured = false; delete w.injury_type; delete w.injury_body_part; delete w.injury_record;
+        events.push({ type: 'injury_recovery', id: w.id });
+      }
       alive.push(w);
     }
   }

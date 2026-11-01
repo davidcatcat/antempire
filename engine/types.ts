@@ -22,12 +22,18 @@ export interface LocalSensory {
 
 export interface SiteMemory { last_success_portions: number; last_visit_day: number }
 
+export type InjuryType = 'abrasion' | 'appendage_damage' | 'unknown';
+
 export interface Worker {
   id: string;
   alive?: boolean;
   age_days: number;
   age_origin?: string;
   injured: boolean;
+  /** v2-review.12: kind of injury from the save records; absent = unknown. */
+  injury_type?: InjuryType;
+  injury_body_part?: string;
+  injury_record?: string;
   task: string;
   known_sources: string[];
   last_location: string;

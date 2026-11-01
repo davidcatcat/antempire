@@ -1040,6 +1040,13 @@
       "description": "Day15 遷移：舊幼蟲初始求食訊號",
       "legacy_path": null,
       "moved_from_code": "sim/migrate_day15.cjs migrationState(): begging_signal:.25（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "classify_injuries": true,
+    "injury_classification": {
+      "abrasion_keywords": [
+        "擦傷"
+      ],
+      "note": "v2-review.12：Day15 遷移時依 saves/world-state.json 的 injuries 紀錄分類：irreversible_damage === true → appendage_damage；legacy_description 含 abrasion_keywords 任一字詞 → abrasion；其他（例如『舊傷』『舊傷改善中』）→ unknown。只讀取既有紀錄，不推測。classify_injuries=false 為 v2-review.11 以前的遷移（不寫入類型），只供隔離證明使用。"
     }
   }
 }

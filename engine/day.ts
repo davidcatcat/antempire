@@ -25,8 +25,10 @@ import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from '
  *   v2-review.10 large-prey team cap predation.large_prey_max_team = 10 (owner request, #15 decision 1)
  *   v2-review.11 late arrivals join a prey waiting for long-range recruits (owner request, #15 decision 3;
  *                species switch predation.late_arrivals_join_waiting_prey)
+ *   v2-review.12 injury types: abrasion heals, appendage damage is permanent, unrecorded type unchanged (owner
+ *                request, #13 injury classification; Day15 migration reads the type from the injury records)
  */
-export const ENGINE_VERSION = 'antempire.v2-review.11-late-arrivals-join-waiting-prey';
+export const ENGINE_VERSION = 'antempire.v2-review.12-injury-types';
 /** Implementation of that behaviour (bumped for refactors that keep results byte-identical). */
 export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
 /** The v2 engine only applies to states at or after the completed Day14 checkpoint. */

@@ -17,8 +17,17 @@ export function migrationState(main: Any, world: Any, climate: Any, bundle: Para
   const mainColony = legacyColonyMeta(w.scenario_colonies as unknown as ScenarioColony[]);
   if (main.simulation.latest_completed_day !== 14 || main.simulation.elapsed_sim_hours !== 336 || world.time.scientific_clock.day !== 14) throw Error('Migration requires authoritative completed Day14');
   const injuries = new Set(world.injuries.map((x: Any) => x.worker_id));
+  // v2-review.12: injury kind read from the Day14 records only (world day15_migration.injury_classification).
+  const classify = m.classify_injuries === true, abrasionWords = ((m.injury_classification as Record<string, Json> | undefined)?.abrasion_keywords ?? []) as string[];
+  const injuryFields = (id: string): Record<string, string> => {
+    if (!classify) return {};
+    const r = world.injuries.find((x: Any) => x.worker_id === id);
+    if (!r) return {};
+    const type = r.irreversible_damage === true ? 'appendage_damage' : abrasionWords.some((k) => String(r.legacy_description ?? '').includes(k)) ? 'abrasion' : 'unknown';
+    return { injury_type: type, ...(typeof r.body_part === 'string' ? { injury_body_part: r.body_part } : {}), ...(typeof r.legacy_description === 'string' ? { injury_record: r.legacy_description } : {}) };
+  };
   const workerKnowledge = m.worker_known_sources as Record<string, string[]>;
-  const workers = main.colony.workers.individuals.filter((x: Any) => x.status === 'alive').map((x: Any) => ({ id: x.id, alive: true, age_days: mig('legacy_unknown_age_initial_days'), age_origin: 'unknown adult age; explicit Day15 game assumption', injured: injuries.has(x.id), task: 'rest', known_sources: workerKnowledge[x.id] || [], last_location: x.v2_latest?.current_location_at_day_end || mainColony.nest_node, local_sensory: { own_crop_sugar_fill: mig('initial_local_sensory.own_crop_sugar_fill'), peer_sugar_hunger: mig('initial_local_sensory.peer_sugar_hunger'), peer_protein_request: mig('initial_local_sensory.peer_protein_request'), direct_brood_begging: mig('initial_local_sensory.direct_brood_begging'), unload_feedback: { sugar: mig('initial_local_sensory.unload_feedback_sugar'), protein: mig('initial_local_sensory.unload_feedback_protein') }, origin: 'individual neutral Day15 inference, unknown previous encounters' } }));
+  const workers = main.colony.workers.individuals.filter((x: Any) => x.status === 'alive').map((x: Any) => ({ id: x.id, alive: true, age_days: mig('legacy_unknown_age_initial_days'), age_origin: 'unknown adult age; explicit Day15 game assumption', injured: injuries.has(x.id), ...injuryFields(x.id), task: 'rest', known_sources: workerKnowledge[x.id] || [], last_location: x.v2_latest?.current_location_at_day_end || mainColony.nest_node, local_sensory: { own_crop_sugar_fill: mig('initial_local_sensory.own_crop_sugar_fill'), peer_sugar_hunger: mig('initial_local_sensory.peer_sugar_hunger'), peer_protein_request: mig('initial_local_sensory.peer_protein_request'), direct_brood_begging: mig('initial_local_sensory.direct_brood_begging'), unload_feedback: { sugar: mig('initial_local_sensory.unload_feedback_sugar'), protein: mig('initial_local_sensory.unload_feedback_protein') }, origin: 'individual neutral Day15 inference, unknown previous encounters' } }));
   const eggDays = num(bundle.species[mainColony.species_id], 'development.egg_days');
   const brood = main.colony.brood.individuals.filter((x: Any) => x.living).map((x: Any) => {
     if (x.stage === 'egg') {
