@@ -1,6 +1,7 @@
-# v2.1（Claude 修正後）完整遊戲假設參數表
+# v2-review.5a 全部遊戲參數（依 sim/params.json 生成）
 
-全部 value 型參數須有 assumption:true；非本種實測，禁用於回填蟻群需求或保證存活。Day15 起生效；正式 Day14 未推進。
+**共 140 個 value 參數；全數 `assumption: true`，不代表本種實測。**
+正式 Day14 336h 不變；只有 Day15+ 的隔離模型遵守這些參數。冬季代謝 Q10=2.0 / 蟻后產卵 Q10=2.5 / 無工蟻照護天數均為假設。更新資訊詳見 reports/day15-134-v5-20seeds-review.md。
 
 | 子系統 | 參數 | 值 | assumption | 說明 |
 |---|---|---:|:---:|---|
@@ -25,6 +26,8 @@
 | nutrition | `brood_protein_min_fraction` | 0.45 | true | 幼蟲吃到至少此比率的蛋白才可有效發育 |
 | nutrition | `max_sugar_store` | 24 | true | 巢群本階段可存/嗉囊攜帶之糖份上限，會隨規模擴張 |
 | nutrition | `max_protein_store` | 12 | true | 巢群本階段可存/處理之蛋白份上限，會隨規模擴張 |
+| nutrition | `metabolic_reference_c` | 25 | true | 一般生理學 + 遊戲假設: 巢溫代謝基準25°C；非P. megacephala實測 |
+| nutrition | `metabolic_q10` | 2 | true | 一般生理學 + 遊戲假設: Q10=2.0 是研究標準化假設，非本物種實測 |
 | starvation | `queen_egg_pause_days` | 2 | true | 任一營養缺口累計2天停止產卵 |
 | starvation | `worker_mortality_starts_days` | 4 | true | 連續糖缺口到4天開始額外死亡風險 |
 | starvation | `larva_mortality_starts_days` | 5 | true | 連續蛋白缺口到5天開始幼蟲死亡風險 |
@@ -40,11 +43,17 @@
 | starvation | `injury_mortality_multiplier` | 1.4 | true | 有舊傷者自然死亡額外風險倍率 |
 | starvation | `queen_zero_worker_hazard_after_days` | 3 | true | after losing all caretakers queen hazard rises especially when energy deficient |
 | starvation | `queen_zero_worker_starved_daily_hazard` | 0.24 | true | no workers plus prolonged food deficit elevates death risk; game assumption |
-| queen | `base_laying_probability` | 0.38 | true | 無飢餓、卵數不太多時每日一卵機率，遊戲假設 |
+| starvation | `unattended_larva_max_days` | 4 | true | 一般生理學 + 遊戲假設: 無工蟻照護及餵食幼蟲最多4日，不是量測 |
+| starvation | `unattended_egg_max_days` | 10 | true | 遊戲假設: 缺工蟻照護卵最多10日，非實測 |
+| starvation | `unattended_pupa_max_days` | 10 | true | 遊戲假設: 缺工蟻照護蛹最多10日，非實測 |
+| queen | `base_laying_probability` | 0.38 | true | 遊戲假設: 25°C、營養充足時每日發生產卵基礎機率，不等於每日必生一卵 |
 | queen | `max_eggs_per_day` | 2 | true | 單日最大產卵數；本階段獨立情境人口控制 |
 | queen | `existing_brood_pressure` | 0.011 | true | 每一隻既有幼體增加的繁殖抑制因子 |
 | queen | `previous_laying_penalty` | 0.6 | true | 昨日有產卵時今日產卵機率倍率 |
 | queen | `adequate_nutrition_threshold` | 0.84 | true | 若當日資源滿足比例低於此則產卵暫停 |
+| queen | `laying_reference_c` | 25 | true | 遊戲假設: 產卵參考巢溫25°C，非本物種實測 |
+| queen | `laying_temperature_q10` | 2.5 | true | 遊戲假設: 低溫降低產卵機率的Q10形狀，非本物種實測 |
+| queen | `second_egg_given_laying_probability` | 0.2 | true | 遊戲假設: 當日發生產卵後，追加第二顆卵之機率；不保證兩卵 |
 | workers | `newborn_initial_age_days` | 0 | true | 新羽化成蟻年齡從零開始 |
 | workers | `legacy_unknown_age_initial_days` | 7 | true | Day14舊工蟻真實成年年齡未知，Day15採遊戲假設7天 |
 | workers | `rest_baseline_probability` | 0.22 | true | 基礎休息比例，依飢餓狀態變動 |
@@ -70,9 +79,9 @@
 | workers | `protein_begging_priority_weight` | 1.8 | true | only locally encountered hungry larvae or nurses can elevate protein foraging |
 | workers | `unloading_success_memory_weight` | 1.4 | true | fast unloading reinforces same kind of forage; slow unloading suppresses it |
 | workers | `scout_search_when_route_unproductive_probability` | 0.18 | true | local search triggered by own failed route, does not reveal distant sugar source |
-| workers | `foraging_cold_limit_c` | 10 | true | below this synthetic outdoor mean temperature cold activity reaches its assumed minimum |
-| workers | `foraging_full_activity_c` | 25 | true | at this temperature or warmer there is no low-temperature penalty |
-| workers | `foraging_cold_min_multiplier` | 0.12 | true | assumed minimum foraging attempts, collection success and recruitment in cold weather |
+| workers | `foraging_cold_limit_c` | 10 | true | 遊戲假設: 白天最高氣溫10°C時活動權重下限，非本種實測 |
+| workers | `foraging_full_activity_c` | 25 | true | 遊戲假設: 白天最高氣溫25°C時冷抑制解除，非地表最佳覓食溫度實測 |
+| workers | `foraging_cold_min_multiplier` | 0.12 | true | 文獻支持方向+遊戲假設: 低溫係數只作用於白天覓食出勤權重一次，不再影響採集和招募 |
 | sources | `honeydew_max` | 5.2 | true | 蜜露F01總可及糖份上限 |
 | sources | `honeydew_daily_replenish` | 0.65 | true | 寄主與蚜蟲仍活著時每日補充糖份 |
 | sources | `honeydew_initial` | 0.55 | true | Day14 F01有蚜蟲但無可採蜜露；Day15起始少量保守情境 |
@@ -136,5 +145,3 @@
 | model | `unit_precision` | 6 | true | 食物計算與存檔保留小數位數 |
 | model | `population_safety_cap_for_trial` | 200 | true | 僅驗收用的膨脹上限；正式模擬不直接使用此限制 |
 | model | `min_workers_alive_for_trial` | 1 | true | 30日驗收禁止無原因全巢滅亡；非遊戲免死設定 |
-
-重要：昆蟲出生依局部棲地容量與溫度，不依蟻群蛋白需求。低溫覓食抑制同時作用在出勤、採集與招募；老化風險未依 R94 定量校準，詳見 day15-134-review.md。
