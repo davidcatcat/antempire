@@ -55,7 +55,7 @@
 - 研究、規則更新、程式改寫、測試、報告**都不推進**遊戲時鐘。
 - 推進的固定流程：①執行凍結的單日程式 → ②更新兩份權威存檔 → ③寫當日日誌。任一守恆或驗證檢查失敗，就**不得**提交存檔或日誌，如實回報。
 - **推進遊戲日的過程中不准修改引擎或參數**；同一天不得重複執行或重跑擇優。
-- 推進工具：`npm run advance` 預設只預演（不寫檔）；玩家明確要求推進時才用 `npm run advance -- --confirm-advance`。它讀取兩份存檔 → 跑一天 → 檢查人口、幼體與糖／蛋白守恆 → 全部通過才寫回 `saves/main.json`、`saves/world-state.json` → 輸出當日事件摘要。日誌依摘要另外撰寫；工具不寫日誌。規則指紋（引擎＋參數）不符時工具會拒絕執行。
+- 推進工具：`npm run advance` 預設只預演（不寫檔）；玩家明確要求推進 Day N 時才用 `npm run advance -- --confirm-advance --day N`。它在一筆可復原的交易中同時提交 `saves/main.json`、`saves/world-state.json`、`journal/v2-day-NNNN.md` 與 `saves/commit-log.json`，所有守恆與日誌檢查通過才提交；中斷後用 `npm run advance -- --recover`。已提交的日誌不可改寫，補充敘事要另建新檔 `journal/v2-day-NNNN-narrative.md`（該日提交之後才建立，只新增不覆寫；數字以正式日誌為準，更正另建 `-narrative-erratum-K.md`）。`saves/commit-log.json` 進 git，且必須與該日兩份存檔、日誌在同一個 git commit 中提交；`saves/.txn/`、鎖與 `*.advance-tmp` 不進 git。規則指紋（引擎＋參數）不符、或存檔不是最後確認版本時工具會拒絕執行。詳見 [`docs/save-transactions.md`](docs/save-transactions.md)。
 
 ## 6. 規則／參數修改
 

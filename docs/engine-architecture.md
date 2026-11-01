@@ -87,14 +87,16 @@ F03、F04 的陌生蟻群目前在 `world/xitun-garden.json#background_colonies`
 
 ## 7. 推進工具 `npm run advance`
 
+一個遊戲日＝一筆可復原的交易，同時提交兩份存檔、當日日誌與 `saves/commit-log.json`。完整說明（流程、一致性保證與限制、讀取端配合、故障測試）見 [`docs/save-transactions.md`](save-transactions.md)。
+
 | 指令 | 作用 |
 |---|---|
-| `npm run advance` | 預演：讀存檔、跑一天、檢查、印出摘要；**不寫任何檔案** |
-| `npm run advance -- --confirm-advance` | 玩家明確要求推進時使用：檢查全部通過才寫回兩份存檔 |
-| `--root <dir>` | 對其他目錄（例如臨時副本）的 `saves/`、`data/` 操作；引擎與參數一律來自本 checkout |
+| `npm run advance` | 預演：讀存檔、跑一天、檢查、印出摘要；不取得鎖、不寫任何檔案 |
+| `npm run advance -- --confirm-advance --day N` | 玩家明確要求推進 Day N 時使用 |
+| `npm run advance -- --recover` | 完成或撤銷中斷的交易；不推進新的一天 |
+| `--root <dir>` | 對其他目錄（例如臨時副本）的 `saves/`、`journal/`、`data/` 操作；引擎與參數一律來自本 checkout |
 | `--summary-out <file>` | 另存當日事件摘要（Markdown） |
 
-- Day14→Day15 時先執行一次性遷移（`engine/migration.ts`），並把規則指紋（`engine/*.ts` 與參數檔的 sha256 清單雜湊）凍結進 `sim_engine_v2.rules_fingerprint`；之後每天若引擎或參數與指紋不符就拒絕推進（規則更新要另開 PR，並另行處理指紋）。
-- 寫入前檢查（`cli/lib/conservation.ts`）：日序、工蟻與幼體人數（兩份存檔、引擎狀態、人口帳一致）、`期初+採入−消耗−產卵−溢出=期末` 的糖與蛋白、嗉囊糖不超過總帳、殘骸批次守恆、死亡工蟻不復活、歷史紀錄不刪除。任一 error 就不寫檔。
-- 工具不寫日誌；摘要是寫 `journal/v2-day-NNNN.md` 的材料。
-- `tests/advance.test.ts` 只在臨時副本上測試 Day14→Day20，與 `sim/run_day.cjs` 逐位元組比對（只正規化引擎參照字串與時間戳），並確認真實 `saves/` 與 `journal/` 未被改動。
+- Day14→Day15 時先執行一次性遷移（`engine/migration.ts`），並把規則指紋凍結進 `sim_engine_v2.rules_fingerprint`；之後引擎或參數與指紋不符就拒絕推進。
+- 寫入前檢查：日序、工蟻與幼體人數、`期初+採入−消耗−產卵−溢出=期末` 的糖與蛋白、嗉囊糖不超過總帳、殘骸批次守恆、死亡工蟻不復活、歷史紀錄不刪除、日誌與存檔描述同一天且列出全部事件、新日誌尚不存在、存檔是 commit log 的最後確認版本。
+- 測試：`tests/advance.test.ts`（臨時副本 Day14→Day20）、`tests/save-transaction.test.ts`（故障注入與復原、並行、重複推進）、`tests/history-integrity.test.ts`（Day1～14 歷史檔案雜湊）。
