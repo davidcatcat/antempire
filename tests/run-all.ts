@@ -8,7 +8,7 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { REPO_ROOT } from '../cli/lib/load.ts';
 
-export const BLOCKING = ['params-split', 'platform-purity', 'naturalism', 'foraging-physics', 'migration', 'local-ecology', 'scaling', 'multi-colony', 'golden', 'differential'];
+export const BLOCKING = ['params-split', 'platform-purity', 'naturalism', 'foraging-physics', 'migration', 'local-ecology', 'scaling', 'multi-colony', 'golden', 'differential', 'advance'];
 export const KNOWN_PREEXISTING_FAILURES = ['local-ecology-orphan-queen'];
 
 const run = (name: string) => {

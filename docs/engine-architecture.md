@@ -84,3 +84,17 @@ F03、F04 的陌生蟻群目前在 `world/xitun-garden.json#background_colonies`
 1. **保留不動**：`sim/results/day9*`～`day14*`（Day9～14 歷史輸出，存檔中有路徑引用）、`sim/day_engine_v1_day9_day14.cjs`（README 指定的 Day9～14 重播程式）。
 2. **封存**：把 `sim/day_engine.cjs`、`foraging_physics.cjs`、`migrate_day15.cjs`、`run_day.cjs`、`params.json`、`day14-projection.json`、`prepare_review_projection.cjs`、`export_review.py`、`test_*.cjs` 以 `git mv` 移到 `sim/archive-v6/`（或直接刪除，git 歷史仍可取回）。
 3. 封存後 `tests/differential.test.ts` 會自動略過；`tests/golden.test.ts`（含由舊引擎產生的完整輸出雜湊）與 `tests/golden/legacy-params-snapshot.json` 繼續鎖定行為。
+
+## 7. 推進工具 `npm run advance`
+
+| 指令 | 作用 |
+|---|---|
+| `npm run advance` | 預演：讀存檔、跑一天、檢查、印出摘要；**不寫任何檔案** |
+| `npm run advance -- --confirm-advance` | 玩家明確要求推進時使用：檢查全部通過才寫回兩份存檔 |
+| `--root <dir>` | 對其他目錄（例如臨時副本）的 `saves/`、`data/` 操作；引擎與參數一律來自本 checkout |
+| `--summary-out <file>` | 另存當日事件摘要（Markdown） |
+
+- Day14→Day15 時先執行一次性遷移（`engine/migration.ts`），並把規則指紋（`engine/*.ts` 與參數檔的 sha256 清單雜湊）凍結進 `sim_engine_v2.rules_fingerprint`；之後每天若引擎或參數與指紋不符就拒絕推進（規則更新要另開 PR，並另行處理指紋）。
+- 寫入前檢查（`cli/lib/conservation.ts`）：日序、工蟻與幼體人數（兩份存檔、引擎狀態、人口帳一致）、`期初+採入−消耗−產卵−溢出=期末` 的糖與蛋白、嗉囊糖不超過總帳、殘骸批次守恆、死亡工蟻不復活、歷史紀錄不刪除。任一 error 就不寫檔。
+- 工具不寫日誌；摘要是寫 `journal/v2-day-NNNN.md` 的材料。
+- `tests/advance.test.ts` 只在臨時副本上測試 Day14→Day20，與 `sim/run_day.cjs` 逐位元組比對（只正規化引擎參照字串與時間戳），並確認真實 `saves/` 與 `journal/` 未被改動。

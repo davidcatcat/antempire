@@ -14,7 +14,8 @@
     "test:golden": "node tests/golden.test.ts",
     "test:naturalism": "node tests/naturalism.test.ts",
     "test:rest": "node tests/run-all.ts --except golden,naturalism",
-    "check:saves": "node cli/check-saves.ts"
+    "check:saves": "node cli/check-saves.ts",
+    "advance": "node cli/advance.ts"
   },
   "devDependencies": {
     "@types/node": "22.19.0",

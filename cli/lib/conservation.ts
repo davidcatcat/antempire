@@ -73,3 +73,24 @@ export function checkSaves(main: Any, world: Any): Check[] {
   }
   return out;
 }
+
+/**
+ * Day-over-day checks for one advance. `expectedStart` is the nest ledger the day must start from:
+ * yesterday's engine stores, or the Day15 migration starting stores.
+ */
+export function checkTransition(before: { main: Any; world: Any }, after: { main: Any; world: Any }, report: Any, expectedStart: { sugar: number; protein: number }): Check[] {
+  const out: Check[] = [];
+  const add = (name: string, ok: boolean, detail?: unknown) => out.push({ name, ok: !!ok, level: 'error', ...(detail === undefined ? {} : { detail }) });
+  const d0 = before.main.simulation.latest_completed_day, d1 = after.main.simulation.latest_completed_day, r = report.summary;
+  add('transition: exactly one day advanced', d1 === d0 + 1 && report.day === d1 && after.world.time.scientific_clock.day === d1, { before: d0, after: d1 });
+  const aliveBefore = before.main.colony.workers.individuals.filter((w: Any) => w.status === 'alive').length;
+  add('transition: workers after = before + eclosions − deaths', r.workers_before === aliveBefore && r.population.workers === aliveBefore + r.eclosions - r.worker_deaths, { before: aliveBefore, eclosions: r.eclosions, deaths: r.worker_deaths, after: r.population.workers });
+  const broodBefore = before.main.colony.brood.individuals.filter((b: Any) => b.living).length, broodAfter = r.population.eggs + r.population.larvae + r.population.pupae;
+  add('transition: brood after = before + laid − eclosed − deaths', r.brood_before === broodBefore && broodAfter === broodBefore + r.eggs_laid - r.eclosions - r.brood_deaths, { before: broodBefore, laid: r.eggs_laid, eclosed: r.eclosions, deaths: r.brood_deaths, after: broodAfter });
+  for (const k of ['sugar', 'protein'] as const) add(`transition: ${k} ledger starts from the previous stock`, Math.abs(r.mass_ledger.start[k] - expectedStart[k]) <= EPS, { expected: expectedStart[k], start: r.mass_ledger.start[k] });
+  const deadBefore = new Set(before.main.colony.workers.individuals.filter((w: Any) => w.status !== 'alive').map((w: Any) => w.id));
+  add('transition: no dead worker revived', after.main.colony.workers.individuals.every((w: Any) => !(deadBefore.has(w.id) && w.status === 'alive')));
+  const keptBefore = before.main.colony.workers.individuals.map((w: Any) => w.id), keptAfter = new Set(after.main.colony.workers.individuals.map((w: Any) => w.id));
+  add('transition: no worker record removed from history', keptBefore.every((id: string) => keptAfter.has(id)));
+  return out;
+}
