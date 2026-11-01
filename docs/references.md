@@ -72,3 +72,22 @@
 | R47 | (2017), *Directional vibration sensing in the leafcutter ant Atta sexdens*. [PubMed](https://pubmed.ncbi.nlm.nih.gov/29247049/), DOI 10.1242/bio.029587 | Atta sexdens 感知基材震動方向，可能與化學訊號互動，屬物種特定能力。 |
 | R48 | (2020), *Interspecific Eavesdropping on Ant Chemical Communication*. [Frontiers](https://www.frontiersin.org/journals/ecology-and-evolution/articles/10.3389/fevo.2020.00024/full) | 綜述：異物種可能利用他蟻氣味，但**不得**預設他蟻能讀懂本巢所有訊號。 |
 
+## 2026-11-01 補充：螞蟻性別、階級多型性、雄蟻與繁殖（R49–R61）
+> 配套規格： [castes-and-reproduction.md](castes-and-reproduction.md)。文獻多為**特定物種／生態**的研究；不能推定虛構西屯未知蟻種已有兵蟻、雄蟻或婚飛。
+
+| ID | 經查證來源 | 對規格的支持及外推限制 |
+|---|---|---|
+| R49 | Smith (2023), *Sexual dimorphism as a facilitator of worker caste evolution in ants*. [Wiley](https://doi.org/10.1002/ece3.9825) | 工蟻／雄蟻／蟻后性別形態差異和多型工蟻演化；雄蟻短暫且多不從事巢務 |
+| R50 | *Brood recognition and discrimination in ants* (2019). [Insectes Sociaux](https://doi.org/10.1007/s00040-019-00747-3) | 螞蟻通常單倍雙倍性別決定：未受精卵雄、受精卵雌，幼體身份與親緣衝突 |
+| R51 | Rajakumar et al. (2012), *Ancestral developmental potential facilitates parallel evolution in ants*. [PubMed](https://pubmed.ncbi.nlm.nih.gov/22223805/), DOI 10.1126/science.1211451 | Pheidole大型／超大型工蟻分化具有幼蟲激素與發育過程依據；非成年工蟻「升級」 |
+| R52 | Holley et al. (2016), *Subcaste-specific evolution of head size in the ant genus Pheidole*. [Wiley](https://doi.org/10.1111/bij.12769) | Pheidole major/minor工蟻形態差異與不同用途；不意味所有蟻種有兵蟻 |
+| R53 | Klunk et al. (2023), *Mechanical demands of bite in plane head shapes of ant workers*. [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC10244895/) | 大型工蟻頭與顎部形態和防禦／食物加工關係；形態不是永久單一工作指令 |
+| R54 | Iwasa & Yamaguchi (2020), *Task allocation in a cooperative society: specialized castes or age-dependent switching among ant workers*. [PubMed](https://pubmed.ncbi.nlm.nih.gov/32094370/) | 區分形態階級與齡級任務切換；為模型研究，不是本殖群日齡資料 |
+| R55 | Tschinkel (2006/2009), *The sociometry and sociogenesis of reproduction in the Florida harvester ant, Pogonomyrmex badius*. [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC2990325/) | 該研究族群約700工蟻開始生產雄蟻與gyne，春季性殖，**只作物種限定案例** |
+| R56 | *Male ant reproductive investment in a seasonal wet tropical forest* (2022). [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC8970379/) | 巴拿馬多蟻種雄蟻飛行與雨季交替／濕度等環境相關；不當台灣婚飛日曆 |
+| R57 | Carmona-Aldana et al. (2024), *The Phenomenon of Reproductive Plasticity in Ants*. [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC11139587/), DOI 10.1016/j.cois.2024.101197 | 部分物種工蟻卵巢可塑、可能繁殖；不能說工蟻在所有蟻種均100%不產卵 |
+| R58 | Lenancker et al. (2021), *Origin, behaviour, and genetics of reproductive workers in an invasive ant*. [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC7986258/) | Anoplolepis gracilipes部分工蟻產生雄性後代與營養卵；不得轉嫁本殖群 |
+| R59 | *Clonal reproduction by males and females in the little fire ant* (2005). [Nature](https://www.nature.com/articles/nature03705) | 性別遺傳有非常規例外，不能把常規受精規則寫成所有蟻種絕對真理 |
+| R60 | *Behavioral regulation of genetic caste determination in a Pogonomyrmex population with dependent lineages* (2006). [PubMed](https://pubmed.ncbi.nlm.nih.gov/16995619/) | 部分蟻種女王／工蟻分化有遺傳限制，不可一概完全以蛋白餵量決定 |
+| R61 | *Larger colony sizes favour greater division of labour between queens and workers in ants* (2025, published online). [Evolution](https://doi.org/10.1093/evolut/qpaf250) | 546蟻種比較表明工蟻繁殖能力與群體規模之巨大差異；**物種不能一律視作全無生殖能力** |
+

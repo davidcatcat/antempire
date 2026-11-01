@@ -1839,7 +1839,13 @@
     "communication_rules_effective_sim_day": 6,
     "communication_research_updated_at_local": "2026-11-01",
     "communication_model_status": "literature_grounded_multichannel_local_inference_not_species_calibrated",
-    "communication_research_does_not_advance_time": true
+    "communication_research_does_not_advance_time": true,
+    "caste_rules_ref": "docs/castes-and-reproduction.md",
+    "caste_state_ref": "saves/world-state.json#/caste_reproduction_system",
+    "caste_rules_effective_sim_day": 6,
+    "caste_model_status": "literature_grounded_no_taxon_specific_caste_or_reproductive_thresholds",
+    "caste_research_updated_at_local": "2026-11-01",
+    "caste_research_does_not_advance_time": true
   },
   "migration_log": [
     {

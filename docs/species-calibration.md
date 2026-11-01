@@ -36,3 +36,5 @@ P3：以文獻或專家資料進行敏感度測試、蒙地卡羅多次模擬與
 - 危機能出現損失或消退；食源可能消失，不依玩家意願出現新糖源。
 - 先有觀察／遭遇／暴露，才有結算與敘事；無事發生同樣有效。
 - 一致性強不等於科學準確；若缺特定蟻種資料，結果應明示不確定性。
+## 2026-11-01 雄蟻、gyne與工蟻形態分化校準
+參照[castes-and-reproduction.md](castes-and-reproduction.md)及[references.md](references.md) R49–R61。要分清**性別、發育階級和現有任務**。優先收集：工蟻頭幅／體長分布，是否具有minor/major／連續形態；卵與幼蟲分期／營養條件、性別或受精證據、產卵者與蟻后交配狀態；本物種是否季節性產生雄蟻／有翅新后及婚飛生態。缺失時`adult_worker_subcaste=null`、`brood_sex=null`、`future_developmental_caste=null`、`reproductive_maturity=null`。**不直接沿用Pogonomyrmex badius約700工蟻的成熟門檻**，不因本殖群14工蟻就宣稱精確幾天後必有雄蟻。

@@ -46,3 +46,5 @@
 ## 2026-11-01 訊號模型資料權威
 自Day6起`docs/ant-communication.md`與`saves/world-state.json#/communication_system`為訊號權威，主存檔只存`simulation.communication_rules_ref`及`simulation.communication_state_ref`。訊號事件要包含釋放者／接收者、時間窗口、位置、媒介、推論或目擊的證據等級；不能在主存檔另建另一份獨立濃度數字。化學濃度、衰退率、CHC標籤及觸角資訊轉換率未知保持null。
 研究提交**不能推進Day5**；回讀兩個存檔並確認目前Day5仍120小時，既有Day5事件、v1舊故事、個體存亡、傷勢和食物歷史未改動。
+## 2026-11-01 性別與發育階級存檔
+從Day6起參照[castes-and-reproduction.md](castes-and-reproduction.md)，世界`caste_reproduction_system`是形態／性別與繁殖成熟條件的權威；主存檔只透過`simulation.caste_rules_ref`與`simulation.caste_state_ref`引用。現有14工蟻的工作行為不等於minor/major；雄蟻與gyne的「已確認記錄0」不等於真實0。卵E001和幼蟲L001/L002不倒填性別，先前120模擬小時、Q001、工蟻數、傷勢和v1歷史保持完全不變。
