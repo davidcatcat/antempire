@@ -178,3 +178,13 @@
 |---|---|---|
 | R115 | (2020), *Task allocation in a cooperative society: specialized castes or age-dependent switching among ant workers*. *Scientific Reports*. [PMID:32094370](https://pubmed.ncbi.nlm.nih.gov/32094370/) | 跨物種任務分配的理論比較：形態階級與齡級/外勤高死亡風險會影響最適分工，但不是P. megacephala的確定任務比率。 |
 | R116 | (2025), *Open and closed economies as possible alternative strategies to resource heterogeneity in ants*. [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC12147459/) | 包含P. megacephala數千小工蟻的存量實驗群，支持百/千隻為合理模擬尺度；實驗供食與群體數不等於台中N00的生命週期、死亡風險或營養效率。 |
+
+## 2026-11-01 完整營養、巢間食物交換與跨規模資源模型（R117–R120）
+> 最新設計 [colony-nutrition-food-web.md](colony-nutrition-food-web.md)，模型參數與F01–F11/U00/U01來源分類 [pmegacephala-food-web-v1.json](../data/pmegacephala-food-web-v1.json)。與已有的**R116（Tsuji & Win 2025，本物種直接雙巢營養實驗）**、**R95（本物種分食）**、**R98/R107（本物種捕食）**、**R112/R23（其他蟻種營養）**聯用。任何其他物種實驗數字不得直接定成西屯巢群的日攝入mg或死亡概率。
+
+| ID | 來源、研究物種與條件 | 允許引入的機制及不能做的外推 |
+|---|---|---|
+| R117 | Dussutour & Simpson (2012), *Ant workers die young and colonies collapse when fed a high-protein diet*. *Proc R Soc B* 279:2402–2408. [DOI](https://doi.org/10.1098/rspb.2012.0051)；**Lasius niger** | 極端P:C組成可顯著影響成蟻壽命和殖群存活。**研究中的1:5最長壽飲食和高蛋白壽命衰退倍率不是Pheidole megacephala目標配比/死亡曲線**。 |
+| R118 | Greenwald, Baltiansky & Feinerman (2018), *Individual crop loads provide local control for collective food intake in ant colonies*. *eLife* 7:e31730. [DOI](https://doi.org/10.7554/eLife.31730)；**Camponotus sanctus** | 局部嗉囊負載／接受者飽足與食物交換共同調節全群攝取，工蟻無須知道全巢庫存。**容量、轉食µL與出勤率不能照抄到本物種**。 |
+| R119 | Krabbe et al. (2019), *Using nutritional geometry to define the fundamental macronutrient niche of the widespread invasive ant Monomorium pharaonis*. *PLOS ONE* 14:e0218764. [DOI](https://doi.org/10.1371/journal.pone.0218764)；**Monomorium pharaonis** | 蛋白/醣/脂三維權衡，工蟻生存與繁殖幼體有不同飲食收益，**不能移植特定P:C:L最適值**。 |
+| R120 | Gutiérrez et al. (2020), *Growth and survival of the superorganism: Ant colony macronutrient intake and investment*. *Ecology and Evolution* 10:7901–7915. [DOI](https://doi.org/10.1002/ece3.6520)；**Lasius niger、Lasius neoniger** | 8個月飲食成分/供食頻率試驗：群體存活、幼體生產、個體體型與採集偏好存在資源取捨；不等於本物種在14或1000隻時的固定每日耗能與繁殖率。 |

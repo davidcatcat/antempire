@@ -1990,7 +1990,9 @@
       "docs/advanced-ecology-integration.md",
       "docs/pheromone-model-evidence.md",
       "docs/historical-climate-weather-engine.md",
-      "data/taichung-climatology-1991-2020.json"
+      "data/taichung-climatology-1991-2020.json",
+      "docs/colony-nutrition-food-web.md",
+      "data/pmegacephala-food-web-v1.json"
     ],
     "latest_completed_day": 8,
     "elapsed_sim_hours": 192,
@@ -2066,7 +2068,7 @@
     "foraging_state_ref": "saves/world-state.json#/foraging_economy",
     "foraging_rules_effective_sim_day": 6,
     "foraging_research_updated_at_local": "2026-11-01",
-    "foraging_model_status": "literature_backed_mechanisms_uncalibrated_unknown_species",
+    "foraging_model_status": "species_selected_P_megacephala_sourced_behavior_existing_v2_qualitative_food_v3_nutrition_rules_effective_day9",
     "foraging_research_does_not_advance_time": true,
     "communication_rules_ref": "docs/ant-communication.md",
     "communication_state_ref": "saves/world-state.json#/communication_system",
@@ -2116,7 +2118,13 @@
     "weather_climatology_data_ref": "data/taichung-climatology-1991-2020.json",
     "weather_mode_policy": "auto_observation_or_valid_forecast_else_historical_climate_synthetic",
     "weather_day8_historical_snapshot_frozen": true,
-    "weather_long_run_support": "seasonal_synthetic_daily_weather_with_persistence_pending_first_Day9_tick"
+    "weather_long_run_support": "seasonal_synthetic_daily_weather_with_persistence_pending_first_Day9_tick",
+    "nutrition_food_web_rules_ref": "docs/colony-nutrition-food-web.md",
+    "nutrition_food_web_archetype_ref": "data/pmegacephala-food-web-v1.json",
+    "nutrition_engine_state_ref": "saves/world-state.json#/foraging_economy/nutrition_engine",
+    "nutrition_rules_effective_sim_day": 9,
+    "nutrition_engine_status": "configured_from_P_megacephala_direct_literature_and_other_ant_mechanisms_pending_first_Day9_tick_not_quantitatively_calibrated",
+    "nutrition_research_only_no_clock_advance": true
   },
   "migration_log": [
     {

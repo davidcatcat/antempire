@@ -3145,6 +3145,129 @@
       "end_carbohydrate_stock_mg": null,
       "end_protein_stock_mg": null,
       "biomass_model_uncalibrated": true
+    },
+    "nutrition_engine": {
+      "schema_version": "antempire.nutrition_engine_v3",
+      "status": "configured_waiting_for_Day9_no_day9_consumption_or_food_flux_simulated",
+      "effective_from_sim_day": 9,
+      "last_completed_sim_day": 8,
+      "last_accounted_day": null,
+      "source_archetype_ref": "data/pmegacephala-food-web-v1.json",
+      "rules_ref": "docs/colony-nutrition-food-web.md",
+      "species_id": "Pheidole megacephala",
+      "ecology_location": "fictional_garden_Taiwan_Taichung_Xitun",
+      "authoritative_food_state_ref": "saves/world-state.json#/foraging_economy",
+      "authoritative_brood_population_ref": "saves/main.json#/colony",
+      "baseline_status": "day8_food_masses_and_colony_crop_loads_unknown",
+      "inherited_day8_external_delivery_events": [
+        {
+          "event_id": "V2D8-E02",
+          "source_node": "F01",
+          "carrier_worker_id": "W005",
+          "count": 1,
+          "quantity_mg": null,
+          "food_kind": "aphid_honeydew"
+        }
+      ],
+      "inherited_day8_queen_eggs": [
+        "E002",
+        "E003"
+      ],
+      "inherited_day8_brood": [
+        "E001",
+        "E002",
+        "E003",
+        "L001",
+        "L002"
+      ],
+      "known_colony_initial_accessible_stores": {
+        "carbohydrate_mg": null,
+        "digestible_protein_mg": null,
+        "lipid_mg": null,
+        "accessible_water_uL": null,
+        "physical_units_have_ever_been_calibrated": false
+      },
+      "known_worker_crop_loads_uL": null,
+      "known_individual_food_quality_measurements": null,
+      "stage_appropriate_nutrient_requirements": null,
+      "no_existing_physical_stock_imputed": true,
+      "current_scenario_nutrition_reserve_estimate": null,
+      "current_stress_index_scenario": null,
+      "current_assessment": {
+        "category": "not_assessable",
+        "confidence": "insufficient_quantitative_data",
+        "known_basis": [
+          "Day8 W005 one confirmed qualitative honeydew delivery",
+          "Day8 no confirmed protein delivery",
+          "preexisting stores unknown",
+          "one living queen, 14 living workers, 3 eggs and 2 larvae"
+        ],
+        "missing_measurements": [
+          "current crop and nest reserve amounts",
+          "food sugar/protein/lipid concentrations",
+          "biomass and field metabolism of worker caste",
+          "larval instars and intake",
+          "queen egg nutrient cost",
+          "available water"
+        ],
+        "has_enough_evidence_for_specific_starvation_event": false
+      },
+      "nutritional_dimensions": [
+        "carbohydrate_mg",
+        "digestible_protein_mg",
+        "lipid_mg",
+        "accessible_water_uL"
+      ],
+      "quantity_status": "unknown_not_zero",
+      "ecological_constraints": {
+        "limited_source_regeneration_not_coupled_to_worker_count": true,
+        "finite_carcass_does_not_respawn_without_new_event": true,
+        "hemipteran_honeydew_requires_live_host": true,
+        "weather_link_ref": "saves/world-state.json#/climate_engine",
+        "current_day9_weather": null
+      },
+      "reconciliation": {
+        "day": null,
+        "external_deliveries_count": null,
+        "external_consumption_count": null,
+        "internal_transfer_count": null,
+        "unique_food_batch_ids": [],
+        "per_nutrient_closed": {
+          "carbohydrate_mg": false,
+          "digestible_protein_mg": false,
+          "lipid_mg": false,
+          "accessible_water_uL": false
+        },
+        "known_missing_initial_stock": true
+      },
+      "numeric_calibration": {
+        "worker_energy_cost_mJ": null,
+        "queen_cost_mJ": null,
+        "larval_digestible_protein_mg": null,
+        "individual_crop_capacity_uL": null,
+        "water_intake_requirement_uL": null,
+        "spoilage_rate": null,
+        "relative_nutritional_optima_PC": null,
+        "relative_nutritional_optima_PCL": null,
+        "starvation_hazard": null,
+        "all_site_measurements_unknown": true
+      },
+      "provenance": {
+        "direct_species_studies": [
+          "R95",
+          "R98",
+          "R107",
+          "R116"
+        ],
+        "other_ant_analogs": [
+          "R112",
+          "R117",
+          "R118",
+          "R119",
+          "R120"
+        ],
+        "mechanism_calibrated_to_site": false
+      }
     }
   },
   "communication_system": {

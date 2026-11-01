@@ -1,0 +1,462 @@
+{
+  "schema_id": "antempire.pmegacephala.food_web_v1",
+  "species_id": "Pheidole megacephala",
+  "first_effective_sim_day": 9,
+  "ecology_setting": "fictional_villa_garden_in_real_Taichung_Xitun",
+  "baseline_sim_day": 8,
+  "latest_completed_day_snapshot_ref": "saves/world-state.json#/day_log_latest",
+  "source_count": 13,
+  "energy_nutrient_dimensions": {
+    "dry_matter_mg": "wet food mass not equivalent to dry digestible nutrients",
+    "carbohydrate_mg": "digestible carbohydrate, concentration must be known",
+    "digestible_protein_mg": "amino_acids_and_digestible_protein, not raw wet prey mass",
+    "lipid_mg": "usable lipids, not assumed zero in dead insects",
+    "accessible_water_uL": "usable ingested water from liquid sources or environmental water; not soil relative humidity"
+  },
+  "quantity_unknown_policy": "null is unknown not 0; scenario numerical values must be tagged scenario_assumption not observed",
+  "source_nodes": {
+    "F01": {
+      "id": "F01",
+      "category": "hemipteran_honeydew",
+      "renewal_class": "renewable_conditional",
+      "qualitative_nutrient_profile": "carbohydrate_rich_liquid",
+      "necessary_ecological_conditions": [
+        "living_aphids",
+        "host_plant_phloem",
+        "local_honeydew_window"
+      ],
+      "scenario_evidence": "confirmed_prior_simulation",
+      "existing_notes": "W005採過少量蜜露，日供給量與持續性未知",
+      "edible_wet_mass_mg": null,
+      "dry_matter_mg": null,
+      "carbohydrate_mg": null,
+      "digestible_protein_mg": null,
+      "lipid_mg": null,
+      "accessible_water_uL": null,
+      "replenishment_flux_per_day": null,
+      "decay_flux_per_day": null,
+      "rival_harvest_flux_per_day": null,
+      "real_biomass_estimate_calibrated": false,
+      "source_population_size": null,
+      "has_usable_food_confirmed_for_sim_day9": null,
+      "new_food_event_id_required_if_resurrecting_finite_carcass": true
+    },
+    "F02": {
+      "id": "F02",
+      "category": "plant_wound_sap",
+      "renewal_class": "finite_wound",
+      "qualitative_nutrient_profile": "mixed_plant_sap",
+      "necessary_ecological_conditions": [
+        "wound_open",
+        "sap_not_dried",
+        "reachable"
+      ],
+      "scenario_evidence": "historic_scenario",
+      "existing_notes": "舊傷口近枯竭，不會每天全量重置",
+      "edible_wet_mass_mg": null,
+      "dry_matter_mg": null,
+      "carbohydrate_mg": null,
+      "digestible_protein_mg": null,
+      "lipid_mg": null,
+      "accessible_water_uL": null,
+      "replenishment_flux_per_day": null,
+      "decay_flux_per_day": null,
+      "rival_harvest_flux_per_day": null,
+      "real_biomass_estimate_calibrated": false,
+      "source_population_size": null,
+      "has_usable_food_confirmed_for_sim_day9": null,
+      "new_food_event_id_required_if_resurrecting_finite_carcass": true
+    },
+    "F03": {
+      "id": "F03",
+      "category": "damaged_fruit",
+      "renewal_class": "finite_decay_and_competition",
+      "qualitative_nutrient_profile": "carbohydrate_rich_fruit_and_unknown_other",
+      "necessary_ecological_conditions": [
+        "fruit_remains",
+        "local_access",
+        "other_ants_compete"
+      ],
+      "scenario_evidence": "historic_scenario",
+      "existing_notes": "腐爛與異巢蟻競爭",
+      "edible_wet_mass_mg": null,
+      "dry_matter_mg": null,
+      "carbohydrate_mg": null,
+      "digestible_protein_mg": null,
+      "lipid_mg": null,
+      "accessible_water_uL": null,
+      "replenishment_flux_per_day": null,
+      "decay_flux_per_day": null,
+      "rival_harvest_flux_per_day": null,
+      "real_biomass_estimate_calibrated": false,
+      "source_population_size": null,
+      "has_usable_food_confirmed_for_sim_day9": null,
+      "new_food_event_id_required_if_resurrecting_finite_carcass": true
+    },
+    "F04": {
+      "id": "F04",
+      "category": "hemipteran_scale_honeydew",
+      "renewal_class": "renewable_conditional_competed",
+      "qualitative_nutrient_profile": "carbohydrate_rich_liquid",
+      "necessary_ecological_conditions": [
+        "living_scale_insects",
+        "host_plant",
+        "rival_foraging"
+      ],
+      "scenario_evidence": "historic_scenario",
+      "existing_notes": "異巢蟻背景取食，主巢尚未取得新食物",
+      "edible_wet_mass_mg": null,
+      "dry_matter_mg": null,
+      "carbohydrate_mg": null,
+      "digestible_protein_mg": null,
+      "lipid_mg": null,
+      "accessible_water_uL": null,
+      "replenishment_flux_per_day": null,
+      "decay_flux_per_day": null,
+      "rival_harvest_flux_per_day": null,
+      "real_biomass_estimate_calibrated": false,
+      "source_population_size": null,
+      "has_usable_food_confirmed_for_sim_day9": null,
+      "new_food_event_id_required_if_resurrecting_finite_carcass": true
+    },
+    "F05": {
+      "id": "F05",
+      "category": "aphid_honeydew_with_predator",
+      "renewal_class": "renewable_conditional_hazard",
+      "qualitative_nutrient_profile": "carbohydrate_rich_liquid",
+      "necessary_ecological_conditions": [
+        "living_hemipterans",
+        "predator_spider_local",
+        "reachable"
+      ],
+      "scenario_evidence": "historic_scenario",
+      "existing_notes": "蜘蛛既有活動，不能把蜘蛛當每天食物或無條件死亡",
+      "edible_wet_mass_mg": null,
+      "dry_matter_mg": null,
+      "carbohydrate_mg": null,
+      "digestible_protein_mg": null,
+      "lipid_mg": null,
+      "accessible_water_uL": null,
+      "replenishment_flux_per_day": null,
+      "decay_flux_per_day": null,
+      "rival_harvest_flux_per_day": null,
+      "real_biomass_estimate_calibrated": false,
+      "source_population_size": null,
+      "has_usable_food_confirmed_for_sim_day9": null,
+      "new_food_event_id_required_if_resurrecting_finite_carcass": true
+    },
+    "F06": {
+      "id": "F06",
+      "category": "plant_sap_residue",
+      "renewal_class": "finite_residue",
+      "qualitative_nutrient_profile": "mixed_plant_sap",
+      "necessary_ecological_conditions": [
+        "old_residue_exists"
+      ],
+      "scenario_evidence": "historic_scenario",
+      "existing_notes": "舊汁液有限",
+      "edible_wet_mass_mg": null,
+      "dry_matter_mg": null,
+      "carbohydrate_mg": null,
+      "digestible_protein_mg": null,
+      "lipid_mg": null,
+      "accessible_water_uL": null,
+      "replenishment_flux_per_day": null,
+      "decay_flux_per_day": null,
+      "rival_harvest_flux_per_day": null,
+      "real_biomass_estimate_calibrated": false,
+      "source_population_size": null,
+      "has_usable_food_confirmed_for_sim_day9": null,
+      "new_food_event_id_required_if_resurrecting_finite_carcass": true
+    },
+    "F07": {
+      "id": "F07",
+      "category": "insect_carcass",
+      "renewal_class": "finite_detritus",
+      "qualitative_nutrient_profile": "protein_lipid_mixed_carcass",
+      "necessary_ecological_conditions": [
+        "actual_carcass_or_remains",
+        "unspoiled_fraction",
+        "reachable"
+      ],
+      "scenario_evidence": "confirmed_prior_simulation",
+      "existing_notes": "舊蛾屍幾乎耗盡，新死蟲須獨立來源事件ID",
+      "edible_wet_mass_mg": null,
+      "dry_matter_mg": null,
+      "carbohydrate_mg": null,
+      "digestible_protein_mg": null,
+      "lipid_mg": null,
+      "accessible_water_uL": null,
+      "replenishment_flux_per_day": null,
+      "decay_flux_per_day": null,
+      "rival_harvest_flux_per_day": null,
+      "real_biomass_estimate_calibrated": false,
+      "source_population_size": null,
+      "has_usable_food_confirmed_for_sim_day9": null,
+      "new_food_event_id_required_if_resurrecting_finite_carcass": true
+    },
+    "F08": {
+      "id": "F08",
+      "category": "flower_nectar",
+      "renewal_class": "renewable_phenology_limited",
+      "qualitative_nutrient_profile": "carbohydrate_rich_liquid",
+      "necessary_ecological_conditions": [
+        "flowering",
+        "nectar_secretion_window",
+        "competing_consumers"
+      ],
+      "scenario_evidence": "confirmed_prior_simulation",
+      "existing_notes": "日間可能分泌不保證工蟻有採到",
+      "edible_wet_mass_mg": null,
+      "dry_matter_mg": null,
+      "carbohydrate_mg": null,
+      "digestible_protein_mg": null,
+      "lipid_mg": null,
+      "accessible_water_uL": null,
+      "replenishment_flux_per_day": null,
+      "decay_flux_per_day": null,
+      "rival_harvest_flux_per_day": null,
+      "real_biomass_estimate_calibrated": false,
+      "source_population_size": null,
+      "has_usable_food_confirmed_for_sim_day9": null,
+      "new_food_event_id_required_if_resurrecting_finite_carcass": true
+    },
+    "F09": {
+      "id": "F09",
+      "category": "damaged_stem_sap",
+      "renewal_class": "finite_wound",
+      "qualitative_nutrient_profile": "mixed_plant_sap",
+      "necessary_ecological_conditions": [
+        "open_stem",
+        "non_dried_sap"
+      ],
+      "scenario_evidence": "historic_scenario",
+      "existing_notes": "舊草莖近乎枯竭",
+      "edible_wet_mass_mg": null,
+      "dry_matter_mg": null,
+      "carbohydrate_mg": null,
+      "digestible_protein_mg": null,
+      "lipid_mg": null,
+      "accessible_water_uL": null,
+      "replenishment_flux_per_day": null,
+      "decay_flux_per_day": null,
+      "rival_harvest_flux_per_day": null,
+      "real_biomass_estimate_calibrated": false,
+      "source_population_size": null,
+      "has_usable_food_confirmed_for_sim_day9": null,
+      "new_food_event_id_required_if_resurrecting_finite_carcass": true
+    },
+    "F10": {
+      "id": "F10",
+      "category": "root_hemipteran_honeydew",
+      "renewal_class": "renewable_conditional_hazard",
+      "qualitative_nutrient_profile": "carbohydrate_rich_liquid",
+      "necessary_ecological_conditions": [
+        "root_hemipterans",
+        "host_plant",
+        "toad_local"
+      ],
+      "scenario_evidence": "historic_scenario",
+      "existing_notes": "根際舊蜜露與蟾蜍風險",
+      "edible_wet_mass_mg": null,
+      "dry_matter_mg": null,
+      "carbohydrate_mg": null,
+      "digestible_protein_mg": null,
+      "lipid_mg": null,
+      "accessible_water_uL": null,
+      "replenishment_flux_per_day": null,
+      "decay_flux_per_day": null,
+      "rival_harvest_flux_per_day": null,
+      "real_biomass_estimate_calibrated": false,
+      "source_population_size": null,
+      "has_usable_food_confirmed_for_sim_day9": null,
+      "new_food_event_id_required_if_resurrecting_finite_carcass": true
+    },
+    "F11": {
+      "id": "F11",
+      "category": "decomposing_insect_fragments",
+      "renewal_class": "finite_decomposition",
+      "qualitative_nutrient_profile": "protein_lipid_remnant",
+      "necessary_ecological_conditions": [
+        "physical_remnant",
+        "not_fully_decomposed",
+        "not_taken_by_others"
+      ],
+      "scenario_evidence": "confirmed_prior_simulation",
+      "existing_notes": "分解者持續消耗殘屑，不能重生相同屍體",
+      "edible_wet_mass_mg": null,
+      "dry_matter_mg": null,
+      "carbohydrate_mg": null,
+      "digestible_protein_mg": null,
+      "lipid_mg": null,
+      "accessible_water_uL": null,
+      "replenishment_flux_per_day": null,
+      "decay_flux_per_day": null,
+      "rival_harvest_flux_per_day": null,
+      "real_biomass_estimate_calibrated": false,
+      "source_population_size": null,
+      "has_usable_food_confirmed_for_sim_day9": null,
+      "new_food_event_id_required_if_resurrecting_finite_carcass": true
+    },
+    "U00": {
+      "id": "U00",
+      "category": "unknown_outer_garden",
+      "renewal_class": "unresolved_not_food",
+      "qualitative_nutrient_profile": "unknown",
+      "necessary_ecological_conditions": [
+        "worker_actual_discovery"
+      ],
+      "scenario_evidence": "partially_explored",
+      "existing_notes": "沒有找到食物不等於整個未來地圖有食物",
+      "edible_wet_mass_mg": null,
+      "dry_matter_mg": null,
+      "carbohydrate_mg": null,
+      "digestible_protein_mg": null,
+      "lipid_mg": null,
+      "accessible_water_uL": null,
+      "replenishment_flux_per_day": null,
+      "decay_flux_per_day": null,
+      "rival_harvest_flux_per_day": null,
+      "real_biomass_estimate_calibrated": false,
+      "source_population_size": null,
+      "has_usable_food_confirmed_for_sim_day9": null,
+      "new_food_event_id_required_if_resurrecting_finite_carcass": true
+    },
+    "U01": {
+      "id": "U01",
+      "category": "reached_pebble_gap",
+      "renewal_class": "unresolved_not_food",
+      "qualitative_nutrient_profile": "unknown",
+      "necessary_ecological_conditions": [
+        "worker_actual_discovery",
+        "confirmed_local_resource"
+      ],
+      "scenario_evidence": "W016_reached_day8",
+      "existing_notes": "新石縫U01有已走路線，但沒有確認任何食物源",
+      "edible_wet_mass_mg": null,
+      "dry_matter_mg": null,
+      "carbohydrate_mg": null,
+      "digestible_protein_mg": null,
+      "lipid_mg": null,
+      "accessible_water_uL": null,
+      "replenishment_flux_per_day": null,
+      "decay_flux_per_day": null,
+      "rival_harvest_flux_per_day": null,
+      "real_biomass_estimate_calibrated": false,
+      "source_population_size": null,
+      "has_usable_food_confirmed_for_sim_day9": null,
+      "new_food_event_id_required_if_resurrecting_finite_carcass": true
+    }
+  },
+  "nutrition_allocation": {
+    "workers": {
+      "dimensions": [
+        "carbohydrate_mg",
+        "digestible_protein_mg",
+        "lipid_mg",
+        "accessible_water_uL"
+      ],
+      "function": "maintenance_activity_recovery",
+      "species_specific_intake_targets": null
+    },
+    "queen": {
+      "dimensions": [
+        "carbohydrate_mg",
+        "digestible_protein_mg",
+        "lipid_mg",
+        "accessible_water_uL"
+      ],
+      "function": "maintenance_ovary_activity_and_egg_costs",
+      "species_specific_intake_targets": null
+    },
+    "brood": {
+      "dimensions": [
+        "carbohydrate_mg",
+        "digestible_protein_mg",
+        "lipid_mg",
+        "accessible_water_uL"
+      ],
+      "function": "larval_growth_and_survival_stage_specific",
+      "species_specific_intake_targets": null
+    },
+    "individual_crop": {
+      "dimensions": [
+        "carbohydrate_mg",
+        "accessible_water_uL"
+      ],
+      "function": "liquid_transfer_not_additive_colony_stock",
+      "crop_capacity_uL": null
+    }
+  },
+  "literature_anchors": {
+    "R95": {
+      "source": "UF/IFAS Pheidole megacephala",
+      "url": "https://ask.ifas.ufl.edu/publication/IN712",
+      "direct": true
+    },
+    "R98": {
+      "source": "Dejean et al. 2007 Pheidole megacephala predation",
+      "url": "https://doi.org/10.1016/j.crvi.2007.06.005",
+      "direct": true
+    },
+    "R116": {
+      "source": "Tsuji & Win 2025 Pheidole megacephala polydomy nutrient exchange",
+      "url": "https://doi.org/10.1242/bio.061976",
+      "direct": true
+    },
+    "R112": {
+      "source": "Dussutour & Simpson 2009 communal nutrition in ants",
+      "url": "https://doi.org/10.1016/j.cub.2009.03.015",
+      "direct": false
+    },
+    "R117": {
+      "source": "Dussutour & Simpson 2012 high-protein diet Lasius niger survival",
+      "url": "https://doi.org/10.1098/rspb.2012.0051",
+      "direct": false
+    },
+    "R118": {
+      "source": "Greenwald, Baltiansky & Feinerman 2018 individual crop loads Camponotus sanctus",
+      "url": "https://doi.org/10.7554/eLife.31730",
+      "direct": false
+    },
+    "R119": {
+      "source": "Krabbe et al. 2019 nutritional geometry Monomorium pharaonis",
+      "url": "https://doi.org/10.1371/journal.pone.0218764",
+      "direct": false
+    },
+    "R120": {
+      "source": "Gutiérrez et al. 2020 macronutrient investment Lasius niger / neoniger",
+      "url": "https://doi.org/10.1002/ece3.6520",
+      "direct": false
+    }
+  },
+  "default_calibration": {
+    "wild_site_honeydew_flux_per_aphid": null,
+    "nectar_rate_per_flower": null,
+    "field_prey_event_rate": null,
+    "field_source_biomass_mg": null,
+    "ant_mass_mg_by_caste": null,
+    "worker_basal_metabolism_mJ_per_day": null,
+    "walking_cost_mJ_per_cm": null,
+    "brood_protein_requirement_mg_per_stage": null,
+    "queen_egg_nutrient_cost_mg": null,
+    "water_requirement_uL_per_day": null,
+    "assimilable_nutrient_fraction_by_food": null,
+    "transfer_efficiency": null,
+    "spoilage_rate": null,
+    "worker_crop_capacity_uL": null,
+    "starvation_death_hazard_curve": null,
+    "larval_starvation_death_hazard_curve": null,
+    "experimentally_verified_pmegacephala_optimal_PC_ratio": null,
+    "experimentally_verified_pmegacephala_optimal_PCL_ratio": null,
+    "assumption_only_default_numeric_flows": false
+  },
+  "thresholds_policy": "inadequate food must have persistent exposure plus bounded reserves and an explicit scenario/empirical hazard; no instant death from no-delivery event",
+  "hypothetical_colony_sizes_for_verification_only": [
+    14,
+    100,
+    1000,
+    10000
+  ],
+  "notes": "Read-only source archetype and unknown initial physical parameter scaffold; live food observations remain solely in world-state.json#/foraging_economy. No extra food created by research."
+}

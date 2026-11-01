@@ -68,3 +68,13 @@
 
 ## 2026-11-01 生態進階與訊號證據修正
 參照[pheromone-model-evidence.md](pheromone-model-evidence.md)、[mutualism-predation.md](mutualism-predation.md)及[advanced-ecology-integration.md](advanced-ecology-integration.md)。蜜露／吸汁蟲保護、活獵物捕獵/逃走、病原來源、屍體處置、幼體蛋白質需求、交通搬運皆需實際地點與事件。**食物入庫仍只有本檔唯一權威**，不能因捕食／共生／分食在不同模組各加一次。兩招募化學分子未被確證，單／雙模型競爭，既有Day5路徑濃度null。
+
+## 八、2026-11-01 完整食物-營養-生命史統一規格（**Day9起生效**）
+
+玩家決定食源、採食、內部分配、代謝、營養不足、蟻后與幼體發育要形成**真正可稽核、能延伸到上萬隻的同一系統**。最新權威詳見 [colony-nutrition-food-web.md](colony-nutrition-food-web.md) 及 [Pheidole食源分類JSON](../data/pmegacephala-food-web-v1.json)，研究R95/R98/R107/R116–R120。
+
+**直接本種證據R116**：P. megacephala人工雙巢營養互補，巢間食物交流使幼體生產更好；不能把巢群食物視作即時全共享。每個既存食源F01–F11/U00/U01皆需來源、再生/消耗、營養成分、時窗及風險，未知質量mg保持null。工蟻外採→回巢→分食/育幼→代謝/排泄/殘餌→生理回饋按唯一食物批次追蹤；跨巢移動只調撥不入新帳。
+
+成年蟻P/C需求與幼蟲生長有不同權衡，**不把他種Lasius最適飲食1:5硬套本種**。現有`sugar_units=3/protein_units=3`仍為歷史v1快照非Day8或Day9物理庫存；沒有量測則每日數值收支無法閉合，必須寫`null`與證據/情境不確定性，不直接從0次帶回推算餓死。
+
+原檔案中部分「尚未鑑種」文字是Day5以前研究歷史；**正式物種已於Day6指定為P. megacephala**，在涉及種屬行為時由本次新規格覆蓋。本次純規格更新，不推進Day8/192h。

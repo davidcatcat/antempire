@@ -71,3 +71,11 @@
 - 主存檔僅放模型參照/生效Day9與已完成Day8，不新增螞蟻。世界`climate_engine`保留**即將生效**的生成器版本與前日輸入，不把Day8先算成合成天氣。
 - Day9起**每次存檔測試**：氣象`active_date`、`last_weather_driven_sim_day`與world/main/journal一致；觀測/預報/合成各有清楚的來源類別及`previous_day_weather_ref`；同一次雨水只算一次；虛擬雨量不是實際降雨；原日誌與歷史seed不能倒改。
 - 無有效未來預報時以虛擬天氣替代，長期仍依真實臺中氣候季節變化推演。未知的微氣候物理量繼續null；假設土壤濕潤指數不可當實際含水率。
+
+## 2026-11-01 Day9起營養、食物源與死亡風險的資料契約
+- 唯一規格 [colony-nutrition-food-web.md](colony-nutrition-food-web.md)；靜態來源樣板 [data/pmegacephala-food-web-v1.json](../data/pmegacephala-food-web-v1.json)；動態**唯一食物權威**在`world-state.json#/foraging_economy`，原`main.json#/colony/food`保留歷史值/衍生當日帳，不可增一個平行庫存。
+- 新增`foraging_economy.nutrition_engine`是**Day9開始使用**的狀態契約，禁止在規格更新時產生day9實際入巢、消耗、飢餓、產卵、幼蟲死亡或填mg/µL。
+- Day9起每次單日提交：食物源生產/腐敗/競爭、搜尋、採食、實際帶回、內部分食、個體/幼體/蟻后攝入、消耗、風險評估、人口生命帳各有來源事件ID及同一時間窗，食物濕重與P/C/L、水份不得混帳。
+- 可量化時所有營養維度守恆；不可量化時`quantitatively_closed=false`、物理值`null`，不把未測量當0。食源有限屍體不得刷新，分食不加外界收入；跨巢輸送沒有雙重收益。
+- Day9起即使14→100/1000/10000也不改生物規則；需求與來源依群體/巢區/幼體/形態/工作量與局部交通核算。要有條件風險與真實前提才可能死亡，不能只因一天0入巢而判蟻后/工蟻死。
+- 舊Day8人口、U01、Q001的新卵E002/E003、六傷蟻、Day8 W005一筆蜜露和Day8`day_log_latest`/journal全部凍結。

@@ -70,3 +70,6 @@
 - [R107](references.md)：Dejean et al. 2007. 本物種不同形態工蟻捕食與招募。
 - [R115](references.md)：*Task allocation in a cooperative society*，形態/齡級分工模型，並非本種定量參數。
 - [R116](references.md)：*Open and closed economies as possible alternative strategies to resource heterogeneity in ants*，P. megacephala等大型實驗殖群與食物經濟，不能直接外推N00消耗率。
+
+## 2026-11-01 Day9起跨100/1000/10000工蟻營養耦合
+[完整營養規格](colony-nutrition-food-web.md)取代任何「工蟻總數×固定每日糖1」的做法；需求按individual/caste/age/health/activity/nest與卵幼蟲形態、蟻后繁殖分層，食物源按外界生物容量/局部存續計算。14隻保留完整個體，100以上可cohort彙總但不使同一食物或工蟻重複入帳。營養偏缺必須通過時序、儲備與分配接觸，影響產卵/發育/條件死亡；尚無本種營養危險率時不得捏造精確死亡百分比。物種本身R116已證實跨巢營養互補，但目前N00**只有一個確認的現住蟻巢**，不新增虛構第二巢。
