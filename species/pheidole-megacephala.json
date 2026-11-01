@@ -537,6 +537,54 @@
       "basis": "遊戲假設",
       "legacy_path": "sim/params.json#workers.injury_repair_probability"
     },
+    "injury_repair_multiplier_abrasion": {
+      "value": 1,
+      "assumption": true,
+      "description": "擦傷（外骨骼表面傷口）的每日復原機率倍率；乘上 injury_repair_probability。v2-review.12 新增",
+      "reference_for_mechanism_only": [
+        "R129",
+        "R130"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制：文獻支持（其他物種，只取方向）。傷口的主要危險是受傷後短時間內的感染：Megaponera analis 未經同伴處理的傷蟻 90% 在 24 小時內死亡，同伴在受傷後 3 小時內舔舐傷口（Frank et al. 2018、2023，R129／R130）；存活下來的表面傷口會封閉。數值：維持原本的每日 5%（倍率 1），本種沒有傷口癒合時間的資料；未依結果調整。",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.12-injury-types",
+        "approved_in": "owner request 2026-11-01 (#13 injury classification)"
+      }
+    },
+    "injury_repair_multiplier_appendage_damage": {
+      "value": 0,
+      "assumption": true,
+      "description": "肢體（腳、觸角）缺損或不可逆損傷的每日復原機率倍率：0＝永久，不會復原；受傷的死亡風險倍率持續有效。v2-review.12 新增",
+      "reference_for_mechanism_only": [
+        "R128",
+        "R123",
+        "R125"
+      ],
+      "basis": "一般生理學",
+      "basis_note": "一般生理學：完全變態昆蟲在成蟲之後不再脫皮，附肢再生需要脫皮，成蟲的再生能力已喪失（Zhong et al. 2023 綜述，R128）。螞蟻實驗中被切除的腳或觸角沒有長回（R123 P. dentata、R125 Cataglyphis）。0 不是本種實測，而是『成蟲不會長回附肢』的直接推論。",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.12-injury-types",
+        "approved_in": "owner request 2026-11-01 (#13 injury classification)"
+      }
+    },
+    "injury_repair_multiplier_unknown": {
+      "value": 1,
+      "assumption": true,
+      "description": "傷勢類型沒有記錄（例如 Day1～14 的『舊傷』）時的每日復原機率倍率。v2-review.12 新增",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "basis_note": "遊戲假設：歷史紀錄沒有寫明是擦傷還是肢體缺損（irreversible_damage 為 null），文獻無法判斷。維持 v2-review.11 以前的行為（倍率 1），不把未知寫成已知；是否改為永久需要 Owner 決定。",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.12-injury-types",
+        "approved_in": "owner request 2026-11-01 (#13 injury classification)"
+      }
+    },
+    "injury_types_note": "v2-review.12：工蟻的 injury_type 為 abrasion（擦傷，可復原）、appendage_damage（肢體缺損，永久）或 unknown（類型未記錄）；沒有 injury_type 欄位的舊狀態視為 unknown。類型只來自存檔的實際傷勢紀錄（Day15 遷移），引擎目前不產生新傷勢。",
     "adult_total_daily_hazard_cap": {
       "value": 0.98,
       "assumption": true,

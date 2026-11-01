@@ -1,6 +1,6 @@
 # TypeScript 引擎架構（engine-ts.1）
 
-> 本文件說明 2026-11 的程式改寫。TypeScript 移植本身**行為完全不變**：移植時的輸出與 `sim/day_engine.cjs`（v2-review.6）逐位元組相同。之後刻意的行為改變只有已核准的規則更新（清單：`tests/golden/approved-rule-changes.json`；v2-review.7 巢溫記憶、v2-review.8 受傷工蟻任務傾向、v2-review.9 同時段合作捕獵、v2-review.10 大型獵物隊伍上限、v2-review.11 後到者加入等待中的獵物），`tests/differential.test.ts` 證明撤回這些變更後與 v6 逐位元組相同，`tests/rules-isolation.test.ts` 證明每一版只改了所列的參數或模型開關。
+> 本文件說明 2026-11 的程式改寫。TypeScript 移植本身**行為完全不變**：移植時的輸出與 `sim/day_engine.cjs`（v2-review.6）逐位元組相同。之後刻意的行為改變只有已核准的規則更新（清單：`tests/golden/approved-rule-changes.json`；v2-review.7 巢溫記憶、v2-review.8 受傷工蟻任務傾向、v2-review.9 同時段合作捕獵、v2-review.10 大型獵物隊伍上限、v2-review.11 後到者加入等待中的獵物、v2-review.12 傷勢分類），`tests/differential.test.ts` 證明撤回這些變更後與 v6 逐位元組相同，`tests/rules-isolation.test.ts` 證明每一版只改了所列的參數或模型開關。
 
 ## 1. 目錄
 
@@ -64,11 +64,12 @@ F03、F04 的陌生蟻群目前在 `world/xitun-garden.json#background_colonies`
 
 | 測試 | 內容 |
 |---|---|
-| `tests/golden.test.ts` | 針對**目前規則版本**（`RULES_TAG`，現為 v11）：① 重新產生 `reports/day15-134-v11-20seeds-{daily,weekly}.csv`、`-analysis.json` 與單一種子 `day15-134-v11-*`，**逐位元組**比對；② 28 個情境（20 種子 × 120 日、斷糧、增糖、豐食、孤兒幼蟲、無工蟻蟻后、高探索、100／1000 工蟻）完整每日輸出（summary＋events＋state）的雜湊鏈，比對 `tests/golden/v11-trace-sha256.json`。v6～v10 的報告與 `tests/golden/v6-trace-sha256.json`（由舊引擎產生，TS 移植時 28/28 相同）保留為歷史。 |
+| `tests/golden.test.ts` | 針對**目前規則版本**（`RULES_TAG`，現為 v12）：① 重新產生 `reports/day15-134-v12-20seeds-{daily,weekly}.csv`、`-analysis.json` 與單一種子 `day15-134-v12-*`，**逐位元組**比對；② 28 個情境（20 種子 × 120 日、斷糧、增糖、豐食、孤兒幼蟲、無工蟻蟻后、高探索、100／1000 工蟻）完整每日輸出（summary＋events＋state）的雜湊鏈，比對 `tests/golden/v12-trace-sha256.json`。v6～v11 的報告與 `tests/golden/v6-trace-sha256.json`（由舊引擎產生，TS 移植時 28/28 相同）保留為歷史。 |
 | `tests/differential.test.ts` | 舊引擎仍在時：**隔離證明**——2618 個模擬日中，只要每天把輸入的 `climate.prior_nest_temp_model_c` 拿掉，新引擎就與 v6 逐位元組相同；真實 Day14 存檔的遷移狀態逐位元組相同；Day15 存檔映射在只正規化引擎參照字串與時間戳後逐位元組相同。 |
 | `tests/nest-temperature.test.ts` | v2-review.7 巢溫記憶公式與遷移後第一天的退回規則。 |
-| `tests/rules-isolation.test.ts` | 參數／模型開關的規則更新：撤回該版（及之後各版）的變更，就必須重現上一版的黃金雜湊（v8 → v7、v9 → v8、v10 → v9、v11 → v10）。 |
+| `tests/rules-isolation.test.ts` | 參數／模型開關的規則更新：撤回該版（及之後各版）的變更，就必須重現上一版的黃金雜湊（v8 → v7、v9 → v8、v10 → v9、v11 → v10、v12 → v11）。 |
 | `tests/hunting.test.ts` | v2-review.9 合作捕獵：隊伍與處理順序無關、參與鎖定、短距／長距招募與走路時間、逃脫、時間一致、共同搬運質量守恆、先採剩餘屍體、隊伍上限、後到者加入等待中的獵物。 |
+| `tests/injury.test.ts` | v2-review.12 傷勢分類：Day15 遷移只依紀錄分類（唯讀真實存檔）、擦傷／未知可復原、肢體缺損永不復原、開關關閉不寫入類型。 |
 | `tests/naturalism.test.ts` | 214 項（與 v6 相同數量）。 |
 | `tests/foraging-physics.test.ts` | 全部通過；項數隨軌跡而定（v6 為 2149，v7 為 2132）。 |
 | `tests/migration.test.ts` | 21／21。 |

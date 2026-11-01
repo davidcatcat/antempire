@@ -77,6 +77,46 @@
       "from": false,
       "to": true,
       "description": "long-range hunts wait at the site on the carcass-trip clock; empty-handed workers arriving by the time the recruits arrive join it (up to the team cap) and the hunt is concluded with all of them; the waiting insect is reserved; false = v2-review.10 immediate resolution"
+    },
+    {
+      "rules_version": "antempire.v2-review.12-injury-types",
+      "approved_in": "owner request 2026-11-01 (#13 injury classification)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "worker_lifespan.injury_repair_multiplier_abrasion",
+      "from": 1,
+      "to": 1,
+      "note": "from = the single v2-review.11 repair rule (every injury repairable)"
+    },
+    {
+      "rules_version": "antempire.v2-review.12-injury-types",
+      "approved_in": "owner request 2026-11-01 (#13 injury classification)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "worker_lifespan.injury_repair_multiplier_appendage_damage",
+      "from": 1,
+      "to": 0,
+      "note": "from = the single v2-review.11 repair rule (every injury repairable)"
+    },
+    {
+      "rules_version": "antempire.v2-review.12-injury-types",
+      "approved_in": "owner request 2026-11-01 (#13 injury classification)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "worker_lifespan.injury_repair_multiplier_unknown",
+      "from": 1,
+      "to": 1,
+      "note": "from = the single v2-review.11 repair rule (every injury repairable)"
+    },
+    {
+      "rules_version": "antempire.v2-review.12-injury-types",
+      "approved_in": "owner request 2026-11-01 (#13 injury classification)",
+      "kind": "param_switch",
+      "file": "world",
+      "path": "day15_migration.classify_injuries",
+      "from": false,
+      "to": true,
+      "description": "Day15 migration records injury_type / injury_body_part / injury_record from the Day14 injury records; false = v2-review.11 migration"
     }
   ]
 }

@@ -1,0 +1,528 @@
+{
+  "schema": "antempire.rules-update.v12-injury-types",
+  "v12_engine": "antempire.v2-review.12-injury-types",
+  "v11_rules": "current engine with only the v2-review.12 changes undone (proven identical to v11 by tests/rules-isolation.test.ts and to v6 migration by tests/differential.test.ts)",
+  "official_day14_advanced": false,
+  "saves_written": false,
+  "game_assumptions": true,
+  "day15_injury_types": {
+    "W007": {
+      "injury_type": "unknown",
+      "body_part": "後腳",
+      "record": "舊傷"
+    },
+    "W008": {
+      "injury_type": "unknown",
+      "body_part": "腳部",
+      "record": "舊傷改善中"
+    },
+    "W009": {
+      "injury_type": "unknown",
+      "body_part": "前足",
+      "record": "舊傷"
+    },
+    "W012": {
+      "injury_type": "abrasion",
+      "body_part": "前足",
+      "record": "輕微擦傷"
+    },
+    "W013": {
+      "injury_type": "abrasion",
+      "body_part": "後足",
+      "record": "1142分鐘擦傷"
+    },
+    "W014": {
+      "injury_type": "abrasion",
+      "body_part": "前足",
+      "record": "遠征擦傷"
+    }
+  },
+  "all_20_seeds_identical_outcomes": true,
+  "seeds": [
+    {
+      "seed": 15032026,
+      "day134_workers": {
+        "v11": 23,
+        "v12": 23
+      },
+      "injury_recoveries": {
+        "v11": 1,
+        "v12": 1
+      },
+      "injured_worker_deaths": {
+        "v11": 6,
+        "v12": 6
+      },
+      "differing_summary_days": 0,
+      "differing_state_days_ignoring_injury_fields": 0
+    },
+    {
+      "seed": 15032027,
+      "day134_workers": {
+        "v11": 0,
+        "v12": 0
+      },
+      "injury_recoveries": {
+        "v11": 1,
+        "v12": 1
+      },
+      "injured_worker_deaths": {
+        "v11": 6,
+        "v12": 6
+      },
+      "differing_summary_days": 0,
+      "differing_state_days_ignoring_injury_fields": 0
+    },
+    {
+      "seed": 15032028,
+      "day134_workers": {
+        "v11": 16,
+        "v12": 16
+      },
+      "injury_recoveries": {
+        "v11": 3,
+        "v12": 3
+      },
+      "injured_worker_deaths": {
+        "v11": 6,
+        "v12": 6
+      },
+      "differing_summary_days": 0,
+      "differing_state_days_ignoring_injury_fields": 0
+    },
+    {
+      "seed": 15032029,
+      "day134_workers": {
+        "v11": 6,
+        "v12": 6
+      },
+      "injury_recoveries": {
+        "v11": 2,
+        "v12": 2
+      },
+      "injured_worker_deaths": {
+        "v11": 6,
+        "v12": 6
+      },
+      "differing_summary_days": 0,
+      "differing_state_days_ignoring_injury_fields": 0
+    },
+    {
+      "seed": 15032030,
+      "day134_workers": {
+        "v11": 12,
+        "v12": 12
+      },
+      "injury_recoveries": {
+        "v11": 2,
+        "v12": 2
+      },
+      "injured_worker_deaths": {
+        "v11": 6,
+        "v12": 6
+      },
+      "differing_summary_days": 0,
+      "differing_state_days_ignoring_injury_fields": 0
+    },
+    {
+      "seed": 15032031,
+      "day134_workers": {
+        "v11": 18,
+        "v12": 18
+      },
+      "injury_recoveries": {
+        "v11": 1,
+        "v12": 1
+      },
+      "injured_worker_deaths": {
+        "v11": 6,
+        "v12": 6
+      },
+      "differing_summary_days": 0,
+      "differing_state_days_ignoring_injury_fields": 0
+    },
+    {
+      "seed": 15032032,
+      "day134_workers": {
+        "v11": 18,
+        "v12": 18
+      },
+      "injury_recoveries": {
+        "v11": 0,
+        "v12": 0
+      },
+      "injured_worker_deaths": {
+        "v11": 6,
+        "v12": 6
+      },
+      "differing_summary_days": 0,
+      "differing_state_days_ignoring_injury_fields": 0
+    },
+    {
+      "seed": 15032033,
+      "day134_workers": {
+        "v11": 9,
+        "v12": 9
+      },
+      "injury_recoveries": {
+        "v11": 1,
+        "v12": 1
+      },
+      "injured_worker_deaths": {
+        "v11": 6,
+        "v12": 6
+      },
+      "differing_summary_days": 0,
+      "differing_state_days_ignoring_injury_fields": 0
+    },
+    {
+      "seed": 15032034,
+      "day134_workers": {
+        "v11": 10,
+        "v12": 10
+      },
+      "injury_recoveries": {
+        "v11": 3,
+        "v12": 3
+      },
+      "injured_worker_deaths": {
+        "v11": 6,
+        "v12": 6
+      },
+      "differing_summary_days": 0,
+      "differing_state_days_ignoring_injury_fields": 0
+    },
+    {
+      "seed": 15032035,
+      "day134_workers": {
+        "v11": 12,
+        "v12": 12
+      },
+      "injury_recoveries": {
+        "v11": 3,
+        "v12": 3
+      },
+      "injured_worker_deaths": {
+        "v11": 6,
+        "v12": 6
+      },
+      "differing_summary_days": 0,
+      "differing_state_days_ignoring_injury_fields": 0
+    },
+    {
+      "seed": 15032036,
+      "day134_workers": {
+        "v11": 12,
+        "v12": 12
+      },
+      "injury_recoveries": {
+        "v11": 1,
+        "v12": 1
+      },
+      "injured_worker_deaths": {
+        "v11": 6,
+        "v12": 6
+      },
+      "differing_summary_days": 0,
+      "differing_state_days_ignoring_injury_fields": 0
+    },
+    {
+      "seed": 15032037,
+      "day134_workers": {
+        "v11": 12,
+        "v12": 12
+      },
+      "injury_recoveries": {
+        "v11": 0,
+        "v12": 0
+      },
+      "injured_worker_deaths": {
+        "v11": 6,
+        "v12": 6
+      },
+      "differing_summary_days": 0,
+      "differing_state_days_ignoring_injury_fields": 0
+    },
+    {
+      "seed": 15032038,
+      "day134_workers": {
+        "v11": 19,
+        "v12": 19
+      },
+      "injury_recoveries": {
+        "v11": 2,
+        "v12": 2
+      },
+      "injured_worker_deaths": {
+        "v11": 6,
+        "v12": 6
+      },
+      "differing_summary_days": 0,
+      "differing_state_days_ignoring_injury_fields": 0
+    },
+    {
+      "seed": 15032039,
+      "day134_workers": {
+        "v11": 14,
+        "v12": 14
+      },
+      "injury_recoveries": {
+        "v11": 1,
+        "v12": 1
+      },
+      "injured_worker_deaths": {
+        "v11": 6,
+        "v12": 6
+      },
+      "differing_summary_days": 0,
+      "differing_state_days_ignoring_injury_fields": 0
+    },
+    {
+      "seed": 15032040,
+      "day134_workers": {
+        "v11": 22,
+        "v12": 22
+      },
+      "injury_recoveries": {
+        "v11": 2,
+        "v12": 2
+      },
+      "injured_worker_deaths": {
+        "v11": 6,
+        "v12": 6
+      },
+      "differing_summary_days": 0,
+      "differing_state_days_ignoring_injury_fields": 0
+    },
+    {
+      "seed": 15032041,
+      "day134_workers": {
+        "v11": 1,
+        "v12": 1
+      },
+      "injury_recoveries": {
+        "v11": 0,
+        "v12": 0
+      },
+      "injured_worker_deaths": {
+        "v11": 6,
+        "v12": 6
+      },
+      "differing_summary_days": 0,
+      "differing_state_days_ignoring_injury_fields": 0
+    },
+    {
+      "seed": 15032042,
+      "day134_workers": {
+        "v11": 9,
+        "v12": 9
+      },
+      "injury_recoveries": {
+        "v11": 3,
+        "v12": 3
+      },
+      "injured_worker_deaths": {
+        "v11": 6,
+        "v12": 6
+      },
+      "differing_summary_days": 0,
+      "differing_state_days_ignoring_injury_fields": 0
+    },
+    {
+      "seed": 15032043,
+      "day134_workers": {
+        "v11": 16,
+        "v12": 16
+      },
+      "injury_recoveries": {
+        "v11": 2,
+        "v12": 2
+      },
+      "injured_worker_deaths": {
+        "v11": 6,
+        "v12": 6
+      },
+      "differing_summary_days": 0,
+      "differing_state_days_ignoring_injury_fields": 0
+    },
+    {
+      "seed": 15032044,
+      "day134_workers": {
+        "v11": 17,
+        "v12": 17
+      },
+      "injury_recoveries": {
+        "v11": 4,
+        "v12": 4
+      },
+      "injured_worker_deaths": {
+        "v11": 6,
+        "v12": 6
+      },
+      "differing_summary_days": 0,
+      "differing_state_days_ignoring_injury_fields": 0
+    },
+    {
+      "seed": 15032045,
+      "day134_workers": {
+        "v11": 12,
+        "v12": 12
+      },
+      "injury_recoveries": {
+        "v11": 1,
+        "v12": 1
+      },
+      "injured_worker_deaths": {
+        "v11": 6,
+        "v12": 6
+      },
+      "differing_summary_days": 0,
+      "differing_state_days_ignoring_injury_fields": 0
+    }
+  ],
+  "what_if_unknown_permanent_not_a_rule": {
+    "note": "diagnostic for the pending Owner decision only; injury_repair_multiplier_unknown = 0 instead of 1; no parameter was changed",
+    "seeds": [
+      {
+        "seed": 15032026,
+        "day134_workers": 23,
+        "injury_recoveries": 0,
+        "injured_worker_deaths": 6,
+        "still_injured_day134": []
+      },
+      {
+        "seed": 15032027,
+        "day134_workers": 0,
+        "injury_recoveries": 1,
+        "injured_worker_deaths": 6,
+        "still_injured_day134": []
+      },
+      {
+        "seed": 15032028,
+        "day134_workers": 16,
+        "injury_recoveries": 1,
+        "injured_worker_deaths": 6,
+        "still_injured_day134": []
+      },
+      {
+        "seed": 15032029,
+        "day134_workers": 6,
+        "injury_recoveries": 0,
+        "injured_worker_deaths": 6,
+        "still_injured_day134": []
+      },
+      {
+        "seed": 15032030,
+        "day134_workers": 12,
+        "injury_recoveries": 0,
+        "injured_worker_deaths": 6,
+        "still_injured_day134": []
+      },
+      {
+        "seed": 15032031,
+        "day134_workers": 18,
+        "injury_recoveries": 0,
+        "injured_worker_deaths": 6,
+        "still_injured_day134": []
+      },
+      {
+        "seed": 15032032,
+        "day134_workers": 18,
+        "injury_recoveries": 0,
+        "injured_worker_deaths": 6,
+        "still_injured_day134": []
+      },
+      {
+        "seed": 15032033,
+        "day134_workers": 9,
+        "injury_recoveries": 1,
+        "injured_worker_deaths": 6,
+        "still_injured_day134": []
+      },
+      {
+        "seed": 15032034,
+        "day134_workers": 10,
+        "injury_recoveries": 1,
+        "injured_worker_deaths": 6,
+        "still_injured_day134": []
+      },
+      {
+        "seed": 15032035,
+        "day134_workers": 12,
+        "injury_recoveries": 3,
+        "injured_worker_deaths": 6,
+        "still_injured_day134": []
+      },
+      {
+        "seed": 15032036,
+        "day134_workers": 12,
+        "injury_recoveries": 0,
+        "injured_worker_deaths": 6,
+        "still_injured_day134": []
+      },
+      {
+        "seed": 15032037,
+        "day134_workers": 12,
+        "injury_recoveries": 0,
+        "injured_worker_deaths": 6,
+        "still_injured_day134": []
+      },
+      {
+        "seed": 15032038,
+        "day134_workers": 19,
+        "injury_recoveries": 1,
+        "injured_worker_deaths": 6,
+        "still_injured_day134": []
+      },
+      {
+        "seed": 15032039,
+        "day134_workers": 14,
+        "injury_recoveries": 1,
+        "injured_worker_deaths": 6,
+        "still_injured_day134": []
+      },
+      {
+        "seed": 15032040,
+        "day134_workers": 22,
+        "injury_recoveries": 1,
+        "injured_worker_deaths": 6,
+        "still_injured_day134": []
+      },
+      {
+        "seed": 15032041,
+        "day134_workers": 1,
+        "injury_recoveries": 0,
+        "injured_worker_deaths": 6,
+        "still_injured_day134": []
+      },
+      {
+        "seed": 15032042,
+        "day134_workers": 9,
+        "injury_recoveries": 2,
+        "injured_worker_deaths": 6,
+        "still_injured_day134": []
+      },
+      {
+        "seed": 15032043,
+        "day134_workers": 16,
+        "injury_recoveries": 2,
+        "injured_worker_deaths": 6,
+        "still_injured_day134": []
+      },
+      {
+        "seed": 15032044,
+        "day134_workers": 17,
+        "injury_recoveries": 3,
+        "injured_worker_deaths": 6,
+        "still_injured_day134": []
+      },
+      {
+        "seed": 15032045,
+        "day134_workers": 12,
+        "injury_recoveries": 1,
+        "injured_worker_deaths": 6,
+        "still_injured_day134": []
+      }
+    ]
+  }
+}

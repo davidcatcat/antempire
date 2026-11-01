@@ -236,3 +236,15 @@
 | 工蟻都是以**接觸**發現獵物 | 後到者必須實際到達同一地點 |
 
 **外推限制**：原文的時間尺度是秒～分鐘，本引擎一段路是 25 分鐘；原文是近巢、大群體條件。逃脫率沿用 v2-review.9 的遊戲假設參數。
+
+## 2026-11-01 傷勢分類：可復原的擦傷與永久的肢體缺損（R128–R131，規則更新 v2-review.12）
+> 用途：決定哪些傷會「痊癒」。**本種沒有直接研究**；以下只提供機制方向，不搬用任何數值（CLAUDE.md §4）。與 R123（*P. dentata* 觸角切除）、R125（*Cataglyphis* 斷腳／觸角）合用。
+
+| ID | 來源、研究物種與條件 | 允許引入的機制及不能做的外推 |
+|---|---|---|
+| R128 | Zhong, Jing, Zheng, Li, Zhang & Ren (2023), *Physiological and molecular mechanisms of insect appendage regeneration*. *Cell Regeneration* 12:9. [DOI](https://doi.org/10.1186/s13619-022-00156-1)；[PMC9978051](https://pmc.ncbi.nlm.nih.gov/articles/PMC9978051)；**綜述** | 附肢完整再生需要脫皮；不完全變態與完全變態昆蟲在變態後都喪失再生能力。螞蟻成蟲不再脫皮，因此**缺損的腳或觸角不會長回**（一般生理學）。原因的分子機制未知，不影響本推論 |
+| R129 | Frank, Wehrhahn & Linsenmair (2018), *Wound treatment and selective help in a termite-hunting ant*. *Proc. R. Soc. B* 285:20172457；**Megaponera analis**（依 R130 的引用與摘要，未讀原文） | 同伴在巢內舔舐傷口；沒有處理時死亡率在 24 小時內由 10% 升至 80%，多半是感染。只取方向：傷口的危險集中在受傷後短時間；數字不可搬用 |
+| R130 | Frank, Kesner, Liberti, Helleu, LeBoeuf, Dascalu, Sponsler, Azuma, Economo, Waridel, Engel, Schmitt & Keller (2023), *Targeted treatment of injured nestmates with antimicrobial compounds in an ant society*. *Nature Communications* 14:8446. [DOI](https://doi.org/10.1038/s41467-023-43885-w)；**Megaponera analis**（已讀全文） | 引 Frank et al. 2017（*Sci. Adv.* 3:e1602187）：出擊的覓食者多達 22% 缺一或兩隻腳，仍參與出擊。同伴在受傷後 3 小時內處理傷口；未處理者 90% 在 24 小時內死亡；感染傷口以後胸腺分泌物處理後死亡率降低 90%。只取方向：缺腳的工蟻可以繼續工作，危險在於早期感染；本種沒有後胸腺治療的資料，不模擬 |
+| R131 | Frank, Buffat, Liberti, Aibekova, Economo & Keller (2024), *Wound-dependent leg amputations to combat infections in an ant society*. *Current Biology* 34(14):3273–3278. [DOI](https://doi.org/10.1016/j.cub.2024.06.021)；**Camponotus floridanus**（未讀全文，依摘要與新聞報導） | 同伴會截斷受傷的腿節以防感染；截肢後的工蟻存活。只支持「缺肢是永久狀態、可以存活」的方向；存活率數字不可搬用 |
+
+**外推限制**：遊戲的「痊癒」只代表受傷的死亡風險倍率解除，不是實測的癒合時間；本種的傷口癒合速度沒有資料。
