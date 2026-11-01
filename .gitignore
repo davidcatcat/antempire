@@ -1,1 +1,4 @@
 node_modules/
+saves/.txn/
+saves/.advance.lock
+*.advance-tmp

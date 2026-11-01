@@ -94,3 +94,18 @@ export function checkTransition(before: { main: Any; world: Any }, after: { main
   add('transition: no worker record removed from history', keptBefore.every((id: string) => keptAfter.has(id)));
   return out;
 }
+
+/** The journal prepared for a day must describe exactly the saved day (written together, never apart). */
+export function checkJournal(after: { main: Any }, report: Any, journalRel: string, journalText: string): Check[] {
+  const out: Check[] = [];
+  const add = (name: string, ok: boolean, detail?: unknown) => out.push({ name, ok: !!ok, level: 'error', ...(detail === undefined ? {} : { detail }) });
+  const day = report.day, r = report.summary, expectedRel = `journal/v2-day-${String(day).padStart(4, '0')}.md`;
+  add('journal: path is journal/v2-day-NNNN.md of the new day', journalRel === expectedRel && after.main.simulation.latest_journal === expectedRel, { journal: journalRel, latest_journal: after.main.simulation.latest_journal, expected: expectedRel });
+  add('journal: headed with the same day and date', journalText.startsWith(`# 🐜《螞蟻帝國》Day ${day}｜${r.date}`), journalText.split('\n')[0]);
+  const pop = r.population;
+  add('journal: population table matches the saved day', [`| 蟻后 | ${pop.queen} |`, `| 工蟻 | ${pop.workers}（`, `| 卵 | ${pop.eggs} |`, `| 幼蟲 | ${pop.larvae} |`, `| 蛹 | ${pop.pupae} |`].every((x) => journalText.includes(x)));
+  add('journal: food table matches the saved ledger', journalText.includes(`| 糖 | ${r.income.sugar} | ${r.consumed.sugar} | ${r.stock.sugar} |`) && journalText.includes(`| 蛋白 | ${r.income.protein} | ${r.consumed.protein} | ${r.stock.protein} |`));
+  const listed = journalText.split('\n').filter((l) => l.startsWith('- {"type":')).length;
+  add('journal: every engine event recorded (one line each)', listed === report.events.length, { journal_lines: listed, events: report.events.length });
+  return out;
+}
