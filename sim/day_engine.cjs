@@ -3,7 +3,8 @@
  * No GitHub/clock access; deterministic pure one-day transition. Node 18+. No dependencies. */
 const crypto = require('node:crypto');
 const fs = require('node:fs');
-const ENGINE_VERSION = 'antempire.v2-review.5a-correct-forage-temperature-probability';
+const physics = require('./foraging_physics.cjs');
+const ENGINE_VERSION = 'antempire.v2-review.6-physical-foraging-pheromone-trophallaxis';
 const clone=x=>structuredClone(x), round=x=>Math.round((x+Number.EPSILON)*1e6)/1e6;
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 function P(p,path){let v=p;for(const segment of path.split('.')){v=v?.[segment]}if(!v||v.assumption!==true||typeof v.value!=='number'||!Number.isFinite(v.value))throw Error('Missing/untagged assumption parameter '+path);return v.value;}
@@ -114,33 +115,29 @@ function selectTask(worker,s,p,weather){
  const entries=[['forage',forageBias],['nurse',care],['rest',rest],['repair',repair],['guard',guard]],total=entries.reduce((x,a)=>x+a[1],0);let roll=g()*total;
  for(const [task,weight] of entries){roll-=weight;if(roll<=0)return task==='forage'&&g()>=foragingTemperatureFactor(p,weather.daytime_air_temp_c)?'rest':task;}return 'rest';
 }
-function discover(worker,s,p,events){let g=dice(s,'scout:'+worker.id);let choices=Object.values(s.sources).filter(x=>x.presence==='potential'&&!worker.known_sources.includes(x.id)&&Array.isArray(x.access_from)&&x.access_from.some(node=>worker.known_sources.includes(node))); // locally reachable, no distant-target omniscience
- if(choices.length===0)return null;
- const target=choices[Math.floor(g()*choices.length)];if(g()>=P(p,'workers.scout_discovery_probability'))return null;
- // No entire-world omniscience: discovering a potential site can reveal it is empty.
- worker.known_sources.push(target.id);if(!target.known_by.includes(worker.id))target.known_by.push(worker.id);events.push({type:'physical_scout_visit',worker:worker.id,site:target.id,via:target.access_from.find(node=>worker.known_sources.includes(node)),causal_basis:'walk along personally known neighboring route'});
- if(target.host_alive===true){target.presence='confirmed_game_scenario';events.push({type:'discovery',worker:worker.id,site:target.id,food_kind:target.type,assumption:true});}else{target.presence='scouted_empty';events.push({type:'scouted_empty',worker:worker.id,site:target.id,assumption:true});}
- return target.id;
+function discover(worker,s,p,events){
+ const g=dice(s,'scout:'+worker.id);
+ const options=Object.values(s.sources).filter(src=>src.presence==='potential'&&!worker.known_sources.includes(src.id)&&Array.isArray(src.access_from)&&src.access_from.some(id=>worker.known_sources.includes(id)));
+ if(!options.length||g()>=P(p,'workers.scout_discovery_probability'))return null;
+ const site=options[Math.floor(g()*options.length)],route=physics.routeTo(site.id);if(!route)return null;
+ const trip=physics.travel(s,p,P,worker,route,events,'scout');if(!trip)return null;
+ events.push({type:'physical_scout_visit',worker:worker.id,site:site.id,via:site.access_from.find(id=>worker.known_sources.includes(id)),route,arrival_minute:trip.arrive,assumption:true});
+ physics.goHome(s,p,P,worker,route,events,'scout_return',trip.arrive);
+ worker.known_sources.push(site.id);site.known_by.push(worker.id);
+ if(site.host_alive===true){site.presence='confirmed_game_scenario';events.push({type:'discovery',worker:worker.id,site:site.id,food_kind:site.type,assumption:true});}
+ else{site.presence='scouted_empty';events.push({type:'scouted_empty',worker:worker.id,site:site.id,assumption:true});}
+ return site.id;
 }
-function collect(source,worker,s,p,weather,events,summary){
- let g=dice(s,`collect:${worker.id}:${source.id}`);let rainMult=clamp(1-weather.rain_mm*P(p,'workers.rain_suppression_fraction'),P(p,'workers.min_rain_activity_multiplier'),1);
- if(source.presence==='scouted_empty'||source.presence==='potential'||sourceSum(source)<=1e-5||g()>rainMult*(source.type==='carcass'?P(p,'sources.carcass_access_probability'):.85))return 0;
- const macro=source.type==='carcass'?'protein':'sugar',min=P(p,`sources.crop_load_${macro}_min`),max=P(p,`sources.crop_load_${macro}_max`),load=round(Math.min(sourceSum(source),min+(max-min)*g()));if(load<=0)return 0;
+function collect(source,worker,s,p,weather,events,summary,onsite){
+ const g=dice(s,'collect:'+worker.id+':'+source.id);
+ const rain=clamp(1-weather.rain_mm*P(p,'workers.rain_suppression_fraction'),P(p,'workers.min_rain_activity_multiplier'),1);
+ if(source.type==='carcass'&&sourceSum(source)<=1e-5)physics.prey(s,p,P,source,worker,onsite,g,events);
+ if(source.presence==='scouted_empty'||source.presence==='potential'||sourceSum(source)<=1e-5||g()>rain*(source.type==='carcass'?P(p,'sources.carcass_access_probability'):.85))return null;
+ const macro=source.type==='carcass'?'protein':'sugar',min=P(p,'sources.crop_load_'+macro+'_min'),max=P(p,'sources.crop_load_'+macro+'_max');
+ const load=round(Math.min(sourceSum(source),min+(max-min)*g()));if(load<=0)return null;
  if(macro==='sugar')source.sugar=round(source.sugar-load);
- else{
-   let needed=load;for(const batch of source.batches){let take=Math.min(batch.protein,needed);batch.protein=round(batch.protein-take);needed=round(needed-take);if(take>0)events.push({type:'source_batch_consumed',source_event_id:batch.event_id,location:source.id,worker:worker.id,quantity_portions:round(take)});if(needed<=1e-6)break;}syncSource(source);
- }
- summary.income[macro]=round(summary.income[macro]+load);summary.foraging_successes++;events.push({type:'food_delivered',site:source.id,worker:worker.id,macro,portions:load,unique_receipt_id:`D${s.sim_day+1}-${worker.id}-${summary.foraging_successes}`});
- // Unloading speed is experienced via direct contact, NOT from total stock.
- const contacts=s.population.workers.filter(w=>w.id!==worker.id&&w.last_location==='N00');
- let available=contacts.length?Math.min(3,contacts.length):0,free=0;
- for(let i=0;i<available;i++){const recipient=contacts[Math.floor(g()*contacts.length)];const signals=localSignals(recipient);free+=(macro==='sugar'?1-signals.sugarSatiety:signals.broodBegging+.1)/available;}
- const unloadingEase=clamp(.15+.8*free,0,1);
- worker.local_sensory??={};worker.local_sensory.unload_feedback??={sugar:.5,protein:.5};
- worker.local_sensory.unload_feedback[macro]=round(.5*worker.local_sensory.unload_feedback[macro]+.5*unloadingEase);
- worker.local_sensory.last_food_kind=macro;worker.local_sensory.last_unloading_ease=round(unloadingEase);
- events.push({type:'local_unloading_feedback',worker:worker.id,site:source.id,macro,encountered_nestmates:available,ease:round(unloadingEase),causal_basis:'food-sharing with physically co-located workers'});
- s.colony[macro]=round(s.colony[macro]+load);return load;
+ else{let needed=load;for(const batch of source.batches){const take=Math.min(batch.protein,needed);batch.protein=round(batch.protein-take);needed=round(needed-take);if(take>0)events.push({type:'source_batch_consumed',source_event_id:batch.event_id,location:source.id,worker:worker.id,quantity_portions:round(take)});if(needed<=1e-6)break;}syncSource(source);}
+ events.push({type:'food_collected',worker:worker.id,site:source.id,macro,portions:load,location:source.id,assumption:true});return {macro,load};
 }
 function forage(s,p,weather,events,summary){
  // Each worker shares at most locally encountered cues and physically learned routes.
@@ -218,7 +215,7 @@ function consume(s,p,summary,weather){
  const demandS=round((workers*P(p,'nutrition.worker_sugar_daily')+servedQueen*P(p,'nutrition.queen_sugar_daily')+servedLarvae*P(p,'nutrition.larva_sugar_daily'))*metabolicFactor+summary.extra_sugar_cost);
  const demandP=round((workers*P(p,'nutrition.worker_protein_daily')+servedQueen*P(p,'nutrition.queen_protein_daily')+servedLarvae*P(p,'nutrition.larva_protein_daily'))*metabolicFactor);
  summary.metabolic_factor=metabolicFactor;summary.nurse_available=workers>0;
- const gotS=round(Math.min(s.colony.sugar,demandS)),gotP=round(Math.min(s.colony.protein,demandP));s.colony.sugar=round(Math.max(0,s.colony.sugar-gotS));s.colony.protein=round(Math.max(0,s.colony.protein-gotP));
+ const gotS=round(Math.min(s.colony.sugar,demandS)),gotP=round(Math.min(s.colony.protein,demandP));s.colony.sugar=round(Math.max(0,s.colony.sugar-gotS));physics.settleCrops(s,gotS);s.colony.protein=round(Math.max(0,s.colony.protein-gotP));
  const unattendedQueen=s.population.queen_alive&&workers===0;const sFraction=unattendedQueen?0:(demandS>0?gotS/demandS:1),pFraction=unattendedQueen?0:(demandP>0?gotP/demandP:1);
  s.colony.sugar_gap_days=sFraction<.995?s.colony.sugar_gap_days+1:0;s.colony.protein_gap_days=pFraction<.995?s.colony.protein_gap_days+1:0;s.colony.stress_days=Math.max(s.colony.sugar_gap_days,s.colony.protein_gap_days);
  summary.demand={sugar:demandS,protein:demandP};summary.consumed={sugar:gotS,protein:gotP};summary.ratios={sugar:round(sFraction),protein:round(pFraction)};
@@ -305,17 +302,17 @@ function simulateDay(input,params){
  const weather=calcWeather(s,params,dayDate);const summary={day:s.sim_day+1,date:dayDate,weather,workers_before:s.population.workers.length,brood_before:s.population.brood.length,queen_alive_before:s.population.queen_alive,income:{sugar:0,protein:0},tasks:{forage:0,nurse:0,repair:0,rest:0,guard:0},foraging_trips:0,foraging_successes:0,scouts:0,recruited:0,extra_sugar_cost:0,foraging_workers_by_macro:{sugar:new Set(),protein:new Set()},worker_deaths:0,brood_deaths:0,hatchings:0,pupations:0,eclosions:0,eggs_laid:0};
  growSources(s,params,weather,events);
  for(const e of events.filter(x=>x.type==='new_food_source')){
-  if(!events.some(x=>x.type==='insect_natural_death'&&x.event_id===e.id&&x.site===e.site))throw Error('NO_GOD_MODE: food has no physical source death');
+  if(!events.some(x=>(x.type==='insect_natural_death'||x.type==='insect_predation')&&x.event_id===e.id&&x.site===e.site))throw Error('NO_GOD_MODE: food has no physical source death');
  }
- forage(s,params,weather,events,summary);summary.foraging_workers_by_macro={sugar:summary.foraging_workers_by_macro.sugar.size,protein:summary.foraging_workers_by_macro.protein.size};
+ forage(s,params,weather,events,summary);for(const e of events.filter(x=>x.type==='new_food_source')){if(!events.some(x=>(x.type==='insect_natural_death'||x.type==='insect_predation')&&x.event_id===e.id&&x.site===e.site))throw Error('NO_GOD_MODE: food without tracked dead insect');}summary.foraging_workers_by_macro={sugar:summary.foraging_workers_by_macro.sugar.size,protein:summary.foraging_workers_by_macro.protein.size};
  // Other colonymates carrying liquid do not duplicate colony external income.
- const storeOverflow={sugar:round(Math.max(0,s.colony.sugar-(P(params,'nutrition.max_sugar_store')+Math.max(0,s.population.workers.length-14)*.4))),protein:round(Math.max(0,s.colony.protein-(P(params,'nutrition.max_protein_store')+Math.max(0,s.population.workers.length-14)*.3)))};s.colony.sugar=round(s.colony.sugar-storeOverflow.sugar);s.colony.protein=round(s.colony.protein-storeOverflow.protein);
+ const storeOverflow={sugar:round(Math.max(0,s.colony.sugar-(P(params,'nutrition.max_sugar_store')+Math.max(0,s.population.workers.length-14)*.4))),protein:round(Math.max(0,s.colony.protein-(P(params,'nutrition.max_protein_store')+Math.max(0,s.population.workers.length-14)*.3)))};s.colony.sugar=round(s.colony.sugar-storeOverflow.sugar);physics.settleCrops(s,storeOverflow.sugar);s.colony.protein=round(s.colony.protein-storeOverflow.protein);
  const ratios=consume(s,params,summary,weather);developmentalDay(s,params,weather,ratios,events,summary);deathAndQueen(s,params,ratios,events,summary,weather);
  summary.population={queen:s.population.queen_alive?1:0,workers:s.population.workers.length,eggs:s.population.brood.filter(b=>b.stage==='egg').length,larvae:s.population.brood.filter(b=>b.stage==='larva').length,pupae:s.population.brood.filter(b=>b.stage==='pupa').length};
  summary.stock={sugar:round(s.colony.sugar),protein:round(s.colony.protein)};summary.starvation={sugar_gap_days:s.colony.sugar_gap_days,protein_gap_days:s.colony.protein_gap_days,stress_days:s.colony.stress_days};
  summary.mass_ledger={unit:'game_portions_NOT_mg',start:initial,foraged:summary.income,metabolized:summary.consumed,egg_laying:{sugar:round(summary.eggs_laid*P(params,'nutrition.egg_laying_sugar_cost')),protein:round(summary.eggs_laid*P(params,'nutrition.egg_laying_protein_cost'))},storage_overflow_not_retained:storeOverflow,note:'Nest mass conservation exact within 1e-5 game portions; source decomposition/replenishment separate'};
  for(const x of ['sugar','protein']){let rhs=round(initial[x]+summary.income[x]-summary.consumed[x]-summary.mass_ledger.egg_laying[x]-summary.mass_ledger.storage_overflow_not_retained[x]);if(Math.abs(rhs-summary.stock[x])>2e-5)throw Error('Nutrient balance not closed: '+x+' '+rhs+' vs '+summary.stock[x]);}
- const NATURAL_EVENT_TYPES=new Set(['new_food_source','source_batch_consumed','food_delivered','insect_immigration','insect_natural_death','insect_population_birth','insect_background_death','physical_scout_visit','discovery','scouted_empty','nest_local_route_learning','local_contact_cue','local_brood_begging_contact','local_unloading_feedback','host_plant_death','hemipteran_colony_change','local_recruitment','hatch','pupation','eclosion','egg_laid','worker_death','brood_death','injury_recovery','queen_death']);
+ const NATURAL_EVENT_TYPES=new Set(['new_food_source','source_batch_consumed','food_delivered','insect_immigration','insect_natural_death','insect_population_birth','insect_background_death','physical_scout_visit','discovery','scouted_empty','nest_local_route_learning','local_contact_cue','local_brood_begging_contact','local_unloading_feedback','host_plant_death','hemipteran_colony_change','local_recruitment','route_step','route_timeout','trail_decay','trail_deposited','local_trail_choice','food_collected','trophallaxis','protein_cached_at_nest','live_prey_encounter','prey_escaped','local_alarm_signal','insect_predation','hatch','pupation','eclosion','egg_laid','worker_death','brood_death','injury_recovery','queen_death']);
  for(const event of events)if(!NATURAL_EVENT_TYPES.has(event.type))throw Error('NO_GOD_MODE: impossible or unregistered event type '+event.type);
  s.climate={...s.climate,prior_wet:weather.wet,prior_air_temp_c:weather.air_temp_c,prior_nest_temp_model_c:weather.nest_temp_model_c,temp_anomaly_c:weather.temperature_anomaly_c,soil_index:weather.soil_index,shade_index:weather.shade_index};
  s.sim_day+=1;s.calendar_date=dayDate;s.last_report=summary;s.last_events=events;
