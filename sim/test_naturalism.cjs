@@ -28,6 +28,15 @@ const voidState=clone(initial);for(const loc of ['F07','F11']){voidState.ecology
 const noMigration=clone(p);noMigration.sources.insect_background_immigration_probability.value=0;voidState.ecology.adjacent_garden_living_insects=0;
 const z=simulateDay(voidState,noMigration);
 ok(z.events.every(e=>e.type!=='new_food_source'&&e.type!=='insect_natural_death'),'zero living insects and zero immigration => no new carcass');
+// Orphan-brood regression: workers=0, queen=0 -> no warehouse consumption; larvae die within fixed assumption.
+const orphan=clone(initial);orphan.population.workers=[];orphan.population.queen_alive=false;orphan.population.brood=orphan.population.brood.filter(x=>x.stage==='larva');orphan.colony.sugar=8;orphan.colony.protein=6;
+let orphanState=orphan;for(let day=0;day<p.starvation.unattended_larva_max_days.value;day++){
+ const z=simulateDay(orphanState,p);
+ ok(z.summary.consumed.sugar===0&&z.summary.consumed.protein===0,'no workers cannot feed brood from warehouse');
+ ok(z.state.colony.sugar===8&&z.state.colony.protein===6,'untended stores cannot be consumed');
+ orphanState=z.state;
+}
+ok(orphanState.population.brood.every(x=>x.stage!=='larva'),'orphan larvae die by bounded assumption');
 let state=initial,insectDeaths=0,carcasses=0,workerDeaths=0,scouts=0;
 for(let i=0;i<30;i++){
  const before=state,out=simulateDay(state,p);const after=out.state;

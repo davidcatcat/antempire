@@ -31,7 +31,7 @@ for(let i=0;i<120;i++){
  sugar_income:x.income.sugar,sugar_consumed:x.consumed.sugar,sugar_store:x.stock.sugar,protein_income:x.income.protein,protein_consumed:x.consumed.protein,protein_store:x.stock.protein,
  insects_F07:ec.insects_by_site.F07.living,insects_F11:ec.insects_by_site.F11.living,insects_adjacent:ec.adjacent_garden_living_insects,insect_births:births,insect_deaths:deaths,insect_migrations:migrations,
  foraging_workers_total:x.tasks.forage,foraging_workers_sugar:x.foraging_workers_by_macro.sugar,foraging_workers_protein:x.foraging_workers_by_macro.protein,
- air_temperature_c:x.weather.air_temp_c,nest_temperature_c:x.weather.nest_temp_model_c,cold_foraging_factor:foragingTemperatureFactor(params,x.weather.air_temp_c),rain_mm:x.weather.rain_mm,
+ air_temperature_c:x.weather.air_temp_c,daytime_air_temperature_c:x.weather.daytime_air_temp_c,daily_min_air_temperature_c:x.weather.daily_min_air_temp_c,nest_temperature_c:x.weather.nest_temp_model_c,metabolic_factor:x.metabolic_factor,queen_laying_temperature_factor:x.queen_laying_temperature_factor,cold_foraging_factor:foragingTemperatureFactor(params,x.weather.daytime_air_temp_c),rain_mm:x.weather.rain_mm,
  worker_deaths:x.worker_deaths,eggs_laid:x.eggs_laid,sugar_gap_days:x.starvation.sugar_gap_days,protein_gap_days:x.starvation.protein_gap_days});
  state=next;
 }
@@ -46,7 +46,7 @@ for(let i=0;i<rows.length;i+=7){
  insects_F07:last.insects_F07,insects_F11:last.insects_F11,insects_adjacent:last.insects_adjacent,
  insect_births:sum(days,'insect_births'),insect_deaths:sum(days,'insect_deaths'),
  foraging_worker_days:sum(days,'foraging_workers_total'),mean_daily_foragers:round(sum(days,'foraging_workers_total')/days.length),
- mean_air_temperature_c:round(sum(days,'air_temperature_c')/days.length)});
+ mean_air_temperature_c:round(sum(days,'air_temperature_c')/days.length),mean_daytime_temperature_c:round(sum(days,'daytime_air_temperature_c')/days.length),mean_metabolic_factor:round(sum(days,'metabolic_factor')/days.length),mean_daily_sugar_consumed:round(sum(days,'sugar_consumed')/days.length),mean_daily_protein_consumed:round(sum(days,'protein_consumed')/days.length)});
 }
 const report={scenario:'unchanged v2.1 corrected base world; no rescue tuning',range:'Day15-Day134',days:rows.length,authoritative_simulation_advanced:false,source:'sim/day14-projection.json',game_assumptions:true,
  final:rows.at(-1),ecology:eventsTotal,
