@@ -160,11 +160,20 @@ Day7→Day8，168→**192模擬小時**。既有F01蚜蟲清晨產少量可及�
 - [v2世界切換紀事](journal/v2-transition.md) — 第1150分鐘存檔停表，科學Day0初始化，未推進時間
 - [原始遊戲紀事](journal/chronicle.md) 與 `journal/chronicle_*.md`：保留舊加速遊戲的事件，不當作生物實測數據。
 
-## 如何繼續
-在 ChatGPT 說**「繼續螞蟻帝國」**或**「模擬一天，觀察蟻群自然發展」**：
-1. 先讀 `saves/main.json`、`saves/world-state.json`、`docs/species-pheidole-megacephala.md`、`docs/weather-data-policy.md` 和 v2 規格；每次推進重新查該日西屯真實氣象資料。
-2. 從目前科學世界 Day14 繼續推進，**預設一次1個生態日**，短期採食與慢速幼體發育分開計算；不要求使用者逐隻指定工蟻。
-3. 依最新**12項進階生態（疾病／衛生／互利／捕獵／休息／記憶／群體／營養／工程／連鎖／交通／生殖）**與**未知地區探索／外界獨立演化與可重播隨機事件**、食物、訊號、階級、**蟻后產卵與逐階段幼體發育、巢穴實際挖土／微氣候**規格產生有因果的模擬，允許零事件／死亡／找不到食物，未知量維持null。
-4. 寫當日紀事、更新兩份狀態並核對。**不會在聊天之外自動執行。**
+## 如何繼續（Day15 起：`npm run advance`）
+玩家說**「繼續螞蟻帝國」**、**「推進一天」**等明確要求時，由 Claude 在 repo 中以 Node 執行推進工具（正式推進只在 Node；不會在聊天之外自動執行）。玩家與 ChatGPT 討論結果與規則，修改交給 Claude 實作（見 [CLAUDE.md](CLAUDE.md)）。
+
+1. **預演**：`npm run advance` — 讀取兩份存檔，用凍結的引擎跑下一天並印出事件摘要與守恆檢查；**不寫任何檔案**。
+2. **正式推進 Day N**（只在玩家明確要求時）：`npm run advance -- --confirm-advance --day N`，N 必須等於下一個遊戲日（目前是 **Day15**）。所有守恆與日誌檢查通過後，一筆可復原的交易會同時提交：
+   - `saves/main.json`、`saves/world-state.json`；
+   - `journal/v2-day-NNNN.md`（引擎完整事件紀錄＋自動摘要；提交後不可改寫）；
+   - `saves/commit-log.json`（各檔 sha256，用來驗證存檔與日誌未被改動）。
+3. **敘事**（選用）：該日提交後另建 `journal/v2-day-NNNN-narrative.md`；數字以正式日誌為準，更正另建 `-narrative-erratum-K.md`。
+4. **提交 git**：上述四個檔案放在同一個 git commit，以「推進遊戲日」PR 給玩家審；不可與規則更新混在同一個 PR。
+5. **中斷或異常**：`npm run advance -- --recover` 完成或撤銷未完成的交易（不會多推進一天）；`npm run check:saves` 檢查守恆、交易狀態與日誌雜湊。
+
+- **預設一次 1 個生態日**；同一天不能推進兩次，推進途中不改引擎或參數。允許零事件、死亡、找不到食物；未知量維持 null。
+- **天氣**：Day15 起由引擎依臺中 1991～2020 月平均氣候合成虛擬日天氣，不是實測或預報（見 [GM 規則卡](docs/gm-rules.md)）。
+- **規則與程式**：[CLAUDE.md](CLAUDE.md)、[GM 規則卡](docs/gm-rules.md)、[引擎架構](docs/engine-architecture.md)、[存檔交易](docs/save-transactions.md)。
 
 若只想觀察：「檢查蟻后」、「查看傷蟻」、「列出根際蜜露點的競爭者」，可不推進時間直接閱讀狀態與分析。
