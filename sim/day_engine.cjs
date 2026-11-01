@@ -182,6 +182,11 @@ function forage(s,p,weather,events,summary){
   if(!chosen){summary.scouts++;continue;}
   const route=chosen.route||physics.routeTo(chosen.source.id);if(!route){summary.scouts++;continue;}
   const trip=physics.travel(s,p,P,worker,route,events,'foraging_depart');if(!trip){events.push({type:'route_timeout',worker:worker.id,site:chosen.source.id,assumption:true});continue;}
+  // Hidden source viability becomes known ONLY AFTER the worker physically arrives.
+  if(chosen.source.presence==='potential'){
+   chosen.source.presence=chosen.source.host_alive?'confirmed_game_scenario':'scouted_empty';
+   events.push(chosen.source.host_alive?{type:'discovery',worker:worker.id,site:chosen.source.id,food_kind:chosen.source.type,assumption:true}:{type:'scouted_empty',worker:worker.id,site:chosen.source.id,assumption:true});
+  }
   if(!worker.known_sources.includes(chosen.source.id))worker.known_sources.push(chosen.source.id);
   if(!chosen.source.known_by.includes(worker.id))chosen.source.known_by.push(worker.id);
   plans.push({worker,source:chosen.source,route,trip,g});
@@ -206,7 +211,7 @@ function forage(s,p,weather,events,summary){
   unload(worker,source,route,found,g);
   // Optional repeated trip with explicit travel time, never free instantaneous collection.
   let finalReturn=trip.back;
-  if(g()<.5&&P(p,'workers.max_trips_per_forager')>=2){
+  if(g()<P(p,'foraging_physics.repeat_trip_probability')&&P(p,'workers.max_trips_per_forager')>=2){
    const again=physics.travel(s,p,P,worker,route,events,'repeat_depart',trip.back);
    if(again){finalReturn=again.back;summary.foraging_trips++;summary.extra_sugar_cost=round(summary.extra_sugar_cost+P(p,'workers.foraging_trip_sugar_cost'));
     const more=collect(source,worker,s,p,weather,events,summary,[worker]);worker.site_memory[source.id]={last_success_portions:more?.load||0,last_visit_day:s.sim_day+1};
@@ -324,6 +329,7 @@ function simulateDay(input,params){
  if(input.schema!=='antempire.engine-v2')throw Error('Expected migrated Day14-or-later engine state');
  for(const key of Object.keys(input))if(!ACCEPTED_INPUT_KEYS.has(key))throw Error('NO_GOD_MODE: unauthorized input '+key);
  validateState(input);
+ if(JSON.stringify(physics.EDGE_PAIRS)!==JSON.stringify(params.foraging_route_topology?.edges))throw Error('NO_GOD_MODE: physical route topology and labeled scenario assumptions differ');
  const s=clone(input),events=[],initial={sugar:s.colony.sugar,protein:s.colony.protein},date=new Date(s.calendar_date+'T00:00:00Z');date.setUTCDate(date.getUTCDate()+1);const dayDate=date.toISOString().slice(0,10);
  const weather=calcWeather(s,params,dayDate);const summary={day:s.sim_day+1,date:dayDate,weather,workers_before:s.population.workers.length,brood_before:s.population.brood.length,queen_alive_before:s.population.queen_alive,income:{sugar:0,protein:0},tasks:{forage:0,nurse:0,repair:0,rest:0,guard:0},foraging_trips:0,foraging_successes:0,scouts:0,recruited:0,extra_sugar_cost:0,foraging_workers_by_macro:{sugar:new Set(),protein:new Set()},worker_deaths:0,brood_deaths:0,hatchings:0,pupations:0,eclosions:0,eggs_laid:0};
  growSources(s,params,weather,events);

@@ -1042,6 +1042,12 @@
       "reference_for_mechanism_only": [
         "SaundFriedman2023"
       ]
+    },
+    "repeat_trip_probability": {
+      "value": 0.5,
+      "assumption": true,
+      "description": "成功首趟後在時間允許時再試第二趟機率；遊戲假設，不是物種實測",
+      "reference_for_mechanism_only": []
     }
   },
   "foraging_route_topology": {
