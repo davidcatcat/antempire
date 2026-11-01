@@ -1,0 +1,2750 @@
+{
+  "report": {
+    "scenario": "baseline",
+    "days": 30,
+    "from": 15,
+    "to": 44,
+    "assumption_not_scientific_measurement": true,
+    "first": {
+      "day": 15,
+      "date": "2026-11-14",
+      "workers": 14,
+      "eggs": 4,
+      "larvae": 3,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 5.93,
+      "protein": 1.743,
+      "sugar_starvation_days": 0,
+      "protein_starvation_days": 0,
+      "foraging_trips": 0,
+      "successful_trips": 0,
+      "recruited": 0,
+      "hatched": 1,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    "last": {
+      "day": 44,
+      "date": "2026-12-13",
+      "workers": 2,
+      "eggs": 0,
+      "larvae": 0,
+      "pupae": 2,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 0.99417,
+      "sugar_starvation_days": 21,
+      "protein_starvation_days": 0,
+      "foraging_trips": 0,
+      "successful_trips": 0,
+      "recruited": 0,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    "totals": {
+      "hatchings": 5,
+      "pupations": 2,
+      "eclosions": 0,
+      "worker_deaths": 12,
+      "brood_deaths": 5,
+      "eggs_laid": 0,
+      "food_delivery_events": 57,
+      "recruitments": 43
+    },
+    "max_workers": 14,
+    "min_workers": 2,
+    "max_sugar_gap": 21,
+    "max_protein_gap": 9,
+    "all_workers_active_daily": true,
+    "deterministic": true,
+    "first_hatch_day": 15,
+    "first_pupa_day": 41,
+    "first_eclosion_day": null,
+    "first_worker_death_day": 27
+  },
+  "rows": [
+    {
+      "day": 15,
+      "date": "2026-11-14",
+      "workers": 14,
+      "eggs": 4,
+      "larvae": 3,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 5.93,
+      "protein": 1.743,
+      "sugar_starvation_days": 0,
+      "protein_starvation_days": 0,
+      "foraging_trips": 0,
+      "successful_trips": 0,
+      "recruited": 0,
+      "hatched": 1,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 16,
+      "date": "2026-11-15",
+      "workers": 14,
+      "eggs": 4,
+      "larvae": 3,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 4.478911,
+      "protein": 1.29491,
+      "sugar_starvation_days": 0,
+      "protein_starvation_days": 0,
+      "foraging_trips": 7,
+      "successful_trips": 2,
+      "recruited": 5,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 17,
+      "date": "2026-11-16",
+      "workers": 14,
+      "eggs": 4,
+      "larvae": 3,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 2.723911,
+      "protein": 0.730208,
+      "sugar_starvation_days": 0,
+      "protein_starvation_days": 0,
+      "foraging_trips": 5,
+      "successful_trips": 2,
+      "recruited": 3,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 18,
+      "date": "2026-11-17",
+      "workers": 14,
+      "eggs": 4,
+      "larvae": 3,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 2.762765,
+      "protein": 0,
+      "sugar_starvation_days": 0,
+      "protein_starvation_days": 1,
+      "foraging_trips": 6,
+      "successful_trips": 4,
+      "recruited": 2,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 19,
+      "date": "2026-11-18",
+      "workers": 14,
+      "eggs": 2,
+      "larvae": 5,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 1.369765,
+      "protein": 0,
+      "sugar_starvation_days": 0,
+      "protein_starvation_days": 2,
+      "foraging_trips": 4,
+      "successful_trips": 1,
+      "recruited": 1,
+      "hatched": 2,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 20,
+      "date": "2026-11-19",
+      "workers": 14,
+      "eggs": 1,
+      "larvae": 6,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 0,
+      "sugar_starvation_days": 1,
+      "protein_starvation_days": 3,
+      "foraging_trips": 9,
+      "successful_trips": 1,
+      "recruited": 2,
+      "hatched": 1,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 21,
+      "date": "2026-11-20",
+      "workers": 14,
+      "eggs": 1,
+      "larvae": 6,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 0,
+      "sugar_starvation_days": 2,
+      "protein_starvation_days": 4,
+      "foraging_trips": 8,
+      "successful_trips": 4,
+      "recruited": 1,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 22,
+      "date": "2026-11-21",
+      "workers": 14,
+      "eggs": 1,
+      "larvae": 6,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 0.607431,
+      "sugar_starvation_days": 3,
+      "protein_starvation_days": 0,
+      "foraging_trips": 12,
+      "successful_trips": 5,
+      "recruited": 7,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 23,
+      "date": "2026-11-22",
+      "workers": 14,
+      "eggs": 1,
+      "larvae": 6,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 0.384829,
+      "protein": 0.243537,
+      "sugar_starvation_days": 0,
+      "protein_starvation_days": 0,
+      "foraging_trips": 11,
+      "successful_trips": 6,
+      "recruited": 3,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 24,
+      "date": "2026-11-23",
+      "workers": 14,
+      "eggs": 1,
+      "larvae": 6,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 0,
+      "sugar_starvation_days": 1,
+      "protein_starvation_days": 1,
+      "foraging_trips": 6,
+      "successful_trips": 0,
+      "recruited": 0,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 25,
+      "date": "2026-11-24",
+      "workers": 14,
+      "eggs": 0,
+      "larvae": 7,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 0,
+      "sugar_starvation_days": 2,
+      "protein_starvation_days": 2,
+      "foraging_trips": 4,
+      "successful_trips": 1,
+      "recruited": 0,
+      "hatched": 1,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 26,
+      "date": "2026-11-25",
+      "workers": 14,
+      "eggs": 0,
+      "larvae": 7,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 0.901523,
+      "sugar_starvation_days": 3,
+      "protein_starvation_days": 0,
+      "foraging_trips": 10,
+      "successful_trips": 5,
+      "recruited": 4,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 27,
+      "date": "2026-11-26",
+      "workers": 13,
+      "eggs": 0,
+      "larvae": 7,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 0.085511,
+      "sugar_starvation_days": 4,
+      "protein_starvation_days": 0,
+      "foraging_trips": 6,
+      "successful_trips": 2,
+      "recruited": 2,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 1,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 28,
+      "date": "2026-11-27",
+      "workers": 12,
+      "eggs": 0,
+      "larvae": 7,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 0,
+      "sugar_starvation_days": 5,
+      "protein_starvation_days": 1,
+      "foraging_trips": 5,
+      "successful_trips": 1,
+      "recruited": 0,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 1,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 29,
+      "date": "2026-11-28",
+      "workers": 11,
+      "eggs": 0,
+      "larvae": 7,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 2.384375,
+      "sugar_starvation_days": 6,
+      "protein_starvation_days": 0,
+      "foraging_trips": 11,
+      "successful_trips": 8,
+      "recruited": 3,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 1,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 30,
+      "date": "2026-11-29",
+      "workers": 9,
+      "eggs": 0,
+      "larvae": 7,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 1.471783,
+      "sugar_starvation_days": 7,
+      "protein_starvation_days": 0,
+      "foraging_trips": 7,
+      "successful_trips": 1,
+      "recruited": 0,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 2,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 31,
+      "date": "2026-11-30",
+      "workers": 9,
+      "eggs": 0,
+      "larvae": 7,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 2.021161,
+      "sugar_starvation_days": 8,
+      "protein_starvation_days": 0,
+      "foraging_trips": 9,
+      "successful_trips": 5,
+      "recruited": 3,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 32,
+      "date": "2026-12-01",
+      "workers": 9,
+      "eggs": 0,
+      "larvae": 7,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 0.504161,
+      "sugar_starvation_days": 9,
+      "protein_starvation_days": 0,
+      "foraging_trips": 2,
+      "successful_trips": 0,
+      "recruited": 0,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 6.095568
+    },
+    {
+      "day": 33,
+      "date": "2026-12-02",
+      "workers": 8,
+      "eggs": 0,
+      "larvae": 7,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 0.585472,
+      "sugar_starvation_days": 10,
+      "protein_starvation_days": 0,
+      "foraging_trips": 8,
+      "successful_trips": 4,
+      "recruited": 3,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 1,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 1.864366
+    },
+    {
+      "day": 34,
+      "date": "2026-12-03",
+      "workers": 8,
+      "eggs": 0,
+      "larvae": 7,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 0,
+      "sugar_starvation_days": 11,
+      "protein_starvation_days": 1,
+      "foraging_trips": 4,
+      "successful_trips": 1,
+      "recruited": 0,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 35,
+      "date": "2026-12-04",
+      "workers": 5,
+      "eggs": 0,
+      "larvae": 7,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 0,
+      "sugar_starvation_days": 12,
+      "protein_starvation_days": 2,
+      "foraging_trips": 7,
+      "successful_trips": 1,
+      "recruited": 2,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 3,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 36,
+      "date": "2026-12-05",
+      "workers": 4,
+      "eggs": 0,
+      "larvae": 7,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 0,
+      "sugar_starvation_days": 13,
+      "protein_starvation_days": 3,
+      "foraging_trips": 4,
+      "successful_trips": 1,
+      "recruited": 1,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 1,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 37,
+      "date": "2026-12-06",
+      "workers": 4,
+      "eggs": 0,
+      "larvae": 7,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 0,
+      "sugar_starvation_days": 14,
+      "protein_starvation_days": 4,
+      "foraging_trips": 2,
+      "successful_trips": 0,
+      "recruited": 0,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 38,
+      "date": "2026-12-07",
+      "workers": 4,
+      "eggs": 0,
+      "larvae": 6,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 0,
+      "sugar_starvation_days": 15,
+      "protein_starvation_days": 5,
+      "foraging_trips": 2,
+      "successful_trips": 0,
+      "recruited": 0,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 1,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 39,
+      "date": "2026-12-08",
+      "workers": 3,
+      "eggs": 0,
+      "larvae": 6,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 0,
+      "sugar_starvation_days": 16,
+      "protein_starvation_days": 6,
+      "foraging_trips": 1,
+      "successful_trips": 0,
+      "recruited": 0,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 1,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 40,
+      "date": "2026-12-09",
+      "workers": 2,
+      "eggs": 0,
+      "larvae": 5,
+      "pupae": 0,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 0,
+      "sugar_starvation_days": 17,
+      "protein_starvation_days": 7,
+      "foraging_trips": 2,
+      "successful_trips": 0,
+      "recruited": 0,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 1,
+      "brood_deaths": 1,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 41,
+      "date": "2026-12-10",
+      "workers": 2,
+      "eggs": 0,
+      "larvae": 2,
+      "pupae": 2,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 0,
+      "sugar_starvation_days": 18,
+      "protein_starvation_days": 8,
+      "foraging_trips": 1,
+      "successful_trips": 0,
+      "recruited": 0,
+      "hatched": 0,
+      "pupated": 2,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 1,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 42,
+      "date": "2026-12-11",
+      "workers": 2,
+      "eggs": 0,
+      "larvae": 0,
+      "pupae": 2,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 0,
+      "sugar_starvation_days": 19,
+      "protein_starvation_days": 9,
+      "foraging_trips": 1,
+      "successful_trips": 0,
+      "recruited": 0,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 2,
+      "eggs_laid": 0,
+      "rain_mm": 1.926991
+    },
+    {
+      "day": 43,
+      "date": "2026-12-12",
+      "workers": 2,
+      "eggs": 0,
+      "larvae": 0,
+      "pupae": 2,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 1.05517,
+      "sugar_starvation_days": 20,
+      "protein_starvation_days": 0,
+      "foraging_trips": 2,
+      "successful_trips": 2,
+      "recruited": 1,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    },
+    {
+      "day": 44,
+      "date": "2026-12-13",
+      "workers": 2,
+      "eggs": 0,
+      "larvae": 0,
+      "pupae": 2,
+      "queen": 1,
+      "sugar": 0,
+      "protein": 0.99417,
+      "sugar_starvation_days": 21,
+      "protein_starvation_days": 0,
+      "foraging_trips": 0,
+      "successful_trips": 0,
+      "recruited": 0,
+      "hatched": 0,
+      "pupated": 0,
+      "eclosed": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 0,
+      "eggs_laid": 0,
+      "rain_mm": 0
+    }
+  ],
+  "events": [
+    {
+      "type": "insect_immigration",
+      "site": "F11",
+      "from": "adjacent_garden_habitat",
+      "individuals": 1,
+      "adjacent_population_after": 39,
+      "causal_basis": "physical transfer from an already counted neighboring population; assumed probability",
+      "assumption": true,
+      "day": 15
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W011",
+      "to": "W004",
+      "site": "F07",
+      "assumption": true,
+      "day": 15
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W011",
+      "to": "W010",
+      "site": "F07",
+      "assumption": true,
+      "day": 15
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W006",
+      "to": "W013",
+      "site": "F11",
+      "assumption": true,
+      "day": 15
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W017",
+      "to": "W016",
+      "site": "F08",
+      "assumption": true,
+      "day": 15
+    },
+    {
+      "type": "hatch",
+      "id": "E001",
+      "day": 15
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W005",
+      "to": "W006",
+      "site": "F01",
+      "assumption": true,
+      "day": 16
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W017",
+      "to": "W015",
+      "site": "F08",
+      "assumption": true,
+      "day": 16
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "V2D11-E04",
+      "location": "F07",
+      "worker": "W004",
+      "quantity_portions": 0.30891,
+      "day": 16
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W004",
+      "macro": "protein",
+      "portions": 0.30891,
+      "unique_receipt_id": "D16-W004-1",
+      "day": 16
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W004",
+      "to": "W005",
+      "site": "F07",
+      "assumption": true,
+      "day": 16
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W004",
+      "to": "W006",
+      "site": "F07",
+      "assumption": true,
+      "day": 16
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W004",
+      "to": "W017",
+      "site": "F07",
+      "assumption": true,
+      "day": 16
+    },
+    {
+      "type": "food_delivered",
+      "site": "F08",
+      "worker": "W016",
+      "macro": "sugar",
+      "portions": 0.327911,
+      "unique_receipt_id": "D16-W016-2",
+      "day": 16
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W016",
+      "to": "W011",
+      "site": "F08",
+      "assumption": true,
+      "day": 16
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W016",
+      "to": "W009",
+      "site": "F08",
+      "assumption": true,
+      "day": 16
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W011",
+      "to": "W008",
+      "site": "F07",
+      "assumption": true,
+      "day": 17
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W010",
+      "to": "W016",
+      "site": "F07",
+      "assumption": true,
+      "day": 17
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "V2D9-E04",
+      "location": "F11",
+      "worker": "W006",
+      "quantity_portions": 0.044524,
+      "day": 17
+    },
+    {
+      "type": "food_delivered",
+      "site": "F11",
+      "worker": "W006",
+      "macro": "protein",
+      "portions": 0.044524,
+      "unique_receipt_id": "D17-W006-1",
+      "day": 17
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W006",
+      "to": "W015",
+      "site": "F11",
+      "assumption": true,
+      "day": 17
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W006",
+      "to": "W017",
+      "site": "F11",
+      "assumption": true,
+      "day": 17
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "V2D11-E04",
+      "location": "F07",
+      "worker": "W010",
+      "quantity_portions": 0.115971,
+      "day": 17
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "V2D10-E04",
+      "location": "F07",
+      "worker": "W010",
+      "quantity_portions": 0.031803,
+      "day": 17
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W010",
+      "macro": "protein",
+      "portions": 0.147774,
+      "unique_receipt_id": "D17-W010-2",
+      "day": 17
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W010",
+      "to": "W009",
+      "site": "F07",
+      "assumption": true,
+      "day": 17
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W015",
+      "to": "W005",
+      "site": "F08",
+      "assumption": true,
+      "day": 18
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W015",
+      "to": "W007",
+      "site": "F08",
+      "assumption": true,
+      "day": 18
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W015",
+      "to": "W008",
+      "site": "F11",
+      "assumption": true,
+      "day": 18
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W015",
+      "to": "W010",
+      "site": "F08",
+      "assumption": true,
+      "day": 18
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W006",
+      "to": "W011",
+      "site": "F11",
+      "assumption": true,
+      "day": 18
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W011",
+      "to": "W012",
+      "site": "F07",
+      "assumption": true,
+      "day": 18
+    },
+    {
+      "type": "food_delivered",
+      "site": "F01",
+      "worker": "W005",
+      "macro": "sugar",
+      "portions": 0.553765,
+      "unique_receipt_id": "D18-W005-1",
+      "day": 18
+    },
+    {
+      "type": "food_delivered",
+      "site": "F08",
+      "worker": "W009",
+      "macro": "sugar",
+      "portions": 0.315383,
+      "unique_receipt_id": "D18-W009-2",
+      "day": 18
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W009",
+      "to": "W014",
+      "site": "F08",
+      "assumption": true,
+      "day": 18
+    },
+    {
+      "type": "food_delivered",
+      "site": "F08",
+      "worker": "W014",
+      "macro": "sugar",
+      "portions": 0.576228,
+      "unique_receipt_id": "D18-W014-3",
+      "day": 18
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W009",
+      "to": "W015",
+      "site": "F08",
+      "assumption": true,
+      "day": 18
+    },
+    {
+      "type": "food_delivered",
+      "site": "F08",
+      "worker": "W015",
+      "macro": "sugar",
+      "portions": 0.360478,
+      "unique_receipt_id": "D18-W015-4",
+      "day": 18
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W017",
+      "to": "W004",
+      "site": "F11",
+      "assumption": true,
+      "day": 19
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W015",
+      "to": "W006",
+      "site": "F08",
+      "assumption": true,
+      "day": 19
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W009",
+      "to": "W012",
+      "site": "F08",
+      "assumption": true,
+      "day": 19
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W008",
+      "to": "W015",
+      "site": "F07",
+      "assumption": true,
+      "day": 19
+    },
+    {
+      "type": "food_delivered",
+      "site": "F08",
+      "worker": "W011",
+      "macro": "sugar",
+      "portions": 0.35,
+      "unique_receipt_id": "D19-W011-1",
+      "day": 19
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W011",
+      "to": "W008",
+      "site": "F08",
+      "assumption": true,
+      "day": 19
+    },
+    {
+      "type": "hatch",
+      "id": "E002",
+      "day": 19
+    },
+    {
+      "type": "hatch",
+      "id": "E003",
+      "day": 19
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W005",
+      "to": "W004",
+      "site": "F08",
+      "assumption": true,
+      "day": 20
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W005",
+      "to": "W015",
+      "site": "F01",
+      "assumption": true,
+      "day": 20
+    },
+    {
+      "type": "food_delivered",
+      "site": "F08",
+      "worker": "W007",
+      "macro": "sugar",
+      "portions": 0.35,
+      "unique_receipt_id": "D20-W007-1",
+      "day": 20
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W007",
+      "to": "W013",
+      "site": "F08",
+      "assumption": true,
+      "day": 20
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W007",
+      "to": "W008",
+      "site": "F08",
+      "assumption": true,
+      "day": 20
+    },
+    {
+      "type": "hatch",
+      "id": "E004",
+      "day": 20
+    },
+    {
+      "type": "insect_natural_death",
+      "site": "F11",
+      "event_id": "NAT-D21-F11-1",
+      "insect_count_before": 10,
+      "insect_count_after": 9,
+      "causal_basis": "background insect mortality from already-present local population; simulated",
+      "day": 21
+    },
+    {
+      "type": "new_food_source",
+      "id": "NAT-D21-F11-1",
+      "site": "F11",
+      "protein_portions": 2.559747,
+      "caused_by_event_id": "NAT-D21-F11-1",
+      "causal_basis": "physical insect body after natural mortality",
+      "assumption": true,
+      "day": 21
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W015",
+      "to": "W007",
+      "site": "F11",
+      "assumption": true,
+      "day": 21
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W010",
+      "to": "W014",
+      "site": "F07",
+      "assumption": true,
+      "day": 21
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W011",
+      "to": "W016",
+      "site": "F11",
+      "assumption": true,
+      "day": 21
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D21-F11-1",
+      "location": "F11",
+      "worker": "W004",
+      "quantity_portions": 0.350635,
+      "day": 21
+    },
+    {
+      "type": "food_delivered",
+      "site": "F11",
+      "worker": "W004",
+      "macro": "protein",
+      "portions": 0.350635,
+      "unique_receipt_id": "D21-W004-1",
+      "day": 21
+    },
+    {
+      "type": "food_delivered",
+      "site": "F08",
+      "worker": "W007",
+      "macro": "sugar",
+      "portions": 0.319278,
+      "unique_receipt_id": "D21-W007-2",
+      "day": 21
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W007",
+      "to": "W012",
+      "site": "F08",
+      "assumption": true,
+      "day": 21
+    },
+    {
+      "type": "food_delivered",
+      "site": "F08",
+      "worker": "W012",
+      "macro": "sugar",
+      "portions": 0.030722,
+      "unique_receipt_id": "D21-W012-3",
+      "day": 21
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D21-F11-1",
+      "location": "F11",
+      "worker": "W016",
+      "quantity_portions": 0.572564,
+      "day": 21
+    },
+    {
+      "type": "food_delivered",
+      "site": "F11",
+      "worker": "W016",
+      "macro": "protein",
+      "portions": 0.572564,
+      "unique_receipt_id": "D21-W016-4",
+      "day": 21
+    },
+    {
+      "type": "insect_natural_death",
+      "site": "F07",
+      "event_id": "NAT-D22-F07-1",
+      "insect_count_before": 12,
+      "insect_count_after": 11,
+      "causal_basis": "background insect mortality from already-present local population; simulated",
+      "day": 22
+    },
+    {
+      "type": "new_food_source",
+      "id": "NAT-D22-F07-1",
+      "site": "F07",
+      "protein_portions": 1.711774,
+      "caused_by_event_id": "NAT-D22-F07-1",
+      "causal_basis": "physical insect body after natural mortality",
+      "assumption": true,
+      "day": 22
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W006",
+      "to": "W010",
+      "site": "F11",
+      "assumption": true,
+      "day": 22
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D22-F07-1",
+      "location": "F07",
+      "worker": "W005",
+      "quantity_portions": 0.557,
+      "day": 22
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W005",
+      "macro": "protein",
+      "portions": 0.557,
+      "unique_receipt_id": "D22-W005-1",
+      "day": 22
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W005",
+      "to": "W004",
+      "site": "F07",
+      "assumption": true,
+      "day": 22
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W005",
+      "to": "W007",
+      "site": "F07",
+      "assumption": true,
+      "day": 22
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W005",
+      "to": "W013",
+      "site": "F07",
+      "assumption": true,
+      "day": 22
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D21-F11-1",
+      "location": "F11",
+      "worker": "W010",
+      "quantity_portions": 0.328022,
+      "day": 22
+    },
+    {
+      "type": "food_delivered",
+      "site": "F11",
+      "worker": "W010",
+      "macro": "protein",
+      "portions": 0.328022,
+      "unique_receipt_id": "D22-W010-2",
+      "day": 22
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W010",
+      "to": "W016",
+      "site": "F11",
+      "assumption": true,
+      "day": 22
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D21-F11-1",
+      "location": "F11",
+      "worker": "W016",
+      "quantity_portions": 0.499657,
+      "day": 22
+    },
+    {
+      "type": "food_delivered",
+      "site": "F11",
+      "worker": "W016",
+      "macro": "protein",
+      "portions": 0.499657,
+      "unique_receipt_id": "D22-W016-3",
+      "day": 22
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D21-F11-1",
+      "location": "F11",
+      "worker": "W011",
+      "quantity_portions": 0.489818,
+      "day": 22
+    },
+    {
+      "type": "food_delivered",
+      "site": "F11",
+      "worker": "W011",
+      "macro": "protein",
+      "portions": 0.489818,
+      "unique_receipt_id": "D22-W011-4",
+      "day": 22
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W011",
+      "to": "W008",
+      "site": "F11",
+      "assumption": true,
+      "day": 22
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D21-F11-1",
+      "location": "F11",
+      "worker": "W008",
+      "quantity_portions": 0.089934,
+      "day": 22
+    },
+    {
+      "type": "food_delivered",
+      "site": "F11",
+      "worker": "W008",
+      "macro": "protein",
+      "portions": 0.089934,
+      "unique_receipt_id": "D22-W008-5",
+      "day": 22
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W011",
+      "to": "W009",
+      "site": "F11",
+      "assumption": true,
+      "day": 22
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W011",
+      "to": "W017",
+      "site": "F11",
+      "assumption": true,
+      "day": 22
+    },
+    {
+      "type": "insect_immigration",
+      "site": "F11",
+      "from": "adjacent_garden_habitat",
+      "individuals": 1,
+      "adjacent_population_after": 38,
+      "causal_basis": "physical transfer from an already counted neighboring population; assumed probability",
+      "assumption": true,
+      "day": 23
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W010",
+      "to": "W014",
+      "site": "F11",
+      "assumption": true,
+      "day": 23
+    },
+    {
+      "type": "food_delivered",
+      "site": "F01",
+      "worker": "W005",
+      "macro": "sugar",
+      "portions": 0.566381,
+      "unique_receipt_id": "D23-W005-1",
+      "day": 23
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W005",
+      "to": "W017",
+      "site": "F01",
+      "assumption": true,
+      "day": 23
+    },
+    {
+      "type": "food_delivered",
+      "site": "F01",
+      "worker": "W017",
+      "macro": "sugar",
+      "portions": 0.543961,
+      "unique_receipt_id": "D23-W017-2",
+      "day": 23
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W005",
+      "to": "W010",
+      "site": "F01",
+      "assumption": true,
+      "day": 23
+    },
+    {
+      "type": "food_delivered",
+      "site": "F01",
+      "worker": "W010",
+      "macro": "sugar",
+      "portions": 0.573504,
+      "unique_receipt_id": "D23-W010-3",
+      "day": 23
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W005",
+      "to": "W007",
+      "site": "F01",
+      "assumption": true,
+      "day": 23
+    },
+    {
+      "type": "food_delivered",
+      "site": "F01",
+      "worker": "W007",
+      "macro": "sugar",
+      "portions": 0.602983,
+      "unique_receipt_id": "D23-W007-4",
+      "day": 23
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D22-F07-1",
+      "location": "F07",
+      "worker": "W008",
+      "quantity_portions": 0.58544,
+      "day": 23
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W008",
+      "macro": "protein",
+      "portions": 0.58544,
+      "unique_receipt_id": "D23-W008-5",
+      "day": 23
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D22-F07-1",
+      "location": "F07",
+      "worker": "W011",
+      "quantity_portions": 0.407666,
+      "day": 23
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W011",
+      "macro": "protein",
+      "portions": 0.407666,
+      "unique_receipt_id": "D23-W011-6",
+      "day": 23
+    },
+    {
+      "type": "insect_immigration",
+      "site": "F07",
+      "from": "adjacent_garden_habitat",
+      "individuals": 1,
+      "adjacent_population_after": 37,
+      "causal_basis": "physical transfer from an already counted neighboring population; assumed probability",
+      "assumption": true,
+      "day": 24
+    },
+    {
+      "type": "insect_immigration",
+      "site": "F11",
+      "from": "adjacent_garden_habitat",
+      "individuals": 1,
+      "adjacent_population_after": 36,
+      "causal_basis": "physical transfer from an already counted neighboring population; assumed probability",
+      "assumption": true,
+      "day": 25
+    },
+    {
+      "type": "insect_natural_death",
+      "site": "F11",
+      "event_id": "NAT-D25-F11-2",
+      "insect_count_before": 11,
+      "insect_count_after": 10,
+      "causal_basis": "background insect mortality from already-present local population; simulated",
+      "day": 25
+    },
+    {
+      "type": "new_food_source",
+      "id": "NAT-D25-F11-2",
+      "site": "F11",
+      "protein_portions": 2.294635,
+      "caused_by_event_id": "NAT-D25-F11-2",
+      "causal_basis": "physical insect body after natural mortality",
+      "assumption": true,
+      "day": 25
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W006",
+      "to": "W011",
+      "site": "F01",
+      "assumption": true,
+      "day": 25
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D25-F11-2",
+      "location": "F11",
+      "worker": "W004",
+      "quantity_portions": 0.548916,
+      "day": 25
+    },
+    {
+      "type": "food_delivered",
+      "site": "F11",
+      "worker": "W004",
+      "macro": "protein",
+      "portions": 0.548916,
+      "unique_receipt_id": "D25-W004-1",
+      "day": 25
+    },
+    {
+      "type": "hatch",
+      "id": "E005",
+      "day": 25
+    },
+    {
+      "type": "insect_natural_death",
+      "site": "F07",
+      "event_id": "NAT-D26-F07-2",
+      "insect_count_before": 12,
+      "insect_count_after": 11,
+      "causal_basis": "background insect mortality from already-present local population; simulated",
+      "day": 26
+    },
+    {
+      "type": "new_food_source",
+      "id": "NAT-D26-F07-2",
+      "site": "F07",
+      "protein_portions": 1.818819,
+      "caused_by_event_id": "NAT-D26-F07-2",
+      "causal_basis": "physical insect body after natural mortality",
+      "assumption": true,
+      "day": 26
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W007",
+      "to": "W005",
+      "site": "F11",
+      "assumption": true,
+      "day": 26
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W006",
+      "to": "W009",
+      "site": "F01",
+      "assumption": true,
+      "day": 26
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D26-F07-2",
+      "location": "F07",
+      "worker": "W009",
+      "quantity_portions": 0.447188,
+      "day": 26
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W009",
+      "macro": "protein",
+      "portions": 0.447188,
+      "unique_receipt_id": "D26-W009-1",
+      "day": 26
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W009",
+      "to": "W007",
+      "site": "F07",
+      "assumption": true,
+      "day": 26
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D26-F07-2",
+      "location": "F07",
+      "worker": "W007",
+      "quantity_portions": 0.510017,
+      "day": 26
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W007",
+      "macro": "protein",
+      "portions": 0.510017,
+      "unique_receipt_id": "D26-W007-2",
+      "day": 26
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D25-F11-2",
+      "location": "F11",
+      "worker": "W010",
+      "quantity_portions": 0.55636,
+      "day": 26
+    },
+    {
+      "type": "food_delivered",
+      "site": "F11",
+      "worker": "W010",
+      "macro": "protein",
+      "portions": 0.55636,
+      "unique_receipt_id": "D26-W010-3",
+      "day": 26
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W010",
+      "to": "W006",
+      "site": "F11",
+      "assumption": true,
+      "day": 26
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D25-F11-2",
+      "location": "F11",
+      "worker": "W006",
+      "quantity_portions": 0.577132,
+      "day": 26
+    },
+    {
+      "type": "food_delivered",
+      "site": "F11",
+      "worker": "W006",
+      "macro": "protein",
+      "portions": 0.577132,
+      "unique_receipt_id": "D26-W006-4",
+      "day": 26
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W010",
+      "to": "W013",
+      "site": "F11",
+      "assumption": true,
+      "day": 26
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D25-F11-2",
+      "location": "F11",
+      "worker": "W013",
+      "quantity_portions": 0.367826,
+      "day": 26
+    },
+    {
+      "type": "food_delivered",
+      "site": "F11",
+      "worker": "W013",
+      "macro": "protein",
+      "portions": 0.367826,
+      "unique_receipt_id": "D26-W013-5",
+      "day": 26
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W010",
+      "to": "W016",
+      "site": "F11",
+      "assumption": true,
+      "day": 26
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W006",
+      "to": "W012",
+      "site": "F11",
+      "assumption": true,
+      "day": 27
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D26-F07-2",
+      "location": "F07",
+      "worker": "W005",
+      "quantity_portions": 0.569223,
+      "day": 27
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W005",
+      "macro": "protein",
+      "portions": 0.569223,
+      "unique_receipt_id": "D27-W005-1",
+      "day": 27
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W005",
+      "to": "W016",
+      "site": "F07",
+      "assumption": true,
+      "day": 27
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D26-F07-2",
+      "location": "F07",
+      "worker": "W016",
+      "quantity_portions": 0.171765,
+      "day": 27
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W016",
+      "macro": "protein",
+      "portions": 0.171765,
+      "unique_receipt_id": "D27-W016-2",
+      "day": 27
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W005",
+      "to": "W012",
+      "site": "F07",
+      "assumption": true,
+      "day": 27
+    },
+    {
+      "type": "worker_death",
+      "id": "W016",
+      "reason": "starvation_or_natural_competing_hazards_scenario",
+      "risk_assumption": 0.017955,
+      "day": 27
+    },
+    {
+      "type": "insect_natural_death",
+      "site": "F11",
+      "event_id": "NAT-D28-F11-3",
+      "insect_count_before": 10,
+      "insect_count_after": 9,
+      "causal_basis": "background insect mortality from already-present local population; simulated",
+      "day": 28
+    },
+    {
+      "type": "new_food_source",
+      "id": "NAT-D28-F11-3",
+      "site": "F11",
+      "protein_portions": 1.886301,
+      "caused_by_event_id": "NAT-D28-F11-3",
+      "causal_basis": "physical insect body after natural mortality",
+      "assumption": true,
+      "day": 28
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W011",
+      "to": "W008",
+      "site": "F01",
+      "assumption": true,
+      "day": 28
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D28-F11-3",
+      "location": "F11",
+      "worker": "W004",
+      "quantity_portions": 0.480119,
+      "day": 28
+    },
+    {
+      "type": "food_delivered",
+      "site": "F11",
+      "worker": "W004",
+      "macro": "protein",
+      "portions": 0.480119,
+      "unique_receipt_id": "D28-W004-1",
+      "day": 28
+    },
+    {
+      "type": "worker_death",
+      "id": "W015",
+      "reason": "starvation_or_natural_competing_hazards_scenario",
+      "risk_assumption": 0.029919,
+      "day": 28
+    },
+    {
+      "type": "insect_natural_death",
+      "site": "F07",
+      "event_id": "NAT-D29-F07-3",
+      "insect_count_before": 11,
+      "insect_count_after": 10,
+      "causal_basis": "background insect mortality from already-present local population; simulated",
+      "day": 29
+    },
+    {
+      "type": "new_food_source",
+      "id": "NAT-D29-F07-3",
+      "site": "F07",
+      "protein_portions": 1.895067,
+      "caused_by_event_id": "NAT-D29-F07-3",
+      "causal_basis": "physical insect body after natural mortality",
+      "assumption": true,
+      "day": 29
+    },
+    {
+      "type": "insect_natural_death",
+      "site": "F11",
+      "event_id": "NAT-D29-F11-4",
+      "insect_count_before": 9,
+      "insect_count_after": 8,
+      "causal_basis": "background insect mortality from already-present local population; simulated",
+      "day": 29
+    },
+    {
+      "type": "new_food_source",
+      "id": "NAT-D29-F11-4",
+      "site": "F11",
+      "protein_portions": 2.135173,
+      "caused_by_event_id": "NAT-D29-F11-4",
+      "causal_basis": "physical insect body after natural mortality",
+      "assumption": true,
+      "day": 29
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W007",
+      "to": "W012",
+      "site": "F01",
+      "assumption": true,
+      "day": 29
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D28-F11-3",
+      "location": "F11",
+      "worker": "W004",
+      "quantity_portions": 0.594549,
+      "day": 29
+    },
+    {
+      "type": "food_delivered",
+      "site": "F11",
+      "worker": "W004",
+      "macro": "protein",
+      "portions": 0.594549,
+      "unique_receipt_id": "D29-W004-1",
+      "day": 29
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W004",
+      "to": "W013",
+      "site": "F11",
+      "assumption": true,
+      "day": 29
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D28-F11-3",
+      "location": "F11",
+      "worker": "W013",
+      "quantity_portions": 0.47426,
+      "day": 29
+    },
+    {
+      "type": "food_delivered",
+      "site": "F11",
+      "worker": "W013",
+      "macro": "protein",
+      "portions": 0.47426,
+      "unique_receipt_id": "D29-W013-2",
+      "day": 29
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D28-F11-3",
+      "location": "F11",
+      "worker": "W005",
+      "quantity_portions": 0.140508,
+      "day": 29
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D29-F11-4",
+      "location": "F11",
+      "worker": "W005",
+      "quantity_portions": 0.30261,
+      "day": 29
+    },
+    {
+      "type": "food_delivered",
+      "site": "F11",
+      "worker": "W005",
+      "macro": "protein",
+      "portions": 0.443118,
+      "unique_receipt_id": "D29-W005-3",
+      "day": 29
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W005",
+      "to": "W012",
+      "site": "F11",
+      "assumption": true,
+      "day": 29
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D29-F11-4",
+      "location": "F11",
+      "worker": "W012",
+      "quantity_portions": 0.625642,
+      "day": 29
+    },
+    {
+      "type": "food_delivered",
+      "site": "F11",
+      "worker": "W012",
+      "macro": "protein",
+      "portions": 0.625642,
+      "unique_receipt_id": "D29-W012-4",
+      "day": 29
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W005",
+      "to": "W006",
+      "site": "F11",
+      "assumption": true,
+      "day": 29
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D29-F11-4",
+      "location": "F11",
+      "worker": "W006",
+      "quantity_portions": 0.439253,
+      "day": 29
+    },
+    {
+      "type": "food_delivered",
+      "site": "F11",
+      "worker": "W006",
+      "macro": "protein",
+      "portions": 0.439253,
+      "unique_receipt_id": "D29-W006-5",
+      "day": 29
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D29-F11-4",
+      "location": "F11",
+      "worker": "W007",
+      "quantity_portions": 0.63409,
+      "day": 29
+    },
+    {
+      "type": "food_delivered",
+      "site": "F11",
+      "worker": "W007",
+      "macro": "protein",
+      "portions": 0.63409,
+      "unique_receipt_id": "D29-W007-6",
+      "day": 29
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D29-F11-4",
+      "location": "F11",
+      "worker": "W010",
+      "quantity_portions": 0.133578,
+      "day": 29
+    },
+    {
+      "type": "food_delivered",
+      "site": "F11",
+      "worker": "W010",
+      "macro": "protein",
+      "portions": 0.133578,
+      "unique_receipt_id": "D29-W010-7",
+      "day": 29
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D29-F07-3",
+      "location": "F07",
+      "worker": "W017",
+      "quantity_portions": 0.580885,
+      "day": 29
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W017",
+      "macro": "protein",
+      "portions": 0.580885,
+      "unique_receipt_id": "D29-W017-8",
+      "day": 29
+    },
+    {
+      "type": "worker_death",
+      "id": "W017",
+      "reason": "starvation_or_natural_competing_hazards_scenario",
+      "risk_assumption": 0.041883,
+      "day": 29
+    },
+    {
+      "type": "insect_natural_death",
+      "site": "F07",
+      "event_id": "NAT-D30-F07-4",
+      "insect_count_before": 10,
+      "insect_count_after": 9,
+      "causal_basis": "background insect mortality from already-present local population; simulated",
+      "day": 30
+    },
+    {
+      "type": "new_food_source",
+      "id": "NAT-D30-F07-4",
+      "site": "F07",
+      "protein_portions": 1.892975,
+      "caused_by_event_id": "NAT-D30-F07-4",
+      "causal_basis": "physical insect body after natural mortality",
+      "assumption": true,
+      "day": 30
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D29-F07-3",
+      "location": "F07",
+      "worker": "W009",
+      "quantity_portions": 0.620408,
+      "day": 30
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W009",
+      "macro": "protein",
+      "portions": 0.620408,
+      "unique_receipt_id": "D30-W009-1",
+      "day": 30
+    },
+    {
+      "type": "worker_death",
+      "id": "W012",
+      "reason": "starvation_or_natural_competing_hazards_scenario",
+      "risk_assumption": 0.054986,
+      "day": 30
+    },
+    {
+      "type": "worker_death",
+      "id": "W014",
+      "reason": "starvation_or_natural_competing_hazards_scenario",
+      "risk_assumption": 0.054986,
+      "day": 30
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W006",
+      "to": "W004",
+      "site": "F01",
+      "assumption": true,
+      "day": 31
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D29-F07-3",
+      "location": "F07",
+      "worker": "W006",
+      "quantity_portions": 0.328113,
+      "day": 31
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W006",
+      "macro": "protein",
+      "portions": 0.328113,
+      "unique_receipt_id": "D31-W006-1",
+      "day": 31
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D29-F07-3",
+      "location": "F07",
+      "worker": "W011",
+      "quantity_portions": 0.110306,
+      "day": 31
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D30-F07-4",
+      "location": "F07",
+      "worker": "W011",
+      "quantity_portions": 0.410628,
+      "day": 31
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W011",
+      "macro": "protein",
+      "portions": 0.520934,
+      "unique_receipt_id": "D31-W011-2",
+      "day": 31
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W011",
+      "to": "W005",
+      "site": "F07",
+      "assumption": true,
+      "day": 31
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D30-F07-4",
+      "location": "F07",
+      "worker": "W005",
+      "quantity_portions": 0.564926,
+      "day": 31
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W005",
+      "macro": "protein",
+      "portions": 0.564926,
+      "unique_receipt_id": "D31-W005-3",
+      "day": 31
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W011",
+      "to": "W008",
+      "site": "F07",
+      "assumption": true,
+      "day": 31
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D30-F07-4",
+      "location": "F07",
+      "worker": "W008",
+      "quantity_portions": 0.529205,
+      "day": 31
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W008",
+      "macro": "protein",
+      "portions": 0.529205,
+      "unique_receipt_id": "D31-W008-4",
+      "day": 31
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W011",
+      "to": "W013",
+      "site": "F07",
+      "assumption": true,
+      "day": 31
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D30-F07-4",
+      "location": "F07",
+      "worker": "W013",
+      "quantity_portions": 0.1232,
+      "day": 31
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W013",
+      "macro": "protein",
+      "portions": 0.1232,
+      "unique_receipt_id": "D31-W013-5",
+      "day": 31
+    },
+    {
+      "type": "insect_natural_death",
+      "site": "F07",
+      "event_id": "NAT-D32-F07-5",
+      "insect_count_before": 9,
+      "insect_count_after": 8,
+      "causal_basis": "background insect mortality from already-present local population; simulated",
+      "day": 32
+    },
+    {
+      "type": "new_food_source",
+      "id": "NAT-D32-F07-5",
+      "site": "F07",
+      "protein_portions": 2.565987,
+      "caused_by_event_id": "NAT-D32-F07-5",
+      "causal_basis": "physical insect body after natural mortality",
+      "assumption": true,
+      "day": 32
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W010",
+      "to": "W013",
+      "site": "F01",
+      "assumption": true,
+      "day": 32
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D32-F07-5",
+      "location": "F07",
+      "worker": "W010",
+      "quantity_portions": 0.491257,
+      "day": 33
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W010",
+      "macro": "protein",
+      "portions": 0.491257,
+      "unique_receipt_id": "D33-W010-1",
+      "day": 33
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W010",
+      "to": "W007",
+      "site": "F07",
+      "assumption": true,
+      "day": 33
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D32-F07-5",
+      "location": "F07",
+      "worker": "W007",
+      "quantity_portions": 0.463263,
+      "day": 33
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W007",
+      "macro": "protein",
+      "portions": 0.463263,
+      "unique_receipt_id": "D33-W007-2",
+      "day": 33
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W010",
+      "to": "W005",
+      "site": "F07",
+      "assumption": true,
+      "day": 33
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D32-F07-5",
+      "location": "F07",
+      "worker": "W011",
+      "quantity_portions": 0.319924,
+      "day": 33
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W011",
+      "macro": "protein",
+      "portions": 0.319924,
+      "unique_receipt_id": "D33-W011-3",
+      "day": 33
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W011",
+      "to": "W008",
+      "site": "F07",
+      "assumption": true,
+      "day": 33
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D32-F07-5",
+      "location": "F07",
+      "worker": "W008",
+      "quantity_portions": 0.323867,
+      "day": 33
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W008",
+      "macro": "protein",
+      "portions": 0.323867,
+      "unique_receipt_id": "D33-W008-4",
+      "day": 33
+    },
+    {
+      "type": "worker_death",
+      "id": "W004",
+      "reason": "starvation_or_natural_competing_hazards_scenario",
+      "risk_assumption": 0.089739,
+      "day": 33
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D32-F07-5",
+      "location": "F07",
+      "worker": "W007",
+      "quantity_portions": 0.494631,
+      "day": 34
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W007",
+      "macro": "protein",
+      "portions": 0.494631,
+      "unique_receipt_id": "D34-W007-1",
+      "day": 34
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D32-F07-5",
+      "location": "F07",
+      "worker": "W010",
+      "quantity_portions": 0.010465,
+      "day": 35
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W010",
+      "macro": "protein",
+      "portions": 0.010465,
+      "unique_receipt_id": "D35-W010-1",
+      "day": 35
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W010",
+      "to": "W007",
+      "site": "F07",
+      "assumption": true,
+      "day": 35
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W010",
+      "to": "W005",
+      "site": "F07",
+      "assumption": true,
+      "day": 35
+    },
+    {
+      "type": "worker_death",
+      "id": "W005",
+      "reason": "starvation_or_natural_competing_hazards_scenario",
+      "risk_assumption": 0.113667,
+      "day": 35
+    },
+    {
+      "type": "worker_death",
+      "id": "W009",
+      "reason": "starvation_or_natural_competing_hazards_scenario",
+      "risk_assumption": 0.114734,
+      "day": 35
+    },
+    {
+      "type": "worker_death",
+      "id": "W013",
+      "reason": "starvation_or_natural_competing_hazards_scenario",
+      "risk_assumption": 0.114734,
+      "day": 35
+    },
+    {
+      "type": "insect_immigration",
+      "site": "F07",
+      "from": "adjacent_garden_habitat",
+      "individuals": 1,
+      "adjacent_population_after": 35,
+      "causal_basis": "physical transfer from an already counted neighboring population; assumed probability",
+      "assumption": true,
+      "day": 36
+    },
+    {
+      "type": "insect_natural_death",
+      "site": "F07",
+      "event_id": "NAT-D36-F07-6",
+      "insect_count_before": 9,
+      "insect_count_after": 8,
+      "causal_basis": "background insect mortality from already-present local population; simulated",
+      "day": 36
+    },
+    {
+      "type": "new_food_source",
+      "id": "NAT-D36-F07-6",
+      "site": "F07",
+      "protein_portions": 2.575526,
+      "caused_by_event_id": "NAT-D36-F07-6",
+      "causal_basis": "physical insect body after natural mortality",
+      "assumption": true,
+      "day": 36
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D36-F07-6",
+      "location": "F07",
+      "worker": "W010",
+      "quantity_portions": 0.482064,
+      "day": 36
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W010",
+      "macro": "protein",
+      "portions": 0.482064,
+      "unique_receipt_id": "D36-W010-1",
+      "day": 36
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W010",
+      "to": "W008",
+      "site": "F07",
+      "assumption": true,
+      "day": 36
+    },
+    {
+      "type": "worker_death",
+      "id": "W008",
+      "reason": "starvation_or_natural_competing_hazards_scenario",
+      "risk_assumption": 0.127604,
+      "day": 36
+    },
+    {
+      "type": "insect_natural_death",
+      "site": "F07",
+      "event_id": "NAT-D37-F07-7",
+      "insect_count_before": 8,
+      "insect_count_after": 7,
+      "causal_basis": "background insect mortality from already-present local population; simulated",
+      "day": 37
+    },
+    {
+      "type": "new_food_source",
+      "id": "NAT-D37-F07-7",
+      "site": "F07",
+      "protein_portions": 1.803879,
+      "caused_by_event_id": "NAT-D37-F07-7",
+      "causal_basis": "physical insect body after natural mortality",
+      "assumption": true,
+      "day": 37
+    },
+    {
+      "type": "brood_death",
+      "id": "E004",
+      "stage": "larva",
+      "reason": "chronic_protein_shortage_game_scenario",
+      "probability_assumption": 0.05,
+      "day": 38
+    },
+    {
+      "type": "worker_death",
+      "id": "W010",
+      "reason": "starvation_or_natural_competing_hazards_scenario",
+      "risk_assumption": 0.164046,
+      "day": 39
+    },
+    {
+      "type": "insect_immigration",
+      "site": "F11",
+      "from": "adjacent_garden_habitat",
+      "individuals": 1,
+      "adjacent_population_after": 34,
+      "causal_basis": "physical transfer from an already counted neighboring population; assumed probability",
+      "assumption": true,
+      "day": 40
+    },
+    {
+      "type": "brood_death",
+      "id": "E003",
+      "stage": "larva",
+      "reason": "chronic_protein_shortage_game_scenario",
+      "probability_assumption": 0.16,
+      "day": 40
+    },
+    {
+      "type": "worker_death",
+      "id": "W007",
+      "reason": "starvation_or_natural_competing_hazards_scenario",
+      "risk_assumption": 0.178834,
+      "day": 40
+    },
+    {
+      "type": "insect_natural_death",
+      "site": "F07",
+      "event_id": "NAT-D41-F07-8",
+      "insect_count_before": 7,
+      "insect_count_after": 6,
+      "causal_basis": "background insect mortality from already-present local population; simulated",
+      "day": 41
+    },
+    {
+      "type": "new_food_source",
+      "id": "NAT-D41-F07-8",
+      "site": "F07",
+      "protein_portions": 2.160794,
+      "caused_by_event_id": "NAT-D41-F07-8",
+      "causal_basis": "physical insect body after natural mortality",
+      "assumption": true,
+      "day": 41
+    },
+    {
+      "type": "brood_death",
+      "id": "E002",
+      "stage": "larva",
+      "reason": "chronic_protein_shortage_game_scenario",
+      "probability_assumption": 0.215,
+      "day": 41
+    },
+    {
+      "type": "pupation",
+      "id": "L001",
+      "day": 41
+    },
+    {
+      "type": "pupation",
+      "id": "L002",
+      "day": 41
+    },
+    {
+      "type": "brood_death",
+      "id": "E001",
+      "stage": "larva",
+      "reason": "chronic_protein_shortage_game_scenario",
+      "probability_assumption": 0.27,
+      "day": 42
+    },
+    {
+      "type": "brood_death",
+      "id": "E005",
+      "stage": "larva",
+      "reason": "chronic_protein_shortage_game_scenario",
+      "probability_assumption": 0.27,
+      "day": 42
+    },
+    {
+      "type": "insect_immigration",
+      "site": "F11",
+      "from": "adjacent_garden_habitat",
+      "individuals": 1,
+      "adjacent_population_after": 33,
+      "causal_basis": "physical transfer from an already counted neighboring population; assumed probability",
+      "assumption": true,
+      "day": 43
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D36-F07-6",
+      "location": "F07",
+      "worker": "W011",
+      "quantity_portions": 0.524194,
+      "day": 43
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W011",
+      "macro": "protein",
+      "portions": 0.524194,
+      "unique_receipt_id": "D43-W011-1",
+      "day": 43
+    },
+    {
+      "type": "local_recruitment",
+      "by": "W011",
+      "to": "W006",
+      "site": "F07",
+      "assumption": true,
+      "day": 43
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D36-F07-6",
+      "location": "F07",
+      "worker": "W006",
+      "quantity_portions": 0.197651,
+      "day": 43
+    },
+    {
+      "type": "source_batch_consumed",
+      "source_event_id": "NAT-D37-F07-7",
+      "location": "F07",
+      "worker": "W006",
+      "quantity_portions": 0.394325,
+      "day": 43
+    },
+    {
+      "type": "food_delivered",
+      "site": "F07",
+      "worker": "W006",
+      "macro": "protein",
+      "portions": 0.591976,
+      "unique_receipt_id": "D43-W006-2",
+      "day": 43
+    },
+    {
+      "type": "insect_natural_death",
+      "site": "F11",
+      "event_id": "NAT-D44-F11-5",
+      "insect_count_before": 10,
+      "insect_count_after": 9,
+      "causal_basis": "background insect mortality from already-present local population; simulated",
+      "day": 44
+    },
+    {
+      "type": "new_food_source",
+      "id": "NAT-D44-F11-5",
+      "site": "F11",
+      "protein_portions": 1.574503,
+      "caused_by_event_id": "NAT-D44-F11-5",
+      "causal_basis": "physical insect body after natural mortality",
+      "assumption": true,
+      "day": 44
+    }
+  ]
+}

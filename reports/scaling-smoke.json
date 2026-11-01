@@ -1,0 +1,23 @@
+[
+  {
+    "workers_before": 14,
+    "workers_after": 14,
+    "ms": 9,
+    "all_workers_tasked": true,
+    "events": 8
+  },
+  {
+    "workers_before": 100,
+    "workers_after": 100,
+    "ms": 6,
+    "all_workers_tasked": true,
+    "events": 40
+  },
+  {
+    "workers_before": 1000,
+    "workers_after": 999,
+    "ms": 28,
+    "all_workers_tasked": true,
+    "events": 287
+  }
+]

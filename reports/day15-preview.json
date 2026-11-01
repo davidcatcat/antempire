@@ -1,0 +1,735 @@
+{
+  "engine_version": "antempire.v2-review.1",
+  "params_schema": "antempire.rules-v2.day15.proposal",
+  "day": 15,
+  "summary": {
+    "day": 15,
+    "date": "2026-11-14",
+    "weather": {
+      "day": 15,
+      "date": "2026-11-14",
+      "kind": "synthetic_climatology_game_assumption_not_real_weather",
+      "wet": false,
+      "air_temp_c": 21.972794,
+      "nest_temp_model_c": 21.125118,
+      "relative_humidity_model_percent": 69.982499,
+      "rain_mm": 0,
+      "soil_index": 0.2447,
+      "shade_index": 0.218552,
+      "temperature_anomaly_c": -0.813085,
+      "rain_probability_model": 0.513477
+    },
+    "workers_before": 14,
+    "brood_before": 7,
+    "queen_alive_before": true,
+    "income": {
+      "sugar": 0,
+      "protein": 0
+    },
+    "tasks": {
+      "forage": 2,
+      "nurse": 8,
+      "repair": 2,
+      "rest": 2,
+      "guard": 0
+    },
+    "foraging_trips": 0,
+    "foraging_successes": 0,
+    "scouts": 2,
+    "recruited": 0,
+    "extra_sugar_cost": 0,
+    "worker_deaths": 0,
+    "brood_deaths": 0,
+    "hatchings": 1,
+    "pupations": 0,
+    "eclosions": 0,
+    "eggs_laid": 0,
+    "demand": {
+      "sugar": 1.67,
+      "protein": 0.557
+    },
+    "consumed": {
+      "sugar": 1.67,
+      "protein": 0.557
+    },
+    "ratios": {
+      "sugar": 1,
+      "protein": 1
+    },
+    "development_factor": 0.843818,
+    "queen_laying_probability_applied": 0.35074,
+    "population": {
+      "queen": 1,
+      "workers": 14,
+      "eggs": 4,
+      "larvae": 3,
+      "pupae": 0
+    },
+    "stock": {
+      "sugar": 5.93,
+      "protein": 1.743
+    },
+    "starvation": {
+      "sugar_gap_days": 0,
+      "protein_gap_days": 0,
+      "stress_days": 0
+    },
+    "mass_ledger": {
+      "unit": "game_portions_NOT_mg",
+      "start": {
+        "sugar": 7.6,
+        "protein": 2.3
+      },
+      "foraged": {
+        "sugar": 0,
+        "protein": 0
+      },
+      "metabolized": {
+        "sugar": 1.67,
+        "protein": 0.557
+      },
+      "egg_laying": {
+        "sugar": 0,
+        "protein": 0
+      },
+      "storage_overflow_not_retained": {
+        "sugar": 0,
+        "protein": 0
+      },
+      "note": "Nest mass conservation exact within 1e-5 game portions; source decomposition/replenishment separate"
+    }
+  },
+  "events": [
+    {
+      "type": "nest_local_route_learning",
+      "from": "W011",
+      "to": "W004",
+      "site": "F07",
+      "assumption": true
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W011",
+      "to": "W010",
+      "site": "F07",
+      "assumption": true
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W006",
+      "to": "W013",
+      "site": "F11",
+      "assumption": true
+    },
+    {
+      "type": "nest_local_route_learning",
+      "from": "W017",
+      "to": "W016",
+      "site": "F08",
+      "assumption": true
+    },
+    {
+      "type": "hatch",
+      "id": "E001"
+    }
+  ],
+  "state": {
+    "schema": "antempire.engine-v2",
+    "sim_day": 15,
+    "calendar_date": "2026-11-14",
+    "next_worker_number": 18,
+    "next_egg_number": 6,
+    "next_larva_number": 3,
+    "next_pupa_number": 1,
+    "population": {
+      "queen_alive": true,
+      "workers": [
+        {
+          "id": "W004",
+          "alive": true,
+          "age_days": 8,
+          "age_origin": "Day15 game assumption: unknown legacy worker age",
+          "injured": false,
+          "task": "nurse",
+          "known_sources": [
+            "F07"
+          ],
+          "last_location": "N00"
+        },
+        {
+          "id": "W005",
+          "alive": true,
+          "age_days": 8,
+          "age_origin": "Day15 game assumption: unknown legacy worker age",
+          "injured": false,
+          "task": "nurse",
+          "known_sources": [
+            "F01"
+          ],
+          "last_location": "N00"
+        },
+        {
+          "id": "W006",
+          "alive": true,
+          "age_days": 8,
+          "age_origin": "Day15 game assumption: unknown legacy worker age",
+          "injured": false,
+          "task": "rest",
+          "known_sources": [
+            "F11"
+          ],
+          "last_location": "N00"
+        },
+        {
+          "id": "W007",
+          "alive": true,
+          "age_days": 8,
+          "age_origin": "Day15 game assumption: unknown legacy worker age",
+          "injured": true,
+          "task": "nurse",
+          "known_sources": [],
+          "last_location": "N00"
+        },
+        {
+          "id": "W008",
+          "alive": true,
+          "age_days": 8,
+          "age_origin": "Day15 game assumption: unknown legacy worker age",
+          "injured": true,
+          "task": "forage",
+          "known_sources": [],
+          "last_location": "N00"
+        },
+        {
+          "id": "W009",
+          "alive": true,
+          "age_days": 8,
+          "age_origin": "Day15 game assumption: unknown legacy worker age",
+          "injured": true,
+          "task": "nurse",
+          "known_sources": [],
+          "last_location": "N00"
+        },
+        {
+          "id": "W010",
+          "alive": true,
+          "age_days": 8,
+          "age_origin": "Day15 game assumption: unknown legacy worker age",
+          "injured": false,
+          "task": "nurse",
+          "known_sources": [
+            "F07"
+          ],
+          "last_location": "N00"
+        },
+        {
+          "id": "W011",
+          "alive": true,
+          "age_days": 8,
+          "age_origin": "Day15 game assumption: unknown legacy worker age",
+          "injured": false,
+          "task": "nurse",
+          "known_sources": [
+            "F07"
+          ],
+          "last_location": "N00"
+        },
+        {
+          "id": "W012",
+          "alive": true,
+          "age_days": 8,
+          "age_origin": "Day15 game assumption: unknown legacy worker age",
+          "injured": true,
+          "task": "forage",
+          "known_sources": [],
+          "last_location": "N00"
+        },
+        {
+          "id": "W013",
+          "alive": true,
+          "age_days": 8,
+          "age_origin": "Day15 game assumption: unknown legacy worker age",
+          "injured": true,
+          "task": "repair",
+          "known_sources": [
+            "F11"
+          ],
+          "last_location": "N00"
+        },
+        {
+          "id": "W014",
+          "alive": true,
+          "age_days": 8,
+          "age_origin": "Day15 game assumption: unknown legacy worker age",
+          "injured": true,
+          "task": "nurse",
+          "known_sources": [],
+          "last_location": "N00"
+        },
+        {
+          "id": "W015",
+          "alive": true,
+          "age_days": 8,
+          "age_origin": "Day15 game assumption: unknown legacy worker age",
+          "injured": false,
+          "task": "rest",
+          "known_sources": [
+            "U00"
+          ],
+          "last_location": "N00"
+        },
+        {
+          "id": "W016",
+          "alive": true,
+          "age_days": 8,
+          "age_origin": "Day15 game assumption: unknown legacy worker age",
+          "injured": false,
+          "task": "nurse",
+          "known_sources": [
+            "U01",
+            "F08"
+          ],
+          "last_location": "N00"
+        },
+        {
+          "id": "W017",
+          "alive": true,
+          "age_days": 8,
+          "age_origin": "Day15 game assumption: unknown legacy worker age",
+          "injured": false,
+          "task": "repair",
+          "known_sources": [
+            "F08"
+          ],
+          "last_location": "N00"
+        }
+      ],
+      "brood": [
+        {
+          "id": "E001",
+          "stage": "larva",
+          "laid_on_day": 2,
+          "age_days": 0,
+          "progress": 0.083382,
+          "origin": "Day14 explicit laid_on_sim_day; progress scenario at 25C"
+        },
+        {
+          "id": "E002",
+          "stage": "egg",
+          "laid_on_day": 8,
+          "age_days": 7,
+          "progress": 0.684382,
+          "origin": "Day14 explicit laid_on_sim_day; progress scenario at 25C"
+        },
+        {
+          "id": "E003",
+          "stage": "egg",
+          "laid_on_day": 8,
+          "age_days": 7,
+          "progress": 0.684382,
+          "origin": "Day14 explicit laid_on_sim_day; progress scenario at 25C"
+        },
+        {
+          "id": "E004",
+          "stage": "egg",
+          "laid_on_day": 9,
+          "age_days": 6,
+          "progress": 0.584382,
+          "origin": "Day14 explicit laid_on_sim_day; progress scenario at 25C"
+        },
+        {
+          "id": "E005",
+          "stage": "egg",
+          "laid_on_day": 13,
+          "age_days": 2,
+          "progress": 0.184382,
+          "origin": "Day14 explicit laid_on_sim_day; progress scenario at 25C"
+        },
+        {
+          "id": "L001",
+          "stage": "larva",
+          "laid_on_day": null,
+          "age_days": null,
+          "progress": 0.570318,
+          "origin": "Day15 one-time migration assumed mid-stage unknown actual larval age"
+        },
+        {
+          "id": "L002",
+          "stage": "larva",
+          "laid_on_day": null,
+          "age_days": null,
+          "progress": 0.570318,
+          "origin": "Day15 one-time migration assumed mid-stage unknown actual larval age"
+        }
+      ]
+    },
+    "colony": {
+      "sugar": 5.93,
+      "protein": 1.743,
+      "sugar_gap_days": 0,
+      "protein_gap_days": 0,
+      "stress_days": 0,
+      "queen_laid_yesterday": false
+    },
+    "climate": {
+      "monthly": [
+        {
+          "month": 1,
+          "mean_air_temperature_c": 17,
+          "mean_relative_humidity_percent": 74.4,
+          "mean_monthly_precipitation_mm": 36.6
+        },
+        {
+          "month": 2,
+          "mean_air_temperature_c": 17.7,
+          "mean_relative_humidity_percent": 75.2,
+          "mean_monthly_precipitation_mm": 63
+        },
+        {
+          "month": 3,
+          "mean_air_temperature_c": 20.1,
+          "mean_relative_humidity_percent": 74.6,
+          "mean_monthly_precipitation_mm": 86.9
+        },
+        {
+          "month": 4,
+          "mean_air_temperature_c": 23.5,
+          "mean_relative_humidity_percent": 75.1,
+          "mean_monthly_precipitation_mm": 126.8
+        },
+        {
+          "month": 5,
+          "mean_air_temperature_c": 26.4,
+          "mean_relative_humidity_percent": 75.7,
+          "mean_monthly_precipitation_mm": 249.6
+        },
+        {
+          "month": 6,
+          "mean_air_temperature_c": 28.1,
+          "mean_relative_humidity_percent": 76.2,
+          "mean_monthly_precipitation_mm": 329
+        },
+        {
+          "month": 7,
+          "mean_air_temperature_c": 28.9,
+          "mean_relative_humidity_percent": 74.9,
+          "mean_monthly_precipitation_mm": 303.3
+        },
+        {
+          "month": 8,
+          "mean_air_temperature_c": 28.4,
+          "mean_relative_humidity_percent": 77.4,
+          "mean_monthly_precipitation_mm": 340.8
+        },
+        {
+          "month": 9,
+          "mean_air_temperature_c": 27.8,
+          "mean_relative_humidity_percent": 74.3,
+          "mean_monthly_precipitation_mm": 147.5
+        },
+        {
+          "month": 10,
+          "mean_air_temperature_c": 25.5,
+          "mean_relative_humidity_percent": 70.8,
+          "mean_monthly_precipitation_mm": 25
+        },
+        {
+          "month": 11,
+          "mean_air_temperature_c": 22.6,
+          "mean_relative_humidity_percent": 72.4,
+          "mean_monthly_precipitation_mm": 23.8
+        },
+        {
+          "month": 12,
+          "mean_air_temperature_c": 18.7,
+          "mean_relative_humidity_percent": 72.6,
+          "mean_monthly_precipitation_mm": 30.5
+        }
+      ],
+      "rain_days_per_year": 113.7,
+      "prior_wet": false,
+      "temp_anomaly_c": -0.813085,
+      "prior_air_temp_c": 21.972794,
+      "soil_index": 0.2447,
+      "shade_index": 0.218552,
+      "prior_nest_temp_c": 21.125118
+    },
+    "sources": {
+      "F01": {
+        "type": "honeydew",
+        "renewable": true,
+        "sugar": 1.2,
+        "protein": 0,
+        "capacity": 5.2,
+        "production_per_day": 0.65,
+        "known_by": [
+          "W005"
+        ],
+        "host_alive": true,
+        "recruits": [],
+        "id": "F01",
+        "presence": "confirmed_game_scenario"
+      },
+      "F08": {
+        "type": "nectar",
+        "renewable": true,
+        "sugar": 0.53,
+        "protein": 0,
+        "capacity": 2.4,
+        "production_per_day": 0.35,
+        "bloom_days_left": 11,
+        "known_by": [
+          "W017",
+          "W016"
+        ],
+        "recruits": [],
+        "id": "F08",
+        "presence": "confirmed_game_scenario",
+        "host_alive": true
+      },
+      "F07": {
+        "type": "carcass",
+        "renewable": false,
+        "sugar": 0,
+        "protein": 0.559,
+        "known_by": [
+          "W011",
+          "W004",
+          "W010"
+        ],
+        "recruits": [],
+        "batches": [
+          {
+            "event_id": "V2D11-E04",
+            "original_day": 11,
+            "protein": 0.516,
+            "origin": "Day11 carcass retained; amount game assumption",
+            "age_days": 4
+          },
+          {
+            "event_id": "V2D10-E04",
+            "original_day": 10,
+            "protein": 0.043,
+            "origin": "Day10 older residual; amount game assumption",
+            "age_days": 5
+          }
+        ],
+        "id": "F07",
+        "presence": "confirmed_game_scenario",
+        "host_alive": true
+      },
+      "F11": {
+        "type": "carcass",
+        "renewable": false,
+        "sugar": 0,
+        "protein": 0.0602,
+        "known_by": [
+          "W006",
+          "W013"
+        ],
+        "recruits": [],
+        "batches": [
+          {
+            "event_id": "V2D9-E04",
+            "original_day": 9,
+            "protein": 0.0602,
+            "origin": "Day9 older residual; amount game assumption",
+            "age_days": 6
+          }
+        ],
+        "id": "F11",
+        "presence": "confirmed_game_scenario",
+        "host_alive": true
+      },
+      "F04": {
+        "id": "F04",
+        "type": "honeydew",
+        "presence": "potential",
+        "scenario_exists_probability": 0.65,
+        "host_alive": true,
+        "renewable": true,
+        "sugar": 1.5,
+        "protein": 0,
+        "capacity": 3,
+        "production_per_day": 0.75,
+        "known_by": [],
+        "recruits": [],
+        "origin": "Unconfirmed garden food source FXX already in Day14 world, actual site viability game scenario"
+      },
+      "F05": {
+        "id": "F05",
+        "type": "honeydew",
+        "presence": "potential",
+        "scenario_exists_probability": 0.8,
+        "host_alive": true,
+        "renewable": true,
+        "sugar": 0.95,
+        "protein": 0,
+        "capacity": 2.8,
+        "production_per_day": 0.55,
+        "known_by": [],
+        "recruits": [],
+        "origin": "Unconfirmed garden food source FXX already in Day14 world, actual site viability game scenario"
+      },
+      "F10": {
+        "id": "F10",
+        "type": "honeydew",
+        "presence": "potential",
+        "scenario_exists_probability": 0.7,
+        "host_alive": false,
+        "renewable": true,
+        "sugar": 0,
+        "protein": 0,
+        "capacity": 2.8,
+        "production_per_day": 0,
+        "known_by": [],
+        "recruits": [],
+        "origin": "Unconfirmed garden food source FXX already in Day14 world, actual site viability game scenario"
+      }
+    },
+    "active_signals": [],
+    "seed": 15032026,
+    "migration_log": [
+      {
+        "type": "day15_v2_rules_only_preview",
+        "effective_day": 15,
+        "day14_read_only": true,
+        "egg_age_rule": "age_days=14-laid_on_sim_day; egg development progress capped below 1 until Day15 tick",
+        "larva_assumption": "L001/L002 original stage age unknown -> 0.5 larva stage progress",
+        "food_assumption": "sugar=7.6 protein=2.3 game portions, not derived by event-count conversion",
+        "notes": "Review fixture projected from authoritative Day14 state and qualitative food-source events; real migration script regenerates from main/world."
+      }
+    ],
+    "last_report": {
+      "day": 15,
+      "date": "2026-11-14",
+      "weather": {
+        "day": 15,
+        "date": "2026-11-14",
+        "kind": "synthetic_climatology_game_assumption_not_real_weather",
+        "wet": false,
+        "air_temp_c": 21.972794,
+        "nest_temp_model_c": 21.125118,
+        "relative_humidity_model_percent": 69.982499,
+        "rain_mm": 0,
+        "soil_index": 0.2447,
+        "shade_index": 0.218552,
+        "temperature_anomaly_c": -0.813085,
+        "rain_probability_model": 0.513477
+      },
+      "workers_before": 14,
+      "brood_before": 7,
+      "queen_alive_before": true,
+      "income": {
+        "sugar": 0,
+        "protein": 0
+      },
+      "tasks": {
+        "forage": 2,
+        "nurse": 8,
+        "repair": 2,
+        "rest": 2,
+        "guard": 0
+      },
+      "foraging_trips": 0,
+      "foraging_successes": 0,
+      "scouts": 2,
+      "recruited": 0,
+      "extra_sugar_cost": 0,
+      "worker_deaths": 0,
+      "brood_deaths": 0,
+      "hatchings": 1,
+      "pupations": 0,
+      "eclosions": 0,
+      "eggs_laid": 0,
+      "demand": {
+        "sugar": 1.67,
+        "protein": 0.557
+      },
+      "consumed": {
+        "sugar": 1.67,
+        "protein": 0.557
+      },
+      "ratios": {
+        "sugar": 1,
+        "protein": 1
+      },
+      "development_factor": 0.843818,
+      "queen_laying_probability_applied": 0.35074,
+      "population": {
+        "queen": 1,
+        "workers": 14,
+        "eggs": 4,
+        "larvae": 3,
+        "pupae": 0
+      },
+      "stock": {
+        "sugar": 5.93,
+        "protein": 1.743
+      },
+      "starvation": {
+        "sugar_gap_days": 0,
+        "protein_gap_days": 0,
+        "stress_days": 0
+      },
+      "mass_ledger": {
+        "unit": "game_portions_NOT_mg",
+        "start": {
+          "sugar": 7.6,
+          "protein": 2.3
+        },
+        "foraged": {
+          "sugar": 0,
+          "protein": 0
+        },
+        "metabolized": {
+          "sugar": 1.67,
+          "protein": 0.557
+        },
+        "egg_laying": {
+          "sugar": 0,
+          "protein": 0
+        },
+        "storage_overflow_not_retained": {
+          "sugar": 0,
+          "protein": 0
+        },
+        "note": "Nest mass conservation exact within 1e-5 game portions; source decomposition/replenishment separate"
+      }
+    },
+    "last_events": [
+      {
+        "type": "nest_local_route_learning",
+        "from": "W011",
+        "to": "W004",
+        "site": "F07",
+        "assumption": true
+      },
+      {
+        "type": "nest_local_route_learning",
+        "from": "W011",
+        "to": "W010",
+        "site": "F07",
+        "assumption": true
+      },
+      {
+        "type": "nest_local_route_learning",
+        "from": "W006",
+        "to": "W013",
+        "site": "F11",
+        "assumption": true
+      },
+      {
+        "type": "nest_local_route_learning",
+        "from": "W017",
+        "to": "W016",
+        "site": "F08",
+        "assumption": true
+      },
+      {
+        "type": "hatch",
+        "id": "E001"
+      }
+    ]
+  }
+}

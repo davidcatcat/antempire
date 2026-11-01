@@ -1,0 +1,8 @@
+{
+  "scenario": "no-food",
+  "acceptance": "PASS (scenario-specific criteria)",
+  "hatch": 15,
+  "pupation": null,
+  "eclosion": null,
+  "workers_remaining": 0
+}

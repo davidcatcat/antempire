@@ -1,0 +1,8 @@
+{
+  "scenario": "baseline",
+  "acceptance": "FAIL: 30-day baseline life cycle or population condition unmet; NOT adjusted for survival or story",
+  "hatch": 15,
+  "pupation": 41,
+  "eclosion": null,
+  "workers_remaining": 2
+}

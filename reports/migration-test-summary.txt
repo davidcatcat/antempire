@@ -1,0 +1,16 @@
+{
+  "pass": 21,
+  "total": 21,
+  "failed": [],
+  "day15_result": {
+    "queen": 1,
+    "workers": 14,
+    "eggs": 4,
+    "larvae": 3,
+    "pupae": 0
+  },
+  "day15_food": {
+    "sugar": 5.93,
+    "protein": 1.743
+  }
+}

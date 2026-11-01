@@ -1,0 +1,8 @@
+{
+  "scenario": "abundant",
+  "acceptance": "PASS (scenario-specific criteria)",
+  "hatch": 15,
+  "pupation": 21,
+  "eclosion": 35,
+  "workers_remaining": 3
+}
