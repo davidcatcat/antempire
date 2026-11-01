@@ -1,11 +1,17 @@
 /**
  * DIFFERENTIAL TEST against the original v6 JavaScript in sim/ (runs only while sim/ still exists).
- *  1. simulateDay: 20 seeds × 120 days + all diagnostic scenarios, JSON.stringify of summary, events AND
- *     state compared byte-for-byte every day (the first differing character is printed on failure).
- *  2. migrationState on the REAL authoritative Day14 saves: byte-identical v2 state.
- *  3. projectDaily (the save mapping of sim/run_day.cjs) on the REAL Day14 saves into a Day15 projection:
- *     saves/main.json + saves/world-state.json + journal byte-identical, after normalising only the
- *     metadata that intentionally changed (engine/params reference strings, timestamp, rules fingerprint).
+ *
+ * v2-review.7 changed exactly ONE rule: the nest temperature now remembers yesterday's NEST temperature
+ * (climate.prior_nest_temp_model_c) instead of yesterday's air temperature. This test proves nothing else
+ * changed:
+ *  1. ISOLATION PROOF — for every diagnostic scenario (20 seeds × 120 days + extremes) the v6 trajectory is
+ *     replayed; each day the TypeScript engine receives the same v6 input state with only
+ *     climate.prior_nest_temp_model_c removed (so its nest-memory input equals what v6 effectively used).
+ *     summary, events and state must then be byte-identical to v6 (engine_version excepted).
+ *  2. migrationState on the REAL Day14 saves: byte-identical v2 state.
+ *  3. projectDaily on the REAL Day14 saves -> Day15 (first day after migration, no nest temperature recorded
+ *     yet, so v6 and v7 coincide): main/world/journal byte-identical after normalising only intentional
+ *     metadata (engine/params reference strings, timestamp).
  * Nothing is written to saves/ or journal/.
  */
 import fs from 'node:fs';
@@ -27,14 +33,15 @@ const fx = readJson('tests/fixtures/day14-projection.json');
 if (fs.readFileSync(path.join(REPO_ROOT, 'sim/day14-projection.json'), 'utf8') !== fs.readFileSync(path.join(REPO_ROOT, 'tests/fixtures/day14-projection.json'), 'utf8')) fail('tests/fixtures/day14-projection.json is not a byte copy of sim/day14-projection.json');
 let days = 0;
 for (const sc of SCENARIOS) {
-  let a = structuredClone(fx), b = structuredClone(fx); if (sc.seed) { a.seed = sc.seed; b.seed = sc.seed; } sc.state(a); sc.state(b);
+  let a = structuredClone(fx); if (sc.seed) a.seed = sc.seed; sc.state(a);
   const op = readJson('sim/params.json'); applyOld(op, sc.params);
   const nb = loadBundle(); applyNew(nb, sc.params);
   for (let d = 0; d < sc.days; d++) {
+    const b = structuredClone(a); delete b.climate.prior_nest_temp_model_c; // neutralise ONLY the fixed rule
     const x = old.simulateDay(a, op), y = simulateDay(b, nb);
-    const sx = JSON.stringify([x.engine_version, x.day, x.summary, x.events, x.state]), sy = JSON.stringify([y.engine_version, y.day, y.summary, y.events, y.state]);
+    const sx = JSON.stringify([x.day, x.summary, x.events, x.state]), sy = JSON.stringify([y.day, y.summary, y.events, y.state]);
     if (sx !== sy) fail(`${sc.name} day ${x.day} ${firstDiff(sx, sy)}`);
-    a = x.state; b = y.state; days++;
+    a = x.state; days++;
   }
 }
 
@@ -56,4 +63,4 @@ for (const [label, a, b] of [['main.json', o.main, n.main], ['world-state.json',
   const sa = JSON.stringify(a, null, 2), sb = JSON.stringify(b, null, 2);
   if (sa !== sb) fail(`projectDaily ${label} ${firstDiff(sa, sb)}`);
 }
-console.log(JSON.stringify({ passed: true, scenarios: SCENARIOS.length, simulated_days_compared: days, migration_state_identical: true, day15_projection_identical_after_metadata_normalisation: true, normalised_fields: ['main.updated_at', 'main.simulation.next_engine_ref', 'main.simulation.v2_params_ref', 'main.migration_log[-1].assumptions_in', 'main.simulation.latest_day_summary.{engine_ref,params_ref}', 'world.time.last_transition.{program_ref,params_ref}'], day15_population: n.report.summary.population }, null, 2));
+console.log(JSON.stringify({ passed: true, isolation_proof: 'v7 = v6 when only climate.prior_nest_temp_model_c is withheld', scenarios: SCENARIOS.length, simulated_days_compared: days, migration_state_identical: true, day15_projection_identical_after_metadata_normalisation: true, normalised_fields: ['main.updated_at', 'main.simulation.next_engine_ref', 'main.simulation.v2_params_ref', 'main.migration_log[-1].assumptions_in', 'main.simulation.latest_day_summary.{engine_ref,params_ref}', 'world.time.last_transition.{program_ref,params_ref}'], day15_population: n.report.summary.population }, null, 2));

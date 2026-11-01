@@ -22,11 +22,11 @@ jobs:
       - run: npm ci
       - name: Type check (whole repo + engine without DOM/Node libs)
         run: npm run typecheck
-      - name: Golden test (v6 reports byte-identical + 28 full-output traces)
+      - name: Golden test (current-rules reports byte-identical + 28 full-output traces)
         run: npm run test:golden
       - name: Naturalism (214 no-god-mode checks)
         run: npm run test:naturalism
       - name: Save conservation (saves/main.json + saves/world-state.json)
         run: npm run check:saves
-      - name: All other tests (params split, platform purity, foraging physics, migration, local ecology incl. orphan queen, scaling, multi-colony, differential vs sim/, advance on a temp copy)
+      - name: All other tests (params split, platform purity, foraging physics, migration, local ecology incl. orphan queen, scaling, multi-colony, v6 isolation proof vs sim/, advance on a temp copy, nest temperature)
         run: npm run test:rest

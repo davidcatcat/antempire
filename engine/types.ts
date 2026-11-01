@@ -119,8 +119,7 @@ export interface ClimateState {
   prior_wet: boolean;
   temp_anomaly_c: number;
   prior_air_temp_c: number;
-  /** NOTE: read by weather.ts but never written by v6 (it writes prior_nest_temp_model_c). See PR notes. */
-  prior_nest_temp_c?: number;
+  /** Yesterday's model nest temperature; weather.ts uses it as the nest-temperature memory (v2-review.7). */
   prior_nest_temp_model_c?: number;
   soil_index: number;
   shade_index: number;

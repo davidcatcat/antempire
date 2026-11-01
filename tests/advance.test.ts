@@ -3,8 +3,10 @@
  *  1. dry run writes nothing;
  *  2. Day14 -> Day15 with --confirm-advance: both saves rewritten in the repo's JSON format, conservation
  *     passes, result identical to the current engine (direct engine call) and — while sim/ exists — to the
- *     v6 runner sim/run_day.cjs after normalising only intentional metadata;
- *  3. Day15 -> Day20 chain with the frozen rules fingerprint, each day checked and compared with v6;
+ *     v6 runner sim/run_day.cjs after normalising only intentional metadata (Day15 is the first day after the
+ *     migration, so no nest temperature is recorded yet and the v2-review.7 nest-memory fix cannot differ);
+ *  3. Day15 -> Day20 chain with the frozen rules fingerprint, each day checked and its saved engine state
+ *     compared with a direct engine call on the previous saved state;
  *  4. a tampered fingerprint is refused and nothing is written;
  *  5. journal/ is never written; the real saves/ are unchanged.
  */
@@ -67,11 +69,13 @@ try {
   };
   if (hasV6) { const [vm, vw] = v6Step(); ok(vm === mainText && vw === worldText, 'Day15 saves byte-identical to v6 sim/run_day.cjs (metadata normalised)'); }
 
-  // 3. Day16..Day20 with frozen fingerprint
+  // 3. Day16..Day20 with frozen fingerprint; each saved engine state = direct engine call on the previous one
   for (let d = 16; d <= 20; d++) {
+    const prev = readJson('saves/world-state.json', tmp).sim_engine_v2;
     const r = advance({ root: tmp, confirm: true, now });
     ok(r.written && r.day === d && r.checks.every((c) => c.ok || c.level === 'warning'), `Day${d} advanced with all error-level checks passing`);
-    if (hasV6) { const [vm, vw] = v6Step(); ok(vm === fs.readFileSync(path.join(tmp, 'saves/main.json'), 'utf8') && vw === fs.readFileSync(path.join(tmp, 'saves/world-state.json'), 'utf8'), `Day${d} saves byte-identical to v6 runner`); }
+    const saved = readJson('saves/world-state.json', tmp), expected = simulateDay(prev, loadBundle());
+    ok(JSON.stringify(saved.sim_engine_v2) === JSON.stringify(expected.state) && JSON.stringify(saved.day_log_latest.events) === JSON.stringify(expected.events), `Day${d} saved engine state = direct engine result`);
   }
 
   // 4. tampered fingerprint -> refused, nothing written
@@ -80,7 +84,7 @@ try {
   const h1 = tmpSha(); let refused = false;
   try { advance({ root: tmp, confirm: true, now }); } catch (err) { refused = (err as Error).message.startsWith('RULES FROZEN'); }
   ok(refused && tmpSha() === h1, 'changed engine/params fingerprint is refused and nothing is written');
-  console.log(JSON.stringify({ passed: true, checks, days_advanced_on_temp_copy: 6, compared_with_v6_runner: hasV6, real_saves_unchanged: true }, null, 2));
+  console.log(JSON.stringify({ passed: true, checks, days_advanced_on_temp_copy: 6, day15_compared_with_v6_runner: hasV6, real_saves_unchanged: true }, null, 2));
 } finally {
   fs.rmSync(tmp, { recursive: true, force: true });
   for (const [f, h] of realSaves) assert.equal(sha(path.join(REPO_ROOT, f)), h, 'REAL SAVE CHANGED: ' + f);
