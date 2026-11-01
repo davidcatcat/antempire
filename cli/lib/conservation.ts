@@ -1,0 +1,74 @@
+/**
+ * Conservation checks on the two authoritative save documents (saves/main.json, saves/world-state.json).
+ * Used by `npm run check:saves` (CI) and by `npm run advance` before anything is written.
+ *
+ * level 'error'   -> the advance command refuses to write; CI fails.
+ * level 'warning' -> reported, not blocking (documented known limitations, see PR notes).
+ */
+export interface Check { name: string; ok: boolean; level: 'error' | 'warning'; detail?: unknown }
+type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+const EPS = 2e-5;
+const r6 = (x: number) => Math.round((x + Number.EPSILON) * 1e6) / 1e6;
+
+export function checkSaves(main: Any, world: Any): Check[] {
+  const out: Check[] = [];
+  const add = (name: string, ok: boolean, detail?: unknown, level: Check['level'] = 'error') => out.push({ name, ok: !!ok, level, ...(detail === undefined ? {} : { detail }) });
+  const day = main.simulation?.latest_completed_day, clock = world.time?.scientific_clock;
+  add('clock: main and world on the same completed day', day === clock?.day, { main: day, world: clock?.day });
+  add('clock: elapsed hours = 24 × day (main and world)', main.simulation?.elapsed_sim_hours === 24 * day && clock?.elapsed_sim_hours === 24 * day, { main: main.simulation?.elapsed_sim_hours, world: clock?.elapsed_sim_hours });
+
+  // Workers
+  const individuals: Any[] = main.colony.workers.individuals, alive = individuals.filter((w) => w.status === 'alive');
+  const ids = individuals.map((w) => w.id);
+  add('workers: individual IDs unique', new Set(ids).size === ids.length);
+  add('workers: current_alive = alive individuals', main.colony.workers.current_alive === alive.length, { current_alive: main.colony.workers.current_alive, alive_individuals: alive.length });
+  add('workers: world ant_population.workers_alive = main', world.ant_population?.workers_alive === alive.length, { world: world.ant_population?.workers_alive, main: alive.length });
+  const demo = main.colony.population_demography;
+  add('workers: demography explicit IDs = alive individuals', JSON.stringify([...(demo?.explicit_worker_ids ?? [])].sort()) === JSON.stringify(alive.map((w) => w.id).sort()));
+  const sl = demo?.stage_ledger;
+  if (sl) add('workers: stage ledger workers_after = before + eclosions − deaths', sl.workers_after === sl.workers_before + sl.worker_eclosions - sl.worker_deaths + (sl.worker_immigrants ?? 0) - (sl.worker_emigrants ?? 0), sl);
+  add('workers: legacy counters confirmed_born − cumulative_deaths = current_alive', main.colony.workers.confirmed_born - main.colony.workers.cumulative_deaths === main.colony.workers.current_alive, { confirmed_born: main.colony.workers.confirmed_born, cumulative_deaths: main.colony.workers.cumulative_deaths, current_alive: main.colony.workers.current_alive, note: 'v6 projectDaily does not update these two legacy counters (open question in PR)' }, 'warning');
+
+  // Brood
+  const brood: Any[] = main.colony.brood.individuals.filter((b: Any) => b.living), count = (st: string) => brood.filter((b) => b.stage === st).length;
+  const b = main.colony.brood;
+  add('brood: stage counts = living individuals', b.eggs === count('egg') && b.larvae === count('larva') && b.pupae === count('pupa'), { eggs: [b.eggs, count('egg')], larvae: [b.larvae, count('larva')], pupae: [b.pupae, count('pupa')] });
+  add('brood: total = eggs + larvae + pupae', b.total === b.eggs + b.larvae + b.pupae, { total: b.total });
+  const wb = world.ant_population?.brood;
+  add('brood: world ant_population.brood = main', wb?.eggs === b.eggs && wb?.larvae === b.larvae && wb?.pupae === b.pupae, { world: wb });
+  const bids = main.colony.brood.individuals.map((x: Any) => x.id);
+  add('brood: IDs unique and distinct from workers', new Set(bids).size === bids.length && !bids.some((id: string) => ids.includes(id)));
+  if (sl?.brood_before && sl?.brood_after && sl?.flux) {
+    const before = (sl.brood_before.eggs ?? 0) + (sl.brood_before.larvae ?? 0) + (sl.brood_before.prepupae ?? 0) + (sl.brood_before.pupae ?? 0);
+    const after = (sl.brood_after.eggs ?? 0) + (sl.brood_after.larvae ?? 0) + (sl.brood_after.prepupae ?? 0) + (sl.brood_after.pupae ?? 0);
+    add('brood: stage ledger after = before + laid − eclosed − deaths', after === before + sl.flux.eggs_laid - sl.flux.pupae_eclosed - sl.flux.brood_deaths, { before, after, flux: sl.flux });
+  }
+
+  // Engine state (exists from Day15 on)
+  const s = world.sim_engine_v2;
+  if (!s) {
+    add('engine: no sim_engine_v2 yet (Day ≤ 14); sugar/protein portion ledger starts at the Day15 migration', day <= 14, { day });
+    return out;
+  }
+  add('engine: engine day = completed day', s.sim_day === day, { engine: s.sim_day, main: day });
+  add('engine: workers = main alive workers (same IDs)', JSON.stringify(s.population.workers.map((w: Any) => w.id).sort()) === JSON.stringify(alive.map((w) => w.id).sort()));
+  add('engine: brood = main living brood (same IDs and stages)', JSON.stringify(s.population.brood.map((x: Any) => x.id + ':' + x.stage).sort()) === JSON.stringify(brood.map((x) => x.id + ':' + x.stage).sort()));
+  add('engine: queen alive = main queen count', (s.population.queen_alive ? 1 : 0) === main.colony.queen.count, { engine: s.population.queen_alive, main: main.colony.queen.count });
+  for (const k of ['sugar', 'protein']) add(`food: ${k} store finite and ≥ 0`, Number.isFinite(s.colony[k]) && s.colony[k] >= 0, s.colony[k]);
+  const crops = s.population.workers.reduce((a: number, w: Any) => a + (w.crop_cargo_sugar || 0), 0);
+  add('food: sugar held in crops ⊆ sugar ledger (not extra mass)', crops <= s.colony.sugar + 1e-4, { crops: r6(crops), ledger: s.colony.sugar });
+  const ledger = world.day_log_latest?.food;
+  if (ledger?.start) {
+    for (const k of ['sugar', 'protein']) {
+      const rhs = r6(ledger.start[k] + ledger.foraged[k] - ledger.metabolized[k] - ledger.egg_laying[k] - ledger.storage_overflow_not_retained[k]);
+      add(`food: ${k} start + foraged − metabolized − eggs − overflow = end stock`, Math.abs(rhs - s.colony[k]) <= EPS, { start: ledger.start[k], foraged: ledger.foraged[k], metabolized: ledger.metabolized[k], eggs: ledger.egg_laying[k], overflow: ledger.storage_overflow_not_retained[k], expected_end: rhs, end_stock: s.colony[k] });
+    }
+  } else add('food: latest day ledger present', false, 'world.day_log_latest.food missing');
+  add('food: main and world copies of the latest ledger identical', JSON.stringify(main.colony.food?.v2_latest_ledger) === JSON.stringify(world.resources?.v2_latest_ledger));
+  for (const src of Object.values<Any>(s.sources)) {
+    if (src.type === 'carcass') add(`source ${src.id}: carcass protein = Σ batches`, Math.abs(src.protein - src.batches.reduce((a: number, x: Any) => a + x.protein, 0)) <= 1e-4);
+    add(`source ${src.id}: non-negative`, (src.sugar || 0) >= 0 && (src.protein || 0) >= 0);
+  }
+  return out;
+}
