@@ -8,7 +8,8 @@
  *    the split species/world parameter files;
  *  - the cumulative counters colony.workers.confirmed_born / cumulative_deaths and
  *    colony.worker_deaths_cumulative / brood_deaths_cumulative are updated every day (Owner decision, PR #5);
- *  - stage_ledger.flux.eggs_hatcing (v6 typo) is written as eggs_hatching (Owner decision, PR #5).
+ *  - stage_ledger.flux.eggs_hatcing (v6 typo) is written as eggs_hatching (Owner decision, PR #5);
+ *  - world ant_population.legacy_* counters stay frozen at their Day14 values (Owner decision, PR #12).
  */
 // @ts-nocheck -- verbatim port of an untyped save-mapping script; the engine API it calls is typed.
 import { simulateDay, migrationState, metadataPreview } from '../../engine/index.ts';

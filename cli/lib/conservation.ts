@@ -92,6 +92,9 @@ export function checkTransition(before: { main: Any; world: Any }, after: { main
   const cw0 = before.main.colony, cw1 = after.main.colony;
   add('transition: confirmed_born += eclosions, cumulative_deaths += worker deaths', cw1.workers.confirmed_born === cw0.workers.confirmed_born + r.eclosions && cw1.workers.cumulative_deaths === cw0.workers.cumulative_deaths + r.worker_deaths, { born: [cw0.workers.confirmed_born, cw1.workers.confirmed_born], deaths: [cw0.workers.cumulative_deaths, cw1.workers.cumulative_deaths], eclosions: r.eclosions, worker_deaths: r.worker_deaths });
   if (typeof cw0.brood_deaths_cumulative === 'number') add('transition: brood_deaths_cumulative += brood deaths', cw1.brood_deaths_cumulative === cw0.brood_deaths_cumulative + r.brood_deaths, { before: cw0.brood_deaths_cumulative, after: cw1.brood_deaths_cumulative, brood_deaths: r.brood_deaths });
+  // Owner decision (PR #12): world ant_population.legacy_* are frozen historical (≤ Day14) values.
+  const legacyKeys = ['legacy_worker_births_confirmed', 'legacy_worker_deaths', 'legacy_brood_deaths'];
+  add('transition: world ant_population.legacy_* counters stay frozen', legacyKeys.every((k) => after.world.ant_population?.[k] === before.world.ant_population?.[k]), Object.fromEntries(legacyKeys.map((k) => [k, [before.world.ant_population?.[k], after.world.ant_population?.[k]]])));
   const deadBefore = new Set(before.main.colony.workers.individuals.filter((w: Any) => w.status !== 'alive').map((w: Any) => w.id));
   add('transition: no dead worker revived', after.main.colony.workers.individuals.every((w: Any) => !(deadBefore.has(w.id) && w.status === 'alive')));
   const keptBefore = before.main.colony.workers.individuals.map((w: Any) => w.id), keptAfter = new Set(after.main.colony.workers.individuals.map((w: Any) => w.id));
