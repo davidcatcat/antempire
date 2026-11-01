@@ -55,7 +55,9 @@ for(let day=0;day<60;day++){
  for(const e of events.filter(e=>e.type==='insect_predation')){ok(events.some(n=>n.type==='new_food_source'&&n.caused_by_event_id===e.event_id),'prey mass has tracked source');}
  delivered+=events.filter(e=>e.type==='food_delivered').length;pheromone+=events.filter(e=>e.type==='trail_deposited').length;trophallaxis+=events.filter(e=>e.type==='trophallaxis').length;hunts+=events.filter(e=>e.type==='insect_predation').length;allEvents+=events.length;
  ok(out.state.population.workers.every(a=>a.last_location==='N00'),'all completed same-day trips returned; no ant teleported outside');
- sim=out.state;
+ ok(out.state.population.workers.reduce((a,w)=>a+(w.crop_cargo_sugar||0),0)<=out.state.colony.sugar+1e-4,'worker crop remains included in ledger only once');
+for(const w of out.state.population.workers)ok((w.crop_cargo_sugar||0)<=P(p,'foraging_physics.crop_capacity')+1e-4,'crop capacity enforced');
+sim=out.state;
 }
 ok(delivered>0&&pheromone>0&&trophallaxis>0,'multi-day history exhibits routes, trails and real handoffs');
 console.log(JSON.stringify({checks,days:60,delivered,pheromone_deposits:pheromone,trophallaxis_contacts:trophallaxis,live_hunts:hunts,events:allEvents,source_provenance:'tracked',official_save_advanced:false},null,2));

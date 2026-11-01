@@ -48,7 +48,7 @@ for(let i=0;i<rows.length;i+=7){
  foraging_worker_days:sum(days,'foraging_workers_total'),mean_daily_foragers:round(sum(days,'foraging_workers_total')/days.length),
  mean_air_temperature_c:round(sum(days,'air_temperature_c')/days.length),mean_daytime_temperature_c:round(sum(days,'daytime_air_temperature_c')/days.length),mean_metabolic_factor:round(sum(days,'metabolic_factor')/days.length),mean_daily_sugar_consumed:round(sum(days,'sugar_consumed')/days.length),mean_daily_protein_consumed:round(sum(days,'protein_consumed')/days.length)});
 }
-const report={scenario:'unchanged v2.1 corrected base world; no rescue tuning',range:'Day15-Day134',days:rows.length,authoritative_simulation_advanced:false,source:'sim/day14-projection.json',game_assumptions:true,
+const report={scenario:'unchanged v2.1 corrected base world; no rescue tuning',range:'Day15-Day134',days:rows.length,authoritative_simulation_advanced:false,source:'sim/day14-projection.json',physical_foraging_version:'v6',game_assumptions:true,
  final:rows.at(-1),ecology:eventsTotal,
  budget:{sugar_income:round(sum(rows,'sugar_income')),sugar_consumed:round(sum(rows,'sugar_consumed')),protein_income:round(sum(rows,'protein_income')),protein_consumed:round(sum(rows,'protein_consumed'))},
  foraging:{worker_days:sum(rows,'foraging_workers_total'),daily_report:'reports/day15-134-daily.csv'},
@@ -57,7 +57,7 @@ const report={scenario:'unchanged v2.1 corrected base world; no rescue tuning',r
  validations:{replay_days:120,insect_population_balance_days:120,habitat_capacity_days:120,independent_of_colony_stocks:true,source_carcass_and_nutrient_conservation:'validated by simulateDay on all days'},
  weeks};
 fs.mkdirSync(outDir,{recursive:true});
-fs.writeFileSync(path.join(outDir,'day15-134-daily.csv'),csv(rows));
-fs.writeFileSync(path.join(outDir,'day15-134-weekly.csv'),csv(weeks));
-fs.writeFileSync(path.join(outDir,'day15-134-analysis.json'),JSON.stringify(report,null,2)+'\n');
+fs.writeFileSync(path.join(outDir,'day15-134-v6-daily.csv'),csv(rows));
+fs.writeFileSync(path.join(outDir,'day15-134-v6-weekly.csv'),csv(weeks));
+fs.writeFileSync(path.join(outDir,'day15-134-v6-analysis.json'),JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify({report:report.final,ecology:report.ecology,budget:report.budget,validations:report.validations,week_count:weeks.length},null,2));

@@ -46,7 +46,7 @@ for(const seed of seeds){
  for(let k=0;k<120;k++){
   const o=simulateDay(state,params),x=o.summary,z=o.state;
   if(k===0||k===119)assert.deepEqual(o,simulateDay(state,params),'replay endpoints per seed');
-  const births=o.events.filter(e=>e.type==='insect_population_birth').reduce((t,e)=>t+e.individuals,0);
+  const births=o.events.filter(e=>e.type==='insect_population_birth').reduce((t,e)=>t+e.individuals,0);const antPreyKills=o.events.filter(e=>e.type==='insect_predation').length;
   const deaths=o.events.filter(e=>e.type==='insect_background_death').reduce((t,e)=>t+e.individuals,0)+o.events.filter(e=>e.type==='insect_natural_death').length+o.events.filter(e=>e.type==='insect_predation').length;
   const now=z.ecology.adjacent_garden_living_insects+Object.values(z.ecology.insects_by_site).reduce((t,p)=>t+p.living,0);
   assert.equal(now,prevInsects+births-deaths,'insect births/deaths balance');
@@ -59,7 +59,7 @@ for(const seed of seeds){
    air_mean_c:x.weather.air_temp_c,daytime_max_air_c:x.weather.daytime_air_temp_c,air_min_c:x.weather.daily_min_air_temp_c,nest_temp_c:x.weather.nest_temp_model_c,
    expected_air_normal_c:round(normalAt(x.date,'mean_air_temperature_c')),temperature_residual_c:round(x.weather.air_temp_c-normalAt(x.date,'mean_air_temperature_c')),
    foraging_factor:foragingTemperatureFactor(params,x.weather.daytime_air_temp_c),metabolic_factor:x.metabolic_factor,laying_temp_factor:x.queen_laying_temperature_factor,
-   foragers:x.tasks.forage,foraging_fraction_per_available_worker:round(x.workers_before>0?x.tasks.forage/x.workers_before:0),queen_laying_probability:x.queen_laying_probability_applied,foragers_sugar:x.foraging_workers_by_macro.sugar,foragers_protein:x.foraging_workers_by_macro.protein,
+   route_steps:o.events.filter(e=>e.type==='route_step').length,trail_deposits:o.events.filter(e=>e.type==='trail_deposited').length,trail_decays:o.events.filter(e=>e.type==='trail_decay').length,active_trail_edges:Object.keys(z.ecology.trail_by_edge||{}).length,trophallaxis_events:o.events.filter(e=>e.type==='trophallaxis').length,trophallaxis_portions:round(o.events.filter(e=>e.type==='trophallaxis').reduce((a,e)=>a+e.portions,0)),live_prey_encounters:o.events.filter(e=>e.type==='live_prey_encounter').length,live_prey_kills:antPreyKills,local_recruits:o.events.filter(e=>e.type==='local_recruitment').length,foragers:x.tasks.forage,foraging_fraction_per_available_worker:round(x.workers_before>0?x.tasks.forage/x.workers_before:0),queen_laying_probability:x.queen_laying_probability_applied,foragers_sugar:x.foraging_workers_by_macro.sugar,foragers_protein:x.foraging_workers_by_macro.protein,
    sugar_income:x.income.sugar,sugar_consumed:x.consumed.sugar,sugar_demand:x.demand.sugar,sugar_fraction:round(x.ratios.sFraction),sugar_store:x.stock.sugar,
    protein_income:x.income.protein,protein_consumed:x.consumed.protein,protein_demand:x.demand.protein,protein_fraction:round(x.ratios.pFraction),protein_store:x.stock.protein,
    eggs_laid:x.eggs_laid,worker_deaths:x.worker_deaths,starvation_linked_worker_deaths:o.events.filter(e=>e.type==='worker_death'&&e.reason.includes('starvation')).length,
@@ -71,7 +71,7 @@ for(const seed of seeds){
  for(let start=0;start<records.length;start+=7){
   const a=records.slice(start,start+7),last=a.at(-1);
   weekly.push({seed,week:Math.floor(start/7)+1,start_day:a[0].day,end_day:last.day,from:a[0].date,to:last.date,queen:last.queen,workers:last.workers,eggs:last.eggs,larvae:last.larvae,pupae:last.pupae,
-   mean_daytime_max_air_c:avg(a,'daytime_max_air_c'),mean_air_temperature_c:avg(a,'air_mean_c'),mean_nest_temperature_c:avg(a,'nest_temp_c'),mean_metabolic_factor:avg(a,'metabolic_factor'),
+   mean_daytime_max_air_c:avg(a,'daytime_max_air_c'),route_steps:sum(a,'route_steps'),trail_deposits:sum(a,'trail_deposits'),trophallaxis_events:sum(a,'trophallaxis_events'),trophallaxis_portions:round(sum(a,'trophallaxis_portions')),live_prey_encounters:sum(a,'live_prey_encounters'),live_prey_kills:sum(a,'live_prey_kills'),local_recruits:sum(a,'local_recruits'),active_trail_edges:last.active_trail_edges,mean_air_temperature_c:avg(a,'air_mean_c'),mean_nest_temperature_c:avg(a,'nest_temp_c'),mean_metabolic_factor:avg(a,'metabolic_factor'),
    mean_daily_foragers:avg(a,'foragers'),mean_worker_foraging_fraction:avg(a,'foraging_fraction_per_available_worker'),mean_queen_laying_probability:avg(a,'queen_laying_probability'),foraging_worker_days:sum(a,'foragers'),eggs_laid:sum(a,'eggs_laid'),
    sugar_income:round(sum(a,'sugar_income')),sugar_consumed:round(sum(a,'sugar_consumed')),mean_daily_sugar_consumed:avg(a,'sugar_consumed'),sugar_balance:round(sum(a,'sugar_income')-sum(a,'sugar_consumed')),sugar_store:last.sugar_store,
    protein_income:round(sum(a,'protein_income')),protein_consumed:round(sum(a,'protein_consumed')),mean_daily_protein_consumed:avg(a,'protein_consumed'),protein_balance:round(sum(a,'protein_income')-sum(a,'protein_consumed')),protein_store:last.protein_store,
@@ -88,7 +88,7 @@ for(const seed of seeds){
   winter_extinct:Boolean(firstExtinct&&firstExtinct.date>='2026-12-01'&&firstExtinct.date<='2027-02-28'),
   main_mechanism_heuristic:mainMechanism,prev14_sugar_short_days:sugarShort,prev14_protein_short_days:proteinShort,prev14_natural_worker_deaths:naturalDeaths,prev14_low_population_days:populationLow,
   queen_Day74:records[59].queen,workers_Day74:records[59].workers,queen_Day134:records.at(-1).queen,workers_Day134:records.at(-1).workers,
-  sugar_income:round(sum(records,'sugar_income')),sugar_consumed:round(sum(records,'sugar_consumed')),protein_income:round(sum(records,'protein_income')),protein_consumed:round(sum(records,'protein_consumed')),
+  sugar_income:round(sum(records,'sugar_income')),sugar_consumed:round(sum(records,'sugar_consumed')),protein_income:round(sum(records,'protein_income')),protein_consumed:round(sum(records,'protein_consumed')),trophallaxis_events:sum(records,'trophallaxis_events'),trail_deposits:sum(records,'trail_deposits'),live_prey_kills:sum(records,'live_prey_kills'),
   insect_births:totalInsectBirths,insect_deaths:totalInsectDeaths,adjacent_start:initial.ecology.adjacent_garden_living_insects,adjacent_Day134:records.at(-1).insects_adjacent});
  // Independent ecological persistence check through Day365, NOT official game progress.
  if(neighbor365.length<8){
@@ -101,7 +101,7 @@ for(const seed of seeds){
 }
 const winter=seedResults.filter(x=>x.winter_extinct),allExtinct=seedResults.filter(x=>x.first_extinct_day!==null);
 const monthly=[];for(const month of [...new Set(daily.map(d=>d.month))].sort()){const rows=daily.filter(d=>d.month===month),alive=rows.filter(d=>d.queen>0);monthly.push({month,mean_air_c:avg(rows,'air_mean_c'),mean_daytime_air_c:avg(rows,'daytime_max_air_c'),mean_normal_c:avg(rows,'expected_air_normal_c'),mean_residual_c:avg(rows,'temperature_residual_c'),mean_daily_foragers_all_seeds:avg(rows,'foragers'),mean_daily_foragers_colonies_queen_alive:avg(alive,'foragers'),mean_per_worker_foraging_fraction:avg(alive,'foraging_fraction_per_available_worker'),mean_laying_probability:avg(alive,'queen_laying_probability'),mean_daily_eggs_all_seeds:avg(rows,'eggs_laid'),mean_daily_eggs_queen_alive:avg(alive,'eggs_laid'),queen_alive_day_count:alive.length});}
-const report={schema:'antempire.winter.v5.multiseed',range:'Day15-134 2026-11-14 through 2027-03-13',official_day14_advanced:false,pr_merged:false,seeds,seed_count:seeds.length,
+const report={schema:'antempire.winter.v6.physical_foraging.multiseed',range:'Day15-134 2026-11-14 through 2027-03-13',official_day14_advanced:false,pr_merged:false,seeds,seed_count:seeds.length,
  assumptions:true,evidence_policy:'Q10=2.0 physiology reference is assumption; CWA normals measured station means; synthetic daily max air is proxy, NOT surface measurement; queen Q10 and unattended days are game assumptions.',
  winter_extinct_count:winter.length,winter_extinct_ratio:round(winter.length/seeds.length),extinct_by_Day134_count:allExtinct.length,
  day74_workers:stat(seedResults.map(x=>x.workers_Day74)),day134_workers:stat(seedResults.map(x=>x.workers_Day134)),
@@ -110,9 +110,9 @@ const report={schema:'antempire.winter.v5.multiseed',range:'Day15-134 2026-11-14
  monthly,seed_results:seedResults,adjacent_insect_long_run_8_fixed_seeds:neighbor365,
  classifications:'Main mechanism is an explicitly heuristic largest 14-day preceding indicator; not verified causal attribution. Sugar/protein: days with fractional ration <0.99; natural deaths: count minus starvation-tagged deaths; population low: days <=3 workers; ties unresolved. Missing protein intake alone is not malnutrition if stored protein feeds colony.',
  validations:{days_per_seed:120,deterministic_first_last_per_seed:true,insect_balance_checked_each_day:true,capacity_checked_each_day:true,ecology_independent_of_colony_stock:true,orphan_larvae_die_within_four_assumed_days:true,unattended_stores_not_consumed:true},
- no_rescue_tuning:true,workforce_recovery_not_guaranteed:true,limitations:['One proxy daily maximum air temperature, not hour-by-hour ground-surface temperatures.','20 seeds share identical hypothetical Day14 garden and legacy ages.','Nectar flowering recurrence and live prey hunting are not yet fully modeled; excluded to avoid food rescue tuning after failed trial.','Minor worker natural lifespan differs from R94 ~26.25 days; current assumed untreated natural expectancy ~64.3 days, unchanged.','This is a game scenario and cannot estimate real Taichung colony winter extinction probabilities.']};
+ no_rescue_tuning:true,workforce_recovery_not_guaranteed:true,limitations:['One proxy daily maximum air temperature, not hour-by-hour ground-surface temperatures.','20 seeds share identical hypothetical Day14 garden and legacy ages.','Nectar flowering recurrence remains unmodeled. Live prey hunting now uses only existing insects at F07/F11; size and capture odds are assumed.','Minor worker natural lifespan differs from R94 ~26.25 days; current assumed untreated natural expectancy ~64.3 days, unchanged.','Garden route lengths are hypothetical and time is simplified into per-trip minutes, not observed trajectory.','Larval protein deliveries remain pooled nursing approximations.','No calibrated major/minor prey role differentiation.','This is a game scenario and cannot estimate real Taichung colony winter extinction probabilities.']};
 fs.mkdirSync(outDir,{recursive:true});
-fs.writeFileSync(path.join(outDir,'day15-134-v5-20seeds-daily.csv'),csv(daily));
-fs.writeFileSync(path.join(outDir,'day15-134-v5-20seeds-weekly.csv'),csv(weekly));
-fs.writeFileSync(path.join(outDir,'day15-134-v5-20seeds-analysis.json'),JSON.stringify(report,null,2)+'\n');
+fs.writeFileSync(path.join(outDir,'day15-134-v6-20seeds-daily.csv'),csv(daily));
+fs.writeFileSync(path.join(outDir,'day15-134-v6-20seeds-weekly.csv'),csv(weekly));
+fs.writeFileSync(path.join(outDir,'day15-134-v6-20seeds-analysis.json'),JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify({seeds:seeds.length,winter_extinct:report.winter_extinct_count,by134:report.extinct_by_Day134_count,day74:report.day74_workers,day134:report.day134_workers,months:monthly,neighbors:neighbor365},null,2));
