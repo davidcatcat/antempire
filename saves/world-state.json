@@ -36,7 +36,8 @@
       "weather_source_ref": "docs/historical-climate-weather-engine.md",
       "nutrition_rules_ref": "docs/colony-nutrition-food-web.md",
       "program_artifact": "sim/results/day9.json",
-      "runtime": "Node.js"
+      "runtime": "Node.js",
+      "program_ref": "sim/day_engine.cjs"
     },
     "setting_changes": [
       {

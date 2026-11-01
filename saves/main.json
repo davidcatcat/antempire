@@ -2048,7 +2048,7 @@
         "V2D9-E10",
         "V2D9-E11"
       ],
-      "model_program_run": "local_node_day_engine.cjs"
+      "model_program_run": "sim/day_engine.cjs"
     },
     "automatic_worker_decisions": true,
     "calendar_timezone": "Asia/Taipei",
