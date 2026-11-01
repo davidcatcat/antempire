@@ -1,6 +1,7 @@
 /**
  * Runs every test script in its own Node process and prints a summary table.
  *   node tests/run-all.ts            -> all blocking tests (exit 1 if any fails)
+ *   node tests/run-all.ts --except a,b -> skip the named tests (CI runs those as separate steps)
  */
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
@@ -13,7 +14,9 @@ const run = (name: string) => {
   const r = spawnSync(process.execPath, [path.join(REPO_ROOT, 'tests', `${name}.test.ts`)], { encoding: 'utf8' });
   return { name, ok: r.status === 0, seconds: ((Date.now() - t) / 1000).toFixed(1), output: (r.stdout + r.stderr).trim() };
 };
-const results = BLOCKING.map(run);
+const exceptArg = process.argv.find((a, i) => process.argv[i - 1] === '--except');
+const except = new Set((exceptArg ?? '').split(',').filter(Boolean));
+const results = BLOCKING.filter((n) => !except.has(n)).map(run);
 for (const r of results) console.log(`${r.ok ? 'PASS' : 'FAIL'}  ${r.name.padEnd(28)} ${r.seconds}s`);
 for (const r of results.filter((x) => !x.ok)) console.log(`\n--- ${r.name} ---\n${r.output.slice(-4000)}`);
 if (results.some((x) => !x.ok)) process.exitCode = 1;

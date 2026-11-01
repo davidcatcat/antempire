@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: typecheck · golden · naturalism · saves
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: node --version
+      - run: npm ci
+      - name: Type check (whole repo + engine without DOM/Node libs)
+        run: npm run typecheck
+      - name: Golden test (v6 reports byte-identical + 28 full-output traces)
+        run: npm run test:golden
+      - name: Naturalism (214 no-god-mode checks)
+        run: npm run test:naturalism
+      - name: Save conservation (saves/main.json + saves/world-state.json)
+        run: npm run check:saves
+      - name: All other ported tests (params split, platform purity, foraging physics, migration, local ecology incl. orphan queen, scaling, multi-colony, differential vs sim/)
+        run: npm run test:rest
