@@ -412,6 +412,21 @@
       "value": 0.18,
       "assumption": true,
       "rationale": "local search triggered by own failed route, does not reveal distant sugar source"
+    },
+    "foraging_cold_limit_c": {
+      "value": 10,
+      "assumption": true,
+      "rationale": "below this synthetic outdoor mean temperature cold activity reaches its assumed minimum"
+    },
+    "foraging_full_activity_c": {
+      "value": 25,
+      "assumption": true,
+      "rationale": "at this temperature or warmer there is no low-temperature penalty"
+    },
+    "foraging_cold_min_multiplier": {
+      "value": 0.12,
+      "assumption": true,
+      "rationale": "assumed minimum foraging attempts, collection success and recruitment in cold weather"
     }
   },
   "sources": {
@@ -617,7 +632,7 @@
       "rationale": "ecological production per scale-insect colony with living host plants, independent of ant population"
     },
     "honeydew_productivity_multiplier": {
-      "value": 1.0,
+      "value": 1,
       "assumption": true,
       "rationale": "baseline physical productivity; single-variable sugar sensitivity test changes ONLY this input"
     },
@@ -650,6 +665,51 @@
       "value": 0.22,
       "assumption": true,
       "rationale": "F04 background rival ants consume a fixed ecological share; independent of main colony shortage"
+    },
+    "insect_site_logistic_daily_birth_rate": {
+      "value": 0.065,
+      "assumption": true,
+      "rationale": "per-capita daily local insect birth chance scaled by available habitat capacity; assumption, not empirical rate"
+    },
+    "insect_boundary_logistic_daily_birth_rate": {
+      "value": 0.055,
+      "assumption": true,
+      "rationale": "self-renewal in the adjacent habitat, independent of colony demands"
+    },
+    "insect_boundary_carrying_capacity": {
+      "value": 80,
+      "assumption": true,
+      "rationale": "fixed ecological carrying capacity of neighboring habitat"
+    },
+    "insect_boundary_per_capita_daily_death_probability": {
+      "value": 0.02,
+      "assumption": true,
+      "rationale": "natural per-capita mortality of neighboring insects, no recoverable local carcass"
+    },
+    "insect_reproduction_reference_c": {
+      "value": 25,
+      "assumption": true,
+      "rationale": "synthetic mean air temperature reference for insect reproduction"
+    },
+    "insect_reproduction_per_degree_c": {
+      "value": 0.035,
+      "assumption": true,
+      "rationale": "game temperature sensitivity of insect reproduction per degree from reference"
+    },
+    "insect_reproduction_min_multiplier": {
+      "value": 0.15,
+      "assumption": true,
+      "rationale": "cold suppression floor for insect reproduction"
+    },
+    "insect_reproduction_max_multiplier": {
+      "value": 1.25,
+      "assumption": true,
+      "rationale": "warm ceiling for insect reproduction"
+    },
+    "insect_local_death_reference_population": {
+      "value": 12,
+      "assumption": true,
+      "rationale": "abundance used to scale existing 0.22 site mortality to current insect abundance"
     }
   },
   "climate": {
