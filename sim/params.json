@@ -868,5 +868,219 @@
       "description": "30日驗收禁止無原因全巢滅亡；非遊戲免死設定",
       "reference_for_mechanism_only": []
     }
+  },
+  "foraging_physics": {
+    "route_edge_minutes": {
+      "value": 25,
+      "assumption": true,
+      "description": "路線圖每條邊單程步行分鐘，拓樸與距離皆遊戲假設；非實際花園量測",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "daily_window_minutes": {
+      "value": 360,
+      "assumption": true,
+      "description": "假設單日可用覓食時段360分鐘，不是個體實測",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "trail_daily_retention": {
+      "value": 0.55,
+      "assumption": true,
+      "description": "單一費洛蒙路徑每日殘留比例，數值假設；文獻僅支持揮發與強化方向",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "trail_deposit_per_success": {
+      "value": 0.35,
+      "assumption": true,
+      "description": "每次成功運回食物的路段費洛蒙增加量，數值假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "trail_min_detectable": {
+      "value": 0.08,
+      "assumption": true,
+      "description": "局部工蟻可察覺路段費洛蒙下限，數值假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "trail_max_strength": {
+      "value": 3,
+      "assumption": true,
+      "description": "路段訊號飽和上限，數值假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "crop_capacity": {
+      "value": 0.8,
+      "assumption": true,
+      "description": "小工蟻嗉囊可持有之遊戲份數上限，非物種實測",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "max_trophallaxis_contacts": {
+      "value": 3,
+      "assumption": true,
+      "description": "回巢每次最多交哺接觸同伴數，數值假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "transfer_max_portions": {
+      "value": 0.28,
+      "assumption": true,
+      "description": "每次交哺最多交付的遊戲糖份，數值假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "live_prey_encounter_probability": {
+      "value": 0.06,
+      "assumption": true,
+      "description": "單次抵達F07/F11活昆蟲遇見率，遊戲假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "large_prey_fraction": {
+      "value": 0.25,
+      "assumption": true,
+      "description": "遇見昆蟲屬大型獵物之假設比例，非實測",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "large_prey_min_team": {
+      "value": 2,
+      "assumption": true,
+      "description": "大型獵物需同位置至少兩隻工蟻，遊戲假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "live_prey_capture_probability": {
+      "value": 0.48,
+      "assumption": true,
+      "description": "符合條件後捕獲活昆蟲機率，遊戲假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "small_prey_protein": {
+      "value": 0.55,
+      "assumption": true,
+      "description": "小型獵物蛋白遊戲份，非實測質量",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "large_prey_protein": {
+      "value": 1.5,
+      "assumption": true,
+      "description": "大型獵物蛋白遊戲份，非實測質量",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    }
+  },
+  "foraging_route_topology": {
+    "assumption": true,
+    "evidence_type": "遊戲假設 assumption: true",
+    "description": "N00-F01/F08/F07/F11/U00/U01、F01-F04、F04-F05、F08-F05、U01-F10的假設可步行路線；不是庭園地理量測。只作環境物理圖；工蟻須親自走路、聞相鄰費洛蒙或已知路線，不能讀取全圖。",
+    "edges": [
+      [
+        "N00",
+        "F01"
+      ],
+      [
+        "N00",
+        "F08"
+      ],
+      [
+        "N00",
+        "F07"
+      ],
+      [
+        "N00",
+        "F11"
+      ],
+      [
+        "N00",
+        "U00"
+      ],
+      [
+        "N00",
+        "U01"
+      ],
+      [
+        "F01",
+        "F04"
+      ],
+      [
+        "F04",
+        "F05"
+      ],
+      [
+        "F08",
+        "F05"
+      ],
+      [
+        "U01",
+        "F10"
+      ]
+    ]
   }
 }
