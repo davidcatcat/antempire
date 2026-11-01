@@ -134,7 +134,8 @@ function collect(source,worker,s,p,weather,events,summary,onsite){
  if(source.type==='carcass'&&sourceSum(source)<=1e-5)physics.prey(s,p,P,source,worker,onsite,g,events);
  if(source.presence==='scouted_empty'||source.presence==='potential'||sourceSum(source)<=1e-5||g()>rain*(source.type==='carcass'?P(p,'sources.carcass_access_probability'):.85))return null;
  const macro=source.type==='carcass'?'protein':'sugar',min=P(p,'sources.crop_load_'+macro+'_min'),max=P(p,'sources.crop_load_'+macro+'_max');
- const load=round(Math.min(sourceSum(source),min+(max-min)*g()));if(load<=0)return null;
+ const freeRoom=macro==='sugar'?Math.max(0,P(p,'foraging_physics.crop_capacity')-(worker.crop_cargo_sugar||0)):Infinity;
+ const load=round(Math.min(sourceSum(source),min+(max-min)*g(),freeRoom));if(load<=0)return null;
  if(macro==='sugar')source.sugar=round(source.sugar-load);
  else{let needed=load;for(const batch of source.batches){const take=Math.min(batch.protein,needed);batch.protein=round(batch.protein-take);needed=round(needed-take);if(take>0)events.push({type:'source_batch_consumed',source_event_id:batch.event_id,location:source.id,worker:worker.id,quantity_portions:round(take)});if(needed<=1e-6)break;}syncSource(source);}
  events.push({type:'food_collected',worker:worker.id,site:source.id,macro,portions:load,location:source.id,assumption:true});return {macro,load};
@@ -204,9 +205,10 @@ function forage(s,p,weather,events,summary){
   if(!found)continue;
   unload(worker,source,route,found,g);
   // Optional repeated trip with explicit travel time, never free instantaneous collection.
+  let finalReturn=trip.back;
   if(g()<.5&&P(p,'workers.max_trips_per_forager')>=2){
    const again=physics.travel(s,p,P,worker,route,events,'repeat_depart',trip.back);
-   if(again){summary.foraging_trips++;summary.extra_sugar_cost=round(summary.extra_sugar_cost+P(p,'workers.foraging_trip_sugar_cost'));
+   if(again){finalReturn=again.back;summary.foraging_trips++;summary.extra_sugar_cost=round(summary.extra_sugar_cost+P(p,'workers.foraging_trip_sugar_cost'));
     const more=collect(source,worker,s,p,weather,events,summary,[worker]);worker.site_memory[source.id]={last_success_portions:more?.load||0,last_visit_day:s.sim_day+1};
     physics.goHome(s,p,P,worker,route,events,'repeat_return',again.arrive);if(more)unload(worker,source,route,more,g);
    }
@@ -215,7 +217,7 @@ function forage(s,p,weather,events,summary){
    const possible=s.population.workers.filter(w=>w.id!==worker.id&&w.last_location==='N00'&&w.task!=='forage'&&w.task!=='guard'&&!w.recruited_today&&w.age_days>=P(p,'workers.newborn_nurse_days'));
    const n=possible.length?1+Math.floor(g()*Math.min(possible.length,P(p,'workers.recruitment_max_followers'))):0;
    for(let i=0;i<n;i++){const follower=possible.splice(Math.floor(g()*possible.length),1)[0];if(!follower)break;
-    const follow=physics.travel(s,p,P,follower,route,events,'recruit_follow_trail',trip.back);
+    const follow=physics.travel(s,p,P,follower,route,events,'recruit_follow_trail',finalReturn);
     if(!follow)continue;
     follower.recruited_today=true;summary.tasks[follower.task]--;follower.task='forage';summary.tasks.forage++;summary.recruited++;summary.foraging_trips++;
     summary.extra_sugar_cost=round(summary.extra_sugar_cost+P(p,'workers.foraging_trip_sugar_cost'));

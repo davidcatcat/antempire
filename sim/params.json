@@ -1034,6 +1034,14 @@
         "Dejean2005",
         "Dejean2007"
       ]
+    },
+    "follow_intermediate_source_probability": {
+      "value": 0.55,
+      "assumption": true,
+      "description": "工蟻抵達有食物的路線交叉點時，若仍嗅到前方費洛蒙，繼續追蹤的機率；遊戲假設，非實測",
+      "reference_for_mechanism_only": [
+        "SaundFriedman2023"
+      ]
     }
   },
   "foraging_route_topology": {
