@@ -140,72 +140,96 @@ function collect(source,worker,s,p,weather,events,summary,onsite){
  events.push({type:'food_collected',worker:worker.id,site:source.id,macro,portions:load,location:source.id,assumption:true});return {macro,load};
 }
 function forage(s,p,weather,events,summary){
- // Each worker shares at most locally encountered cues and physically learned routes.
- const oldKnown=s.population.workers.filter(w=>w.known_sources.length>0);
- for(const receiver of s.population.workers){
-  const g=dice(s,'nest_contact:'+receiver.id);
-  const peers=s.population.workers.filter(w=>w.id!==receiver.id&&w.last_location==='N00');
+ physics.decay(s,p,P,events);
+ // Read only personally contacted nestmates, never whole-colony sugar/protein stocks.
+ for(const worker of s.population.workers){const g=dice(s,'nest_contact:'+worker.id);
+  const peers=worker.last_location==='N00'?s.population.workers.filter(w=>w.id!==worker.id&&w.last_location==='N00'):[];
   if(peers.length&&g()<P(p,'workers.local_peer_contact_probability')){
-   const peer=peers[Math.floor(g()*peers.length)];
-   receiver.local_sensory??={};const mem=receiver.local_sensory;
-   const retention=P(p,'workers.local_signal_smoothing');
-   mem.peer_sugar_hunger=round(retention*(mem.peer_sugar_hunger??.4)+(1-retention)*(1-localSignals(peer).sugarSatiety));
-   mem.peer_protein_request=round(retention*(mem.peer_protein_request??.25)+(1-retention)*(peer.local_sensory?.direct_brood_begging||0));
-   events.push({type:'local_contact_cue',worker:receiver.id,peer:peer.id,peer_crop_fill:round(localSignals(peer).sugarSatiety),brood_begging_from_peer:round(peer.local_sensory?.direct_brood_begging||0)});
-  }
-  if(g()<P(p,'workers.nest_contact_route_learning_probability')&&oldKnown.length){
-   const teacher=oldKnown[Math.floor(g()*oldKnown.length)];if(teacher.id!==receiver.id){
-    const sites=teacher.known_sources.filter(id=>s.sources[id]&&!receiver.known_sources.includes(id));
-    if(sites.length){const site=sites[Math.floor(g()*sites.length)];receiver.known_sources.push(site);if(!s.sources[site].known_by.includes(receiver.id))s.sources[site].known_by.push(receiver.id);events.push({type:'nest_local_route_learning',from:teacher.id,to:receiver.id,site,assumption:true});}
-   }
+   const peer=peers[Math.floor(g()*peers.length)],mem=worker.local_sensory??={},ret=P(p,'workers.local_signal_smoothing');
+   mem.peer_sugar_hunger=round(ret*(mem.peer_sugar_hunger??.4)+(1-ret)*(1-localSignals(peer).sugarSatiety));
+   mem.peer_protein_request=round(ret*(mem.peer_protein_request??.25)+(1-ret)*(peer.local_sensory?.direct_brood_begging||0));
+   events.push({type:'local_contact_cue',worker:worker.id,peer:peer.id,peer_crop_fill:round(localSignals(peer).sugarSatiety),assumption:true});
   }
  }
  const foragers=[];
  for(const worker of s.population.workers){
   worker.task=selectTask(worker,s,p,weather);worker.age_days++;summary.tasks[worker.task]=(summary.tasks[worker.task]||0)+1;
-  if(worker.task==='nurse'){
-   const larvae=s.population.brood.filter(b=>b.stage==='larva');const g=dice(s,'nurse_contact:'+worker.id);
-   if(larvae.length&&g()<.75){const b=larvae[Math.floor(g()*larvae.length)];worker.local_sensory??={};worker.local_sensory.direct_brood_begging=round(b.begging_signal??.2);events.push({type:'local_brood_begging_contact',worker:worker.id,larva:b.id,signal:b.begging_signal??.2});}
+  if(worker.task==='nurse'){const larvae=s.population.brood.filter(b=>b.stage==='larva'),g=dice(s,'nurse_contact:'+worker.id);
+   if(larvae.length&&g()<.75){const brood=larvae[Math.floor(g()*larvae.length)];worker.local_sensory??={};worker.local_sensory.direct_brood_begging=round(brood.begging_signal??.2);events.push({type:'local_brood_begging_contact',worker:worker.id,larva:brood.id,signal:brood.begging_signal??.2});}
   }
-  if(worker.task==='forage')foragers.push(worker);
+  if(worker.task==='forage'&&worker.last_location==='N00')foragers.push(worker);
  }
- for(const worker of foragers){
-  const g=dice(s,'target:'+worker.id);worker.site_memory??={};const cues=localSignals(worker),sugarNeed=clamp((1-cues.sugarSatiety)*.6+cues.peerSugarHunger*.4,0,1);
-  let known=worker.known_sources.map(id=>s.sources[id]).filter(x=>x&&x.presence!=='scouted_empty');
-  const maxPrevSuccess=Math.max(0,...known.map(site=>worker.site_memory[site.id]?.last_success_portions??0));
-  if(!known.length||(maxPrevSuccess<.1&&g()<P(p,'workers.scout_search_when_route_unproductive_probability'))){discover(worker,s,p,events);known=worker.known_sources.map(id=>s.sources[id]).filter(x=>x&&x.presence!=='scouted_empty');}
-  if(!known.length){summary.scouts++;continue;}
-  const rate=sources=>sources.type==='carcass'?'protein':'sugar';
-  let rank=known.map(site=>{
-   const macro=rate(site),prior=worker.site_memory[site.id]?.last_success_portions??.15;
-   const failAge=worker.site_memory[site.id]?.last_visit_day??(s.sim_day-2);
-   const oldFail=prior===0&&s.sim_day-failAge<4?.35:1;
-   const unloading=worker.local_sensory?.unload_feedback?.[macro]??.5;
-   const hungerBonus=macro==='sugar'?1+P(p,'workers.sugar_hunger_priority_weight')*sugarNeed:1+P(p,'workers.protein_begging_priority_weight')*clamp(cues.broodBegging*.75+cues.proteinFeedback*.25,0,1);
-   const score=(.15+prior)*oldFail*hungerBonus*(.65+P(p,'workers.unloading_success_memory_weight')*unloading);
-   return {site,score};
-  }).sort((a,b)=>b.score-a.score);
-  const target=rank[g()<.77?0:Math.min(1,rank.length-1)].site;
-  const trips=1+(g()<.50?1:0);let last=0;
-  for(let j=0;j<trips;j++){
-   summary.foraging_trips++;summary.extra_sugar_cost=round(summary.extra_sugar_cost+P(p,'workers.foraging_trip_sugar_cost'));
-   const result=collect(target,worker,s,p,weather,events,summary);
-   summary.foraging_workers_by_macro[target.type==='carcass'?'protein':'sugar'].add(worker.id);
-   last=result;worker.site_memory[target.id]={last_success_portions:result,last_visit_day:s.sim_day+1};
-   if(result===0)break;
+ // Plan first departures, then physically move all foragers to their sites before any group capture.
+ // This allows prey teams ONLY when independent workers actually reach the same node.
+ const plans=[];
+ for(const worker of foragers){const g=dice(s,'target:'+worker.id);worker.site_memory??={};
+  let known=worker.known_sources.map(id=>s.sources[id]).filter(src=>src&&src.presence!=='scouted_empty');
+  const best=Math.max(0,...known.map(src=>worker.site_memory[src.id]?.last_success_portions??0));
+  if(!known.length||(best<.1&&g()<P(p,'workers.scout_search_when_route_unproductive_probability'))){
+   discover(worker,s,p,events);known=worker.known_sources.map(id=>s.sources[id]).filter(src=>src&&src.presence!=='scouted_empty');
   }
-  if(last>0&&g()<P(p,'workers.recruitment_probability')){
-   const available=s.population.workers.filter(w=>w.id!==worker.id&&w.task!=='forage'&&!w.recruited_today&&w.task!=='guard'&&w.age_days>=P(p,'workers.newborn_nurse_days'));
-   const n=available.length?1+Math.floor(g()*Math.min(available.length,P(p,'workers.recruitment_max_followers'))):0;
-   for(let k=0;k<n;k++){
-    const follower=available.splice(Math.floor(g()*available.length),1)[0];follower.recruited_today=true;follower.known_sources=[...new Set([...follower.known_sources,target.id])];if(!target.known_by.includes(follower.id))target.known_by.push(follower.id);
-    summary.tasks[follower.task]--;follower.task='forage';summary.tasks.forage++;summary.recruited++;summary.foraging_trips++;summary.extra_sugar_cost=round(summary.extra_sugar_cost+P(p,'workers.foraging_trip_sugar_cost'));
-    events.push({type:'local_recruitment',by:worker.id,to:follower.id,site:target.id,assumption:true});
-    summary.foraging_workers_by_macro[target.type==='carcass'?'protein':'sugar'].add(follower.id);const amount=collect(target,follower,s,p,weather,events,summary);follower.site_memory??={};follower.site_memory[target.id]={last_success_portions:amount,last_visit_day:s.sim_day+1};
+  let chosen=null;
+  if(known.length){const cues=localSignals(worker),need=clamp((1-cues.sugarSatiety)*.6+cues.peerSugarHunger*.4,0,1);
+   const ranks=known.map(site=>{const macro=site.type==='carcass'?'protein':'sugar',prior=worker.site_memory[site.id]?.last_success_portions??.15;
+    const age=worker.site_memory[site.id]?.last_visit_day??(s.sim_day-2),penalty=prior===0&&s.sim_day-age<4?.35:1;
+    const unload=worker.local_sensory?.unload_feedback?.[macro]??.5;
+    const bias=macro==='sugar'?1+P(p,'workers.sugar_hunger_priority_weight')*need:1+P(p,'workers.protein_begging_priority_weight')*clamp(cues.broodBegging*.75+cues.proteinFeedback*.25,0,1);
+    return {site,score:(.15+prior)*penalty*bias*(.65+P(p,'workers.unloading_success_memory_weight')*unload)};
+   }).sort((a,b)=>b.score-a.score);
+   chosen={source:ranks[g()<.77?0:Math.min(1,ranks.length-1)].site};
+  }else chosen=physics.followLocalTrail(s,p,P,worker,g,events);
+  if(!chosen){summary.scouts++;continue;}
+  const route=chosen.route||physics.routeTo(chosen.source.id);if(!route){summary.scouts++;continue;}
+  const trip=physics.travel(s,p,P,worker,route,events,'foraging_depart');if(!trip){events.push({type:'route_timeout',worker:worker.id,site:chosen.source.id,assumption:true});continue;}
+  if(!worker.known_sources.includes(chosen.source.id))worker.known_sources.push(chosen.source.id);
+  if(!chosen.source.known_by.includes(worker.id))chosen.source.known_by.push(worker.id);
+  plans.push({worker,source:chosen.source,route,trip,g});
+ }
+ function unload(worker,source,route,found,g){const transfer=physics.handoff(s,p,P,worker,found.macro,found.load,events,g,source.id);
+  summary.income[found.macro]=round(summary.income[found.macro]+found.load);summary.foraging_successes++;
+  worker.local_sensory??={};worker.local_sensory.unload_feedback??={sugar:.5,protein:.5};
+  const ease=clamp(.15+.8*(transfer.count/Math.max(1,P(p,'foraging_physics.max_trophallaxis_contacts'))),0,1);
+  worker.local_sensory.unload_feedback[found.macro]=round(.5*worker.local_sensory.unload_feedback[found.macro]+.5*ease);
+  worker.local_sensory.last_food_kind=found.macro;worker.local_sensory.last_unloading_ease=round(ease);
+  events.push({type:'local_unloading_feedback',worker:worker.id,site:source.id,macro:found.macro,encountered_nestmates:transfer.count,ease:round(ease),assumption:true});
+  physics.deposit(s,p,P,route,worker,events);
+ }
+ for(const plan of plans){const {worker,source,route,trip,g}=plan;if(worker.last_location!==source.id)continue;
+  const nearby=plans.filter(q=>q.source.id===source.id&&q.worker.last_location===source.id).map(q=>q.worker);
+  summary.foraging_trips++;summary.extra_sugar_cost=round(summary.extra_sugar_cost+P(p,'workers.foraging_trip_sugar_cost'));
+  const found=collect(source,worker,s,p,weather,events,summary,nearby);
+  summary.foraging_workers_by_macro[source.type==='carcass'?'protein':'sugar'].add(worker.id);
+  worker.site_memory[source.id]={last_success_portions:found?.load||0,last_visit_day:s.sim_day+1};
+  physics.goHome(s,p,P,worker,route,events,'foraging_return',trip.arrive);
+  if(!found)continue;
+  unload(worker,source,route,found,g);
+  // Optional repeated trip with explicit travel time, never free instantaneous collection.
+  if(g()<.5&&P(p,'workers.max_trips_per_forager')>=2){
+   const again=physics.travel(s,p,P,worker,route,events,'repeat_depart',trip.back);
+   if(again){summary.foraging_trips++;summary.extra_sugar_cost=round(summary.extra_sugar_cost+P(p,'workers.foraging_trip_sugar_cost'));
+    const more=collect(source,worker,s,p,weather,events,summary,[worker]);worker.site_memory[source.id]={last_success_portions:more?.load||0,last_visit_day:s.sim_day+1};
+    physics.goHome(s,p,P,worker,route,events,'repeat_return',again.arrive);if(more)unload(worker,source,route,more,g);
+   }
+  }
+  if(g()<P(p,'workers.recruitment_probability')&&physics.fullTrail(s,p,P,route)){
+   const possible=s.population.workers.filter(w=>w.id!==worker.id&&w.last_location==='N00'&&w.task!=='forage'&&w.task!=='guard'&&!w.recruited_today&&w.age_days>=P(p,'workers.newborn_nurse_days'));
+   const n=possible.length?1+Math.floor(g()*Math.min(possible.length,P(p,'workers.recruitment_max_followers'))):0;
+   for(let i=0;i<n;i++){const follower=possible.splice(Math.floor(g()*possible.length),1)[0];if(!follower)break;
+    const follow=physics.travel(s,p,P,follower,route,events,'recruit_follow_trail',trip.back);
+    if(!follow)continue;
+    follower.recruited_today=true;summary.tasks[follower.task]--;follower.task='forage';summary.tasks.forage++;summary.recruited++;summary.foraging_trips++;
+    summary.extra_sugar_cost=round(summary.extra_sugar_cost+P(p,'workers.foraging_trip_sugar_cost'));
+    events.push({type:'local_recruitment',by:worker.id,to:follower.id,site:source.id,physical_route:route,signal_dependent:true,assumption:true});
+    if(!follower.known_sources.includes(source.id))follower.known_sources.push(source.id);if(!source.known_by.includes(follower.id))source.known_by.push(follower.id);
+    const cargo=collect(source,follower,s,p,weather,events,summary,[follower]);
+    summary.foraging_workers_by_macro[source.type==='carcass'?'protein':'sugar'].add(follower.id);
+    follower.site_memory??={};follower.site_memory[source.id]={last_success_portions:cargo?.load||0,last_visit_day:s.sim_day+1};
+    physics.goHome(s,p,P,follower,route,events,'recruit_return',follow.arrive);
+    if(cargo)unload(follower,source,route,cargo,g);
    }
   }
  }
- for(const worker of s.population.workers)delete worker.recruited_today;
+ for(const w of s.population.workers)delete w.recruited_today;
 }
 function consume(s,p,summary,weather){
  const workers=s.population.workers.length, larvae=s.population.brood.filter(b=>b.stage==='larva');
