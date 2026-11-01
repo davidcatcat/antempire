@@ -116,3 +116,25 @@
 
 **落實原則**：高可信的是「方向與因果機制」；**未知**的是Q001每日日產卵數、幼體各階段實際天數、N00挖土質量、巢室體積、CO₂及崩塌風險。未知維持`null`而非捏造0或套別種研究數值。
 
+## 2026-11-01 未知地區探索、移動速度、空間範圍與生態隨機性（R79–R92）
+> 規則：[exploration-dynamic-ecology.md](exploration-dynamic-ecology.md)。**數字只屬研究物種／實驗場景**，不可套作未知花園蟻Q001的速度、最遠半徑或事件機率。
+
+| ID | 科學來源 | 研究所支持的機制／不能外推的部分 |
+|---|---|---|
+| R79 | Popp & Dornhaus (2023), *Ants combine systematic meandering and correlated random walks when searching for unknown resources*. [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC9971824/), DOI 10.1016/j.isci.2022.105916 | `Temnothorax rugatulus`空曠arena速度中位8.3mm/s、78%個體有約10mm左右轉向結構；這是**研究個體**的行走速度，不是未知蟻種探索半徑。 |
+| R80 | Gordon (2012), *The Dynamics of Foraging Trails in the Tropical Arboreal Ant Cephalotes goniodontus*. [PLOS ONE](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0050472) | 植物枝葉熟悉路線平均4.39cm/s（20隻，38cm路段），彎曲實走距離可達直線2–5倍；樹棲路線不能直接當地棲未知蟻數值。 |
+| R81 | *The balbyter ant Camponotus fulvopilosus combines several navigational strategies to support homing when foraging in the close vicinity of its nest* (2022). [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC9523141/) | 平均覓食距離20±6.3m、觀察8–31.3m，不代表所有小群體具同樣半徑。 |
+| R82 | *Looking and homing: how displaced ants decide where to go* (2014). [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC3886322/) | `Myrmecia croslandi`地面捕食巢周2–3m、樹上採食5–15m，離巢尋路與局部景觀記憶相關；不能轉成本巢幾米探查上限。 |
+| R83 | Gordon (1995), *The development of an ant colony's foraging range*. [Animal Behaviour](https://doi.org/10.1016/0003-3472(95)80198-7) | `Pogonomyrmex barbatus`覓食面積隨群體成長，年度區域部分改變，非固定幾何圈。 |
+| R84 | *Quantifying the Effect of Colony Size and Food Distribution on Harvester Ant Foraging* (2012). [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC3393712/) | 三種收穫蟻回巢速率、距離、旅程時間差別大；實測速度不是本蟻參數。 |
+| R85 | Burford et al. (2018), *Foraging behavior and locomotion of the invasive Argentine ant from winter aggregations*. [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC6084982/) | `Linepithema humile`地表溫度／濕度影響移動，重雨會抑制出巢；研究溫度窗口不能移植。 |
+| R86 | Roeder et al. (2022), *Thermal tolerance regulates foraging behaviour of ants*. [Wiley](https://doi.org/10.1111/een.13118) | `Pogonomyrmex barbatus`野外溫度、行進時間、距離和熱容忍度的關係；本地未知蟻不是研究種。 |
+| R87 | Dorfman et al. (2022), *A guide to area-restricted search: a foundational foraging behaviour*. [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC9796321/), DOI 10.1111/brv.12883 | 綜述：廣域探索與線索觸發的局部密集搜尋切換，尤其適用斑塊狀資源；不是蟻種固定轉向機率。 |
+| R88 | Schwarz, Wystrach & Cheng (2017), *Ants’ navigation in an unfamiliar environment is influenced by their experience of a familiar route*. [Nature Scientific Reports](https://www.nature.com/articles/s41598-017-14036-1) | `Melophorus bagoti`陌生地形搜尋與熟悉路線記憶交互作用；不是天生全圖GPS。 |
+| R89 | Lanan (2014), *Spatiotemporal resource distribution and foraging strategies of ants*. [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC4267257/) | 整理402種蟻的資源時間／空間分布與可耗竭性；支持動態資源斑塊、移動與招募模組化而非每格固定刷新。 |
+| R90 | Hartman, Ryan & Karamched (2024), *Walk this way: modeling foraging ant dynamics in multiple food source environments*. [Springer](https://link.springer.com/article/10.1007/s00285-024-02136-2) | 隨機格點模型能生成食源間的群體軌跡與回饋；**計算模型不是本花園真實生態事件率**。 |
+| R91 | *Colony variation in the collective regulation of foraging by harvester ants* (2011). [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC3071749/) | 收穫蟻受回巢工蟻接觸與每日食源變化調節出巢，路線和搜尋時間分開；物種特定。 |
+| R92 | *Daily Dynamics of an Ant Community in a Mountaintop Ecosystem* (2020). [PubMed](https://pubmed.ncbi.nlm.nih.gov/32078670/) | 地表氣溫、空氣濕度與多蟻種活動的時段變動；不能用臺中市城市日預報冒充巢外微氣候。 |
+
+**定量限制**：未知蟻種的步速／探索半徑／單次搜尋時間與未知世界昆蟲、其他蟻群、蜘蛛、人為干擾的出現率均未校準；數值欄位應`null`。可用有因果的**種子隨機情境**做遊戲推演，但它不是實測或實驗驗證的概率。
+

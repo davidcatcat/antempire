@@ -983,7 +983,8 @@
     "docs/simulation-engine.md",
     "docs/species-calibration.md",
     "docs/references.md",
-    "docs/weather-data-policy.md"
+    "docs/weather-data-policy.md",
+    "docs/exploration-dynamic-ecology.md"
   ],
   "source_quality": {
     "historic_map": "observed_in_story_not_field_measurement",
@@ -1003,7 +1004,8 @@
     "day4_human_event": "fictional_villa_local_watering_generated_by_uncalibrated_model",
     "day4_biology": "uncalibrated_seeded_qualitative_scenario",
     "day5_weather": "CWA_city_forecast_republished_2026_10_31_not_real_observations",
-    "day5_biology": "mechanism_inspired_seeded_uncalibrated_narrative"
+    "day5_biology": "mechanism_inspired_seeded_uncalibrated_narrative",
+    "exploration_dynamic_world": "literature_mechanism_with_unvalidated_stochastic_scenarios_not_observed_garden_ecology"
   },
   "day_log_latest": {
     "day": 5,
@@ -3354,5 +3356,585 @@
       "engineering_energy_mJ": null,
       "template_only_not_simulated": true
     }
+  },
+  "exploration_dynamic_world": {
+    "schema_version": "v2-exploration-fog-of-war-stochastic-ecology-v1",
+    "rules_ref": "docs/exploration-dynamic-ecology.md",
+    "science_refs": "docs/references.md#2026-11-01-未知地區探索移動速度空間範圍與生態隨機性r79r92",
+    "research_calendar_date": "2026-11-01",
+    "baseline_day": 5,
+    "effective_from_sim_day": 6,
+    "research_update_does_not_advance_clock": true,
+    "simulation_scope": "fictional_Taichung_Xitun_villa_garden_and_unverified_surroundings",
+    "species_taxon": null,
+    "quantitative_exploration_calibration": "none",
+    "spatial_model": {
+      "known_world_map_ref": "saves/world-state.json#/world_map",
+      "existing_locations_are_not_changed": true,
+      "frontier_sectors": {
+        "U00": {
+          "id": "U00",
+          "name": "現有花園未探索區域",
+          "conceptual_only": false,
+          "already_in_world_map_locations": true,
+          "geography_confirmed": false,
+          "physical_location_coordinates_cm": null,
+          "actual_distance_from_N00_cm": null,
+          "route_path_length_cm": null,
+          "physically_accessible": null,
+          "habitat_type": null,
+          "verified_obstacles": null,
+          "plants_present": null,
+          "insects_present": null,
+          "food_present": null,
+          "predators_present": null,
+          "rival_ant_colony_present": null,
+          "water_source_present": null,
+          "actual_food_mass_mg": null,
+          "world_hidden_ecological_state": "not_prepopulated_reveal_only_by_causal_simulated_events",
+          "observed_by_worker_ids": [
+            "W015"
+          ],
+          "known_fragment": "outer root-crack edge visited Day5; rest unknown",
+          "current_status": "partially_explored_outer_root_crack_only",
+          "no_new_known_food_or_nest_from_research": true
+        },
+        "X01": {
+          "id": "X01",
+          "name": "未知外圈候選扇區01",
+          "conceptual_only": true,
+          "already_in_world_map_locations": false,
+          "geography_confirmed": null,
+          "physical_location_coordinates_cm": null,
+          "actual_distance_from_N00_cm": null,
+          "route_path_length_cm": null,
+          "physically_accessible": null,
+          "habitat_type": null,
+          "verified_obstacles": null,
+          "plants_present": null,
+          "insects_present": null,
+          "food_present": null,
+          "predators_present": null,
+          "rival_ant_colony_present": null,
+          "water_source_present": null,
+          "actual_food_mass_mg": null,
+          "world_hidden_ecological_state": "not_prepopulated_reveal_only_by_causal_simulated_events",
+          "observed_by_worker_ids": [],
+          "known_fragment": null,
+          "current_status": "not_instantiated_no_confirmed_substrate",
+          "no_new_known_food_or_nest_from_research": true
+        },
+        "X02": {
+          "id": "X02",
+          "name": "未知外圈候選扇區02",
+          "conceptual_only": true,
+          "already_in_world_map_locations": false,
+          "geography_confirmed": null,
+          "physical_location_coordinates_cm": null,
+          "actual_distance_from_N00_cm": null,
+          "route_path_length_cm": null,
+          "physically_accessible": null,
+          "habitat_type": null,
+          "verified_obstacles": null,
+          "plants_present": null,
+          "insects_present": null,
+          "food_present": null,
+          "predators_present": null,
+          "rival_ant_colony_present": null,
+          "water_source_present": null,
+          "actual_food_mass_mg": null,
+          "world_hidden_ecological_state": "not_prepopulated_reveal_only_by_causal_simulated_events",
+          "observed_by_worker_ids": [],
+          "known_fragment": null,
+          "current_status": "not_instantiated_no_confirmed_substrate",
+          "no_new_known_food_or_nest_from_research": true
+        },
+        "X03": {
+          "id": "X03",
+          "name": "未知外圈候選扇區03",
+          "conceptual_only": true,
+          "already_in_world_map_locations": false,
+          "geography_confirmed": null,
+          "physical_location_coordinates_cm": null,
+          "actual_distance_from_N00_cm": null,
+          "route_path_length_cm": null,
+          "physically_accessible": null,
+          "habitat_type": null,
+          "verified_obstacles": null,
+          "plants_present": null,
+          "insects_present": null,
+          "food_present": null,
+          "predators_present": null,
+          "rival_ant_colony_present": null,
+          "water_source_present": null,
+          "actual_food_mass_mg": null,
+          "world_hidden_ecological_state": "not_prepopulated_reveal_only_by_causal_simulated_events",
+          "observed_by_worker_ids": [],
+          "known_fragment": null,
+          "current_status": "not_instantiated_no_confirmed_substrate",
+          "no_new_known_food_or_nest_from_research": true
+        },
+        "X04": {
+          "id": "X04",
+          "name": "未知外圈候選扇區04",
+          "conceptual_only": true,
+          "already_in_world_map_locations": false,
+          "geography_confirmed": null,
+          "physical_location_coordinates_cm": null,
+          "actual_distance_from_N00_cm": null,
+          "route_path_length_cm": null,
+          "physically_accessible": null,
+          "habitat_type": null,
+          "verified_obstacles": null,
+          "plants_present": null,
+          "insects_present": null,
+          "food_present": null,
+          "predators_present": null,
+          "rival_ant_colony_present": null,
+          "water_source_present": null,
+          "actual_food_mass_mg": null,
+          "world_hidden_ecological_state": "not_prepopulated_reveal_only_by_causal_simulated_events",
+          "observed_by_worker_ids": [],
+          "known_fragment": null,
+          "current_status": "not_instantiated_no_confirmed_substrate",
+          "no_new_known_food_or_nest_from_research": true
+        }
+      },
+      "discovery_requires_reached_location_and_perception": true,
+      "candidate_X_sectors_are_not_confirmed_physical_places": true,
+      "no_auto_route_from_N00_to_X_sectors": true,
+      "no_auto_food_from_unexplored_sector": true,
+      "no_global_worker_fog_of_war_reveal": true
+    },
+    "worker_exploration_states": {
+      "W004": {
+        "worker_id": "W004",
+        "active_forage_state_at_end_day5": [
+          "與幼體接觸、清潔；依巢室局部需求而非固定職位"
+        ],
+        "last_day5_path_nodes": [
+          "N00"
+        ],
+        "walking_speed_mm_s": null,
+        "trip_path_length_cm": null,
+        "max_nest_distance_cm": null,
+        "searched_area_cm2": null,
+        "actual_search_duration_min": null,
+        "return_time_reserved_min": null,
+        "terrain_cost_multiplier": null,
+        "load_penalty": null,
+        "injury_mobility_cost": null,
+        "last_exploration_frontier_id": null,
+        "last_exploration_detail": null,
+        "unexplored_world_known_as_whole": false,
+        "baseline_only_no_new_trip": true
+      },
+      "W005": {
+        "worker_id": "W005",
+        "active_forage_state_at_end_day5": [
+          "沿舊氣味路徑查蜜露但空載折返"
+        ],
+        "last_day5_path_nodes": [
+          "N00",
+          "F01",
+          "N00"
+        ],
+        "walking_speed_mm_s": null,
+        "trip_path_length_cm": null,
+        "max_nest_distance_cm": null,
+        "searched_area_cm2": null,
+        "actual_search_duration_min": null,
+        "return_time_reserved_min": null,
+        "terrain_cost_multiplier": null,
+        "load_penalty": null,
+        "injury_mobility_cost": null,
+        "last_exploration_frontier_id": null,
+        "last_exploration_detail": null,
+        "unexplored_world_known_as_whole": false,
+        "baseline_only_no_new_trip": true
+      },
+      "W006": {
+        "worker_id": "W006",
+        "active_forage_state_at_end_day5": [
+          "腐葉舊殘屑搜尋失敗，空載回巢"
+        ],
+        "last_day5_path_nodes": [
+          "N00",
+          "F11",
+          "N00"
+        ],
+        "walking_speed_mm_s": null,
+        "trip_path_length_cm": null,
+        "max_nest_distance_cm": null,
+        "searched_area_cm2": null,
+        "actual_search_duration_min": null,
+        "return_time_reserved_min": null,
+        "terrain_cost_multiplier": null,
+        "load_penalty": null,
+        "injury_mobility_cost": null,
+        "last_exploration_frontier_id": null,
+        "last_exploration_detail": null,
+        "unexplored_world_known_as_whole": false,
+        "baseline_only_no_new_trip": true
+      },
+      "W007": {
+        "worker_id": "W007",
+        "active_forage_state_at_end_day5": [
+          "後足舊傷仍在，巢內清理及休止"
+        ],
+        "last_day5_path_nodes": [
+          "N00"
+        ],
+        "walking_speed_mm_s": null,
+        "trip_path_length_cm": null,
+        "max_nest_distance_cm": null,
+        "searched_area_cm2": null,
+        "actual_search_duration_min": null,
+        "return_time_reserved_min": null,
+        "terrain_cost_multiplier": null,
+        "load_penalty": null,
+        "injury_mobility_cost": null,
+        "last_exploration_frontier_id": null,
+        "last_exploration_detail": null,
+        "unexplored_world_known_as_whole": false,
+        "baseline_only_no_new_trip": true
+      },
+      "W008": {
+        "worker_id": "W008",
+        "active_forage_state_at_end_day5": [
+          "接觸幼體、保持巢室整潔，腳傷狀態未知"
+        ],
+        "last_day5_path_nodes": [
+          "N00"
+        ],
+        "walking_speed_mm_s": null,
+        "trip_path_length_cm": null,
+        "max_nest_distance_cm": null,
+        "searched_area_cm2": null,
+        "actual_search_duration_min": null,
+        "return_time_reserved_min": null,
+        "terrain_cost_multiplier": null,
+        "load_penalty": null,
+        "injury_mobility_cost": null,
+        "last_exploration_frontier_id": null,
+        "last_exploration_detail": null,
+        "unexplored_world_known_as_whole": false,
+        "baseline_only_no_new_trip": true
+      },
+      "W009": {
+        "worker_id": "W009",
+        "active_forage_state_at_end_day5": [
+          "少量巢口清潔與休止，前足舊傷不視為痊癒"
+        ],
+        "last_day5_path_nodes": [
+          "N00"
+        ],
+        "walking_speed_mm_s": null,
+        "trip_path_length_cm": null,
+        "max_nest_distance_cm": null,
+        "searched_area_cm2": null,
+        "actual_search_duration_min": null,
+        "return_time_reserved_min": null,
+        "terrain_cost_multiplier": null,
+        "load_penalty": null,
+        "injury_mobility_cost": null,
+        "last_exploration_frontier_id": null,
+        "last_exploration_detail": null,
+        "unexplored_world_known_as_whole": false,
+        "baseline_only_no_new_trip": true
+      },
+      "W010": {
+        "worker_id": "W010",
+        "active_forage_state_at_end_day5": [
+          "短時入口周邊活動，本日未前往蜘蛛所在F05"
+        ],
+        "last_day5_path_nodes": [
+          "N00",
+          "巢口外緣",
+          "N00"
+        ],
+        "walking_speed_mm_s": null,
+        "trip_path_length_cm": null,
+        "max_nest_distance_cm": null,
+        "searched_area_cm2": null,
+        "actual_search_duration_min": null,
+        "return_time_reserved_min": null,
+        "terrain_cost_multiplier": null,
+        "load_penalty": null,
+        "injury_mobility_cost": null,
+        "last_exploration_frontier_id": null,
+        "last_exploration_detail": null,
+        "unexplored_world_known_as_whole": false,
+        "baseline_only_no_new_trip": true
+      },
+      "W011": {
+        "worker_id": "W011",
+        "active_forage_state_at_end_day5": [
+          "腐葉與石塊邊搜索但無新遺骸可帶回"
+        ],
+        "last_day5_path_nodes": [
+          "N00",
+          "F11",
+          "F07",
+          "N00"
+        ],
+        "walking_speed_mm_s": null,
+        "trip_path_length_cm": null,
+        "max_nest_distance_cm": null,
+        "searched_area_cm2": null,
+        "actual_search_duration_min": null,
+        "return_time_reserved_min": null,
+        "terrain_cost_multiplier": null,
+        "load_penalty": null,
+        "injury_mobility_cost": null,
+        "last_exploration_frontier_id": null,
+        "last_exploration_detail": null,
+        "unexplored_world_known_as_whole": false,
+        "baseline_only_no_new_trip": true
+      },
+      "W012": {
+        "worker_id": "W012",
+        "active_forage_state_at_end_day5": [
+          "幼體接觸與碎屑清潔，保留前足舊傷"
+        ],
+        "last_day5_path_nodes": [
+          "N00"
+        ],
+        "walking_speed_mm_s": null,
+        "trip_path_length_cm": null,
+        "max_nest_distance_cm": null,
+        "searched_area_cm2": null,
+        "actual_search_duration_min": null,
+        "return_time_reserved_min": null,
+        "terrain_cost_multiplier": null,
+        "load_penalty": null,
+        "injury_mobility_cost": null,
+        "last_exploration_frontier_id": null,
+        "last_exploration_detail": null,
+        "unexplored_world_known_as_whole": false,
+        "baseline_only_no_new_trip": true
+      },
+      "W013": {
+        "worker_id": "W013",
+        "active_forage_state_at_end_day5": [
+          "後足受傷但仍短距搬移巢口泥粒"
+        ],
+        "last_day5_path_nodes": [
+          "N00"
+        ],
+        "walking_speed_mm_s": null,
+        "trip_path_length_cm": null,
+        "max_nest_distance_cm": null,
+        "searched_area_cm2": null,
+        "actual_search_duration_min": null,
+        "return_time_reserved_min": null,
+        "terrain_cost_multiplier": null,
+        "load_penalty": null,
+        "injury_mobility_cost": null,
+        "last_exploration_frontier_id": null,
+        "last_exploration_detail": null,
+        "unexplored_world_known_as_whole": false,
+        "baseline_only_no_new_trip": true
+      },
+      "W014": {
+        "worker_id": "W014",
+        "active_forage_state_at_end_day5": [
+          "巢內整理、自我梳理，前足傷與感染狀態未明"
+        ],
+        "last_day5_path_nodes": [
+          "N00"
+        ],
+        "walking_speed_mm_s": null,
+        "trip_path_length_cm": null,
+        "max_nest_distance_cm": null,
+        "searched_area_cm2": null,
+        "actual_search_duration_min": null,
+        "return_time_reserved_min": null,
+        "terrain_cost_multiplier": null,
+        "load_penalty": null,
+        "injury_mobility_cost": null,
+        "last_exploration_frontier_id": null,
+        "last_exploration_detail": null,
+        "unexplored_world_known_as_whole": false,
+        "baseline_only_no_new_trip": true
+      },
+      "W015": {
+        "worker_id": "W015",
+        "active_forage_state_at_end_day5": [
+          "探索未知草根縫但沒有取得食物，返回巢穴"
+        ],
+        "last_day5_path_nodes": [
+          "N00",
+          "U00外緣",
+          "N00"
+        ],
+        "walking_speed_mm_s": null,
+        "trip_path_length_cm": null,
+        "max_nest_distance_cm": null,
+        "searched_area_cm2": null,
+        "actual_search_duration_min": null,
+        "return_time_reserved_min": null,
+        "terrain_cost_multiplier": null,
+        "load_penalty": null,
+        "injury_mobility_cost": null,
+        "last_exploration_frontier_id": "U00",
+        "last_exploration_detail": "Day5 only U00 exterior root-crack edge; no food verified",
+        "unexplored_world_known_as_whole": false,
+        "baseline_only_no_new_trip": true
+      },
+      "W016": {
+        "worker_id": "W016",
+        "active_forage_state_at_end_day5": [
+          "幼體周圍整理與間歇休息"
+        ],
+        "last_day5_path_nodes": [
+          "N00"
+        ],
+        "walking_speed_mm_s": null,
+        "trip_path_length_cm": null,
+        "max_nest_distance_cm": null,
+        "searched_area_cm2": null,
+        "actual_search_duration_min": null,
+        "return_time_reserved_min": null,
+        "terrain_cost_multiplier": null,
+        "load_penalty": null,
+        "injury_mobility_cost": null,
+        "last_exploration_frontier_id": null,
+        "last_exploration_detail": null,
+        "unexplored_world_known_as_whole": false,
+        "baseline_only_no_new_trip": true
+      },
+      "W017": {
+        "worker_id": "W017",
+        "active_forage_state_at_end_day5": [
+          "清潔與休止；生理年齡仍未確認"
+        ],
+        "last_day5_path_nodes": [
+          "N00"
+        ],
+        "walking_speed_mm_s": null,
+        "trip_path_length_cm": null,
+        "max_nest_distance_cm": null,
+        "searched_area_cm2": null,
+        "actual_search_duration_min": null,
+        "return_time_reserved_min": null,
+        "terrain_cost_multiplier": null,
+        "load_penalty": null,
+        "injury_mobility_cost": null,
+        "last_exploration_frontier_id": null,
+        "last_exploration_detail": null,
+        "unexplored_world_known_as_whole": false,
+        "baseline_only_no_new_trip": true
+      }
+    },
+    "locomotion_and_search": {
+      "species_median_walking_speed_mm_s": null,
+      "effective_search_speed_mm_s": null,
+      "effective_foraging_radius_m": null,
+      "observed_field_trip_distribution": null,
+      "walking_speed_distinct_from_path_length_and_displacement": true,
+      "movement_modes": [
+        "known_route_navigation_if_supported",
+        "correlated_random_walk_unexplored",
+        "cue_triggered_area_restricted_search",
+        "return_or_abort_due_to_time_risk"
+      ],
+      "track_worker_routes_as_time_windows": true,
+      "has_to_reserve_return_budget": true,
+      "no_teleport_across_unverified_edges": true,
+      "worker_knowledge_partial": true,
+      "temnothorax_8_3_mm_s_only_reference_not_assigned": true,
+      "cephalotes_4_39_cm_s_only_reference_not_assigned": true
+    },
+    "background_ecology": {
+      "independent_of_colony_exploration": true,
+      "persistent_process_types": [
+        "plants_phenology",
+        "aphid_scale_honeydew",
+        "insect_mortality_and_decomposition",
+        "fruit_fall_if_tree_present",
+        "rival_ant_foraging",
+        "spider_movement_and_webs",
+        "toad_movement",
+        "weather_driven_microhabitats",
+        "fictional_gardener_interventions",
+        "soil_leaflitter_and_obstacles"
+      ],
+      "simulation_last_completed_day": 5,
+      "new_events_since_activation": [],
+      "new_physical_food_sources_since_activation": [],
+      "new_hidden_habitat_instantiations_since_activation": [],
+      "unverified_sector_species_presence": null,
+      "actual_colony_accessible_resources_mg": null,
+      "world_weather_must_be_external_sourced": true,
+      "human_activity_is_fictional_simulation_only": true,
+      "no_independent_world_event_claimed_during_research": true
+    },
+    "random_event_policy": {
+      "generator": "FNV-1a32+mulberry32",
+      "day6_seed_material_format": "antempire-garden-v2|Day5->Day6|<latest_main_parent_head_sha>|2026-11-05",
+      "named_streams": [
+        "plants",
+        "sap_hemipterans",
+        "insects_and_detritus",
+        "rivals",
+        "predators",
+        "human_gardener",
+        "terrain",
+        "weather_microclimate",
+        "worker_exploration",
+        "encounter_outcomes"
+      ],
+      "named_stream_derivation": "FNV-1a32(parent_seed_material + '|' + stream_name), then mulberry32 per stream",
+      "avoid_cross_subsystem_draw_order_coupling": true,
+      "stochastic_rates_for_real_species": null,
+      "scenario_unvalidated_weights": [],
+      "events_require_species_habitat_temporal_causality": true,
+      "background_can_change_when_no_workers_leave": true,
+      "zero_visible_events_valid": true,
+      "chance_of_new_food_not_guaranteed": true,
+      "physical_weather_observations_never_randomly_fabricated": true,
+      "event_log_evidence_fields": [
+        "event_id",
+        "sim_date",
+        "time_window",
+        "sector_id",
+        "actor_or_source_id",
+        "cause",
+        "preconditions",
+        "rng_stream",
+        "rng_draw",
+        "model_weight_or_null",
+        "outcome",
+        "worker_observed",
+        "evidence_level"
+      ]
+    },
+    "knowledge_layers": {
+      "world_latent_events_are_not_direct_worker_knowledge": true,
+      "worker_personal_observations_are_not_colony_broadcast": true,
+      "colony_contact_reports_require_real_interaction": true,
+      "observer_background_reports_label_unobserved_by_colony": true
+    },
+    "day6_template": {
+      "day": 6,
+      "calendar_date": "2026-11-05",
+      "background_ecology_events": [],
+      "worker_exploration_trips": [],
+      "newly_discovered_terrain": [],
+      "newly_discovered_food_or_rivals": [],
+      "confirmed_return_to_nest_contacts": [],
+      "world_events_unobserved_by_colony": [],
+      "new_known_world_map_locations": [],
+      "new_confirmed_route_edges": [],
+      "rng_stream_materials": null,
+      "events_with_individual_rolls": [],
+      "daily_new_food_sources_count": null,
+      "daily_discovered_frontier_cm2": null,
+      "daily_max_worker_range_m": null,
+      "daily_mean_walking_speed_mm_s": null,
+      "template_only_not_day6_simulation": true
+    },
+    "verification_notes": "Day5 W015 explored only U00 edge; no new event, route, food, ant or insect has been spawned by this rules-only commit."
   }
 }

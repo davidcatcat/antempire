@@ -1853,7 +1853,13 @@
     "reproduction_nest_rules_effective_sim_day": 6,
     "reproduction_nest_research_updated_at_local": "2026-11-01",
     "reproduction_nest_model_status": "literature_mechanism_both_unvalidated_species_and_physical_params",
-    "reproduction_nest_research_does_not_advance_time": true
+    "reproduction_nest_research_does_not_advance_time": true,
+    "exploration_rules_ref": "docs/exploration-dynamic-ecology.md",
+    "exploration_state_ref": "saves/world-state.json#/exploration_dynamic_world",
+    "exploration_rules_effective_sim_day": 6,
+    "exploration_research_updated_at_local": "2026-11-01",
+    "exploration_model_status": "literature_informed_spatial_and_stochastic_mechanisms_unvalidated_species_unknown",
+    "exploration_research_does_not_advance_time": true
   },
   "migration_log": [
     {

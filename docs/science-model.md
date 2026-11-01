@@ -64,3 +64,7 @@
 - [queen-brood-growth.md](queen-brood-growth.md)：Q001產卵與幼體發育按日及週尺度，受個體、實際巢溫、食物攝取、工蟻照護和發育階段制約；不固定「每日X卵／孵化XX日」。受精與階級仍按[castes-and-reproduction.md](castes-and-reproduction.md)未知保持null。
 - [nest-construction.md](nest-construction.md)：建巢須有工蟻局部動機、挖土/搬運活動、土壤及排水條件與時間／能量成本；環境調整可以失敗，**搬了泥粒不等於新巢室完成**。兩育幼室、一儲藏室、泥脊的舊世界配置全部保留。
 - 核對文獻 [references.md](references.md) R62–R78。未知蟻種與巢內物理量不得套其他物種精準日產卵率、發育日齡、挖土量、通風量或坍塌概率；Day5不前進。
+
+## 2026-11-01 未知世界探索與外部生態變化（Day6起）
+依 [exploration-dynamic-ecology.md](exploration-dynamic-ecology.md) 及[references.md](references.md) R79–R92，工蟻**移動中的速度／實際走過的路長／最大離巢距離／搜尋覆蓋區**是不同變量。陌生地區有相關隨機步行、線索附近密集搜尋、熟悉路線回訪，並需保留回巢時間與身體限制。個體局部知識不會透過世界地圖自動廣播。
+**世界背景先行自主變化**：植物、蚜蟲與蜜露、昆蟲殘骸、蜘蛛、蟾蜍、異巢蟻與虛構人類活動可在無本巢工蟻時繼續；必須有前置物種／棲地／時間證據才抽事件，允許全天零重大事件。真實區域天氣不許抽籤偽造實測。U00僅W015走到外緣；X01–X04是未具體化的外圈候選區，不自動加食源／路線。未知速度與概率保持null。

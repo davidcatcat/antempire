@@ -51,3 +51,6 @@
 
 ## 2026-11-01 蟻后生殖與巢穴建設資料權威
 新增[queen-brood-growth.md](queen-brood-growth.md)及[nest-construction.md](nest-construction.md)，世界`queen_brood_growth`、`nest_construction_system`是**未來Day6以後的生理／工程活動狀態容器**；主存檔維持`colony.queen`、`colony.brood`與`colony.workers`為存活權威，僅以`simulation.reproduction_growth_rules_ref`、`simulation.nest_construction_rules_ref`參照機制，不重複建立互相衝突的存活數。新建巢室需真實工程事件、容量證據與工蟻成本；新個體須有階段生命歷史與守恆。**研究更新不推進Day5、不修改舊室數、不新增工蟻卵或舊幼體階段**。
+
+## 2026-11-01 未知區域探索與外界動態的權威資料
+權威位於`saves/world-state.json#/exploration_dynamic_world`；主存檔只指向`simulation.exploration_rules_ref`和`simulation.exploration_state_ref`，不複製第二份位置／食源。區分`background_events`（世界發生）、`worker_observed_events`（局部確實感知）、`colony_contact_reports`（回巢／訊號傳遞）。所有事件需種子、時間、地點、因果前提和證據；人類活動是虛構事件，天氣仍需有來源真實資料。Day5狀態、U00外緣既有故事、F01–F11食源與N00主巢不改；X01–X04只是抽象候選區，未探不得直接放入實際世界地圖。速度／半徑／生態概率未知保持null。

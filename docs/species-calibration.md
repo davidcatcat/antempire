@@ -41,3 +41,6 @@ P3：以文獻或專家資料進行敏感度測試、蒙地卡羅多次模擬與
 
 ## 2026-11-01 產卵速度與巢穴工程校準
 依[queen-brood-growth.md](queen-brood-growth.md)、[nest-construction.md](nest-construction.md)與R62–R78。優先校準：本蟻種形態／分類，Q001巢內實際溫度與營養、產卵／幼體階段實測追蹤、照護工蟻接觸、個體存活／發育速率；另有N00土壤粒徑、含水率、黏聚性、巢室體積、孔隙CO₂/O₂、搬土負載、土粒來源去向、工蟻齡級與傷勢。沒有這些資料，`egg_rate_per_day=null`、`stage_duration_days=null`、`nest_soil_mass_mg=null`、`construction_rate_cm3_day=null`，**不得挪用他蟻數字填上**。
+
+## 2026-11-01 探索與未知生態校準
+參照 [exploration-dynamic-ecology.md](exploration-dynamic-ecology.md) R79–R92。需要鑑種、個體體長與腿長、溫度／濕度與負載、不同基質短距錄影測量`walking_speed_mm_per_s`，用路徑標記算`actual_path_length_cm`、`max_nest_distance_cm`、轉向分布、有效搜索覆蓋與每趟外出時間。沒有資訊就null，不能直接抄`Temnothorax`的8.3mm/s或樹棲`Cephalotes`的4.39cm/s。外界食物、昆蟲、蜘蛛、異巢蟻、人類干擾發生率也不具本場地真實統計，`stochastic_event_rates=null`。
