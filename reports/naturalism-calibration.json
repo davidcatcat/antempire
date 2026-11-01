@@ -1,0 +1,12 @@
+{
+  "passed": 203,
+  "days": 30,
+  "events_natural_only": true,
+  "seeded_replay": true,
+  "no_direct_interventions": true,
+  "insectDeaths": 16,
+  "carcasses": 16,
+  "workerDeaths": 2,
+  "physicalScoutingEvents": 3,
+  "canonical_save_changed": false
+}

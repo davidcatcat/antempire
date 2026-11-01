@@ -104,10 +104,9 @@
       "reference_for_mechanism_only": []
     },
     "larva_protein_daily": {
-      "value": 0.2,
+      "value": 0.08,
       "assumption": true,
-      "description": "每幼蟲日蛋白耗，單位份",
-      "reference_for_mechanism_only": []
+      "rationale": "game assumption 0.08 portions per larva per day; no mg conversion; replaces 0.2"
     },
     "egg_laying_protein_cost": {
       "value": 0.14,
@@ -138,6 +137,22 @@
       "assumption": true,
       "description": "巢群本階段可存/處理之蛋白份上限，會隨規模擴張",
       "reference_for_mechanism_only": []
+    },
+    "metabolic_reference_c": {
+      "value": 25,
+      "assumption": true,
+      "description": "一般生理學 + 遊戲假設: 巢溫代謝基準25°C；非P. megacephala實測",
+      "reference_for_mechanism_only": [
+        "PMC11750369"
+      ]
+    },
+    "metabolic_q10": {
+      "value": 2,
+      "assumption": true,
+      "description": "一般生理學 + 遊戲假設: Q10=2.0 是研究標準化假設，非本物種實測",
+      "reference_for_mechanism_only": [
+        "PMC11750369"
+      ]
     }
   },
   "starvation": {
@@ -222,13 +237,41 @@
       "assumption": true,
       "description": "有舊傷者自然死亡額外風險倍率",
       "reference_for_mechanism_only": []
+    },
+    "queen_zero_worker_hazard_after_days": {
+      "value": 3,
+      "assumption": true,
+      "rationale": "after losing all caretakers queen hazard rises especially when energy deficient"
+    },
+    "queen_zero_worker_starved_daily_hazard": {
+      "value": 0.24,
+      "assumption": true,
+      "rationale": "no workers plus prolonged food deficit elevates death risk; game assumption"
+    },
+    "unattended_larva_max_days": {
+      "value": 4,
+      "assumption": true,
+      "description": "一般生理學 + 遊戲假設: 無工蟻照護及餵食幼蟲最多4日，不是量測",
+      "reference_for_mechanism_only": []
+    },
+    "unattended_egg_max_days": {
+      "value": 10,
+      "assumption": true,
+      "description": "遊戲假設: 缺工蟻照護卵最多10日，非實測",
+      "reference_for_mechanism_only": []
+    },
+    "unattended_pupa_max_days": {
+      "value": 10,
+      "assumption": true,
+      "description": "遊戲假設: 缺工蟻照護蛹最多10日，非實測",
+      "reference_for_mechanism_only": []
     }
   },
   "queen": {
     "base_laying_probability": {
       "value": 0.38,
       "assumption": true,
-      "description": "無飢餓、卵數不太多時每日一卵機率，遊戲假設",
+      "description": "遊戲假設: 25°C、營養充足時每日發生產卵基礎機率，不等於每日必生一卵",
       "reference_for_mechanism_only": []
     },
     "max_eggs_per_day": {
@@ -253,6 +296,24 @@
       "value": 0.84,
       "assumption": true,
       "description": "若當日資源滿足比例低於此則產卵暫停",
+      "reference_for_mechanism_only": []
+    },
+    "laying_reference_c": {
+      "value": 25,
+      "assumption": true,
+      "description": "遊戲假設: 產卵參考巢溫25°C，非本物種實測",
+      "reference_for_mechanism_only": []
+    },
+    "laying_temperature_q10": {
+      "value": 2.5,
+      "assumption": true,
+      "description": "遊戲假設: 低溫降低產卵機率的Q10形狀，非本物種實測",
+      "reference_for_mechanism_only": []
+    },
+    "second_egg_given_laying_probability": {
+      "value": 0.2,
+      "assumption": true,
+      "description": "遊戲假設: 當日發生產卵後，追加第二顆卵之機率；不保證兩卵",
       "reference_for_mechanism_only": []
     }
   },
@@ -374,13 +435,53 @@
         "R116"
       ]
     },
-    "protein_source_choice_bias": {
+    "local_peer_contact_probability": {
+      "value": 0.58,
+      "assumption": true,
+      "rationale": "local in-nest encounter likelihood, no global visibility"
+    },
+    "local_signal_smoothing": {
+      "value": 0.5,
+      "assumption": true,
+      "rationale": "fraction retained from own prior local encounters"
+    },
+    "sugar_hunger_priority_weight": {
       "value": 4.5,
       "assumption": true,
-      "description": "蛋白庫不足3日需求時，同時熟悉多處工蟻選已知蛋白來源的相對偏好",
-      "reference_for_mechanism_only": [
-        "R112"
-      ]
+      "rationale": "worker chooses sugar more often when own crop/encountered nestmates signal hunger"
+    },
+    "protein_begging_priority_weight": {
+      "value": 1.8,
+      "assumption": true,
+      "rationale": "only locally encountered hungry larvae or nurses can elevate protein foraging"
+    },
+    "unloading_success_memory_weight": {
+      "value": 1.4,
+      "assumption": true,
+      "rationale": "fast unloading reinforces same kind of forage; slow unloading suppresses it"
+    },
+    "scout_search_when_route_unproductive_probability": {
+      "value": 0.18,
+      "assumption": true,
+      "rationale": "local search triggered by own failed route, does not reveal distant sugar source"
+    },
+    "foraging_cold_limit_c": {
+      "value": 10,
+      "assumption": true,
+      "rationale": "below this synthetic outdoor mean temperature cold activity reaches its assumed minimum",
+      "description": "遊戲假設: 白天最高氣溫10°C時活動權重下限，非本種實測"
+    },
+    "foraging_full_activity_c": {
+      "value": 25,
+      "assumption": true,
+      "rationale": "at this temperature or warmer there is no low-temperature penalty",
+      "description": "遊戲假設: 白天最高氣溫25°C時冷抑制解除，非地表最佳覓食溫度實測"
+    },
+    "foraging_cold_min_multiplier": {
+      "value": 0.12,
+      "assumption": true,
+      "rationale": "assumed minimum foraging attempts, collection success and recruitment in cold weather",
+      "description": "文獻支持方向+遊戲假設: 低溫係數只作用於白天覓食出勤權重一次，不再影響採集和招募"
     }
   },
   "sources": {
@@ -574,6 +675,96 @@
       "reference_for_mechanism_only": [
         "R95"
       ]
+    },
+    "honeydew_per_aphid_colony_per_day": {
+      "value": 0.32,
+      "assumption": true,
+      "rationale": "ecological production per aphid colony with living host plants, independent of ant population"
+    },
+    "honeydew_per_scale_colony_per_day": {
+      "value": 0.4,
+      "assumption": true,
+      "rationale": "ecological production per scale-insect colony with living host plants, independent of ant population"
+    },
+    "honeydew_productivity_multiplier": {
+      "value": 1,
+      "assumption": true,
+      "rationale": "baseline physical productivity; single-variable sugar sensitivity test changes ONLY this input"
+    },
+    "hemipteran_colony_daily_growth_probability": {
+      "value": 0.012,
+      "assumption": true,
+      "rationale": "natural hemipteran colony reproduction game assumption; depends on living host"
+    },
+    "hemipteran_colony_daily_collapse_probability": {
+      "value": 0.006,
+      "assumption": true,
+      "rationale": "natural daily mortality/reproductive collapse of a colony, independent of ant demand"
+    },
+    "host_plant_daily_death_probability": {
+      "value": 0.0007,
+      "assumption": true,
+      "rationale": "garden host plant mortality; not reactive to colony demand"
+    },
+    "max_hemipteran_colonies_per_host": {
+      "value": 4,
+      "assumption": true,
+      "rationale": "physical carrying capacity per host plant, distinct from honeydew stored capacity"
+    },
+    "rain_honeydew_secretion_suppression_per_mm": {
+      "value": 0.018,
+      "assumption": true,
+      "rationale": "rain suppresses feeding/secretion production as ecological assumption"
+    },
+    "rival_honeydew_harvest_fraction_F04": {
+      "value": 0.22,
+      "assumption": true,
+      "rationale": "F04 background rival ants consume a fixed ecological share; independent of main colony shortage"
+    },
+    "insect_site_logistic_daily_birth_rate": {
+      "value": 0.065,
+      "assumption": true,
+      "rationale": "per-capita daily local insect birth chance scaled by available habitat capacity; assumption, not empirical rate"
+    },
+    "insect_boundary_logistic_daily_birth_rate": {
+      "value": 0.055,
+      "assumption": true,
+      "rationale": "self-renewal in the adjacent habitat, independent of colony demands"
+    },
+    "insect_boundary_carrying_capacity": {
+      "value": 80,
+      "assumption": true,
+      "rationale": "fixed ecological carrying capacity of neighboring habitat"
+    },
+    "insect_boundary_per_capita_daily_death_probability": {
+      "value": 0.02,
+      "assumption": true,
+      "rationale": "natural per-capita mortality of neighboring insects, no recoverable local carcass"
+    },
+    "insect_reproduction_reference_c": {
+      "value": 25,
+      "assumption": true,
+      "rationale": "synthetic mean air temperature reference for insect reproduction"
+    },
+    "insect_reproduction_per_degree_c": {
+      "value": 0.035,
+      "assumption": true,
+      "rationale": "game temperature sensitivity of insect reproduction per degree from reference"
+    },
+    "insect_reproduction_min_multiplier": {
+      "value": 0.15,
+      "assumption": true,
+      "rationale": "cold suppression floor for insect reproduction"
+    },
+    "insect_reproduction_max_multiplier": {
+      "value": 1.25,
+      "assumption": true,
+      "rationale": "warm ceiling for insect reproduction"
+    },
+    "insect_local_death_reference_population": {
+      "value": 12,
+      "assumption": true,
+      "rationale": "abundance used to scale existing 0.22 site mortality to current insect abundance"
     }
   },
   "climate": {
@@ -677,5 +868,233 @@
       "description": "30日驗收禁止無原因全巢滅亡；非遊戲免死設定",
       "reference_for_mechanism_only": []
     }
+  },
+  "foraging_physics": {
+    "route_edge_minutes": {
+      "value": 25,
+      "assumption": true,
+      "description": "路線圖每條邊單程步行分鐘，拓樸與距離皆遊戲假設；非實際花園量測",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "daily_window_minutes": {
+      "value": 360,
+      "assumption": true,
+      "description": "假設單日可用覓食時段360分鐘，不是個體實測",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "trail_daily_retention": {
+      "value": 0.55,
+      "assumption": true,
+      "description": "單一費洛蒙路徑每日殘留比例，數值假設；文獻僅支持揮發與強化方向",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "trail_deposit_per_success": {
+      "value": 0.35,
+      "assumption": true,
+      "description": "每次成功運回食物的路段費洛蒙增加量，數值假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "trail_min_detectable": {
+      "value": 0.08,
+      "assumption": true,
+      "description": "局部工蟻可察覺路段費洛蒙下限，數值假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "trail_max_strength": {
+      "value": 3,
+      "assumption": true,
+      "description": "路段訊號飽和上限，數值假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "crop_capacity": {
+      "value": 0.8,
+      "assumption": true,
+      "description": "小工蟻嗉囊可持有之遊戲份數上限，非物種實測",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "max_trophallaxis_contacts": {
+      "value": 3,
+      "assumption": true,
+      "description": "回巢每次最多交哺接觸同伴數，數值假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "transfer_max_portions": {
+      "value": 0.28,
+      "assumption": true,
+      "description": "每次交哺最多交付的遊戲糖份，數值假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "live_prey_encounter_probability": {
+      "value": 0.06,
+      "assumption": true,
+      "description": "單次抵達F07/F11活昆蟲遇見率，遊戲假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "large_prey_fraction": {
+      "value": 0.25,
+      "assumption": true,
+      "description": "遇見昆蟲屬大型獵物之假設比例，非實測",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "large_prey_min_team": {
+      "value": 2,
+      "assumption": true,
+      "description": "大型獵物需同位置至少兩隻工蟻，遊戲假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "live_prey_capture_probability": {
+      "value": 0.48,
+      "assumption": true,
+      "description": "符合條件後捕獲活昆蟲機率，遊戲假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "small_prey_protein": {
+      "value": 0.55,
+      "assumption": true,
+      "description": "小型獵物蛋白遊戲份，非實測質量",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "large_prey_protein": {
+      "value": 1.5,
+      "assumption": true,
+      "description": "大型獵物蛋白遊戲份，非實測質量",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ]
+    },
+    "follow_intermediate_source_probability": {
+      "value": 0.55,
+      "assumption": true,
+      "description": "工蟻抵達有食物的路線交叉點時，若仍嗅到前方費洛蒙，繼續追蹤的機率；遊戲假設，非實測",
+      "reference_for_mechanism_only": [
+        "SaundFriedman2023"
+      ]
+    },
+    "repeat_trip_probability": {
+      "value": 0.5,
+      "assumption": true,
+      "description": "成功首趟後在時間允許時再試第二趟機率；遊戲假設，不是物種實測",
+      "reference_for_mechanism_only": []
+    }
+  },
+  "foraging_route_topology": {
+    "assumption": true,
+    "evidence_type": "遊戲假設 assumption: true",
+    "description": "N00-F01/F08/F07/F11/U00/U01、F01-F04、F04-F05、F08-F05、U01-F10的假設可步行路線；不是庭園地理量測。只作環境物理圖；工蟻須親自走路、聞相鄰費洛蒙或已知路線，不能讀取全圖。",
+    "edges": [
+      [
+        "N00",
+        "F01"
+      ],
+      [
+        "N00",
+        "F08"
+      ],
+      [
+        "N00",
+        "F07"
+      ],
+      [
+        "N00",
+        "F11"
+      ],
+      [
+        "N00",
+        "U00"
+      ],
+      [
+        "N00",
+        "U01"
+      ],
+      [
+        "F01",
+        "F04"
+      ],
+      [
+        "F04",
+        "F05"
+      ],
+      [
+        "F08",
+        "F05"
+      ],
+      [
+        "U01",
+        "F10"
+      ]
+    ]
   }
 }

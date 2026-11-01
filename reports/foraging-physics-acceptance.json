@@ -1,0 +1,20 @@
+{
+  "schema": "antempire.foraging.physical.acceptance.v6",
+  "run_date": "2026-11-01",
+  "source": "sim/test_foraging_physics.cjs",
+  "simulated_days": 60,
+  "assertions_passed": 2149,
+  "deliveries": 288,
+  "trail_deposit_events": 337,
+  "trophallaxis_contacts": 417,
+  "live_prey_capture_events": 3,
+  "model_events": 4343,
+  "other_naturalism_assertions_passed": 214,
+  "winter_fixed_seed_count": 20,
+  "winter_extinct_seed_count": 1,
+  "official_day14_advanced": false,
+  "assumption": true,
+  "actual_node_ci_verified": false,
+  "test_execution": "Isolated JavaScript compatible evaluator, NOT Node CLI nor GitHub Actions",
+  "meaning": "Synthetic game mechanics assertions, not real biological field measurements"
+}

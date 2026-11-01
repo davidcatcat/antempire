@@ -1,0 +1,111 @@
+{
+  "scenario": "no-food",
+  "days": 60,
+  "range": "Day15-Day74",
+  "authoritative_simulation_advanced": false,
+  "base_day14_source": "sim/day14-projection.json (read-only projection)",
+  "all_numbers_game_assumptions": true,
+  "single_changed_variable": "counterfactual zero existing life/food and disable immigration (not a single-variable test)",
+  "final": {
+    "day": 74,
+    "date": "2027-01-12",
+    "queen": 0,
+    "workers": 0,
+    "eggs": 0,
+    "larvae": 0,
+    "pupae": 0,
+    "sugar_store": 0,
+    "protein_store": 0,
+    "sugar_income": 0,
+    "protein_income": 0,
+    "sugar_consumed": 0,
+    "protein_consumed": 0,
+    "sugar_demand": 0,
+    "protein_demand": 0,
+    "egg_sugar_cost": 0,
+    "egg_protein_cost": 0,
+    "foraging_sugar_workers": 0,
+    "foraging_protein_workers": 0,
+    "foraging_trips": 0,
+    "foraging_successes": 0,
+    "honeydew_ecosystem_net_production": 0,
+    "active_hemipteran_sites": 0,
+    "rain_mm": 0,
+    "temperature_c": 16.208182,
+    "sugar_gap_days": 0,
+    "protein_gap_days": 0,
+    "eggs_laid": 0,
+    "hatched": 0,
+    "pupated": 0,
+    "eclosed": 0,
+    "worker_deaths": 0,
+    "brood_deaths": 0
+  },
+  "total": {
+    "sugar_income": 0,
+    "protein_income": 0,
+    "sugar_consumption": 0,
+    "protein_consumption": 0,
+    "sugar_demand": 24.104,
+    "protein_demand": 5.132,
+    "foraging_sugar_worker_days": 44,
+    "foraging_protein_worker_days": 18,
+    "worker_deaths": 14,
+    "brood_deaths": 7,
+    "eggs_laid": 0,
+    "hatchings": 5,
+    "pupations": 0,
+    "eclosions": 0
+  },
+  "ecosystem": {
+    "initial_honeydew_sources": [
+      {
+        "id": "F01",
+        "host_plants": 2,
+        "hemipteran_colonies": 4,
+        "hemipteran_kind": "aphid",
+        "host_alive": true
+      },
+      {
+        "id": "F04",
+        "host_plants": 2,
+        "hemipteran_colonies": 3,
+        "hemipteran_kind": "scale",
+        "host_alive": true
+      },
+      {
+        "id": "F05",
+        "host_plants": 1,
+        "hemipteran_colonies": 2,
+        "hemipteran_kind": "aphid",
+        "host_alive": true
+      },
+      {
+        "id": "F10",
+        "host_plants": 0,
+        "hemipteran_colonies": 0,
+        "hemipteran_kind": "scale",
+        "host_alive": false
+      }
+    ],
+    "average_daily_produced_honeydew": 0,
+    "average_daily_sugar_demand": 0.4017,
+    "gross_production_to_demand_ratio": 0,
+    "average_daily_delivered_sugar": 0,
+    "delivered_sugar_to_demand_ratio": 0
+  },
+  "initial_L_stage": {
+    "L001": {},
+    "L002": {}
+  },
+  "new_eggs_completed_life_cycle": [],
+  "max_sugar_gap": 28,
+  "max_protein_gap": 28,
+  "criteria": {
+    "all_colony_extinct": true,
+    "no_external_supply": true,
+    "no_new_eggs": true
+  },
+  "passed": true,
+  "replay_exact": true
+}
