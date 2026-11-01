@@ -28,7 +28,8 @@ export function checkSaves(main: Any, world: Any): Check[] {
   add('workers: demography explicit IDs = alive individuals', JSON.stringify([...(demo?.explicit_worker_ids ?? [])].sort()) === JSON.stringify(alive.map((w) => w.id).sort()));
   const sl = demo?.stage_ledger;
   if (sl) add('workers: stage ledger workers_after = before + eclosions − deaths', sl.workers_after === sl.workers_before + sl.worker_eclosions - sl.worker_deaths + (sl.worker_immigrants ?? 0) - (sl.worker_emigrants ?? 0), sl);
-  add('workers: legacy counters confirmed_born − cumulative_deaths = current_alive', main.colony.workers.confirmed_born - main.colony.workers.cumulative_deaths === main.colony.workers.current_alive, { confirmed_born: main.colony.workers.confirmed_born, cumulative_deaths: main.colony.workers.cumulative_deaths, current_alive: main.colony.workers.current_alive, note: 'v6 projectDaily does not update these two legacy counters (open question in PR)' }, 'warning');
+  add('workers: confirmed_born − cumulative_deaths = current_alive', main.colony.workers.confirmed_born - main.colony.workers.cumulative_deaths === main.colony.workers.current_alive, { confirmed_born: main.colony.workers.confirmed_born, cumulative_deaths: main.colony.workers.cumulative_deaths, current_alive: main.colony.workers.current_alive });
+  if (typeof main.colony.worker_deaths_cumulative === 'number') add('workers: colony.worker_deaths_cumulative = workers.cumulative_deaths', main.colony.worker_deaths_cumulative === main.colony.workers.cumulative_deaths, { worker_deaths_cumulative: main.colony.worker_deaths_cumulative, cumulative_deaths: main.colony.workers.cumulative_deaths });
 
   // Brood
   const brood: Any[] = main.colony.brood.individuals.filter((b: Any) => b.living), count = (st: string) => brood.filter((b) => b.stage === st).length;
@@ -71,5 +72,47 @@ export function checkSaves(main: Any, world: Any): Check[] {
     if (src.type === 'carcass') add(`source ${src.id}: carcass protein = Σ batches`, Math.abs(src.protein - src.batches.reduce((a: number, x: Any) => a + x.protein, 0)) <= 1e-4);
     add(`source ${src.id}: non-negative`, (src.sugar || 0) >= 0 && (src.protein || 0) >= 0);
   }
+  return out;
+}
+
+/**
+ * Day-over-day checks for one advance. `expectedStart` is the nest ledger the day must start from:
+ * yesterday's engine stores, or the Day15 migration starting stores.
+ */
+export function checkTransition(before: { main: Any; world: Any }, after: { main: Any; world: Any }, report: Any, expectedStart: { sugar: number; protein: number }): Check[] {
+  const out: Check[] = [];
+  const add = (name: string, ok: boolean, detail?: unknown) => out.push({ name, ok: !!ok, level: 'error', ...(detail === undefined ? {} : { detail }) });
+  const d0 = before.main.simulation.latest_completed_day, d1 = after.main.simulation.latest_completed_day, r = report.summary;
+  add('transition: exactly one day advanced', d1 === d0 + 1 && report.day === d1 && after.world.time.scientific_clock.day === d1, { before: d0, after: d1 });
+  const aliveBefore = before.main.colony.workers.individuals.filter((w: Any) => w.status === 'alive').length;
+  add('transition: workers after = before + eclosions − deaths', r.workers_before === aliveBefore && r.population.workers === aliveBefore + r.eclosions - r.worker_deaths, { before: aliveBefore, eclosions: r.eclosions, deaths: r.worker_deaths, after: r.population.workers });
+  const broodBefore = before.main.colony.brood.individuals.filter((b: Any) => b.living).length, broodAfter = r.population.eggs + r.population.larvae + r.population.pupae;
+  add('transition: brood after = before + laid − eclosed − deaths', r.brood_before === broodBefore && broodAfter === broodBefore + r.eggs_laid - r.eclosions - r.brood_deaths, { before: broodBefore, laid: r.eggs_laid, eclosed: r.eclosions, deaths: r.brood_deaths, after: broodAfter });
+  for (const k of ['sugar', 'protein'] as const) add(`transition: ${k} ledger starts from the previous stock`, Math.abs(r.mass_ledger.start[k] - expectedStart[k]) <= EPS, { expected: expectedStart[k], start: r.mass_ledger.start[k] });
+  const cw0 = before.main.colony, cw1 = after.main.colony;
+  add('transition: confirmed_born += eclosions, cumulative_deaths += worker deaths', cw1.workers.confirmed_born === cw0.workers.confirmed_born + r.eclosions && cw1.workers.cumulative_deaths === cw0.workers.cumulative_deaths + r.worker_deaths, { born: [cw0.workers.confirmed_born, cw1.workers.confirmed_born], deaths: [cw0.workers.cumulative_deaths, cw1.workers.cumulative_deaths], eclosions: r.eclosions, worker_deaths: r.worker_deaths });
+  if (typeof cw0.brood_deaths_cumulative === 'number') add('transition: brood_deaths_cumulative += brood deaths', cw1.brood_deaths_cumulative === cw0.brood_deaths_cumulative + r.brood_deaths, { before: cw0.brood_deaths_cumulative, after: cw1.brood_deaths_cumulative, brood_deaths: r.brood_deaths });
+  // Owner decision (PR #12): world ant_population.legacy_* are frozen historical (≤ Day14) values.
+  const legacyKeys = ['legacy_worker_births_confirmed', 'legacy_worker_deaths', 'legacy_brood_deaths'];
+  add('transition: world ant_population.legacy_* counters stay frozen', legacyKeys.every((k) => after.world.ant_population?.[k] === before.world.ant_population?.[k]), Object.fromEntries(legacyKeys.map((k) => [k, [before.world.ant_population?.[k], after.world.ant_population?.[k]]])));
+  const deadBefore = new Set(before.main.colony.workers.individuals.filter((w: Any) => w.status !== 'alive').map((w: Any) => w.id));
+  add('transition: no dead worker revived', after.main.colony.workers.individuals.every((w: Any) => !(deadBefore.has(w.id) && w.status === 'alive')));
+  const keptBefore = before.main.colony.workers.individuals.map((w: Any) => w.id), keptAfter = new Set(after.main.colony.workers.individuals.map((w: Any) => w.id));
+  add('transition: no worker record removed from history', keptBefore.every((id: string) => keptAfter.has(id)));
+  return out;
+}
+
+/** The journal prepared for a day must describe exactly the saved day (written together, never apart). */
+export function checkJournal(after: { main: Any }, report: Any, journalRel: string, journalText: string): Check[] {
+  const out: Check[] = [];
+  const add = (name: string, ok: boolean, detail?: unknown) => out.push({ name, ok: !!ok, level: 'error', ...(detail === undefined ? {} : { detail }) });
+  const day = report.day, r = report.summary, expectedRel = `journal/v2-day-${String(day).padStart(4, '0')}.md`;
+  add('journal: path is journal/v2-day-NNNN.md of the new day', journalRel === expectedRel && after.main.simulation.latest_journal === expectedRel, { journal: journalRel, latest_journal: after.main.simulation.latest_journal, expected: expectedRel });
+  add('journal: headed with the same day and date', journalText.startsWith(`# 🐜《螞蟻帝國》Day ${day}｜${r.date}`), journalText.split('\n')[0]);
+  const pop = r.population;
+  add('journal: population table matches the saved day', [`| 蟻后 | ${pop.queen} |`, `| 工蟻 | ${pop.workers}（`, `| 卵 | ${pop.eggs} |`, `| 幼蟲 | ${pop.larvae} |`, `| 蛹 | ${pop.pupae} |`].every((x) => journalText.includes(x)));
+  add('journal: food table matches the saved ledger', journalText.includes(`| 糖 | ${r.income.sugar} | ${r.consumed.sugar} | ${r.stock.sugar} |`) && journalText.includes(`| 蛋白 | ${r.income.protein} | ${r.consumed.protein} | ${r.stock.protein} |`));
+  const listed = journalText.split('\n').filter((l) => l.startsWith('- {"type":')).length;
+  add('journal: every engine event recorded (one line each)', listed === report.events.length, { journal_lines: listed, events: report.events.length });
   return out;
 }

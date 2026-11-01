@@ -55,6 +55,7 @@
 - 研究、規則更新、程式改寫、測試、報告**都不推進**遊戲時鐘。
 - 推進的固定流程：①執行凍結的單日程式 → ②更新兩份權威存檔 → ③寫當日日誌。任一守恆或驗證檢查失敗，就**不得**提交存檔或日誌，如實回報。
 - **推進遊戲日的過程中不准修改引擎或參數**；同一天不得重複執行或重跑擇優。
+- 推進工具：`npm run advance` 預設只預演（不寫檔）；玩家明確要求推進 Day N 時才用 `npm run advance -- --confirm-advance --day N`。它在一筆可復原的交易中同時提交 `saves/main.json`、`saves/world-state.json`、`journal/v2-day-NNNN.md` 與 `saves/commit-log.json`，所有守恆與日誌檢查通過才提交；中斷後用 `npm run advance -- --recover`。已提交的日誌不可改寫，補充敘事要另建新檔 `journal/v2-day-NNNN-narrative.md`（該日提交之後才建立，只新增不覆寫；數字以正式日誌為準，更正另建 `-narrative-erratum-K.md`）。`saves/commit-log.json` 進 git，且必須與該日兩份存檔、日誌在同一個 git commit 中提交；`saves/.txn/`、鎖與 `*.advance-tmp` 不進 git。規則指紋（引擎＋參數）不符、或存檔不是最後確認版本時工具會拒絕執行。詳見 [`docs/save-transactions.md`](docs/save-transactions.md)。
 
 ## 6. 規則／參數修改
 
@@ -79,7 +80,7 @@
 
 - `engine/`：純模擬核心（TypeScript，無 DOM／Node API）。`species/<id>.json` 物種參數、`world/<id>.json` 世界參數；程式中不寫死數值、不用物種名稱判斷。架構見 [`docs/engine-architecture.md`](docs/engine-architecture.md)。
 - `cli/`：Node 工具（讀檔、規則指紋、存檔映射、報告產生器）。`web/`：預留給只讀網頁。
-- `npm ci`、`npm run typecheck`、`npm test`（Node ≥ 22.18 原生執行 `.ts`）。
+- `npm ci`、`npm run typecheck`、`npm test`、`npm run check:saves`、`npm run advance`（Node 版本固定於 `.nvmrc`，原生執行 `.ts`）。CI（`.github/workflows/ci.yml`）在每次 push 與 PR 執行。
 - 純重構必須通過 `tests/golden.test.ts`（逐位元組）；改變輸出就是規則更新，要另開規則更新 PR。
 
 ## 10. 參考文件

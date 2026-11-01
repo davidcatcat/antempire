@@ -83,3 +83,19 @@ F03、F04 的陌生蟻群目前在 `world/xitun-garden.json#background_colonies`
 1. **保留不動**：`sim/results/day9*`～`day14*`（Day9～14 歷史輸出，存檔中有路徑引用）、`sim/day_engine_v1_day9_day14.cjs`（README 指定的 Day9～14 重播程式）。
 2. **封存**：把 `sim/day_engine.cjs`、`foraging_physics.cjs`、`migrate_day15.cjs`、`run_day.cjs`、`params.json`、`day14-projection.json`、`prepare_review_projection.cjs`、`export_review.py`、`test_*.cjs` 以 `git mv` 移到 `sim/archive-v6/`（或直接刪除，git 歷史仍可取回）。
 3. 封存後 `tests/differential.test.ts` 會自動略過；`tests/golden.test.ts`（含由舊引擎產生的完整輸出雜湊）與 `tests/golden/legacy-params-snapshot.json` 繼續鎖定行為。
+
+## 7. 推進工具 `npm run advance`
+
+一個遊戲日＝一筆可復原的交易，同時提交兩份存檔、當日日誌與 `saves/commit-log.json`。完整說明（流程、一致性保證與限制、讀取端配合、故障測試）見 [`docs/save-transactions.md`](save-transactions.md)。
+
+| 指令 | 作用 |
+|---|---|
+| `npm run advance` | 預演：讀存檔、跑一天、檢查、印出摘要；不取得鎖、不寫任何檔案 |
+| `npm run advance -- --confirm-advance --day N` | 玩家明確要求推進 Day N 時使用 |
+| `npm run advance -- --recover` | 完成或撤銷中斷的交易；不推進新的一天 |
+| `--root <dir>` | 對其他目錄（例如臨時副本）的 `saves/`、`journal/`、`data/` 操作；引擎與參數一律來自本 checkout |
+| `--summary-out <file>` | 另存當日事件摘要（Markdown） |
+
+- Day14→Day15 時先執行一次性遷移（`engine/migration.ts`），並把規則指紋凍結進 `sim_engine_v2.rules_fingerprint`；之後引擎或參數與指紋不符就拒絕推進。
+- 寫入前檢查：日序、工蟻與幼體人數、`期初+採入−消耗−產卵−溢出=期末` 的糖與蛋白、嗉囊糖不超過總帳、殘骸批次守恆、死亡工蟻不復活、歷史紀錄不刪除、日誌與存檔描述同一天且列出全部事件、新日誌尚不存在、存檔是 commit log 的最後確認版本。
+- 測試：`tests/advance.test.ts`（臨時副本 Day14→Day20）、`tests/save-transaction.test.ts`（故障注入與復原、並行、重複推進）、`tests/history-integrity.test.ts`（Day1～14 歷史檔案雜湊）。
