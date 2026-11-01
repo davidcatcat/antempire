@@ -1,6 +1,9 @@
 # 物種設定、參數分級及校準計畫
 
-## 物種識別
+## 物種選定已更新（2026-11-01；Day6起適用）
+**本世界主蟻群已由玩家正式指定為熱帶大頭家蟻（Pheidole megacephala）**。權威物種規格見[species-pheidole-megacephala.md](species-pheidole-megacephala.md)，文獻R93–R101。這是**虛構模擬物種選擇**，不是現場標本鑑定；Day5以前各節的`species_taxon=null`、不預設major與特定費洛蒙是**舊研究基線**，從Day6起以新物種覆蓋，但個體形態、巢內實測溫濕與量化速率仍未知。
+
+## 物種識別（以下為2026-10-31歷史基線，已被上述新選擇取代）
 已知只有「黑色、地棲、單蟻后創巢敘事、住宅花園」；這不足以推定 `Lasius niger`、`Camponotus`、`Tetramorium` 或其他屬。**species_taxon=null**。已證實巢內有卵與工蟻，只能把「Q001可生殖」列為敘事事實，不等於完成分類鑑定。
 
 ## v2 最小生態類型（占位，非物種）
@@ -44,3 +47,6 @@ P3：以文獻或專家資料進行敏感度測試、蒙地卡羅多次模擬與
 
 ## 2026-11-01 探索與未知生態校準
 參照 [exploration-dynamic-ecology.md](exploration-dynamic-ecology.md) R79–R92。需要鑑種、個體體長與腿長、溫度／濕度與負載、不同基質短距錄影測量`walking_speed_mm_per_s`，用路徑標記算`actual_path_length_cm`、`max_nest_distance_cm`、轉向分布、有效搜索覆蓋與每趟外出時間。沒有資訊就null，不能直接抄`Temnothorax`的8.3mm/s或樹棲`Cephalotes`的4.39cm/s。外界食物、昆蟲、蜘蛛、異巢蟻、人類干擾發生率也不具本場地真實統計，`stochastic_event_rates=null`。
+
+## 2026-11-01 Pheidole megacephala校準里程碑
+研究種已選定：工蟻minor/major雙態、二通道招募費洛蒙（濃度未知）、口對口分食能力、雜食、通常多蟻后也有單后創巢報告。R94廣西實驗室28±1°C、70±5%RH卵孵化7.69±0.63天，非繁殖卵至成蟻28.73±2.83天、繁殖37.60±3.20天，**只能作實驗參考，不能等同本巢實際發育速度**。待校準：W004–W017實際體型、Q001卵巢活動／交配與產卵日率、巢內溫濕、卵E001／幼蟲L001-L002生理齡、食量／嗉囊與訊號濃度、工蟻走速、巢內結構；沒有資料保持null。

@@ -84,8 +84,8 @@
     }
   },
   "ant_population": {
-    "taxon": null,
-    "model_guild": "黑色地棲、單蟻后創巢之架空綜合類型",
+    "taxon": "Pheidole megacephala",
+    "model_guild": "Pheidole megacephala species-selected small single-confirmed-queen colony, dimorphic minor/major at species level, individual morphs unresolved",
     "queen_id": "Q001",
     "workers_alive": 14,
     "brood": {
@@ -96,7 +96,13 @@
     "legacy_worker_births_confirmed": 17,
     "legacy_worker_deaths": 3,
     "legacy_brood_deaths": 1,
-    "ages_days_unknown": true
+    "ages_days_unknown": true,
+    "species_selection_kind": "user_selected_fictional_model_not_field_id",
+    "species_rules_effective_sim_day": 6,
+    "major_minor_worker_types_documented_for_species": true,
+    "individual_worker_morphs_unconfirmed": true,
+    "species_polygyny_documented": true,
+    "local_confirmed_queen_count": 1
   },
   "queen_physiology": {
     "id": "Q001",
@@ -964,7 +970,7 @@
     "control_mode": "observer_autonomous",
     "task_assignment": "local_response_thresholds_not_permanent_jobs",
     "random_seed": 1368988448,
-    "model_parameter_set": "unidentified_species_v2",
+    "model_parameter_set": "pheidole_megacephala_literature_v1_field_rates_uncalibrated",
     "uncertainty_tracking": true,
     "auto_advance_on_chat_request": true,
     "last_rng_algorithm": "mulberry32_from_fnv1a_seed",
@@ -975,7 +981,8 @@
       "no_guess_of_missing_values": true,
       "no_user_location_substitution": true,
       "no_weather_backfill_to_prior_day1": true
-    }
+    },
+    "species_determined_by_user": true
   },
   "source_docs": [
     "docs/science-model.md",
@@ -984,7 +991,8 @@
     "docs/species-calibration.md",
     "docs/references.md",
     "docs/weather-data-policy.md",
-    "docs/exploration-dynamic-ecology.md"
+    "docs/exploration-dynamic-ecology.md",
+    "docs/species-pheidole-megacephala.md"
   ],
   "source_quality": {
     "historic_map": "observed_in_story_not_field_measurement",
@@ -1005,7 +1013,9 @@
     "day4_biology": "uncalibrated_seeded_qualitative_scenario",
     "day5_weather": "CWA_city_forecast_republished_2026_10_31_not_real_observations",
     "day5_biology": "mechanism_inspired_seeded_uncalibrated_narrative",
-    "exploration_dynamic_world": "literature_mechanism_with_unvalidated_stochastic_scenarios_not_observed_garden_ecology"
+    "exploration_dynamic_world": "literature_mechanism_with_unvalidated_stochastic_scenarios_not_observed_garden_ecology",
+    "species_selection": "player_chosen_simulated_P_megacephala_not_field_observation_or_lab_identification",
+    "species_development_benchmark": "2026_guangxi_lab_28C_reference_not_N00_microclimate"
   },
   "day_log_latest": {
     "day": 5,
@@ -1627,7 +1637,7 @@
     "research_calendar_date": "2026-11-01",
     "rules_ref": "docs/foraging-food-economy.md",
     "research_update_only_no_sim_advance": true,
-    "species_taxon": null,
+    "species_taxon": "Pheidole megacephala",
     "source_nodes": {
       "F01": {
         "source_type": "aphid_honeydew",
@@ -2086,13 +2096,13 @@
       "unknown_stock_is_not_zero": true
     },
     "model_gate": {
-      "foraging_circadian_rhythm": "unknown_taxon_no_fixed_clock",
+      "foraging_circadian_rhythm": "Taiwan_species_daily_foraging_reported_but_no_fixed_time_without_local_weather",
       "microclimate_temperature": "unknown_not_city_air_temperature",
       "departure": "individual_crop_local_contact_memory_injury_fatigue_risk",
       "search": "local_detection_route_memory_unknown_unexplored_not_automatic_food",
-      "recruitment": "conditional_on_real_reward_and_species_signals",
-      "multiple_pheromones": "disabled_until_species_evidence",
-      "trophallaxis": "conditional_unknown_taxon",
+      "recruitment": "P_megacephala_dual_chemical_signal_recruitment_real_food_event_required",
+      "multiple_pheromones": "supported_two_signal_foraging_P_megacephala_R96_not_numerically_calibrated",
+      "trophallaxis": "species_supported_requires_observed_local_interaction_and_food",
       "nutrition_types": [
         "carbohydrate",
         "protein",
@@ -2146,15 +2156,17 @@
     "effective_from_sim_day": 6,
     "baseline_completed_sim_day": 5,
     "research_update_only_no_clock_advance": true,
-    "taxon": null,
+    "taxon": "Pheidole megacephala",
     "quantitative_calibration": "none",
     "channels": {
       "trail_pheromone": {
-        "species_capability": "unknown_conditional",
+        "species_capability": "documented_two_recruitment_signals_P_megacephala_R96",
         "composition": null,
         "deposition_rate": null,
         "half_life": null,
-        "default_broadcast": false
+        "default_broadcast": false,
+        "chemical_signal_count_supported_by_study": 2,
+        "exact_pheromone_composition_unknown": true
       },
       "local_alarm_chemical": {
         "species_capability": "unknown_conditional",
@@ -2176,8 +2188,8 @@
         "global_information_transfer": false
       },
       "trophallaxis": {
-        "supported_in_this_taxon": null,
-        "flow_supported": "conditional_only",
+        "supported_in_this_taxon": true,
+        "flow_supported": "documented_major_minor_P_megacephala_IFAS_requires_contact_and_liquid",
         "material_transfer_not_new_external_food": true,
         "chemical_info_transfer": "species_specific_not_assumed"
       },
@@ -2196,7 +2208,7 @@
         "from": "N00",
         "to": "F01",
         "substrate": "葉片與地表碎石",
-        "unknown_ant_taxon_trail_use": "conditional_unconfirmed",
+        "unknown_ant_taxon_trail_use": "species_has_recruitment_pheromones_but_route_deposition_unmeasured",
         "pheromone_presence_now": null,
         "pheromone_concentration": null,
         "deposition_rate_mg_per_min": null,
@@ -2220,7 +2232,7 @@
         "from": "N00",
         "to": "F02",
         "substrate": "盆栽莖葉與蛛絲",
-        "unknown_ant_taxon_trail_use": "conditional_unconfirmed",
+        "unknown_ant_taxon_trail_use": "species_has_recruitment_pheromones_but_route_deposition_unmeasured",
         "pheromone_presence_now": null,
         "pheromone_concentration": null,
         "deposition_rate_mg_per_min": null,
@@ -2238,7 +2250,7 @@
         "from": "N00",
         "to": "F03",
         "substrate": "果皮與土面",
-        "unknown_ant_taxon_trail_use": "conditional_unconfirmed",
+        "unknown_ant_taxon_trail_use": "species_has_recruitment_pheromones_but_route_deposition_unmeasured",
         "pheromone_presence_now": null,
         "pheromone_concentration": null,
         "deposition_rate_mg_per_min": null,
@@ -2259,7 +2271,7 @@
         "from": "N00",
         "to": "F04",
         "substrate": "石牆縫及硬土",
-        "unknown_ant_taxon_trail_use": "conditional_unconfirmed",
+        "unknown_ant_taxon_trail_use": "species_has_recruitment_pheromones_but_route_deposition_unmeasured",
         "pheromone_presence_now": null,
         "pheromone_concentration": null,
         "deposition_rate_mg_per_min": null,
@@ -2277,7 +2289,7 @@
         "from": "N00",
         "to": "F05",
         "substrate": "草根及葉片",
-        "unknown_ant_taxon_trail_use": "conditional_unconfirmed",
+        "unknown_ant_taxon_trail_use": "species_has_recruitment_pheromones_but_route_deposition_unmeasured",
         "pheromone_presence_now": null,
         "pheromone_concentration": null,
         "deposition_rate_mg_per_min": null,
@@ -2298,7 +2310,7 @@
         "from": "N00",
         "to": "F06",
         "substrate": "潮濕石縫",
-        "unknown_ant_taxon_trail_use": "conditional_unconfirmed",
+        "unknown_ant_taxon_trail_use": "species_has_recruitment_pheromones_but_route_deposition_unmeasured",
         "pheromone_presence_now": null,
         "pheromone_concentration": null,
         "deposition_rate_mg_per_min": null,
@@ -2316,7 +2328,7 @@
         "from": "N00",
         "to": "F07",
         "substrate": "腐葉與石底",
-        "unknown_ant_taxon_trail_use": "conditional_unconfirmed",
+        "unknown_ant_taxon_trail_use": "species_has_recruitment_pheromones_but_route_deposition_unmeasured",
         "pheromone_presence_now": null,
         "pheromone_concentration": null,
         "deposition_rate_mg_per_min": null,
@@ -2337,7 +2349,7 @@
         "from": "N00",
         "to": "F08",
         "substrate": "雜草及花梗",
-        "unknown_ant_taxon_trail_use": "conditional_unconfirmed",
+        "unknown_ant_taxon_trail_use": "species_has_recruitment_pheromones_but_route_deposition_unmeasured",
         "pheromone_presence_now": null,
         "pheromone_concentration": null,
         "deposition_rate_mg_per_min": null,
@@ -2359,7 +2371,7 @@
         "from": "N00",
         "to": "F09",
         "substrate": "斷莖及低石",
-        "unknown_ant_taxon_trail_use": "conditional_unconfirmed",
+        "unknown_ant_taxon_trail_use": "species_has_recruitment_pheromones_but_route_deposition_unmeasured",
         "pheromone_presence_now": null,
         "pheromone_concentration": null,
         "deposition_rate_mg_per_min": null,
@@ -2377,7 +2389,7 @@
         "from": "N00",
         "to": "F10",
         "substrate": "潮葉與植物根際",
-        "unknown_ant_taxon_trail_use": "conditional_unconfirmed",
+        "unknown_ant_taxon_trail_use": "species_has_recruitment_pheromones_but_route_deposition_unmeasured",
         "pheromone_presence_now": null,
         "pheromone_concentration": null,
         "deposition_rate_mg_per_min": null,
@@ -2397,7 +2409,7 @@
         "from": "N00",
         "to": "F11",
         "substrate": "腐葉及潮土",
-        "unknown_ant_taxon_trail_use": "conditional_unconfirmed",
+        "unknown_ant_taxon_trail_use": "species_has_recruitment_pheromones_but_route_deposition_unmeasured",
         "pheromone_presence_now": null,
         "pheromone_concentration": null,
         "deposition_rate_mg_per_min": null,
@@ -2649,7 +2661,8 @@
       "last_contact_sim_day": null,
       "nestmate_profiles": null,
       "touch_events_since_activation": 0,
-      "external_food_entry_from_transfer": 0
+      "external_food_entry_from_transfer": 0,
+      "trophallaxis_supported": true
     },
     "alarm_fields": [],
     "alarm_emission_events_since_activation": 0,
@@ -2712,17 +2725,17 @@
     "reference_ref": "docs/references.md",
     "update_type": "research_specification_only",
     "simulation_time_advanced": false,
-    "taxon": null,
-    "worker_morphology_distribution": "unknown_not_assumed_monomorphic_or_dimorphic",
+    "taxon": "Pheidole megacephala",
+    "worker_morphology_distribution": "species_dimorphic_minor_major_individual_subcastes_all_unknown",
     "biological_context": {
       "typical_female_diploid_male_haploid": "high_level_generalization_with_documented_exceptions",
       "genetic_sex_determination_mechanism_for_taxon": null,
-      "larval_developmental_caste_pathway_for_taxon": null,
-      "adult_worker_caste_specialization": "unknown",
+      "larval_developmental_caste_pathway_for_taxon": "P_megacephala_third_instars_caste_distinguishable_in_lab_by_setae_and_size_R94_not_observed_in_current_brood",
+      "adult_worker_caste_specialization": "documented_P_megacephala_minors_general_and_majors_defense_food_processing_flexible",
       "behavioural_task_assignment": "flexible_local_response_not_fixed_morphological_caste",
       "worker_reproductive_capacity": null,
       "worker_trophic_egg_laying_supported": null,
-      "specific_soldier_development_possible": null,
+      "specific_soldier_development_possible": true,
       "nonstandard_clonal_reproduction_possible": null
     },
     "confirmed_members": {
@@ -2997,7 +3010,11 @@
       "gyne_production_conditions": null,
       "worker_male_egg_laying_enabled": false,
       "worker_trophic_egg_laying_enabled": false,
-      "decision_rule": "do_not_spawn_males_gynes_without_prior_brood_stage_and_species_context"
+      "decision_rule": "do_not_spawn_males_gynes_without_prior_brood_stage_and_species_context",
+      "species_polygyny_well_documented": true,
+      "single_queen_founding_reported": true,
+      "species_colony_budding_documented": true,
+      "local_confirmed_queen_only_Q001": true
     },
     "seasonal_reproduction": {
       "local_season": "autumn",
@@ -3008,7 +3025,8 @@
       "local_weather_and_microclimate_nuptial_triggers": null,
       "no_forced_flight_based_on_forecast_alone": true,
       "mating_success_probability": null,
-      "flight_mortality_probability": null
+      "flight_mortality_probability": null,
+      "research_population_source": "Guangxi_lab_and_field_not_Taichung_seasonal_schedule"
     },
     "future_adult_reproductive_events_template": {
       "new_egg_ids": [],
@@ -3050,7 +3068,7 @@
     "effective_from_sim_day": 6,
     "baseline_completed_sim_day": 5,
     "research_only_no_clock_advance": true,
-    "species_taxon": null,
+    "species_taxon": "Pheidole megacephala",
     "queen": {
       "id": "Q001",
       "currently_alive": true,
@@ -3068,7 +3086,8 @@
       "founding_stage": "existing_colony_with_workers_not_queen_alone",
       "observed_day5_new_egg_event_count": 0,
       "zero_observed_new_eggs_not_zero_biological_fecundity": true,
-      "model_no_fixed_daily_rate": true
+      "model_no_fixed_daily_rate": true,
+      "species_oviposition_pattern_supported": "intermittent_batches_R94_no_automatically_assigned_eggs"
     },
     "tracked_brood": {
       "L001": {
@@ -3144,8 +3163,8 @@
       "worker_care_available_hours": null
     },
     "transition_gates": {
-      "egg_to_larva": "individual_incubation_history_and_supported_environment_not_fixed_day",
-      "larva_to_pupa": "individual_instars_nutrition_actual_stage_age_species_unknown",
+      "egg_to_larva": "P_megacephala_lab_reference_R94_7_69_days_at_28C_only_N00_conditions_unknown",
+      "larva_to_pupa": "P_megacephala_lab_reference_R94_requires_actual_stage_history_nutrition_and_nest_temp_unmeasured",
       "pupa_to_adult": "prior_confirmed_pupa_and_development_conditions",
       "egg_loss": "cause_or_scenario_with_observation_not_automatic",
       "queen_oviposition": "conditional_nutrition_nest_conditions_social_care_species_unverified",
@@ -3173,6 +3192,32 @@
       "species_calibrated_stage_days": null,
       "queen_egg_maturation_mg": null,
       "template_not_yet_simulated": true
+    },
+    "laboratory_reference_2026_Guangxi_28C": {
+      "source_ref": "R94",
+      "species": "Pheidole megacephala",
+      "study_locality": "Nanning Guangxi",
+      "rearing_temperature_c_mean": 28,
+      "rearing_temperature_c_tolerance": 1,
+      "relative_humidity_percent": 70,
+      "relative_humidity_tolerance_percent": 5,
+      "photoperiod_hours_light": 16,
+      "photoperiod_hours_dark": 8,
+      "nutrition": "ad_libitum_supplied_in_lab_not_equivalent_to_N00",
+      "egg_to_larva_mean_days": 7.69,
+      "egg_to_larva_sd_days": 0.63,
+      "second_instars_after_oviposition_mean_days": 9.54,
+      "third_instars_after_oviposition_mean_days": 15.06,
+      "nonreproductive_pupation_after_oviposition_mean_days": 23.68,
+      "nonreproductive_eclosion_after_oviposition_mean_days": 28.73,
+      "nonreproductive_eclosion_sd_days": 2.83,
+      "reproductive_eclosion_after_oviposition_mean_days": 37.6,
+      "reproductive_eclosion_sd_days": 3.2,
+      "mean_minor_worker_longevity_days": 26.25,
+      "mean_major_worker_longevity_days": 56,
+      "data_type": "species_specific_lab_reference_not_actual_simulation_parameter",
+      "must_not_impute_missing_nest_temperature_or_brood_age": true,
+      "not_an_absolute_stage_timer": true
     }
   },
   "nest_construction_system": {
@@ -3182,7 +3227,7 @@
     "effective_from_sim_day": 6,
     "baseline_completed_sim_day": 5,
     "research_only_no_clock_advance": true,
-    "species_taxon": null,
+    "species_taxon": "Pheidole megacephala",
     "main_nest_id": "N00",
     "abandoned_nest_ids": [
       "N01",
@@ -3193,7 +3238,8 @@
       "storage_count": 1,
       "perimeter_earthen_ridge": true,
       "storm_resilience_verified": false,
-      "historic_features_are_not_new_day6_construction": true
+      "historic_features_are_not_new_day6_construction": true,
+      "ridge_is_historical_story_not_generic_species_mound": true
     },
     "nest_geometry": {
       "verified_main_entrance_count": null,
@@ -3333,7 +3379,8 @@
       "repair_priority": "local_damage_or_brood_risk_then_optional_growth",
       "constructive_local_signals_only": true,
       "failed_digging_allowed": true,
-      "migration_requires_individual_path_and_candidate_site_assessment": true
+      "migration_requires_individual_path_and_candidate_site_assessment": true,
+      "species_excavation_mode": "often_uses_existing_cavities_R94_not_automatically_large_surface_mound"
     },
     "day6_build_template": {
       "sim_day": 6,
@@ -3355,7 +3402,8 @@
       "ventilation_measurement": null,
       "engineering_energy_mJ": null,
       "template_only_not_simulated": true
-    }
+    },
+    "species_nest_habitat_reference": "P_megacephala_known_soil_under_stones_and_moist_shaded_preexisting_crevices_R93_R94"
   },
   "exploration_dynamic_world": {
     "schema_version": "v2-exploration-fog-of-war-stochastic-ecology-v1",
@@ -3366,7 +3414,7 @@
     "effective_from_sim_day": 6,
     "research_update_does_not_advance_clock": true,
     "simulation_scope": "fictional_Taichung_Xitun_villa_garden_and_unverified_surroundings",
-    "species_taxon": null,
+    "species_taxon": "Pheidole megacephala",
     "quantitative_exploration_calibration": "none",
     "spatial_model": {
       "known_world_map_ref": "saves/world-state.json#/world_map",
@@ -3844,7 +3892,8 @@
       "no_teleport_across_unverified_edges": true,
       "worker_knowledge_partial": true,
       "temnothorax_8_3_mm_s_only_reference_not_assigned": true,
-      "cephalotes_4_39_cm_s_only_reference_not_assigned": true
+      "cephalotes_4_39_cm_s_only_reference_not_assigned": true,
+      "species_research_still_missing_site_speed": true
     },
     "background_ecology": {
       "independent_of_colony_exploration": true,

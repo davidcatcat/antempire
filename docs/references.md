@@ -138,3 +138,18 @@
 
 **定量限制**：未知蟻種的步速／探索半徑／單次搜尋時間與未知世界昆蟲、其他蟻群、蜘蛛、人為干擾的出現率均未校準；數值欄位應`null`。可用有因果的**種子隨機情境**做遊戲推演，但它不是實測或實驗驗證的概率。
 
+## 2026-11-01 本世界正式選用：熱帶大頭家蟻 Pheidole megacephala（R93–R101）
+> 專屬物種規格 [species-pheidole-megacephala.md](species-pheidole-megacephala.md)，2026-11-01玩家指定為虛構模擬物種，**不是野外標本鑑定**。舊R01–R92中其他蟻種的數值不會自動繼承。
+
+| ID | 研究／權威物種資料 | 能套的機制與條件限制 |
+|---|---|---|
+| R93 | [臺灣生命大百科：熱帶大頭家蟻 Pheidole megacephala](https://taieol.tw/pages/97561/articles) | 本種臺灣分布、森林邊緣／都市綠地及土、石下生活、雜食和大／小工蟻二態；尺寸按來源族群，**不是本群個體測量**。 |
+| R94 | Yuan et al. (2026), *Life History of the Invasive Big-Headed Ant Pheidole megacephala*. *Insects* 17(10), 992. [DOI](https://doi.org/10.3390/insects17100992) | 廣西28±1°C、70±5%RH完整實驗：卵孵化7.69±0.63天、非繁殖卵→成蟻28.73±2.83天、繁殖蟻37.60±3.20天；幼蟲三齡、卵批次產、生殖多后/單后創巢既有報告、偏好濕陰縫隙。數值**不直接設成本巢速率**。 |
+| R95 | University of Florida IFAS, *Bigheaded Ant, Pheidole megacephala*. [UF Extension](https://ask.ifas.ufl.edu/publication/IN712) | 此物種的覓食招募、種子／昆蟲／蜜露飲食、大小工蟻口對口交換、可多蟻后；引述較早／其他溫度的較長階段發育研究，不和R94的28°C總日數混合。 |
+| R96 | Dussutour et al. (2009), *The role of multiple pheromones in food recruitment by ants*. *J Exp Biol* 212:2337–2348. [PubMed](https://pubmed.ncbi.nlm.nih.gov/19617426/) | P. megacephala原始實驗：覓食招募符合**兩種信號**，可啟用雙通道，未測濃度與分子不填數值；同R21。 |
+| R97 | *Body size variation and caste ratios in geographically distinct populations of invasive Pheidole megacephala* (2014). [Oxford Academic](https://academic.oup.com/biolinnean/article/113/2/423/2416021) | 大小工蟻形態與角色、比例依族群環境變動；不拿研究比例隨機替14隻老工蟻派「major」。 |
+| R98 | Dejean et al. (2007), *The predatory behavior of Pheidole megacephala*. [Comptes Rendus Biologies](https://doi.org/10.1016/j.crvi.2007.06.005) | 此種minor/major不同採食與捕食角色；特定喀麥隆族群不能當本花園工蟻體重實測。 |
+| R99 | Sarnat et al. (2015), *Introduced Pheidole of the world: taxonomy, biology and distribution*. [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC4714327/) | 種名鑑別、入侵多巢／分巢和已知地理記錄；學術物種資料，不是本巢的實測鑑定。 |
+| R100 | San Juan et al. (2025), *Pheidole megacephala: An invasive ant that raids colonies of Solenopsis invicta*. [Ecology](https://doi.org/10.1002/ecy.70113) | 部分大型／入侵殖群可襲擊敵巢；不代表本巢14工蟻必與F03外蟻開戰或獲勝。 |
+| R101 | *Genetic Structure, Nestmate Recognition and Behaviour of Two Cryptic Species of the Invasive Big-Headed Ant Pheidole megacephala* (2012). [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC3284284/) | 隱蔽複合物種與繁殖分巢、同巢辨識／遺傳差異；不能把本巢想像成與全球Pheidole都同巢的無敵超殖群。 |
+

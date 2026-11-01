@@ -54,3 +54,6 @@
 
 ## 2026-11-01 未知區域探索與外界動態的權威資料
 權威位於`saves/world-state.json#/exploration_dynamic_world`；主存檔只指向`simulation.exploration_rules_ref`和`simulation.exploration_state_ref`，不複製第二份位置／食源。區分`background_events`（世界發生）、`worker_observed_events`（局部確實感知）、`colony_contact_reports`（回巢／訊號傳遞）。所有事件需種子、時間、地點、因果前提和證據；人類活動是虛構事件，天氣仍需有來源真實資料。Day5狀態、U00外緣既有故事、F01–F11食源與N00主巢不改；X01–X04只是抽象候選區，未探不得直接放入實際世界地圖。速度／半徑／生態概率未知保持null。
+
+## 2026-11-01 物種選擇與跨模組唯一權威
+本虛構殖群的玩家指定物種`Pheidole megacephala`，唯一主權威參照`docs/species-pheidole-megacephala.md`、`saves/main.json#/simulation/species_id`及`saves/world-state.json#/ant_population/taxon`；各模型同值只作**一致性標籤**。生效Day6，Day1–Day5歷史不倒填；物種選定≠本地實測鑑定。物種已知minor/major雙態，**個體未鑑別仍null**；物種已知雙訊號／口對口交換能力不等於已發生事件。Q001×1、14工蟻、1卵2幼蟲、0蛹、N00舊巢配置、物理食量與氣象全部不改；已選物種數據不自動產生精確日生育率或活動速度。
