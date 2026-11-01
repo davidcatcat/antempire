@@ -59,3 +59,8 @@
 新增科學規格 [ant-communication.md](ant-communication.md)，文獻見 [references.md](references.md) R32–R48。工蟻訊號不是全巢即時廣播；每條訊號應留下發出者、位置、媒介、衰退、接收者和個體反應。化學路徑、警戒氣味、CHC同巢辨識、觸角接觸、口對口液體分享、基材震動／蟻后化學訊號須**分開建模、依物種限制啟用**。未知蟻種不宣稱具有雙費洛蒙、必然振動求救或精確嗉囊交換。沒有真正感知訊號的工蟻不能憑全知知道蜘蛛、外蟻或食源位置；不能使蟻后成為工作指揮。只影響下一次Day5→Day6，舊日誌和時鐘不變。
 ## 2026-11-01 蟻群性別／形態階級／生殖補充（Day6起）
 新增[castes-and-reproduction.md](castes-and-reproduction.md)與[references.md](references.md) R49–R61。**生物學性別、雌性發育成蟻后或工蟻、minor/major形態差異、工蟻任務分工**必須分別記錄。Q001為現有蟻后；14位W004–W017是工蟻（通常雌性），未鑑定其minor／major形態，不將早期「警戒、育幼、挖土」當成生理階級。E001及兩幼蟲性別、受精與未來階級皆未知，不得倒填。雄蟻、gyne須具卵→幼蟲→蛹→成蟻的完整時間尺度；雄蟻通常不做普通工蟻巢務。婚飛、工蟻產雄卵或營養卵及特殊多蟻后制度皆需物種與殖群條件，無證據不啟用。
+
+## 2026-11-01 蟻后繁殖與蟻巢工程補充（Day6起）
+- [queen-brood-growth.md](queen-brood-growth.md)：Q001產卵與幼體發育按日及週尺度，受個體、實際巢溫、食物攝取、工蟻照護和發育階段制約；不固定「每日X卵／孵化XX日」。受精與階級仍按[castes-and-reproduction.md](castes-and-reproduction.md)未知保持null。
+- [nest-construction.md](nest-construction.md)：建巢須有工蟻局部動機、挖土/搬運活動、土壤及排水條件與時間／能量成本；環境調整可以失敗，**搬了泥粒不等於新巢室完成**。兩育幼室、一儲藏室、泥脊的舊世界配置全部保留。
+- 核對文獻 [references.md](references.md) R62–R78。未知蟻種與巢內物理量不得套其他物種精準日產卵率、發育日齡、挖土量、通風量或坍塌概率；Day5不前進。

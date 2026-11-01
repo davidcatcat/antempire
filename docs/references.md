@@ -91,3 +91,28 @@
 | R60 | *Behavioral regulation of genetic caste determination in a Pogonomyrmex population with dependent lineages* (2006). [PubMed](https://pubmed.ncbi.nlm.nih.gov/16995619/) | 部分蟻種女王／工蟻分化有遺傳限制，不可一概完全以蛋白餵量決定 |
 | R61 | *Larger colony sizes favour greater division of labour between queens and workers in ants* (2025, published online). [Evolution](https://doi.org/10.1093/evolut/qpaf250) | 546蟻種比較表明工蟻繁殖能力與群體規模之巨大差異；**物種不能一律視作全無生殖能力** |
 
+## 2026-11-01 補充：蟻后產卵、幼體發育與蟻巢工程（R62–R78）
+> 對應 [queen-brood-growth.md](queen-brood-growth.md)、[nest-construction.md](nest-construction.md)。**文獻屬研究物種的實驗或野外結果；不是未鑑種Q001、N00花盆巢的精準生理或建築數值。**
+
+| ID | 論文與可驗證連結 | 本模擬可採用的機制／限制 |
+|---|---|---|
+| R62 | Konu et al. (2023), *Genetic modification of the ant Lasius niger using CRISPR-Cas9 technology*. [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC10087202/) | 在23°C研究首幼蟲約採后後18天、首蛹25天、首工蟻能走42天；**從採集蟻后計時，不是每顆卵孵化到工蟻42天**。 |
+| R63 | *Queen fecundity, worker entourage and cuticular chemistry in the ant Formica fusca* (2023). [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC10410219/) | 高低產卵群初始平均0.6±1.2及16.0±7.3卵/日，更多工蟻照護使實驗期間產卵增加；不套Q001。 |
+| R64 | *Effect of temperature on the oviposition rate of Argentine ant queens* (2007). [PubMed](https://pubmed.ncbi.nlm.nih.gov/17981292/) | `Linepithema humile`在研究溫度28°C產卵較高；不是未知花園蟻最適巢溫。 |
+| R65 | *Egg-Laying Behavior of Cataglyphis niger Ants Is Influenced More Strongly by Temperature Than Daylength* (2022). [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC9774527/) | 降溫抑制產卵及影響卵後續命運；卵消失可能被工蟻取食但不可視為已直接目擊每顆。 |
+| R66 | Majidifar et al. (2024), *Ontogeny of superorganisms: Social control of queen specialization in ants*. [Wiley](https://besjournals.onlinelibrary.wiley.com/doi/10.1111/1365-2435.14536) | Lasius niger首工蟻出現後蟻后育幼行為銳減；本巢已14工蟻，勿當0工蟻創巢重跑。 |
+| R67 | *The influence of social structure on brood survival and development in a socially polymorphic ant: insights from a cross-fostering experiment* (2012). [PubMed](https://pubmed.ncbi.nlm.nih.gov/22998635/) | 卵來源與養育工蟻社會背景均可影響幼體存活和發育速度，不用死板統一齡期。 |
+| R68 | *Impact of heat stress on colony foundation in ants* (2026). [PubMed](https://pubmed.ncbi.nlm.nih.gov/41919996/) | Lasius niger創巢蟻后急性熱壓力影響存活與工蟻產出，非本巢死亡概率。 |
+| R69 | Tschinkel (2005), *The nest architecture of the ant, Camponotus socius*. [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC1283890/) | 巢穴規模與工蟻數量相關，房間／通道幾何具物種特色；不能複製該巢深度。 |
+| R70 | Mikheyev & Tschinkel (2004), *Nest architecture of the ant Formica pallidefulva*. [DOI](https://doi.org/10.1007/s00040-003-0703-3) | 局部土壤溫濕與巢穴成長、擴建軸有關，挖掘耗時間／能量；不是本巢每日固定施工率。 |
+| R71 | *Soil Moisture and Excavation Behaviour in the Chaco Leaf-Cutting Ant Atta vollenweideri* (2014). [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC3991694/) | 適當水分促進挖掘、過濕抑制且近積水層停挖；12mm是特定實驗結果不可照套。 |
+| R72 | *Nest Enlargement in Leaf-Cutting Ants: Relocated Brood and Fungus Trigger the Excavation of New Chambers* (2014). [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC4022738/) | Acromyrmex lundi幼體移位與巢室形成相關；本未鑑種不能假造真菌農業或固定巢室。 |
+| R73 | *Agitated ants: regulation and self-organization of incipient nest excavation via collisional cues* (2023). [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC10189599/) | 小群火蟻的碰撞與挖掘節律能靠局部互動自組織，不需中央工頭；不能套公式參數。 |
+| R74 | Rajendran et al. (2026), *Colony demographics shape nest construction in Camponotus fellah ants*. [eLife](https://elifesciences.org/articles/100706), DOI 10.7554/eLife.100706.4 | 已正式發表：年齡群與殖群成長／災害修復影響挖掘數量及隧道角度；本工蟻真實齡級未知。 |
+| R75 | *Carbon dioxide levels and ventilation in Acromyrmex nests: significance and evolution of architectural innovations in leaf-cutting ants* (2021). [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC8611346/) | Acromyrmex部分淺巢與覆草巢利用對流／風改善通風；不推定本巢有自動煙囪。 |
+| R76 | *The construction of ventilation turrets in Atta vollenweideri leaf-cutting ants* (2017). [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC5690471/) | 某切葉蟻通風塔結構受巢道CO₂條件影響，物種特化不能默認通用。 |
+| R77 | Tschinkel (2013), *Florida harvester ant nest architecture, nest relocation and soil carbon dioxide gradients*. [PubMed](https://pubmed.ncbi.nlm.nih.gov/23555829/) | Pogonomyrmex badius可重建與過去相似巢體；不得給本花盆巢固定遷巢期限。 |
+| R78 | *Ant nest architecture is shaped by local adaptation and plastic response to temperature* (2021). [Scientific Reports](https://www.nature.com/articles/s41598-021-02491-w) | 蟻巢築造受群體原始適應與當下溫度交互影響；不能只依同一天城市預報推算巢形。 |
+
+**落實原則**：高可信的是「方向與因果機制」；**未知**的是Q001每日日產卵數、幼體各階段實際天數、N00挖土質量、巢室體積、CO₂及崩塌風險。未知維持`null`而非捏造0或套別種研究數值。
+

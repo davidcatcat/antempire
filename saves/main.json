@@ -1845,7 +1845,15 @@
     "caste_rules_effective_sim_day": 6,
     "caste_model_status": "literature_grounded_no_taxon_specific_caste_or_reproductive_thresholds",
     "caste_research_updated_at_local": "2026-11-01",
-    "caste_research_does_not_advance_time": true
+    "caste_research_does_not_advance_time": true,
+    "reproduction_growth_rules_ref": "docs/queen-brood-growth.md",
+    "reproduction_growth_state_ref": "saves/world-state.json#/queen_brood_growth",
+    "nest_construction_rules_ref": "docs/nest-construction.md",
+    "nest_construction_state_ref": "saves/world-state.json#/nest_construction_system",
+    "reproduction_nest_rules_effective_sim_day": 6,
+    "reproduction_nest_research_updated_at_local": "2026-11-01",
+    "reproduction_nest_model_status": "literature_mechanism_both_unvalidated_species_and_physical_params",
+    "reproduction_nest_research_does_not_advance_time": true
   },
   "migration_log": [
     {
