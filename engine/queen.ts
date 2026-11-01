@@ -1,0 +1,64 @@
+/**
+ * Adult survival (workers), queen survival and oviposition of one colony.
+ * Order of random draws is identical to v6 deathAndQueen().
+ */
+import { clamp, round } from './math.ts';
+import { colonyDice } from './workers.ts';
+import { formatId } from './brood.ts';
+import type { SpeciesParams } from './params.ts';
+import type { ColonyState, ColonySummary, Ratios, SimEvent, Weather, Worker, WorldState } from './types.ts';
+
+/** Natural (age/injury) and starvation hazards; resting injured workers may recover. */
+export function workerSurvival(world: WorldState, colony: ColonyState, sp: SpeciesParams, events: SimEvent[], summary: ColonySummary): void {
+  const life = sp.worker_lifespan, st = sp.starvation, stores = colony.stores;
+  const alive: Worker[] = [];
+  for (const w of colony.population.workers) {
+    const g = colonyDice(world, colony, 'adult_survival:' + w.id);
+    let natural = life.natural_daily_base_hazard;
+    natural += Math.max(0, w.age_days - life.age_risk_from_days) * life.age_hazard_slope;
+    if (w.injured) natural *= life.injury_mortality_multiplier;
+    let starvation = 0;
+    if (stores.sugar_gap_days >= st.worker_mortality_starts_days) starvation = clamp(st.worker_daily_hazard_base + (stores.sugar_gap_days - st.worker_mortality_starts_days) * st.worker_daily_hazard_slope, 0, st.worker_starvation_hazard_cap);
+    const risk = clamp(1 - (1 - natural) * (1 - starvation), 0, life.adult_total_daily_hazard_cap);
+    if (g() < risk) { summary.worker_deaths++; events.push({ type: 'worker_death', id: w.id, reason: starvation > 0 ? 'starvation_or_natural_competing_hazards_scenario' : 'natural_or_injury_assumed', risk_assumption: round(risk) }); }
+    else {
+      if (w.injured && w.task === 'rest' && stores.stress_days === 0 && g() < life.injury_repair_probability) { w.injured = false; events.push({ type: 'injury_recovery', id: w.id }); }
+      alive.push(w);
+    }
+  }
+  colony.population.workers = alive;
+}
+
+/** Queen hazard rises after prolonged deficits or several days without any worker. */
+export function queenSurvival(world: WorldState, colony: ColonyState, sp: SpeciesParams, events: SimEvent[]): void {
+  const st = sp.starvation, stores = colony.stores, pop = colony.population;
+  stores.no_worker_days = pop.workers.length === 0 ? (stores.no_worker_days || 0) + 1 : 0;
+  const zeroWorkers = stores.no_worker_days >= st.queen_zero_worker_hazard_after_days;
+  const queenRisk = zeroWorkers ? Math.max(st.queen_daily_hazard, st.queen_zero_worker_starved_daily_hazard) : st.queen_daily_hazard;
+  if (pop.queen_alive && ((stores.stress_days >= st.queen_hazard_after_days) || zeroWorkers) && colonyDice(world, colony, 'queen_survival')() < queenRisk) {
+    pop.queen_alive = false; events.push({ type: 'queen_death', id: colony.queen_id, reason: 'prolonged_energy_or_protein_deficit_scenario' });
+  }
+}
+
+/** Egg laying after maintenance, conditional on nutrition, reserves, temperature and existing brood. */
+export function oviposition(world: WorldState, colony: ColonyState, sp: SpeciesParams, ratios: Ratios, weather: Weather, events: SimEvent[], summary: ColonySummary): void {
+  const q = sp.queen_laying, n = sp.nutrition, st = sp.starvation, stores = colony.stores, pop = colony.population;
+  const broodCount = pop.brood.length;
+  const enough = ratios.sFraction >= q.adequate_nutrition_threshold && ratios.pFraction >= q.adequate_nutrition_threshold && stores.sugar >= n.egg_laying_sugar_cost && stores.protein >= n.egg_laying_protein_cost;
+  const pause = stores.sugar_gap_days >= st.queen_egg_pause_days || stores.protein_gap_days >= st.queen_egg_pause_days;
+  const layingTemp = round(clamp(Math.pow(q.laying_temperature_q10, (weather.nest_temp_model_c - q.laying_reference_c) / 10), 0, 1));
+  summary.queen_laying_temperature_factor = layingTemp;
+  const probability = clamp(q.base_laying_probability * layingTemp * (stores.queen_laid_yesterday ? q.previous_laying_penalty : 1) * (1 - q.existing_brood_pressure * broodCount), 0, q.laying_probability_cap);
+  const eggDice = colonyDice(world, colony, 'oviposition');
+  let laid = pop.queen_alive && pop.workers.length > 0 && enough && !pause && eggDice() < probability ? 1 : 0;
+  // At most max_eggs_per_day; the conditional second-egg probability is a game assumption.
+  if (laid && q.max_eggs_per_day >= 2 && eggDice() < q.second_egg_given_laying_probability && stores.sugar >= 2 * n.egg_laying_sugar_cost && stores.protein >= 2 * n.egg_laying_protein_cost) laid = 2;
+  for (let i = 0; i < laid; i++) {
+    stores.sugar = round(stores.sugar - n.egg_laying_sugar_cost); stores.protein = round(stores.protein - n.egg_laying_protein_cost);
+    const id = formatId(colony.egg_id_prefix, colony.next_egg_number++, colony.id_number_width);
+    pop.brood.push({ id, stage: 'egg', laid_on_day: world.sim_day + 1, age_days: 0, progress: 0, origin: 'v2_scenario_laying' });
+    events.push({ type: 'egg_laid', id, queen: colony.queen_id, sugar_cost_portions: n.egg_laying_sugar_cost, protein_cost_portions: n.egg_laying_protein_cost }); summary.eggs_laid++;
+  }
+  stores.queen_laid_yesterday = Boolean(laid);
+  summary.queen_laying_probability_applied = pop.queen_alive && pop.workers.length > 0 && enough && !pause ? round(probability) : 0;
+}

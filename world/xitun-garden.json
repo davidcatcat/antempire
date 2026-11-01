@@ -1,0 +1,1045 @@
+{
+  "schema": "antempire.world-params.v1",
+  "world_id": "xitun-garden",
+  "name_zh": "臺中市西屯區虛構獨棟別墅花園",
+  "status": "Day15 起生效的 v6 引擎世界參數；由 sim/params.json 拆分而來，數值逐一原樣搬移。與物種無關：天氣、植物、半翅目、昆蟲族群、食源、路線與背景蟻群。",
+  "derived_from": {
+    "file": "sim/params.json",
+    "schema": "antempire.rules-v2.day15.proposal",
+    "effective_from_day": "Day15"
+  },
+  "evidence_policy": "每個數值參數都是 {value, assumption:true, basis, ...}。basis ∈ {文獻支持, 一般生理學, 遊戲假設}；mechanism_basis 表示機制方向的證據等級（數值本身仍可能是遊戲假設）。legacy_path 指向 sim/params.json 原始位置；moved_from_code 表示原本寫死在 v6 程式中、這次只搬移不改值的常數。",
+  "independence_rule": "世界生態（植物、半翅目、昆蟲族群、天氣）不得讀取或依任何蟻群的需求、庫存或人口調整（CLAUDE.md §2.2）。",
+  "scenario_colonies": [
+    {
+      "id": "MAIN",
+      "species_id": "pheidole-megacephala",
+      "nest_node": "N00",
+      "queen_id": "Q001",
+      "worker_id_prefix": "W",
+      "egg_id_prefix": "E",
+      "id_number_width": 3,
+      "rng_namespace": "",
+      "legacy_v2_state": "saves/world-state.json#/sim_engine_v2（antempire.engine-v2 單一蟻群格式）",
+      "note": "主蟻群。rng_namespace 為空字串，使隨機串流標籤與 v6 引擎完全相同；之後新增的模擬蟻群必須使用不同且非空的 rng_namespace 與 ID 前綴。"
+    }
+  ],
+  "model": {
+    "scenario_seed": {
+      "value": 15032026,
+      "assumption": true,
+      "description": "不受Git SHA影響的固定遊戲情境種子",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#model.scenario_seed"
+    },
+    "unit_precision": {
+      "value": 6,
+      "assumption": true,
+      "description": "食物計算與存檔保留小數位數",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#model.unit_precision"
+    },
+    "population_safety_cap_for_trial": {
+      "value": 200,
+      "assumption": true,
+      "description": "僅驗收用的膨脹上限；正式模擬不直接使用此限制",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#model.population_safety_cap_for_trial"
+    },
+    "min_workers_alive_for_trial": {
+      "value": 1,
+      "assumption": true,
+      "description": "30日驗收禁止無原因全巢滅亡；非遊戲免死設定",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#model.min_workers_alive_for_trial"
+    }
+  },
+  "climate": {
+    "annual_rain_days": {
+      "value": 113.7,
+      "assumption": true,
+      "description": "基準資料引用，但在模型中用於雨日prior，非特定日期實測",
+      "reference_for_mechanism_only": [
+        "CWA 1991-2020"
+      ],
+      "basis": "文獻支持",
+      "basis_note": "CWA 臺中測站 1991–2020 平年值（官方統計資料）；模型中只作雨日先驗，不是特定日期觀測",
+      "legacy_path": "sim/params.json#climate.annual_rain_days"
+    },
+    "wet_persistence": {
+      "value": 0.45,
+      "assumption": true,
+      "description": "延續前日雨天的Markov額外持續係數",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#climate.wet_persistence"
+    },
+    "temperature_ar": {
+      "value": 0.65,
+      "assumption": true,
+      "description": "溫度距平日相關係數",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#climate.temperature_ar"
+    },
+    "temperature_daily_sigma_c": {
+      "value": 1.8,
+      "assumption": true,
+      "description": "日溫距平創新標準差，假設",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#climate.temperature_daily_sigma_c"
+    },
+    "rainfall_gamma_shape": {
+      "value": 1.6,
+      "assumption": true,
+      "description": "降雨Gamma形狀係數，假設",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#climate.rainfall_gamma_shape"
+    },
+    "soil_daily_loss": {
+      "value": 0.025,
+      "assumption": true,
+      "description": "土壤日淨乾燥扣減，降低舊程式固定0.1",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#climate.soil_daily_loss"
+    },
+    "soil_rain_gain_per_mm": {
+      "value": 0.045,
+      "assumption": true,
+      "description": "每mm雨增加的無量綱土壤記憶",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#climate.soil_rain_gain_per_mm"
+    },
+    "soil_persistence": {
+      "value": 0.93,
+      "assumption": true,
+      "description": "前日土壤記憶保留倍率",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#climate.soil_persistence"
+    },
+    "soil_shade_daily_loss": {
+      "value": 0.013,
+      "assumption": true,
+      "description": "遮蔽土每日扣減",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#climate.soil_shade_daily_loss"
+    },
+    "soil_shade_persistence": {
+      "value": 0.96,
+      "assumption": true,
+      "description": "遮蔽土記憶保留倍率",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#climate.soil_shade_persistence"
+    },
+    "soil_shade_rain_gain_per_mm": {
+      "value": 0.025,
+      "assumption": true,
+      "description": "遮蔽土每mm雨額外記憶",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#climate.soil_shade_rain_gain_per_mm"
+    },
+    "wet_day_temperature_offset_c": {
+      "value": 0.8,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "雨日相對於雨日機率的氣溫偏移（°C）",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs calcWeather(): -.8*(Number(wet)-rainProb)（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "rh_wet_offset_percent": {
+      "value": 5,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "雨日相對濕度偏移（百分點）",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs calcWeather(): wet?5:-2（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "rh_dry_offset_percent": {
+      "value": -2,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "非雨日相對濕度偏移（百分點）",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs calcWeather(): wet?5:-2（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "rh_anomaly_coefficient": {
+      "value": 0.45,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "氣溫距平對相對濕度的係數",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs calcWeather(): +.45*anomaly（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "rain_prior_month_weight_exponent": {
+      "value": 0.6,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "由月均雨量推算雨日先驗的指數",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs rainPriors(): Math.pow(mm/days,.6)（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "rain_probability_daily_cap": {
+      "value": 0.85,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "單日雨日先驗機率上限",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs rainPriors(): Math.min(.85,mid*w)（原寫死於程式，數值原樣搬移，未修改）"
+    }
+  },
+  "nest_microclimate": {
+    "nest_buffer_fraction": {
+      "value": 0.55,
+      "assumption": true,
+      "description": "巢內溫度相對外界均溫的緩衝權重，非實測",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#development.nest_buffer_fraction"
+    },
+    "nest_temp_memory": {
+      "value": 0.6,
+      "assumption": true,
+      "description": "巢內緩衝溫度，不當真實巢溫",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#climate.nest_temp_memory"
+    }
+  },
+  "plants": {
+    "new_plant_event_probability": {
+      "value": 0.035,
+      "assumption": true,
+      "description": "新花期或落果事件，用於後續世界擴充，未當前模型全實作",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.new_plant_event_probability"
+    },
+    "host_plant_daily_death_probability": {
+      "value": 0.0007,
+      "assumption": true,
+      "rationale": "garden host plant mortality; not reactive to colony demand",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.host_plant_daily_death_probability"
+    }
+  },
+  "hemipterans": {
+    "honeydew_per_colony_per_day": {
+      "aphid": {
+        "value": 0.32,
+        "assumption": true,
+        "rationale": "ecological production per aphid colony with living host plants, independent of ant population",
+        "basis": "遊戲假設",
+        "legacy_path": "sim/params.json#sources.honeydew_per_aphid_colony_per_day"
+      },
+      "scale": {
+        "value": 0.4,
+        "assumption": true,
+        "rationale": "ecological production per scale-insect colony with living host plants, independent of ant population",
+        "basis": "遊戲假設",
+        "legacy_path": "sim/params.json#sources.honeydew_per_scale_colony_per_day"
+      }
+    },
+    "honeydew_productivity_multiplier": {
+      "value": 1,
+      "assumption": true,
+      "rationale": "baseline physical productivity; single-variable sugar sensitivity test changes ONLY this input",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.honeydew_productivity_multiplier"
+    },
+    "hemipteran_colony_daily_growth_probability": {
+      "value": 0.012,
+      "assumption": true,
+      "rationale": "natural hemipteran colony reproduction game assumption; depends on living host",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.hemipteran_colony_daily_growth_probability"
+    },
+    "hemipteran_colony_daily_collapse_probability": {
+      "value": 0.006,
+      "assumption": true,
+      "rationale": "natural daily mortality/reproductive collapse of a colony, independent of ant demand",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.hemipteran_colony_daily_collapse_probability"
+    },
+    "max_hemipteran_colonies_per_host": {
+      "value": 4,
+      "assumption": true,
+      "rationale": "physical carrying capacity per host plant, distinct from honeydew stored capacity",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.max_hemipteran_colonies_per_host"
+    },
+    "rain_honeydew_secretion_suppression_per_mm": {
+      "value": 0.018,
+      "assumption": true,
+      "rationale": "rain suppresses feeding/secretion production as ecological assumption",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.rain_honeydew_secretion_suppression_per_mm"
+    },
+    "honeydew_rain_secretion_min_multiplier": {
+      "value": 0.05,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "雨天蜜露分泌抑制後的最低倍率",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs growSources(): clamp(1-rain*suppression,.05,1)（原寫死於程式，數值原樣搬移，未修改）"
+    }
+  },
+  "honeydew": {
+    "honeydew_max": {
+      "value": 5.2,
+      "assumption": true,
+      "description": "蜜露F01總可及糖份上限",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.honeydew_max"
+    },
+    "honeydew_daily_replenish": {
+      "value": 0.65,
+      "assumption": true,
+      "description": "寄主與蚜蟲仍活著時每日補充糖份",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.honeydew_daily_replenish"
+    },
+    "honeydew_initial": {
+      "value": 0.55,
+      "assumption": true,
+      "description": "Day14 F01有蚜蟲但無可採蜜露；Day15起始少量保守情境",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.honeydew_initial"
+    },
+    "honeydew_washoff_per_rain_mm": {
+      "value": 0.012,
+      "assumption": true,
+      "description": "每mm雨使蜜露減少的比例",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.honeydew_washoff_per_rain_mm"
+    },
+    "honeydew_washoff_max_fraction": {
+      "value": 0.9,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "雨水單日沖刷蜜露的比例上限",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs growSources(): clamp(rain*washoff,0,.9)（原寫死於程式，數值原樣搬移，未修改）"
+    }
+  },
+  "nectar": {
+    "nectar_max": {
+      "value": 2.4,
+      "assumption": true,
+      "description": "F08花蜜份數上限",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.nectar_max"
+    },
+    "nectar_daily_replenish": {
+      "value": 0.35,
+      "assumption": true,
+      "description": "花仍在開放期時日補充量",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.nectar_daily_replenish"
+    },
+    "nectar_initial": {
+      "value": 0.18,
+      "assumption": true,
+      "description": "Day14無可確認花蜜之情境假設",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.nectar_initial"
+    },
+    "nectar_bloom_days_remaining": {
+      "value": 12,
+      "assumption": true,
+      "description": "Day15起餘下開花期假設",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.nectar_bloom_days_remaining"
+    },
+    "nectar_washoff_per_rain_mm": {
+      "value": 0.035,
+      "assumption": true,
+      "description": "每mm雨造成花蜜沖刷比例",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.nectar_washoff_per_rain_mm"
+    },
+    "nectar_washoff_max_fraction": {
+      "value": 0.9,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "雨水單日沖刷花蜜的比例上限",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs growSources(): clamp(rain*washoff,0,.9)（原寫死於程式，數值原樣搬移，未修改）"
+    }
+  },
+  "carcasses": {
+    "carcass_daily_decay_fraction": {
+      "value": 0.14,
+      "assumption": true,
+      "description": "未採集殘骸每一日可食份數減少比例",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.carcass_daily_decay_fraction"
+    },
+    "carcass_rain_decay_bonus": {
+      "value": 0.004,
+      "assumption": true,
+      "description": "每mm雨額外可食減少比例",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.carcass_rain_decay_bonus"
+    },
+    "carcass_new_protein_min": {
+      "value": 1.45,
+      "assumption": true,
+      "description": "新屍體蛋白份數下界",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.carcass_new_protein_min"
+    },
+    "carcass_new_protein_max": {
+      "value": 2.6,
+      "assumption": true,
+      "description": "新屍體蛋白份數上界",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.carcass_new_protein_max"
+    },
+    "carcass_max_lifetime_days": {
+      "value": 9,
+      "assumption": true,
+      "description": "殘骸來源最長保留9天；只刪除已腐化且無可食量來源",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.carcass_max_lifetime_days"
+    },
+    "carcass_decay_max_daily_fraction": {
+      "value": 0.95,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "殘骸每日可食量減少比例上限",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs growSources(): clamp(decay+rain*bonus,0,.95)（原寫死於程式，數值原樣搬移，未修改）"
+    }
+  },
+  "insects": {
+    "insect_local_carrying_capacity": {
+      "value": 18,
+      "assumption": true,
+      "description": "局部昆蟲最大可容納數，依棲地而定的遊戲近似",
+      "reference_for_mechanism_only": [
+        "R95",
+        "R98"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#sources.insect_local_carrying_capacity"
+    },
+    "insect_background_immigration_probability": {
+      "value": 0.08,
+      "assumption": true,
+      "description": "每日從相鄰花園棲地遷入1隻已存在昆蟲的情境機率，記錄來源事件",
+      "reference_for_mechanism_only": [
+        "R95",
+        "R98"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#sources.insect_background_immigration_probability"
+    },
+    "insect_local_daily_mortality_probability": {
+      "value": 0.22,
+      "assumption": true,
+      "description": "每處已有存活昆蟲每日產生一次自然死亡的場址近似機率，絕非直接生成食物",
+      "reference_for_mechanism_only": [
+        "R95",
+        "R98"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#sources.insect_local_daily_mortality_probability"
+    },
+    "insect_site_logistic_daily_birth_rate": {
+      "value": 0.065,
+      "assumption": true,
+      "rationale": "per-capita daily local insect birth chance scaled by available habitat capacity; assumption, not empirical rate",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.insect_site_logistic_daily_birth_rate"
+    },
+    "insect_boundary_logistic_daily_birth_rate": {
+      "value": 0.055,
+      "assumption": true,
+      "rationale": "self-renewal in the adjacent habitat, independent of colony demands",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.insect_boundary_logistic_daily_birth_rate"
+    },
+    "insect_boundary_carrying_capacity": {
+      "value": 80,
+      "assumption": true,
+      "rationale": "fixed ecological carrying capacity of neighboring habitat",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.insect_boundary_carrying_capacity"
+    },
+    "insect_boundary_per_capita_daily_death_probability": {
+      "value": 0.02,
+      "assumption": true,
+      "rationale": "natural per-capita mortality of neighboring insects, no recoverable local carcass",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.insect_boundary_per_capita_daily_death_probability"
+    },
+    "insect_reproduction_reference_c": {
+      "value": 25,
+      "assumption": true,
+      "rationale": "synthetic mean air temperature reference for insect reproduction",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.insect_reproduction_reference_c"
+    },
+    "insect_reproduction_per_degree_c": {
+      "value": 0.035,
+      "assumption": true,
+      "rationale": "game temperature sensitivity of insect reproduction per degree from reference",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.insect_reproduction_per_degree_c"
+    },
+    "insect_reproduction_min_multiplier": {
+      "value": 0.15,
+      "assumption": true,
+      "rationale": "cold suppression floor for insect reproduction",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.insect_reproduction_min_multiplier"
+    },
+    "insect_reproduction_max_multiplier": {
+      "value": 1.25,
+      "assumption": true,
+      "rationale": "warm ceiling for insect reproduction",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.insect_reproduction_max_multiplier"
+    },
+    "insect_local_death_reference_population": {
+      "value": 12,
+      "assumption": true,
+      "rationale": "abundance used to scale existing 0.22 site mortality to current insect abundance",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.insect_local_death_reference_population"
+    }
+  },
+  "prey": {
+    "large_prey_fraction": {
+      "value": 0.25,
+      "assumption": true,
+      "description": "遇見昆蟲屬大型獵物之假設比例，非實測",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#foraging_physics.large_prey_fraction"
+    },
+    "small_prey_protein": {
+      "value": 0.55,
+      "assumption": true,
+      "description": "小型獵物蛋白遊戲份，非實測質量",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#foraging_physics.small_prey_protein"
+    },
+    "large_prey_protein": {
+      "value": 1.5,
+      "assumption": true,
+      "description": "大型獵物蛋白遊戲份，非實測質量",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#foraging_physics.large_prey_protein"
+    }
+  },
+  "routes": {
+    "topology": {
+      "assumption": true,
+      "evidence_type": "遊戲假設 assumption: true",
+      "description": "N00-F01/F08/F07/F11/U00/U01、F01-F04、F04-F05、F08-F05、U01-F10的假設可步行路線；不是庭園地理量測。只作環境物理圖；工蟻須親自走路、聞相鄰費洛蒙或已知路線，不能讀取全圖。",
+      "edges": [
+        [
+          "N00",
+          "F01"
+        ],
+        [
+          "N00",
+          "F08"
+        ],
+        [
+          "N00",
+          "F07"
+        ],
+        [
+          "N00",
+          "F11"
+        ],
+        [
+          "N00",
+          "U00"
+        ],
+        [
+          "N00",
+          "U01"
+        ],
+        [
+          "F01",
+          "F04"
+        ],
+        [
+          "F04",
+          "F05"
+        ],
+        [
+          "F08",
+          "F05"
+        ],
+        [
+          "U01",
+          "F10"
+        ]
+      ],
+      "legacy_path": "sim/params.json#foraging_route_topology"
+    },
+    "route_edge_minutes": {
+      "value": 25,
+      "assumption": true,
+      "description": "路線圖每條邊單程步行分鐘，拓樸與距離皆遊戲假設；非實際花園量測",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#foraging_physics.route_edge_minutes"
+    }
+  },
+  "background_colonies": {
+    "note": "F03、F04 曾出現的陌生蟻群目前只是背景生態（不模擬個體、不與主蟻群互動）。F04_rival 以固定比例消耗 F04 蜜露；F03 目前沒有數值效果。未來若要成為真正被模擬的蟻群，須新增 scenario_colonies 項目與該物種參數檔。",
+    "F04_rival": {
+      "site": "F04",
+      "honeydew_harvest_fraction": {
+        "value": 0.22,
+        "assumption": true,
+        "rationale": "F04 background rival ants consume a fixed ecological share; independent of main colony shortage",
+        "basis": "遊戲假設",
+        "legacy_path": "sim/params.json#sources.rival_honeydew_harvest_fraction_F04"
+      },
+      "species_id": null,
+      "species_note": "物種未鑑定（null），不得套用任何物種參數"
+    },
+    "F03_rival": {
+      "site": "F03",
+      "species_id": null,
+      "engine_effect": "none",
+      "note": "Day3 起世界背景記錄的異巢蟻活動；v6 引擎無數值作用。"
+    }
+  },
+  "day15_migration": {
+    "note": "Day14→Day15 一次性遷移（engine/migration.ts）使用的情境假設，只在第一次推進 Day15 時使用一次；不回寫 Day1～14。",
+    "worker_known_sources": {
+      "W005": [
+        "F01"
+      ],
+      "W006": [
+        "F11"
+      ],
+      "W011": [
+        "F07"
+      ],
+      "W017": [
+        "F08"
+      ],
+      "W015": [
+        "U00"
+      ],
+      "W016": [
+        "U01"
+      ]
+    },
+    "worker_known_sources_note": "由 Day1～14 歷史中各工蟻親身走過的路線整理（原寫死於 sim/migrate_day15.cjs migrationState() workerKnowledge）。",
+    "F01_census": {
+      "hemipteran_kind": "aphid",
+      "host_plants": {
+        "value": 2,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "Day15 一次性花園盤點：F01 寄主植物數",
+        "legacy_path": null,
+        "moved_from_code": "sim/migrate_day15.cjs migrationState(): add('F01',...,{host_plants:2})（原寫死於程式，數值原樣搬移，未修改）"
+      },
+      "hemipteran_colonies": {
+        "value": 4,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "Day15 一次性花園盤點：F01 蚜蟲群數",
+        "legacy_path": null,
+        "moved_from_code": "sim/migrate_day15.cjs migrationState(): add('F01',...,{hemipteran_colonies:4})（原寫死於程式，數值原樣搬移，未修改）"
+      }
+    },
+    "hidden_honeydew_sites": {
+      "F04": {
+        "hemipteran_kind": "scale",
+        "access_from": [
+          "F01"
+        ],
+        "initial_sugar": {
+          "value": 0.75,
+          "assumption": true,
+          "basis": "遊戲假設",
+          "description": "Day15 遷移：F04 隱藏蜜露點若寄主存活時的初始糖份",
+          "legacy_path": null,
+          "moved_from_code": "sim/migrate_day15.cjs migrationState(): ['F04',0.75,...] quantity（原寫死於程式，數值原樣搬移，未修改）"
+        },
+        "listed_production": {
+          "value": 0.75,
+          "assumption": true,
+          "basis": "遊戲假設",
+          "description": "Day15 遷移：F04 舊程式列出但未使用的 production 值（實際寫入 production_per_day=0，之後由生態模組重算）",
+          "legacy_path": null,
+          "moved_from_code": "sim/migrate_day15.cjs migrationState(): ['F04',..,0.75,..] production (listed but NOT passed to add(); add() receives 0)（原寫死於程式，數值原樣搬移，未修改）"
+        },
+        "capacity": {
+          "value": 3,
+          "assumption": true,
+          "basis": "遊戲假設",
+          "description": "Day15 遷移：F04 蜜露可及上限",
+          "legacy_path": null,
+          "moved_from_code": "sim/migrate_day15.cjs migrationState(): ['F04',..,3,..] max（原寫死於程式，數值原樣搬移，未修改）"
+        },
+        "exists_probability": {
+          "value": 0.65,
+          "assumption": true,
+          "basis": "遊戲假設",
+          "description": "Day15 遷移：F04 寄主存活的固定種子情境機率",
+          "legacy_path": null,
+          "moved_from_code": "sim/migrate_day15.cjs migrationState(): ['F04',..,0.65] prob（原寫死於程式，數值原樣搬移，未修改）"
+        },
+        "host_plants": {
+          "value": 2,
+          "assumption": true,
+          "basis": "遊戲假設",
+          "description": "Day15 遷移：F04 寄主存活時的寄主植物數",
+          "legacy_path": null,
+          "moved_from_code": "sim/migrate_day15.cjs migrationState(): host_plants:alive?(id==='F04'?2:1):0（原寫死於程式，數值原樣搬移，未修改）"
+        },
+        "hemipteran_colonies": {
+          "value": 3,
+          "assumption": true,
+          "basis": "遊戲假設",
+          "description": "Day15 遷移：F04 寄主存活時的半翅目群數",
+          "legacy_path": null,
+          "moved_from_code": "sim/migrate_day15.cjs migrationState(): hemipteran_colonies:alive?(F04:3,F05:2,else 1):0（原寫死於程式，數值原樣搬移，未修改）"
+        }
+      },
+      "F05": {
+        "hemipteran_kind": "aphid",
+        "access_from": [
+          "F08",
+          "F04"
+        ],
+        "initial_sugar": {
+          "value": 0.4,
+          "assumption": true,
+          "basis": "遊戲假設",
+          "description": "Day15 遷移：F05 隱藏蜜露點若寄主存活時的初始糖份",
+          "legacy_path": null,
+          "moved_from_code": "sim/migrate_day15.cjs migrationState(): ['F05',0.4,...] quantity（原寫死於程式，數值原樣搬移，未修改）"
+        },
+        "listed_production": {
+          "value": 0.55,
+          "assumption": true,
+          "basis": "遊戲假設",
+          "description": "Day15 遷移：F05 舊程式列出但未使用的 production 值（實際寫入 production_per_day=0，之後由生態模組重算）",
+          "legacy_path": null,
+          "moved_from_code": "sim/migrate_day15.cjs migrationState(): ['F05',..,0.55,..] production (listed but NOT passed to add(); add() receives 0)（原寫死於程式，數值原樣搬移，未修改）"
+        },
+        "capacity": {
+          "value": 2.8,
+          "assumption": true,
+          "basis": "遊戲假設",
+          "description": "Day15 遷移：F05 蜜露可及上限",
+          "legacy_path": null,
+          "moved_from_code": "sim/migrate_day15.cjs migrationState(): ['F05',..,2.8,..] max（原寫死於程式，數值原樣搬移，未修改）"
+        },
+        "exists_probability": {
+          "value": 0.8,
+          "assumption": true,
+          "basis": "遊戲假設",
+          "description": "Day15 遷移：F05 寄主存活的固定種子情境機率",
+          "legacy_path": null,
+          "moved_from_code": "sim/migrate_day15.cjs migrationState(): ['F05',..,0.8] prob（原寫死於程式，數值原樣搬移，未修改）"
+        },
+        "host_plants": {
+          "value": 1,
+          "assumption": true,
+          "basis": "遊戲假設",
+          "description": "Day15 遷移：F05 寄主存活時的寄主植物數",
+          "legacy_path": null,
+          "moved_from_code": "sim/migrate_day15.cjs migrationState(): host_plants:alive?(id==='F04'?2:1):0（原寫死於程式，數值原樣搬移，未修改）"
+        },
+        "hemipteran_colonies": {
+          "value": 2,
+          "assumption": true,
+          "basis": "遊戲假設",
+          "description": "Day15 遷移：F05 寄主存活時的半翅目群數",
+          "legacy_path": null,
+          "moved_from_code": "sim/migrate_day15.cjs migrationState(): hemipteran_colonies:alive?(F04:3,F05:2,else 1):0（原寫死於程式，數值原樣搬移，未修改）"
+        }
+      },
+      "F10": {
+        "hemipteran_kind": "scale",
+        "access_from": [
+          "U01"
+        ],
+        "initial_sugar": {
+          "value": 0.4,
+          "assumption": true,
+          "basis": "遊戲假設",
+          "description": "Day15 遷移：F10 隱藏蜜露點若寄主存活時的初始糖份",
+          "legacy_path": null,
+          "moved_from_code": "sim/migrate_day15.cjs migrationState(): ['F10',0.4,...] quantity（原寫死於程式，數值原樣搬移，未修改）"
+        },
+        "listed_production": {
+          "value": 0.5,
+          "assumption": true,
+          "basis": "遊戲假設",
+          "description": "Day15 遷移：F10 舊程式列出但未使用的 production 值（實際寫入 production_per_day=0，之後由生態模組重算）",
+          "legacy_path": null,
+          "moved_from_code": "sim/migrate_day15.cjs migrationState(): ['F10',..,0.5,..] production (listed but NOT passed to add(); add() receives 0)（原寫死於程式，數值原樣搬移，未修改）"
+        },
+        "capacity": {
+          "value": 2.8,
+          "assumption": true,
+          "basis": "遊戲假設",
+          "description": "Day15 遷移：F10 蜜露可及上限",
+          "legacy_path": null,
+          "moved_from_code": "sim/migrate_day15.cjs migrationState(): ['F10',..,2.8,..] max（原寫死於程式，數值原樣搬移，未修改）"
+        },
+        "exists_probability": {
+          "value": 0.7,
+          "assumption": true,
+          "basis": "遊戲假設",
+          "description": "Day15 遷移：F10 寄主存活的固定種子情境機率",
+          "legacy_path": null,
+          "moved_from_code": "sim/migrate_day15.cjs migrationState(): ['F10',..,0.7] prob（原寫死於程式，數值原樣搬移，未修改）"
+        },
+        "host_plants": {
+          "value": 1,
+          "assumption": true,
+          "basis": "遊戲假設",
+          "description": "Day15 遷移：F10 寄主存活時的寄主植物數",
+          "legacy_path": null,
+          "moved_from_code": "sim/migrate_day15.cjs migrationState(): host_plants:alive?(id==='F04'?2:1):0（原寫死於程式，數值原樣搬移，未修改）"
+        },
+        "hemipteran_colonies": {
+          "value": 1,
+          "assumption": true,
+          "basis": "遊戲假設",
+          "description": "Day15 遷移：F10 寄主存活時的半翅目群數",
+          "legacy_path": null,
+          "moved_from_code": "sim/migrate_day15.cjs migrationState(): hemipteran_colonies:alive?(F04:3,F05:2,else 1):0（原寫死於程式，數值原樣搬移，未修改）"
+        }
+      }
+    },
+    "starting_sugar": {
+      "value": 7.6,
+      "assumption": true,
+      "description": "Day14既有存糧不可測；作為Day15獨立情境起始糖儲備，約四天工蟻+蟻后基礎需求",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#nutrition.starting_sugar"
+    },
+    "starting_protein": {
+      "value": 2.3,
+      "assumption": true,
+      "description": "Day14曾有兩次昆蟲來源帶回，作為Day15獨立情境的蛋白儲備假設，非由事件數換算",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#nutrition.starting_protein"
+    },
+    "legacy_unknown_age_initial_days": {
+      "value": 7,
+      "assumption": true,
+      "description": "Day14舊工蟻真實成年年齡未知，Day15採遊戲假設7天",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.legacy_unknown_age_initial_days"
+    },
+    "carcass_initial_F07": {
+      "value": 0.6,
+      "assumption": true,
+      "description": "保留Day11 F07 V2D11-E04屍體可能剩餘的蛋白份數；高不確定性",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.carcass_initial_F07"
+    },
+    "carcass_initial_F11": {
+      "value": 0.07,
+      "assumption": true,
+      "description": "保留Day9 F11舊屍剩餘蛋白份數；已採部分且腐敗更久",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.carcass_initial_F11"
+    },
+    "carcass_initial_F07_older": {
+      "value": 0.05,
+      "assumption": true,
+      "description": "保留Day10 F07舊殘骸少量假設",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.carcass_initial_F07_older"
+    },
+    "insect_initial_living_F07": {
+      "value": 12,
+      "assumption": true,
+      "description": "在F07的獨立小型昆蟲局部初始存活數，過渡假設，不是新食物",
+      "reference_for_mechanism_only": [
+        "R95",
+        "R98"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#sources.insect_initial_living_F07"
+    },
+    "insect_initial_living_F11": {
+      "value": 9,
+      "assumption": true,
+      "description": "在F11的獨立小型昆蟲局部初始存活數，過渡假設，不是新食物",
+      "reference_for_mechanism_only": [
+        "R95",
+        "R98"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#sources.insect_initial_living_F11"
+    },
+    "insect_initial_boundary_reservoir": {
+      "value": 40,
+      "assumption": true,
+      "description": "相鄰庭園初始已有40隻活昆蟲的有限情境族群；遷入F07/F11須從此扣減，沒有上帝視角無限出現",
+      "reference_for_mechanism_only": [
+        "R95"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#sources.insect_initial_boundary_reservoir"
+    },
+    "initial_local_sensory": {
+      "own_crop_sugar_fill": {
+        "value": 0.55,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "Day15 遷移：舊工蟻先前個體經驗未知時的中性嗉囊飽足假設",
+        "legacy_path": null,
+        "moved_from_code": "sim/migrate_day15.cjs migrationState(): local_sensory.own_crop_sugar_fill:.55（原寫死於程式，數值原樣搬移，未修改）"
+      },
+      "peer_sugar_hunger": {
+        "value": 0.4,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "Day15 遷移：中性同伴飢餓印象假設",
+        "legacy_path": null,
+        "moved_from_code": "sim/migrate_day15.cjs migrationState(): peer_sugar_hunger:.4（原寫死於程式，數值原樣搬移，未修改）"
+      },
+      "peer_protein_request": {
+        "value": 0.25,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "Day15 遷移：中性同伴蛋白需求印象假設",
+        "legacy_path": null,
+        "moved_from_code": "sim/migrate_day15.cjs migrationState(): peer_protein_request:.25（原寫死於程式，數值原樣搬移，未修改）"
+      },
+      "direct_brood_begging": {
+        "value": 0,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "Day15 遷移：尚未接觸幼蟲求食",
+        "legacy_path": null,
+        "moved_from_code": "sim/migrate_day15.cjs migrationState(): direct_brood_begging:0（原寫死於程式，數值原樣搬移，未修改）"
+      },
+      "unload_feedback_sugar": {
+        "value": 0.5,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "Day15 遷移：中性糖卸貨回饋",
+        "legacy_path": null,
+        "moved_from_code": "sim/migrate_day15.cjs migrationState(): unload_feedback:{sugar:.5}（原寫死於程式，數值原樣搬移，未修改）"
+      },
+      "unload_feedback_protein": {
+        "value": 0.5,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "Day15 遷移：中性蛋白卸貨回饋",
+        "legacy_path": null,
+        "moved_from_code": "sim/migrate_day15.cjs migrationState(): unload_feedback:{protein:.5}（原寫死於程式，數值原樣搬移，未修改）"
+      }
+    },
+    "egg_progress_cap": {
+      "value": 0.999,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "Day15 遷移：舊卵25°C等效發育進度上限（不在遷移時直接孵化）",
+      "legacy_path": null,
+      "moved_from_code": "sim/migrate_day15.cjs migrationState(): Math.min(.999,...)（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "legacy_larva_stage_progress": {
+      "value": 0.5,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "Day15 遷移：L001/L002 未知幼齡假設完成幼蟲期 50%",
+      "legacy_path": null,
+      "moved_from_code": "sim/migrate_day15.cjs migrationState(): progress:.5（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "legacy_larva_begging_signal": {
+      "value": 0.25,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "Day15 遷移：舊幼蟲初始求食訊號",
+      "legacy_path": null,
+      "moved_from_code": "sim/migrate_day15.cjs migrationState(): begging_signal:.25（原寫死於程式，數值原樣搬移，未修改）"
+    }
+  }
+}

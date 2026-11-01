@@ -1,0 +1,1389 @@
+{
+  "schema": "antempire.species-params.v1",
+  "species_id": "pheidole-megacephala",
+  "scientific_name": "Pheidole megacephala (Fabricius, 1793)",
+  "common_name_zh": "熱帶大頭家蟻",
+  "status": "Day15 起生效的 v6 引擎參數（antempire.v2-review.6）；本檔由 sim/params.json 拆分而來，數值逐一原樣搬移",
+  "derived_from": {
+    "file": "sim/params.json",
+    "schema": "antempire.rules-v2.day15.proposal",
+    "effective_from_day": "Day15"
+  },
+  "evidence_policy": "每個數值參數都是 {value, assumption:true, basis, ...}。basis ∈ {文獻支持, 一般生理學, 遊戲假設}；mechanism_basis 表示機制方向的證據等級（數值本身仍可能是遊戲假設）。legacy_path 指向 sim/params.json 原始位置；moved_from_code 表示原本寫死在 v6 程式中、這次只搬移不改值的常數。",
+  "species_references_policy": "本物種文獻見 docs/references.md R93–R102、R107、R110、R116 等；新增其他蟻種不可沿用本檔數值，須有該物種自己的來源（CLAUDE.md §4）。",
+  "traits": {
+    "note": "以下是物種層級的描述性特徵（非數值參數）。engine_status 說明 v6 引擎目前是否模擬該機制；未模擬者不影響任何結果。",
+    "castes": {
+      "worker_polymorphism": "dimorphic_minor_major",
+      "morphs": [
+        "minor",
+        "major"
+      ],
+      "evidence": "文獻支持",
+      "sources": [
+        "R93",
+        "R94",
+        "R95",
+        "R97",
+        "R98"
+      ],
+      "summary": "雌性工蟻有 minor（小型）與 major（大型／兵蟻）雙態，成年後不互相轉換；major 常參與防衛與拆解大型獵物，任務非絕對固定。",
+      "engine_status": "not_simulated：所有羽化個體以 castes.eclosion_caste_label 標記，未分配 major；major 產生開關 castes.major_worker_production_enabled 目前為 false，若設為 true 引擎會拒絕執行（尚未實作）。"
+    },
+    "colony_founding": {
+      "queens": "polygyne_common_monogyne_founding_reported",
+      "modes": [
+        "budding",
+        "independent_single_queen_founding"
+      ],
+      "evidence": "文獻支持",
+      "sources": [
+        "R94",
+        "R97",
+        "R99",
+        "R100",
+        "R101"
+      ],
+      "summary": "成熟殖群常見多蟻后，可分巢（budding）；也有單蟻后獨立創巢的報告。本遊戲主蟻群確認只有 Q001 一后。",
+      "engine_status": "not_simulated：引擎每個蟻群只追蹤 queen_alive 一位蟻后；新后、雄蟻、婚飛與分巢未實作。"
+    },
+    "diet": {
+      "type": "omnivore",
+      "foods": [
+        "hemipteran_honeydew",
+        "floral_nectar",
+        "insect_carcass",
+        "live_arthropod_prey",
+        "seeds"
+      ],
+      "evidence": "文獻支持",
+      "sources": [
+        "R93",
+        "R95",
+        "R98",
+        "R107",
+        "R116"
+      ],
+      "summary": "雜食：蜜露、花蜜／糖液、昆蟲殘骸、活節肢動物與種子。",
+      "engine_status": "partial：引擎模擬蜜露、花蜜、殘骸與已追蹤活昆蟲捕食；種子未模擬。糖與蛋白分開記帳。"
+    },
+    "recruitment": {
+      "method": "trail_pheromone_mass_recruitment",
+      "chemical_channels_confirmed": null,
+      "evidence": "文獻支持（機制）；化學分子數未確證",
+      "sources": [
+        "R96",
+        "R102",
+        "R21"
+      ],
+      "summary": "以化學路徑招募同巢工蟻；2009 雙費洛蒙模型與 2023 單費洛蒙模型都能解釋實驗資料，故不宣稱兩種分子已證實。",
+      "engine_status": "simulated：單一路段訊號（遊戲假設），參數見 recruitment.*。"
+    },
+    "trophallaxis": {
+      "present": true,
+      "evidence": "文獻支持",
+      "sources": [
+        "R95"
+      ],
+      "summary": "小工蟻之間及大小工蟻之間有口對口液體交換。",
+      "engine_status": "simulated：回巢交哺只在巢內實際相遇時發生，參數見 trophallaxis.*。"
+    },
+    "foraging_temperature": {
+      "evidence": "文獻支持（方向）；數值為遊戲假設",
+      "sources": [
+        "Harada et al. 2021 Nature of Kagoshima 48:99–108",
+        "JCU researchonline 44334"
+      ],
+      "summary": "覓食受日間地表溫度與季節影響，冬季活動下降。",
+      "engine_status": "simulated：以合成白天最高氣溫代理，參數見 foraging_activity.foraging_cold_*（遊戲假設）。"
+    },
+    "predation": {
+      "evidence": "文獻支持（機制）",
+      "sources": [
+        "R98",
+        "R107"
+      ],
+      "summary": "單蟻捕食小型獵物、大型獵物需局部招募協作。",
+      "engine_status": "simulated：只捕食世界中已追蹤的活昆蟲，參數見 predation.*。"
+    },
+    "nesting": {
+      "evidence": "文獻支持",
+      "sources": [
+        "R93",
+        "R94"
+      ],
+      "summary": "利用土中、石下、倒木與現成縫隙築巢，偏好濕潤陰蔽處。",
+      "engine_status": "not_simulated：巢室結構未進入數值引擎。"
+    }
+  },
+  "castes": {
+    "eclosion_caste_label": "minor_worker_scenario_unverified",
+    "eclosion_caste_label_note": "原寫死於 sim/day_engine.cjs developmentalDay() 的 eclosion 事件字串，搬移至物種參數（字串原樣）。",
+    "major_worker_production_enabled": false,
+    "major_worker_production_note": "物種層級開關：本物種確有 major 型態，但 v6 引擎未實作 major 產生；設為 true 會使引擎拒絕執行，而不是靜默忽略。"
+  },
+  "development": {
+    "reference_c": {
+      "value": 25,
+      "assumption": true,
+      "description": "以25°C為相對發育速率基準",
+      "reference_for_mechanism_only": [
+        "R94"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#development.reference_c"
+    },
+    "egg_days": {
+      "value": 10,
+      "assumption": true,
+      "description": "25°C卵期標準長度，遊戲假設",
+      "reference_for_mechanism_only": [
+        "R94"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#development.egg_days"
+    },
+    "larva_days": {
+      "value": 12,
+      "assumption": true,
+      "description": "25°C幼蟲期標準長度，遊戲假設，不等於實際野外幼蟲期",
+      "reference_for_mechanism_only": [
+        "R94"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#development.larva_days"
+    },
+    "pupa_days": {
+      "value": 10,
+      "assumption": true,
+      "description": "25°C蛹期標準長度，遊戲假設",
+      "reference_for_mechanism_only": [
+        "R94"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#development.pupa_days"
+    },
+    "q10": {
+      "value": 1.55,
+      "assumption": true,
+      "description": "溫度每提高10°C之發育速度倍數，遊戲假設",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#development.q10"
+    },
+    "min_temp_factor": {
+      "value": 0.48,
+      "assumption": true,
+      "description": "環境低溫時發育減緩下限，遊戲假設",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#development.min_temp_factor"
+    },
+    "max_temp_factor": {
+      "value": 1.9,
+      "assumption": true,
+      "description": "環境高溫時發育加速上限，遊戲假設",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#development.max_temp_factor"
+    },
+    "larva_min_nutrition_growth_factor": {
+      "value": 0.1,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "幼蟲發育速率乘上當日營養滿足率，最低不低於此倍率",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs developmentalDay(): Math.max(.1,Math.min(pFraction,sFraction))（原寫死於程式，數值原樣搬移，未修改）"
+    }
+  },
+  "metabolism": {
+    "reference_c": {
+      "value": 25,
+      "assumption": true,
+      "description": "一般生理學 + 遊戲假設: 巢溫代謝基準25°C；非P. megacephala實測",
+      "reference_for_mechanism_only": [
+        "PMC11750369"
+      ],
+      "basis": "一般生理學",
+      "basis_note": "一般外溫動物／昆蟲生理學推理，非本物種實測",
+      "legacy_path": "sim/params.json#nutrition.metabolic_reference_c"
+    },
+    "q10": {
+      "value": 2,
+      "assumption": true,
+      "description": "一般生理學 + 遊戲假設: Q10=2.0 是研究標準化假設，非本物種實測",
+      "reference_for_mechanism_only": [
+        "PMC11750369"
+      ],
+      "basis": "一般生理學",
+      "basis_note": "一般外溫動物／昆蟲生理學推理，非本物種實測",
+      "legacy_path": "sim/params.json#nutrition.metabolic_q10"
+    }
+  },
+  "nutrition": {
+    "worker_sugar_daily": {
+      "value": 0.1,
+      "assumption": true,
+      "description": "每工蟻日糖消耗，單位份",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#nutrition.worker_sugar_daily"
+    },
+    "worker_protein_daily": {
+      "value": 0.008,
+      "assumption": true,
+      "description": "每工蟻維生蛋白日耗，單位份",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#nutrition.worker_protein_daily"
+    },
+    "queen_sugar_daily": {
+      "value": 0.22,
+      "assumption": true,
+      "description": "蟻后日糖消耗，單位份",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#nutrition.queen_sugar_daily"
+    },
+    "queen_protein_daily": {
+      "value": 0.045,
+      "assumption": true,
+      "description": "蟻后維生蛋白日耗，單位份",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#nutrition.queen_protein_daily"
+    },
+    "larva_sugar_daily": {
+      "value": 0.025,
+      "assumption": true,
+      "description": "每幼蟲日糖日耗，單位份",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#nutrition.larva_sugar_daily"
+    },
+    "larva_protein_daily": {
+      "value": 0.08,
+      "assumption": true,
+      "rationale": "game assumption 0.08 portions per larva per day; no mg conversion; replaces 0.2",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#nutrition.larva_protein_daily"
+    },
+    "egg_laying_protein_cost": {
+      "value": 0.14,
+      "assumption": true,
+      "description": "每一顆卵的營養成本，單位份",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#nutrition.egg_laying_protein_cost"
+    },
+    "egg_laying_sugar_cost": {
+      "value": 0.08,
+      "assumption": true,
+      "description": "每一顆卵的營養成本，單位份",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#nutrition.egg_laying_sugar_cost"
+    },
+    "brood_protein_min_fraction": {
+      "value": 0.45,
+      "assumption": true,
+      "description": "幼蟲吃到至少此比率的蛋白才可有效發育",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#nutrition.brood_protein_min_fraction"
+    },
+    "max_sugar_store": {
+      "value": 24,
+      "assumption": true,
+      "description": "巢群本階段可存/嗉囊攜帶之糖份上限，會隨規模擴張",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#nutrition.max_sugar_store"
+    },
+    "max_protein_store": {
+      "value": 12,
+      "assumption": true,
+      "description": "巢群本階段可存/處理之蛋白份上限，會隨規模擴張",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#nutrition.max_protein_store"
+    },
+    "store_capacity_baseline_workers": {
+      "value": 14,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "巢內儲存上限開始隨工蟻數擴張的基準工蟻數",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs simulateDay(): Math.max(0,workers-14)（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "sugar_store_per_extra_worker": {
+      "value": 0.4,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "超過基準後每多一隻工蟻增加的糖儲存上限（份）",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs simulateDay(): Math.max(0,workers-14)*.4（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "protein_store_per_extra_worker": {
+      "value": 0.3,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "超過基準後每多一隻工蟻增加的蛋白儲存上限（份）",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs simulateDay(): Math.max(0,workers-14)*.3（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "ration_gap_threshold": {
+      "value": 0.995,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "當日糖或蛋白滿足率低於此值即累計一天缺口",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs consume(): sFraction<.995（原寫死於程式，數值原樣搬移，未修改）"
+    }
+  },
+  "starvation": {
+    "queen_egg_pause_days": {
+      "value": 2,
+      "assumption": true,
+      "description": "任一營養缺口累計2天停止產卵",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#starvation.queen_egg_pause_days"
+    },
+    "worker_mortality_starts_days": {
+      "value": 4,
+      "assumption": true,
+      "description": "連續糖缺口到4天開始額外死亡風險",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#starvation.worker_mortality_starts_days"
+    },
+    "larva_mortality_starts_days": {
+      "value": 5,
+      "assumption": true,
+      "description": "連續蛋白缺口到5天開始幼蟲死亡風險",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#starvation.larva_mortality_starts_days"
+    },
+    "worker_daily_hazard_base": {
+      "value": 0.015,
+      "assumption": true,
+      "description": "飢餓門檻後每日每蟻額外基礎死亡機率",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#starvation.worker_daily_hazard_base"
+    },
+    "worker_daily_hazard_slope": {
+      "value": 0.012,
+      "assumption": true,
+      "description": "缺口每延長一天死亡機率增幅",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#starvation.worker_daily_hazard_slope"
+    },
+    "larva_daily_hazard_base": {
+      "value": 0.05,
+      "assumption": true,
+      "description": "幼蟲營養不足的基礎死亡率",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#starvation.larva_daily_hazard_base"
+    },
+    "larva_daily_hazard_slope": {
+      "value": 0.055,
+      "assumption": true,
+      "description": "幼蟲缺蛋白每延長一天之機率增幅",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#starvation.larva_daily_hazard_slope"
+    },
+    "queen_hazard_after_days": {
+      "value": 12,
+      "assumption": true,
+      "description": "極端連續飢餓後蟻后也受風險",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#starvation.queen_hazard_after_days"
+    },
+    "queen_daily_hazard": {
+      "value": 0.008,
+      "assumption": true,
+      "description": "極端營養不足後蟻后每日額外死亡機率",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#starvation.queen_daily_hazard"
+    },
+    "queen_zero_worker_hazard_after_days": {
+      "value": 3,
+      "assumption": true,
+      "rationale": "after losing all caretakers queen hazard rises especially when energy deficient",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#starvation.queen_zero_worker_hazard_after_days"
+    },
+    "queen_zero_worker_starved_daily_hazard": {
+      "value": 0.24,
+      "assumption": true,
+      "rationale": "no workers plus prolonged food deficit elevates death risk; game assumption",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#starvation.queen_zero_worker_starved_daily_hazard"
+    },
+    "larva_daily_hazard_cap": {
+      "value": 0.75,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "幼蟲缺蛋白每日死亡機率上限",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs developmentalDay(): clamp(...,0,.75)（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "worker_starvation_hazard_cap": {
+      "value": 0.95,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "工蟻飢餓附加死亡機率上限",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs deathAndQueen(): clamp(...,0,.95)（原寫死於程式，數值原樣搬移，未修改）"
+    }
+  },
+  "brood_care": {
+    "unattended_larva_max_days": {
+      "value": 4,
+      "assumption": true,
+      "description": "一般生理學 + 遊戲假設: 無工蟻照護及餵食幼蟲最多4日，不是量測",
+      "reference_for_mechanism_only": [],
+      "basis": "一般生理學",
+      "basis_note": "一般外溫動物／昆蟲生理學推理，非本物種實測",
+      "legacy_path": "sim/params.json#starvation.unattended_larva_max_days"
+    },
+    "unattended_egg_max_days": {
+      "value": 10,
+      "assumption": true,
+      "description": "遊戲假設: 缺工蟻照護卵最多10日，非實測",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#starvation.unattended_egg_max_days"
+    },
+    "unattended_pupa_max_days": {
+      "value": 10,
+      "assumption": true,
+      "description": "遊戲假設: 缺工蟻照護蛹最多10日，非實測",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#starvation.unattended_pupa_max_days"
+    }
+  },
+  "worker_lifespan": {
+    "natural_daily_base_hazard": {
+      "value": 0.003,
+      "assumption": true,
+      "description": "假定日自然死亡基礎機率，非本種精確死亡率",
+      "reference_for_mechanism_only": [
+        "R94"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#starvation.worker_natural_daily_base_hazard"
+    },
+    "age_risk_from_days": {
+      "value": 28,
+      "assumption": true,
+      "description": "超過假設成蟻年齡後死亡風險逐日增加",
+      "reference_for_mechanism_only": [
+        "R94"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#starvation.worker_age_risk_from_days"
+    },
+    "age_hazard_slope": {
+      "value": 0.00075,
+      "assumption": true,
+      "description": "假設老化危險率每日增加量",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#starvation.worker_age_hazard_slope"
+    },
+    "injury_mortality_multiplier": {
+      "value": 1.4,
+      "assumption": true,
+      "description": "有舊傷者自然死亡額外風險倍率",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#starvation.injury_mortality_multiplier"
+    },
+    "newborn_initial_age_days": {
+      "value": 0,
+      "assumption": true,
+      "description": "新羽化成蟻年齡從零開始",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.newborn_initial_age_days"
+    },
+    "injury_repair_probability": {
+      "value": 0.05,
+      "assumption": true,
+      "description": "舊傷個體每日復原機率（需食物與休息）",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.injury_repair_probability"
+    },
+    "adult_total_daily_hazard_cap": {
+      "value": 0.98,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "工蟻合併每日死亡機率上限",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs deathAndQueen(): clamp(1-(1-natural)*(1-starvation),0,.98)（原寫死於程式，數值原樣搬移，未修改）"
+    }
+  },
+  "queen_laying": {
+    "base_laying_probability": {
+      "value": 0.38,
+      "assumption": true,
+      "description": "遊戲假設: 25°C、營養充足時每日發生產卵基礎機率，不等於每日必生一卵",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#queen.base_laying_probability"
+    },
+    "max_eggs_per_day": {
+      "value": 2,
+      "assumption": true,
+      "description": "單日最大產卵數；本階段獨立情境人口控制",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#queen.max_eggs_per_day"
+    },
+    "existing_brood_pressure": {
+      "value": 0.011,
+      "assumption": true,
+      "description": "每一隻既有幼體增加的繁殖抑制因子",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#queen.existing_brood_pressure"
+    },
+    "previous_laying_penalty": {
+      "value": 0.6,
+      "assumption": true,
+      "description": "昨日有產卵時今日產卵機率倍率",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#queen.previous_laying_penalty"
+    },
+    "adequate_nutrition_threshold": {
+      "value": 0.84,
+      "assumption": true,
+      "description": "若當日資源滿足比例低於此則產卵暫停",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#queen.adequate_nutrition_threshold"
+    },
+    "laying_reference_c": {
+      "value": 25,
+      "assumption": true,
+      "description": "遊戲假設: 產卵參考巢溫25°C，非本物種實測",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#queen.laying_reference_c"
+    },
+    "laying_temperature_q10": {
+      "value": 2.5,
+      "assumption": true,
+      "description": "遊戲假設: 低溫降低產卵機率的Q10形狀，非本物種實測",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#queen.laying_temperature_q10"
+    },
+    "second_egg_given_laying_probability": {
+      "value": 0.2,
+      "assumption": true,
+      "description": "遊戲假設: 當日發生產卵後，追加第二顆卵之機率；不保證兩卵",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#queen.second_egg_given_laying_probability"
+    },
+    "laying_probability_cap": {
+      "value": 0.9,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "蟻后每日產卵機率上限",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs deathAndQueen(): clamp(...,0,.9)（原寫死於程式，數值原樣搬移，未修改）"
+    }
+  },
+  "task_allocation": {
+    "rest_baseline_probability": {
+      "value": 0.22,
+      "assumption": true,
+      "description": "基礎休息比例，依飢餓狀態變動",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.rest_baseline_probability"
+    },
+    "nurse_baseline_probability": {
+      "value": 0.25,
+      "assumption": true,
+      "description": "基礎育幼偏好",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.nurse_baseline_probability"
+    },
+    "maintenance_baseline_probability": {
+      "value": 0.12,
+      "assumption": true,
+      "description": "巢口維護基礎偏好",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.maintenance_baseline_probability"
+    },
+    "forage_baseline_probability": {
+      "value": 0.36,
+      "assumption": true,
+      "description": "基礎覓食偏好，營養缺乏與招募將提高",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.forage_baseline_probability"
+    },
+    "defence_baseline_probability": {
+      "value": 0.05,
+      "assumption": true,
+      "description": "巢口警戒偏好",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.defence_baseline_probability"
+    },
+    "injury_foraging_multiplier": {
+      "value": 0.45,
+      "assumption": true,
+      "description": "受傷個體覓食意願下降倍率",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.injury_foraging_multiplier"
+    },
+    "newborn_nurse_days": {
+      "value": 4,
+      "assumption": true,
+      "description": "新羽化頭幾日優先巢內工作，遊戲假設",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.newborn_nurse_days"
+    },
+    "injured_task_forage_multiplier": {
+      "value": 0.75,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "受傷工蟻在任務抽選時的覓食權重倍率（注意：與未被引擎使用的 task_allocation.injury_foraging_multiplier=0.45 不同，見 PR 說明）",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs selectTask(): worker.injured?.75:1（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "newborn_forage_multiplier": {
+      "value": 0.08,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "新羽化工蟻覓食權重倍率",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs selectTask(): young?.08:1（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "hunger_own_crop_weight": {
+      "value": 0.7,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "任務抽選時自身嗉囊空虛對飢餓訊號的權重",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs selectTask(): (1-sugarSatiety)*.7（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "hunger_peer_weight": {
+      "value": 0.3,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "任務抽選時接觸同伴飢餓對飢餓訊號的權重",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs selectTask(): peerSugarHunger*.3（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "hunger_forage_boost": {
+      "value": 0.9,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "局部飢餓訊號提升覓食權重的幅度",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs selectTask(): (1+.9*hunger)（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "brood_begging_nurse_boost": {
+      "value": 0.65,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "親身接觸幼蟲求食訊號提升育幼權重的幅度",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs selectTask(): (1+.65*broodBegging)（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "newborn_nurse_multiplier": {
+      "value": 3,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "新羽化工蟻育幼權重倍率",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs selectTask(): young?3:1（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "injured_rest_multiplier": {
+      "value": 1.5,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "受傷工蟻休息權重倍率",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs selectTask(): worker.injured?1.5:1（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "soil_wetness_repair_boost": {
+      "value": 0.8,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "土表濕潤指數提升巢口維護權重的幅度",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs selectTask(): (1+.8*soil_index)（原寫死於程式，數值原樣搬移，未修改）"
+    }
+  },
+  "local_signals": {
+    "nest_contact_route_learning_probability": {
+      "value": 0.28,
+      "assumption": true,
+      "description": "每日同巢局部接觸，借由另一隻熟悉路線工蟻學到某已知食源路線的機率（非全知）",
+      "reference_for_mechanism_only": [
+        "R95",
+        "R116"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#workers.nest_contact_route_learning_probability"
+    },
+    "local_peer_contact_probability": {
+      "value": 0.58,
+      "assumption": true,
+      "rationale": "local in-nest encounter likelihood, no global visibility",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.local_peer_contact_probability"
+    },
+    "local_signal_smoothing": {
+      "value": 0.5,
+      "assumption": true,
+      "rationale": "fraction retained from own prior local encounters",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.local_signal_smoothing"
+    },
+    "default_own_crop_sugar_fill": {
+      "value": 0.55,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "個體尚無紀錄時的自身嗉囊飽足預設值",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs localSignals(): own_crop_sugar_fill??.55（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "default_peer_sugar_hunger": {
+      "value": 0.4,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "個體尚無紀錄時的同伴飢餓印象預設值",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs localSignals()/forage(): peer_sugar_hunger??.4（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "default_direct_brood_begging": {
+      "value": 0,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "個體尚無紀錄時的幼蟲求食接觸預設值",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs localSignals(): direct_brood_begging??0；forage(): ||0（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "default_peer_protein_request": {
+      "value": 0.25,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "個體尚無紀錄時的同伴蛋白需求印象預設值",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs localSignals()/forage(): peer_protein_request??.25（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "nurse_larva_contact_probability": {
+      "value": 0.75,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "育幼工蟻當日實際接觸到一隻幼蟲的機率",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs forage(): g()<.75（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "default_larva_begging_contact_signal": {
+      "value": 0.2,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "育幼接觸時，幼蟲尚無求食紀錄的預設訊號",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs forage(): brood.begging_signal??.2（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "crop_fill_previous_weight": {
+      "value": 0.3,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "嗉囊飽足記憶保留前一日的權重",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs consume(): .3*(own_crop_sugar_fill??.6)（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "crop_fill_today_weight": {
+      "value": 0.7,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "嗉囊飽足記憶採用當日實際進食比例的權重",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs consume(): +.7*full（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "default_crop_fill_before_feeding": {
+      "value": 0.6,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "巢內分配糖時個體尚無嗉囊紀錄的預設值",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs consume(): own_crop_sugar_fill??.6（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "larva_begging_previous_weight": {
+      "value": 0.3,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "幼蟲求食訊號保留前一日的權重",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs consume(): .3*(begging_signal??.3)（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "larva_begging_shortfall_weight": {
+      "value": 0.7,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "幼蟲求食訊號反映當日蛋白不足的權重",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs consume(): +.7*(1-pFraction)（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "default_larva_begging_prior": {
+      "value": 0.3,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "幼蟲尚無求食紀錄時的前一日預設值",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs consume(): begging_signal??.3（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "unload_feedback_default": {
+      "value": 0.5,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "個體尚無卸貨經驗時的卸貨回饋預設值",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs forage(): unload_feedback??={sugar:.5,protein:.5}；?.[macro]??.5（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "unload_ease_base": {
+      "value": 0.15,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "回巢卸貨難易度的基礎值",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs forage() unload(): .15+.8*(count/max)（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "unload_ease_contact_weight": {
+      "value": 0.8,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "回巢實際交哺接觸數對卸貨難易度的權重",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs forage() unload(): .15+.8*(count/max)（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "unload_feedback_previous_weight": {
+      "value": 0.5,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "卸貨回饋記憶保留前次的權重",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs forage() unload(): .5*previous（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "unload_feedback_today_weight": {
+      "value": 0.5,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "卸貨回饋記憶採用本次卸貨難易度的權重",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs forage() unload(): +.5*ease（原寫死於程式，數值原樣搬移，未修改）"
+    }
+  },
+  "foraging_activity": {
+    "rain_suppression_fraction": {
+      "value": 0.035,
+      "assumption": true,
+      "description": "每mm雨對出勤/採集倍率的減損，上限截斷",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.rain_suppression_fraction"
+    },
+    "min_rain_activity_multiplier": {
+      "value": 0.35,
+      "assumption": true,
+      "description": "暴雨仍可能有部分微氣候遮蔽路線",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.min_rain_activity_multiplier"
+    },
+    "foraging_cold_limit_c": {
+      "value": 10,
+      "assumption": true,
+      "rationale": "below this synthetic outdoor mean temperature cold activity reaches its assumed minimum",
+      "description": "遊戲假設: 白天最高氣溫10°C時活動權重下限，非本種實測",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.foraging_cold_limit_c"
+    },
+    "foraging_full_activity_c": {
+      "value": 25,
+      "assumption": true,
+      "rationale": "at this temperature or warmer there is no low-temperature penalty",
+      "description": "遊戲假設: 白天最高氣溫25°C時冷抑制解除，非地表最佳覓食溫度實測",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.foraging_full_activity_c"
+    },
+    "foraging_cold_min_multiplier": {
+      "value": 0.12,
+      "assumption": true,
+      "rationale": "assumed minimum foraging attempts, collection success and recruitment in cold weather",
+      "description": "文獻支持方向+遊戲假設: 低溫係數只作用於白天覓食出勤權重一次，不再影響採集和招募",
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#workers.foraging_cold_min_multiplier"
+    },
+    "daily_window_minutes": {
+      "value": 360,
+      "assumption": true,
+      "description": "假設單日可用覓食時段360分鐘，不是個體實測",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#foraging_physics.daily_window_minutes"
+    }
+  },
+  "foraging_trips": {
+    "max_trips_per_forager": {
+      "value": 2,
+      "assumption": true,
+      "description": "每覓食工蟻單日最大外勤次數",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.max_trips_per_forager"
+    },
+    "foraging_trip_sugar_cost": {
+      "value": 0.012,
+      "assumption": true,
+      "description": "覓食路線附加糖耗份數",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.foraging_trip_sugar_cost"
+    },
+    "repeat_trip_probability": {
+      "value": 0.5,
+      "assumption": true,
+      "description": "成功首趟後在時間允許時再試第二趟機率；遊戲假設，不是物種實測",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#foraging_physics.repeat_trip_probability"
+    }
+  },
+  "scouting": {
+    "scout_discovery_probability": {
+      "value": 0.25,
+      "assumption": true,
+      "description": "無既知食源時探索新地點成功機率",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.scout_discovery_probability"
+    },
+    "scout_search_when_route_unproductive_probability": {
+      "value": 0.18,
+      "assumption": true,
+      "rationale": "local search triggered by own failed route, does not reveal distant sugar source",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.scout_search_when_route_unproductive_probability"
+    },
+    "unproductive_route_threshold_portions": {
+      "value": 0.1,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "個體已知路線最佳收穫低於此份數時才可能改去探索",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs forage(): best<.1（原寫死於程式，數值原樣搬移，未修改）"
+    }
+  },
+  "site_choice": {
+    "sugar_hunger_priority_weight": {
+      "value": 4.5,
+      "assumption": true,
+      "rationale": "worker chooses sugar more often when own crop/encountered nestmates signal hunger",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.sugar_hunger_priority_weight"
+    },
+    "protein_begging_priority_weight": {
+      "value": 1.8,
+      "assumption": true,
+      "rationale": "only locally encountered hungry larvae or nurses can elevate protein foraging",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.protein_begging_priority_weight"
+    },
+    "unloading_success_memory_weight": {
+      "value": 1.4,
+      "assumption": true,
+      "rationale": "fast unloading reinforces same kind of forage; slow unloading suppresses it",
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.unloading_success_memory_weight"
+    },
+    "need_own_crop_weight": {
+      "value": 0.6,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "選擇食源時自身嗉囊空虛對糖需求的權重",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs forage(): (1-sugarSatiety)*.6（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "need_peer_weight": {
+      "value": 0.4,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "選擇食源時接觸同伴飢餓對糖需求的權重",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs forage(): peerSugarHunger*.4（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "default_prior_success_portions": {
+      "value": 0.15,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "個體對某食源尚無收穫紀錄時的預設收穫印象",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs forage(): last_success_portions??.15（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "default_last_visit_days_ago": {
+      "value": 2,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "個體對某食源尚無造訪紀錄時視為幾天前造訪",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs forage(): last_visit_day??(sim_day-2)（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "recent_failure_penalty": {
+      "value": 0.35,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "近期空手而回的食源評分倍率",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs forage(): prior===0&&...?.35:1（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "recent_failure_window_days": {
+      "value": 4,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "空手懲罰持續的天數範圍",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs forage(): sim_day-age<4（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "brood_begging_protein_weight": {
+      "value": 0.75,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "蛋白食源評分中親身接觸幼蟲求食的權重",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs forage(): broodBegging*.75（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "peer_protein_feedback_weight": {
+      "value": 0.25,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "蛋白食源評分中同伴蛋白需求印象的權重",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs forage(): proteinFeedback*.25（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "score_base_offset": {
+      "value": 0.15,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "食源評分的基礎偏移",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs forage(): (.15+prior)（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "unloading_memory_base": {
+      "value": 0.65,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "食源評分中卸貨回饋項的基礎值",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs forage(): (.65+weight*unload)（原寫死於程式，數值原樣搬移，未修改）"
+    },
+    "best_site_choice_probability": {
+      "value": 0.77,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "選擇評分第一名食源的機率（否則第二名）",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs forage(): g()<.77?0:1（原寫死於程式，數值原樣搬移，未修改）"
+    }
+  },
+  "food_handling": {
+    "carcass_access_probability": {
+      "value": 0.7,
+      "assumption": true,
+      "description": "到達且食物剩餘時遇到/可採的機率",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.carcass_access_probability"
+    },
+    "crop_load_sugar_min": {
+      "value": 0.28,
+      "assumption": true,
+      "description": "每趟成功糖運輸下界份數",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.crop_load_sugar_min"
+    },
+    "crop_load_sugar_max": {
+      "value": 0.62,
+      "assumption": true,
+      "description": "每趟成功糖運輸上界份數",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.crop_load_sugar_max"
+    },
+    "crop_load_protein_min": {
+      "value": 0.3,
+      "assumption": true,
+      "description": "每趟成功昆蟲蛋白運輸下界份數",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.crop_load_protein_min"
+    },
+    "crop_load_protein_max": {
+      "value": 0.64,
+      "assumption": true,
+      "description": "每趟成功昆蟲蛋白運輸上界份數",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#sources.crop_load_protein_max"
+    },
+    "liquid_collection_probability": {
+      "value": 0.85,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "抵達有液態糖的食源且未遇雨時實際採到的機率",
+      "legacy_path": null,
+      "moved_from_code": "sim/day_engine.cjs collect(): source.type===carcass?carcass_access_probability:.85（原寫死於程式，數值原樣搬移，未修改）"
+    }
+  },
+  "recruitment": {
+    "recruitment_probability": {
+      "value": 0.55,
+      "assumption": true,
+      "description": "成功覓食者在巢內接觸其他工蟻之招募機率",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.recruitment_probability"
+    },
+    "recruitment_max_followers": {
+      "value": 3,
+      "assumption": true,
+      "description": "每筆成功食物資訊最多影響三隻同巢工蟻",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.recruitment_max_followers"
+    },
+    "local_communication_retention_days": {
+      "value": 3,
+      "assumption": true,
+      "description": "招募訊號只保持短期局部記憶",
+      "reference_for_mechanism_only": [],
+      "basis": "遊戲假設",
+      "legacy_path": "sim/params.json#workers.local_communication_retention_days"
+    },
+    "trail_daily_retention": {
+      "value": 0.55,
+      "assumption": true,
+      "description": "單一費洛蒙路徑每日殘留比例，數值假設；文獻僅支持揮發與強化方向",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#foraging_physics.trail_daily_retention"
+    },
+    "trail_deposit_per_success": {
+      "value": 0.35,
+      "assumption": true,
+      "description": "每次成功運回食物的路段費洛蒙增加量，數值假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#foraging_physics.trail_deposit_per_success"
+    },
+    "trail_min_detectable": {
+      "value": 0.08,
+      "assumption": true,
+      "description": "局部工蟻可察覺路段費洛蒙下限，數值假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#foraging_physics.trail_min_detectable"
+    },
+    "trail_max_strength": {
+      "value": 3,
+      "assumption": true,
+      "description": "路段訊號飽和上限，數值假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#foraging_physics.trail_max_strength"
+    },
+    "follow_intermediate_source_probability": {
+      "value": 0.55,
+      "assumption": true,
+      "description": "工蟻抵達有食物的路線交叉點時，若仍嗅到前方費洛蒙，繼續追蹤的機率；遊戲假設，非實測",
+      "reference_for_mechanism_only": [
+        "SaundFriedman2023"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#foraging_physics.follow_intermediate_source_probability"
+    },
+    "trail_follow_max_hops": {
+      "value": 6,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "沿費洛蒙路段追蹤時最多經過的節點數",
+      "legacy_path": null,
+      "moved_from_code": "sim/foraging_physics.cjs followLocalTrail(): for(hop<6)（原寫死於程式，數值原樣搬移，未修改）"
+    }
+  },
+  "trophallaxis": {
+    "crop_capacity": {
+      "value": 0.8,
+      "assumption": true,
+      "description": "小工蟻嗉囊可持有之遊戲份數上限，非物種實測",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#foraging_physics.crop_capacity"
+    },
+    "max_trophallaxis_contacts": {
+      "value": 3,
+      "assumption": true,
+      "description": "回巢每次最多交哺接觸同伴數，數值假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#foraging_physics.max_trophallaxis_contacts"
+    },
+    "transfer_max_portions": {
+      "value": 0.28,
+      "assumption": true,
+      "description": "每次交哺最多交付的遊戲糖份，數值假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#foraging_physics.transfer_max_portions"
+    }
+  },
+  "predation": {
+    "live_prey_encounter_probability": {
+      "value": 0.06,
+      "assumption": true,
+      "description": "單次抵達F07/F11活昆蟲遇見率，遊戲假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#foraging_physics.live_prey_encounter_probability"
+    },
+    "large_prey_min_team": {
+      "value": 2,
+      "assumption": true,
+      "description": "大型獵物需同位置至少兩隻工蟻，遊戲假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#foraging_physics.large_prey_min_team"
+    },
+    "live_prey_capture_probability": {
+      "value": 0.48,
+      "assumption": true,
+      "description": "符合條件後捕獲活昆蟲機率，遊戲假設",
+      "reference_for_mechanism_only": [
+        "Dussutour2009",
+        "SaundFriedman2023",
+        "Dejean2005",
+        "Dejean2007"
+      ],
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持",
+      "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
+      "legacy_path": "sim/params.json#foraging_physics.live_prey_capture_probability"
+    }
+  }
+}
