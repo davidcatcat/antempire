@@ -48,7 +48,7 @@
 | 引擎用法 | `engine/activity.ts#edgeMinutes` | 有長度時，分鐘數＝長度×10×曲折度÷速度÷60；沒有長度時用舊的 25 分鐘 |
 | 畫面用法 | web-mvp 分支 `cli/web-export.ts#layoutOf` | 8 方位字轉角度，x＝sin×距離、y＝cos×距離（示意圖）；沒有方位或距離的地點放進「位置未知」區 |
 | 巢 | `docs/nest-construction.md` | N00 有 2 育幼空間、1 儲藏空間、1 泥脊，都是 `legacy_story_known_qualitative`；容積、深度、入口數全部 null |
-| 巢溫 | `world.nest_microclimate` | `nest_buffer_fraction`=0.55、`nest_temp_memory`=0.6（遊戲假設） |
+| 巢溫 | `world.nest_microclimate` | 引擎實際使用 `nest_temp_memory`=0.6（遊戲假設）；`nest_buffer_fraction`=0.55 **只存在於參數檔，引擎（`resolveWorld`）不讀取**（2026-11-03 依 Issue #43 審查更正） |
 
 **示意座標的一致性下限**（`scripts/geom.py` 算出；方位字只精確到 ±22.5°）：
 
@@ -61,6 +61,16 @@
 這些範圍是**驗證器的約束，不是長度**，不得寫入 `edge_length_cm`。
 
 ---
+
+## 1b. 四種「距離」不可混用（2026-11-03 依 Issue #43 審查補充）
+| 量 | 來源 | 用途 | 可否推得另一種 |
+|---|---|---|---|
+| **示意座標** | 方位字（8 方位）＋約距離，由畫面推算 | 只供畫面擺放；標示「示意」 | 不可當作量測位置 |
+| **直線距離**（敘事約距離） | 舊故事的「約 N cm」 | 只描述地點離巢口多遠 | 不等於可走的路徑長度 |
+| **路徑長度** | 世界參數 `routes.edge_length_cm`（只有 4 條邊有紀錄） | 引擎的移動時間（長度 ÷ 速度） | 未紀錄的邊**不可**由直線距離推算 |
+| **未知地形** | 未紀錄長度的邊、障礙物、曲折 | 引擎暫用 `route_edge_minutes` 25 分鐘（遊戲假設） | 保持未知並標示 |
+- 示意直線與路徑長度不一致**不一定是錯誤**（可能有障礙或曲折）；也**不得**為了消除文件中的差異而直接修改引擎世界。任何地點或長度的改變都要走規則更新 PR。
+- 引擎的路徑選擇（目前以記憶與 BFS 找路）不保證是物理最短距離；螞蟻也不必走最短路線，但路線選擇要能由局部訊號與個體記憶解釋。
 
 ## 2. 共用花園空間資料模型（引擎與畫面共用一份幾何）
 
@@ -220,7 +230,7 @@
 1. **世界物理（與蟻群無關）**：
    - 天氣 → 微地點地表水與土壤濕度指標；
    - 依幾何算出巢室的濕度狀態：只讀巢室幾何、所屬微地點與入口高程，**不讀蟻群人口或需求**；
-   - 巢室溫度用現行 `nest_buffer_fraction` 模型。若規則更新啟用深度衰減，才改成下式（R309）：
+   - 巢室溫度用現行的 `nest_temp_memory` 模型（`nest_buffer_fraction` 未被引擎使用）。若規則更新啟用深度衰減，才改成下式（R309）：
      `T_cav = T_mean + (T_surface − T_mean)·exp(−depth/D)`
      其中 `D` 為 null；啟用時必須由情境宣告，並標為遊戲假設。
 2. **局部事件產生**：巢室變成 wet 或 flooded、通道坍塌、入口被沖毀。這些是世界事件，各有事件 ID。
@@ -274,7 +284,7 @@
 
 #### B. 環境耦合：溫度、濕度、排水與風險
 - **溫度**：
-  - 第一階段沿用 `nest_buffer_fraction`／`nest_temp_memory`，不改；
+  - 第一階段沿用 `nest_temp_memory`（引擎實際使用者），不改；`nest_buffer_fraction` 未被讀取，要嘛在規則更新中正式啟用並說明，要嘛標示為未使用；
   - 第二階段（另開規則更新）才加深度與覆蓋物衰減，以 R309 的機制為準，`soil_thermal_diffusivity`、`cover_object_heat_capacity` 均為 null，必須由情境宣告；
   - 淺巢（R290）表示巢溫接近表土溫度，這是 pattern 驗證的方向，不是數值。
 - **濕度**：巢室只有離散的 `wetness_state`，**不輸出 RH%**，因為沒有測量。狀態轉移由下列量決定：
@@ -351,7 +361,7 @@
 | `world.soil_thermal_diffusivity_mm2_s` | null | true | 機制：一般物理（R309）；數值：— | 土質未知 |
 | `world.cover_object_heat_capacity` | null | true | — | 同上 |
 | `world.latitude_deg_for_solar_geometry` | null（情境可宣告約 24.18°N） | true | 遊戲假設 | 虛構地址；R310 只作氣候先驗 |
-| 既有 `nest_buffer_fraction` | 0.55（不變） | true | 遊戲假設 | 現行 |
+| 既有 `nest_buffer_fraction` | 0.55（不變） | true | 遊戲假設 | **引擎不讀取**（只在參數檔中）；實際使用的是 `nest_temp_memory` |
 | 既有 `edge_length_cm` | 48／31／83／35（不變） | true | 遊戲假設 | 唯一移動長度來源 |
 
 ---
