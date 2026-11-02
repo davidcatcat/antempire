@@ -409,6 +409,31 @@
 
 **R167 Phillips (1933) 重讀補充（2026-11-02，新增，不改舊列）**：夏威夷鳳梨田：本種「最活躍在清晨、傍晚與夜間，盡量避開熱處」（p.146）；冬季低溫使夜間野外活動停止，其他季節全天都可見（p.148）；實驗室約 10 隻工蟻＋5 隻兵蟻緩慢降溫：約 16.7°C 遲緩、約 10°C 癱瘓，回溫後多數恢復（樣本極小）；巢總在潮濕處；大雨淹巢溺死（p.144–145）。定性，文獻支持方向；數值信心低。
 
+
+## 2026-11-02 P0-A 24 小時生態時鐘（R230–R247；研究與設計，未改規則）
+
+> 用於 `docs/research-design-p0a-24h-clock.md`；工作筆記 `reports/p0a-24h-clock/literature-notes.md`。R228 Castiñeiras 1982、R229 Su 1979 定義在第二階段段落（PR #34）。R204–R227（#38）、R260–R275（P1-A）、R290–R311（P1-B）在其他 PR。他種一律「非本種」，數值不作本種參數。
+
+| ID | 文獻 | 讀取 | 等級 | 用途 | 不可外推 |
+|---|---|---|---|---|---|
+| R230 | Greenslade PJM (1971) *J. Appl. Ecol.* 8:323. DOI 10.2307/2402874 | 二手（經 R232） | a | 索羅門群島椰園中被歸為夜行性 | 未讀原文 |
+| R231 | Lee CY (2002) *Proc. 4th ICUP*:3–18 | 全文 | b | 3 種流浪蟻每 2 小時、48 小時：日落後 2～4 小時高峰，15 時左右幾乎停止，與溫度負相關 | *P. longicornis*、*M. pharaonis*、*S. geminata*，非本種 |
+| R232 | Chong KF, Lee CY (2009) *Sociobiology* 54:531–539 | 全文 | b | 72 小時：溫度、濕度各解釋約 20%，光不顯著；10 時高峰、14～16 時最低、夜間活躍 | *Anoplolepis gracilipes*，非本種 |
+| R233 | Cassill DL et al. (2009) *J. Insect Behav.* 22:313–323. DOI 10.1007/s10905-009-9173-4 | 全文 | b | 多段、不同步、可被接觸干擾、依位置而異的短睡眠；約 20% 工蟻同時在睡；光暗不影響 | *S. invicta*，1 個小實驗群，27°C |
+| R234 | Hasegawa E et al. (2016) *Sci. Rep.* 6:20846. DOI 10.1038/srep20846 | 摘要 | b | 門檻變異產生不活動個體，在活躍個體疲勞時接手 | 模擬＋他種群；無可用數值 |
+| R235 | Cole BJ (1991) *Am. Nat.* 137:244–259. DOI 10.1086/285156 | 經摘要工具 | b | 工蟻互相觸發活動、產生短週期 | *Leptothorax allardycei* |
+| R236 | Mildner S, Roces F (2017) *PLoS ONE* 12:e0169244. DOI 10.1371/journal.pone.0169244 | 摘要 | b | 巢內照護者在群體中全天活動無節律；覓食者可被餵食時刻同步 | *Camponotus rufipes* |
+| R237 | Ingram KK et al. (2009) *BMC Ecol.* 9:7. DOI 10.1186/1472-6785-9-7 | 摘要 | b | 覓食者有日節律，巢內工蟻持續低度活動 | *Pogonomyrmex occidentalis* |
+| R238 | Sharma VK et al. (2004) *Naturwissenschaften* 91:386–390. DOI 10.1007/s00114-004-0544-6 | 摘要 | b | 同巢個體與階級的日夜型不同；小工蟻無節律 | *Camponotus compressus* |
+| R239 | Narendra A et al. (2010) *Proc. R. Soc. B* 277:1531–1538. DOI 10.1098/rspb.2009.2324 | 摘要 | b | 以環境光強度（非溫度、非時刻）觸發出巢 | *Myrmecia pyriformis* |
+| R240 | Jeanson R, Weidenmüller A (2014) *Biol. Rev.* 89:671–687. DOI 10.1111/brv.12074 | 摘要 | b（綜述） | 個體差異的來源；門檻以外還有反應機率與強度 | 綜述 |
+| R241 | Gordon DM et al. (2013) *PLoS ONE* 8:e63363. DOI 10.1371/journal.pone.0063363 | 摘要 | b | 濕度越高，回巢者對出巢率的促進越強 | *P. barbatus* |
+| R242 | Bujan J et al. (2016) *Ecol. Evol.* 6:6282–6291. DOI 10.1002/ece3.2355 | 摘要 | b | 82 種螞蟻耐乾 0.7～97.9 h，隨體重增加；以 VPD 描述乾燥 | 巴拿馬群落 |
+| R243 | Kaspari M, Weiser MD (2000) *Biotropica* 32:703–711. DOI 10.1111/j.1744-7429.2000.tb00518.x | 摘要 | b | 濕季誘餌活動 +25%；日夜差異小 | 巴拿馬群落 |
+| R244 | Dolai A et al. (2024) *J. Biol. Rhythms* 39:295–307. DOI 10.1177/07487304241233778 | 摘要 | b | 雨天出入巢顯著減少；雨停後很快恢復，沒有補償性覓食 | *Oecophylla smaragdina*（樹棲） |
+| R245 | Farji-Brener AG et al. (2018) *Insectes Soc.* 65:233–239. DOI 10.1007/s00040-018-0605-z | 經摘要工具 | b | 雨使葉片負載重 143% 並掉落；模擬雨聲與濕度使行走加速約 30% | *Atta cephalotes* |
+| R246 | Human KG et al. (1998) *Environ. Entomol.* 27:822–833. DOI 10.1093/ee/27.4.822 | 經摘要工具 | b | 日活動與土溫、氣溫、濕度的關係；物種間活動時間大量重疊 | *Linepithema humile* 等 |
+| R247 | Parton WJ, Logan JA (1981) *Agric. Meteorol.* 23:205–216. DOI 10.1016/0002-1571(81)90105-9 | 只核對書目 | 一般方法 | 日內氣溫：白天正弦、夜間指數 | 係數未讀，`null` |
 ## 2026-11-02 P1-B 巢穴與空間（R290–R311；研究與設計，未改規則）
 
 > 用於 `docs/research-design-p1b-nest-space.md`；工作筆記 `reports/p1b-nest-space/literature-notes.md`。其他段落的編號（R189–R203 #34、R204–R227 #38、R228–R259 P0-A、R260–R275 P1-A）不重複。
