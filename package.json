@@ -19,7 +19,9 @@
     "evaluate:day0-extremes": "node cli/reports/day0-extremes.ts",
     "web:export": "node cli/web-export.ts",
     "web:build": "tsc -p web/tsconfig.json",
-    "web": "npm run web:build && node cli/web-serve.ts"
+    "web": "npm run web:build && node cli/web-serve.ts",
+    "evaluate:phase2-sensitivity": "node cli/reports/phase2-sensitivity.ts --run 4",
+    "check:phase2-sensitivity": "node cli/reports/phase2-sensitivity.ts --validate"
   },
   "devDependencies": {
     "@types/node": "22.19.0",
