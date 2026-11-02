@@ -1,0 +1,116 @@
+=== Engine (Q10 1.55, ref 25, clamp 0.48-1.9; egg10/larva12/pupa10) vs data ===
+dataset                        T   egg_obs   egg_eng larva_obs larva_eng  pupa_obs  pupa_eng total_obs total_eng
+Fluker1969 (R166)           21.0     21.00     11.92     30.00     14.30     21.00     11.92     72.00     38.13
+Phillips1933 C (R167)       23.6     18.00     10.63     27.00     12.76     20.50     10.63     65.50     34.02
+Phillips1933 B (R167)       25.6     17.00      9.74     23.50     11.69     19.00      9.74     59.50     31.17
+Phillips1933 A (R167)       27.0     12.00      9.16     20.00     10.99     20.00      9.16     52.00     29.31
+Chang1985 (R136)            26.5      8.50      9.36     16.50     11.24      9.00      9.36     36.00     29.96
+Yuan2026 (R94)              28.0      7.69      8.77     15.99     10.52      5.05      8.77     28.73     28.06
+
+=== Linear degree-day fits (rate=(T-T0)/K) per stage ===
+Fluker+Chang+Yuan    egg    T0= 16.99 K=   83.1 DD | Q10-fit: D25= 11.39 Q10= 4.44
+Fluker+Chang+Yuan    larva  T0= 13.27 K=  228.1 DD | Q10-fit: D25= 20.25 Q10= 2.58
+Fluker+Chang+Yuan    pupa   T0= 18.84 K=   53.2 DD | Q10-fit: D25= 10.16 Q10= 6.70
+Fluker+Chang+Yuan    total  T0= 16.26 K=  349.2 DD | Q10-fit: D25= 42.99 Q10= 3.66
+Fluker+Yuan          egg    T0= 16.96 K=   84.9 DD | Q10-fit: D25= 11.83 Q10= 4.20
+Fluker+Yuan          larva  T0= 13.01 K=  239.7 DD | Q10-fit: D25= 20.94 Q10= 2.46
+Fluker+Yuan          pupa   T0= 18.78 K=   46.5 DD | Q10-fit: D25=  9.30 Q10= 7.66
+Fluker+Yuan          total  T0= 16.35 K=  334.6 DD | Q10-fit: D25= 42.59 Q10= 3.72
+Phillips A-C only    egg    T0= 16.87 K=  129.5 DD | Q10-fit: D25= 16.14 Q10= 3.10
+Phillips A-C only    larva  T0= 13.85 K=  267.4 DD | Q10-fit: D25= 24.15 Q10= 2.39
+Phillips A-C only    pupa   T0=-82.91 K= 2145.9 DD | Q10-fit: D25= 19.90 Q10= 1.10
+Phillips A-C only    total  T0= 10.38 K=  878.2 DD | Q10-fit: D25= 60.32 Q10= 1.94
+all six              egg    T0= 17.74 K=   91.8 DD | Q10-fit: D25= 13.62 Q10= 4.01
+all six              larva  T0= 13.84 K=  240.1 DD | Q10-fit: D25= 22.13 Q10= 2.50
+all six              pupa   T0= 19.56 K=   67.6 DD | Q10-fit: D25= 14.58 Q10= 4.50
+all six              total  T0= 16.64 K=  406.0 DD | Q10-fit: D25= 51.36 Q10= 3.15
+
+=== Predictions of the Fluker+Chang+Yuan DD fit and Q10 fit, per dataset (total) ===
+Fluker1969 (R166)          T= 21.0 obs= 72.00 DD= 73.74 Q10fit= 72.27 engine= 38.13
+Phillips1933 C (R167)      T= 23.6 obs= 65.50 DD= 47.61 Q10fit= 51.56 engine= 34.02
+Phillips1933 B (R167)      T= 25.6 obs= 59.50 DD= 37.41 Q10fit= 39.77 engine= 31.17
+Phillips1933 A (R167)      T= 27.0 obs= 52.00 DD= 32.53 Q10fit= 33.16 engine= 29.31
+Chang1985 (R136)           T= 26.5 obs= 36.00 DD= 34.12 Q10fit= 35.38 engine= 29.96
+Yuan2026 (R94)             T= 28.0 obs= 28.73 DD= 29.76 Q10fit= 29.12 engine= 28.06
+Extrapolation (Fluker+Chang+Yuan total):
+  T=15.0  DD=     inf  Q10fit=  157.5  engine=  49.6 (factor 0.645)
+  T=17.0  DD=   474.5  Q10fit=  121.5  engine=  45.4 (factor 0.704)
+  T=18.0  DD=   201.2  Q10fit=  106.7  engine=  43.5 (factor 0.736)
+  T=19.0  DD=   127.6  Q10fit=   93.7  engine=  41.6 (factor 0.769)
+  T=20.0  DD=    93.5  Q10fit=   82.3  engine=  39.8 (factor 0.803)
+  T=22.0  DD=    60.9  Q10fit=   63.5  engine=  36.5 (factor 0.877)
+  T=24.0  DD=    45.1  Q10fit=   49.0  engine=  33.4 (factor 0.957)
+  T=25.0  DD=    40.0  Q10fit=   43.0  engine=  32.0 (factor 1.000)
+  T=30.0  DD=    25.4  Q10fit=   22.5  engine=  25.7 (factor 1.245)
+  T=32.0  DD=    22.2  Q10fit=   17.3  engine=  23.5 (factor 1.359)
+
+=== Pairwise Q10 (total) ===
+  Fluker1969 (R166)        vs Phillips1933 C (R167)    Q10= 1.44
+  Fluker1969 (R166)        vs Phillips1933 B (R167)    Q10= 1.51
+  Fluker1969 (R166)        vs Phillips1933 A (R167)    Q10= 1.72
+  Fluker1969 (R166)        vs Chang1985 (R136)         Q10= 3.53
+  Fluker1969 (R166)        vs Yuan2026 (R94)           Q10= 3.72
+  Phillips1933 C (R167)    vs Phillips1933 B (R167)    Q10= 1.62
+  Phillips1933 C (R167)    vs Phillips1933 A (R167)    Q10= 1.97
+  Phillips1933 C (R167)    vs Chang1985 (R136)         Q10= 7.88
+  Phillips1933 C (R167)    vs Yuan2026 (R94)           Q10= 6.51
+  Phillips1933 B (R167)    vs Phillips1933 A (R167)    Q10= 2.62
+  Phillips1933 B (R167)    vs Chang1985 (R136)         Q10=265.83
+  Phillips1933 B (R167)    vs Yuan2026 (R94)           Q10=20.77
+  Phillips1933 A (R167)    vs Chang1985 (R136)         Q10= 0.00
+  Phillips1933 A (R167)    vs Yuan2026 (R94)           Q10=377.29
+  Chang1985 (R136)         vs Yuan2026 (R94)           Q10= 4.50
+
+=== Stage proportions (egg:larva:pupa of total) ===
+  Fluker1969 (R166)          egg 0.29 larva 0.42 pupa 0.29
+  Phillips1933 C (R167)      egg 0.27 larva 0.41 pupa 0.31
+  Phillips1933 B (R167)      egg 0.29 larva 0.39 pupa 0.32
+  Phillips1933 A (R167)      egg 0.23 larva 0.38 pupa 0.38
+  Chang1985 (R136)           egg 0.24 larva 0.46 pupa 0.25
+  Yuan2026 (R94)             egg 0.27 larva 0.56 pupa 0.18
+
+Engine factor at 10..35 C: [(10, 0.518), (15, 0.645), (20, 0.803), (25, 1.0), (30, 1.245), (35, 1.55)]
+Temp where clamp 0.48 binds: T = 8.25246053659352
+Temp where clamp 1.90 binds: T = 39.64567403288892
+Fluct (DD, T0=16.3) Tmean=16 amp=0: days=    inf
+Fluct (DD, T0=16.3) Tmean=16 amp=3: days=  422.5
+Fluct (DD, T0=16.3) Tmean=16 amp=5: days=  238.9
+Fluct (DD, T0=16.3) Tmean=18 amp=0: days=  201.2
+Fluct (DD, T0=16.3) Tmean=18 amp=3: days=  175.7
+Fluct (DD, T0=16.3) Tmean=18 amp=5: days=  136.6
+Fluct (DD, T0=16.3) Tmean=21 amp=0: days=   73.7
+Fluct (DD, T0=16.3) Tmean=21 amp=3: days=   73.7
+Fluct (DD, T0=16.3) Tmean=21 amp=5: days=   73.5
+Fluct (DD, T0=16.3) Tmean=25 amp=0: days=   40.0
+Fluct (DD, T0=16.3) Tmean=25 amp=3: days=   40.0
+Fluct (DD, T0=16.3) Tmean=25 amp=5: days=   40.0
+
+=== Yuan 2026 Table S3 (28 C) interval hazards ===
+minor S: [1.0, 0.702, 0.337, 0.231, 0.087, 0.01, 0.01, 0.0] daily hazard per interval: [0.0253, 0.0525, 0.0269, 0.0701, 0.1569, 0.0, nan]
+  mean lifespan (death at interval midpoint) = 26.2 d
+soldier S: [1.0, 0.857, 0.786, 0.786, 0.571, 0.429, 0.071, 0.0] daily hazard per interval: [0.011, 0.0062, 0.0, 0.0227, 0.0205, 0.128, nan]
+  mean lifespan (death at interval midpoint) = 56.0 d
+Gompertz MLE minor: A=0.0245/d B=0.0200/d  mean=26.0 median=22.5  S(14,28,56)=0.67,0.40,0.08
+Gompertz MLE soldier: A=0.0025/d B=0.0440/d  mean=56.5 median=58.7  S(14,28,56)=0.95,0.87,0.54
+Engine natural hazard: mean lifespan 66.1 d, median 65 d, S at {14: 0.959, 28: 0.919, 56: 0.635, 70: 0.421, 84: 0.24, 98: 0.117, 140: 0.005}
+Ratio engine mean / Yuan minor mean 26.25 = 2.52 ; / Yuan all 29.78 = 2.22
+S. invicta 30C mean longevity at head width 0.6 mm = 72 d
+S. invicta 30C mean longevity at head width 0.8 mm = 83 d
+S. invicta 30C mean longevity at head width 1.0 mm = 94 d
+S. invicta 30C mean longevity at head width 1.2 mm = 105 d
+S. invicta 30C mean longevity at head width 1.4 mm = 116 d
+Calabi&Porter: +14% per 2C drop => Q10 = 1.93
+
+=== Egg->adult (minor) at Taichung monthly mean AIR temperature (illustration only; nest temp unknown) ===
+  month  1 T=17.0  engine= 45.4  DD(F+C+Y)=  474.5  DD(all6)= 1118.8  Q10fit= 121.5
+  month  2 T=17.7  engine= 44.1  DD(F+C+Y)=  243.2  DD(all6)=  382.0  Q10fit= 110.9
+  month  3 T=20.1  engine= 39.7  DD(F+C+Y)=   91.0  DD(all6)=  117.2  Q10fit=  81.2
+  month  4 T=23.5  engine= 34.2  DD(F+C+Y)=   48.3  DD(all6)=   59.2  Q10fit=  52.2
+  month  5 T=26.4  engine= 30.1  DD(F+C+Y)=   34.5  DD(all6)=   41.6  Q10fit=  35.8
+  month  6 T=28.1  engine= 27.9  DD(F+C+Y)=   29.5  DD(all6)=   35.4  Q10fit=  28.7
+  month  7 T=28.9  engine= 27.0  DD(F+C+Y)=   27.6  DD(all6)=   33.1  Q10fit=  25.9
+  month  8 T=28.4  engine= 27.6  DD(F+C+Y)=   28.8  DD(all6)=   34.5  Q10fit=  27.6
+  month  9 T=27.8  engine= 28.3  DD(F+C+Y)=   30.3  DD(all6)=   36.4  Q10fit=  29.9
+  month 10 T=25.5  engine= 31.3  DD(F+C+Y)=   37.8  DD(all6)=   45.8  Q10fit=  40.3
+  month 11 T=22.6  engine= 35.5  DD(F+C+Y)=   55.1  DD(all6)=   68.1  Q10fit=  58.7
+  month 12 T=18.7  engine= 42.2  DD(F+C+Y)=  143.4  DD(all6)=  196.8  Q10fit=  97.4
