@@ -8,6 +8,7 @@ import { clamp, round } from './math.ts';
 import type { Rng } from './rng.ts';
 import { goHome, routeTo, travel, type Trip } from './routes.ts';
 import { decayTrails, depositTrail, followLocalTrail, fullTrail } from './trails.ts';
+import { ensureRouteMemory, knownEmpty, knownNodes, knownRoute, learnRoute, markEmpty, unknownExits } from './navigation.ts';
 import { sourceSum, syncSource } from './ecology.ts';
 import { handoff } from './nutrition.ts';
 import { colonyDice, localSignals, nestContacts, nurseContact, rainActivity, selectTask } from './workers.ts';
@@ -16,6 +17,16 @@ import type { ColonyState, ColonySummary, Macro, SimEvent, Source, Weather, Work
 
 const knowledge = (colony: ColonyState, id: string) => colony.source_knowledge[id];
 const macroOf = (src: Source): Macro => (src.type === 'carcass' ? 'protein' : 'sugar');
+
+/**
+ * A physical outbound walk. With v2-review.14 route memory on (`day` given) the worker learns every edge it has
+ * just walked; otherwise this is exactly routes.travel().
+ */
+function walkRoute(sp: SpeciesParams, wp: WorldParams, worker: Worker, route: string[], events: SimEvent[], kind: string, offset: number, day: number | undefined): Trip | null {
+  const trip = travel(sp, wp, worker, route, events, kind, offset);
+  if (trip && day !== undefined) learnRoute(worker, route, kind, day);
+  return trip;
+}
 
 /** A worker whose own routes are unproductive may scout ONE unknown site adjacent to a site it knows. */
 function discover(world: WorldState, colony: ColonyState, sp: SpeciesParams, wp: WorldParams, worker: Worker, events: SimEvent[]): string | null {
@@ -123,6 +134,8 @@ export interface HuntContext {
   tripCost: () => void; byMacro: { sugar: Set<string>; protein: Set<string> };
   /** v2-review.11: living insects already being hunted by a waiting team, per site (not available to other hunts). */
   reserved?: Record<string, number>;
+  /** v2-review.14: game day used to record walked edges in route memory (undefined = route memory off). */
+  learnDay?: number;
 }
 
 /** Hunting is possible only at a carcass site whose carcass is empty on arrival and that holds living tracked insects. */
@@ -227,12 +240,12 @@ export function huntWindow(ctx: HuntContext, source: Source, arrivals: Arrival[]
         continue;
       }
       if (!n) { escape('insufficient_team_no_recruits'); lock(() => 0, null); Object.assign(engaged.get(finder.worker.id) as Carry, { walked_home: true, home: minute }); continue; }
-      travel(sp, wp, finder.worker, finder.route, events, 'hunt_recruit_lead', minute + one);
+      walkRoute(sp, wp, finder.worker, finder.route, events, 'hunt_recruit_lead', minute + one, ctx.learnDay);
       ctx.tripCost();
       for (let i = 0; i < n; i++) {
         const follower = pool.splice(Math.floor(g() * pool.length), 1)[0];
         if (!follower) break;
-        if (!travel(sp, wp, follower, finder.route, events, 'hunt_recruit_follow_trail', minute + one)) continue;
+        if (!walkRoute(sp, wp, follower, finder.route, events, 'hunt_recruit_follow_trail', minute + one, ctx.learnDay)) continue;
         follower.recruited_today = true; summary.tasks[follower.task as keyof typeof summary.tasks]--; follower.task = 'forage'; summary.tasks.forage++; summary.recruited++; ctx.tripCost();
         events.push({ type: 'hunt_recruitment', by: finder.worker.id, to: follower.id, site: source.id, minute: minute + one, physical_route: finder.route, signal_dependent: true, assumption: true });
         const k = knowledge(colony, source.id);
@@ -299,11 +312,111 @@ function planTrip(world: WorldState, colony: ColonyState, sp: SpeciesParams, wp:
   return { worker, source: chosen.source, route, trip, g };
 }
 
+/**
+ * v2-review.14 exploration: the worker walks a route it knows to one node it knows (possibly the nest), perceives
+ * the edges leaving that node, takes one it has never walked, and perceives what is at the far end. It cannot
+ * see further than that node. Exploring takes real walking time; finding nothing, a dead end or an empty site
+ * are all normal outcomes. Returns a plan when food is found there (the worker then forages at that site).
+ */
+function explore(world: WorldState, colony: ColonyState, sp: SpeciesParams, wp: WorldParams, worker: Worker, events: SimEvent[], day: number, tripCost: () => void): { plan: Plan | null; walked: boolean } {
+  const g = colonyDice(world, colony, 'explore:' + worker.id), nest = colony.nest_node;
+  if (g() >= sp.scouting.scout_discovery_probability) return { plan: null, walked: false };
+  const bases = knownNodes(worker, nest), base = bases[Math.floor(g() * bases.length)];
+  const toBase = knownRoute(worker, nest, base) as string[];
+  const exits = unknownExits(worker, wp, base);
+  if (!exits.length) {
+    // Walked to a known place and perceived no unexplored direction there.
+    if (base === nest) { events.push({ type: 'exploration_no_new_direction', worker: worker.id, node: base, minute: 0, assumption: true }); return { plan: null, walked: false }; }
+    const trip = walkRoute(sp, wp, worker, toBase, events, 'explore_depart', 0, day);
+    if (!trip) return { plan: null, walked: false };
+    tripCost();
+    events.push({ type: 'exploration_no_new_direction', worker: worker.id, node: base, minute: trip.arrive, assumption: true });
+    goHome(wp, worker, toBase, events, 'explore_return', trip.arrive);
+    return { plan: null, walked: true };
+  }
+  const next = exits[Math.floor(g() * exits.length)], route = [...toBase, next];
+  const trip = walkRoute(sp, wp, worker, route, events, 'explore_depart', 0, day);
+  if (!trip) { events.push({ type: 'route_timeout', worker: worker.id, site: next, assumption: true }); return { plan: null, walked: false }; }
+  events.push({ type: 'exploration_step', worker: worker.id, from: base, to: next, minute: trip.arrive, route, assumption: true });
+  const site = world.sources[next];
+  // What the worker can perceive on arrival: food on the spot, living tracked insects, or hemipterans on a living host.
+  const perceivable = !!site && (sourceSum(site) > 1e-5 || (world.ecology.insects_by_site[site.id]?.living ?? 0) > 0 || (site.type === 'honeydew' && site.host_alive !== false && ((site.hemipteran_colonies as number) ?? 0) > 0));
+  if (site && perceivable) {
+    // Food perceived on arrival: forage here now.
+    const k = knowledge(colony, site.id);
+    if (k.presence === 'potential') k.presence = 'confirmed_game_scenario'; // colony bookkeeping only
+    events.push({ type: 'discovery', worker: worker.id, site: site.id, food_kind: site.type, minute: trip.arrive, assumption: true });
+    if (!worker.known_sources.includes(site.id)) worker.known_sources.push(site.id);
+    if (!k.known_by.includes(worker.id)) k.known_by.push(worker.id);
+    return { plan: { worker, source: site, route, trip, g: colonyDice(world, colony, 'target:' + worker.id) }, walked: true };
+  }
+  tripCost();
+  if (site && site.host_alive === false) {
+    // A dead host plant: nothing will appear here (no regrowth in this model); this worker remembers it.
+    markEmpty(worker, site.id, day);
+    const k = knowledge(colony, site.id);
+    if (k.presence === 'potential') k.presence = 'scouted_empty'; // colony bookkeeping only
+    events.push({ type: 'scouted_empty', worker: worker.id, site: site.id, minute: trip.arrive, assumption: true });
+  } else events.push({ type: 'exploration_found_nothing', worker: worker.id, node: next, minute: trip.arrive, ...(site ? { site_without_food_now: site.id } : {}), assumption: true });
+  goHome(wp, worker, route, events, 'explore_return', trip.arrive);
+  return { plan: null, walked: true };
+}
+
+/**
+ * v2-review.14 trip planning from the worker's OWN memory: a known site is usable only over edges the worker has
+ * walked. A worker with no usable site first follows trail pheromone it can sense at the nest (hop by hop), and
+ * otherwise may explore. A worker whose own sites are unproductive may explore instead of going back.
+ */
+function planTripFromMemory(world: WorldState, colony: ColonyState, sp: SpeciesParams, wp: WorldParams, worker: Worker, events: SimEvent[], summary: ColonySummary, day: number, tripCost: () => void): Plan | null {
+  const sc = sp.site_choice, nest = colony.nest_node;
+  const g = colonyDice(world, colony, 'target:' + worker.id); worker.site_memory ??= {};
+  const memory = worker.site_memory;
+  const known = worker.known_sources.map((id) => world.sources[id]).filter((src) => src && !knownEmpty(worker, src.id) && knownRoute(worker, nest, src.id));
+  const best = Math.max(0, ...known.map((src) => memory[src.id]?.last_success_portions ?? 0));
+  if (!known.length || (best < sp.scouting.unproductive_route_threshold_portions && g() < sp.scouting.scout_search_when_route_unproductive_probability)) {
+    if (!known.length) {
+      const trail = followLocalTrail(world, colony, sp, wp, worker, g, events, true);
+      if (trail) return depart(world, colony, sp, wp, worker, events, trail.source, trail.route, 'trail_follow_depart', g, day);
+    }
+    const ex = explore(world, colony, sp, wp, worker, events, day, tripCost);
+    if (ex.plan) return ex.plan;
+    if (ex.walked || !known.length) { summary.scouts++; return null; }
+  }
+  const cues = localSignals(sp, worker), need = clamp((1 - cues.sugarSatiety) * sc.need_own_crop_weight + cues.peerSugarHunger * sc.need_peer_weight, 0, 1);
+  const ranks = known.map((site) => {
+    const macro = macroOf(site), prior = memory[site.id]?.last_success_portions ?? sc.default_prior_success_portions;
+    const age = memory[site.id]?.last_visit_day ?? (world.sim_day - sc.default_last_visit_days_ago), penalty = prior === 0 && world.sim_day - age < sc.recent_failure_window_days ? sc.recent_failure_penalty : 1;
+    const unload = worker.local_sensory?.unload_feedback?.[macro] ?? sp.local_signals.unload_feedback_default;
+    const bias = macro === 'sugar' ? 1 + sc.sugar_hunger_priority_weight * need : 1 + sc.protein_begging_priority_weight * clamp(cues.broodBegging * sc.brood_begging_protein_weight + cues.proteinFeedback * sc.peer_protein_feedback_weight, 0, 1);
+    return { site, score: (sc.score_base_offset + prior) * penalty * bias * (sc.unloading_memory_base + sc.unloading_success_memory_weight * unload) };
+  }).sort((a, b) => b.score - a.score);
+  const site = ranks[g() < sc.best_site_choice_probability ? 0 : Math.min(1, ranks.length - 1)].site;
+  return depart(world, colony, sp, wp, worker, events, site, knownRoute(worker, nest, site.id) as string[], 'foraging_depart', g, day);
+}
+
+/** Walk to the chosen site; what is there becomes known only on arrival. */
+function depart(world: WorldState, colony: ColonyState, sp: SpeciesParams, wp: WorldParams, worker: Worker, events: SimEvent[], source: Source, route: string[], kind: string, g: Rng, day: number): Plan | null {
+  const trip = walkRoute(sp, wp, worker, route, events, kind, 0, day);
+  if (!trip) { events.push({ type: 'route_timeout', worker: worker.id, site: source.id, assumption: true }); return null; }
+  const k = knowledge(colony, source.id);
+  if (k.presence === 'potential') {
+    k.presence = source.host_alive ? 'confirmed_game_scenario' : 'scouted_empty';
+    events.push(source.host_alive ? { type: 'discovery', worker: worker.id, site: source.id, food_kind: source.type, assumption: true } : { type: 'scouted_empty', worker: worker.id, site: source.id, assumption: true });
+  }
+  if (source.host_alive === false) markEmpty(worker, source.id, day);
+  if (!worker.known_sources.includes(source.id)) worker.known_sources.push(source.id);
+  if (!k.known_by.includes(worker.id)) k.known_by.push(worker.id);
+  return { worker, source, route, trip, g };
+}
+
 /** One colony's whole foraging day. Mutates world sources/insects (collection, predation) and the colony. */
 export function forageDay(world: WorldState, colony: ColonyState, sp: SpeciesParams, wp: WorldParams, weather: Weather, events: SimEvent[], summary: ColonySummary): void {
   const ft = sp.foraging_trips, rc = sp.recruitment, ls = sp.local_signals, nest = colony.nest_node;
   const tripCost = () => { summary.foraging_trips++; summary.extra_sugar_cost = round(summary.extra_sugar_cost + ft.foraging_trip_sugar_cost); };
   const byMacro = summary.foraging_workers_by_macro as { sugar: Set<string>; protein: Set<string> };
+  // v2-review.14: individual route memory (switch navigation.individual_route_memory).
+  const learnDay = sp.navigation.individual_route_memory ? world.sim_day + 1 : undefined;
+  if (learnDay !== undefined) ensureRouteMemory(colony, wp, learnDay, events);
   decayTrails(colony, sp, events);
   nestContacts(world, colony, sp, events);
   const foragers: Worker[] = [];
@@ -316,7 +429,7 @@ export function forageDay(world: WorldState, colony: ColonyState, sp: SpeciesPar
   // Plan all departures first and move every forager to its site BEFORE any group capture, so prey
   // teams form ONLY from independent workers who actually reached the same node.
   const plans: Plan[] = [];
-  for (const worker of foragers) { const plan = planTrip(world, colony, sp, wp, worker, events, summary); if (plan) plans.push(plan); }
+  for (const worker of foragers) { const plan = learnDay === undefined ? planTrip(world, colony, sp, wp, worker, events, summary) : planTripFromMemory(world, colony, sp, wp, worker, events, summary, learnDay, tripCost); if (plan) plans.push(plan); }
 
   const unload = (worker: Worker, source: Source, route: string[], found: { macro: Macro; load: number }, g: Rng) => {
     const transfer = handoff(colony, sp, worker, found.macro, found.load, events, g, source.id);
@@ -345,7 +458,7 @@ export function forageDay(world: WorldState, colony: ColonyState, sp: SpeciesPar
       // Optional repeated trip with explicit travel time, never free instantaneous collection.
       let finalReturn = trip.back;
       if (g() < ft.repeat_trip_probability && ft.max_trips_per_forager >= 2) {
-        const again = travel(sp, wp, worker, route, events, 'repeat_depart', trip.back);
+        const again = walkRoute(sp, wp, worker, route, events, 'repeat_depart', trip.back, learnDay);
         if (again) {
           finalReturn = again.back; tripCost();
           const more = collect(world, colony, sp, wp, source, worker, weather, events, hunting ? [worker] : null);
@@ -361,7 +474,7 @@ export function forageDay(world: WorldState, colony: ColonyState, sp: SpeciesPar
         for (let i = 0; i < n; i++) {
           const follower = possible.splice(Math.floor(g() * possible.length), 1)[0];
           if (!follower) break;
-          const follow = travel(sp, wp, follower, route, events, 'recruit_follow_trail', finalReturn);
+          const follow = walkRoute(sp, wp, follower, route, events, 'recruit_follow_trail', finalReturn, learnDay);
           if (!follow) continue;
           follower.recruited_today = true; summary.tasks[follower.task as keyof typeof summary.tasks]--; follower.task = 'forage'; summary.tasks.forage++; summary.recruited++; tripCost();
           events.push({ type: 'local_recruitment', by: worker.id, to: follower.id, site: source.id, physical_route: route, signal_dependent: true, assumption: true });
@@ -389,7 +502,7 @@ export function forageDay(world: WorldState, colony: ColonyState, sp: SpeciesPar
     // and workers arriving before the recruits join it.
     const lateJoin = sp.predation.late_arrivals_join_waiting_prey;
     const waitingList: WaitingPrey[] = [];
-    const ctx: HuntContext = { world, colony, sp, wp, events, summary, tripCost, byMacro, ...(lateJoin ? { reserved: {} } : {}) };
+    const ctx: HuntContext = { world, colony, sp, wp, events, summary, tripCost, byMacro, ...(lateJoin ? { reserved: {} } : {}), ...(learnDay !== undefined ? { learnDay } : {}) };
     interface Visit { arrival: Arrival; source: Source; kind: 'first' | 'repeat' | 'follow'; plan: Plan }
     /** A marker that makes the clock stop at a waiting prey's resolution minute even if nobody else arrives. */
     interface Marker { arrival: { arrive: number }; source: Source; kind: 'resolve' }
@@ -408,7 +521,7 @@ export function forageDay(world: WorldState, colony: ColonyState, sp: SpeciesPar
       for (let i = 0; i < n; i++) {
         const follower = possible.splice(Math.floor(g() * possible.length), 1)[0];
         if (!follower) break;
-        const follow = travel(sp, wp, follower, route, events, 'recruit_follow_trail', finalReturn);
+        const follow = walkRoute(sp, wp, follower, route, events, 'recruit_follow_trail', finalReturn, learnDay);
         if (!follow) continue;
         follower.recruited_today = true; summary.tasks[follower.task as keyof typeof summary.tasks]--; follower.task = 'forage'; summary.tasks.forage++; summary.recruited++; tripCost();
         events.push({ type: 'local_recruitment', by: worker.id, to: follower.id, site: source.id, physical_route: route, signal_dependent: true, assumption: true });
@@ -440,7 +553,7 @@ export function forageDay(world: WorldState, colony: ColonyState, sp: SpeciesPar
       if (!found) return;
       // First trip succeeded: optional repeated trip with explicit travel time, then local recruitment.
       if (v.plan.g() < ft.repeat_trip_probability && ft.max_trips_per_forager >= 2) {
-        const again = travel(sp, wp, worker, route, events, 'repeat_depart', back);
+        const again = walkRoute(sp, wp, worker, route, events, 'repeat_depart', back, learnDay);
         if (again) { tripCost(); schedule({ arrival: { worker, route, arrive: again.arrive }, source, kind: 'repeat', plan: v.plan }); return; }
       }
       recruitFollowers(v.plan, back);

@@ -5,6 +5,7 @@
 import { clamp, round } from './math.ts';
 import { colonyDice } from './workers.ts';
 import { formatId } from './brood.ts';
+import { settleCrops } from './nutrition.ts';
 import type { SpeciesParams } from './params.ts';
 import type { ColonyState, ColonySummary, Ratios, SimEvent, Weather, Worker, WorldState } from './types.ts';
 
@@ -60,7 +61,10 @@ export function oviposition(world: WorldState, colony: ColonyState, sp: SpeciesP
   // At most max_eggs_per_day; the conditional second-egg probability is a game assumption.
   if (laid && q.max_eggs_per_day >= 2 && eggDice() < q.second_egg_given_laying_probability && stores.sugar >= 2 * n.egg_laying_sugar_cost && stores.protein >= 2 * n.egg_laying_protein_cost) laid = 2;
   for (let i = 0; i < laid; i++) {
-    stores.sugar = round(stores.sugar - n.egg_laying_sugar_cost); stores.protein = round(stores.protein - n.egg_laying_protein_cost);
+    stores.sugar = round(stores.sugar - n.egg_laying_sugar_cost);
+    // v2-review.13: the sugar spent on an egg leaves the workers' crops too, so crops stay a subset of the ledger.
+    if (sp.nutrition_rules.egg_laying_settles_crops) settleCrops(colony, n.egg_laying_sugar_cost);
+    stores.protein = round(stores.protein - n.egg_laying_protein_cost);
     const id = formatId(colony.egg_id_prefix, colony.next_egg_number++, colony.id_number_width);
     pop.brood.push({ id, stage: 'egg', laid_on_day: world.sim_day + 1, age_days: 0, progress: 0, origin: 'v2_scenario_laying' });
     events.push({ type: 'egg_laid', id, queen: colony.queen_id, sugar_cost_portions: n.egg_laying_sugar_cost, protein_cost_portions: n.egg_laying_protein_cost }); summary.eggs_laid++;

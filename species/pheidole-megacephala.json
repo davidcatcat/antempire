@@ -347,7 +347,9 @@
       "description": "當日糖或蛋白滿足率低於此值即累計一天缺口",
       "legacy_path": null,
       "moved_from_code": "sim/day_engine.cjs consume(): sFraction<.995（原寫死於程式，數值原樣搬移，未修改）"
-    }
+    },
+    "egg_laying_settles_crops": true,
+    "egg_laying_settles_crops_note": "錯誤修正開關（v2-review.13）：true＝蟻后產卵消耗的糖同時從工蟻嗉囊扣除（與代謝、溢出相同，用 settleCrops），使『嗉囊中的糖 ⊆ 蟻群糖帳』永遠成立。false＝v2-review.12 以前：產卵只扣帳、不扣嗉囊，產卵日之後嗉囊可能超過帳面（20 種子 × 120 日有 155 天違反），只供隔離證明使用。這是程式錯誤修正，不是新的生物學機制；數值都沒有改。"
   },
   "starvation": {
     "queen_egg_pause_days": {
@@ -1408,6 +1410,11 @@
       "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
       "legacy_path": "sim/params.json#foraging_physics.transfer_max_portions"
     }
+  },
+  "navigation": {
+    "individual_route_memory": true,
+    "individual_route_memory_note": "模型開關（v2-review.14，#8；Owner 2026-11-02 指示開發）。true＝每隻工蟻只能沿自己實際走過的路段（route_memory）規劃路線；沒有可用路線時，先感知巢口的可追蹤費洛蒙並逐段跟隨，否則可局部探索：沿已知路線走到一個已知節點，感知該節點的出口，走一條沒走過的路段，到達後才知道那裡有什麼。路段只有實際走過才會記住（含跟隨費洛蒙或招募者走過的路段）。不使用全圖最短路，也不讀蟻群層級的地點旗標做個體決策。false＝v2-review.12 的全圖路線（只供隔離證明）。改變此開關屬於規則更新。",
+    "memory_model_note": "第一版的抽象化（遊戲假設）：記憶＝走過的路段集合，含取得方式（walked／trail_followed／recruit_followed／explored／day14_history）、首次與最近使用日；另記『到過但沒有食物來源的地點』。沒有遺忘（本種沒有路線記憶保持時間的資料），雙向可用，不記距離。探索沿用 scouting.scout_discovery_probability 作為『當天實際出去探索』的機率、route_edge_minutes 作為每段步行時間，沒有新增數值參數。"
   },
   "predation": {
     "live_prey_encounter_probability": {

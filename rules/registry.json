@@ -120,6 +120,40 @@
       "previous": "antempire.v2-review.11-late-arrivals-join-waiting-prey",
       "save_schema": "antempire.engine-v2",
       "state_migration": null
+    },
+    {
+      "rules_version": "antempire.v2-review.13-egg-sugar-settles-crops",
+      "tag": "v13",
+      "fingerprint": {
+        "engine": "e30ca796389b1301b75e7cebfcff0b82a04c5aac27bbb100e9e0223c224b4395",
+        "params": "b86c9bf3f8049614f24f1be4b53dc2502f256434578f7b6cb45ca43b34fb11b8"
+      },
+      "approved_in": "#21（錯誤修正：產卵耗糖同時從嗉囊扣除，#20）",
+      "merge_commit": "9577b498d6d9d93d06901115edaf27893c1f5957",
+      "golden": {
+        "traces": "tests/golden/v13-trace-sha256.json",
+        "reports": "reports/day15-134-v13-*"
+      },
+      "previous": "antempire.v2-review.12-injury-types",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null
+    },
+    {
+      "rules_version": "antempire.v2-review.14-individual-route-memory",
+      "tag": "v14",
+      "fingerprint": {
+        "engine": "42a34c98e6951a4812eb38027161a455fe402129aa5672823d16b777924c2d32",
+        "params": "e80a019a4f2d103e624d108177aa352fa1892307cbb0b33713bad92290aaf123"
+      },
+      "approved_in": "#22（個體路線記憶與局部探索，#8）",
+      "merge_commit": "92a75e8a9af3d7759c9ef219aa9d7f08c20bd010",
+      "golden": {
+        "traces": "tests/golden/v14-trace-sha256.json",
+        "reports": "reports/day15-134-v14-*"
+      },
+      "previous": "antempire.v2-review.13-egg-sugar-settles-crops",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": "worker route_memory is created at the first v14 day by engine/navigation.ts ensureRouteMemory() from world day15_migration.worker_route_evidence (recorded history only); no existing field is rewritten"
     }
   ]
 }
