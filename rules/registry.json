@@ -1,0 +1,159 @@
+{
+  "schema": "antempire.rules-registry.v1",
+  "note": "已核准的規則版本（#11）。每個會改變模擬輸出的規則更新 PR 都必須在本檔新增一筆（含該 PR 的規則指紋），PR 合併即代表核准；CI 驗證目前程式的指紋＝最後一筆。存檔在 Day15 啟用時凍結當時的指紋；之後要換成新版本，只能用 `npm run advance -- --adopt-rules <rules_version> --confirm-advance --day N`，而且只能從存檔凍結的版本換到登錄檔中緊接的下一版（不可跳版），切換與第 N 天的推進在同一筆可復原交易中提交。指紋演算法：cli/lib/fingerprint.ts（engine/*.ts 與參數檔的 sha256 清單）。",
+  "versions": [
+    {
+      "rules_version": "antempire.v2-review.6-physical-foraging-pheromone-trophallaxis",
+      "tag": "v6",
+      "fingerprint": {
+        "engine": "a01bb93accc091f8fb6791bf355cfa6214f5b40b480a9d7066c0a51d977ba587",
+        "params": "fcade044381ab46a0e23b12dcac0e61f79f3c3a4642ca3e3ee3653d62e807272"
+      },
+      "approved_in": "#2–#5（TypeScript 移植與工具；行為與 sim/day_engine.cjs 逐位元組相同）",
+      "merge_commit": "8d59aba63949dd488dfb5b367e22500f4b5502ff",
+      "golden": {
+        "traces": "tests/golden/v6-trace-sha256.json",
+        "reports": "reports/day15-134-v6-*"
+      },
+      "previous": null,
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null
+    },
+    {
+      "rules_version": "antempire.v2-review.7-nest-temperature-memory",
+      "tag": "v7",
+      "fingerprint": {
+        "engine": "aa7a19d09e564003bc2ddcba93f9b3ea753ae7dfbcae40115c10568887742276",
+        "params": "fcade044381ab46a0e23b12dcac0e61f79f3c3a4642ca3e3ee3653d62e807272"
+      },
+      "approved_in": "#6",
+      "merge_commit": "9ca20d882753164a3f9b683cb6439e2cfb0f9a56",
+      "golden": {
+        "traces": "tests/golden/v7-trace-sha256.json",
+        "reports": "reports/day15-134-v7-*"
+      },
+      "previous": "antempire.v2-review.6-physical-foraging-pheromone-trophallaxis",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null
+    },
+    {
+      "rules_version": "antempire.v2-review.8-injured-worker-neutral-tasks",
+      "tag": "v8",
+      "fingerprint": {
+        "engine": "aec8297839f6117b060c42a2245db164605a99b58a6e430753c10941efbf70cf",
+        "params": "b8e3c531b77be6ef79ae6fd351f4e2ea646ce9a7b17acb4b74de7643db47583a"
+      },
+      "approved_in": "#14",
+      "merge_commit": "6828c198d7f5f3f64057aa483ca37b27ff5e1013",
+      "golden": {
+        "traces": "tests/golden/v8-trace-sha256.json",
+        "reports": "reports/day15-134-v8-*"
+      },
+      "previous": "antempire.v2-review.7-nest-temperature-memory",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null
+    },
+    {
+      "rules_version": "antempire.v2-review.9-simultaneous-site-hunting",
+      "tag": "v9",
+      "fingerprint": {
+        "engine": "e8ad231c29ea41071ac83e6b1e9c86509300896644527d545c45072d6c7b5f72",
+        "params": "378feb12de4639a2b4f424a6fdb7d490496e63227df3729b7be2e96afa806055"
+      },
+      "approved_in": "#15",
+      "merge_commit": "335bbecae178091eb714dd133892871bcb86e739",
+      "golden": {
+        "traces": "tests/golden/v9-trace-sha256.json",
+        "reports": "reports/day15-134-v9-*"
+      },
+      "previous": "antempire.v2-review.8-injured-worker-neutral-tasks",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null
+    },
+    {
+      "rules_version": "antempire.v2-review.10-hunt-team-cap",
+      "tag": "v10",
+      "fingerprint": {
+        "engine": "a591e852c35e30f48b3b8a4df404516d117faea9a2052626f75395dceb81d3eb",
+        "params": "b607df2bcbc56cb2732f42d7973d6dff1c9a7bdd8a136fe99ab50bccf6ad144b"
+      },
+      "approved_in": "#16",
+      "merge_commit": "0de9661bb55b57f5c234b7a109db74a3e8526a3a",
+      "golden": {
+        "traces": "tests/golden/v10-trace-sha256.json",
+        "reports": "reports/day15-134-v10-*"
+      },
+      "previous": "antempire.v2-review.9-simultaneous-site-hunting",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null
+    },
+    {
+      "rules_version": "antempire.v2-review.11-late-arrivals-join-waiting-prey",
+      "tag": "v11",
+      "fingerprint": {
+        "engine": "b09174a3cf0e8ab8f4efc543127e0d430c9ab860a00cdf25c4fb9488a04ed014",
+        "params": "9517411b033c6d95968dd1877bbf73f2b52b934a580e963cbce94b6fa31e8be8"
+      },
+      "approved_in": "#18",
+      "merge_commit": "52ac34cd02fbf82a399e3e52a8e7513f2c59169b",
+      "golden": {
+        "traces": "tests/golden/v11-trace-sha256.json",
+        "reports": "reports/day15-134-v11-*"
+      },
+      "previous": "antempire.v2-review.10-hunt-team-cap",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null
+    },
+    {
+      "rules_version": "antempire.v2-review.12-injury-types",
+      "tag": "v12",
+      "fingerprint": {
+        "engine": "4dee7ea3c399a73917bd86c8648ca5ce052ba5c655a3b45d01e57e1cd4305da6",
+        "params": "837a53da451ded6eef7d0fcdfb0d9de6343d071e4515e59fa8f45fd163557176"
+      },
+      "approved_in": "#19",
+      "merge_commit": "1b34bcaf03acca88e5c2a0aaf078a833b89ba9da",
+      "golden": {
+        "traces": "tests/golden/v12-trace-sha256.json",
+        "reports": "reports/day15-134-v12-*"
+      },
+      "previous": "antempire.v2-review.11-late-arrivals-join-waiting-prey",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null
+    },
+    {
+      "rules_version": "antempire.v2-review.13-egg-sugar-settles-crops",
+      "tag": "v13",
+      "fingerprint": {
+        "engine": "e30ca796389b1301b75e7cebfcff0b82a04c5aac27bbb100e9e0223c224b4395",
+        "params": "b86c9bf3f8049614f24f1be4b53dc2502f256434578f7b6cb45ca43b34fb11b8"
+      },
+      "approved_in": "#21（錯誤修正：產卵耗糖同時從嗉囊扣除，#20）",
+      "merge_commit": "9577b498d6d9d93d06901115edaf27893c1f5957",
+      "golden": {
+        "traces": "tests/golden/v13-trace-sha256.json",
+        "reports": "reports/day15-134-v13-*"
+      },
+      "previous": "antempire.v2-review.12-injury-types",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null
+    },
+    {
+      "rules_version": "antempire.v2-review.14-individual-route-memory",
+      "tag": "v14",
+      "fingerprint": {
+        "engine": "42a34c98e6951a4812eb38027161a455fe402129aa5672823d16b777924c2d32",
+        "params": "e80a019a4f2d103e624d108177aa352fa1892307cbb0b33713bad92290aaf123"
+      },
+      "approved_in": "#22（個體路線記憶與局部探索，#8）",
+      "merge_commit": "92a75e8a9af3d7759c9ef219aa9d7f08c20bd010",
+      "golden": {
+        "traces": "tests/golden/v14-trace-sha256.json",
+        "reports": "reports/day15-134-v14-*"
+      },
+      "previous": "antempire.v2-review.13-egg-sugar-settles-crops",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": "worker route_memory is created at the first v14 day by engine/navigation.ts ensureRouteMemory() from world day15_migration.worker_route_evidence (recorded history only); no existing field is rewritten"
+    }
+  ]
+}

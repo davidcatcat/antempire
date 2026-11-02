@@ -184,6 +184,10 @@ export function acquireLock(root: string, purpose: string, io: Io = nodeIo, now 
 
 export interface CommitEntry {
   day: number; date: string; committed_at: string; engine_version: string;
+  /** #11: registered rules version of the running checkout (rules/registry.json); null if unregistered. */
+  rules_version?: string | null;
+  /** #11: present on the day a new approved rules version was adopted. */
+  rules_adopted?: { from: string; to: string; effective_from_day: number };
   rules_fingerprint: { engine: string; params: string };
   files: Record<string, string>;     // rel -> sha256 of the committed bytes
   previous: Record<string, string | null>; // rel -> sha256 of what was replaced (null = newly created)

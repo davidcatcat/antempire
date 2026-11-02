@@ -18,7 +18,12 @@ export interface SaveRefs { engine_ref: string; rules_ref: string; params_ref: s
 export const DEFAULT_REFS: SaveRefs = { engine_ref: 'engine/index.ts', rules_ref: 'docs/gm-rules.md', params_ref: 'species/pheidole-megacephala.json + world/xitun-garden.json' };
 const clone = (x) => structuredClone(x);
 
-export function projectDaily(main, world, climatology, bundle, fingerprint, refs = DEFAULT_REFS, now = new Date().toISOString()) {
+/**
+ * opts.rulesVersion: registered name of `fingerprint` (rules/registry.json), recorded at Day15 activation.
+ * opts.adopt: an Owner-requested switch (#11) from the frozen version to the next approved one, effective from
+ *   the day being created; it is applied only if the save is frozen exactly at adopt.from.
+ */
+export function projectDaily(main, world, climatology, bundle, fingerprint, refs = DEFAULT_REFS, now = new Date().toISOString(), opts = {}) {
  const engineHash = fingerprint.engine, paramsHash = fingerprint.params;
  if(main.simulation.latest_completed_day!==world.time.scientific_clock.day)throw Error('main/world day mismatch');
  const m=clone(main),w=clone(world);
@@ -26,10 +31,19 @@ export function projectDaily(main, world, climatology, bundle, fingerprint, refs
  if(!s){if(m.simulation.latest_completed_day!==14)throw Error('Day15 migration only allowed from Day14');s=migrationState(m,w,climatology,bundle);
   const mm=metadataPreview(m,{engine_ref:refs.engine_ref,rules_ref:refs.rules_ref,params_ref:refs.params_ref},now);m.continuity=mm.continuity;m.simulation=mm.simulation;m.migration_log=mm.migration_log;
   s.rules_fingerprint={engine:engineHash,params:paramsHash,activated_from_day:15};
- }else if(s.rules_fingerprint.engine!==engineHash||s.rules_fingerprint.params!==paramsHash)throw Error('RULES FROZEN: engine/params modified. Use separate rules-update review, not a daily tick.');
- const report=simulateDay(s,bundle),r=report.summary,beforeDay=m.simulation.latest_completed_day;
+  s.rules_history=[{event:'activated',rules_version:opts.rulesVersion??null,fingerprint:{engine:engineHash,params:paramsHash},effective_from_day:15,at:now}];
+ }else if(opts.adopt){
+  const a=opts.adopt,day=m.simulation.latest_completed_day+1;
+  if(s.rules_fingerprint.engine!==a.from.fingerprint.engine||s.rules_fingerprint.params!==a.from.fingerprint.params)throw Error('RULES ADOPTION REFUSED: the save is not frozen at '+a.from.rules_version);
+  if(engineHash!==a.to.fingerprint.engine||paramsHash!==a.to.fingerprint.params)throw Error('RULES ADOPTION REFUSED: the running engine/params are not '+a.to.rules_version);
+  s.rules_history=[...(s.rules_history??[]),{event:'adopted',from_version:a.from.rules_version,to_version:a.to.rules_version,from_fingerprint:{engine:s.rules_fingerprint.engine,params:s.rules_fingerprint.params},to_fingerprint:{engine:engineHash,params:paramsHash},effective_from_day:day,approved_in:a.to.approved_in,at:now}];
+  s.rules_fingerprint={engine:engineHash,params:paramsHash,activated_from_day:day};
+ }else if(s.rules_fingerprint.engine!==engineHash||s.rules_fingerprint.params!==paramsHash)throw Error('RULES FROZEN: engine/params modified. Use separate rules-update review, not a daily tick.'+(opts.frozenHint?' '+opts.frozenHint:''));
+ // rules_history is save bookkeeping (#11), not engine input: the engine never sees it.
+ const {rules_history:_history,...engineInput}=s;
+ const report=simulateDay(engineInput,bundle),r=report.summary,beforeDay=m.simulation.latest_completed_day;
  if(report.day!==beforeDay+1||beforeDay+1!==w.time.scientific_clock.day+1)throw Error('exactly one day required');
- w.sim_engine_v2=report.state;w.sim_engine_v2.rules_fingerprint=s.rules_fingerprint;
+ w.sim_engine_v2=report.state;w.sim_engine_v2.rules_fingerprint=s.rules_fingerprint;if(s.rules_history)w.sim_engine_v2.rules_history=s.rules_history;
  m.updated_at=now;m.simulation.latest_completed_day=report.day;m.simulation.elapsed_sim_hours=24*report.day;m.simulation.status='day_'+report.day+'_completed_waiting_day_'+(report.day+1);
  m.simulation.latest_journal='journal/v2-day-'+String(report.day).padStart(4,'0')+'.md';
  m.simulation.calendar_anchor.next_day=report.day+1;const d=new Date(r.date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+1);m.simulation.calendar_anchor.next_calendar_date=d.toISOString().slice(0,10);
