@@ -325,6 +325,15 @@
       "from": 3,
       "to": 14,
       "description": "lone-queen hazard starts after 14 workerless days (Chang 1985, this species: queens without workers died within 2–3 weeks); 3 days killed ~95% of lone queens before day 14. Found while building the A4 (queen + 10 pupae) control the Owner asked for."
+    },
+    {
+      "rules_version": "antempire.v2-review.19-evaluation-corrections",
+      "approved_in": "Owner instruction 2026-11-02 (phase 1: evaluation corrections; pending Owner review)",
+      "kind": "param_metadata",
+      "day14_output_unchanged": true,
+      "file": "species:pheidole-megacephala",
+      "path": "starvation.queen_zero_worker_hazard_after_days",
+      "description": "source label corrected: the day-14 start (and the 0.24 daily hazard) are game assumptions derived from Chang 1985's '2-3 weeks', not literature measurements; values unchanged, outputs identical to v2-review.18"
     }
   ]
 }
