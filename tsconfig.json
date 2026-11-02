@@ -13,5 +13,5 @@
     "resolveJsonModule": true,
     "skipLibCheck": true
   },
-  "include": ["engine/**/*.ts", "cli/**/*.ts", "tests/**/*.ts"]
+  "include": ["engine/**/*.ts", "cli/**/*.ts", "tests/**/*.ts", "prototypes/**/*.ts"]
 }
