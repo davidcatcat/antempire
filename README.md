@@ -140,6 +140,7 @@ Day7→Day8，168→**192模擬小時**。既有F01蚜蟲清晨產少量可及�
 - **[統一需求與工作計畫](docs/requirements-and-plan.md)**（2026-11-02，以 Owner 最後確認的原則為準）、[產品願景（科學真實性最高原則）](docs/product-vision.md)、[授權與第三方程式碼規範](docs/licensing.md)、[Roadmap](docs/roadmap.md)、[現況審查](docs/status-audit-2026-11.md)、[開源模擬器對照](docs/oss-comparison-2026-11.md)、[可視化技術設計](docs/visualization-architecture.md)
 - [P0-A 研究與設計：24 小時生態時鐘（逐時溫濕度與降雨事件、1440 分鐘事件時鐘、個體活動與休息、局部訊號；2026-11，未實作）](docs/research-design-p0a-24h-clock.md)
 - [第二階段：個體行為參數敏感度](reports/phase2-behaviour-review.md)（不挑選最佳值）與[活動時窗、一天之內換工作的研究與設計](docs/research-design-phase2-activity-tasks.md)
+- [第三階段研究與設計：幼體發育溫度、工蟻與兵蟻壽命、蟻后批次產卵、食卵與幼體營養（2026-11，未實作）](docs/research-design-phase3-lifecycle.md)
 - [科學參考文獻](docs/references.md) — 研究出處及外推限制
 - [版本遷移紀錄](docs/migration-v2.md) — 舊故事如何不改寫地銜接新世界
 - [存檔規則](docs/save-rules.md) — 續玩、寫入、驗證與故障修復
