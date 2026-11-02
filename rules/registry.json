@@ -190,6 +190,24 @@
       "save_schema": "antempire.engine-v2",
       "state_migration": null,
       "note": "只增加死亡事件的診斷欄位；機率、抽樣與狀態不變（tests/rules-isolation.test.ts 移除新增欄位後重現 v15 的 Day14 與 Day0 golden）。"
+    },
+    {
+      "rules_version": "antempire.v2-review.17-activity-timeline",
+      "tag": "v17",
+      "fingerprint": {
+        "engine": "14120080483cea80631d7953f77950e0b8d6d30116e1010f47cd0ea67231a9f9",
+        "params": "7d7abc189a85ee1fd375d25c3d4214b7bc51756480c556c9e05003ded69cec86"
+      },
+      "approved_in": "個體行動時間軸 PR（依賴 #28、#29；待 Owner 審閱；合併即核准）",
+      "golden": {
+        "traces": "tests/golden/v17-trace-sha256.json",
+        "reports": "reports/day15-134-v17-*",
+        "day0_traces": "tests/golden/day0-v17-trace-sha256.json"
+      },
+      "previous": "antempire.v2-review.16-death-diagnostics",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null,
+      "note": "個體行動時間軸與自主覓食（species activity.individual_timeline）；路段時間由世界記錄的長度÷本種沿跡速度計算，長度未知的路段沿用 25 分鐘。開關關閉時與 v16 逐位元組相同。"
     }
   ]
 }

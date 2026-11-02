@@ -29,8 +29,14 @@ type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 const SITE = 'F07';
 /** v2-review.14: a worker told it knows F07 must also have walked the way there (N00–F07). */
 const KNOWS_SITE = () => ({ origin: 'test fixture', edges: { 'F07:N00': { acquired: 'walked', first_day: 14, last_day: 14 } }, empty_sites: {} });
+/**
+ * v2-review.17: the fixtures below test the v9–v11 SAME-MINUTE WINDOW model, which is what runs with
+ * activity.individual_timeline = false (kept for the isolation proof). Hunting on the v17 continuous timeline is
+ * tested in tests/activity.test.ts; the physical invariants (section 6) are checked under both models.
+ */
+const windowModel = <T extends ReturnType<typeof bundle>>(b: T): T => { (b.species[MAIN_SPECIES] as Any).activity.individual_timeline = false; return b; };
 const forced = (o: { encounter?: number; large?: number; capture?: number; escape?: number; team?: number; cap?: number }) => {
-  const b = bundle();
+  const b = windowModel(bundle());
   setParam(b, MAIN_SPECIES, 'predation.live_prey_encounter_probability', o.encounter ?? 1);
   setParam(b, 'world', 'prey.large_prey_fraction', o.large ?? 1);
   setParam(b, MAIN_SPECIES, 'predation.live_prey_capture_probability', o.capture ?? 1);
@@ -167,10 +173,9 @@ function invariants(events: SimEvent[], label: string) {
 let hunts = 0, recruitHunts = 0;
 {
   // All 20 fixed seeds × 120 days (a single seed may contain no hunt at all, which would leave the checks empty).
-  const b = bundle();
-  for (let seed = 15032026; seed < 15032046; seed++) {
+  for (const [model, b] of [['window', windowModel(bundle())], ['timeline', bundle()]] as const) for (let seed = 15032026; seed < 15032046; seed++) {
     let s: LegacyV2State = fixture(); s.seed = seed;
-    for (let d = 0; d < 120; d++) { const o = simulateDay(s, b); invariants(o.events, `seed ${seed} Day${o.day}`); hunts += o.events.filter((e) => e.type === 'insect_predation').length; recruitHunts += o.events.filter((e) => e.type === 'hunt_recruitment').length; s = o.state; if (!s.population.workers.length) break; }
+    for (let d = 0; d < 120; d++) { const o = simulateDay(s, b); invariants(o.events, `${model} seed ${seed} Day${o.day}`); hunts += o.events.filter((e) => e.type === 'insect_predation').length; recruitHunts += o.events.filter((e) => e.type === 'hunt_recruitment').length; s = o.state; if (!s.population.workers.length) break; }
   }
   ok(hunts > 0, 'game parameters: the 20-seed × 120-day baseline has hunts to check (' + hunts + ')');
 }

@@ -4,19 +4,21 @@
  * exact count depends on the rules version: v6–v2-review.8 = 214 (18 insect deaths, 1 scout visit);
  * v2-review.9 (#10, simultaneous site-window hunting) to v2-review.13 = 213 (17 insect deaths, 2 scout visits);
  * v2-review.14 (#8, individual route memory) = 211 (17 insect deaths, 0 v12-style scout visits: exploration replaces
- * them and is checked separately below and in tests/navigation.test.ts). The count must
+ * them and is checked separately below and in tests/navigation.test.ts);
+ * v2-review.17 (activity timeline) = 212 (17 insect deaths; the exploration-reach check is split into two
+ * checks because a worker may now walk to a place earlier the same day and explore beyond it). The count must
  * equal the current version's expected value exactly; every assertion must pass.
  */
 import { simulateDay, foragingTemperatureFactor, resolveSpecies } from '../engine/index.ts';
 import { bundle, counter, fixture, MAIN_SPECIES, setParam, species } from './lib/harness.ts';
 
 const LEGACY_CHECK_COUNT = 214;
-const EXPECTED_CHECK_COUNT = 211; // v2-review.14
+const EXPECTED_CHECK_COUNT = 212; // v2-review.17
 const initial = fixture(), p = bundle(), sp = resolveSpecies(species(p));
 const clone = structuredClone;
 if (!(foragingTemperatureFactor(sp, 12) < foragingTemperatureFactor(sp, 20) && foragingTemperatureFactor(sp, 25) === 1)) throw Error('low temperature must suppress foraging');
 const c = counter(), { ok, denied } = c;
-const supportedTypes = new Set(['new_food_source', 'source_batch_consumed', 'food_delivered', 'insect_immigration', 'insect_natural_death', 'insect_population_birth', 'insect_background_death', 'physical_scout_visit', 'discovery', 'scouted_empty', 'nest_local_route_learning', 'local_contact_cue', 'local_brood_begging_contact', 'local_unloading_feedback', 'host_plant_death', 'hemipteran_colony_change', 'local_recruitment', 'route_step', 'route_timeout', 'trail_decay', 'trail_deposited', 'local_trail_choice', 'food_collected', 'trophallaxis', 'protein_cached_at_nest', 'live_prey_encounter', 'prey_escaped', 'local_alarm_signal', 'long_range_recruitment_trail', 'hunt_recruitment', 'joint_prey_transport', 'waiting_prey_joined', 'route_memory_initialized', 'exploration_step', 'exploration_no_new_direction', 'exploration_found_nothing', 'insect_predation', 'hatch', 'pupation', 'eclosion', 'egg_laid', 'worker_death', 'brood_death', 'injury_recovery', 'queen_death']);
+const supportedTypes = new Set(['new_food_source', 'source_batch_consumed', 'food_delivered', 'insect_immigration', 'insect_natural_death', 'insect_population_birth', 'insect_background_death', 'physical_scout_visit', 'discovery', 'scouted_empty', 'nest_local_route_learning', 'local_contact_cue', 'local_brood_begging_contact', 'local_unloading_feedback', 'host_plant_death', 'hemipteran_colony_change', 'local_recruitment', 'route_step', 'route_timeout', 'trail_decay', 'trail_deposited', 'local_trail_choice', 'food_collected', 'trophallaxis', 'protein_cached_at_nest', 'live_prey_encounter', 'prey_escaped', 'local_alarm_signal', 'long_range_recruitment_trail', 'hunt_recruitment', 'joint_prey_transport', 'waiting_prey_joined', 'route_memory_initialized', 'worker_activity', 'forager_stopped', 'action_cancelled_no_time', 'no_route_cannot_depart', 'recruitment_no_nestmate', 'recruitment_failed', 'exploration_step', 'exploration_no_new_direction', 'exploration_found_nothing', 'insect_predation', 'hatch', 'pupation', 'eclosion', 'egg_laid', 'worker_death', 'brood_death', 'injury_recovery', 'queen_death']);
 const anyState = (x: unknown) => x as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 const withOverride = anyState(clone(initial)); withOverride.force_food = { site: 'N00', sugar: 100 }; denied(() => simulateDay(withOverride, p));
 const withDrama = anyState(clone(initial)); withDrama.make_sure_queen_survives = true; denied(() => simulateDay(withDrama, p));
@@ -87,7 +89,15 @@ setParam(searchSettings, MAIN_SPECIES, 'task_allocation.forage_baseline_probabil
 const forcedSearchTrial = simulateDay(scoutFixture, searchSettings);
 const found = forcedSearchTrial.events.filter((e) => e.type === 'exploration_step');
 const w0 = scoutFixture.population.workers[0].id, nestNeighbours = ['F01', 'F07', 'F08', 'F11', 'U00', 'U01'];
-ok(found.every((e) => (e.worker === w0 ? (e.from === 'N00' && nestNeighbours.includes(e.to as string)) || (e.from === 'U01' && e.to === 'F10') : e.from === 'N00' && nestNeighbours.includes(e.to as string))) && !found.some((e) => e.to === 'F04' || e.to === 'F05'), 'exploration reaches ONLY places adjacent to a known place (F10 only via known U01), never remote F04/F05');
+// v2-review.17: a worker may make several trips a day, so a place it walked to earlier the same day is known too.
+// Invariant: every exploration step starts from the nest or a node THIS worker had walked to before departing.
+const knownBefore = (e: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+  const seg = forcedSearchTrial.events.find((x: any) => x.type === 'worker_activity' && x.worker === e.worker && x.action === 'explore_depart' && x.end === e.minute) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  const departed = seg ? seg.start : e.minute;
+  return new Set(['N00', ...(e.worker === w0 ? ['U01'] : []), ...forcedSearchTrial.events.filter((x: any) => x.type === 'route_step' && x.worker === e.worker && x.minute <= departed).flatMap((x: any) => [x.from, x.to])]); // eslint-disable-line @typescript-eslint/no-explicit-any
+};
+ok(found.every((e) => knownBefore(e).has(e.from as string)) && found.filter((e) => e.from === 'N00').every((e) => nestNeighbours.includes(e.to as string)), 'exploration reaches ONLY places adjacent to a place the worker already knew (one edge beyond its own map)');
+ok(found.filter((e) => e.to === 'F04' || e.to === 'F05').every((e) => knownBefore(e).has('F01') || knownBefore(e).has('F08')), 'remote F04/F05 only after the worker itself walked to a neighbouring place');
 ok(found.length >= 1, 'explorers must actually traverse an edge under the high-search QA fixture');
 ok(insectDeaths === carcasses, 'background food and prey originates from distinct tracked insect deaths');
 const result = { passed: c.checks, expected_current: EXPECTED_CHECK_COUNT, legacy_v6_passed: LEGACY_CHECK_COUNT, days: 30, events_natural_only: true, seeded_replay: true, no_direct_interventions: true, insectDeaths, carcasses, workerDeaths, physicalScoutingEvents: scouts, canonical_save_changed: false };

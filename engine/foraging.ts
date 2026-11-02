@@ -12,6 +12,7 @@ import { ensureRouteMemory, knownEmpty, knownNodes, knownRoute, learnRoute, mark
 import { sourceSum, syncSource } from './ecology.ts';
 import { handoff } from './nutrition.ts';
 import { colonyDice, localSignals, nestContacts, nurseContact, rainActivity, selectTask } from './workers.ts';
+import { activityDay } from './activity.ts';
 import type { SpeciesParams, WorldParams } from './params.ts';
 import type { ColonyState, ColonySummary, Macro, SimEvent, Source, Weather, Worker, WorldState } from './types.ts';
 
@@ -94,7 +95,7 @@ function collect(world: WorldState, colony: ColonyState, sp: SpeciesParams, wp: 
 }
 
 /** Remove `load` protein portions from the site's batches in order, recording each batch it came from. */
-function takeProtein(source: Source, worker: Worker, load: number, events: SimEvent[]): void {
+export function takeProtein(source: Source, worker: Worker, load: number, events: SimEvent[]): void {
   let needed = load;
   for (const batch of source.batches) {
     const take = Math.min(batch.protein, needed);
@@ -425,6 +426,13 @@ export function forageDay(world: WorldState, colony: ColonyState, sp: SpeciesPar
     summary.tasks[worker.task as keyof typeof summary.tasks] = (summary.tasks[worker.task as keyof typeof summary.tasks] || 0) + 1;
     if (worker.task === 'nurse') nurseContact(world, colony, sp, worker, events);
     if (worker.task === 'forage' && worker.last_location === nest) foragers.push(worker);
+  }
+  // v2-review.17: the individual activity timeline replaces the planned-trip day below. It is built on the
+  // individual route memory (v2-review.14); with that switch off the earlier model runs unchanged.
+  if (sp.activity.individual_timeline && learnDay !== undefined) {
+    activityDay({ world, colony, sp, wp, weather, events, summary, learnDay: learnDay as number }, foragers);
+    for (const w of colony.population.workers) delete w.recruited_today;
+    return;
   }
   // Plan all departures first and move every forager to its site BEFORE any group capture, so prey
   // teams form ONLY from independent workers who actually reached the same node.

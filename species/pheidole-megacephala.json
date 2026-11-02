@@ -1499,5 +1499,176 @@
     "simultaneous_site_group_hunting_note": "模型開關（v2-review.9，#10 核准）：true＝同一地點、同一分鐘抵達的工蟻組成一個捕獵時間窗，一起處理遭遇、短距／長距招募與共同搬運，每隻工蟻同一時間窗只參與一次捕獵；false＝v2-review.8 以前的逐一處理模型（只供隔離證明 tests/rules-isolation.test.ts 使用）。改變此開關屬於規則更新。",
     "late_arrivals_join_waiting_prey": true,
     "late_arrivals_join_waiting_prey_note": "模型開關（v2-review.11，Owner 依 #15 決策 3 要求查文獻後修正）：true＝發現者回巢做長距招募時，大型獵物留在原地等待；在招募者到達前（含同一分鐘）抵達同地點、空手的工蟻加入這隻獵物（受 large_prey_max_team 限制），在招募者抵達時與整隊一起結算。目前只有一個巢、路線逐段行走，其他工蟻只可能在招募者抵達的同一分鐘到達。等待中的獵物不會被其他隊伍重複捕捉。機制：Dejean et al. 2007（R98／R107，本種）——發現者留在獵物身上並以腹部末端的訊號吸引附近同伴（第二隻 6.8 秒內到達），大型獵物由短距招募者壓制、部分工蟻回巢招募更多同伴，工蟻以接觸發現獵物。沒有新增數值參數。false＝v2-review.10 的立即結算（只供隔離證明使用）。改變此開關屬於規則更新。"
+  },
+  "activity": {
+    "individual_timeline": true,
+    "individual_timeline_note": "模型開關（v2-review.17，Owner 工作包 1）。true＝每隻外出工蟻有自己的時間軸：決定出巢→沿自己記得的路線（或費洛蒙／探索）步行→到達→搜尋→採集或捕食→回巢→把食物交給當時真的在巢內的同伴→留下費洛蒙→可能招募巢內同伴→依自己嗉囊、剛才的卸貨經驗與感知到的需求，決定再出發或停止。每天幾趟是行為與時間的結果，不是預先指定。false＝v2-review.16 的「每隻預定一趟、抽籤再一趟」（只供隔離證明）。時間軸建立在個體路線記憶（navigation.individual_route_memory，v2-review.14）之上；該開關關閉時仍執行舊模型。",
+    "trail_walking_speed_mm_s": {
+      "value": 17,
+      "assumption": true,
+      "basis": "文獻支持",
+      "description": "沿費洛蒙路徑的步行速度（mm/s）",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.17-activity-timeline",
+        "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)"
+      },
+      "source": "R133 Vázquez, Koehler & Pereira 2020 (Insects 11:5, DOI 10.3390/insects11010005)：本種在實驗室人工路徑上約 17 mm/s",
+      "extrapolation_limit": "實驗室平滑人工路徑、室溫；花園土面、落葉、溫度不同都可能較慢或較快。數值來自本種，但野外速度未知"
+    },
+    "off_trail_speed_factor": {
+      "value": 0.5,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "沒有可感知費洛蒙的路段上，步行速度相對於沿跡速度的倍數",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.17-activity-timeline",
+        "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)"
+      },
+      "basis_note": "沿跡較快較直的方向有跨物種觀察，但本種沒有離跡速度數據；0.5 是遊戲假設"
+    },
+    "search_minutes": {
+      "value": 2,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "到達地點後搜尋、找到可取食部位的時間（分鐘）",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.17-activity-timeline",
+        "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)"
+      },
+      "basis_note": "本種與 Pheidole 都沒有查到此時間（docs/references.md v17 段落）；遊戲假設"
+    },
+    "liquid_fill_minutes_full_crop": {
+      "value": 3,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "從液體食源裝滿整個嗉囊的時間（分鐘）；實際時間依載量比例",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.17-activity-timeline",
+        "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)"
+      },
+      "basis_note": "本種與 Pheidole 都沒有查到此時間（docs/references.md v17 段落）；遊戲假設"
+    },
+    "protein_handling_minutes": {
+      "value": 3,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "切取或抓取屍體／獵物並準備搬運的時間（分鐘）",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.17-activity-timeline",
+        "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)"
+      },
+      "basis_note": "本種與 Pheidole 都沒有查到此時間（docs/references.md v17 段落）；遊戲假設"
+    },
+    "unload_minutes": {
+      "value": 2,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "回巢後卸貨（口對口交哺或放下蛋白）的時間（分鐘）",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.17-activity-timeline",
+        "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)"
+      },
+      "basis_note": "本種與 Pheidole 都沒有查到此時間（docs/references.md v17 段落）；遊戲假設"
+    },
+    "rest_between_trips_minutes": {
+      "value": 5,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "卸貨後到再次決定是否出巢之間在巢內停留的時間（分鐘）",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.17-activity-timeline",
+        "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)"
+      },
+      "basis_note": "本種與 Pheidole 都沒有查到此時間（docs/references.md v17 段落）；遊戲假設"
+    },
+    "continue_base": {
+      "value": 0.3,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "成功卸貨後再出發機率的基礎值",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.17-activity-timeline",
+        "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)"
+      },
+      "basis_note": "沒有本種資料；遊戲假設"
+    },
+    "continue_crop_emptied_weight": {
+      "value": 0.6,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "糖：卸貨後自己嗉囊被同伴取走的比例（1−剩餘／容量）對再出發機率的加權",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.17-activity-timeline",
+        "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)"
+      },
+      "mechanism_basis": "機制方向：跨物種文獻支持（Greenwald, Baltiansky & Feinerman 2018 eLife 7:e31730；Baltiansky, Frankel & Feinerman 2023 eLife 12:e77659，Camponotus sanctus，非本種）：覓食者只依自己嗉囊的變化決定再出巢；數值為遊戲假設"
+    },
+    "continue_brood_need_weight": {
+      "value": 0.4,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "蛋白：自己親身感知的幼蟲求食／同伴蛋白需求對再出發機率的加權（蛋白放下儲存，不經口對口，所以不用嗉囊變化）",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.17-activity-timeline",
+        "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)"
+      }
+    },
+    "continue_after_failure_probability": {
+      "value": 0.5,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "空手而回後還會再出發（或改去探索）的機率",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.17-activity-timeline",
+        "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)"
+      }
+    },
+    "active_minute_sugar_cost": {
+      "value": 0.00024,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "外出每分鐘的額外耗糖（份）",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.17-activity-timeline",
+        "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)"
+      },
+      "derivation": "由舊規則每趟 foraging_trips.foraging_trip_sugar_cost 0.012 ÷ 舊的一段來回 50 分鐘換算，使舊情境一段路的來回耗糖不變；不是實測"
+    },
+    "safety_max_actions_per_worker_day": {
+      "value": 5000,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "運算安全限制：每隻工蟻每天最多處理的決策／行動數，超過即拋出錯誤",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.17-activity-timeline",
+        "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)"
+      },
+      "note": "不是生物學規則；只防止程式無限迴圈，正常模擬不會接近"
+    },
+    "recruit_min_crop_fill_fraction": {
+      "value": 0.5,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "糖：這趟載量達到嗉囊容量的這個比例，才會沿路留跡並招募",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.17-activity-timeline",
+        "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)"
+      },
+      "mechanism_basis": "機制方向：跨物種文獻支持（Mailleux et al. 2000 Anim Behav 59:1061；2006 JEB 209:4224，Lasius niger，非本種）：只有達到「想要的量」才留跡招募；本種 Dejean et al. 2005：偵察蟻先裝滿嗉囊再回巢招募。數值為遊戲假設"
+    }
   }
 }
