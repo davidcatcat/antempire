@@ -12,7 +12,7 @@ import { ENGINE_VERSION, simulateDay, num, resolveSpecies, foragingTemperatureFa
 import { loadBundle, readJson, REPO_ROOT } from '../lib/load.ts';
 
 /** Report file tag of the current rules version (v8 = v2-review.8). Files of earlier tags in reports/ are history. */
-export const RULES_TAG = 'v19';
+export const RULES_TAG = 'v20';
 
 export function generateWinterMultiseed(outDir, bundle = loadBundle(), initial = readJson('tests/fixtures/day14-projection.json'), tag = RULES_TAG) {
 const MAIN_SPECIES=legacyColonyMeta(bundle.world.scenario_colonies).species_id;
