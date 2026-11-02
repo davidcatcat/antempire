@@ -11,6 +11,8 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 const canvas = $<HTMLCanvasElement>('map'), ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 const ui = { mode: $<HTMLSelectElement>('mode'), day: $<HTMLInputElement>('day'), minute: $<HTMLInputElement>('minute'), play: $<HTMLButtonElement>('play'), speed: $<HTMLSelectElement>('speed'), time: $('timeLabel'), badge: $('badge'), info: $('info'), events: $('events'), nest: $('nest'), weather: $('weather'), view: $<HTMLSelectElement>('view'), ovTrail: $<HTMLInputElement>('ovTrail'), ovExplored: $<HTMLInputElement>('ovExplored'), ovFood: $<HTMLInputElement>('ovFood'), ovLabels: $<HTMLInputElement>('ovLabels'), timeline: $('timeline') };
 
+/** Canvas colours come from the page's CSS tokens so both light and dark themes stay readable. */
+const tok = (name: string, fallback: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
 let index: Index, official: Official | null = null, exp: Experiment | null = null, pos: Pos = {}, places: Place[] = [], links: Link[] = [];
 let selected: string | null = null, playing = false, last = 0;
 const cam = { x: 0, y: 0, scale: 3 };
@@ -94,7 +96,8 @@ function ants(): { id: string; x: number; y: number; interpolated: boolean; inju
 
 function draw() {
   const W = canvas.width, H = canvas.height, dpr = window.devicePixelRatio || 1;
-  ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--ground').trim() || '#e9e2cf'; ctx.fillRect(0, 0, W, H);
+  const INK = tok('--ink', '#2f2a22'), LINK = tok('--link', '#b9ad8f'), MUTED = tok('--muted', '#8c8270'), ANT = tok('--ant', '#1d1d1d'), SEL = tok('--select', '#d62828'), TRAIL = tok('--trail', '196,76,32'), EXPL = tok('--explored', '46,125,90');
+  ctx.fillStyle = tok('--ground', '#e9e2cf'); ctx.fillRect(0, 0, W, H);
   if (ui.view.value === 'nest') { drawNest(); renderPanels(); return; }
   const day = exp ? Number(ui.day.value) : 0, s = exp ? stateAtStart(exp, day) : null, explored = s ? exploredEdges(s) : new Set<string>();
   // links
@@ -102,36 +105,36 @@ function draw() {
     const a = pos[l.from], b = pos[l.to]; if (!a || !b) continue;
     const A = screenOf(l.from), B = screenOf(l.to), key = [l.from, l.to].sort().join(':'), trail = s?.trails[key] ?? 0;
     ctx.setLineDash(a.known && b.known ? [] : [6 * dpr, 6 * dpr]);
-    ctx.strokeStyle = '#b9ad8f'; ctx.lineWidth = 1.5 * dpr; ctx.beginPath(); ctx.moveTo(A.sx, A.sy); ctx.lineTo(B.sx, B.sy); ctx.stroke();
-    if (ui.ovExplored.checked && explored.has(key)) { ctx.strokeStyle = 'rgba(46,125,90,0.55)'; ctx.lineWidth = 5 * dpr; ctx.beginPath(); ctx.moveTo(A.sx, A.sy); ctx.lineTo(B.sx, B.sy); ctx.stroke(); }
-    if (ui.ovTrail.checked && trail > 0) { ctx.strokeStyle = `rgba(196,76,32,${Math.min(0.9, 0.25 + trail / 3)})`; ctx.lineWidth = (2 + trail * 2) * dpr; ctx.beginPath(); ctx.moveTo(A.sx, A.sy); ctx.lineTo(B.sx, B.sy); ctx.stroke(); }
+    ctx.strokeStyle = LINK; ctx.lineWidth = 1.5 * dpr; ctx.beginPath(); ctx.moveTo(A.sx, A.sy); ctx.lineTo(B.sx, B.sy); ctx.stroke();
+    if (ui.ovExplored.checked && explored.has(key)) { ctx.strokeStyle = `rgba(${EXPL},0.55)`; ctx.lineWidth = 5 * dpr; ctx.beginPath(); ctx.moveTo(A.sx, A.sy); ctx.lineTo(B.sx, B.sy); ctx.stroke(); }
+    if (ui.ovTrail.checked && trail > 0) { ctx.strokeStyle = `rgba(${TRAIL},${Math.min(0.9, 0.25 + trail / 3)})`; ctx.lineWidth = (2 + trail * 2) * dpr; ctx.beginPath(); ctx.moveTo(A.sx, A.sy); ctx.lineTo(B.sx, B.sy); ctx.stroke(); }
   }
   ctx.setLineDash([]);
   // unknown-position tray (screen-anchored, not on the map scale)
   const unknown = Object.entries(pos).filter(([, p]) => !p.known).map(([id]) => id).sort();
-  if (unknown.length) { const a = trayScreen(unknown[0]), b = trayScreen(unknown[unknown.length - 1]); ctx.strokeStyle = '#8c8270'; ctx.setLineDash([3 * dpr, 3 * dpr]); ctx.strokeRect(a.sx - 16 * dpr, a.sy - 16 * dpr, b.sx - a.sx + 60 * dpr, 32 * dpr); ctx.setLineDash([]); ctx.fillStyle = '#6b6252'; ctx.font = `${11 * dpr}px system-ui`; ctx.fillText('位置未記錄（不在地圖比例上）', a.sx - 16 * dpr, a.sy - 20 * dpr); }
+  if (unknown.length) { const a = trayScreen(unknown[0]), b = trayScreen(unknown[unknown.length - 1]); ctx.strokeStyle = MUTED; ctx.setLineDash([3 * dpr, 3 * dpr]); ctx.strokeRect(a.sx - 16 * dpr, a.sy - 16 * dpr, b.sx - a.sx + 60 * dpr, 32 * dpr); ctx.setLineDash([]); ctx.fillStyle = MUTED; ctx.font = `${11 * dpr}px system-ui`; ctx.fillText('位置未記錄（不在地圖比例上）', a.sx - 16 * dpr, a.sy - 20 * dpr); }
   // places
   for (const p of places) {
     const q = pos[p.id], S = q.known ? toScreen(q.x, q.y) : trayScreen(p.id), src = s?.sources[p.id], r = (p.id === NEST ? 9 : 7) * dpr;
     ctx.fillStyle = p.id === NEST ? '#6d4c2f' : p.kind?.includes('honeydew') || src?.type === 'honeydew' ? '#5f9e4a' : p.kind?.includes('nectar') || src?.type === 'nectar' ? '#e3b23c' : p.kind?.includes('carcass') || p.kind?.includes('detritus') || src?.type === 'carcass' ? '#8b5a3c' : '#a39b88';
     ctx.beginPath(); ctx.arc(S.sx, S.sy, r, 0, Math.PI * 2); ctx.fill();
-    if (ui.ovFood.checked && src) { const amt = src.type === 'carcass' ? src.protein : src.sugar; ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(S.sx + r + 2 * dpr, S.sy - 3 * dpr, Math.min(60, amt * 8) * dpr, 6 * dpr); }
+    if (ui.ovFood.checked && src) { const amt = src.type === 'carcass' ? src.protein : src.sugar; ctx.fillStyle = INK; ctx.fillRect(S.sx + r + 2 * dpr, S.sy - 3 * dpr, Math.min(60, amt * 8) * dpr, 6 * dpr); }
     if (ui.ovLabels.checked) {
       const wide = cam.scale / dpr > 5 && q.known, label = wide ? `${p.id} ${p.name ?? ''}` : p.id;
-      ctx.fillStyle = '#2f2a22'; ctx.font = `${12 * dpr}px system-ui`;
+      ctx.fillStyle = INK; ctx.font = `${12 * dpr}px system-ui`;
       if (p.id === NEST) ctx.fillText(label, S.sx - ctx.measureText(label).width / 2, S.sy + r + 14 * dpr); else ctx.fillText(label, S.sx + r + 3 * dpr, S.sy - 6 * dpr);
     }
   }
   // ants
   for (const a of ants()) {
     const S = a.trayAt ? trayScreen(a.trayAt) : toScreen(a.x, a.y), sel = a.id === selected;
-    ctx.fillStyle = sel ? '#d62828' : a.injured ? '#7a5c3a' : '#1d1d1d';
+    ctx.fillStyle = sel ? SEL : a.injured ? MUTED : ANT;
     ctx.beginPath(); ctx.ellipse(S.sx, S.sy, (sel ? 5 : 3.5) * dpr, (sel ? 3.2 : 2.3) * dpr, 0, 0, Math.PI * 2); ctx.fill();
-    if (a.interpolated) { ctx.strokeStyle = 'rgba(29,29,29,0.35)'; ctx.lineWidth = 1 * dpr; ctx.beginPath(); ctx.arc(S.sx, S.sy, 6 * dpr, 0, Math.PI * 2); ctx.stroke(); }
-    if (sel) { ctx.fillStyle = '#d62828'; ctx.font = `bold ${12 * dpr}px system-ui`; ctx.fillText(a.id, S.sx + 7 * dpr, S.sy + 4 * dpr); }
+    if (a.interpolated) { ctx.strokeStyle = MUTED; ctx.lineWidth = 1 * dpr; ctx.beginPath(); ctx.arc(S.sx, S.sy, 6 * dpr, 0, Math.PI * 2); ctx.stroke(); }
+    if (sel) { ctx.fillStyle = SEL; ctx.font = `bold ${12 * dpr}px system-ui`; ctx.fillText(a.id, S.sx + 7 * dpr, S.sy + 4 * dpr); }
   }
   // scale bar
-  const bar = 20 * cam.scale; ctx.fillStyle = '#2f2a22'; ctx.fillRect(12 * dpr, H - 18 * dpr, bar, 3 * dpr); ctx.font = `${11 * dpr}px system-ui`; ctx.fillText('20 cm（示意比例：方位＋約距離，非測量）', 12 * dpr, H - 24 * dpr);
+  const bar = 20 * cam.scale; ctx.fillStyle = INK; ctx.fillRect(12 * dpr, H - 18 * dpr, bar, 3 * dpr); ctx.font = `${11 * dpr}px system-ui`; ctx.fillText('20 cm（示意比例：方位＋約距離，非測量）', 12 * dpr, H - 24 * dpr);
   renderPanels();
 }
 
