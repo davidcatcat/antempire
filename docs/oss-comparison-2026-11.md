@@ -3,6 +3,7 @@
 > - 三個程式專案（AntSim V2、anthill、SimulAnt）以 `git clone --depth 1` 取得後**只閱讀檔案**，沒有執行任何建置、安裝或程式。
 > - 三個科學模型（docxology/ant-pheromone、NetLogo Ant Adaptation、Bles et al. 2022）閱讀原始碼或全文。
 > - 完整筆記（含檔案行號與引文）保存在 session 的研究筆記中，以下為摘要。
+> - 2026-11-02 更正：GPL-3.0 的描述原寫成「重用會使作品須採 GPL，只學概念」，易被讀成完全禁止重用；已在總表與 B 節原處更正。授權與第三方程式碼規範見 `docs/licensing.md`。
 > - **結論先寫在前面**：
 >   - 沒有任何一個專案可以整套採用；
 >   - 沒有任何一個提供 *Pheidole megacephala* 可用的數值；
@@ -14,7 +15,7 @@
 |---|---|---|---|---|---|---|
 | 來源 | github.com/nilsgollub/AntSim_V2，HEAD cefa0830（2026-10-17） | github.com/151henry151/anthill，HEAD 82fa8aa4（2026-04-09） | github.com/docxology/ant-pheromone，HEAD d88264e（2026-10-25） | ccl.northwestern.edu／NetLogo models（Martin & Wilensky 2019） | *Animals* 12(21):2963，DOI 10.3390/ani12212963；資料與程式在 Zenodo 6396637 | github.com/sparktron/SimulAnt，HEAD 5d713da5（2026-08-30） |
 | 可取得 | 是 | 是（425 MB，多為預建執行檔，未執行） | 是 | 是 | 全文是；Zenodo 檔案只經摘要工具確認，未下載 | 是 |
-| 授權 | **MIT**：保留聲明即可重用 | **GPL-3.0**：重用程式會使我們的作品須採 GPL，**只學概念** | **無授權**＝保留所有權利，**不可重用** | **CC BY-NC-SA 3.0**（NetLogo 本身 GPL）：非商業、相同方式分享 | 文章 CC BY 4.0；程式標示 CC BY 4.0 | **無授權**＝保留所有權利，**不可重用** |
+| 授權（2026-11-02 更正，詳見 `docs/licensing.md`） | **MIT**：保留著作權與授權聲明即可重用、修改、散布 | **GPL-3.0**：**允許**重用、修改與散布（含商業用途）；條件是散布衍生作品時整體以 GPL-3.0 釋出並提供原始碼。AntEmpire 授權未定，所以**目前不複製其程式**；概念與演算法可自行實作 | **沒有授權聲明**：依著作權法預設保留所有權利，未經授權不可複製程式；可閱讀、學習概念 | **CC BY-NC-SA 3.0**（NetLogo 本身 GPL）：可重用模型，但限非商業、須標示、相同方式分享 | 文章 CC BY 4.0；程式標示 CC BY 4.0（標示來源即可重用） | **沒有授權聲明**：同 C |
 | 物種 | 無（Messor barbarus 只用於配色） | 以 *Lasius niger* 為靈感 | **本種**實驗資料（Dussutour 2009 的曲線） | 無（教育遊戲） | *Lasius niger* | 無（類 SimAnt） |
 | 文獻 | 無 | 附 Hartman 2024 等文獻，但參數沒有逐項來源 | Saund & Friedman 2023（論文未讀到全文） | 無 | 本身即論文 | 無 |
 | 技術 | TypeScript、Vite、PixiJS v8（附 Canvas 2D 退路）、Vitest | Godot 4.2、GDScript、體素 | Python，平均場 Y 型迷宮模型 | NetLogo | Python 代理人模型 | 原生 JavaScript ES 模組、35 個 node:test |
@@ -45,7 +46,7 @@
   - 以游標為中心的縮放、雙指縮放；
   - 跟隨個體與事件驅動的鏡頭；搬運物圖示；腳步動畫與速度連動。
 
-### B. anthill（GPL-3）
+### B. anthill（GPL-3.0；程式可在 GPL 條件下重用，目前只學概念）
 - **實作**：
   - 體素區塊與落沙物理；挖巢前緣評分、棄土、硬度；
   - 蟻后創巢期；幼體；
@@ -144,7 +145,7 @@
 
 **拒絕**：
 - 任何讀取全巢存糧的行為、依需求補食物、中央分配、全域歸巢、畫格耦合的模擬步、全域亂數；
-- 所有直接改寫世界或螞蟻的玩家工具（與 NO_GOD_MODE 衝突；未來的玩家干預另由 Owner 決定，而且必須是記錄在案的世界事件）。
+- 所有直接改寫世界或螞蟻的玩家工具（與 NO_GOD_MODE 衝突；玩家干預已移出產品需求，見 `docs/product-vision.md` §4）。
 
 **可能的科學規則更新（需另開規則更新 PR，附多種子比較，數值全標遊戲假設）**：
 - 探索時的弱沉積、非線性選路、一天之內的費洛蒙衰減（C）；
