@@ -210,3 +210,16 @@ Day14 權威已知卵：E001／E002／E003／E004／E005 分別經過 **12／6�
   - 探索 45 → 136 趟，其中 96 趟空手而回。
   - 詳見 `reports/rules-update-v14-review.md`。沒有為任何結果回調參數。
 - **引擎行為版本**：`antempire.v2-review.14-individual-route-memory`；`tests/rules-isolation.test.ts` 關閉開關重現 v13 的 28 個情境。
+
+## 2026-11-02 規則更新 v2-review.15：Day0 科學初始化（評估用；Owner 審閱後才合併）
+- **內容**：新增 `engine/initialization.ts`，由花園初始條件（`scenarios/day0/garden.json`）與創巢情境（`founding-*.json`）直接產生 Day0 世界：
+  1. 花園先單獨暖機 30 日，事件全部記錄；
+  2. 再放入沒有路線、沒有食源知識、沒有 Day14 資料的創巢群。
+- **不支援的創巢方式**：獨立創巢 B、多蟻后 C，以及蟻后數 ≠ 1，一律拒絕執行（`FOUNDING_NOT_SUPPORTED`），不偽裝。
+- **其他引擎變更**：
+  - `validateWorld` 接受 Day0；
+  - Day14 路線證據不給模擬中羽化的工蟻（避免新 W011 等編號撞到歷史證據）。
+- **Day14 起算的所有輸出與 v14 逐位元組相同**：`tests/rules-isolation.test.ts`、`tests/golden/v15-trace-sha256.json`。
+- **正式遊戲**：正式存檔仍是 Day14；本版**不**切換存檔、**不**開始正式 Day0、**不**推進任何遊戲日。正式 Day0 需要另外的存檔空間設計與 Owner 決定（`docs/day0-initialization.md` §10）。
+- **評估結果（診斷）**：`reports/day0-evaluation.md`。A1～A3 × 四季 × 20 種子 × 365 日中，只有 4/240 次蟻后存活到 365 日，全在秋季開始。沒有為結果調參。
+- **引擎行為版本**：`antempire.v2-review.15-day0-initialization`。

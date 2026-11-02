@@ -1,0 +1,15 @@
+{
+  "schema": "antempire.day0-founding.v1",
+  "id": "B",
+  "title": "獨立創巢：單獨一隻已交配蟻后",
+  "species_id": "pheidole-megacephala",
+  "mode": "independent_founding",
+  "engine_supported": false,
+  "missing_mechanisms": [
+    "蟻后以自身儲備（翅肌、脂肪體）餵養第一批幼體（claustral／semi-claustral），目前引擎的幼蟲只能由工蟻餵食，沒有工蟻時會在『無人照護』上限後死亡",
+    "沒有工蟻時蟻后不產卵（oviposition 需要 workers.length > 0），且蟻后的無工蟻死亡風險是為『工蟻全滅』設計的，不是創巢期",
+    "第一批小型工蟻（nanitic）的體型與發育差異",
+    "蟻后是否外出覓食（semi-claustral）"
+  ],
+  "note": "引擎目前不支持；若直接以『1 蟻后＋0 工蟻』試跑，只會得到引擎規則下的必然死亡，不是獨立創巢的模擬結果，因此**不執行**。需要先研究本種是否會獨立創巢以及其方式（見 docs/day0-initialization.md），再另開規則更新。"
+}

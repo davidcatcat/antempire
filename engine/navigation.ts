@@ -99,7 +99,9 @@ export function ensureRouteMemory(colony: ColonyState, wp: WorldParams, day: num
   const evidence = wp.route_evidence;
   for (const w of colony.population.workers) {
     if (w.route_memory) continue;
-    const rec = evidence[w.id];
+    // v2-review.15: Day14 route evidence belongs to the workers that lived in Day1–14, never to a worker that
+    // eclosed in the simulation and happens to reuse a number (Day0 worlds number workers from W001).
+    const rec = w.age_origin === 'born_after_v2_migration' ? undefined : evidence[w.id];
     const mem: RouteMemory = { origin: rec ? 'day14_history_evidence' : w.age_origin === 'born_after_v2_migration' ? 'eclosed_in_simulation' : 'no_recorded_route', edges: {}, empty_sites: {} };
     for (const k of rec?.edges ?? []) mem.edges[k] = { acquired: 'day14_history', first_day: 14, last_day: 14 };
     w.route_memory = mem;

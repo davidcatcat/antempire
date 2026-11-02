@@ -1,0 +1,197 @@
+{
+  "schema": "antempire.day0-garden.v1",
+  "world_id": "xitun-garden",
+  "note": "Day0 的花園生態初始狀態（世界，不是蟻群）。數值沿用世界檔中同一份『花園盤點』遊戲假設（原本放在 day15_migration 下，描述的是花園本身而不是 Day14 蟻群），在此逐項標明出處；**不繼承 Day1～14 的任何蟻群紀錄**（沒有舊屍體批次、沒有 Day14 存糧、沒有個體路線）。寄主植物是否存在依各次評估的世界種子抽樣（與蟻群無關）。屍體與蜜露的初始存量由蟻群建立前的生態暖機自然產生。",
+  "warmup_days": {
+    "value": 30,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "description": "蟻群建立前，花園生態單獨運行的天數（天氣、寄主、半翅目、昆蟲出生死亡與自然屍體）。暖機期間的自然事件全部記錄。",
+    "basis_note": "讓初始存量與天氣記憶由世界過程產生，而不是直接指定；30 日是遊戲假設，不是文獻值。"
+  },
+  "initial_climate": {
+    "soil_index": {
+      "value": 0.3,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "暖機開始時的土壤濕度指標（0～1）；經 30 日天氣後只剩很小影響"
+    },
+    "shade_index": {
+      "value": 0.25,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "暖機開始時的遮蔭土壤濕度指標（0～1）"
+    },
+    "prior_wet": false,
+    "temp_anomaly_c": {
+      "value": 0,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "暖機開始時的氣溫距平（°C），0＝氣候平均"
+    }
+  },
+  "honeydew_sites": {
+    "F01": {
+      "hemipteran_kind": "aphid",
+      "host_plants": {
+        "value": 2,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "F01 寄主植物數",
+        "derived_from": "world day15_migration.F01_census.host_plants（同一份花園盤點假設）"
+      },
+      "hemipteran_colonies": {
+        "value": 4,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "F01 蚜蟲群數",
+        "derived_from": "world day15_migration.F01_census.hemipteran_colonies"
+      },
+      "exists_probability": {
+        "value": 1,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "F01 寄主存在（已知花園植物）"
+      }
+    },
+    "F04": {
+      "hemipteran_kind": "scale",
+      "host_plants": {
+        "value": 2,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "F04 寄主植物數（若存在）",
+        "derived_from": "world day15_migration.hidden_honeydew_sites.F04.host_plants"
+      },
+      "hemipteran_colonies": {
+        "value": 3,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "F04 半翅目群數（若存在）",
+        "derived_from": "world day15_migration.hidden_honeydew_sites.F04.hemipteran_colonies"
+      },
+      "exists_probability": {
+        "value": 0.65,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "F04 寄主存在機率；每個世界種子抽樣一次（世界過程，與蟻群無關）",
+        "derived_from": "world day15_migration.hidden_honeydew_sites.F04.exists_probability"
+      },
+      "access_from": [
+        "F01"
+      ]
+    },
+    "F05": {
+      "hemipteran_kind": "aphid",
+      "host_plants": {
+        "value": 1,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "F05 寄主植物數（若存在）",
+        "derived_from": "world day15_migration.hidden_honeydew_sites.F05.host_plants"
+      },
+      "hemipteran_colonies": {
+        "value": 2,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "F05 半翅目群數（若存在）",
+        "derived_from": "world day15_migration.hidden_honeydew_sites.F05.hemipteran_colonies"
+      },
+      "exists_probability": {
+        "value": 0.8,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "F05 寄主存在機率；每個世界種子抽樣一次（世界過程，與蟻群無關）",
+        "derived_from": "world day15_migration.hidden_honeydew_sites.F05.exists_probability"
+      },
+      "access_from": [
+        "F08",
+        "F04"
+      ]
+    },
+    "F10": {
+      "hemipteran_kind": "scale",
+      "host_plants": {
+        "value": 1,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "F10 寄主植物數（若存在）",
+        "derived_from": "world day15_migration.hidden_honeydew_sites.F10.host_plants"
+      },
+      "hemipteran_colonies": {
+        "value": 1,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "F10 半翅目群數（若存在）",
+        "derived_from": "world day15_migration.hidden_honeydew_sites.F10.hemipteran_colonies"
+      },
+      "exists_probability": {
+        "value": 0.7,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "F10 寄主存在機率；每個世界種子抽樣一次（世界過程，與蟻群無關）",
+        "derived_from": "world day15_migration.hidden_honeydew_sites.F10.exists_probability"
+      },
+      "access_from": [
+        "U01"
+      ]
+    }
+  },
+  "nectar_sites": {
+    "F08": {
+      "bloom_days_at_start_of_warmup": {
+        "value": 12,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "暖機開始時 F08 剩餘花期日數",
+        "derived_from": "world nectar.nectar_bloom_days_remaining",
+        "model_limit": "目前的花蜜模型只有一次倒數，沒有隨季節重新開花（模型缺陷，見報告）"
+      },
+      "initial_sugar": {
+        "value": 0,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "暖機開始時花蜜存量；暖機期間由開花產生"
+      }
+    }
+  },
+  "carcass_sites": {
+    "F07": {
+      "initial_living_insects": {
+        "value": 12,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "F07 活昆蟲數（暖機開始時）",
+        "derived_from": "world day15_migration.insect_initial_living_F07"
+      },
+      "initial_carcass_protein": {
+        "value": 0,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "暖機開始時沒有屍體；屍體只來自暖機與之後的自然死亡（有事件 ID）"
+      }
+    },
+    "F11": {
+      "initial_living_insects": {
+        "value": 9,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "F11 活昆蟲數（暖機開始時）",
+        "derived_from": "world day15_migration.insect_initial_living_F11"
+      },
+      "initial_carcass_protein": {
+        "value": 0,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "同上"
+      }
+    }
+  },
+  "boundary_insects": {
+    "value": 40,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "description": "相鄰庭園活昆蟲族群（暖機開始時）",
+    "derived_from": "world day15_migration.insect_initial_boundary_reservoir"
+  }
+}

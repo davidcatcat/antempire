@@ -1,6 +1,6 @@
 # TypeScript 引擎架構（engine-ts.1）
 
-> 本文件說明 2026-11 的程式改寫。TypeScript 移植本身**行為完全不變**：移植時的輸出與 `sim/day_engine.cjs`（v2-review.6）逐位元組相同。之後刻意的行為改變只有已核准的規則更新（清單：`tests/golden/approved-rule-changes.json`；v2-review.7 巢溫記憶、v2-review.8 受傷工蟻任務傾向、v2-review.9 同時段合作捕獵、v2-review.10 大型獵物隊伍上限、v2-review.11 後到者加入等待中的獵物、v2-review.12 傷勢分類、v2-review.13 產卵耗糖扣嗉囊、v2-review.14 個體路線記憶），`tests/differential.test.ts` 證明撤回這些變更後與 v6 逐位元組相同，`tests/rules-isolation.test.ts` 證明每一版只改了所列的參數或模型開關。
+> 本文件說明 2026-11 的程式改寫。TypeScript 移植本身**行為完全不變**：移植時的輸出與 `sim/day_engine.cjs`（v2-review.6）逐位元組相同。之後刻意的行為改變只有已核准的規則更新（清單：`tests/golden/approved-rule-changes.json`；v2-review.7 巢溫記憶、v2-review.8 受傷工蟻任務傾向、v2-review.9 同時段合作捕獵、v2-review.10 大型獵物隊伍上限、v2-review.11 後到者加入等待中的獵物、v2-review.12 傷勢分類、v2-review.13 產卵耗糖扣嗉囊、v2-review.14 個體路線記憶、v2-review.15 Day0 初始化——Day14 起算輸出不變），`tests/differential.test.ts` 證明撤回這些變更後與 v6 逐位元組相同，`tests/rules-isolation.test.ts` 證明每一版只改了所列的參數或模型開關。
 
 ## 1. 目錄
 
@@ -33,6 +33,7 @@
 | `brood.ts` | 卵→幼蟲→蛹→工蟻 | `developmentalDay` |
 | `queen.ts` | 工蟻存活、蟻后存活、產卵 | `deathAndQueen` |
 | `day.ts` | 一個世界日的固定順序、守恆與因果檢查 | `simulateDay` 主體 |
+| `initialization.ts` | v2-review.15 Day0 初始化：花園生態單獨暖機，再放入創巢群（無路線、無食源知識、無 Day14 資料）；不支援的創巢方式拒絕執行（見 `docs/day0-initialization.md`） | （新增） |
 | `legacy.ts` | v2 單蟻群存檔格式轉接器（`simulateDay(state, bundle)`） | `simulateDay` 介面 |
 | `migration.ts` | Day14→Day15 一次性遷移 | `sim/migrate_day15.cjs` |
 
@@ -73,6 +74,7 @@ F03、F04 的陌生蟻群目前在 `world/xitun-garden.json#background_colonies`
 | `tests/injury.test.ts` | v2-review.12 傷勢分類：Day15 遷移只依紀錄分類（唯讀真實存檔）、擦傷／未知可復原、肢體缺損永不復原、開關關閉不寫入類型。 |
 | `tests/crop-ledger.test.ts` | v2-review.13：20 種子 × 120 日每天檢查「嗉囊糖 ⊆ 糖帳」；開關關閉時如實記錄舊錯誤。 |
 | `tests/navigation.test.ts` | v2-review.14 個體路線記憶：反上帝視角、局部探索只多走一段、記憶隔離、逐段跟隨費洛蒙並學習、訊號消失、20 種子 × 60 日逐日稽核（每段步行都有依據、記憶只因走過而增加、每隻工蟻一天是一條連續且時間遞增的路徑）、生態產量與開關無關。 |
+| `tests/day0.test.ts` | v2-review.15 Day0：合法狀態、出處、暖機只來自自然事件且與創巢情境無關、240 次 Day0→Day1（守恆、每段記憶都是當天親自走過）、24 次 90 日稽核（不跳階段、記憶只因走過而增加）、重播、拒絕 B／C、新羽化工蟻不拿 Day14 路線。 |
 | `tests/naturalism.test.ts` | 214 項（與 v6 相同數量）。 |
 | `tests/foraging-physics.test.ts` | 全部通過；項數隨軌跡而定（v6 為 2149，v7 為 2132）。 |
 | `tests/migration.test.ts` | 21／21。 |
