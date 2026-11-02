@@ -152,6 +152,168 @@
       "diagnostics_only": true,
       "normalise_output": "death_diagnostics_v16",
       "description": "queen_death names the active trigger(s) (chronic sugar / protein / both deficit, no workers) and which one set the applied hazard (max rule), records hazards and sampling, natural queen hazard 'not_modelled'; worker_death records its competing natural and starvation hazards. No probability, draw or state changes: undoing the added fields reproduces v2-review.15 byte for byte."
+    },
+    {
+      "rules_version": "antempire.v2-review.17-activity-timeline",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)",
+      "kind": "param_switch",
+      "file": "species:pheidole-megacephala",
+      "path": "activity.individual_timeline",
+      "from": false,
+      "to": true,
+      "description": "individual activity timeline: each worker loops decide -> walk -> search -> collect/hunt -> return -> unload -> (recruit) -> decide again on its own clock; trips per day are an outcome; travel time from recorded edge length / walking speed (unknown lengths keep route_edge_minutes); false = v2-review.16 planned trip + optional repeat"
+    },
+    {
+      "rules_version": "antempire.v2-review.17-activity-timeline",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "activity.trail_walking_speed_mm_s",
+      "to": 17
+    },
+    {
+      "rules_version": "antempire.v2-review.17-activity-timeline",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "activity.off_trail_speed_factor",
+      "to": 0.5
+    },
+    {
+      "rules_version": "antempire.v2-review.17-activity-timeline",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "activity.search_minutes",
+      "to": 2
+    },
+    {
+      "rules_version": "antempire.v2-review.17-activity-timeline",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "activity.liquid_fill_minutes_full_crop",
+      "to": 3
+    },
+    {
+      "rules_version": "antempire.v2-review.17-activity-timeline",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "activity.protein_handling_minutes",
+      "to": 3
+    },
+    {
+      "rules_version": "antempire.v2-review.17-activity-timeline",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "activity.unload_minutes",
+      "to": 2
+    },
+    {
+      "rules_version": "antempire.v2-review.17-activity-timeline",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "activity.rest_between_trips_minutes",
+      "to": 5
+    },
+    {
+      "rules_version": "antempire.v2-review.17-activity-timeline",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "activity.continue_base",
+      "to": 0.3
+    },
+    {
+      "rules_version": "antempire.v2-review.17-activity-timeline",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "activity.continue_after_failure_probability",
+      "to": 0.5
+    },
+    {
+      "rules_version": "antempire.v2-review.17-activity-timeline",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "activity.active_minute_sugar_cost",
+      "to": 0.00024
+    },
+    {
+      "rules_version": "antempire.v2-review.17-activity-timeline",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "activity.safety_max_actions_per_worker_day",
+      "to": 5000
+    },
+    {
+      "rules_version": "antempire.v2-review.17-activity-timeline",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)",
+      "kind": "param_added",
+      "file": "world",
+      "path": "routes.edge_length_cm.F01:N00",
+      "to": 48
+    },
+    {
+      "rules_version": "antempire.v2-review.17-activity-timeline",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)",
+      "kind": "param_added",
+      "file": "world",
+      "path": "routes.edge_length_cm.F07:N00",
+      "to": 31
+    },
+    {
+      "rules_version": "antempire.v2-review.17-activity-timeline",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)",
+      "kind": "param_added",
+      "file": "world",
+      "path": "routes.edge_length_cm.F08:N00",
+      "to": 83
+    },
+    {
+      "rules_version": "antempire.v2-review.17-activity-timeline",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)",
+      "kind": "param_added",
+      "file": "world",
+      "path": "routes.edge_length_cm.F11:N00",
+      "to": 35
+    },
+    {
+      "rules_version": "antempire.v2-review.17-activity-timeline",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)",
+      "kind": "param_added",
+      "file": "world",
+      "path": "routes.path_tortuosity",
+      "to": 1
+    },
+    {
+      "rules_version": "antempire.v2-review.17-activity-timeline",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "activity.continue_crop_emptied_weight",
+      "to": 0.6
+    },
+    {
+      "rules_version": "antempire.v2-review.17-activity-timeline",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "activity.continue_brood_need_weight",
+      "to": 0.4
+    },
+    {
+      "rules_version": "antempire.v2-review.17-activity-timeline",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "activity.recruit_min_crop_fill_fraction",
+      "to": 0.5
     }
   ]
 }

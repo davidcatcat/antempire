@@ -19,7 +19,7 @@ const c = counter(), { ok } = c, p = bundle(), initial = fixture();
 // Static: ecology never sees any colony; worker decision/foraging modules never read the nest ledger.
 const ecology = codeOnly('engine/ecology.ts');
 ok(!/\b(colon(y|ies)|stores|population|workers)\b/i.test(ecology), 'plant and hemipteran ecology does not read nest budget');
-for (const file of ['engine/workers.ts', 'engine/foraging.ts', 'engine/trails.ts', 'engine/routes.ts']) {
+for (const file of ['engine/workers.ts', 'engine/foraging.ts', 'engine/trails.ts', 'engine/routes.ts', 'engine/activity.ts', 'engine/navigation.ts']) {
   ok(!/\bstores\b|\.sugar_gap_days|\.protein_gap_days|\.stress_days/.test(codeOnly(file)), 'worker behavior ' + file + ' does not read nest budget');
 }
 // Every numeric parameter is a labelled assumption with a basis (throws otherwise).

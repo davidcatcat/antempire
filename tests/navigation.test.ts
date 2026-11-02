@@ -62,11 +62,22 @@ function day(seed: number, setup: (s: LegacyV2State) => void, edits: [string, st
     }, [[MAIN_SPECIES, 'scouting.scout_search_when_route_unproductive_probability', 1], [MAIN_SPECIES, 'scouting.scout_discovery_probability', 1]]);
     const id = fixture().population.workers[0].id;
     for (const e of out.events.filter((x) => x.type === 'exploration_step' && x.worker === id) as Any[]) {
-      ok(['N00', 'F01', 'F04'].includes(e.from), 'exploration starts from a node the worker knows');
-      ok(e.route.slice(0, -1).every((n: string, i: number, r: string[]) => i === 0 || ['F01:N00', 'F01:F04'].includes(ek(r[i - 1], n))), 'the way to the starting node uses remembered edges only');
-      if (e.to === 'F05') { if (e.route.join('>') === 'N00>F01>F04>F05') viaF04++; else viaOther++; }
+      // v2-review.17: nodes the worker walked earlier the same day count as known too
+      const seg = out.events.find((x) => x.type === 'worker_activity' && x.worker === id && x.action === 'explore_depart' && x.end === e.minute) as Any;
+      const departed = seg ? seg.start : e.minute;
+      const earlierSteps = out.events.filter((x) => x.type === 'route_step' && x.worker === id && (x.minute as number) <= departed) as Any[];
+      const earlier = new Set(earlierSteps.flatMap((x) => [x.from, x.to])), earlierEdges = new Set(earlierSteps.map((x) => ek(x.from, x.to)));
+      ok(['N00', 'F01', 'F04'].includes(e.from) || earlier.has(e.from), 'exploration starts from a node the worker knows');
+      ok(e.route.slice(0, -1).every((n: string, i: number, r: string[]) => i === 0 || ['F01:N00', 'F01:F04'].includes(ek(r[i - 1], n)) || earlierEdges.has(ek(r[i - 1], n))), 'the way to the starting node uses remembered edges only');
+      // via F08 is legitimate only if the worker walked N00–F08 earlier that day (v2-review.17: several trips a day)
+      if (e.to === 'F05') { if (e.route.join('>') === 'N00>F01>F04>F05') viaF04++; else if (!earlierEdges.has('F08:N00')) viaOther++; }
+      // v2-review.17: a worker may explore more than once a day; every edge it learned beyond the two it knew must be
+      // an edge it explored itself (one per exploration), never anything beyond a node it reached.
       const after = edgesOf(out.state.population.workers.find((w) => w.id === id));
-      ok(after.size === 3 && after.has(ek(e.from, e.to)), 'exactly one new edge learned per exploration; nothing beyond the reached node');
+      const explored = new Set((out.events.filter((x) => x.type === 'exploration_step' && x.worker === id) as Any[]).map((x) => ek(x.from, x.to)));
+      // edges walked behind a recruiter or along a sensed trail are learned too (v2-review.17: several trips a day)
+      for (const x of out.events.filter((y) => y.type === 'route_step' && y.worker === id && /recruit|trail_follow/.test(String(y.kind))) as Any[]) explored.add(ek(x.from, x.to));
+      ok(after.has(ek(e.from, e.to)) && [...after].every((k) => ['F01:N00', 'F01:F04'].includes(k) || explored.has(k)) && after.size <= 2 + explored.size, 'one new edge learned per exploration; nothing beyond the reached node');
     }
   }
   ok(viaF04 > 0 && viaOther === 0, `F05 discovered only from F04 (${viaF04} times), never through the unknown F08`);

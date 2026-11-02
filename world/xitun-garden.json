@@ -650,7 +650,75 @@
       "basis": "遊戲假設",
       "mechanism_basis": "文獻支持",
       "basis_note": "機制方向有文獻支持（見 reference_for_mechanism_only 或 docs/references.md）；數值為遊戲假設",
-      "legacy_path": "sim/params.json#foraging_physics.route_edge_minutes"
+      "legacy_path": "sim/params.json#foraging_physics.route_edge_minutes",
+      "v17_note": "v2-review.17 起只用於長度未知的路段（以及 activity.individual_timeline=false 的舊模型）"
+    },
+    "edge_length_cm": {
+      "note": "v2-review.17：每條路段的步行長度（公分）。只列出世界設定中有記錄的路段（主巢到該地點的「約距離」）；其他路段長度未知，不列出、不推算，仍沿用 route_edge_minutes 作為對照。",
+      "F01:N00": {
+        "value": 48,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "主巢—F01 路段長度（cm）",
+        "legacy_path": null,
+        "added_in": {
+          "rules_version": "antempire.v2-review.17-activity-timeline",
+          "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)"
+        },
+        "source": "docs/ecosystem-world.md §1 與 saves/world-state.json world_map.locations[].distance_cm（世界設定的「約距離」，主巢入口到該地點）",
+        "extrapolation_limit": "直線距離，是實際路徑長度的下限；沒有量測、沒有座標"
+      },
+      "F07:N00": {
+        "value": 31,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "主巢—F07 路段長度（cm）",
+        "legacy_path": null,
+        "added_in": {
+          "rules_version": "antempire.v2-review.17-activity-timeline",
+          "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)"
+        },
+        "source": "docs/ecosystem-world.md §1 與 saves/world-state.json world_map.locations[].distance_cm（世界設定的「約距離」，主巢入口到該地點）",
+        "extrapolation_limit": "直線距離，是實際路徑長度的下限；沒有量測、沒有座標"
+      },
+      "F08:N00": {
+        "value": 83,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "主巢—F08 路段長度（cm）",
+        "legacy_path": null,
+        "added_in": {
+          "rules_version": "antempire.v2-review.17-activity-timeline",
+          "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)"
+        },
+        "source": "docs/ecosystem-world.md §1 與 saves/world-state.json world_map.locations[].distance_cm（世界設定的「約距離」，主巢入口到該地點）",
+        "extrapolation_limit": "直線距離，是實際路徑長度的下限；沒有量測、沒有座標"
+      },
+      "F11:N00": {
+        "value": 35,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "description": "主巢—F11 路段長度（cm）",
+        "legacy_path": null,
+        "added_in": {
+          "rules_version": "antempire.v2-review.17-activity-timeline",
+          "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)"
+        },
+        "source": "docs/ecosystem-world.md §1 與 saves/world-state.json world_map.locations[].distance_cm（世界設定的「約距離」，主巢入口到該地點）",
+        "extrapolation_limit": "直線距離，是實際路徑長度的下限；沒有量測、沒有座標"
+      }
+    },
+    "path_tortuosity": {
+      "value": 1,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "實際步行路徑長度／記錄距離的倍數",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.17-activity-timeline",
+        "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, work package 1; pending Owner review)"
+      },
+      "basis_note": "沒有花園路徑彎曲度資料；1＝直線下限（不另加假設的繞路）。比較情境另見 Day0 評估"
     }
   },
   "background_colonies": {

@@ -35,6 +35,8 @@ export function runDay0(founding: FoundingId, season: Season, seed: number, bund
   const c0 = s.colonies[0];
   const day0 = { date: s.calendar_date, workers: c0.population.workers.length, brood: c0.population.brood.length, sugar: c0.stores.sugar, protein: c0.stores.protein, worker_ages: c0.population.workers.map((w) => w.age_days), warmup_events: init.warmup.events.length, warmup_carcass_protein: r3(Object.values(s.sources).filter((x) => x.type === 'carcass').reduce((a, x) => a + x.protein, 0)), honeydew_hosts_alive: Object.values(s.sources).filter((x) => x.type === 'honeydew' && x.host_alive).map((x) => x.id) };
   const cum = { income: { sugar: 0, protein: 0 }, consumed: { sugar: 0, protein: 0 }, demand: { sugar: 0, protein: 0 }, eggs_laid: 0, hatch: 0, pupation: 0, eclosion: 0, worker_deaths: 0, brood_deaths: 0, trips: 0, successes: 0, explorations: 0, exploration_found_nothing: 0, discoveries: 0, recruitment: 0, trail_choices: 0, trophallaxis: 0, predation: 0, repair_worker_days: 0, forage_worker_days: 0, nurse_worker_days: 0 };
+  const act: Any = { outside_minutes: 0, travel_minutes: 0, search_minutes: 0, handling_minutes: 0, prey_holding_minutes: 0, unload_minutes: 0, cancelled_no_time: 0, no_route: 0, active_worker_days: 0, worker_days: 0, rest_minutes_active_foragers: 0, recruitment_failed: 0, trips_hist: {}, stop_reasons: {} };
+  const garden = { sugar: 0, protein: 0 }, gardenKnown = { sugar: 0, protein: 0 }; let gardenDays = 0;
   const bySite: Record<string, number> = {}, workerDeath: Record<string, number> = {}, broodDeath: Record<string, number> = {}, firstDiscovery: Record<string, number> = {};
   const checkpoints: Record<number, Any> = {}, chain: Any[] = [], seasonTemps: { air: number[]; nest: number[] } = { air: [], nest: [] };
   let queenDeath: Any = null;
@@ -46,6 +48,20 @@ export function runDay0(founding: FoundingId, season: Season, seed: number, bund
     for (const k of ['sugar', 'protein'] as const) { cum.income[k] = r3(cum.income[k] + sm.income[k]); cum.consumed[k] = r3(cum.consumed[k] + (sm.consumed?.[k] ?? 0)); cum.demand[k] = r3(cum.demand[k] + (sm.demand?.[k] ?? 0)); }
     cum.eggs_laid += sm.eggs_laid; cum.hatch += sm.hatchings; cum.pupation += sm.pupations; cum.eclosion += sm.eclosions; cum.worker_deaths += sm.worker_deaths; cum.brood_deaths += sm.brood_deaths; cum.trips += sm.foraging_trips; cum.successes += sm.foraging_successes;
     cum.repair_worker_days += sm.tasks.repair; cum.forage_worker_days += sm.tasks.forage; cum.nurse_worker_days += sm.tasks.nurse;
+    // v2-review.17 activity timeline (absent in earlier versions)
+    if (sm.activity) {
+      const A = sm.activity, per = Object.values(A.workers as Record<string, Any>), out = per.filter((w) => w.trips > 0);
+      for (const k of ['outside_minutes', 'travel_minutes', 'search_minutes', 'handling_minutes', 'prey_holding_minutes', 'unload_minutes', 'cancelled_no_time', 'no_route'] as const) act[k] = r3((act[k] ?? 0) + A[k]);
+      act.active_worker_days += out.length; act.worker_days += per.length;
+      act.rest_minutes_active_foragers = r3((act.rest_minutes_active_foragers ?? 0) + out.reduce((x, w) => x + (A.window_minutes - w.outside_minutes - w.unload_minutes), 0));
+      for (const w of out) act.trips_hist[Math.min(w.trips, 20)] = (act.trips_hist[Math.min(w.trips, 20)] ?? 0) + 1;
+      for (const w of per) if (w.stop_reason) act.stop_reasons[w.stop_reason] = (act.stop_reasons[w.stop_reason] ?? 0) + 1;
+    }
+    for (const e of ev as Any[]) if (e.type === 'recruitment_failed' || e.type === 'recruitment_no_nestmate') act.recruitment_failed++;
+    // garden food standing at day end (world), and the part at sites some living worker has itself walked to
+    const known = new Set(s.colonies[0].population.workers.flatMap((w) => Object.keys((w.route_memory as Any)?.edges ?? {}).flatMap((k) => k.split(':'))));
+    for (const src of Object.values(s.sources)) { const m = src.type === 'carcass' ? 'protein' : 'sugar', v = src.type === 'carcass' ? src.protein : src.sugar; garden[m] = r3(garden[m] + v); if (known.has(src.id)) gardenKnown[m] = r3(gardenKnown[m] + v); }
+    gardenDays++;
     sugarGapMax = Math.max(sugarGapMax, s.colonies[0].stores.sugar_gap_days); proteinGapMax = Math.max(proteinGapMax, s.colonies[0].stores.protein_gap_days);
     if (sm.eggs_laid && firstEggDay === null) firstEggDay = d;
     if (sm.eclosions && firstEclosionDay === null) firstEclosionDay = d;
@@ -78,6 +94,7 @@ export function runDay0(founding: FoundingId, season: Season, seed: number, bund
     queen_death_day: queenDeathDay, queen_death_reason: queenDeathReason, queen_death: queenDeath, zero_worker_day: zeroWorkerDay, colony_end_day: endDay,
     first_egg_day: firstEggDay, first_eclosion_day: firstEclosionDay, max_sugar_gap_days: sugarGapMax, max_protein_gap_days: proteinGapMax,
     totals: cum, income_by_site: bySite, first_discovery_day_by_site: firstDiscovery, worker_death_reasons: workerDeath, brood_death_reasons: broodDeath,
+    activity: act, garden_food_mean: { sugar: gardenDays ? r3(garden.sugar / gardenDays) : null, protein: gardenDays ? r3(garden.protein / gardenDays) : null }, garden_food_at_sites_known_by_workers_mean: { sugar: gardenDays ? r3(gardenKnown.sugar / gardenDays) : null, protein: gardenDays ? r3(gardenKnown.protein / gardenDays) : null },
     temperature: { mean_air_c: mean(seasonTemps.air), mean_nest_c: mean(seasonTemps.nest), min_nest_c: seasonTemps.nest.length ? r3(Math.min(...seasonTemps.nest)) : null, days: seasonTemps.air.length },
     checkpoints, last_key_events: endDay !== null ? chain : undefined,
   };
@@ -106,6 +123,12 @@ function aggregate(runs: Any[]): Any {
   out.brood_death_reasons_total = sumObj('brood_death_reasons');
   out.queen_death_reasons = sumObj('_qd');
   const t = (k: string) => r3(runs.reduce((a, r) => a + r.totals[k], 0));
+  const A = (k: string) => r3(runs.reduce((a, r) => a + (r.activity?.[k] ?? 0), 0));
+  const hist: Record<string, number> = {}, stops: Record<string, number> = {};
+  for (const r of runs) { for (const [k, v] of Object.entries(r.activity?.trips_hist ?? {})) hist[k] = (hist[k] ?? 0) + (v as number); for (const [k, v] of Object.entries(r.activity?.stop_reasons ?? {})) stops[k] = (stops[k] ?? 0) + (v as number); }
+  out.activity = { active_forager_days: A('active_worker_days'), worker_days: A('worker_days'), trips_per_active_forager_day: A('active_worker_days') ? r3(t('trips') / A('active_worker_days')) : null, outside_min_per_active_forager_day: A('active_worker_days') ? r3(A('outside_minutes') / A('active_worker_days')) : null, travel_minutes: A('travel_minutes'), search_minutes: A('search_minutes'), handling_minutes: A('handling_minutes'), prey_holding_minutes: A('prey_holding_minutes'), unload_minutes: A('unload_minutes'), rest_minutes_active_foragers: A('rest_minutes_active_foragers'), cancelled_no_time: A('cancelled_no_time'), no_route: A('no_route'), recruitment_failed: A('recruitment_failed'), trips_per_forager_day_histogram: hist, stop_reasons: stops };
+  out.garden_food_mean_median = { sugar: median(runs.map((r) => r.garden_food_mean?.sugar).filter((x) => x !== null && x !== undefined)), protein: median(runs.map((r) => r.garden_food_mean?.protein).filter((x) => x !== null && x !== undefined)) };
+  out.garden_food_known_mean_median = { sugar: median(runs.map((r) => r.garden_food_at_sites_known_by_workers_mean?.sugar).filter((x) => x !== null && x !== undefined)), protein: median(runs.map((r) => r.garden_food_at_sites_known_by_workers_mean?.protein).filter((x) => x !== null && x !== undefined)) };
   out.totals = { trips: t('trips'), successes: t('successes'), explorations: t('explorations'), exploration_found_nothing: t('exploration_found_nothing'), discoveries: t('discoveries'), recruitment: t('recruitment'), trail_choices: t('trail_choices'), trophallaxis: t('trophallaxis'), predation: t('predation'), eggs_laid: t('eggs_laid'), hatch: t('hatch'), pupation: t('pupation'), eclosion: t('eclosion'), repair_worker_days: t('repair_worker_days') };
   out.mean_nest_temperature_c_median = median(runs.map((r) => r.temperature.mean_nest_c));
   return out;
@@ -147,6 +170,13 @@ function tables(doc: Any): string {
     for (const season of Object.keys(doc.groups[f])) { const g = doc.groups[f][season], j = (o: Any) => Object.entries(o).sort().map(([k, v]) => `${k} ${v}`).join('；') || '—'; L.push(`| ${season} | ${j(g.income_by_site_total)} | ${j(g.worker_death_reasons_total)} | ${j(g.brood_death_reasons_total)} | ${j(g.queen_death_reasons)} |`); }
     L.push('');
   }
+  L.push('## 個體行動（v2-review.17 起；20 種子合計）', '');
+  L.push('| 情境 | 季節 | 有出巢的工蟻日 | 每隻出巢工蟻每日趟數 | 每隻出巢工蟻每日外出分鐘 | 步行／搜尋／採集／守獵物／卸貨（分鐘） | 出巢工蟻巢內時間（分鐘） | 因時間不足取消 | 沒有路線而未出勤 | 招募失敗 | 停止原因 |', '|---|---|---:|---:|---:|---|---:|---:|---:|---:|---|');
+  for (const f of doc.foundings_run) for (const season of Object.keys(doc.groups[f])) { const a = doc.groups[f][season].activity; L.push(`| ${f} | ${season} | ${a.active_forager_days} | ${a.trips_per_active_forager_day ?? '—'} | ${a.outside_min_per_active_forager_day ?? '—'} | ${a.travel_minutes}／${a.search_minutes}／${a.handling_minutes}／${a.prey_holding_minutes}／${a.unload_minutes} | ${a.rest_minutes_active_foragers} | ${a.cancelled_no_time} | ${a.no_route} | ${a.recruitment_failed} | ${Object.entries(a.stop_reasons).sort().map(([k, v]) => k + ' ' + v).join('；') || '—'} |`); }
+  L.push('');
+  L.push('| 情境 | 季節 | 每隻出巢工蟻每日趟數分布（趟:工蟻日） | 花園每日食物存量中位（糖／蛋白，份） | 其中在工蟻走過的地點（糖／蛋白） |', '|---|---|---|---|---|');
+  for (const f of doc.foundings_run) for (const season of Object.keys(doc.groups[f])) { const g = doc.groups[f][season]; L.push(`| ${f} | ${season} | ${Object.entries(g.activity.trips_per_forager_day_histogram).sort((x, y) => +x[0] - +y[0]).map(([k, v]) => k + ':' + v).join(' ') || '—'} | ${g.garden_food_mean_median.sugar}／${g.garden_food_mean_median.protein} | ${g.garden_food_known_mean_median.sugar}／${g.garden_food_known_mean_median.protein} |`); }
+  L.push('');
   L.push('## 未執行的創巢方式', '');
   for (const [f, u] of Object.entries(doc.foundings_not_supported as Any)) L.push(`- **${f}**（${(u as Any).title}）：引擎拒絕（${(u as Any).refused ? 'FOUNDING_NOT_SUPPORTED' : '未拒絕！'}）；缺少：${((u as Any).missing_mechanisms ?? []).join('；')}`);
   return L.join('\n') + '\n';

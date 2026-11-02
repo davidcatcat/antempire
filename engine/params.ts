@@ -74,6 +74,8 @@ export function validateParamTree(file: ParamFile, label: string): number {
   return count;
 }
 
+const ACTIVITY_KEYS = ['trail_walking_speed_mm_s', 'off_trail_speed_factor', 'search_minutes', 'liquid_fill_minutes_full_crop', 'protein_handling_minutes', 'unload_minutes', 'rest_between_trips_minutes', 'continue_base', 'continue_crop_emptied_weight', 'continue_brood_need_weight', 'continue_after_failure_probability', 'recruit_min_crop_fill_fraction', 'active_minute_sugar_cost', 'safety_max_actions_per_worker_day'] as const;
+
 export function resolveSpecies(file: ParamFile) {
   if (file.schema !== 'antempire.species-params.v1') throw Error('Unknown species params schema ' + String(file.schema));
   const p = {
@@ -100,6 +102,8 @@ export function resolveSpecies(file: ParamFile) {
     recruitment: section(file, 'recruitment', ['recruitment_probability', 'recruitment_max_followers', 'trail_daily_retention', 'trail_deposit_per_success', 'trail_min_detectable', 'trail_max_strength', 'follow_intermediate_source_probability', 'trail_follow_max_hops'] as const),
     trophallaxis: section(file, 'trophallaxis', ['crop_capacity', 'max_trophallaxis_contacts', 'transfer_max_portions'] as const),
     navigation: { individual_route_memory: bool(file, 'navigation.individual_route_memory') },
+    // v2-review.17: individual activity timeline (switch) and its durations / decision weights.
+    activity: { individual_timeline: bool(file, 'activity.individual_timeline'), ...(bool(file, 'activity.individual_timeline') ? section(file, 'activity', ACTIVITY_KEYS) : ({} as Record<(typeof ACTIVITY_KEYS)[number], number>)) },
     predation: {
       ...section(file, 'predation', ['live_prey_encounter_probability', 'large_prey_min_team', 'live_prey_capture_probability', 'large_prey_escape_while_recruiting_probability', 'large_prey_max_team'] as const),
       simultaneous_site_group_hunting: bool(file, 'predation.simultaneous_site_group_hunting'),
@@ -138,6 +142,25 @@ function routeEvidence(file: ParamFile, edges: [string, string][]): Record<strin
   return out;
 }
 
+/**
+ * v2-review.17: recorded walking-path lengths per edge (cm). Only edges whose length the world records are
+ * listed; an edge that is absent has an UNKNOWN length and keeps routes.route_edge_minutes. Keys are sorted
+ * 'A:B' edge keys of existing topology edges.
+ */
+function edgeLengths(file: ParamFile, edges: [string, string][]): { edge_length_cm: Record<string, number>; path_tortuosity: number } {
+  const raw = at(file, 'routes.edge_length_cm') as Record<string, Json> | undefined;
+  const valid = new Set(edges.map(([a, b]) => [a, b].sort().join(':')));
+  const out: Record<string, number> = {};
+  for (const [k, node] of Object.entries(raw ?? {})) {
+    if (node === null || typeof node !== 'object') continue; // notes
+    if (!valid.has(k)) throw Error('routes.edge_length_cm: not a topology edge key ' + k);
+    const v = num(file, `routes.edge_length_cm.${k}`);
+    if (!(v > 0)) throw Error('routes.edge_length_cm must be positive: ' + k);
+    out[k] = v;
+  }
+  return { edge_length_cm: out, path_tortuosity: raw ? num(file, 'routes.path_tortuosity') : 1 };
+}
+
 export function resolveWorld(file: ParamFile) {
   if (file.schema !== 'antempire.world-params.v1') throw Error('Unknown world params schema ' + String(file.schema));
   const edges = at(file, 'routes.topology.edges');
@@ -170,7 +193,7 @@ export function resolveWorld(file: ParamFile) {
     carcasses: section(file, 'carcasses', ['carcass_daily_decay_fraction', 'carcass_rain_decay_bonus', 'carcass_new_protein_min', 'carcass_new_protein_max', 'carcass_max_lifetime_days', 'carcass_decay_max_daily_fraction'] as const),
     insects: section(file, 'insects', ['insect_local_carrying_capacity', 'insect_background_immigration_probability', 'insect_local_daily_mortality_probability', 'insect_site_logistic_daily_birth_rate', 'insect_boundary_logistic_daily_birth_rate', 'insect_boundary_carrying_capacity', 'insect_boundary_per_capita_daily_death_probability', 'insect_reproduction_reference_c', 'insect_reproduction_per_degree_c', 'insect_reproduction_min_multiplier', 'insect_reproduction_max_multiplier', 'insect_local_death_reference_population'] as const),
     prey: section(file, 'prey', ['large_prey_fraction', 'small_prey_protein', 'large_prey_protein'] as const),
-    routes: { edges: edges as [string, string][], route_edge_minutes: num(file, 'routes.route_edge_minutes') },
+    routes: { edges: edges as [string, string][], route_edge_minutes: num(file, 'routes.route_edge_minutes'), ...edgeLengths(file, edges as [string, string][]) },
     background_rivals: rivals,
     route_evidence: routeEvidence(file, edges as [string, string][]),
   };

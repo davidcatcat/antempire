@@ -13,6 +13,8 @@
  *                nothing undone reproduces tests/golden/v14-trace-sha256.json
  *   v2-review.16 (death diagnostics; diagnostics_only) -> removing only the added event fields (named output
  *                normaliser) reproduces tests/golden/v15-trace-sha256.json
+ *   v2-review.17 (individual activity timeline; switch off, new parameters unused) -> reproduces
+ *                tests/golden/v16-trace-sha256.json and the v16 Day0 golden
  * Every step also undoes the output normalisers of its own and later diagnostics-only versions.
  * Each step undoes its own changes AND every later step's, so step N is compared with the engine as it was.
  */
@@ -38,6 +40,7 @@ const STEPS = [
   { version: 'antempire.v2-review.14-individual-route-memory', previousGolden: 'tests/golden/v13-trace-sha256.json' },
   { version: 'antempire.v2-review.15-day0-initialization', previousGolden: 'tests/golden/v14-trace-sha256.json' },
   { version: 'antempire.v2-review.16-death-diagnostics', previousGolden: 'tests/golden/v15-trace-sha256.json' },
+  { version: 'antempire.v2-review.17-activity-timeline', previousGolden: 'tests/golden/v16-trace-sha256.json' },
 ];
 const ORDER = STEPS.map((s) => s.version);
 const results: Record<string, string> = {};
