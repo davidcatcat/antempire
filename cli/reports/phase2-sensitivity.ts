@@ -193,7 +193,7 @@ export function buildDoc(all: Any[], batch: string, cfg: string): Any {
     rules_fingerprint: { engine: fp.engine, params: fp.params }, batch_id: batch, config_hash: cfg,
     baseline: BASELINE, baseline_note: 'Owner 2026-11-02：兩者維持 0.5，只作為既有對照基準（遊戲假設），不是已知值，也不是最佳值。',
     seeds: DAY0_SEEDS, seasons: SEASONS, horizon_days: 365, rows_per_job: ROWS_PER_JOB, row_columns: ROW_COLUMNS,
-    measures: { any_own_worker_eclosion_365: '年度內曾有自產工蟻羽化（原稱「有效繁殖」）', sustained_reproduction_candidate: SUSTAINED_REPRODUCTION },
+    measures: { any_own_worker_eclosion_365: '年度內曾有自產工蟻羽化（原稱「有效繁殖」）：整個觀察期間 Day1～365 累積的事件，不是 Day365 當天的狀態', queen_alive_365: 'Day365 當天的狀態', workers_365: 'Day365 當天的狀態', growth_365: 'Day365 當天的狀態（相對於 Day0）', sustained_reproduction_candidate: SUSTAINED_REPRODUCTION },
     jobs: all, summaries: summaries(all),
   };
 }
@@ -283,13 +283,13 @@ export function tables(doc: Any): string {
   const S = doc.summaries, J = (f: string, caf: number, rmin: number) => doc.jobs.find((x: Any) => x.founding === f && x.caf === caf && x.rmin === rmin);
   const L = [`# 第二階段：個體決策參數的敏感度（${doc.rules_tag}；診斷，**不挑選最佳值**）`, '',
     `> 每格＝20 種子 × 4 季＝80 次；批次 \`${doc.batch_id}\`；引擎指紋 \`${doc.rules_fingerprint.engine.slice(0, 12)}\`、參數指紋 \`${doc.rules_fingerprint.params.slice(0, 12)}\`。`,
-    '> Day365 指標分開列：蟻后存活／有工蟻／**年度內曾有自產工蟻羽化**（原稱「有效繁殖」；只表示曾有一隻自產工蟻羽化）／**持續繁殖候選定義**／成長·持平·衰退·只剩蟻后·全滅。',
+    '> 指標分開列，並註明是**狀態**還是**事件**：蟻后存活、有工蟻、成長分類＝**Day365 當天的狀態**；**年度內曾有自產工蟻羽化**（原稱「有效繁殖」）＝**整個觀察期間（Day1～365）累積的事件**，只要曾發生一次就算，Day365 時蟻群可能已滅亡；**持續繁殖候選**＝Day365 狀態加上後半年的事件。',
     `> 持續繁殖候選定義（遊戲假設，評估用，不是生物學門檻）：${SUSTAINED_REPRODUCTION.rule}。`,
     '> 基準＝兩參數皆 0.5（Owner 2026-11-02 決定只作為既有對照基準）。其他數值並列，不選最佳存活率。', ''];
   const cell = (s: Any) => `${s.queen_alive_365}／${s.colonies_with_workers_365}／${s.any_own_worker_eclosion_365}／${s.sustained_reproduction_candidate}／${s.growth_365.grew ?? 0}·${s.growth_365.held ?? 0}·${s.growth_365.declined ?? 0}·${s.growth_365.no_workers_queen_alive ?? 0}·${s.growth_365.extinct ?? 0}`;
   for (const [param, key] of [['continue_after_failure_probability（空手而回後繼續）', 'caf'], ['recruit_min_crop_fill_fraction（招募門檻）', 'rmin']] as const) {
     const pick = (f: string, v: number) => (key === 'caf' ? J(f, v, 0.5) : J(f, 0.5, v));
-    L.push(`## ${param}（另一參數固定 0.5）`, '', '格內：蟻后存活／有工蟻／曾有自產工蟻羽化／持續繁殖候選／成長·持平·衰退·只剩蟻后·全滅', '', `| 情境 | ${LEVELS.join(' | ')} |`, `|---|${LEVELS.map(() => '---').join('|')}|`);
+    L.push(`## ${param}（另一參數固定 0.5）`, '', '格內：蟻后存活〔Day365 狀態〕／有工蟻〔Day365 狀態〕／曾有自產工蟻羽化〔Day1～365 累積事件〕／持續繁殖候選〔狀態＋事件〕／成長·持平·衰退·只剩蟻后·全滅〔Day365 狀態〕', '', `| 情境 | ${LEVELS.join(' | ')} |`, `|---|${LEVELS.map(() => '---').join('|')}|`);
     for (const f of SUPPORTED_FOUNDINGS) L.push(`| ${f} | ${LEVELS.map((v) => { const j = pick(f, v); return j ? cell(S[j.id].all) : '—'; }).join(' | ')} |`);
     L.push('', `| 情境 | 每隻出巢工蟻每日趟數：${LEVELS.join(' / ')} | 糖收入中位：${LEVELS.join(' / ')} | 有自產羽化的 30 日區間數中位：${LEVELS.join(' / ')} |`, '|---|---|---|---|');
     for (const f of SUPPORTED_FOUNDINGS) { const js = LEVELS.map((v) => pick(f, v)); L.push(`| ${f} | ${js.map((j) => (j ? S[j.id].all.trips_per_active_forager_day ?? '—' : '—')).join(' / ')} | ${js.map((j) => (j ? S[j.id].all.sugar_income_median ?? '—' : '—')).join(' / ')} | ${js.map((j) => (j ? S[j.id].all.own_eclosion_windows_median ?? '—' : '—')).join(' / ')} |`); }

@@ -173,7 +173,7 @@ export function generateDay0Evaluation(outDir: string, bundle: ParamBundle = loa
   return doc;
 }
 
-function tables(doc: Any): string {
+export function tables(doc: Any): string {
   const L: string[] = [`# Day0 評估表 ${doc.rules_tag}（自動產生：\`node cli/reports/day0-evaluation.ts\`）`, '', `> 診斷，不是目標。引擎 ${doc.engine_version}；20 固定種子（${doc.seeds[0]}～${doc.seeds.at(-1)}）× 365 日；四季分開。所有數值都是遊戲模型。`, ''];
   for (const f of doc.foundings_run) {
     L.push(`## 情境 ${f}`, '');
@@ -191,7 +191,7 @@ function tables(doc: Any): string {
     L.push('');
   }
   L.push('## 四項指標分開（v2-review.19 起）：蟻后存活／有工蟻／截至該日曾有自產工蟻羽化／成長分類（成長·持平·衰退·只剩蟻后·全滅）', '');
-  L.push('> 成長分類以 Day0 的「工蟻＋帶來的蛹」為參考數。「曾有自產工蟻羽化」（2026-11-02 起的名稱，原稱「有效繁殖」）只計這次模擬中蟻后產下的卵羽化成的工蟻，不計創巢時帶來的幼體；它只表示**曾經**有一隻自產工蟻羽化，不表示繁殖能持續。持續繁殖見下一節。', '');
+  L.push('> 蟻后存活、有工蟻、成長分類是**該檢查日當天的狀態**；「曾有自產工蟻羽化」（2026-11-02 起的名稱，原稱「有效繁殖」）是**從 Day1 到該檢查日累積的事件**：只要曾有一隻這次模擬中蟻后產下的卵羽化成工蟻就算（不計創巢時帶來的幼體），該檢查日時蟻群可能已滅亡；它不表示繁殖能持續。持續繁殖見下一節。成長分類以 Day0 的「工蟻＋帶來的蛹」為參考數。', '');
   L.push('| 情境 | 季節 | Day30 | Day90 | Day180 | Day365 |', '|---|---|---|---|---|---|');
   for (const f of doc.foundings_run) for (const season of Object.keys(doc.groups[f])) { const g = doc.groups[f][season]; L.push(`| ${f} | ${season} | ${[30, 90, 180, 365].map((cp) => { const x = g.checkpoints[cp], gr = x.growth; return `${x.queen_alive}／${x.colonies_with_workers}／${x.any_own_worker_eclosion}／${gr.grew ?? 0}·${gr.held ?? 0}·${gr.declined ?? 0}·${gr.no_workers_queen_alive ?? 0}·${gr.extinct ?? 0}`; }).join(' | ')} |`); }
   L.push('');
