@@ -62,14 +62,19 @@ const read = (f) => JSON.parse(fs.readFileSync(path.join(DATA, f), 'utf8'));
       for (let d = 1; d < ndays; d++) {
         const day = exp.days[d - 1], died = day.events.filter((e) => e.type === 'worker_death').map((e) => e.id), born = day.events.filter((e) => e.type === 'eclosion').map((e) => e.new_worker_id);
         if (!died.length && !born.length && d % 7) continue;
-        await setDay(d, day.window_minutes ?? 360); const atEnd = await drawn();
+        const w = day.window_minutes ?? 360;
+        await setDay(d, w); const inWindow = await drawn();
+        check(JSON.stringify(inWindow) === JSON.stringify((d === 1 ? exp.day0.state : exp.days[d - 2].end_state).workers.map((x) => x.id).sort()), `${name} ${meta.id}: inside the window of day ${d} the start-of-day colony is drawn`);
+        await setDay(d, w + 1); const settled = await drawn();
+        check((await page.$eval('#timeLabel', (e) => e.textContent)).includes('日終結算後'), `${name} ${meta.id}: the settlement step is labelled, not shown as a clock minute`);
         await setDay(d + 1, 0); const next = await drawn();
-        check(JSON.stringify(next) === JSON.stringify(day.end_state.workers.map((w) => w.id).sort()), `${name} ${meta.id}: ants drawn at the start of day ${d + 1} = engine workers at the end of day ${d}`);
-        for (const w of died) check(atEnd.includes(w) && !next.includes(w), `${name} ${meta.id}: ${w} (died day ${d}) drawn on day ${d}, not on day ${d + 1}`);
-        for (const w of born) check(!atEnd.includes(w) && next.includes(w), `${name} ${meta.id}: ${w} (eclosed day ${d}) appears only from day ${d + 1}`);
+        check(JSON.stringify(settled) === JSON.stringify(day.end_state.workers.map((x) => x.id).sort()), `${name} ${meta.id}: after the day-${d} settlement the engine's end-of-day workers are drawn`);
+        check(JSON.stringify(next) === JSON.stringify(settled), `${name} ${meta.id}: day ${d + 1} starts with exactly the settled day-${d} colony`);
+        for (const x of died) check(inWindow.includes(x) && !settled.includes(x), `${name} ${meta.id}: ${x} (died day ${d}) drawn during the window, gone after the settlement`);
+        for (const x of born) check(!inWindow.includes(x) && settled.includes(x), `${name} ${meta.id}: ${x} (eclosed day ${d}) appears at the settlement of day ${d}`);
       }
       // replay boundary: last minute of the last day, then play stops at the end
-      const lastW = exp.days[ndays - 1].window_minutes ?? 360;
+      const lastW = (exp.days[ndays - 1].window_minutes ?? 360) + 1;
       await setDay(ndays, lastW);
       check((await V(() => window.antempireViewer.state())).day === ndays, `${name} ${meta.id}: last day renders`);
       await page.selectOption('#speed', '60'); await page.click('#play'); await page.waitForTimeout(600);

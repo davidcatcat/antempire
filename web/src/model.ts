@@ -38,6 +38,20 @@ export function stateAtStart(exp: Experiment, day: number): ColonySnap {
   return day === 1 ? exp.day0.state : exp.days[day - 2].end_state;
 }
 
+/** Minutes after the activity window at which the end-of-day settlement is shown. The engine applies deaths,
+ *  eclosions, egg laying and development at the END of the day without a clock time; the viewer shows them as one
+ *  explicit "日終結算" step after the window, never at an invented minute. */
+export const SETTLEMENT_STEP = 1;
+export const windowOf = (d: ExperimentDay) => d.window_minutes ?? 360;
+export const isSettled = (d: ExperimentDay, t: number) => t > windowOf(d);
+
+/** The colony to DRAW at minute t of day `day`: the start-of-day state during the activity window, the engine's
+ *  end-of-day state after the settlement step (so deaths and eclosions of that day are visible). */
+export function stateAt(exp: Experiment, day: number, t: number): ColonySnap {
+  const s = stateAtStart(exp, day);
+  return isSettled(exp.days[day - 1], t) ? exp.days[day - 1].end_state : s;
+}
+
 /** The world kinds are never mixed: a file loaded for one mode must declare that mode. */
 export function assertKind<T extends { kind: string; schema: string }>(data: T, kind: 'official' | 'experiment', file: string): T {
   const d = data as unknown as { kind: string; schema: string; official?: boolean; days?: unknown };
@@ -91,10 +105,15 @@ export function poseAt(d: ExperimentDay, workerId: string, t: number, pos: Recor
   return { x: p.x, y: p.y, place: here, action: here === nest ? 'in_nest' : 'at_site', interpolated: false, segment: null };
 }
 
-/** Events of a day up to minute t (events without a minute happen at the end of the day: included only when t >= window). */
+/** True when the engine gave this event a clock minute. Events without one (deaths, eclosions, egg laying,
+ *  ecology) belong to the end-of-day settlement and are never given an invented time. */
+export const isTimed = (e: SimEvent) => typeof e.minute === 'number' || typeof e.start === 'number';
+
+/** Events of a day up to minute t: timed events whose minute <= t; untimed (end-of-day) events only once the
+ *  settlement step is shown (t > window). */
 export function eventsUntil(d: ExperimentDay, t: number): SimEvent[] {
-  const w = d.window_minutes ?? 360;
-  return d.events.filter((e) => e.type !== 'worker_activity' && e.type !== 'route_step' && ((typeof e.minute === 'number' ? e.minute : typeof e.start === 'number' ? e.start : w + 1) <= t || t >= w));
+  const settled = isSettled(d, t);
+  return d.events.filter((e) => e.type !== 'worker_activity' && e.type !== 'route_step' && (isTimed(e) ? ((typeof e.minute === 'number' ? e.minute : e.start) as number) <= t : settled));
 }
 
 /** Union of the route edges remembered by the workers alive at the start of the day (observer overlay). */
