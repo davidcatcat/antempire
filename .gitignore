@@ -3,3 +3,4 @@ saves/.txn/
 saves/.advance.lock
 *.advance-tmp
 reports/phase2-sensitivity/.work/
+web/dist/
