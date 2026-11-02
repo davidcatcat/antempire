@@ -475,3 +475,36 @@
   - 第 84 日的小工蟻存活數；
   - 繁殖季節寫成「3～5 月」與「晚春到秋季」兩種。
 - GISD 的「壽命 78／38 日」不採用，理由見 `docs/research-design-phase3-lifecycle.md` §0。
+
+## 2026-11-02 P1-A 大工蟻（R260–R275；研究與設計，未改規則）
+
+> 用於 `docs/research-design-p1a-majors.md`；工作筆記 `reports/p1a-majors/literature-notes.md`。R189–R203（PR #34）、R204–R227（PR #38）、R228–R259（P0-A）在其他 PR；本段不重複編號。
+
+| ID | 文獻 | 讀取 | 分級 | 支持的內容 | 不可外推之處 |
+|---|---|---|---|---|---|
+| R260 | Tsuji K. (1990) Nutrient storage in the major workers of *Pheidole ryukyuensis*. *Appl. Entomol. Zool.* 25:283–287. DOI 10.1303/aez.25.283 | 頁面影像全文 | 非本種 | replete major 使 minor 斷食存活 31.3 vs 8.0 日；非 replete major 13.9 日；**作者觀察本種「顯然沒有 replete」** | 單一群、24°C；本種一句為個人觀察 |
+| R261 | Sempo G., Detrain C. (2010) *J. Insect Sci.* 10:3. DOI 10.1673/031.010.0301 | 全文 | 非本種 *P. pallidula* | major 活動 40–50%、minor ≈ 70%；改變比例時 major 不補位；replete major 最多 32%（引 R271） | 無女王實驗群 |
+| R262 | Sempo G., Detrain C. (2004) *Insectes Soc.* 51:48–54 | 經摘要工具 | 非本種 | major 做 minor 行為庫的 69%，含育幼；行為庫大小受觀察次數影響 | 數字未逐字核對 |
+| R263 | Detrain C. (1990) *Actes Coll. Insectes Soc.* 6:131–139 | 全文 | 非本種 | major 對路徑費洛蒙與觸角邀請的反應閾值較高；只在大型、搬不動的食物時被招募 | 實驗室 |
+| R264 | Detrain C., Pasteels J. M., Deneubourg J.-L. (1988) *Actes Coll. Insectes Soc.* 4:87–94 | 全文 | 非本種 | 路徑費洛蒙主要由 minor 產生；major 循跡較好；major 切斷獵物骨片、殺死入侵者 | 人工路徑 |
+| R265 | Detrain C., Pasteels J. M. (1991) *J. Insect Behav.* 4:157–176. DOI 10.1007/BF01054609 | 經摘要工具 | 非本種 | 同 R263（期刊版） | 未讀全文 |
+| R266 | Detrain C., Pasteels J. M. (1992) *Behav. Ecol. Sociobiol.* 29:405–412. DOI 10.1007/BF00170170 | 經摘要工具 | 非本種 | 兩形態共同防衛；防衛策略由招募者的基本行為湧現 | 未讀全文 |
+| R267 | Wilson E. O. (1984) *Behav. Ecol. Sociobiol.* 16:89–98 | 二手（經 R261、R97） | 非本種 | minor 少時 major 擴大行為庫（待命階級） | R261 指出抽樣偏差 |
+| R268 | Bonabeau E., Theraulaz G., Deneubourg J.-L. (1996) *Proc. R. Soc. B* 263:1565–1569. DOI 10.1098/rspb.1996.0229 | 經摘要工具 | 模型 | 固定反應閾值模型可重現 *Pheidole* 分工 | 閾值數值是模型值 |
+| R269 | Wheeler D. E., Nijhout H. F. (1983) *J. Insect Physiol.* 29:847–854. DOI 10.1016/0022-1910(83)90151-8 | 經摘要工具 | 非本種 *P. bicarinata* | 敏感期約終齡第 4–6 日；劑量高延後化蛹、低則提早 | 外用類似物，非自然營養 |
+| R270 | Passera L., Roncin E., Kaufmann B., Keller L. (1996) *Nature* 379:630–631. DOI 10.1038/379630a0 | 經摘要工具 | 非本種 *P. pallidula* | 接觸競爭群後兵蟻增加 | 與本種 R97 結果方向不同 |
+| R271 | Lachaud J.-P. et al. (1992) In Billen J. (ed.) *Biology and Evolution of Social Insects*, pp. 153–160 | 二手（經 R261、R116） | 非本種 | major 儲脂、replete 最多 32% | 未讀原文 |
+| R272 | Chown S. L. et al. (2007) *Funct. Ecol.* 21:282–290. DOI 10.1111/j.1365-2435.2007.01245.x | 經摘要工具 | 一般生理學 | 8 種多型蟻種內代謝縮放指數 0.67–1.0 | 不含本種 |
+| R273 | Mertl A. L., Sorenson M. D., Traniello J. F. A. (2010) *Insectes Soc.* 57:441–452. DOI 10.1007/s00040-010-0102-5 | 經摘要工具 | 非本種 | 招募越強的種，餌上 major 比例越高 | 種間比較 |
+| R274 | Lin Minghui（指導 B. Guénard），HKU Summer Research Fellowship 海報 F11（無日期，約 2021） | 全文（海報） | 本種？（未明寫） | major 比例 0/10/20/30% 時，30% 的取食率最高 | **未經審查**；時態混雜；只作定性參考 |
+| R275 | Creighton W. S., Creighton M. P. (1959)（*P. militicida*） | 二手／經摘要工具 | 非本種 | 只有 major 的巢也從不嘗試打開種子 | 二手 |
+
+**既有 ID 的補讀**（只新增說明，不改舊列；2026-11-02 P1-A 補讀）：
+- R97（Wills et al. 2014）全文：乾重（圖讀）major 390–1110 µg、minor 63–97 µg；major 比例 0.06–0.25；完全二態。
+- R99（Sarnat et al. 2015）：major 頭寬 1.10–1.54 mm、minor 0.50–0.61 mm。
+- R132（Dejean et al. 2005）：受招募者中兵蟻 1.07% vs 8.16%；嗉囊 0.08 vs 0.26 mg；外掛液滴。
+- R98／R107（Dejean et al. 2007）：minor 0.35 mg、major 1.65 mg；蛾卵招募中兵蟻約 28–32%，兵蟻咬開卵。
+- R116（Tsuji & Win 2025）：本種 200 隻 minor 鮮重 48.0 mg；文中把 major 當 replete 是屬級泛論。
+- R173（San Juan et al. 2025）：勘誤見 C6。
+
+**R173 勘誤（新增，不改舊列）**：舊列寫「本種攻擊火蟻時，死亡的多半是兵蟻」，與原文不符：原文那句出現在 *Pheidole* cf. *parva* 的段落，而且沒有說是哪一種的兵蟻。本種在 R173 的可用內容是：兵蟻把被小工蟻拉開的獵物或敵蟻切斷腳、觸角或斬首（定性）。〔設計文件衝突表 C6〕
