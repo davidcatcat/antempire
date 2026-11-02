@@ -6,9 +6,9 @@
 <title>螞蟻帝國 觀察器</title>
 <style>
   /* 觀察箱：土色地面、墨色文字；畫布顏色也讀這些 token */
-  :root { --ground: #e6dcc3; --ink: #2b261d; --panel: #f7f3ea; --line: #d6cbb2; --muted: #857a63; --link: #b3a688; --ant: #1b1a17; --select: #c0392b; --trail: 196,76,32; --explored: 46,125,90; --official-bg: #e2eaf3; --official-fg: #1d3b5c; --exp-bg: #f6e3d1; --exp-fg: #6b3410; }
-  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground: #2a251d; --ink: #ece4d2; --panel: #1c1914; --line: #463e31; --muted: #a89c84; --link: #6f6553; --ant: #f2ead8; --select: #ff7a66; --trail: 236,120,72; --explored: 104,190,150; --official-bg: #1f2b38; --official-fg: #c9dcf0; --exp-bg: #3a2717; --exp-fg: #f2c9a4; color-scheme: dark; } }
-  :root[data-theme="dark"] { --ground: #2a251d; --ink: #ece4d2; --panel: #1c1914; --line: #463e31; --muted: #a89c84; --link: #6f6553; --ant: #f2ead8; --select: #ff7a66; --trail: 236,120,72; --explored: 104,190,150; --official-bg: #1f2b38; --official-fg: #c9dcf0; --exp-bg: #3a2717; --exp-fg: #f2c9a4; color-scheme: dark; }
+  :root { --ground: #e6dcc3; --ink: #2b261d; --panel: #f7f3ea; --line: #d6cbb2; --muted: #857a63; --link: #b3a688; --ant: #1b1a17; --select: #c0392b; --trail: 196,76,32; --explored: 46,125,90; --official-bg: #e2eaf3; --official-fg: #1d3b5c; --exp-bg: #f6e3d1; --exp-fg: #6b3410; --place-nest: #6d4c2f; --place-honeydew: #4f8f3c; --place-nectar: #c9941c; --place-carcass: #8b5a3c; --place-other: #9a917d; --task-forage: #c0392b; --task-nurse: #2f6db3; --task-rest: #8c8270; --task-repair: #7a5a1e; --task-guard: #6b3fa0; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground: #2a251d; --ink: #ece4d2; --panel: #1c1914; --line: #463e31; --muted: #a89c84; --link: #6f6553; --ant: #f2ead8; --select: #ff7a66; --trail: 236,120,72; --explored: 104,190,150; --official-bg: #1f2b38; --official-fg: #c9dcf0; --exp-bg: #3a2717; --exp-fg: #f2c9a4; --place-nest: #b98a5e; --place-honeydew: #7cc46a; --place-nectar: #f0c25a; --place-carcass: #c98e6a; --place-other: #b7ad98; --task-forage: #ff7a66; --task-nurse: #79aef0; --task-rest: #b0a58f; --task-repair: #d9b26a; --task-guard: #c39bf0; color-scheme: dark; } }
+  :root[data-theme="dark"] { --ground: #2a251d; --ink: #ece4d2; --panel: #1c1914; --line: #463e31; --muted: #a89c84; --link: #6f6553; --ant: #f2ead8; --select: #ff7a66; --trail: 236,120,72; --explored: 104,190,150; --official-bg: #1f2b38; --official-fg: #c9dcf0; --exp-bg: #3a2717; --exp-fg: #f2c9a4; --place-nest: #b98a5e; --place-honeydew: #7cc46a; --place-nectar: #f0c25a; --place-carcass: #c98e6a; --place-other: #b7ad98; --task-forage: #ff7a66; --task-nurse: #79aef0; --task-rest: #b0a58f; --task-repair: #d9b26a; --task-guard: #c39bf0; color-scheme: dark; }
   * { box-sizing: border-box; }
   body { margin: 0; font-family: system-ui, -apple-system, "Noto Sans TC", sans-serif; color: var(--ink); background: var(--panel); }
   header { padding: 8px 12px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
@@ -32,6 +32,10 @@
   #events { max-height: 220px; overflow: auto; font-size: 12px; line-height: 1.6; }
   .note { color: var(--muted); font-size: 12px; }
   .tag { margin-left: 6px; padding: 1px 6px; border-radius: 4px; background: var(--line); color: var(--ink); font-size: 11px; }
+  .legend { display: grid; gap: 4px; font-size: 12px; }
+  .legend .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .sw { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: middle; margin-right: 4px; }
+  .bar { display: inline-block; height: 0; vertical-align: middle; margin-right: 4px; width: 22px; border-top-style: solid; }
   .overlays label { margin-right: 10px; font-size: 13px; white-space: nowrap; }
   @media (min-width: 900px) { main { grid-template-columns: 1fr 380px; } #mapwrap { height: calc(100vh - 170px); } aside { grid-row: span 2; max-height: calc(100vh - 110px); overflow: auto; } }
 </style>
@@ -41,7 +45,7 @@
   <h1>螞蟻帝國 觀察器</h1>
   <select id="mode" aria-label="世界"></select>
   <select id="view" aria-label="視角"><option value="garden">花園地表</option><option value="nest">巢內</option></select>
-  <span class="overlays"><label><input type="checkbox" id="ovTrail" checked>費洛蒙</label><label><input type="checkbox" id="ovExplored">已探索路段</label><label><input type="checkbox" id="ovFood" checked>食物存量</label><label><input type="checkbox" id="ovLabels" checked>地名</label></span>
+  <span class="overlays"><label><input type="checkbox" id="ovTrail" checked>費洛蒙</label><label><input type="checkbox" id="ovExplored">已探索路段</label><label><input type="checkbox" id="ovFood" checked>食物存量</label><label><input type="checkbox" id="ovLabels" checked>地名</label><label><input type="checkbox" id="ovTask">依當日任務摘要上色</label></span>
   <div id="badge" class="badge">載入中…</div>
 </header>
 <main>
@@ -55,6 +59,7 @@
     </div>
   </div>
   <aside>
+    <section><h2>圖例</h2><div id="legend" class="legend"></div></section>
     <section><h2>個體</h2><div id="info"></div></section>
     <section><h2>蟻群</h2><div id="nest"></div></section>
     <section><h2>事件（引擎紀錄）</h2><div id="events"></div></section>
