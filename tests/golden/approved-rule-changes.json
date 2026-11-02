@@ -117,6 +117,26 @@
       "from": false,
       "to": true,
       "description": "Day15 migration records injury_type / injury_body_part / injury_record from the Day14 injury records; false = v2-review.11 migration"
+    },
+    {
+      "rules_version": "antempire.v2-review.13-egg-sugar-settles-crops",
+      "approved_in": "pending Owner review (bug found during #8 work, 2026-11-02)",
+      "kind": "param_switch",
+      "file": "species:pheidole-megacephala",
+      "path": "nutrition.egg_laying_settles_crops",
+      "from": false,
+      "to": true,
+      "description": "bug fix: egg-laying sugar cost is also removed from worker crops (settleCrops), like metabolism and overflow; false = v2-review.12"
+    },
+    {
+      "rules_version": "antempire.v2-review.14-individual-route-memory",
+      "approved_in": "Owner instruction 2026-11-02 (#8, work package A; pending Owner review)",
+      "kind": "param_switch",
+      "file": "species:pheidole-megacephala",
+      "path": "navigation.individual_route_memory",
+      "from": false,
+      "to": true,
+      "description": "each worker plans only over edges it walked (route_memory); naive workers follow locally sensed trail hop by hop, otherwise explore one unknown edge from a known node; edges learned only by walking; Day14 route memory only from cited history records; false = v2-review.13 whole-graph routing"
     }
   ]
 }

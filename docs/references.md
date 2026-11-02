@@ -248,3 +248,21 @@
 | R131 | Frank, Buffat, Liberti, Aibekova, Economo & Keller (2024), *Wound-dependent leg amputations to combat infections in an ant society*. *Current Biology* 34(14):3273–3278. [DOI](https://doi.org/10.1016/j.cub.2024.06.021)；**Camponotus floridanus**（未讀全文，依摘要與新聞報導） | 同伴會截斷受傷的腿節以防感染；截肢後的工蟻存活。只支持「缺肢是永久狀態、可以存活」的方向；存活率數字不可搬用 |
 
 **外推限制**：遊戲的「痊癒」只代表受傷的死亡風險倍率解除，不是實測的癒合時間；本種的傷口癒合速度沒有資料。
+
+## 2026-11-02 個體路線記憶、局部探索與費洛蒙（R132–R135；規則更新 v2-review.14，#8）
+> **閱讀狀態一律如實標記**。既有 ID 不重複建立：Dussutour et al. 2009＝**R21／R96**（同一篇，舊有重複 ID，兩者皆保留以免破壞既有引用）；Dejean et al. 2007＝**R98／R107**（同上）；Saund & Friedman 2023＝**R102**；Czaczkes et al. 2013（*L. niger* 路線學習）＝**R33**。其他已知重複：R23＝R112、R101＝R110。
+
+### 既有來源的本次查核結果
+| ID | 閱讀狀態 | 本次確認的內容與限制 |
+|---|---|---|
+| R21／R96 Dussutour, Nicolis, Shephard, Beekman & Sumpter (2009) *J Exp Biol* 212(15):2337–2348，DOI 10.1242/jeb.029827；**本種** | **僅查核摘要**（期刊網站在本環境被阻擋，開放取用資料庫列為非開放） | 摘要：探索時留下「持久、弱招募」的訊號，取食時留下「短效、強招募」的訊號；模型假設「探索在局部增強取食、取食在局部抑制探索」。**實驗設計、選擇比例、訊號半衰期都沒有讀到，任何數字都不可使用** |
+| R102 Saund & Friedman (2023) *Cognitive Systems Research* 80:81–89，DOI 10.1016/j.cogsys.2023.02.005；理論模型 | **僅查核摘要** | 摘要：單一費洛蒙模型即可解釋 R21 的主要觀察；兩種費洛蒙「合理但不必要」，且原研究「不足以作為兩種費洛蒙的決定性證據」。**只表示資料不需要兩種，不表示本種只有一種**；本引擎的單一訊號是**建模簡化**。另有 Dodoková et al. 2024（*Swarm Intelligence* 18:335–371）比較單／雙費洛蒙，只讀到摘要，未引用其結論 |
+| R33 Czaczkes, Grüter, Ellis, Wood & Ratnieks (2013) *J Exp Biol* 216(2):188–197，DOI 10.1242/jeb.076570；**Lasius niger** | 摘要直接閱讀；全文只經網頁摘要工具取得片段（**不等於讀過全文**） | 摘要：重複方向的路線易學、交替方向難（錯誤 3% vs 32%）；費洛蒙減少錯誤，並**幫助路線學習**（之後無費洛蒙時錯誤仍較少）。費洛蒙與記憶是加成使用。**所有百分比、拜訪次數都不可套用到本種**（不同亞科、實驗室 cm 級迷宮、最多 8 次拜訪） |
+
+### 新增來源
+| ID | 來源、研究物種與條件 | 閱讀狀態 | 允許引入的機制及不能做的外推 |
+|---|---|---|---|
+| R132 | Dejean, Le Breton, Suzzoni, Orivel & Saux-Moreau (2005), *Influence of interspecific competition on the recruitment behavior and liquid food transport in the tramp ant species Pheidole megacephala*. *Naturwissenschaften* 92:324–327. DOI 10.1007/s00114-005-0632-2；**本種**，喀麥隆原生地 4 群＋1 實驗室群，30 組對照（中性 vs 被 *Oecophylla* 標記 48 小時的 A3 紙，0.3 ml 蜂蜜） | **全文已讀** | 偵察蟻先裝滿嗉囊再回巢招募；在競爭者標記區**招募數與兵蟻比例都較高**；兵蟻可在頭胸下攜帶外部液滴（標記區 21/30 vs 中性 2/30）；競爭者實際在場時偵察蟻不招募。**招募數、mg 載量、兵蟻比例都與實驗設定綁定，不可直接當參數**；本研究沒有路徑費洛蒙資料。此前在本檔 2026-11-01 段落已提及但未編號，自此以 R132 指稱 |
+| R133 | Vázquez, Koehler & Pereira (2019, 卷期 2020), *Comparative Quantification of Trail-Following Behavior in Pest Ants*. *Insects* 11(1):5. DOI 10.3390/insects11010005；**六種螞蟻含本種與 *Solenopsis invicta***，佛州實驗室，同種腹部萃取物畫線、錄影 | **全文已讀**（圖中數值未讀） | 本種沿跡速度約 17 mm/s（紅火蟻約 9.6）；去程比回程較貼近路線（回程側偏 1.7 vs 去程 1.1 mm）；約 80% 的個體走完 150 mm 測試段（物種間無差異）。**機制：沿跡是在路線兩側擺動前進，回巢時稍差；可用『每段離開路線』的機率表示**。速度、偏移、完成率都是實驗室人工路線條件，**不可直接套用**；未量測路線壽命、岔路選擇與招募 |
+| R134 | Freas, Buehlmann & Spetch (2026), *Combining social and private information: How ants use pheromones and learnt cues to navigate*. *Learning & Behavior* 54(1):23–36. DOI 10.3758/s13420-025-00697-w；PMC12999738；**跨物種綜述**（*Formica*、*Lasius*、*Paraponera*、*Pheidole oxyops* 等） | **全文已讀** | 費洛蒙路徑是學習個體路線的「鷹架」；**有經驗的工蟻在衝突時常優先使用個體記憶**，權重依物種與資訊可靠度而定；費洛蒙本身沒有方向性，方向來自記憶或路網幾何；學到的路線資訊可以相當穩定。**本種沒有個體記憶的資料**；綜述沒有可用的權重公式或學習次數 |
+| R135 | Mothapo & Wossler (2014), *Resource competition assays between the African big-headed ant, Pheidole megacephala (Fabricius) and the invasive Argentine ant, Linepithema humile (Mayr): mechanisms of inter-specific displacement*. *Ecological Entomology* 39(4):501–510. DOI 10.1111/een.12126；**本種 vs *L. humile***，實驗室 | **僅查核摘要** | 摘要：兩種同時找到共享資源，但本種一發現餌就以高種間攻擊性驅離 *L. humile* 並控制到實驗結束；群體打鬥結果取決於數量優勢。**沒有讀到任何數字**，只供多蟻群競爭設計（#9）作方向參考 |

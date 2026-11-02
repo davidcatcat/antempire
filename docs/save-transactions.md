@@ -75,3 +75,32 @@
 - 換回舊存檔、暫存檔損毀、交易中被外部修改、殘留暫存檔。
 
 故障注入只透過可替換的 I/O 物件或環境變數 `ANTEMPIRE_FAULT`，而且**只允許用在 `--root` 指向臨時副本時**；用在正式存檔上會被拒絕。
+
+## 8. 規則版本升級（#11）
+
+- **登錄檔** `rules/registry.json`（進 git）：每個已核准的規則版本一筆，包含：
+  - 版本名稱、規則指紋（`cli/lib/fingerprint.ts`：engine/*.ts 與參數檔的 sha256）；
+  - 核准的 PR、合併 commit；
+  - 黃金雜湊檔、前一版。
+
+  目前登錄 v6～v12，指紋由各版合併 commit 計算。
+- **CI**（`tests/rules-registry.test.ts`）：目前程式的指紋必須等於登錄檔最後一筆，且 `ENGINE_VERSION` 一致。因此**每個會改變輸出的規則更新 PR 都必須在同一個 PR 新增登錄項目**，PR 合併即代表核准。舊版的黃金雜湊必須保留。
+- **凍結**：存檔在 Day15 啟用時凍結當時的指紋，`sim_engine_v2.rules_history` 記錄 `activated`（版本名稱、生效日 15）。之後一般推進只接受凍結的指紋。
+- **切換**：只在玩家明確要求時使用 `npm run advance -- --adopt-rules <版本> --confirm-advance --day N`。
+  1. 目標版本必須在登錄檔中，且等於目前執行的程式；
+  2. 存檔凍結的版本必須是目標版本的**前一版**（不可跳版）；
+  3. 切換與第 N 天的推進在**同一筆可復原交易**中提交：`rules_history` 追加 `{from_version, to_version, effective_from_day: N, approved_in}`，`rules_fingerprint` 換成新版、`activated_from_day: N`，commit log 該日記錄 `rules_adopted`；
+  4. 任一步驟失敗或程序中斷：提交點之前回到完整的舊版本，之後則完成切換＋第 N 天（`--recover`），不會出現「切了規則但沒推進」或相反的半套狀態。
+- **拒絕的情況**（不寫入任何檔案）：
+  - 版本未登錄；
+  - 目前程式不是目標版本；
+  - 跳版；
+  - `--day` 不是下一天；
+  - 存檔尚未啟用（Day14）；
+  - 已是該版本。
+
+  一般推進遇到新版程式時，錯誤訊息會列出正確的 `--adopt-rules` 指令，但**不會自動切換**。
+- **已完成的日不會被新規則改寫**：切換只影響第 N 天以後；舊日的日誌與 commit log 都保留當時的版本與指紋。
+- **未做的事（待 Owner 決定）**：
+  - 是否為每個核准版本打 git tag（`rules-v12` 等），方便取回舊版程式重播；
+  - 存檔格式需要遷移時（例如新欄位），登錄項目的 `state_migration` 欄位目前都是 null，因為到 v12 為止的變更都不需要改寫既有欄位。

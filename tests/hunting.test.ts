@@ -10,7 +10,7 @@
  *     escape while waiting, no recruits, no time left;
  *  4. time consistency: every team member is at the site at the event minute and walks home afterwards;
  *  5. joint retrieval conserves the captured prey exactly and every carried portion traces to its HUNT batch;
- *  6. whole-day level: reversing the colony's worker order leaves every hunt identical; multi-day run keeps
+ *  6. whole-day level: reversing the colony's worker order leaves every hunt identical; 20 seeds × 120 days keep
  *     the lock and the time consistency on every day;
  *  7. a leftover carcass is taken first; only workers left empty-handed then hunt, as one window;
  *  8. v2-review.10 team cap (predation.large_prey_max_team): teams never exceed it, joiners are drawn at
@@ -27,6 +27,8 @@ import { bundle, counter, fixture, MAIN_SPECIES, setParam } from './lib/harness.
 const c = counter(), { ok } = c;
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 const SITE = 'F07';
+/** v2-review.14: a worker told it knows F07 must also have walked the way there (N00–F07). */
+const KNOWS_SITE = () => ({ origin: 'test fixture', edges: { 'F07:N00': { acquired: 'walked', first_day: 14, last_day: 14 } }, empty_sites: {} });
 const forced = (o: { encounter?: number; large?: number; capture?: number; escape?: number; team?: number; cap?: number }) => {
   const b = bundle();
   setParam(b, MAIN_SPECIES, 'predation.live_prey_encounter_probability', o.encounter ?? 1);
@@ -138,7 +140,7 @@ function day(reverse: boolean) {
   const b = forced({}); setParam(b, MAIN_SPECIES, 'scouting.scout_discovery_probability', 0); setParam(b, MAIN_SPECIES, 'task_allocation.forage_baseline_probability', 1000);
   const s: LegacyV2State = fixture();
   s.sources[SITE].batches = []; s.sources[SITE].protein = 0; s.ecology.insects_by_site[SITE].living = 10;
-  for (const w of s.population.workers) { w.known_sources = [SITE]; w.age_days = 20; w.site_memory = {}; }
+  for (const w of s.population.workers) { w.known_sources = [SITE]; w.age_days = 20; w.site_memory = {}; (w as Any).route_memory = KNOWS_SITE(); }
   if (reverse) s.population.workers.reverse();
   return simulateDay(s, b).events.filter((e) => ['live_prey_encounter', 'insect_predation', 'prey_escaped', 'joint_prey_transport', 'hunt_recruitment'].includes(e.type));
 }
@@ -164,17 +166,20 @@ function invariants(events: SimEvent[], label: string) {
 }
 let hunts = 0, recruitHunts = 0;
 {
-  let s: LegacyV2State = fixture();
+  // All 20 fixed seeds × 120 days (a single seed may contain no hunt at all, which would leave the checks empty).
   const b = bundle();
-  for (let d = 0; d < 120; d++) { const o = simulateDay(s, b); invariants(o.events, 'Day' + o.day); hunts += o.events.filter((e) => e.type === 'insect_predation').length; recruitHunts += o.events.filter((e) => e.type === 'hunt_recruitment').length; s = o.state; }
-  ok(hunts > 0, 'game parameters: the 120-day baseline has hunts to check (' + hunts + ')');
+  for (let seed = 15032026; seed < 15032046; seed++) {
+    let s: LegacyV2State = fixture(); s.seed = seed;
+    for (let d = 0; d < 120; d++) { const o = simulateDay(s, b); invariants(o.events, `seed ${seed} Day${o.day}`); hunts += o.events.filter((e) => e.type === 'insect_predation').length; recruitHunts += o.events.filter((e) => e.type === 'hunt_recruitment').length; s = o.state; if (!s.population.workers.length) break; }
+  }
+  ok(hunts > 0, 'game parameters: the 20-seed × 120-day baseline has hunts to check (' + hunts + ')');
 }
 // 7. leftover carcass: workers take it first; only the empty-handed ones then search for live prey together
 {
   const b = forced({}); setParam(b, MAIN_SPECIES, 'scouting.scout_discovery_probability', 0); setParam(b, MAIN_SPECIES, 'task_allocation.forage_baseline_probability', 1000); setParam(b, MAIN_SPECIES, 'food_handling.carcass_access_probability', 1);
   const s: LegacyV2State = fixture();
   s.sources[SITE].batches = [{ event_id: 'TEST-LEFTOVER', original_day: 14, protein: 0.1, age_days: 0, origin: 'test fixture leftover' } as Any]; s.sources[SITE].protein = 0.1; s.ecology.insects_by_site[SITE].living = 10;
-  for (const w of s.population.workers) { w.known_sources = [SITE]; w.age_days = 20; w.site_memory = {}; }
+  for (const w of s.population.workers) { w.known_sources = [SITE]; w.age_days = 20; w.site_memory = {}; (w as Any).route_memory = KNOWS_SITE(); }
   const ev = simulateDay(s, b).events;
   const took = ev.filter((e) => e.type === 'source_batch_consumed' && e.source_event_id === 'TEST-LEFTOVER').map((e) => e.worker as string);
   const first = ev.find((e) => e.type === 'insect_predation') as Any;
@@ -209,7 +214,7 @@ function lateDays(on: boolean) {
   for (let seed = 1; seed <= 40; seed++) {
     const s: LegacyV2State = fixture(); s.seed = seed;
     s.sources[SITE].batches = []; s.sources[SITE].protein = 0; s.ecology.insects_by_site[SITE].living = 10;
-    for (const w of s.population.workers) { w.known_sources = [SITE]; w.age_days = 20; w.site_memory = {}; }
+    for (const w of s.population.workers) { w.known_sources = [SITE]; w.age_days = 20; w.site_memory = {}; (w as Any).route_memory = KNOWS_SITE(); }
     out.push(simulateDay(s, b).events);
   }
   return out;
@@ -231,4 +236,4 @@ let joinedEvents = 0;
   ok(joinedEvents > 0, 'the fixed seeds produce late joiners to check (' + joinedEvents + ')');
   ok(lateDays(false).every((ev) => !ev.some((e) => e.type === 'waiting_prey_joined')), 'switch off (v2-review.10): nobody joins a waiting prey');
 }
-console.log(JSON.stringify({ passed: true, checks: c.checks, late_joins: joinedEvents, baseline_120d_hunts: hunts, baseline_120d_hunt_recruitments: recruitHunts }, null, 2));
+console.log(JSON.stringify({ passed: true, checks: c.checks, late_joins: joinedEvents, baseline_20seeds_120d_hunts: hunts, baseline_20seeds_120d_hunt_recruitments: recruitHunts }, null, 2));

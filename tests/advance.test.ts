@@ -19,6 +19,7 @@ import { checkSaves } from '../cli/lib/conservation.ts';
 import { commitConsistency, readCommitLog } from '../cli/lib/save-transaction.ts';
 import { rulesFingerprint } from '../cli/lib/fingerprint.ts';
 import { projectDaily, DEFAULT_REFS } from '../cli/lib/project-day.ts';
+import { byFingerprint, readRegistry } from '../cli/lib/rules-registry.ts';
 import { REPO_ROOT, readJson, loadBundle } from '../cli/lib/load.ts';
 import { migrationState, simulateDay } from '../engine/index.ts';
 
@@ -61,17 +62,19 @@ try {
   // The save mapping itself is pinned against v6 by tests/differential.test.ts (approved changes undone);
   // here the committed Day15 must equal the current mapping called directly, byte for byte.
   {
-    const ref = projectDaily(m14, w14, readJson('data/taichung-climatology-1991-2020.json', tmp), loadBundle(), rulesFingerprint(), DEFAULT_REFS, now);
+    const fpNow = rulesFingerprint(), ref = projectDaily(m14, w14, readJson('data/taichung-climatology-1991-2020.json', tmp), loadBundle(), fpNow, DEFAULT_REFS, now, { rulesVersion: byFingerprint(readRegistry(), fpNow)?.rules_version ?? null });
     ok(JSON.stringify(ref.main, null, 2) + '\n' === mainText && JSON.stringify(ref.world, null, 2) + '\n' === worldText && journal15.startsWith(ref.journal), 'Day15 main/world byte-identical to projectDaily called directly; its journal draft starts the committed journal');
   }
 
   // 3. Day16..Day20; each saved engine state = direct engine call on the previous one
   for (let d = 16; d <= 20; d++) {
-    const prev = readJson('saves/world-state.json', tmp).sim_engine_v2;
+    const { rules_history: history, ...prev } = readJson('saves/world-state.json', tmp).sim_engine_v2; // #11 bookkeeping is not engine input
     const r = advance({ root: tmp, confirm: true, expectDay: d, now });
     ok(r.written && r.day === d && r.checks.every((c) => c.ok || c.level === 'warning'), `Day${d} committed with all error-level checks passing`);
     const saved = readJson('saves/world-state.json', tmp), expected = simulateDay(prev, loadBundle());
-    ok(JSON.stringify(saved.sim_engine_v2) === JSON.stringify(expected.state) && JSON.stringify(saved.day_log_latest.events) === JSON.stringify(expected.events), `Day${d} saved engine state = direct engine result`);
+    const { rules_history: savedHistory, ...savedState } = saved.sim_engine_v2;
+    ok(JSON.stringify(savedHistory) === JSON.stringify(history), `Day${d}: rules history carried over unchanged (no adoption)`);
+    ok(JSON.stringify(savedState) === JSON.stringify(expected.state) && JSON.stringify(saved.day_log_latest.events) === JSON.stringify(expected.events), `Day${d} saved engine state = direct engine result`);
   }
   const log = readCommitLog(tmp);
   ok(log?.entries.map((e) => e.day).join() === '15,16,17,18,19,20', 'commit log has one entry per committed day');

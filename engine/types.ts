@@ -36,6 +36,8 @@ export interface Worker {
   injury_record?: string;
   task: string;
   known_sources: string[];
+  /** v2-review.14: edges this worker has physically walked (engine/navigation.ts RouteMemory). */
+  route_memory?: unknown;
   last_location: string;
   local_sensory?: LocalSensory;
   site_memory?: Record<string, SiteMemory>;

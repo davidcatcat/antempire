@@ -1,0 +1,152 @@
+{
+  "schema": "antempire.golden-trace.v1",
+  "generated_from": {
+    "engine": "engine/ (TypeScript)",
+    "params": "species/*.json + world/xitun-garden.json",
+    "fixture": "tests/fixtures/day14-projection.json",
+    "engine_version": "antempire.v2-review.13-egg-sugar-settles-crops"
+  },
+  "method": "per scenario: h_0=\"\" ; h_d = sha256(h_{d-1} + JSON.stringify([summary, events, state])) ; recorded h_days",
+  "scenarios": {
+    "baseline-seed-15032026": {
+      "days": 120,
+      "final_day": 134,
+      "sha256": "158b58034d42d49dea91b96c8e0ae24668a036317c98e7e70a76ad46af162f21"
+    },
+    "baseline-seed-15032027": {
+      "days": 120,
+      "final_day": 134,
+      "sha256": "434442d599b83070dc847a0765ee3e82914a61381d5b47c317aa14c43a82c013"
+    },
+    "baseline-seed-15032028": {
+      "days": 120,
+      "final_day": 134,
+      "sha256": "76125856ea719b7ac348d5606f1cdf32a1b75fa0e2a6faddcc95fefb79470047"
+    },
+    "baseline-seed-15032029": {
+      "days": 120,
+      "final_day": 134,
+      "sha256": "68eef703f992382fd2ce9193b675febc1743b14667b37249974c4208e6407bcb"
+    },
+    "baseline-seed-15032030": {
+      "days": 120,
+      "final_day": 134,
+      "sha256": "0492a3942716e2b53aa762323c40bda7754970b688740af1fa1d6b993cd7940e"
+    },
+    "baseline-seed-15032031": {
+      "days": 120,
+      "final_day": 134,
+      "sha256": "5e37465847ab3a83359bea997f5d5afa725a7c4ea00e9ce3b55b0cf2d5014dab"
+    },
+    "baseline-seed-15032032": {
+      "days": 120,
+      "final_day": 134,
+      "sha256": "3e48c2d73c022cc07b51a50bdf0bdf1b1018d732625183a18bd38e5244273847"
+    },
+    "baseline-seed-15032033": {
+      "days": 120,
+      "final_day": 134,
+      "sha256": "cc4702ac711127a5205db11faea3515027ed4877a2205527e8829a82a8a521e2"
+    },
+    "baseline-seed-15032034": {
+      "days": 120,
+      "final_day": 134,
+      "sha256": "3f709dbb1230d90a204e28cbe4109fe1c5cedd4fee3ad35b1765dfba99e90604"
+    },
+    "baseline-seed-15032035": {
+      "days": 120,
+      "final_day": 134,
+      "sha256": "5e734795510e7642cc72408e8c2fb6e24c998b9377562939767a8faf4e5c7a3e"
+    },
+    "baseline-seed-15032036": {
+      "days": 120,
+      "final_day": 134,
+      "sha256": "95ccf08658ac6a1c12b1293d4d80e05ddaf4781aaa78471dd20ff9fd6c1c2e21"
+    },
+    "baseline-seed-15032037": {
+      "days": 120,
+      "final_day": 134,
+      "sha256": "bdcea2c71494850b9eb2c39776789d9e046bf721833334f41d1585a8c65aadcf"
+    },
+    "baseline-seed-15032038": {
+      "days": 120,
+      "final_day": 134,
+      "sha256": "ac5737a3ddeed16e0502c615c68a6486ecbb0ba852d2f2d5726097ee8afbeed2"
+    },
+    "baseline-seed-15032039": {
+      "days": 120,
+      "final_day": 134,
+      "sha256": "8ec2c0d275d9a69088e797df66e94c0085053080b9969b1ef484c17a53a17c7b"
+    },
+    "baseline-seed-15032040": {
+      "days": 120,
+      "final_day": 134,
+      "sha256": "f61b7242e2386ce7fe1012904b0bef03822ddf24a85c468c3dff82ebbfe1d0e8"
+    },
+    "baseline-seed-15032041": {
+      "days": 120,
+      "final_day": 134,
+      "sha256": "d494afc3198f96bbaaefe8dce9643b2d2b179c3af6fcc7bcf96da6b22f12c4f0"
+    },
+    "baseline-seed-15032042": {
+      "days": 120,
+      "final_day": 134,
+      "sha256": "5723ed0445a5d9e0df72d08f739271f07e15d521431d76b06ea1d94ed3656072"
+    },
+    "baseline-seed-15032043": {
+      "days": 120,
+      "final_day": 134,
+      "sha256": "ef2e2b081927452ad733797f53b81534071b33f0f34f333ce058468e6b9eb5ff"
+    },
+    "baseline-seed-15032044": {
+      "days": 120,
+      "final_day": 134,
+      "sha256": "ba504303193a5cf23766cca42c76cd8c9c79fc2ec4e125353738f6585941d73d"
+    },
+    "baseline-seed-15032045": {
+      "days": 120,
+      "final_day": 134,
+      "sha256": "4ce9904acdc30a76eb47320c9368d03c9ba9a121e89e4815f1d7d63d044864a5"
+    },
+    "no-food-60": {
+      "days": 60,
+      "final_day": 74,
+      "sha256": "f6a810a242804324bd19ee49ebdf360e11fb4d30582dd548adb6196278b16719"
+    },
+    "sugar-only-1.5x-60": {
+      "days": 60,
+      "final_day": 74,
+      "sha256": "05ba86efd5748b718487f8e0dd6bde6ff0d9f7be7dbdbcfc5dad9ca70692c409"
+    },
+    "abundant-30": {
+      "days": 30,
+      "final_day": 44,
+      "sha256": "7dae2e582d1e6b4ad6d0cab3426123a83c93b77fc8e2d57055e3cd335dba7e0f"
+    },
+    "orphan-larvae-10": {
+      "days": 10,
+      "final_day": 24,
+      "sha256": "0aa4bd180122caf9dd859efddb4837ad9d56336b65113d08c272f79d4a1f4955"
+    },
+    "workerless-queen-starved-20": {
+      "days": 20,
+      "final_day": 34,
+      "sha256": "5684e776cefbc80dde14dbc21b9cc344b1a0bbcf94e47b324a392ef7690d5b1d"
+    },
+    "high-search-scout-5": {
+      "days": 5,
+      "final_day": 19,
+      "sha256": "7b4a728ad8a88e6bfc0e8c12ade25763d3b18e71cd6eafc93d2e8279ac554346"
+    },
+    "workers-100-30": {
+      "days": 30,
+      "final_day": 44,
+      "sha256": "934a5b9220e3547315e7aafb7f138b5a6131719a4ced17d8b220cc3e676bd795"
+    },
+    "workers-1000-3": {
+      "days": 3,
+      "final_day": 17,
+      "sha256": "0a3d65d39067b0dd96097729d2e351905a10a34505f8a65091a21a9954d9aafe"
+    }
+  }
+}

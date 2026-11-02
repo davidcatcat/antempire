@@ -57,8 +57,15 @@ const o = oldRun.projectDaily(structuredClone(main), structuredClone(world), cli
 const n = projectDaily(structuredClone(main), structuredClone(world), clim, bundle, fp, DEFAULT_REFS, now);
 // Normalise ONLY the intentional save-mapping differences of the old output (see tests/lib/v6-normalise.ts).
 normaliseV6Projection(o, now);
+// #11 rules registry: the new save records its rules history (activation at Day15). This is the only addition to
+// the save mapping; it is checked here and then removed so every other byte is still compared with v6.
+{
+  const h = n.world.sim_engine_v2.rules_history;
+  if (!Array.isArray(h) || h.length !== 1 || h[0].event !== 'activated' || h[0].effective_from_day !== 15) fail('rules_history at Day15 activation malformed: ' + JSON.stringify(h));
+  delete n.world.sim_engine_v2.rules_history;
+}
 for (const [label, a, b] of [['main.json', o.main, n.main], ['world-state.json', o.world, n.world], ['journal', o.journal, n.journal]] as const) {
   const sa = JSON.stringify(a, null, 2), sb = JSON.stringify(b, null, 2);
   if (sa !== sb) fail(`projectDaily ${label} ${firstDiff(sa, sb)}`);
 }
-console.log(JSON.stringify({ passed: true, isolation_proof: 'current engine = v6 once exactly the approved changes are undone', approved_changes: approvedChanges().map((c) => `${c.rules_version} ${c.kind} ${c.path ?? c.neutralise?.delete_state_path ?? ''}`), scenarios: SCENARIOS.length, simulated_days_compared: days, migration_state_identical: true, day15_projection_identical_after_metadata_normalisation: true, normalised: 'tests/lib/v6-normalise.ts (refs, timestamp, cumulative counters, eggs_hatching key)', day15_population: n.report.summary.population }, null, 2));
+console.log(JSON.stringify({ passed: true, isolation_proof: 'current engine = v6 once exactly the approved changes are undone', approved_changes: approvedChanges().map((c) => `${c.rules_version} ${c.kind} ${c.path ?? c.neutralise?.delete_state_path ?? ''}`), scenarios: SCENARIOS.length, simulated_days_compared: days, migration_state_identical: true, day15_projection_identical_after_metadata_normalisation: true, normalised: 'tests/lib/v6-normalise.ts (refs, timestamp, cumulative counters, eggs_hatching key); new rules_history (#11) checked then removed', day15_population: n.report.summary.population }, null, 2));
