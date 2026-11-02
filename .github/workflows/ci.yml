@@ -30,3 +30,30 @@ jobs:
         run: npm run check:saves
       - name: All other tests (params split, platform purity, foraging physics, migration, local ecology incl. orphan queen, scaling, multi-colony, v6 isolation proof vs sim/, advance on a temp copy, nest temperature, save transaction fault injection, Day1-14 history integrity, cumulative save counters, rules isolation, simultaneous hunting, injury types, crop ledger, individual route memory, rules registry and safe rules upgrade, multi-colony timeline prototype evidence, Day0 initialization and Day0->Day1 / 90-day audits, death diagnostics, individual activity timeline audit, evaluation-method checks, phase 2 sensitivity data validation + fixed-seed reruns)
         run: npm run test:rest
+
+  viewer-smoke:
+    name: viewer browser smoke test (Playwright, Chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright 1.63.0 and Chromium (not saved to package.json; browser tests only)
+        run: npm install --no-save playwright@1.63.0 && npx playwright install --with-deps chromium
+      - name: Build the viewer (web/dist is a build product, never committed)
+        run: npm run web:build
+      - name: Smoke test (desktop + phone; interpolation label, day crossing, deaths, eclosions, replay end, official/experiment separation)
+        run: |
+          node cli/web-serve.ts 8781 &
+          for i in $(seq 1 30); do curl -sf http://localhost:8781/ > /dev/null && break; sleep 1; done
+          node tests/browser/web-viewer.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: viewer-screenshots
+          path: ${{ runner.temp }}/viewer-shots
