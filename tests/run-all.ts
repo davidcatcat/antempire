@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { REPO_ROOT } from '../cli/lib/load.ts';
 
-export const BLOCKING = ['params-split', 'platform-purity', 'naturalism', 'foraging-physics', 'migration', 'local-ecology', 'scaling', 'multi-colony', 'golden', 'differential', 'advance', 'nest-temperature', 'save-transaction', 'history-integrity', 'save-counters', 'rules-isolation', 'hunting', 'injury', 'crop-ledger', 'navigation', 'rules-registry', 'multi-colony-timeline', 'day0', 'death-diagnostics', 'activity', 'eval-methods', 'issue43-timeline', 'phase2-sensitivity', 'reproduction-measures'];
+export const BLOCKING = ['params-split', 'platform-purity', 'naturalism', 'foraging-physics', 'migration', 'local-ecology', 'scaling', 'multi-colony', 'golden', 'differential', 'advance', 'nest-temperature', 'save-transaction', 'history-integrity', 'save-counters', 'rules-isolation', 'hunting', 'injury', 'crop-ledger', 'navigation', 'rules-registry', 'multi-colony-timeline', 'day0', 'death-diagnostics', 'activity', 'eval-methods', 'web', 'web-serve', 'issue43-timeline', 'phase2-sensitivity', 'reproduction-measures', 'p0a-rain-allocation'];
 
 const run = (name: string) => {
   const t = Date.now();
