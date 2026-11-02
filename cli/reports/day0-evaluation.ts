@@ -14,6 +14,7 @@ import { loadBundle, readJson, REPO_ROOT } from '../lib/load.ts';
 import { buildDay0, day0Inputs, seasonStart, SEASONS, SUPPORTED_FOUNDINGS, type FoundingId, type Season } from '../lib/day0.ts';
 import { rulesFingerprint } from '../lib/fingerprint.ts';
 import { RULES_TAG } from './winter-multiseed.ts';
+import { BIN_DAYS, binOf, reproductionMeasures, SUSTAINED_REPRODUCTION } from './reproduction-measures.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any -- report rows
 export const DAY0_SEEDS = Array.from({ length: 20 }, (_, i) => 20270001 + i);
@@ -34,9 +35,12 @@ export function runDay0(founding: FoundingId, season: Season, seed: number, bund
   let s = init.state;
   const c0 = s.colonies[0];
   // v2-review.19: separate measures. Reference adults at Day0 = founding workers + carried pupae (A4 starts
-  // with pupae only). Effective reproduction counts ONLY adults eclosed from eggs laid during the run.
+  // with pupae only). Own-worker eclosion counts ONLY adults eclosed from eggs laid during the run (renamed from
+  // "effective reproduction", Owner 2026-11-02: the measure only says a worker of the queen's own eggs eclosed).
   const initialBrood = new Set(c0.population.brood.map((b) => b.id)), n0 = c0.population.workers.length + c0.population.brood.filter((b) => b.stage === 'pupa').length;
   const founders = new Set(c0.population.workers.map((w) => w.id));
+  const nBins = Math.ceil(days / BIN_DAYS), ownBy30 = new Array<number>(nBins).fill(0), eggsBy30 = new Array<number>(nBins).fill(0);
+  let lastOwnEclosionDay: number | null = null, lastEggDay: number | null = null;
   let ownEclosions = 0, maxWorkers = c0.population.workers.length, maxWorkersDay = 0;
   const day0 = { date: s.calendar_date, workers: c0.population.workers.length, brood: c0.population.brood.length, sugar: c0.stores.sugar, protein: c0.stores.protein, worker_ages: c0.population.workers.map((w) => w.age_days), warmup_events: init.warmup.events.length, warmup_carcass_protein: r3(Object.values(s.sources).filter((x) => x.type === 'carcass').reduce((a, x) => a + x.protein, 0)), honeydew_hosts_alive: Object.values(s.sources).filter((x) => x.type === 'honeydew' && x.host_alive).map((x) => x.id) };
   const cum = { income: { sugar: 0, protein: 0 }, consumed: { sugar: 0, protein: 0 }, demand: { sugar: 0, protein: 0 }, eggs_laid: 0, hatch: 0, pupation: 0, eclosion: 0, worker_deaths: 0, brood_deaths: 0, trips: 0, successes: 0, explorations: 0, exploration_found_nothing: 0, discoveries: 0, recruitment: 0, trail_choices: 0, trophallaxis: 0, predation: 0, repair_worker_days: 0, forage_worker_days: 0, nurse_worker_days: 0 };
@@ -69,9 +73,10 @@ export function runDay0(founding: FoundingId, season: Season, seed: number, bund
     gardenDays++;
     sugarGapMax = Math.max(sugarGapMax, s.colonies[0].stores.sugar_gap_days); proteinGapMax = Math.max(proteinGapMax, s.colonies[0].stores.protein_gap_days);
     if (sm.eggs_laid && firstEggDay === null) firstEggDay = d;
+    if (sm.eggs_laid) { eggsBy30[binOf(d)] += sm.eggs_laid; lastEggDay = d; }
     if (sm.eclosions && firstEclosionDay === null) firstEclosionDay = d;
     for (const e of ev as Any[]) {
-      if (e.type === 'eclosion' && !initialBrood.has(e.source_brood_id)) ownEclosions++;
+      if (e.type === 'eclosion' && !initialBrood.has(e.source_brood_id)) { ownEclosions++; ownBy30[binOf(d)]++; lastOwnEclosionDay = d; }
       if (e.type === 'food_collected') inc(bySite, `${e.site}:${e.macro}`, e.portions);
       else if (e.type === 'exploration_step') cum.explorations++;
       else if (e.type === 'exploration_found_nothing') cum.exploration_found_nothing++;
@@ -97,9 +102,9 @@ export function runDay0(founding: FoundingId, season: Season, seed: number, bund
     if (endDay !== null) { for (const cp of CHECKPOINTS) if (cp > d && !checkpoints[cp]) checkpoints[cp] = { extinct: true }; break; }
   }
   const mean = (xs: number[]) => (xs.length ? r3(xs.reduce((a, b) => a + b, 0) / xs.length) : null);
-  return {
+  const out = {
     founding, season, seed, start_date: start, day0,
-    reference_adults_day0: n0, own_eclosions: ownEclosions, max_workers: maxWorkers, max_workers_day: maxWorkersDay,
+    reference_adults_day0: n0, own_eclosions: ownEclosions, own_eclosions_by_30d: ownBy30, eggs_laid_by_30d: eggsBy30, last_own_eclosion_day: lastOwnEclosionDay, last_egg_day: lastEggDay, max_workers: maxWorkers, max_workers_day: maxWorkersDay,
     queen_death_day: queenDeathDay, queen_death_reason: queenDeathReason, queen_death: queenDeath, zero_worker_day: zeroWorkerDay, colony_end_day: endDay,
     first_egg_day: firstEggDay, first_eclosion_day: firstEclosionDay, max_sugar_gap_days: sugarGapMax, max_protein_gap_days: proteinGapMax,
     totals: cum, income_by_site: bySite, first_discovery_day_by_site: firstDiscovery, worker_death_reasons: workerDeath, brood_death_reasons: broodDeath,
@@ -107,6 +112,7 @@ export function runDay0(founding: FoundingId, season: Season, seed: number, bund
     temperature: { mean_air_c: mean(seasonTemps.air), mean_nest_c: mean(seasonTemps.nest), min_nest_c: seasonTemps.nest.length ? r3(Math.min(...seasonTemps.nest)) : null, days: seasonTemps.air.length },
     checkpoints, last_key_events: endDay !== null ? chain : undefined,
   };
+  return days === HORIZON ? { ...out, reproduction: reproductionMeasures(out) } : out;
 }
 
 function aggregate(runs: Any[]): Any {
@@ -116,7 +122,7 @@ function aggregate(runs: Any[]): Any {
     const ws = at.map((x) => (x.extinct ? 0 : x.workers));
     out.checkpoints[cp] = {
       queen_alive: alive.filter((x) => x.queen).length, colonies_with_workers: ws.filter((x) => x > 0).length,
-      effective_reproduction: runs.filter((r) => (r.checkpoints[cp]?.own_eclosions_so_far ?? r.own_eclosions) > 0).length,
+      any_own_worker_eclosion: runs.filter((r) => (r.checkpoints[cp]?.own_eclosions_so_far ?? r.own_eclosions) > 0).length,
       growth: at.reduce((o: Any, x) => { const k = x.extinct ? 'extinct' : x.growth; o[k] = (o[k] ?? 0) + 1; return o; }, {}),
       founders_alive_median: median(at.map((x) => (x.extinct ? 0 : x.founders_alive ?? 0))),
       workers_min: Math.min(...ws), workers_median: median(ws), workers_max: Math.max(...ws),
@@ -143,6 +149,8 @@ function aggregate(runs: Any[]): Any {
   out.garden_food_known_mean_median = { sugar: median(runs.map((r) => r.garden_food_at_sites_known_by_workers_mean?.sugar).filter((x) => x !== null && x !== undefined)), protein: median(runs.map((r) => r.garden_food_at_sites_known_by_workers_mean?.protein).filter((x) => x !== null && x !== undefined)) };
   out.totals = { trips: t('trips'), successes: t('successes'), explorations: t('explorations'), exploration_found_nothing: t('exploration_found_nothing'), discoveries: t('discoveries'), recruitment: t('recruitment'), trail_choices: t('trail_choices'), trophallaxis: t('trophallaxis'), predation: t('predation'), eggs_laid: t('eggs_laid'), hatch: t('hatch'), pupation: t('pupation'), eclosion: t('eclosion'), repair_worker_days: t('repair_worker_days') };
   out.mean_nest_temperature_c_median = median(runs.map((r) => r.temperature.mean_nest_c));
+  const rm = runs.map((r) => r.reproduction).filter(Boolean);
+  out.reproduction_365 = rm.length ? { definition: SUSTAINED_REPRODUCTION.id, sustained_reproduction_candidate: rm.filter((x) => x.sustained_reproduction_candidate).length, own_eclosion_windows_median: median(rm.map((x) => x.own_eclosion_windows)), own_eclosions_second_half_median: median(rm.map((x) => x.own_eclosions_second_half)) } : null;
   return out;
 }
 
@@ -165,7 +173,7 @@ export function generateDay0Evaluation(outDir: string, bundle: ParamBundle = loa
   return doc;
 }
 
-function tables(doc: Any): string {
+export function tables(doc: Any): string {
   const L: string[] = [`# Day0 評估表 ${doc.rules_tag}（自動產生：\`node cli/reports/day0-evaluation.ts\`）`, '', `> 診斷，不是目標。引擎 ${doc.engine_version}；20 固定種子（${doc.seeds[0]}～${doc.seeds.at(-1)}）× 365 日；四季分開。所有數值都是遊戲模型。`, ''];
   for (const f of doc.foundings_run) {
     L.push(`## 情境 ${f}`, '');
@@ -182,10 +190,15 @@ function tables(doc: Any): string {
     for (const season of Object.keys(doc.groups[f])) { const g = doc.groups[f][season], j = (o: Any) => Object.entries(o).sort().map(([k, v]) => `${k} ${v}`).join('；') || '—'; L.push(`| ${season} | ${j(g.income_by_site_total)} | ${j(g.worker_death_reasons_total)} | ${j(g.brood_death_reasons_total)} | ${j(g.queen_death_reasons)} |`); }
     L.push('');
   }
-  L.push('## 四項指標分開（v2-review.19 起）：蟻后存活／有工蟻／有效繁殖（自產卵羽化 ≥1）／成長分類（成長·持平·衰退·只剩蟻后·全滅）', '');
-  L.push('> 成長分類以 Day0 的「工蟻＋帶來的蛹」為參考數。有效繁殖只計這次模擬中蟻后產下的卵羽化成的工蟻，不計創巢時帶來的幼體。', '');
+  L.push('## 四項指標分開（v2-review.19 起）：蟻后存活／有工蟻／截至該日曾有自產工蟻羽化／成長分類（成長·持平·衰退·只剩蟻后·全滅）', '');
+  L.push('> 蟻后存活、有工蟻、成長分類是**該檢查日當天的狀態**；「曾有自產工蟻羽化」（2026-11-02 起的名稱，原稱「有效繁殖」）是**從 Day1 到該檢查日累積的事件**：只要曾有一隻這次模擬中蟻后產下的卵羽化成工蟻就算（不計創巢時帶來的幼體），該檢查日時蟻群可能已滅亡；它不表示繁殖能持續。持續繁殖見下一節。成長分類以 Day0 的「工蟻＋帶來的蛹」為參考數。', '');
   L.push('| 情境 | 季節 | Day30 | Day90 | Day180 | Day365 |', '|---|---|---|---|---|---|');
-  for (const f of doc.foundings_run) for (const season of Object.keys(doc.groups[f])) { const g = doc.groups[f][season]; L.push(`| ${f} | ${season} | ${[30, 90, 180, 365].map((cp) => { const x = g.checkpoints[cp], gr = x.growth; return `${x.queen_alive}／${x.colonies_with_workers}／${x.effective_reproduction}／${gr.grew ?? 0}·${gr.held ?? 0}·${gr.declined ?? 0}·${gr.no_workers_queen_alive ?? 0}·${gr.extinct ?? 0}`; }).join(' | ')} |`); }
+  for (const f of doc.foundings_run) for (const season of Object.keys(doc.groups[f])) { const g = doc.groups[f][season]; L.push(`| ${f} | ${season} | ${[30, 90, 180, 365].map((cp) => { const x = g.checkpoints[cp], gr = x.growth; return `${x.queen_alive}／${x.colonies_with_workers}／${x.any_own_worker_eclosion}／${gr.grew ?? 0}·${gr.held ?? 0}·${gr.declined ?? 0}·${gr.no_workers_queen_alive ?? 0}·${gr.extinct ?? 0}`; }).join(' | ')} |`); }
+  L.push('');
+  L.push(`## 持續繁殖（${SUSTAINED_REPRODUCTION.label}；評估定義，不是生物學門檻，也不是調參目標）`, '');
+  L.push(`> ${SUSTAINED_REPRODUCTION.rule}。${SUSTAINED_REPRODUCTION.caveat}`, '');
+  L.push('| 情境 | 季節 | 符合候選定義（/20） | 有自產工蟻羽化的 30 日區間數中位（共 13 格，最後一格為 Day361～365 的 5 日；2026-11-03 起計入，Issue #43 F07） | 後半年自產工蟻羽化數中位 |', '|---|---|---:|---:|---:|');
+  for (const f of doc.foundings_run) for (const season of Object.keys(doc.groups[f])) { const x = doc.groups[f][season].reproduction_365; if (x) L.push(`| ${f} | ${season} | ${x.sustained_reproduction_candidate} | ${x.own_eclosion_windows_median} | ${x.own_eclosions_second_half_median} |`); }
   L.push('');
   L.push('## 個體行動（v2-review.17 起；20 種子合計）', '');
   L.push('| 情境 | 季節 | 有出巢的工蟻日 | 每隻出巢工蟻每日趟數 | 每隻出巢工蟻每日外出分鐘 | 步行／搜尋／採集／守獵物／卸貨（分鐘） | 出巢工蟻巢內時間（分鐘） | 因時間不足取消 | 沒有路線而未出勤 | 招募失敗 | 停止原因 |', '|---|---|---:|---:|---:|---|---:|---:|---:|---:|---|');

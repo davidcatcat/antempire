@@ -11,7 +11,7 @@
  *    the weather generator actually reads (annual_rain_days, rain_probability_daily_cap, wet_persistence), and
  *    verifies the realised rain days, longest wet spell, rainfall, soil wetness and the colony's activity on wet
  *    vs dry days. The v18 E5 changed a field the generator never reads; it is re-run as E5-v18 (defective).
- *  - Every scenario reports queen survival, worker survival, effective reproduction (eclosions from eggs laid in
+ *  - Every scenario reports queen survival, worker survival, "own-worker eclosion within the horizon" (renamed from "effective reproduction"; eclosions from eggs laid in
  *    the run) and growth/decline separately.
  *   node cli/reports/day0-extremes.ts [outFile]     (default reports/day0-<tag>/extremes.json + .md)
  */
@@ -115,7 +115,7 @@ function run(sc: Scenario): Any {
     recorded_path_lengths_cm: pathCm, one_way_minutes_on_trail: Object.fromEntries(Object.entries(pathCm).map(([k, v]) => [k, r3((v as number) * 10 / speed / 60)])),
     queen_alive_day60: R.filter((r) => r.queen_alive).length,
     colonies_with_workers_day60: R.filter((r) => r.workers > 0).length,
-    effective_reproduction: R.filter((r) => r.own_eclosions > 0).length,
+    any_own_worker_eclosion: R.filter((r) => r.own_eclosions > 0).length,
     growth_classes: R.reduce((o: Any, r) => { o[r.growth] = (o[r.growth] ?? 0) + 1; return o; }, {}),
     colony_end: R.filter((r) => r.colony_end_day !== null).length,
     workers_day60_median: med(R.map((r) => r.workers)), own_eclosions_median: med(R.map((r) => r.own_eclosions)), eggs_laid_median: med(R.map((r) => r.eggs_laid)),
@@ -133,11 +133,11 @@ if (import.meta.main) {
   const results = SCENARIOS.map((sc) => { const r = run(sc); console.error(sc.id, r.queen_alive_day60 ?? r.not_implemented); return r; });
   fs.writeFileSync(out, JSON.stringify({ schema: 'antempire.day0-extremes.v2', diagnostic_not_target: true, rules_tag: RULES_TAG, start: START, days: DAYS, seeds: DAY0_SEEDS, note: 'all 20 seeds kept for every scenario; per-day rows in rows[].days', results }, null, 1) + '\n');
   const L = [`# Day0 極端情境 ${RULES_TAG}（診斷，不是目標；秋季 Day0、20 種子 × ${DAYS} 日；四項存活指標分開）`, '',
-    '| 情境 | 說明 | Day60 蟻后存活 | Day60 有工蟻 | 有效繁殖（自產卵羽化 ≥1） | 成長／持平／衰退／只剩蟻后／全滅 | Day60 工蟻中位 | 自產羽化中位 | 每趟平均步行分鐘中位 | 蟻后死亡日中位（原因） |', '|---|---|---:|---:|---:|---|---:|---:|---:|---|'];
+    '| 情境 | 說明 | Day60 蟻后存活 | Day60 有工蟻 | 60 日內曾有自產工蟻羽化 | 成長／持平／衰退／只剩蟻后／全滅 | Day60 工蟻中位 | 自產羽化中位 | 每趟平均步行分鐘中位 | 蟻后死亡日中位（原因） |', '|---|---|---:|---:|---:|---|---:|---:|---:|---|'];
   for (const r of results) {
     if (r.not_implemented) { L.push(`| ${r.id} | ${r.title} | — | — | — | — | — | — | — | 未實作：${r.not_implemented} |`); continue; }
     const g = r.growth_classes;
-    L.push(`| ${r.id} | ${r.title} | ${r.queen_alive_day60}/20 | ${r.colonies_with_workers_day60}/20 | ${r.effective_reproduction}/20 | ${g.grew ?? 0}／${g.held ?? 0}／${g.declined ?? 0}／${g.no_workers_queen_alive ?? 0}／${g.extinct ?? 0} | ${r.workers_day60_median} | ${r.own_eclosions_median} | ${r.mean_travel_minutes_per_trip_median ?? '—'} | ${r.queen_death_day_median ?? '—'}（${Object.entries(r.queen_death_reasons).map(([k, v]) => k + ' ' + v).join('、') || '—'}） |`);
+    L.push(`| ${r.id} | ${r.title} | ${r.queen_alive_day60}/20 | ${r.colonies_with_workers_day60}/20 | ${r.any_own_worker_eclosion}/20 | ${g.grew ?? 0}／${g.held ?? 0}／${g.declined ?? 0}／${g.no_workers_queen_alive ?? 0}／${g.extinct ?? 0} | ${r.workers_day60_median} | ${r.own_eclosions_median} | ${r.mean_travel_minutes_per_trip_median ?? '—'} | ${r.queen_death_day_median ?? '—'}（${Object.entries(r.queen_death_reasons).map(([k, v]) => k + ' ' + v).join('、') || '—'}） |`);
   }
   L.push('', '## 降雨情境的實際天氣與活動（20 種子中位數）', '', '| 情境 | 雨日數（60 日） | 最長連續雨日（中位／最少） | 總雨量 mm | 土壤濕度（雨日／晴日） | 覓食任務比例（雨日／晴日） | 每隻工蟻每日趟數（雨日／晴日） | 每隻工蟻每日收入（雨日／晴日） |', '|---|---:|---|---:|---|---|---|---|');
   for (const r of results.filter((x) => !x.not_implemented && (x.id.startsWith('E5') || x.id === 'E0'))) { const w = r.weather, a = r.activity_wet_vs_dry_median; L.push(`| ${r.id} | ${w.rain_days_median} | ${w.longest_wet_spell_median}／${w.longest_wet_spell_min} | ${w.rain_mm_median} | ${w.soil_wet_days_median}／${w.soil_dry_days_median} | ${a.forage_task_share_wet}／${a.forage_task_share_dry} | ${a.trips_per_worker_wet}／${a.trips_per_worker_dry} | ${a.income_per_worker_wet}／${a.income_per_worker_dry} |`); }
