@@ -46,7 +46,7 @@
    },
    "queen_alive_day60": 12,
    "colonies_with_workers_day60": 14,
-   "effective_reproduction": 10,
+   "any_own_worker_eclosion": 10,
    "growth_classes": {
     "grew": 2,
     "declined": 10,
@@ -12689,7 +12689,7 @@
    },
    "queen_alive_day60": 19,
    "colonies_with_workers_day60": 20,
-   "effective_reproduction": 18,
+   "any_own_worker_eclosion": 18,
    "growth_classes": {
     "grew": 2,
     "declined": 16,
@@ -26538,7 +26538,7 @@
    "one_way_minutes_on_trail": {},
    "queen_alive_day60": 14,
    "colonies_with_workers_day60": 14,
-   "effective_reproduction": 12,
+   "any_own_worker_eclosion": 12,
    "growth_classes": {
     "held": 1,
     "declined": 12,
@@ -39169,7 +39169,7 @@
    },
    "queen_alive_day60": 13,
    "colonies_with_workers_day60": 15,
-   "effective_reproduction": 12,
+   "any_own_worker_eclosion": 12,
    "growth_classes": {
     "grew": 2,
     "declined": 12,
@@ -51805,7 +51805,7 @@
    },
    "queen_alive_day60": 13,
    "colonies_with_workers_day60": 14,
-   "effective_reproduction": 13,
+   "any_own_worker_eclosion": 13,
    "growth_classes": {
     "grew": 1,
     "declined": 12,
@@ -64673,7 +64673,7 @@
    },
    "queen_alive_day60": 9,
    "colonies_with_workers_day60": 9,
-   "effective_reproduction": 6,
+   "any_own_worker_eclosion": 6,
    "growth_classes": {
     "extinct": 11,
     "declined": 9
@@ -75895,7 +75895,7 @@
    },
    "queen_alive_day60": 3,
    "colonies_with_workers_day60": 0,
-   "effective_reproduction": 1,
+   "any_own_worker_eclosion": 1,
    "growth_classes": {
     "extinct": 17,
     "no_workers_queen_alive": 3
@@ -87553,7 +87553,7 @@
    },
    "queen_alive_day60": 15,
    "colonies_with_workers_day60": 16,
-   "effective_reproduction": 14,
+   "any_own_worker_eclosion": 14,
    "growth_classes": {
     "extinct": 4,
     "declined": 12,
@@ -100463,7 +100463,7 @@
    },
    "queen_alive_day60": 15,
    "colonies_with_workers_day60": 15,
-   "effective_reproduction": 13,
+   "any_own_worker_eclosion": 13,
    "growth_classes": {
     "grew": 2,
     "declined": 13,
@@ -113383,7 +113383,7 @@
    },
    "queen_alive_day60": 14,
    "colonies_with_workers_day60": 16,
-   "effective_reproduction": 12,
+   "any_own_worker_eclosion": 12,
    "growth_classes": {
     "grew": 2,
     "declined": 12,
@@ -126221,7 +126221,7 @@
    },
    "queen_alive_day60": 14,
    "colonies_with_workers_day60": 15,
-   "effective_reproduction": 13,
+   "any_own_worker_eclosion": 13,
    "growth_classes": {
     "grew": 1,
     "declined": 13,
@@ -139060,7 +139060,7 @@
    },
    "queen_alive_day60": 15,
    "colonies_with_workers_day60": 15,
-   "effective_reproduction": 12,
+   "any_own_worker_eclosion": 12,
    "growth_classes": {
     "grew": 2,
     "declined": 11,
@@ -151893,7 +151893,7 @@
    },
    "queen_alive_day60": 16,
    "colonies_with_workers_day60": 14,
-   "effective_reproduction": 13,
+   "any_own_worker_eclosion": 13,
    "growth_classes": {
     "grew": 4,
     "declined": 8,
@@ -164972,7 +164972,7 @@
    },
    "queen_alive_day60": 1,
    "colonies_with_workers_day60": 1,
-   "effective_reproduction": 0,
+   "any_own_worker_eclosion": 0,
    "growth_classes": {
     "extinct": 19,
     "held": 1
@@ -172488,7 +172488,7 @@
    },
    "queen_alive_day60": 20,
    "colonies_with_workers_day60": 20,
-   "effective_reproduction": 20,
+   "any_own_worker_eclosion": 20,
    "growth_classes": {
     "grew": 6,
     "declined": 12,
@@ -186343,7 +186343,7 @@
    },
    "queen_alive_day60": 0,
    "colonies_with_workers_day60": 0,
-   "effective_reproduction": 0,
+   "any_own_worker_eclosion": 0,
    "growth_classes": {
     "extinct": 20
    },
