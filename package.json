@@ -17,7 +17,8 @@
     "advance": "node cli/advance.ts",
     "evaluate:day0": "node cli/reports/day0-evaluation.ts",
     "evaluate:day0-extremes": "node cli/reports/day0-extremes.ts",
-    "evaluate:phase2-sensitivity": "for i in 0 1 2 3; do node cli/reports/phase2-sensitivity.ts --shard $i/4 & done; wait; node cli/reports/phase2-sensitivity.ts --merge"
+    "evaluate:phase2-sensitivity": "node cli/reports/phase2-sensitivity.ts --run 4",
+    "check:phase2-sensitivity": "node cli/reports/phase2-sensitivity.ts --validate"
   },
   "devDependencies": {
     "@types/node": "22.19.0",
