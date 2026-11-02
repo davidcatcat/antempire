@@ -197,7 +197,7 @@ export function tables(doc: Any): string {
   L.push('');
   L.push(`## 持續繁殖（${SUSTAINED_REPRODUCTION.label}；評估定義，不是生物學門檻，也不是調參目標）`, '');
   L.push(`> ${SUSTAINED_REPRODUCTION.rule}。${SUSTAINED_REPRODUCTION.caveat}`, '');
-  L.push('| 情境 | 季節 | 符合候選定義（/20） | 有自產工蟻羽化的 30 日區間數中位（共 12） | 後半年自產工蟻羽化數中位 |', '|---|---|---:|---:|---:|');
+  L.push('| 情境 | 季節 | 符合候選定義（/20） | 有自產工蟻羽化的 30 日區間數中位（共 13 格，最後一格為 Day361～365 的 5 日；2026-11-03 起計入，Issue #43 F07） | 後半年自產工蟻羽化數中位 |', '|---|---|---:|---:|---:|');
   for (const f of doc.foundings_run) for (const season of Object.keys(doc.groups[f])) { const x = doc.groups[f][season].reproduction_365; if (x) L.push(`| ${f} | ${season} | ${x.sustained_reproduction_candidate} | ${x.own_eclosion_windows_median} | ${x.own_eclosions_second_half_median} |`); }
   L.push('');
   L.push('## 個體行動（v2-review.17 起；20 種子合計）', '');

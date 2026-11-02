@@ -342,7 +342,8 @@
      "definition": "sustained_reproduction_candidate_v1",
      "sustained_reproduction_candidate": 9,
      "own_eclosion_windows_median": 2,
-     "own_eclosions_second_half_median": 0
+     "own_eclosions_second_half_median": 0,
+     "own_eclosion_windows_first_360_median": 2
     }
    },
    "summer": {
@@ -611,7 +612,8 @@
      "definition": "sustained_reproduction_candidate_v1",
      "sustained_reproduction_candidate": 9,
      "own_eclosion_windows_median": 1,
-     "own_eclosions_second_half_median": 0
+     "own_eclosions_second_half_median": 0,
+     "own_eclosion_windows_first_360_median": 1
     }
    },
    "autumn": {
@@ -882,7 +884,8 @@
      "definition": "sustained_reproduction_candidate_v1",
      "sustained_reproduction_candidate": 10,
      "own_eclosion_windows_median": 6,
-     "own_eclosions_second_half_median": 23
+     "own_eclosions_second_half_median": 23,
+     "own_eclosion_windows_first_360_median": 6
     }
    },
    "winter": {
@@ -1155,7 +1158,8 @@
      "definition": "sustained_reproduction_candidate_v1",
      "sustained_reproduction_candidate": 12,
      "own_eclosion_windows_median": 10,
-     "own_eclosions_second_half_median": 43.5
+     "own_eclosions_second_half_median": 43.5,
+     "own_eclosion_windows_first_360_median": 10
     }
    }
   },
@@ -1428,8 +1432,9 @@
     "reproduction_365": {
      "definition": "sustained_reproduction_candidate_v1",
      "sustained_reproduction_candidate": 12,
-     "own_eclosion_windows_median": 11,
-     "own_eclosions_second_half_median": 45
+     "own_eclosion_windows_median": 12,
+     "own_eclosions_second_half_median": 45,
+     "own_eclosion_windows_first_360_median": 11
     }
    },
    "summer": {
@@ -1702,7 +1707,8 @@
      "definition": "sustained_reproduction_candidate_v1",
      "sustained_reproduction_candidate": 9,
      "own_eclosion_windows_median": 3.5,
-     "own_eclosions_second_half_median": 0.5
+     "own_eclosions_second_half_median": 0.5,
+     "own_eclosion_windows_first_360_median": 3.5
     }
    },
    "autumn": {
@@ -1975,7 +1981,8 @@
      "definition": "sustained_reproduction_candidate_v1",
      "sustained_reproduction_candidate": 16,
      "own_eclosion_windows_median": 11,
-     "own_eclosions_second_half_median": 54
+     "own_eclosions_second_half_median": 54,
+     "own_eclosion_windows_first_360_median": 11
     }
    },
    "winter": {
@@ -2249,8 +2256,9 @@
     "reproduction_365": {
      "definition": "sustained_reproduction_candidate_v1",
      "sustained_reproduction_candidate": 15,
-     "own_eclosion_windows_median": 10,
-     "own_eclosions_second_half_median": 47
+     "own_eclosion_windows_median": 11,
+     "own_eclosions_second_half_median": 47,
+     "own_eclosion_windows_first_360_median": 10
     }
    }
   },
@@ -2520,7 +2528,8 @@
      "definition": "sustained_reproduction_candidate_v1",
      "sustained_reproduction_candidate": 10,
      "own_eclosion_windows_median": 6.5,
-     "own_eclosions_second_half_median": 18
+     "own_eclosions_second_half_median": 18,
+     "own_eclosion_windows_first_360_median": 6.5
     }
    },
    "summer": {
@@ -2789,7 +2798,8 @@
      "definition": "sustained_reproduction_candidate_v1",
      "sustained_reproduction_candidate": 8,
      "own_eclosion_windows_median": 2,
-     "own_eclosions_second_half_median": 0
+     "own_eclosions_second_half_median": 0,
+     "own_eclosion_windows_first_360_median": 2
     }
    },
    "autumn": {
@@ -3062,7 +3072,8 @@
      "definition": "sustained_reproduction_candidate_v1",
      "sustained_reproduction_candidate": 11,
      "own_eclosion_windows_median": 11,
-     "own_eclosions_second_half_median": 47
+     "own_eclosions_second_half_median": 47,
+     "own_eclosion_windows_first_360_median": 11
     }
    },
    "winter": {
@@ -3331,7 +3342,8 @@
      "definition": "sustained_reproduction_candidate_v1",
      "sustained_reproduction_candidate": 12,
      "own_eclosion_windows_median": 10.5,
-     "own_eclosions_second_half_median": 40
+     "own_eclosions_second_half_median": 40,
+     "own_eclosion_windows_first_360_median": 10.5
     }
    }
   },
@@ -3600,7 +3612,8 @@
      "definition": "sustained_reproduction_candidate_v1",
      "sustained_reproduction_candidate": 5,
      "own_eclosion_windows_median": 0,
-     "own_eclosions_second_half_median": 0
+     "own_eclosions_second_half_median": 0,
+     "own_eclosion_windows_first_360_median": 0
     }
    },
    "summer": {
@@ -3872,7 +3885,8 @@
      "definition": "sustained_reproduction_candidate_v1",
      "sustained_reproduction_candidate": 5,
      "own_eclosion_windows_median": 0,
-     "own_eclosions_second_half_median": 0
+     "own_eclosions_second_half_median": 0,
+     "own_eclosion_windows_first_360_median": 0
     }
    },
    "autumn": {
@@ -4142,8 +4156,9 @@
     "reproduction_365": {
      "definition": "sustained_reproduction_candidate_v1",
      "sustained_reproduction_candidate": 11,
-     "own_eclosion_windows_median": 10.5,
-     "own_eclosions_second_half_median": 45.5
+     "own_eclosion_windows_median": 11,
+     "own_eclosions_second_half_median": 45.5,
+     "own_eclosion_windows_first_360_median": 10.5
     }
    },
    "winter": {
@@ -4412,7 +4427,8 @@
      "definition": "sustained_reproduction_candidate_v1",
      "sustained_reproduction_candidate": 3,
      "own_eclosion_windows_median": 0,
-     "own_eclosions_second_half_median": 0
+     "own_eclosions_second_half_median": 0,
+     "own_eclosion_windows_first_360_median": 0
     }
    }
   },
@@ -4681,8 +4697,9 @@
     "reproduction_365": {
      "definition": "sustained_reproduction_candidate_v1",
      "sustained_reproduction_candidate": 17,
-     "own_eclosion_windows_median": 11,
-     "own_eclosions_second_half_median": 46.5
+     "own_eclosion_windows_median": 12,
+     "own_eclosions_second_half_median": 46.5,
+     "own_eclosion_windows_first_360_median": 11
     }
    },
    "summer": {
@@ -4953,7 +4970,8 @@
      "definition": "sustained_reproduction_candidate_v1",
      "sustained_reproduction_candidate": 10,
      "own_eclosion_windows_median": 6.5,
-     "own_eclosions_second_half_median": 18
+     "own_eclosions_second_half_median": 18,
+     "own_eclosion_windows_first_360_median": 6.5
     }
    },
    "autumn": {
@@ -5222,7 +5240,8 @@
      "definition": "sustained_reproduction_candidate_v1",
      "sustained_reproduction_candidate": 18,
      "own_eclosion_windows_median": 11,
-     "own_eclosions_second_half_median": 51
+     "own_eclosions_second_half_median": 51,
+     "own_eclosion_windows_first_360_median": 11
     }
    },
    "winter": {
@@ -5488,8 +5507,9 @@
     "reproduction_365": {
      "definition": "sustained_reproduction_candidate_v1",
      "sustained_reproduction_candidate": 16,
-     "own_eclosion_windows_median": 11,
-     "own_eclosions_second_half_median": 46
+     "own_eclosion_windows_median": 11.5,
+     "own_eclosions_second_half_median": 46,
+     "own_eclosion_windows_first_360_median": 11
     }
    }
   }
@@ -6135,7 +6155,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 48,
     "eggs_last_95_days": 19,
     "sustained_reproduction_candidate": true
@@ -6782,7 +6803,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 49,
     "eggs_last_95_days": 21,
     "sustained_reproduction_candidate": true
@@ -7424,7 +7446,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 45,
     "eggs_last_95_days": 19,
     "sustained_reproduction_candidate": true
@@ -8072,7 +8095,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 39,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -8602,6 +8626,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 1,
+    "own_eclosion_windows_first_360": 1,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -9185,6 +9210,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 2,
+    "own_eclosion_windows_first_360": 2,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -9647,6 +9673,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -10287,6 +10314,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 2,
+    "own_eclosion_windows_first_360": 2,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -10933,7 +10961,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 10,
+    "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 66,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -11517,6 +11546,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -11983,6 +12013,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -12631,7 +12662,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 42,
     "eggs_last_95_days": 22,
     "sustained_reproduction_candidate": true
@@ -13159,6 +13191,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -13806,7 +13839,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 9,
+    "own_eclosion_windows": 10,
+    "own_eclosion_windows_first_360": 9,
     "own_eclosions_second_half": 50,
     "eggs_last_95_days": 21,
     "sustained_reproduction_candidate": true
@@ -14450,7 +14484,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 50,
     "eggs_last_95_days": 25,
     "sustained_reproduction_candidate": true
@@ -15096,7 +15131,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 52,
     "eggs_last_95_days": 25,
     "sustained_reproduction_candidate": true
@@ -15619,6 +15655,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -16152,6 +16189,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -16735,6 +16773,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 1,
+    "own_eclosion_windows_first_360": 1,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -17194,6 +17233,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -17829,6 +17869,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 1,
+    "own_eclosion_windows_first_360": 1,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -18415,6 +18456,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -19055,7 +19097,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 50,
     "eggs_last_95_days": 20,
     "sustained_reproduction_candidate": true
@@ -19704,7 +19747,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 42,
     "eggs_last_95_days": 27,
     "sustained_reproduction_candidate": true
@@ -20182,6 +20226,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -20825,6 +20870,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 56,
     "eggs_last_95_days": 32,
     "sustained_reproduction_candidate": true
@@ -21470,7 +21516,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 56,
     "eggs_last_95_days": 35,
     "sustained_reproduction_candidate": true
@@ -21927,6 +21974,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -22570,7 +22618,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 60,
     "eggs_last_95_days": 28,
     "sustained_reproduction_candidate": true
@@ -23218,7 +23267,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 55,
     "eggs_last_95_days": 28,
     "sustained_reproduction_candidate": true
@@ -23628,6 +23678,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -24147,6 +24198,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -24605,6 +24657,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -25253,6 +25306,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 10,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 56,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -25897,7 +25951,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 61,
     "eggs_last_95_days": 38,
     "sustained_reproduction_candidate": true
@@ -26483,6 +26538,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 1,
+    "own_eclosion_windows_first_360": 1,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -27003,6 +27059,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -27524,6 +27581,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -27983,6 +28041,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -28625,7 +28684,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 43,
     "eggs_last_95_days": 25,
     "sustained_reproduction_candidate": true
@@ -29272,6 +29332,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 62,
     "eggs_last_95_days": 32,
     "sustained_reproduction_candidate": true
@@ -29919,7 +29980,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 60,
     "eggs_last_95_days": 34,
     "sustained_reproduction_candidate": true
@@ -30563,6 +30625,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 46,
     "eggs_last_95_days": 25,
     "sustained_reproduction_candidate": true
@@ -31213,7 +31276,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 49,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -31744,6 +31808,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 1,
+    "own_eclosion_windows_first_360": 1,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -32383,7 +32448,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 60,
     "eggs_last_95_days": 29,
     "sustained_reproduction_candidate": true
@@ -32847,6 +32913,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -33309,6 +33376,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -33953,6 +34021,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 55,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -34530,6 +34599,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -34940,6 +35010,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -35463,6 +35534,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -35921,6 +35993,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -36569,6 +36642,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 55,
     "eggs_last_95_days": 21,
     "sustained_reproduction_candidate": true
@@ -37213,7 +37287,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 62,
     "eggs_last_95_days": 35,
     "sustained_reproduction_candidate": true
@@ -37860,7 +37935,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 50,
     "eggs_last_95_days": 25,
     "sustained_reproduction_candidate": true
@@ -38382,6 +38458,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -38905,6 +38982,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -39545,6 +39623,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 51,
     "eggs_last_95_days": 20,
     "sustained_reproduction_candidate": true
@@ -40004,6 +40083,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -40650,6 +40730,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 59,
     "eggs_last_95_days": 32,
     "sustained_reproduction_candidate": true
@@ -41348,6 +41429,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 3,
+    "own_eclosion_windows_first_360": 3,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -41991,7 +42073,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 43,
     "eggs_last_95_days": 24,
     "sustained_reproduction_candidate": true
@@ -42641,6 +42724,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 10,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 41,
     "eggs_last_95_days": 24,
     "sustained_reproduction_candidate": true
@@ -43278,6 +43362,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 3,
+    "own_eclosion_windows_first_360": 3,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -43919,7 +44004,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 55,
     "eggs_last_95_days": 34,
     "sustained_reproduction_candidate": true
@@ -44444,6 +44530,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -45136,6 +45223,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 2,
+    "own_eclosion_windows_first_360": 2,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -45780,7 +45868,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 10,
+    "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 57,
     "eggs_last_95_days": 31,
     "sustained_reproduction_candidate": true
@@ -46430,6 +46519,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 10,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 59,
     "eggs_last_95_days": 34,
     "sustained_reproduction_candidate": true
@@ -46967,6 +47057,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -47490,6 +47581,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -48022,6 +48114,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -48668,7 +48761,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 52,
     "eggs_last_95_days": 25,
     "sustained_reproduction_candidate": true
@@ -49312,7 +49406,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 52,
     "eggs_last_95_days": 34,
     "sustained_reproduction_candidate": true
@@ -49961,7 +50056,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 53,
     "eggs_last_95_days": 34,
     "sustained_reproduction_candidate": true
@@ -50607,7 +50703,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 58,
     "eggs_last_95_days": 22,
     "sustained_reproduction_candidate": true
@@ -51255,7 +51352,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 9,
+    "own_eclosion_windows": 10,
+    "own_eclosion_windows_first_360": 9,
     "own_eclosions_second_half": 45,
     "eggs_last_95_days": 24,
     "sustained_reproduction_candidate": true
@@ -51717,6 +51815,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -52360,7 +52459,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 44,
     "eggs_last_95_days": 30,
     "sustained_reproduction_candidate": true
@@ -53006,7 +53106,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 48,
     "eggs_last_95_days": 19,
     "sustained_reproduction_candidate": true
@@ -53596,6 +53697,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -54237,7 +54339,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 48,
     "eggs_last_95_days": 20,
     "sustained_reproduction_candidate": true
@@ -54887,7 +54990,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 51,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -55575,6 +55679,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 4,
+    "own_eclosion_windows_first_360": 4,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -56218,7 +56323,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 42,
     "eggs_last_95_days": 27,
     "sustained_reproduction_candidate": true
@@ -56868,7 +56974,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 53,
     "eggs_last_95_days": 22,
     "sustained_reproduction_candidate": true
@@ -57515,7 +57622,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 52,
     "eggs_last_95_days": 19,
     "sustained_reproduction_candidate": true
@@ -58159,7 +58267,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 64,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -58741,6 +58850,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -59163,6 +59273,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -59687,6 +59798,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -60212,6 +60324,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -60858,7 +60971,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 57,
     "eggs_last_95_days": 21,
     "sustained_reproduction_candidate": true
@@ -61506,7 +61620,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 50,
     "eggs_last_95_days": 25,
     "sustained_reproduction_candidate": true
@@ -62154,7 +62269,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 52,
     "eggs_last_95_days": 25,
     "sustained_reproduction_candidate": true
@@ -62680,6 +62796,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -63210,6 +63327,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -63851,7 +63969,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 56,
     "eggs_last_95_days": 19,
     "sustained_reproduction_candidate": true
@@ -64495,7 +64614,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 37,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -64964,6 +65084,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -65615,7 +65736,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 55,
     "eggs_last_95_days": 34,
     "sustained_reproduction_candidate": true
@@ -66257,6 +66379,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 8,
+    "own_eclosion_windows_first_360": 8,
     "own_eclosions_second_half": 41,
     "eggs_last_95_days": 24,
     "sustained_reproduction_candidate": true
@@ -66905,7 +67028,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 42,
     "eggs_last_95_days": 27,
     "sustained_reproduction_candidate": true
@@ -67381,6 +67505,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -67850,6 +67975,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -68548,6 +68674,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 6,
+    "own_eclosion_windows_first_360": 6,
     "own_eclosions_second_half": 1,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -69194,7 +69321,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 51,
     "eggs_last_95_days": 26,
     "sustained_reproduction_candidate": true
@@ -69840,7 +69968,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 57,
     "eggs_last_95_days": 31,
     "sustained_reproduction_candidate": true
@@ -70479,6 +70608,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -71122,7 +71252,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 50,
     "eggs_last_95_days": 31,
     "sustained_reproduction_candidate": true
@@ -71647,6 +71778,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -72115,6 +72247,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -72762,6 +72895,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 56,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -73409,7 +73543,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 61,
     "eggs_last_95_days": 38,
     "sustained_reproduction_candidate": true
@@ -73997,6 +74132,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -74530,6 +74666,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 1,
+    "own_eclosion_windows_first_360": 1,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -75167,6 +75304,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 1,
+    "own_eclosion_windows_first_360": 1,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -75639,6 +75777,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -76281,7 +76420,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 43,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -76929,7 +77069,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 10,
+    "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 63,
     "eggs_last_95_days": 32,
     "sustained_reproduction_candidate": true
@@ -77578,7 +77719,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 60,
     "eggs_last_95_days": 32,
     "sustained_reproduction_candidate": true
@@ -78222,7 +78364,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 54,
     "eggs_last_95_days": 24,
     "sustained_reproduction_candidate": true
@@ -78872,6 +79015,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 50,
     "eggs_last_95_days": 20,
     "sustained_reproduction_candidate": true
@@ -79516,6 +79660,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 33,
     "eggs_last_95_days": 20,
     "sustained_reproduction_candidate": true
@@ -80157,6 +80302,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 57,
     "eggs_last_95_days": 30,
     "sustained_reproduction_candidate": true
@@ -80805,7 +80951,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 57,
     "eggs_last_95_days": 37,
     "sustained_reproduction_candidate": true
@@ -81452,7 +81599,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 58,
     "eggs_last_95_days": 22,
     "sustained_reproduction_candidate": true
@@ -82095,6 +82243,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 56,
     "eggs_last_95_days": 26,
     "sustained_reproduction_candidate": true
@@ -82744,7 +82893,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 54,
     "eggs_last_95_days": 24,
     "sustained_reproduction_candidate": true
@@ -83389,7 +83539,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 57,
     "eggs_last_95_days": 25,
     "sustained_reproduction_candidate": true
@@ -83917,6 +84068,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -84385,6 +84537,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -85034,6 +85187,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 52,
     "eggs_last_95_days": 26,
     "sustained_reproduction_candidate": true
@@ -85679,7 +85833,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 60,
     "eggs_last_95_days": 33,
     "sustained_reproduction_candidate": true
@@ -86329,7 +86484,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 54,
     "eggs_last_95_days": 30,
     "sustained_reproduction_candidate": true
@@ -86852,6 +87008,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -87392,6 +87549,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -88036,6 +88194,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 49,
     "eggs_last_95_days": 26,
     "sustained_reproduction_candidate": true
@@ -88680,6 +88839,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 43,
     "eggs_last_95_days": 24,
     "sustained_reproduction_candidate": true
@@ -89326,6 +89486,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 56,
     "eggs_last_95_days": 32,
     "sustained_reproduction_candidate": true
@@ -89973,7 +90134,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 10,
+    "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 55,
     "eggs_last_95_days": 28,
     "sustained_reproduction_candidate": true
@@ -90614,7 +90776,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 45,
     "eggs_last_95_days": 18,
     "sustained_reproduction_candidate": true
@@ -91263,6 +91426,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 40,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -91954,6 +92118,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 4,
+    "own_eclosion_windows_first_360": 4,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -92425,6 +92590,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -93072,7 +93238,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 10,
+    "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 58,
     "eggs_last_95_days": 31,
     "sustained_reproduction_candidate": true
@@ -93717,6 +93884,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 58,
     "eggs_last_95_days": 25,
     "sustained_reproduction_candidate": true
@@ -94361,7 +94529,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 56,
     "eggs_last_95_days": 28,
     "sustained_reproduction_candidate": true
@@ -95013,6 +95182,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 10,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 58,
     "eggs_last_95_days": 33,
     "sustained_reproduction_candidate": true
@@ -95657,7 +95827,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 48,
     "eggs_last_95_days": 29,
     "sustained_reproduction_candidate": true
@@ -96307,7 +96478,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 10,
+    "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 46,
     "eggs_last_95_days": 32,
     "sustained_reproduction_candidate": true
@@ -96830,6 +97002,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -97477,7 +97650,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 10,
+    "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 43,
     "eggs_last_95_days": 25,
     "sustained_reproduction_candidate": true
@@ -98121,7 +98295,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 54,
     "eggs_last_95_days": 34,
     "sustained_reproduction_candidate": true
@@ -98773,7 +98948,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 60,
     "eggs_last_95_days": 34,
     "sustained_reproduction_candidate": true
@@ -99423,7 +99599,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 10,
+    "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 64,
     "eggs_last_95_days": 24,
     "sustained_reproduction_candidate": true
@@ -99964,6 +100141,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -100437,6 +100615,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -101081,7 +101260,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 38,
     "eggs_last_95_days": 30,
     "sustained_reproduction_candidate": true
@@ -101730,7 +101910,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 47,
     "eggs_last_95_days": 19,
     "sustained_reproduction_candidate": true
@@ -102380,7 +102561,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 51,
     "eggs_last_95_days": 21,
     "sustained_reproduction_candidate": true
@@ -103022,7 +103204,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 46,
     "eggs_last_95_days": 20,
     "sustained_reproduction_candidate": true
@@ -103673,7 +103856,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 48,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -104194,6 +104378,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -104657,6 +104842,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -105306,7 +105492,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 45,
     "eggs_last_95_days": 22,
     "sustained_reproduction_candidate": true
@@ -105836,6 +106023,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -106481,7 +106669,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 65,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -107129,6 +107318,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 1,
+    "own_eclosion_windows_first_360": 1,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -107599,6 +107789,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -108238,6 +108429,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 2,
+    "own_eclosion_windows_first_360": 2,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -108929,6 +109121,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 3,
+    "own_eclosion_windows_first_360": 3,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -109576,7 +109769,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 58,
     "eggs_last_95_days": 21,
     "sustained_reproduction_candidate": true
@@ -110213,6 +110407,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 2,
+    "own_eclosion_windows_first_360": 2,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -110908,6 +111103,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 3,
+    "own_eclosion_windows_first_360": 3,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -111557,6 +111753,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 10,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 44,
     "eggs_last_95_days": 9,
     "sustained_reproduction_candidate": true
@@ -112205,6 +112402,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 36,
     "eggs_last_95_days": 18,
     "sustained_reproduction_candidate": true
@@ -112846,7 +113044,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 50,
     "eggs_last_95_days": 19,
     "sustained_reproduction_candidate": true
@@ -113310,6 +113509,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -113951,7 +114151,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 56,
     "eggs_last_95_days": 31,
     "sustained_reproduction_candidate": true
@@ -114534,6 +114735,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -114994,6 +115196,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -115632,6 +115835,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 2,
+    "own_eclosion_windows_first_360": 2,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -116267,6 +116471,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 2,
+    "own_eclosion_windows_first_360": 2,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -116727,6 +116932,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -117189,6 +117395,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -117710,6 +117917,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -118352,7 +118560,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 59,
     "eggs_last_95_days": 29,
     "sustained_reproduction_candidate": true
@@ -119002,7 +119211,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 55,
     "eggs_last_95_days": 27,
     "sustained_reproduction_candidate": true
@@ -119525,6 +119735,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -120056,6 +120267,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 1,
+    "own_eclosion_windows_first_360": 1,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -120515,6 +120727,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -121162,7 +121375,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 55,
     "eggs_last_95_days": 21,
     "sustained_reproduction_candidate": true
@@ -121803,7 +122017,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 61,
     "eggs_last_95_days": 38,
     "sustained_reproduction_candidate": true
@@ -122444,6 +122659,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 2,
+    "own_eclosion_windows_first_360": 2,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -123089,7 +123305,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 52,
     "eggs_last_95_days": 26,
     "sustained_reproduction_candidate": true
@@ -123735,7 +123952,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 47,
     "eggs_last_95_days": 26,
     "sustained_reproduction_candidate": true
@@ -124376,6 +124594,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 47,
     "eggs_last_95_days": 25,
     "sustained_reproduction_candidate": true
@@ -124835,6 +125054,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -125480,7 +125700,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 67,
     "eggs_last_95_days": 36,
     "sustained_reproduction_candidate": true
@@ -126064,6 +126285,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 1,
+    "own_eclosion_windows_first_360": 1,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -126534,6 +126756,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -127182,7 +127405,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 48,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -127699,6 +127923,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -128162,6 +128387,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -128810,7 +129036,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 62,
     "eggs_last_95_days": 33,
     "sustained_reproduction_candidate": true
@@ -129334,6 +129561,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -129977,7 +130205,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 52,
     "eggs_last_95_days": 29,
     "sustained_reproduction_candidate": true
@@ -130615,6 +130844,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 1,
+    "own_eclosion_windows_first_360": 1,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -131255,6 +131485,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 1,
+    "own_eclosion_windows_first_360": 1,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -131904,7 +132135,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 46,
     "eggs_last_95_days": 35,
     "sustained_reproduction_candidate": true
@@ -132366,6 +132598,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -133012,6 +133245,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 52,
     "eggs_last_95_days": 16,
     "sustained_reproduction_candidate": true
@@ -133657,7 +133891,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 60,
     "eggs_last_95_days": 32,
     "sustained_reproduction_candidate": true
@@ -134304,7 +134539,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 52,
     "eggs_last_95_days": 27,
     "sustained_reproduction_candidate": true
@@ -134950,7 +135186,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 59,
     "eggs_last_95_days": 21,
     "sustained_reproduction_candidate": true
@@ -135597,7 +135834,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 54,
     "eggs_last_95_days": 26,
     "sustained_reproduction_candidate": true
@@ -136242,6 +136480,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 50,
     "eggs_last_95_days": 19,
     "sustained_reproduction_candidate": true
@@ -136703,6 +136942,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -137348,6 +137588,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 55,
     "eggs_last_95_days": 32,
     "sustained_reproduction_candidate": true
@@ -137986,6 +138227,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 3,
+    "own_eclosion_windows_first_360": 3,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -138627,7 +138869,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 39,
     "eggs_last_95_days": 18,
     "sustained_reproduction_candidate": true
@@ -139278,6 +139521,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 39,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -139917,6 +140161,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 2,
+    "own_eclosion_windows_first_360": 2,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -140378,6 +140623,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -141027,7 +141273,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 56,
     "eggs_last_95_days": 31,
     "sustained_reproduction_candidate": true
@@ -141490,6 +141737,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -142136,7 +142384,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 56,
     "eggs_last_95_days": 31,
     "sustained_reproduction_candidate": true
@@ -142785,6 +143034,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 10,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 65,
     "eggs_last_95_days": 33,
     "sustained_reproduction_candidate": true
@@ -143311,6 +143561,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -143959,7 +144210,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 41,
     "eggs_last_95_days": 33,
     "sustained_reproduction_candidate": true
@@ -144483,6 +144735,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -145128,7 +145381,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 51,
     "eggs_last_95_days": 22,
     "sustained_reproduction_candidate": true
@@ -145774,7 +146028,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 50,
     "eggs_last_95_days": 34,
     "sustained_reproduction_candidate": true
@@ -146421,7 +146676,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 9,
+    "own_eclosion_windows": 10,
+    "own_eclosion_windows_first_360": 9,
     "own_eclosions_second_half": 56,
     "eggs_last_95_days": 33,
     "sustained_reproduction_candidate": true
@@ -147067,7 +147323,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 61,
     "eggs_last_95_days": 24,
     "sustained_reproduction_candidate": true
@@ -147651,6 +147908,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 3,
+    "own_eclosion_windows_first_360": 3,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -148119,6 +148377,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -148762,7 +149021,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 43,
     "eggs_last_95_days": 30,
     "sustained_reproduction_candidate": true
@@ -149399,7 +149659,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 48,
     "eggs_last_95_days": 19,
     "sustained_reproduction_candidate": true
@@ -150035,7 +150296,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 51,
     "eggs_last_95_days": 21,
     "sustained_reproduction_candidate": true
@@ -150478,6 +150740,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -151115,7 +151378,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 43,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -151563,6 +151827,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -152195,7 +152460,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 49,
     "eggs_last_95_days": 27,
     "sustained_reproduction_candidate": true
@@ -152646,6 +152912,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -153279,7 +153546,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 50,
     "eggs_last_95_days": 19,
     "sustained_reproduction_candidate": true
@@ -153778,6 +154046,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -154227,6 +154496,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -154853,6 +155123,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 2,
+    "own_eclosion_windows_first_360": 2,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -155248,6 +155519,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -155694,6 +155966,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -156139,6 +156412,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -156647,6 +156921,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -157095,6 +157370,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -157725,6 +158001,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 1,
+    "own_eclosion_windows_first_360": 1,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -158349,6 +158626,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 3,
+    "own_eclosion_windows_first_360": 3,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -158800,6 +159078,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -159240,6 +159519,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -159797,6 +160077,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -160256,6 +160537,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -160698,6 +160980,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -161329,6 +161612,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 1,
+    "own_eclosion_windows_first_360": 1,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -161774,6 +162058,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -162404,6 +162689,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 10,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 56,
     "eggs_last_95_days": 29,
     "sustained_reproduction_candidate": true
@@ -163039,7 +163325,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 56,
     "eggs_last_95_days": 35,
     "sustained_reproduction_candidate": true
@@ -163675,7 +163962,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 51,
     "eggs_last_95_days": 26,
     "sustained_reproduction_candidate": true
@@ -164308,7 +164596,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 59,
     "eggs_last_95_days": 29,
     "sustained_reproduction_candidate": true
@@ -164757,6 +165046,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -165198,6 +165488,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -165593,6 +165884,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -166039,6 +166331,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -166477,6 +166770,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -167103,6 +167397,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 3,
+    "own_eclosion_windows_first_360": 3,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -167550,6 +167845,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -167996,6 +168292,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -168568,6 +168865,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -169199,6 +169497,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 47,
     "eggs_last_95_days": 25,
     "sustained_reproduction_candidate": true
@@ -169639,6 +169938,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -170271,7 +170571,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 64,
     "eggs_last_95_days": 34,
     "sustained_reproduction_candidate": true
@@ -170910,7 +171211,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 59,
     "eggs_last_95_days": 31,
     "sustained_reproduction_candidate": true
@@ -171540,7 +171842,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 10,
+    "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 52,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -172179,7 +172482,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 40,
     "eggs_last_95_days": 22,
     "sustained_reproduction_candidate": true
@@ -172754,6 +173058,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 1,
+    "own_eclosion_windows_first_360": 1,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -173384,6 +173689,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 53,
     "eggs_last_95_days": 29,
     "sustained_reproduction_candidate": true
@@ -174019,7 +174325,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 60,
     "eggs_last_95_days": 32,
     "sustained_reproduction_candidate": true
@@ -174656,7 +174963,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 59,
     "eggs_last_95_days": 22,
     "sustained_reproduction_candidate": true
@@ -175290,6 +175598,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 56,
     "eggs_last_95_days": 26,
     "sustained_reproduction_candidate": true
@@ -175741,6 +176050,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -176182,6 +176492,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -176577,6 +176888,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -177024,6 +177336,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -177649,6 +177962,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 1,
+    "own_eclosion_windows_first_360": 1,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -178160,6 +178474,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -178794,7 +179109,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 51,
     "eggs_last_95_days": 22,
     "sustained_reproduction_candidate": true
@@ -179367,6 +179683,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -179999,7 +180316,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 54,
     "eggs_last_95_days": 26,
     "sustained_reproduction_candidate": true
@@ -180631,6 +180949,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 52,
     "eggs_last_95_days": 22,
     "sustained_reproduction_candidate": true
@@ -181074,6 +181393,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -181514,6 +181834,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -182151,7 +182472,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 10,
+    "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 59,
     "eggs_last_95_days": 31,
     "sustained_reproduction_candidate": true
@@ -182593,6 +182915,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -183230,6 +183553,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 41,
     "eggs_last_95_days": 22,
     "sustained_reproduction_candidate": true
@@ -183675,6 +183999,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -184306,7 +184631,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 10,
+    "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 53,
     "eggs_last_95_days": 34,
     "sustained_reproduction_candidate": true
@@ -184755,6 +185081,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -185201,6 +185528,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -185699,6 +186027,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -186147,6 +186476,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -186650,6 +186980,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -187040,6 +187371,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -187487,6 +187819,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -188107,6 +188440,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -188551,6 +188885,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -188999,6 +189334,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -189513,6 +189849,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 1,
+    "own_eclosion_windows_first_360": 1,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -190021,6 +190358,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -190699,6 +191037,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 2,
+    "own_eclosion_windows_first_360": 2,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -191143,6 +191482,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -191787,7 +192127,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 48,
     "eggs_last_95_days": 19,
     "sustained_reproduction_candidate": true
@@ -192436,7 +192777,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 51,
     "eggs_last_95_days": 21,
     "sustained_reproduction_candidate": true
@@ -192905,6 +193247,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -193552,7 +193895,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 52,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -194190,7 +194534,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 42,
     "eggs_last_95_days": 17,
     "sustained_reproduction_candidate": true
@@ -194833,7 +195178,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 50,
     "eggs_last_95_days": 27,
     "sustained_reproduction_candidate": true
@@ -195482,7 +195828,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 47,
     "eggs_last_95_days": 22,
     "sustained_reproduction_candidate": true
@@ -196129,7 +196476,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 10,
+    "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 53,
     "eggs_last_95_days": 19,
     "sustained_reproduction_candidate": true
@@ -196774,7 +197122,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 65,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -197421,6 +197770,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 41,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -198064,7 +198414,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 10,
+    "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 46,
     "eggs_last_95_days": 22,
     "sustained_reproduction_candidate": true
@@ -198711,7 +199062,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 40,
     "eggs_last_95_days": 22,
     "sustained_reproduction_candidate": true
@@ -199172,6 +199524,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -199631,6 +199984,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -200276,7 +200630,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 50,
     "eggs_last_95_days": 25,
     "sustained_reproduction_candidate": true
@@ -200925,7 +201280,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 52,
     "eggs_last_95_days": 25,
     "sustained_reproduction_candidate": true
@@ -201572,6 +201928,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 10,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 44,
     "eggs_last_95_days": 9,
     "sustained_reproduction_candidate": true
@@ -202218,6 +202575,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 38,
     "eggs_last_95_days": 18,
     "sustained_reproduction_candidate": true
@@ -202860,7 +203218,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 50,
     "eggs_last_95_days": 19,
     "sustained_reproduction_candidate": true
@@ -203502,7 +203861,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 34,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -204145,7 +204505,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 56,
     "eggs_last_95_days": 30,
     "sustained_reproduction_candidate": true
@@ -204729,6 +205090,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 1,
+    "own_eclosion_windows_first_360": 1,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -205187,6 +205549,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -205829,6 +206192,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -206468,6 +206832,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 39,
     "eggs_last_95_days": 21,
     "sustained_reproduction_candidate": true
@@ -207110,6 +207475,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 56,
     "eggs_last_95_days": 34,
     "sustained_reproduction_candidate": true
@@ -207636,6 +208002,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -208277,7 +208644,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 51,
     "eggs_last_95_days": 26,
     "sustained_reproduction_candidate": true
@@ -208920,7 +209288,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 59,
     "eggs_last_95_days": 30,
     "sustained_reproduction_candidate": true
@@ -209565,7 +209934,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 55,
     "eggs_last_95_days": 29,
     "sustained_reproduction_candidate": true
@@ -210083,6 +210453,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -210731,7 +211102,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 36,
     "eggs_last_95_days": 35,
     "sustained_reproduction_candidate": true
@@ -211191,6 +211563,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -211839,6 +212212,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 56,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -212485,7 +212859,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 61,
     "eggs_last_95_days": 38,
     "sustained_reproduction_candidate": true
@@ -213128,6 +213503,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 2,
+    "own_eclosion_windows_first_360": 2,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -213709,6 +214085,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -214175,6 +214552,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -214814,6 +215192,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 47,
     "eggs_last_95_days": 27,
     "sustained_reproduction_candidate": true
@@ -215271,6 +215650,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -215915,7 +216295,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 68,
     "eggs_last_95_days": 37,
     "sustained_reproduction_candidate": true
@@ -216563,6 +216944,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 61,
     "eggs_last_95_days": 32,
     "sustained_reproduction_candidate": true
@@ -217204,7 +217586,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 10,
+    "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 49,
     "eggs_last_95_days": 22,
     "sustained_reproduction_candidate": true
@@ -217853,7 +218236,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 10,
+    "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 46,
     "eggs_last_95_days": 19,
     "sustained_reproduction_candidate": true
@@ -218496,6 +218880,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 35,
     "eggs_last_95_days": 19,
     "sustained_reproduction_candidate": true
@@ -219140,7 +219525,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 59,
     "eggs_last_95_days": 25,
     "sustained_reproduction_candidate": true
@@ -219786,7 +220172,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 58,
     "eggs_last_95_days": 30,
     "sustained_reproduction_candidate": true
@@ -220433,7 +220820,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 60,
     "eggs_last_95_days": 23,
     "sustained_reproduction_candidate": true
@@ -221079,6 +221467,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 54,
     "eggs_last_95_days": 26,
     "sustained_reproduction_candidate": true
@@ -221729,7 +222118,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 10,
+    "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 53,
     "eggs_last_95_days": 25,
     "sustained_reproduction_candidate": true
@@ -222375,7 +222765,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 51,
     "eggs_last_95_days": 20,
     "sustained_reproduction_candidate": true
@@ -223023,7 +223414,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 48,
     "eggs_last_95_days": 32,
     "sustained_reproduction_candidate": true
@@ -223484,6 +223876,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -223944,6 +224337,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -224588,7 +224982,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 10,
+    "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 59,
     "eggs_last_95_days": 36,
     "sustained_reproduction_candidate": true
@@ -225238,7 +225633,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 51,
     "eggs_last_95_days": 28,
     "sustained_reproduction_candidate": true
@@ -225884,7 +226280,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 58,
     "eggs_last_95_days": 20,
     "sustained_reproduction_candidate": true
@@ -226531,7 +226928,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 10,
+    "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 51,
     "eggs_last_95_days": 24,
     "sustained_reproduction_candidate": true
@@ -227174,6 +227572,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 50,
     "eggs_last_95_days": 21,
     "sustained_reproduction_candidate": true
@@ -227817,6 +228216,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 38,
     "eggs_last_95_days": 20,
     "sustained_reproduction_candidate": true
@@ -228463,6 +228863,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 10,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 57,
     "eggs_last_95_days": 32,
     "sustained_reproduction_candidate": true
@@ -229109,7 +229510,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 58,
     "eggs_last_95_days": 30,
     "sustained_reproduction_candidate": true
@@ -229572,6 +229974,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -230220,6 +230623,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 43,
     "eggs_last_95_days": 24,
     "sustained_reproduction_candidate": true
@@ -230860,7 +231264,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 30,
     "eggs_last_95_days": 24,
     "sustained_reproduction_candidate": true
@@ -231501,7 +231906,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 55,
     "eggs_last_95_days": 34,
     "sustained_reproduction_candidate": true
@@ -232149,7 +232555,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 56,
     "eggs_last_95_days": 30,
     "sustained_reproduction_candidate": true
@@ -232609,6 +233016,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -233255,7 +233663,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 53,
     "eggs_last_95_days": 31,
     "sustained_reproduction_candidate": true
@@ -233905,6 +234314,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 10,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 57,
     "eggs_last_95_days": 33,
     "sustained_reproduction_candidate": true
@@ -234479,6 +234889,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -235126,7 +235537,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 44,
     "eggs_last_95_days": 33,
     "sustained_reproduction_candidate": true
@@ -235587,6 +235999,7 @@
    "reproduction": {
     "any_own_worker_eclosion": false,
     "own_eclosion_windows": 0,
+    "own_eclosion_windows_first_360": 0,
     "own_eclosions_second_half": 0,
     "eggs_last_95_days": 0,
     "sustained_reproduction_candidate": false
@@ -236234,7 +236647,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 46,
     "eggs_last_95_days": 21,
     "sustained_reproduction_candidate": true
@@ -236879,7 +237293,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 50,
     "eggs_last_95_days": 34,
     "sustained_reproduction_candidate": true
@@ -237526,7 +237941,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 10,
+    "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 60,
     "eggs_last_95_days": 34,
     "sustained_reproduction_candidate": true
@@ -238174,7 +238590,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 63,
     "eggs_last_95_days": 24,
     "sustained_reproduction_candidate": true
@@ -238821,7 +239238,8 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 11,
+    "own_eclosion_windows": 12,
+    "own_eclosion_windows_first_360": 11,
     "own_eclosions_second_half": 43,
     "eggs_last_95_days": 24,
     "sustained_reproduction_candidate": true
@@ -239465,6 +239883,7 @@
    "reproduction": {
     "any_own_worker_eclosion": true,
     "own_eclosion_windows": 10,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 46,
     "eggs_last_95_days": 27,
     "sustained_reproduction_candidate": true
@@ -240108,11 +240527,17 @@
    },
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 10,
+    "own_eclosion_windows": 11,
+    "own_eclosion_windows_first_360": 10,
     "own_eclosions_second_half": 33,
     "eggs_last_95_days": 30,
     "sustained_reproduction_candidate": true
    }
   }
- ]
+ ],
+ "derived_columns_revision": {
+  "date": "2026-11-03",
+  "reason": "Issue #43 F07: own_eclosion_windows now counts the partial Day361–365 bin; the v1 value is kept as own_eclosion_windows_first_360. Re-derived from the stored per-seed 30-day bins; no simulation was re-run and no raw seed field changed.",
+  "runs_whose_window_count_changed": 165
+ }
 }
