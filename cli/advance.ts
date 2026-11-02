@@ -4,6 +4,9 @@
  *   npm run advance                                   # 預演 (dry run)：不取得鎖、不寫任何檔案
  *   npm run advance -- --confirm-advance --day 15     # 玩家明確要求推進 Day15 時才使用
  *   npm run advance -- --recover                      # 中斷後：完成或撤銷未完成的交易，不推進新的一天
+ *   npm run advance -- --adopt-rules <版本> --confirm-advance --day N
+ *                                                     # 玩家明確要求時：把凍結的規則換成登錄檔中緊接的下一個
+ *                                                     # 已核准版本，並在同一筆交易中用新規則推進 Day N（#11）
  *   npm run advance -- --root <dir>                   # 對另一個存檔目錄（例如臨時副本）操作
  *   npm run advance -- --summary-out <file>           # 另存當日事件摘要（Markdown）
  *
@@ -23,8 +26,15 @@ import { checkJournal, checkSaves, checkTransition, type Check } from './lib/con
 import { daySummaryMarkdown } from './lib/day-summary.ts';
 import { COMMIT_LOG_REL, InjectedCrash, TransactionError, acquireLock, commitConsistency, commitDay, ioFromEnv, nowFromEnv, leftoverTempFiles, nextCommitLog, nodeIo, pendingTransactions, readCommitLog, readLock, recoverTransactions, sha256, type Io } from './lib/save-transaction.ts';
 import { ENGINE_VERSION, num } from '../engine/index.ts';
+import { byFingerprint, planAdoption, readRegistry, RulesError, type Fingerprint, type Registry } from './lib/rules-registry.ts';
 
-export interface AdvanceOptions { root: string; confirm: boolean; expectDay?: number; now?: string; summaryOut?: string; io?: Io }
+export interface AdvanceOptions {
+  root: string; confirm: boolean; expectDay?: number; now?: string; summaryOut?: string; io?: Io;
+  /** #11: switch the frozen rules to this registered version (Owner request only). */
+  adoptRules?: string;
+  /** Tests on temporary copies only: replace the checkout's fingerprint / the registry (refused for the real saves). */
+  testOverrides?: { fingerprint?: Fingerprint; registry?: Registry };
+}
 export interface AdvanceResult { written: boolean; day: number; date: string; checks: Check[]; summary: string; journal: string; files: string[]; reason?: string }
 
 const json = (x: unknown) => JSON.stringify(x, null, 2) + '\n';
@@ -51,13 +61,18 @@ export function advance(opts: AdvanceOptions): AdvanceResult {
     const main = JSON.parse(rawMain.toString('utf8')), world = JSON.parse(rawWorld.toString('utf8'));
     const consistency = commitConsistency(root, main, io).filter((c) => !c.ok && c.level === 'error');
     if (consistency.length) throw new TransactionError('CONFLICT', 'saves are not the last committed version: ' + consistency.map((c) => c.name).join('; '));
-    const bundle = loadBundle(), fp = rulesFingerprint();
+    if (opts.testOverrides && root === path.resolve(REPO_ROOT)) throw Error('test overrides are only allowed on a temporary copy (--root)');
+    const bundle = loadBundle(), fp = opts.testOverrides?.fingerprint ?? rulesFingerprint(), registry = opts.testOverrides?.registry ?? readRegistry();
+    const frozen = world.sim_engine_v2?.rules_fingerprint as Fingerprint | undefined;
+    const adoption = opts.adoptRules ? planAdoption(registry, frozen, opts.adoptRules, fp) : undefined;
+    const currentVersion = byFingerprint(registry, fp), frozenVersion = frozen ? byFingerprint(registry, frozen) : undefined;
+    const frozenHint = currentVersion && frozenVersion && currentVersion.previous === frozenVersion.rules_version ? `The running engine is the next approved version ${currentVersion.rules_version} (frozen: ${frozenVersion.rules_version}); to switch, the Owner must request: npm run advance -- --adopt-rules ${currentVersion.rules_version} --confirm-advance --day N` : '';
     const before = { main: structuredClone(main), world: structuredClone(world) };
     const beforeChecks = checkSaves(main, world).filter((c) => !c.ok && c.level === 'error');
     if (beforeChecks.length) throw Error('Current saves fail conservation checks; refusing to advance: ' + beforeChecks.map((c) => c.name).join('; '));
     const climatology = world.sim_engine_v2 ? null : readJson('data/taichung-climatology-1991-2020.json', root);
     const expectedStart = world.sim_engine_v2 ? { sugar: world.sim_engine_v2.colony.sugar, protein: world.sim_engine_v2.colony.protein } : { sugar: num(bundle.world, 'day15_migration.starting_sugar'), protein: num(bundle.world, 'day15_migration.starting_protein') };
-    const run = projectDaily(main, world, climatology, bundle, fp, DEFAULT_REFS, now);
+    const run = projectDaily(main, world, climatology, bundle, fp, DEFAULT_REFS, now, { rulesVersion: currentVersion?.rules_version ?? null, adopt: adoption, frozenHint });
     const day = run.report.day, journalRel: string = run.main.simulation.latest_journal;
     const checks = [...checkSaves(run.main, run.world), ...checkTransition(before, { main: run.main, world: run.world }, run.report, expectedStart)];
     const journal = run.journal + '\n' + daySummaryMarkdown(run.report, checks, { embedded: true });
@@ -69,12 +84,12 @@ export function advance(opts: AdvanceOptions): AdvanceResult {
     if (opts.summaryOut) { fs.mkdirSync(path.dirname(path.resolve(opts.summaryOut)), { recursive: true }); fs.writeFileSync(path.resolve(opts.summaryOut), summary); }
     const errors = checks.filter((c) => !c.ok && c.level === 'error');
     if (errors.length) return { ...result, reason: 'checks failed; nothing written: ' + errors.map((c) => c.name).join('; ') };
-    if (!opts.confirm) return { ...result, reason: `dry run (to create Day ${day}: npm run advance -- --confirm-advance --day ${day})` };
+    if (!opts.confirm) return { ...result, reason: `dry run (to create Day ${day}: npm run advance -- ${adoption ? `--adopt-rules ${adoption.to.rules_version} ` : ''}--confirm-advance --day ${day})` };
     if (opts.expectDay !== day) throw new TransactionError('DUPLICATE_DAY', `the next game day is Day ${day}, but --day ${opts.expectDay} was requested; refusing (a day is never advanced twice)`);
 
     const prevLog = readCommitLog(root, io);
     const files = { [WORLD]: json(run.world), [MAIN]: json(run.main), [journalRel]: journal };
-    const entry = { day, date: run.report.summary.date, committed_at: now, engine_version: ENGINE_VERSION, rules_fingerprint: { engine: fp.engine, params: fp.params }, files: Object.fromEntries(Object.entries(files).map(([rel, text]) => [rel, sha256(text)])), previous: { [WORLD]: sha256(rawWorld), [MAIN]: sha256(rawMain), [journalRel]: null } };
+    const entry = { day, date: run.report.summary.date, committed_at: now, engine_version: ENGINE_VERSION, rules_version: currentVersion?.rules_version ?? null, ...(adoption ? { rules_adopted: { from: adoption.from.rules_version, to: adoption.to.rules_version, effective_from_day: day } } : {}), rules_fingerprint: { engine: fp.engine, params: fp.params }, files: Object.fromEntries(Object.entries(files).map(([rel, text]) => [rel, sha256(text)])), previous: { [WORLD]: sha256(rawWorld), [MAIN]: sha256(rawMain), [journalRel]: null } };
     const logText = json(nextCommitLog(prevLog, entry));
     const logAbs = path.join(root, COMMIT_LOG_REL), preLog = io.exists(logAbs) ? sha256(io.read(logAbs)) : null;
     commitDay(root, {
@@ -116,7 +131,7 @@ if (import.meta.main) {
       console.error(r.state === 'rolled-forward' ? '交易已完成（roll forward）；沒有推進額外的一天。' : r.state === 'rolled-back' ? '未完成的交易已撤銷（roll back）；存檔維持前一天。' : '沒有需要復原的交易。');
     } else {
       const dayArg = value('--day');
-      const r = advance({ root, confirm: args.includes('--confirm-advance'), expectDay: dayArg === undefined ? undefined : Number(dayArg), summaryOut: value('--summary-out'), io, now });
+      const r = advance({ root, confirm: args.includes('--confirm-advance'), expectDay: dayArg === undefined ? undefined : Number(dayArg), summaryOut: value('--summary-out'), io, now, adoptRules: value('--adopt-rules') });
       process.stdout.write(r.summary + '\n');
       for (const c of r.checks.filter((x) => !x.ok)) console.error(`${c.level.toUpperCase()}: ${c.name} ${JSON.stringify(c.detail)}`);
       console.error(r.written ? `已提交 Day ${r.day}（${r.date}）：${r.files.join('、')}。日誌已寫入且不可改寫。` : `未寫入任何檔案：${r.reason}`);
@@ -124,6 +139,6 @@ if (import.meta.main) {
     }
   } catch (err) {
     console.error(`推進／復原中止：${(err as Error).message}`);
-    process.exitCode = err instanceof TransactionError ? 3 : 1;
+    process.exitCode = err instanceof TransactionError || err instanceof RulesError ? 3 : 1;
   }
 }
