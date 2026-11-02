@@ -4,7 +4,7 @@
  * world seeds, builds the Day0 world with engine/initialization.ts and runs 365 days with the current engine.
  * Checkpoints: Day 1, 7, 30, 60, 90, 120, 180, 365. Unsupported foundings (B, C) are listed with their missing
  * mechanisms and are not run.
- *   node cli/reports/day0-evaluation.ts [outDir]     (default reports/day0)
+ *   node cli/reports/day0-evaluation.ts [outDir]     (default reports/day0-<rules tag>; the v15 results stay in reports/day0/)
  * Writes ONLY to outDir; never reads or writes saves/ or journal/.
  */
 import fs from 'node:fs';
@@ -13,6 +13,7 @@ import { ENGINE_VERSION, simulateWorldDay, FoundingNotSupported, type ParamBundl
 import { loadBundle, readJson, REPO_ROOT } from '../lib/load.ts';
 import { buildDay0, day0Inputs, seasonStart, SEASONS, SUPPORTED_FOUNDINGS, type FoundingId, type Season } from '../lib/day0.ts';
 import { rulesFingerprint } from '../lib/fingerprint.ts';
+import { RULES_TAG } from './winter-multiseed.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any -- report rows
 export const DAY0_SEEDS = Array.from({ length: 20 }, (_, i) => 20270001 + i);
@@ -36,6 +37,7 @@ export function runDay0(founding: FoundingId, season: Season, seed: number, bund
   const cum = { income: { sugar: 0, protein: 0 }, consumed: { sugar: 0, protein: 0 }, demand: { sugar: 0, protein: 0 }, eggs_laid: 0, hatch: 0, pupation: 0, eclosion: 0, worker_deaths: 0, brood_deaths: 0, trips: 0, successes: 0, explorations: 0, exploration_found_nothing: 0, discoveries: 0, recruitment: 0, trail_choices: 0, trophallaxis: 0, predation: 0, repair_worker_days: 0, forage_worker_days: 0, nurse_worker_days: 0 };
   const bySite: Record<string, number> = {}, workerDeath: Record<string, number> = {}, broodDeath: Record<string, number> = {}, firstDiscovery: Record<string, number> = {};
   const checkpoints: Record<number, Any> = {}, chain: Any[] = [], seasonTemps: { air: number[]; nest: number[] } = { air: [], nest: [] };
+  let queenDeath: Any = null;
   let queenDeathDay: number | null = null, queenDeathReason: string | null = null, zeroWorkerDay: number | null = null, endDay: number | null = null, firstEggDay: number | null = null, firstEclosionDay: number | null = null, sugarGapMax = 0, proteinGapMax = 0;
   for (let d = 1; d <= days; d++) {
     const out = simulateWorldDay(s, bundle); s = out.state;
@@ -58,7 +60,7 @@ export function runDay0(founding: FoundingId, season: Season, seed: number, bund
       else if (e.type === 'insect_predation') cum.predation++;
       else if (e.type === 'worker_death') inc(workerDeath, e.reason);
       else if (e.type === 'brood_death') inc(broodDeath, `${e.stage}:${e.reason}`);
-      else if (e.type === 'queen_death') { queenDeathDay = d; queenDeathReason = e.reason; }
+      else if (e.type === 'queen_death') { queenDeathDay = d; queenDeathReason = e.reason; queenDeath = { day: d, reason: e.reason, active_triggers: e.active_triggers ?? null, hazards: e.hazards ?? null, sugar_gap_days: e.sugar_gap_days ?? null, protein_gap_days: e.protein_gap_days ?? null, no_worker_days: e.no_worker_days ?? null }; }
       if (KEY_EVENTS.has(e.type)) { chain.push({ day: d, type: e.type, ...(e.reason ? { reason: e.reason } : {}), ...(e.stage ? { stage: e.stage } : {}), ...(e.site ? { site: e.site } : {}), sugar_gap_days: s.colonies[0].stores.sugar_gap_days, protein_gap_days: s.colonies[0].stores.protein_gap_days }); if (chain.length > 12) chain.shift(); }
     }
     const pop = s.colonies[0].population;
@@ -73,7 +75,7 @@ export function runDay0(founding: FoundingId, season: Season, seed: number, bund
   const mean = (xs: number[]) => (xs.length ? r3(xs.reduce((a, b) => a + b, 0) / xs.length) : null);
   return {
     founding, season, seed, start_date: start, day0,
-    queen_death_day: queenDeathDay, queen_death_reason: queenDeathReason, zero_worker_day: zeroWorkerDay, colony_end_day: endDay,
+    queen_death_day: queenDeathDay, queen_death_reason: queenDeathReason, queen_death: queenDeath, zero_worker_day: zeroWorkerDay, colony_end_day: endDay,
     first_egg_day: firstEggDay, first_eclosion_day: firstEclosionDay, max_sugar_gap_days: sugarGapMax, max_protein_gap_days: proteinGapMax,
     totals: cum, income_by_site: bySite, first_discovery_day_by_site: firstDiscovery, worker_death_reasons: workerDeath, brood_death_reasons: broodDeath,
     temperature: { mean_air_c: mean(seasonTemps.air), mean_nest_c: mean(seasonTemps.nest), min_nest_c: seasonTemps.nest.length ? r3(Math.min(...seasonTemps.nest)) : null, days: seasonTemps.air.length },
@@ -112,7 +114,7 @@ function aggregate(runs: Any[]): Any {
 export function generateDay0Evaluation(outDir: string, bundle: ParamBundle = loadBundle()): Any {
   fs.mkdirSync(outDir, { recursive: true });
   const runs: Any[] = [];
-  for (const f of SUPPORTED_FOUNDINGS) for (const season of SEASONS) for (const seed of DAY0_SEEDS) { const r = runDay0(f, season, seed, bundle); r._qd = r.queen_death_reason ? { [r.queen_death_reason]: 1 } : {}; runs.push(r); }
+  for (const f of SUPPORTED_FOUNDINGS) for (const season of SEASONS) for (const seed of DAY0_SEEDS) { const r = runDay0(f, season, seed, bundle); r._qd = r.queen_death_reason ? { [r.queen_death_reason + (r.queen_death?.active_triggers ? ' [' + r.queen_death.active_triggers.join('+') + ']' : '')]: 1 } : {}; runs.push(r); }
   const groups: Any = {};
   for (const f of SUPPORTED_FOUNDINGS) { groups[f] = {}; for (const season of SEASONS) groups[f][season] = aggregate(runs.filter((r) => r.founding === f && r.season === season)); }
   const unsupported: Any = {};
@@ -122,14 +124,14 @@ export function generateDay0Evaluation(outDir: string, bundle: ParamBundle = loa
   }
   for (const r of runs) delete r._qd;
   const fp = rulesFingerprint();
-  const doc = { schema: 'antempire.day0-evaluation.v1', diagnostic_not_target: true, engine_version: ENGINE_VERSION, rules_fingerprint: { engine: fp.engine, params: fp.params }, official_saves_used: false, seeds: DAY0_SEEDS, horizon_days: HORIZON, checkpoints: CHECKPOINTS, seasons: readJson('scenarios/day0/seasons.json').starts, foundings_run: SUPPORTED_FOUNDINGS, foundings_not_supported: unsupported, groups, runs };
+  const doc = { schema: 'antempire.day0-evaluation.v1', diagnostic_not_target: true, rules_tag: RULES_TAG, engine_version: ENGINE_VERSION, rules_fingerprint: { engine: fp.engine, params: fp.params }, official_saves_used: false, seeds: DAY0_SEEDS, horizon_days: HORIZON, checkpoints: CHECKPOINTS, seasons: readJson('scenarios/day0/seasons.json').starts, foundings_run: SUPPORTED_FOUNDINGS, foundings_not_supported: unsupported, groups, runs };
   fs.writeFileSync(path.join(outDir, 'evaluation.json'), JSON.stringify(doc, null, 1) + '\n');
   fs.writeFileSync(path.join(outDir, 'evaluation-tables.md'), tables(doc));
   return doc;
 }
 
 function tables(doc: Any): string {
-  const L: string[] = ['# Day0 評估表（自動產生：`node cli/reports/day0-evaluation.ts`）', '', `> 診斷，不是目標。引擎 ${doc.engine_version}；20 固定種子（${doc.seeds[0]}～${doc.seeds.at(-1)}）× 365 日；四季分開。所有數值都是遊戲模型。`, ''];
+  const L: string[] = [`# Day0 評估表 ${doc.rules_tag}（自動產生：\`node cli/reports/day0-evaluation.ts\`）`, '', `> 診斷，不是目標。引擎 ${doc.engine_version}；20 固定種子（${doc.seeds[0]}～${doc.seeds.at(-1)}）× 365 日；四季分開。所有數值都是遊戲模型。`, ''];
   for (const f of doc.foundings_run) {
     L.push(`## 情境 ${f}`, '');
     L.push('| 季節 | 檢查日 | 蟻后存活 | 有工蟻 | 工蟻 min/中位/max | 幼體中位 | 累計產卵中位 | 累計羽化中位 | 累計糖收入中位 | 累計蛋白收入中位 | 個體發現中位 | 每隻記得路段中位 |', '|---|---:|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|');
@@ -151,7 +153,7 @@ function tables(doc: Any): string {
 }
 
 if (import.meta.main) {
-  const outDir = process.argv[2] ? path.resolve(process.argv[2]) : path.join(REPO_ROOT, 'reports/day0');
+  const outDir = process.argv[2] ? path.resolve(process.argv[2]) : path.join(REPO_ROOT, `reports/day0-${RULES_TAG}`);
   const t = Date.now(), doc = generateDay0Evaluation(outDir);
   console.log(JSON.stringify({ wrote: outDir, runs: doc.runs.length, seconds: (Date.now() - t) / 1000 }, null, 2));
 }

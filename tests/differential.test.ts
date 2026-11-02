@@ -22,7 +22,7 @@ import { rulesFingerprint } from '../cli/lib/fingerprint.ts';
 import { REPO_ROOT, readJson, loadBundle } from '../cli/lib/load.ts';
 import { SCENARIOS, applyNew, applyOld } from './lib/scenarios.ts';
 import { normaliseV6Projection } from './lib/v6-normalise.ts';
-import { neutraliseState, revertParams, approvedChanges } from './lib/approved-changes.ts';
+import { neutraliseState, revertParams, approvedChanges, normaliseOutput } from './lib/approved-changes.ts';
 
 if (!fs.existsSync(path.join(REPO_ROOT, 'sim/day_engine.cjs'))) { console.log(JSON.stringify({ skipped: 'sim/ archived; tests/golden.test.ts pins the v6 output instead' })); process.exit(0); }
 const require = createRequire(import.meta.url);
@@ -40,7 +40,7 @@ for (const sc of SCENARIOS) {
   for (let d = 0; d < sc.days; d++) {
     const b = structuredClone(a); neutraliseState(b); // undo ONLY the approved engine changes
     const x = old.simulateDay(a, op), y = simulateDay(b, nb);
-    const sx = JSON.stringify([x.day, x.summary, x.events, x.state]), sy = JSON.stringify([y.day, y.summary, y.events, y.state]);
+    const sx = JSON.stringify([x.day, x.summary, x.events, x.state]), sy = JSON.stringify(normaliseOutput([y.day, y.summary, y.events, y.state]));
     if (sx !== sy) fail(`${sc.name} day ${x.day} ${firstDiff(sx, sy)}`);
     a = x.state; days++;
   }
@@ -54,7 +54,7 @@ if (ms !== ns) fail('migrationState ' + firstDiff(ms, ns));
 
 const fp = rulesFingerprint(), now = '2026-11-01T00:00:00.000Z';
 const o = oldRun.projectDaily(structuredClone(main), structuredClone(world), clim, oldParams, fp.engine, fp.params);
-const n = projectDaily(structuredClone(main), structuredClone(world), clim, bundle, fp, DEFAULT_REFS, now);
+const n = normaliseOutput(projectDaily(structuredClone(main), structuredClone(world), clim, bundle, fp, DEFAULT_REFS, now));
 // Normalise ONLY the intentional save-mapping differences of the old output (see tests/lib/v6-normalise.ts).
 normaliseV6Projection(o, now);
 // #11 rules registry: the new save records its rules history (activation at Day15). This is the only addition to

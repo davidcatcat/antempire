@@ -31,8 +31,9 @@ import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from '
  *   v2-review.14 individual route memory and local exploration (#8; species switch navigation.individual_route_memory)
  *   v2-review.15 Day0 initialization (engine/initialization.ts): states may start at Day0; Day14 route evidence
  *                is never given to workers that eclosed in the simulation (Day14 outputs byte-identical)
+ *   v2-review.16 death diagnostics: queen_death names its active triggers and the hazard that applied; worker_death records its competing hazards (no probability or draw changed)
  */
-export const ENGINE_VERSION = 'antempire.v2-review.15-day0-initialization';
+export const ENGINE_VERSION = 'antempire.v2-review.16-death-diagnostics';
 /** Implementation of that behaviour (bumped for refactors that keep results byte-identical). */
 export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
 /**
