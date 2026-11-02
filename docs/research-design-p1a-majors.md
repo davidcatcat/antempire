@@ -116,9 +116,11 @@ become_major = eligible AND window_protein_received ≥ theta_eff
 
 ### 5.4 嗉囊載量與液體搬運
 
-**(a) 嗉囊**：`crop_capacity_major = crop_capacity × 3.25`。
-- 依據：本種野外實測，小工蟻嗉囊攜帶蜂蜜 0.08 ± 0.01 mg、兵蟻 0.26 ± 0.02 mg（R132）。
-- 分類：**倍率為文獻支持（本種）**；但這是「實際帶回的量」，不是最大容量，且濃蜂蜜會限制裝載；`crop_capacity` 本身（0.8 遊戲份）仍是遊戲假設。
+**(a) 嗉囊**（2026-11-03 依 Issue #43 審查修正）：區分三個不同的量，**不得混用**：
+1. **實際帶回的液體量**（本種實測）：特定蜂蜜實驗中，小工蟻 0.08 ± 0.01 mg、兵蟻 0.26 ± 0.02 mg（R132），平均比 3.25。這是那個實驗條件（濃蜂蜜、特定距離與競爭情境）下的**搬運觀察值**。
+2. **嗉囊最大容量**：本種**沒有量測**（`crop_capacity_major = null`，`crop_capacity` 0.8 份本身也是遊戲假設）。3.25 **不是**最大容量的倍率。
+3. **外掛液滴**：見 (b)，另一種搬運方式。
+- 實作建議：以 `observed_load_ratio_major_minor = 3.25`（文獻支持，本種，R132，**只作驗證型態 V7**）檢查模擬中的實際搬運量比；最大容量用情境比較（例如與體重比例縮放、與攜帶量比相同、或不設差異），標示遊戲假設，不以 3.25 直接設定容量。
 
 **(b) 頭胸下外掛液滴（social bucket）**：預設**關閉**（功能開關 `external_droplet_enabled = false`）。
 - 本種確有此行為：兵蟻外掛液滴約 0.86 mg，總載量最多 1.88 mg；在競爭者標記區 21/30 次出現，中性區 2/30 次（R132）。
@@ -153,7 +155,7 @@ become_major = eligible AND window_protein_received ≥ theta_eff
   1. Gompertz：`A_major = 0.0025/日`、`B_major = 0.044/日`（第三階段擬合，非原作者數值；n 小）；
   2. 14 日區間查表：每日死亡率 0.011、0.006、0、0.023、0.021、0.128（文獻支持，但有階梯狀痕跡）。
 - 溫度修正：與 minor 共用 `Q10_life`（第三階段為 null；候選 1.93 是非本種 *S. invicta*）。
-- 飢餓：不另設 major 飢餓參數；major 較大的嗉囊與（若有）體儲備在現行飢餓機制中自然生效。非本種 *P. ryukyuensis* 的非 replete major 斷食存活約為 minor 的 1.7–1.9 倍（R260），只當驗證方向。
+- 飢餓（2026-11-03 依 Issue #43 審查修正）：原稿說「較大的嗉囊在現行飢餓機制中自然生效」是錯的——**現行引擎的工蟻飢餓風險只讀全巢缺糖天數**（Issue #43 A08），與個體嗉囊無關，所以嗉囊大小目前**不會**影響任何個體的飢餓。這要等工作包 C（#45：個體營養區室、個體飢餓）完成後才可能成立；在那之前不得宣稱大工蟻的飢餓存活已被模擬。非本種 *P. ryukyuensis* 的非 replete major 斷食存活約為 minor 的 1.7–1.9 倍（R260），只當驗證方向。
 - 小巢工蟻殺兵蟻（本種 R167 定性）：沒有機制資料，**不實作**，記錄為已知缺口。
 
 ---
@@ -174,7 +176,8 @@ become_major = eligible AND window_protein_received ≥ theta_eff
 | `pupa_duration_major_factor` | null（若必須運作＝1，遊戲假設） | — | — |
 | `cost_ratio_major` | 範圍 4.7–6.3（澳洲 11.4）；選值待裁示 | 範圍：文獻支持（本種）；選值：遊戲假設 | R97、R98、R132 |
 | `metabolic_scaling_exponent_b` | 0.67–1.0；選值待裁示 | 一般生理學 | R272 |
-| `crop_capacity_major_multiplier` | 3.25 | 文獻支持（本種，攜帶量） | R132 |
+| `crop_capacity_major` | null | 本種沒有最大容量量測；以情境比較（遊戲假設） | — |
+| `observed_load_ratio_major_minor` | 3.25 | 文獻支持（本種，特定蜂蜜實驗的實際攜帶量比；**只作驗證，不是容量**） | R132 |
 | `external_droplet_enabled` | false | — | R132（行為存在，觸發條件未建模） |
 | `external_droplet_units` | null（本種 ≈ 0.86 mg 外掛，需換算為遊戲份） | 文獻支持（本種）；換算：遊戲假設 | R132 |
 | `replete_storage_enabled` | false（**不可**改為 true，除非有本種證據） | — | R260 |
@@ -200,7 +203,7 @@ become_major = eligible AND window_protein_received ≥ theta_eff
 | V4 | 大巢、食物充足、28°C 左右 | 新羽化中 major 比例落在數 % 到二十餘 % 的量級（R94 11.86%；R97 野外 0.06–0.25） | 本種 |
 | V5 | 加入／移走成年 major（在模型中做對照實驗，不動正式存檔） | 移走後新 major 增加、加入後減少 | 非本種 R174、R213 |
 | V6 | 液體餌 vs 需要切開的食物 | 受招募者中 major 比例：液體低、需切開者高 | 本種 R132（1–8%）、R98（約 30%） |
-| V7 | major 嗉囊攜帶量 | ≈ minor 的 3.25 倍 | 本種 R132 |
+| V7 | 相同條件下 major／minor 的實際攜帶量比 | 約 3.25（只在相近實驗條件下比較） | 本種 R132 |
 | V8 | 28°C 食物無限的存活 | major 中位約為 minor 的 2–2.5 倍 | 本種 R94 |
 | V9 | 斷食 | major 存活長於 minor（方向） | 非本種 R260 |
 
@@ -232,7 +235,7 @@ become_major = eligible AND window_protein_received ≥ theta_eff
 | **PR-0（文件）** | `docs/references.md` **新增** R260–R275 段落；R97、R132、R98 的補讀數字；R173 勘誤（新增，不改舊列） | 無 | 文件檢查 |
 | **PR-A（資料結構）** | 成蟲新增 `caste`（既有個體一律 `null`、`legacy_unknown`）、幼體新增敏感期欄位；`major_worker_production_enabled` 仍為 false | 數值輸出應相同，但存檔多了欄位 → 依 §6 視為規則更新；證明除新增欄位外逐位元組相同 | golden 測試（去除新欄位後比對）、`check:saves` |
 | **PR-B（品級決定與發育成本）** | §5.1、§5.2；開關改 true | 有 | 多種子 × 多日 × 極端情境（V1–V5）；記錄不產 major 的結果 |
-| **PR-C（成蟲生理）** | §5.3 代謝、§5.4a 嗉囊、§5.6 存活 | 有 | V7–V9；守恆檢查（嗉囊糖 ⊆ 蟻群糖帳） |
+| **PR-C（成蟲生理；依賴工作包 C 的個體營養）** | §5.3 代謝、§5.4a 嗉囊、§5.6 存活 | 有 | V7–V9；守恆檢查（嗉囊糖 ⊆ 蟻群糖帳） |
 | **PR-D（行為）** | §5.5 閾值、探索、留跡、切割、育幼（依玩家裁示） | 有 | V6；比較單／雙費洛蒙招募模型下的結果 |
 | PR-E（可選） | 外掛液滴（§5.4b），需先有競爭者標記的生態來源 | 有 | 另案 |
 
