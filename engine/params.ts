@@ -84,6 +84,7 @@ export function resolveSpecies(file: ParamFile) {
     },
     development: section(file, 'development', ['reference_c', 'egg_days', 'larva_days', 'pupa_days', 'q10', 'min_temp_factor', 'max_temp_factor', 'larva_min_nutrition_growth_factor'] as const),
     metabolism: section(file, 'metabolism', ['reference_c', 'q10'] as const),
+    nutrition_rules: { egg_laying_settles_crops: bool(file, 'nutrition.egg_laying_settles_crops') },
     nutrition: section(file, 'nutrition', ['worker_sugar_daily', 'worker_protein_daily', 'queen_sugar_daily', 'queen_protein_daily', 'larva_sugar_daily', 'larva_protein_daily', 'egg_laying_protein_cost', 'egg_laying_sugar_cost', 'max_sugar_store', 'max_protein_store', 'store_capacity_baseline_workers', 'sugar_store_per_extra_worker', 'protein_store_per_extra_worker', 'ration_gap_threshold'] as const),
     starvation: section(file, 'starvation', ['queen_egg_pause_days', 'worker_mortality_starts_days', 'larva_mortality_starts_days', 'worker_daily_hazard_base', 'worker_daily_hazard_slope', 'larva_daily_hazard_base', 'larva_daily_hazard_slope', 'queen_hazard_after_days', 'queen_daily_hazard', 'queen_zero_worker_hazard_after_days', 'queen_zero_worker_starved_daily_hazard', 'larva_daily_hazard_cap', 'worker_starvation_hazard_cap'] as const),
     brood_care: section(file, 'brood_care', ['unattended_larva_max_days', 'unattended_egg_max_days', 'unattended_pupa_max_days'] as const),

@@ -159,3 +159,15 @@ Day14 權威已知卵：E001／E002／E003／E004／E005 分別經過 **12／6�
   - 詳見 `reports/rules-update-v12-review.md`。沒有為任何結果回調參數。
 - **待 Owner 決定**：三隻「舊傷」要不要視為永久。報告附有「假設視為永久」的診斷結果，未改參數。
 - **引擎行為版本**：`antempire.v2-review.12-injury-types`；`tests/rules-isolation.test.ts`（倍率回到 1、遷移開關關閉）重現 v11 的全部 28 個情境；`tests/differential.test.ts` 證明關閉後的遷移與 v6 逐位元組相同。
+
+## 2026-11-02 規則更新 v2-review.13：產卵耗糖同時從嗉囊扣除（錯誤修正；Owner 審閱後才合併）
+
+- **錯誤**：蟻后產卵時 `queen.ts` 只從蟻群糖帳扣除 `egg_laying_sugar_cost`，沒有同時從工蟻嗉囊扣除。代謝與儲存溢出都有用 `settleCrops` 扣嗉囊，產卵卻沒有。因此產卵日之後，「工蟻嗉囊中的糖」可能大於「蟻群糖帳」，違反「嗉囊糖 ⊆ 糖帳」的守恆檢查。
+- **為什麼以前沒發現**：既有的 `foraging-physics`、`save-counters` 只檢查一個種子，v12 的那條軌跡剛好沒有觸發。20 種子 × 120 日掃描顯示 v12 有 155 天違反（其中 28 天是產卵當天，其餘是之後尚未被消耗的部分）。開發 #8（個體路線記憶）時，新的軌跡在預設種子觸發了它。
+- **修正**：產卵扣糖時同樣呼叫 `settleCrops`。數值都沒有改；這不是新的生物學機制。開關 `nutrition.egg_laying_settles_crops`（false＝v2-review.12，只供隔離證明）。
+- **影響（診斷，不是目標）**：
+  - 違反天數 155 → 0。
+  - 20 種子的滅巢 1/20 → 1/20；Day134 工蟻 0/12/23 → 0/12/22。
+  - 產卵 464 → 467；糖收入 2766.6 → 2802.5，蛋白 863.0 → 898.2（嗉囊狀態不同，改變之後的交哺與軌跡）。
+  - 詳見 `reports/rules-update-v13-egg-crop-settle.json`。
+- **引擎行為版本**：`antempire.v2-review.13-egg-sugar-settles-crops`；`tests/rules-isolation.test.ts` 關閉開關重現 v12 的 28 個情境；新增 `tests/crop-ledger.test.ts` 每天檢查 20 種子 × 120 日。

@@ -1,0 +1,708 @@
+{
+  "schema": "antempire.rules-update.v13-egg-crop-settle",
+  "v13_engine": "antempire.v2-review.13-egg-sugar-settles-crops",
+  "official_day14_advanced": false,
+  "note": "Diagnostic, not a target; nothing was tuned.",
+  "summary_20_seeds": {
+    "v12": {
+      "extinct_by_day134": 1,
+      "day134_workers_min_median_max": [
+        0,
+        12,
+        23
+      ],
+      "day134_queens_alive": 18,
+      "eggs_laid": 464,
+      "sugar_income": 2766.5614,
+      "protein_income": 862.9496,
+      "crop_above_ledger_days": 155
+    },
+    "v13": {
+      "extinct_by_day134": 1,
+      "day134_workers_min_median_max": [
+        0,
+        12,
+        22
+      ],
+      "day134_queens_alive": 18,
+      "eggs_laid": 467,
+      "sugar_income": 2802.4806,
+      "protein_income": 898.1576,
+      "crop_above_ledger_days": 0
+    }
+  },
+  "scenarios": [
+    {
+      "scenario": "baseline-seed-15032026",
+      "days": 120,
+      "v12": {
+        "queen": 1,
+        "workers": 23,
+        "first_extinct_day": null,
+        "eggs_laid": 37,
+        "sugar_income": 194.0774,
+        "protein_income": 57.2428,
+        "trophallaxis_events": 887,
+        "crop_above_ledger_days": 0
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 22,
+        "first_extinct_day": null,
+        "eggs_laid": 34,
+        "sugar_income": 193.7668,
+        "protein_income": 49.7324,
+        "trophallaxis_events": 869,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "baseline-seed-15032027",
+      "days": 120,
+      "v12": {
+        "queen": 0,
+        "workers": 0,
+        "first_extinct_day": 51,
+        "eggs_laid": 1,
+        "sugar_income": 1.0395,
+        "protein_income": 18.6727,
+        "trophallaxis_events": 4,
+        "crop_above_ledger_days": 0
+      },
+      "v13": {
+        "queen": 0,
+        "workers": 0,
+        "first_extinct_day": 51,
+        "eggs_laid": 1,
+        "sugar_income": 1.0395,
+        "protein_income": 18.6727,
+        "trophallaxis_events": 4,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "baseline-seed-15032028",
+      "days": 120,
+      "v12": {
+        "queen": 1,
+        "workers": 16,
+        "first_extinct_day": null,
+        "eggs_laid": 32,
+        "sugar_income": 149.6123,
+        "protein_income": 54.7181,
+        "trophallaxis_events": 724,
+        "crop_above_ledger_days": 0
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 16,
+        "first_extinct_day": null,
+        "eggs_laid": 32,
+        "sugar_income": 152.5744,
+        "protein_income": 49.4443,
+        "trophallaxis_events": 754,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "baseline-seed-15032029",
+      "days": 120,
+      "v12": {
+        "queen": 1,
+        "workers": 6,
+        "first_extinct_day": null,
+        "eggs_laid": 14,
+        "sugar_income": 117.624,
+        "protein_income": 23.9888,
+        "trophallaxis_events": 463,
+        "crop_above_ledger_days": 11
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 4,
+        "first_extinct_day": null,
+        "eggs_laid": 15,
+        "sugar_income": 113.0934,
+        "protein_income": 27.1893,
+        "trophallaxis_events": 481,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "baseline-seed-15032030",
+      "days": 120,
+      "v12": {
+        "queen": 1,
+        "workers": 12,
+        "first_extinct_day": null,
+        "eggs_laid": 23,
+        "sugar_income": 138.856,
+        "protein_income": 36.8034,
+        "trophallaxis_events": 660,
+        "crop_above_ledger_days": 32
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 12,
+        "first_extinct_day": null,
+        "eggs_laid": 23,
+        "sugar_income": 140.704,
+        "protein_income": 36.8034,
+        "trophallaxis_events": 671,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "baseline-seed-15032031",
+      "days": 120,
+      "v12": {
+        "queen": 1,
+        "workers": 18,
+        "first_extinct_day": null,
+        "eggs_laid": 34,
+        "sugar_income": 154.0232,
+        "protein_income": 43.6077,
+        "trophallaxis_events": 779,
+        "crop_above_ledger_days": 0
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 18,
+        "first_extinct_day": null,
+        "eggs_laid": 35,
+        "sugar_income": 165.4336,
+        "protein_income": 56.504,
+        "trophallaxis_events": 845,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "baseline-seed-15032032",
+      "days": 120,
+      "v12": {
+        "queen": 1,
+        "workers": 18,
+        "first_extinct_day": null,
+        "eggs_laid": 23,
+        "sugar_income": 147.8858,
+        "protein_income": 62.1708,
+        "trophallaxis_events": 765,
+        "crop_above_ledger_days": 0
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 18,
+        "first_extinct_day": null,
+        "eggs_laid": 23,
+        "sugar_income": 149.591,
+        "protein_income": 62.7332,
+        "trophallaxis_events": 764,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "baseline-seed-15032033",
+      "days": 120,
+      "v12": {
+        "queen": 1,
+        "workers": 9,
+        "first_extinct_day": null,
+        "eggs_laid": 20,
+        "sugar_income": 137.8555,
+        "protein_income": 43.7444,
+        "trophallaxis_events": 703,
+        "crop_above_ledger_days": 0
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 9,
+        "first_extinct_day": null,
+        "eggs_laid": 20,
+        "sugar_income": 138.0469,
+        "protein_income": 47.8646,
+        "trophallaxis_events": 706,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "baseline-seed-15032034",
+      "days": 120,
+      "v12": {
+        "queen": 1,
+        "workers": 10,
+        "first_extinct_day": null,
+        "eggs_laid": 25,
+        "sugar_income": 137.2742,
+        "protein_income": 61.4411,
+        "trophallaxis_events": 642,
+        "crop_above_ledger_days": 0
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 10,
+        "first_extinct_day": null,
+        "eggs_laid": 25,
+        "sugar_income": 138.3512,
+        "protein_income": 48.0741,
+        "trophallaxis_events": 669,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "baseline-seed-15032035",
+      "days": 120,
+      "v12": {
+        "queen": 1,
+        "workers": 12,
+        "first_extinct_day": null,
+        "eggs_laid": 25,
+        "sugar_income": 149.7935,
+        "protein_income": 33.6747,
+        "trophallaxis_events": 723,
+        "crop_above_ledger_days": 0
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 9,
+        "first_extinct_day": null,
+        "eggs_laid": 23,
+        "sugar_income": 151.9751,
+        "protein_income": 31.5843,
+        "trophallaxis_events": 733,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "baseline-seed-15032036",
+      "days": 120,
+      "v12": {
+        "queen": 1,
+        "workers": 12,
+        "first_extinct_day": null,
+        "eggs_laid": 26,
+        "sugar_income": 146.2366,
+        "protein_income": 53.2027,
+        "trophallaxis_events": 644,
+        "crop_above_ledger_days": 24
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 12,
+        "first_extinct_day": null,
+        "eggs_laid": 26,
+        "sugar_income": 145.6713,
+        "protein_income": 57.7949,
+        "trophallaxis_events": 693,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "baseline-seed-15032037",
+      "days": 120,
+      "v12": {
+        "queen": 1,
+        "workers": 12,
+        "first_extinct_day": null,
+        "eggs_laid": 26,
+        "sugar_income": 152.812,
+        "protein_income": 64.0817,
+        "trophallaxis_events": 767,
+        "crop_above_ledger_days": 0
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 12,
+        "first_extinct_day": null,
+        "eggs_laid": 26,
+        "sugar_income": 150.7446,
+        "protein_income": 64.3953,
+        "trophallaxis_events": 784,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "baseline-seed-15032038",
+      "days": 120,
+      "v12": {
+        "queen": 1,
+        "workers": 19,
+        "first_extinct_day": null,
+        "eggs_laid": 25,
+        "sugar_income": 159.6544,
+        "protein_income": 36.8954,
+        "trophallaxis_events": 774,
+        "crop_above_ledger_days": 0
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 12,
+        "first_extinct_day": null,
+        "eggs_laid": 25,
+        "sugar_income": 156.3284,
+        "protein_income": 34.5318,
+        "trophallaxis_events": 722,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "baseline-seed-15032039",
+      "days": 120,
+      "v12": {
+        "queen": 1,
+        "workers": 10,
+        "first_extinct_day": null,
+        "eggs_laid": 16,
+        "sugar_income": 148.5375,
+        "protein_income": 38.1667,
+        "trophallaxis_events": 761,
+        "crop_above_ledger_days": 0
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 14,
+        "first_extinct_day": null,
+        "eggs_laid": 19,
+        "sugar_income": 158.8807,
+        "protein_income": 44.7884,
+        "trophallaxis_events": 791,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "baseline-seed-15032040",
+      "days": 120,
+      "v12": {
+        "queen": 1,
+        "workers": 19,
+        "first_extinct_day": null,
+        "eggs_laid": 35,
+        "sugar_income": 180.9663,
+        "protein_income": 46.5701,
+        "trophallaxis_events": 870,
+        "crop_above_ledger_days": 0
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 22,
+        "first_extinct_day": null,
+        "eggs_laid": 38,
+        "sugar_income": 186.8376,
+        "protein_income": 55.769,
+        "trophallaxis_events": 926,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "baseline-seed-15032041",
+      "days": 120,
+      "v12": {
+        "queen": 0,
+        "workers": 1,
+        "first_extinct_day": null,
+        "eggs_laid": 7,
+        "sugar_income": 69.6849,
+        "protein_income": 4.7867,
+        "trophallaxis_events": 327,
+        "crop_above_ledger_days": 0
+      },
+      "v13": {
+        "queen": 0,
+        "workers": 1,
+        "first_extinct_day": null,
+        "eggs_laid": 7,
+        "sugar_income": 70.4659,
+        "protein_income": 4.7867,
+        "trophallaxis_events": 336,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "baseline-seed-15032042",
+      "days": 120,
+      "v12": {
+        "queen": 1,
+        "workers": 10,
+        "first_extinct_day": null,
+        "eggs_laid": 21,
+        "sugar_income": 149.2285,
+        "protein_income": 30.4889,
+        "trophallaxis_events": 687,
+        "crop_above_ledger_days": 0
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 10,
+        "first_extinct_day": null,
+        "eggs_laid": 21,
+        "sugar_income": 150.8581,
+        "protein_income": 60.3799,
+        "trophallaxis_events": 671,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "baseline-seed-15032043",
+      "days": 120,
+      "v12": {
+        "queen": 1,
+        "workers": 16,
+        "first_extinct_day": null,
+        "eggs_laid": 26,
+        "sugar_income": 138.1341,
+        "protein_income": 65.3982,
+        "trophallaxis_events": 694,
+        "crop_above_ledger_days": 50
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 16,
+        "first_extinct_day": null,
+        "eggs_laid": 26,
+        "sugar_income": 143.2665,
+        "protein_income": 60.1186,
+        "trophallaxis_events": 709,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "baseline-seed-15032044",
+      "days": 120,
+      "v12": {
+        "queen": 1,
+        "workers": 17,
+        "first_extinct_day": null,
+        "eggs_laid": 25,
+        "sugar_income": 149.2787,
+        "protein_income": 40.5467,
+        "trophallaxis_events": 679,
+        "crop_above_ledger_days": 38
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 17,
+        "first_extinct_day": null,
+        "eggs_laid": 25,
+        "sugar_income": 149.5266,
+        "protein_income": 40.954,
+        "trophallaxis_events": 664,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "baseline-seed-15032045",
+      "days": 120,
+      "v12": {
+        "queen": 1,
+        "workers": 12,
+        "first_extinct_day": null,
+        "eggs_laid": 23,
+        "sugar_income": 143.987,
+        "protein_income": 46.748,
+        "trophallaxis_events": 669,
+        "crop_above_ledger_days": 0
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 12,
+        "first_extinct_day": null,
+        "eggs_laid": 23,
+        "sugar_income": 145.325,
+        "protein_income": 46.0367,
+        "trophallaxis_events": 670,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "no-food-60",
+      "days": 60,
+      "v12": {
+        "queen": 0,
+        "workers": 0,
+        "first_extinct_day": 42,
+        "eggs_laid": 0,
+        "sugar_income": 0,
+        "protein_income": 0,
+        "trophallaxis_events": 0,
+        "crop_above_ledger_days": 0
+      },
+      "v13": {
+        "queen": 0,
+        "workers": 0,
+        "first_extinct_day": 42,
+        "eggs_laid": 0,
+        "sugar_income": 0,
+        "protein_income": 0,
+        "trophallaxis_events": 0,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "sugar-only-1.5x-60",
+      "days": 60,
+      "v12": {
+        "queen": 1,
+        "workers": 18,
+        "first_extinct_day": null,
+        "eggs_laid": 24,
+        "sugar_income": 84.2798,
+        "protein_income": 39.7428,
+        "trophallaxis_events": 409,
+        "crop_above_ledger_days": 0
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 18,
+        "first_extinct_day": null,
+        "eggs_laid": 24,
+        "sugar_income": 85.8798,
+        "protein_income": 39.7428,
+        "trophallaxis_events": 409,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "abundant-30",
+      "days": 30,
+      "v12": {
+        "queen": 1,
+        "workers": 15,
+        "first_extinct_day": null,
+        "eggs_laid": 11,
+        "sugar_income": 41.5474,
+        "protein_income": 32.24,
+        "trophallaxis_events": 208,
+        "crop_above_ledger_days": 0
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 15,
+        "first_extinct_day": null,
+        "eggs_laid": 11,
+        "sugar_income": 41.259,
+        "protein_income": 32.9768,
+        "trophallaxis_events": 218,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "orphan-larvae-10",
+      "days": 10,
+      "v12": {
+        "queen": 0,
+        "workers": 0,
+        "first_extinct_day": 15,
+        "eggs_laid": 0,
+        "sugar_income": 0,
+        "protein_income": 0,
+        "trophallaxis_events": 0,
+        "crop_above_ledger_days": 0
+      },
+      "v13": {
+        "queen": 0,
+        "workers": 0,
+        "first_extinct_day": 15,
+        "eggs_laid": 0,
+        "sugar_income": 0,
+        "protein_income": 0,
+        "trophallaxis_events": 0,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "workerless-queen-starved-20",
+      "days": 20,
+      "v12": {
+        "queen": 0,
+        "workers": 0,
+        "first_extinct_day": 17,
+        "eggs_laid": 0,
+        "sugar_income": 0,
+        "protein_income": 0,
+        "trophallaxis_events": 0,
+        "crop_above_ledger_days": 0
+      },
+      "v13": {
+        "queen": 0,
+        "workers": 0,
+        "first_extinct_day": 17,
+        "eggs_laid": 0,
+        "sugar_income": 0,
+        "protein_income": 0,
+        "trophallaxis_events": 0,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "high-search-scout-5",
+      "days": 5,
+      "v12": {
+        "queen": 1,
+        "workers": 14,
+        "first_extinct_day": null,
+        "eggs_laid": 0,
+        "sugar_income": 0,
+        "protein_income": 0,
+        "trophallaxis_events": 0,
+        "crop_above_ledger_days": 0
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 14,
+        "first_extinct_day": null,
+        "eggs_laid": 0,
+        "sugar_income": 0,
+        "protein_income": 0,
+        "trophallaxis_events": 0,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "workers-100-30",
+      "days": 30,
+      "v12": {
+        "queen": 1,
+        "workers": 34,
+        "first_extinct_day": null,
+        "eggs_laid": 3,
+        "sugar_income": 80.0744,
+        "protein_income": 25.7954,
+        "trophallaxis_events": 423,
+        "crop_above_ledger_days": 7
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 34,
+        "first_extinct_day": null,
+        "eggs_laid": 3,
+        "sugar_income": 80.1191,
+        "protein_income": 25.7954,
+        "trophallaxis_events": 423,
+        "crop_above_ledger_days": 0
+      }
+    },
+    {
+      "scenario": "workers-1000-3",
+      "days": 3,
+      "v12": {
+        "queen": 1,
+        "workers": 989,
+        "first_extinct_day": null,
+        "eggs_laid": 0,
+        "sugar_income": 4.39,
+        "protein_income": 18.246,
+        "trophallaxis_events": 22,
+        "crop_above_ledger_days": 0
+      },
+      "v13": {
+        "queen": 1,
+        "workers": 989,
+        "first_extinct_day": null,
+        "eggs_laid": 0,
+        "sugar_income": 4.39,
+        "protein_income": 18.246,
+        "trophallaxis_events": 22,
+        "crop_above_ledger_days": 0
+      }
+    }
+  ]
+}

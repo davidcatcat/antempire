@@ -347,7 +347,9 @@
       "description": "當日糖或蛋白滿足率低於此值即累計一天缺口",
       "legacy_path": null,
       "moved_from_code": "sim/day_engine.cjs consume(): sFraction<.995（原寫死於程式，數值原樣搬移，未修改）"
-    }
+    },
+    "egg_laying_settles_crops": true,
+    "egg_laying_settles_crops_note": "錯誤修正開關（v2-review.13）：true＝蟻后產卵消耗的糖同時從工蟻嗉囊扣除（與代謝、溢出相同，用 settleCrops），使『嗉囊中的糖 ⊆ 蟻群糖帳』永遠成立。false＝v2-review.12 以前：產卵只扣帳、不扣嗉囊，產卵日之後嗉囊可能超過帳面（20 種子 × 120 日有 155 天違反），只供隔離證明使用。這是程式錯誤修正，不是新的生物學機制；數值都沒有改。"
   },
   "starvation": {
     "queen_egg_pause_days": {
