@@ -10,7 +10,7 @@
  *     escape while waiting, no recruits, no time left;
  *  4. time consistency: every team member is at the site at the event minute and walks home afterwards;
  *  5. joint retrieval conserves the captured prey exactly and every carried portion traces to its HUNT batch;
- *  6. whole-day level: reversing the colony's worker order leaves every hunt identical; multi-day run keeps
+ *  6. whole-day level: reversing the colony's worker order leaves every hunt identical; 20 seeds × 120 days keep
  *     the lock and the time consistency on every day;
  *  7. a leftover carcass is taken first; only workers left empty-handed then hunt, as one window;
  *  8. v2-review.10 team cap (predation.large_prey_max_team): teams never exceed it, joiners are drawn at
@@ -164,10 +164,13 @@ function invariants(events: SimEvent[], label: string) {
 }
 let hunts = 0, recruitHunts = 0;
 {
-  let s: LegacyV2State = fixture();
+  // All 20 fixed seeds × 120 days (a single seed may contain no hunt at all, which would leave the checks empty).
   const b = bundle();
-  for (let d = 0; d < 120; d++) { const o = simulateDay(s, b); invariants(o.events, 'Day' + o.day); hunts += o.events.filter((e) => e.type === 'insect_predation').length; recruitHunts += o.events.filter((e) => e.type === 'hunt_recruitment').length; s = o.state; }
-  ok(hunts > 0, 'game parameters: the 120-day baseline has hunts to check (' + hunts + ')');
+  for (let seed = 15032026; seed < 15032046; seed++) {
+    let s: LegacyV2State = fixture(); s.seed = seed;
+    for (let d = 0; d < 120; d++) { const o = simulateDay(s, b); invariants(o.events, `seed ${seed} Day${o.day}`); hunts += o.events.filter((e) => e.type === 'insect_predation').length; recruitHunts += o.events.filter((e) => e.type === 'hunt_recruitment').length; s = o.state; if (!s.population.workers.length) break; }
+  }
+  ok(hunts > 0, 'game parameters: the 20-seed × 120-day baseline has hunts to check (' + hunts + ')');
 }
 // 7. leftover carcass: workers take it first; only the empty-handed ones then search for live prey together
 {
@@ -231,4 +234,4 @@ let joinedEvents = 0;
   ok(joinedEvents > 0, 'the fixed seeds produce late joiners to check (' + joinedEvents + ')');
   ok(lateDays(false).every((ev) => !ev.some((e) => e.type === 'waiting_prey_joined')), 'switch off (v2-review.10): nobody joins a waiting prey');
 }
-console.log(JSON.stringify({ passed: true, checks: c.checks, late_joins: joinedEvents, baseline_120d_hunts: hunts, baseline_120d_hunt_recruitments: recruitHunts }, null, 2));
+console.log(JSON.stringify({ passed: true, checks: c.checks, late_joins: joinedEvents, baseline_20seeds_120d_hunts: hunts, baseline_20seeds_120d_hunt_recruitments: recruitHunts }, null, 2));

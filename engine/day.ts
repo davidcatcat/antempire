@@ -27,8 +27,9 @@ import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from '
  *                species switch predation.late_arrivals_join_waiting_prey)
  *   v2-review.12 injury types: abrasion heals, appendage damage is permanent, unrecorded type unchanged (owner
  *                request, #13 injury classification; Day15 migration reads the type from the injury records)
+ *   v2-review.13 bug fix: egg-laying sugar also leaves worker crops (crops stay a subset of the sugar ledger)
  */
-export const ENGINE_VERSION = 'antempire.v2-review.12-injury-types';
+export const ENGINE_VERSION = 'antempire.v2-review.13-egg-sugar-settles-crops';
 /** Implementation of that behaviour (bumped for refactors that keep results byte-identical). */
 export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
 /** The v2 engine only applies to states at or after the completed Day14 checkpoint. */
