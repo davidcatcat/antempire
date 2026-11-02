@@ -139,6 +139,11 @@ Day7→Day8，168→**192模擬小時**。既有F01蚜蟲清晨產少量可及�
 - [Day0 引擎修正與年度評估總報告（2026-11）](reports/day0-final-report-2026-11.md) — v16～v18 的修正、四季 × 五種創巢 × 20 種子結果、極端情境、尚未完成的機制；[研究與設計](docs/research-design-2026-11.md)
 - [P0-A 研究與設計：24 小時生態時鐘（逐時溫濕度與降雨事件、1440 分鐘事件時鐘、個體活動與休息、局部訊號；2026-11，未實作）](docs/research-design-p0a-24h-clock.md)
 - [第二階段：個體行為參數敏感度](reports/phase2-behaviour-review.md)（不挑選最佳值）與[活動時窗、一天之內換工作的研究與設計](docs/research-design-phase2-activity-tasks.md)
+- [工作包 C 設計：個體營養的實體食物區室與轉移（Issue #43 F01、A08；2026-11-03，未實作）](docs/design-wpc-food-compartments.md)
+- [P1-B 研究與設計：巢穴空間與引擎／畫面共用的花園空間資料（2026-11，未實作）](docs/research-design-p1b-nest-space.md)
+- [P1-A 研究與設計：大工蟻（形態、分化、營養成本、嗉囊與液體搬運、防衛與招募、存活；2026-11，未實作）](docs/research-design-p1a-majors.md)
+- [第三階段研究與設計：幼體發育溫度、工蟻與兵蟻壽命、蟻后批次產卵、食卵與幼體營養（2026-11，未實作）](docs/research-design-phase3-lifecycle.md)
+- **[統一需求與工作計畫](docs/requirements-and-plan.md)**（2026-11-02，以 Owner 最後確認的原則為準）、[產品願景（科學真實性最高原則）](docs/product-vision.md)、[授權與第三方程式碼規範](docs/licensing.md)、[Roadmap](docs/roadmap.md)、[現況審查](docs/status-audit-2026-11.md)、[開源模擬器對照](docs/oss-comparison-2026-11.md)、[可視化技術設計](docs/visualization-architecture.md)
 - [科學參考文獻](docs/references.md) — 研究出處及外推限制
 - [版本遷移紀錄](docs/migration-v2.md) — 舊故事如何不改寫地銜接新世界
 - [存檔規則](docs/save-rules.md) — 續玩、寫入、驗證與故障修復

@@ -434,3 +434,84 @@
 | R245 | Farji-Brener AG et al. (2018) *Insectes Soc.* 65:233–239. DOI 10.1007/s00040-018-0605-z | 經摘要工具 | b | 雨使葉片負載重 143% 並掉落；模擬雨聲與濕度使行走加速約 30% | *Atta cephalotes* |
 | R246 | Human KG et al. (1998) *Environ. Entomol.* 27:822–833. DOI 10.1093/ee/27.4.822 | 經摘要工具 | b | 日活動與土溫、氣溫、濕度的關係；物種間活動時間大量重疊 | *Linepithema humile* 等 |
 | R247 | Parton WJ, Logan JA (1981) *Agric. Meteorol.* 23:205–216. DOI 10.1016/0002-1571(81)90105-9 | 只核對書目 | 一般方法 | 日內氣溫：白天正弦、夜間指數 | 係數未讀，`null` |
+## 2026-11-02 P1-B 巢穴與空間（R290–R311；研究與設計，未改規則）
+
+> 用於 `docs/research-design-p1b-nest-space.md`；工作筆記 `reports/p1b-nest-space/literature-notes.md`。其他段落的編號（R189–R203 #34、R204–R227 #38、R228–R259 P0-A、R260–R275 P1-A）不重複。
+> **禁止套用**：R303、R304、R308 列出的是他種的深層地下巢與筏，只作反例。
+
+| ID | 文獻 | 物種／分級 | 讀取 | 用途 |
+|
+
+**R116 補充（新增，不改舊列）**：R116＝Tsuji & Win (2025) *Biology Open* 14:bio061976，DOI 10.1242/bio.061976（舊列缺作者與 DOI）。實驗室多巢、無兵蟻：相連的巢共享工蟻與食物，切斷連結後幼體生產崩潰；野外「巢常在約 1 m 內」只是定性描述。
+## 2026-11-02 P1-A 大工蟻（R260–R275；研究與設計，未改規則）
+
+> 用於 `docs/research-design-p1a-majors.md`；工作筆記 `reports/p1a-majors/literature-notes.md`。R189–R203（PR #34）、R204–R227（PR #38）、R228–R259（P0-A）在其他 PR；本段不重複編號。
+
+| ID | 文獻 | 讀取 | 分級 | 支持的內容 | 不可外推之處 |
+|---|---|---|---|---|---|
+| R260 | Tsuji K. (1990) Nutrient storage in the major workers of *Pheidole ryukyuensis*. *Appl. Entomol. Zool.* 25:283–287. DOI 10.1303/aez.25.283 | 頁面影像全文 | 非本種 | replete major 使 minor 斷食存活 31.3 vs 8.0 日；非 replete major 13.9 日；**作者觀察本種「顯然沒有 replete」** | 單一群、24°C；本種一句為個人觀察 |
+| R261 | Sempo G., Detrain C. (2010) *J. Insect Sci.* 10:3. DOI 10.1673/031.010.0301 | 全文 | 非本種 *P. pallidula* | major 活動 40–50%、minor ≈ 70%；改變比例時 major 不補位；replete major 最多 32%（引 R271） | 無女王實驗群 |
+| R262 | Sempo G., Detrain C. (2004) *Insectes Soc.* 51:48–54 | 經摘要工具 | 非本種 | major 做 minor 行為庫的 69%，含育幼；行為庫大小受觀察次數影響 | 數字未逐字核對 |
+| R263 | Detrain C. (1990) *Actes Coll. Insectes Soc.* 6:131–139 | 全文 | 非本種 | major 對路徑費洛蒙與觸角邀請的反應閾值較高；只在大型、搬不動的食物時被招募 | 實驗室 |
+| R264 | Detrain C., Pasteels J. M., Deneubourg J.-L. (1988) *Actes Coll. Insectes Soc.* 4:87–94 | 全文 | 非本種 | 路徑費洛蒙主要由 minor 產生；major 循跡較好；major 切斷獵物骨片、殺死入侵者 | 人工路徑 |
+| R265 | Detrain C., Pasteels J. M. (1991) *J. Insect Behav.* 4:157–176. DOI 10.1007/BF01054609 | 經摘要工具 | 非本種 | 同 R263（期刊版） | 未讀全文 |
+| R266 | Detrain C., Pasteels J. M. (1992) *Behav. Ecol. Sociobiol.* 29:405–412. DOI 10.1007/BF00170170 | 經摘要工具 | 非本種 | 兩形態共同防衛；防衛策略由招募者的基本行為湧現 | 未讀全文 |
+| R267 | Wilson E. O. (1984) *Behav. Ecol. Sociobiol.* 16:89–98 | 二手（經 R261、R97） | 非本種 | minor 少時 major 擴大行為庫（待命階級） | R261 指出抽樣偏差 |
+| R268 | Bonabeau E., Theraulaz G., Deneubourg J.-L. (1996) *Proc. R. Soc. B* 263:1565–1569. DOI 10.1098/rspb.1996.0229 | 經摘要工具 | 模型 | 固定反應閾值模型可重現 *Pheidole* 分工 | 閾值數值是模型值 |
+| R269 | Wheeler D. E., Nijhout H. F. (1983) *J. Insect Physiol.* 29:847–854. DOI 10.1016/0022-1910(83)90151-8 | 經摘要工具 | 非本種 *P. bicarinata* | 敏感期約終齡第 4–6 日；劑量高延後化蛹、低則提早 | 外用類似物，非自然營養 |
+| R270 | Passera L., Roncin E., Kaufmann B., Keller L. (1996) *Nature* 379:630–631. DOI 10.1038/379630a0 | 經摘要工具 | 非本種 *P. pallidula* | 接觸競爭群後兵蟻增加 | 與本種 R97 結果方向不同 |
+| R271 | Lachaud J.-P. et al. (1992) In Billen J. (ed.) *Biology and Evolution of Social Insects*, pp. 153–160 | 二手（經 R261、R116） | 非本種 | major 儲脂、replete 最多 32% | 未讀原文 |
+| R272 | Chown S. L. et al. (2007) *Funct. Ecol.* 21:282–290. DOI 10.1111/j.1365-2435.2007.01245.x | 經摘要工具 | 一般生理學 | 8 種多型蟻種內代謝縮放指數 0.67–1.0 | 不含本種 |
+| R273 | Mertl A. L., Sorenson M. D., Traniello J. F. A. (2010) *Insectes Soc.* 57:441–452. DOI 10.1007/s00040-010-0102-5 | 經摘要工具 | 非本種 | 招募越強的種，餌上 major 比例越高 | 種間比較 |
+| R274 | Lin Minghui（指導 B. Guénard），HKU Summer Research Fellowship 海報 F11（無日期，約 2021） | 全文（海報） | 本種？（未明寫） | major 比例 0/10/20/30% 時，30% 的取食率最高 | **未經審查**；時態混雜；只作定性參考 |
+| R275 | Creighton W. S., Creighton M. P. (1959)（*P. militicida*） | 二手／經摘要工具 | 非本種 | 只有 major 的巢也從不嘗試打開種子 | 二手 |
+
+**既有 ID 的補讀**（只新增說明，不改舊列；2026-11-02 P1-A 補讀）：
+- R97（Wills et al. 2014）全文：乾重（圖讀）major 390–1110 µg、minor 63–97 µg；major 比例 0.06–0.25；完全二態。
+- R99（Sarnat et al. 2015）：major 頭寬 1.10–1.54 mm、minor 0.50–0.61 mm。
+- R132（Dejean et al. 2005）：受招募者中兵蟻 1.07% vs 8.16%；嗉囊 0.08 vs 0.26 mg；外掛液滴。
+- R98／R107（Dejean et al. 2007）：minor 0.35 mg、major 1.65 mg；蛾卵招募中兵蟻約 28–32%，兵蟻咬開卵。
+- R116（Tsuji & Win 2025）：本種 200 隻 minor 鮮重 48.0 mg；文中把 major 當 replete 是屬級泛論。
+- R173（San Juan et al. 2025）：勘誤見 C6。
+
+**R173 勘誤（新增，不改舊列）**：舊列寫「本種攻擊火蟻時，死亡的多半是兵蟻」，與原文不符：原文那句出現在 *Pheidole* cf. *parva* 的段落，而且沒有說是哪一種的兵蟻。本種在 R173 的可用內容是：兵蟻把被小工蟻拉開的獵物或敵蟻切斷腳、觸角或斬首（定性）。〔設計文件衝突表 C6〕
+## 2026-11-02 第三階段：幼體發育溫度、成蟲死亡、蟻后批次產卵、食卵與幼體營養（R204–R227；研究與設計，未改規則）
+
+> 用於 `docs/research-design-phase3-lifecycle.md`；工作筆記 `reports/phase3-lifecycle/literature-notes.md`。
+> - 第二階段的 R189–R203 定義在 PR #34（尚未合併時，本段編號仍從 R204 起，不重複）。
+> - 「非本種」的數值一律不作為本種參數；本段沒有據此改任何參數。
+
+| ID | 文獻 | 讀取程度 | 分類 |
+|---|---|---|---|
+| R204 | Porter SD, Tschinkel WR (1985) Fire ant polymorphism: the ergonomics of brood production. *Behav. Ecol. Sociobiol.* 16:323–336 | 全文 | 非本種：*S. invicta* |
+| R205 | Tschinkel WR (1988) Social control of egg-laying rate in queens of the fire ant, *Solenopsis invicta*. *Physiol. Entomol.* 13:327–350 | 摘要頁影像 | 非本種 |
+| R206 | Tschinkel WR (1995) Stimulation of fire ant queen fecundity by a highly specific brood stage. *Ann. Entomol. Soc. Am.* 88:876–882 | 第 1 頁影像 | 非本種 |
+| R207 | Vargo EL (1989) On differential reproduction among queens in polygyne colonies of the fire ant *Solenopsis invicta*. *Actes Coll. Insectes Soc.* 5:109–116 | 全文（OCR） | 非本種 |
+| R208 | Tschinkel WR (1993a) Resource allocation, brood production and cannibalism during colony founding in the fire ant. *Behav. Ecol. Sociobiol.* 33:209–223 | 全文相關章節 | 非本種 |
+| R209 | Tschinkel WR (1993b) Sociometry and sociogenesis of colonies of the fire ant *Solenopsis invicta* during one annual cycle. *Ecol. Monogr.* 63:425–457 | 全文相關章節 | 非本種 |
+| R210 | Cassill DL, Tschinkel WR (1995) Allocation of liquid food to larvae via trophallaxis in colonies of the fire ant. *Anim. Behav.* 50:801–813 | 全文相關章節 | 非本種 |
+| R211 | Cassill DL, Tschinkel WR (1999) Effects of colony-level attributes on larval feeding in the fire ant. *Insectes Soc.* 46:261–266 | 摘要 | 非本種 |
+| R212 | Passera L (1973) Origine des soldats dans les sociétés de *Pheidole pallidula*. *Proc. VII Int. Congr. IUSSI*, London | 全文 | 非本種：同屬 *P. pallidula* |
+| R213 | Lillico-Ouachour A (2017) MSc thesis, McGill University（第 1 章 = Lillico-Ouachour & Abouheif 2017 *Curr. Opin. Insect Sci.* 19:43–51） | 全文相關章節 | 非本種：*Pheidole* 綜述 |
+| R214 | Rajakumar R et al. (2018) *Nature* 562:574–577. DOI 10.1038/s41586-018-0613-1 | 摘要 | 非本種：*Pheidole* |
+| R215 | Sorensen AA, Busch TM, Vinson SB (1983) *J. Kansas Entomol. Soc.* 56:140–150 | 經摘要工具 | 非本種：*S. invicta*；數字需要再核對 |
+| R216 | Huang MH, Wheeler DE, Fjerdingstad EJ (2013) *Mol. Ecol.* 22. DOI 10.1111/mec.12218 | 摘要 | 非本種：*Pheidole* 工蟻沒有卵巢 |
+| R217 | Schultner E, Gardner A, Karhunen M, Helanterä H (2014) *Am. Nat.* DOI 10.1086/678459 | 摘要 | 非本種：多種 *Formica* |
+| R218 | Warner MR, Lipponen J, Linksvayer TA (2017) bioRxiv 211573 | 摘要（預印本） | 非本種：*M. pharaonis* |
+| R219 | Kramer BH, Schaible R (2013) *PLoS ONE* 8:e61813 | 全文相關段落 | 一般；轉述 Calabi & Porter 1989 |
+| R220 | Jaimes-Nino LM, Oettler J (2025) *Biol. Rev.* DOI 10.1111/brv.70035 | 全文相關章節 | 一般；蟻后壽命資料的品質 |
+| R221 | Brière JF et al. (1999) *Environ. Entomol.* 28:22–29 | 摘要 | 一般方法 |
+| R222 | Colinet H et al. (2015) *Annu. Rev. Entomol.* 60:123–140 | 摘要（經工具） | 一般生理學 |
+| R223 | Penick CA, Tschinkel WR (2008) Thermoregulatory brood transport in the fire ant. *Insectes Soc.* 55. DOI 10.1007/s00040-008-0987-4 | 全文摘要 | 非本種 |
+| R224 | Asano E, Cassill DL (2012) *J. Theor. Biol.* 305:70–77 | 摘要 | 非本種，模型 |
+| R225 | Bar A, Shalev L, Scharf I (2022) *Biology* 11:1714 | 摘要 | 非本種：*Cataglyphis niger* |
+| R226 | Porter SD, Tschinkel WR (1993) Fire ant thermal preferences. *Behav. Ecol. Sociobiol.* 32:321–329 | 全文 | 非本種 |
+| R227 | Cassill DL, Tschinkel WR (2000) *J. Insect Physiol.* 46:933–939 | 全文 | 非本種 |
+
+**既有編號的附註**（第三階段新增附註，不改寫原有行）
+
+- R172 的措辭含糊：原文是「mortality is 50% at 77 days」，解讀為 77 日時存活 50%。
+- R94 有兩處內部不一致：
+  - 第 84 日的小工蟻存活數；
+  - 繁殖季節寫成「3～5 月」與「晚春到秋季」兩種。
+- GISD 的「壽命 78／38 日」不採用，理由見 `docs/research-design-phase3-lifecycle.md` §0。
