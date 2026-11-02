@@ -334,6 +334,16 @@
       "file": "species:pheidole-megacephala",
       "path": "starvation.queen_zero_worker_hazard_after_days",
       "description": "source label corrected: the day-14 start (and the 0.24 daily hazard) are game assumptions derived from Chang 1985's '2-3 weeks', not literature measurements; values unchanged, outputs identical to v2-review.18"
+    },
+    {
+      "rules_version": "antempire.v2-review.20-local-causality",
+      "approved_in": "Owner instruction 2026-11-03 (Issue #43 work package B; pending Owner review)",
+      "kind": "param_switch",
+      "file": "species:pheidole-megacephala",
+      "path": "activity.local_causality_v20",
+      "from": false,
+      "to": true,
+      "description": "Issue #43 F02–F05 and R11 on the individual timeline: trail followed one edge at a time with remote nodes perceived only on arrival (F02); a search interrupted by short-range prey recruitment is closed at the interruption (F03); a late arrival joins a held prey without needing another unreserved prey (F04); every outside interval is charged exactly once, including the finder returning to recruit (F05); routes learned on arrival and recruitment done at the end of unloading with nestmates actually in the nest then (R11). false = v2-review.19 behaviour (isolation proof only)."
     }
   ]
 }

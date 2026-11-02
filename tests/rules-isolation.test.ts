@@ -17,6 +17,7 @@
  *                tests/golden/v16-trace-sha256.json and the v16 Day0 golden
  *   v2-review.18 (lone-queen hazard from day 14; A4/A5 scenario files are not engine input) -> reproduces v17
  *   v2-review.19 (parameter source labels only) -> the current engine reproduces v18 unchanged
+ *   v2-review.20 (Issue #43 local-causality fixes; switch activity.local_causality_v20 off) -> reproduces v19
  * Every step also undoes the output normalisers of its own and later diagnostics-only versions.
  * Each step undoes its own changes AND every later step's, so step N is compared with the engine as it was.
  */
@@ -45,6 +46,7 @@ const STEPS = [
   { version: 'antempire.v2-review.17-activity-timeline', previousGolden: 'tests/golden/v16-trace-sha256.json' },
   { version: 'antempire.v2-review.18-founding-controls', previousGolden: 'tests/golden/v17-trace-sha256.json' },
   { version: 'antempire.v2-review.19-evaluation-corrections', previousGolden: 'tests/golden/v18-trace-sha256.json' },
+  { version: 'antempire.v2-review.20-local-causality', previousGolden: 'tests/golden/v19-trace-sha256.json' },
 ];
 const ORDER = STEPS.map((s) => s.version);
 const results: Record<string, string> = {};
