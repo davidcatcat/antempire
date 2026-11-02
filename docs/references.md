@@ -326,3 +326,49 @@
 - 趟與趟之間的休息、疲勞、連續幾次失敗後放棄；
 - 每日活動時窗：文獻指向「溫度門檻」而不是固定時鐘，v17 仍沿用 360 分鐘，列為待修；
 - 新羽化工蟻開始覓食的日數（只有 *P. dentata* 的資料，R153 待列）。
+
+## 2026-11-02 多巢、繁殖、生理、階級與花園生態（R153–R188；研究與設計，未改規則）
+
+> 用於 `docs/research-design-2026-11.md`。
+> - 分級：**a**＝本種實測，**b**＝其他物種（非本種），**c**＝查無。
+> - 讀取程度：全文／摘要／經摘要工具（數字使用前須再核對）。
+> - 本段沒有據此改任何參數。
+
+| ID | 研究 | 讀取 | 分級 | 支持的內容 | 不可外推之處 |
+|---|---|---|---|---|---|
+| R153 | Pietrek et al. (2021) *Oecologia* 195:667–676. DOI 10.1007/s00442-021-04859-1 | 摘要 | a | 肯亞草原侵入前緣約 50 m／年，擴散率隨工蟻密度上升而下降 | 草原；沒有巢網結構資料 |
+| R154 | Frazer & Holway (2025) *Biological Invasions* 27:139. DOI 10.1007/s10530-025-03598-1 | 全文 | a | 美國灌溉住宅區：聖地牙哥 114 ha，一年 +12 ha；工蟻失水 LT50 為 10.8 h（約 55% RH）、3.9 h（約 7% RH） | 加州氣候 |
+| R155 | Ellis & Robinson (2016) *Behavioral Ecology* 27:660–668. DOI 10.1093/beheco/arv205 | 全文 | b | 工蟻把姊妹巢當成食源：「拿」而不是「給」；63% 只單向搬運；淨流量流向不覓食的巢 | *Formica lugubris*，非本種 |
+| R156 | Ellis, Franks & Robinson (2014) *Behavioral Ecology* 25:1183–1191. DOI 10.1093/beheco/aru108 | 全文（重點段落） | b | 巢間食物交換是相鄰巢之間的局部行為，沒有全群計畫 | 同上 |
+| R157 | Heller, Ingram & Gordon (2008) *Insectes Sociaux* 55:397–403 | 全文 | b | 有路徑相連的巢 88% 收到標記糖，沒相連的 0%；兩週傳播 10～50 m | *Linepithema humile*，非本種 |
+| R158 | Heller & Gordon (2006) *Ecological Entomology* 31:499–510. DOI 10.1111/j.1365-2311.2006.00806.x | 全文 | b | 分巢距離 2.16±1.74 m；42% 的巢存在不到 1 個月；巢間每分鐘 20～35 隻；濕度改變會引發搬巢，食物移動不會 | 同上 |
+| R159 | Holway & Case (2000) *Animal Behaviour* 59:433–441 | 摘要 | b | 在食物附近建新巢，並把工蟻、幼體移向食物（與 R158 結論相反） | 同上 |
+| R160 | Ellis & Robinson (2015) *PLoS ONE* 10:e0138321 | 全文 | b | 新巢中不覓食的 60% 被放棄（覓食巢 36%）；巢間搬運工蟻 34±8.6、幼體 7.6±3.1 個／30 分鐘 | *F. lugubris*，非本種 |
+| R161 | Burns et al. (2021) *Journal of Animal Ecology* 90:143–152. DOI 10.1111/1365-2656.13198 | 摘要 | b | 食源被封鎖一年後，巢網分裂並改用新食源，巢的存活不受影響 | 同上 |
+| R162 | Hee et al. (2000) *Conservation Biology* 14:559–563 | 經摘要工具 | b | 沒有工蟻的蟻后 100% 死亡，有工蟻的 6%；10 隻工蟻的群會成長 | *L. humile*，非本種 |
+| R163 | Ulloa-Chacón & Cherix (1989) *Actes Coll. Ins. Soc.* 5:121–129 | 全文（OCR） | b | 幼蟲抑制蟻后產卵：沒有幼體時 10.2 粒／日，有二齡幼蟲時 3.5 粒／日 | *Wasmannia auropunctata*，非本種 |
+| R164 | Passera (1978)，經 Genzoni et al. (2023) *eLife* 附表引用 | 全文（附表） | b | *Pheidole pallidula* 的營養卵只由未交配蟻后產下 | 非本種，二手 |
+| R165 | Bizzell & Pull (2024) *Current Biology* 34:R848 | 摘要 | b | 蟻后吃掉感染的幼蟲後，產卵增加 55% | *Lasius* 獨立創巢蟻后，非本種 |
+| R166 | Fluker (1969) 博士論文，University of Hawaii（ScholarSpace） | 全文 | a | 20～22°C：卵 19～23、幼蟲 28～32、蛹 19～23 日，卵→成蟲共 66～78 日 | 空調實驗室，樣本數未給 |
+| R167 | Phillips (1933) 博士論文，University of Hawaii（常被引為 1934） | 全文 | a | 不同溫度類別的發育時間（52～65.5 日）；30°C 恆溫下蟻后死亡、35°C 下 2～5 日內全死；100 隻以下的巢只產小工蟻 | 比 R94、R136 慢 1.5～1.8 倍，原因不明；只有 1～2 群 |
+| R168 | Porter (1988) *J. Insect Physiol.* 34:1127. DOI 10.1016/0022-1910(88)90215-6 | 經摘要工具 | b | 小工蟻卵→成蟲：24°C 55 日、35°C 23 日；最適溫 32°C | *Solenopsis invicta*，非本種 |
+| R169 | Abril et al. (2010) *J. Insect Science* 10:97 | 全文 | b | 卵期 18°C 58 日、30°C 少於 15 日；32°C 沒有卵存活 | *L. humile*，非本種；度日值為二手 |
+| R170 | Kipyatkov & Lopatina (2015) *Entomological Science* 18:174. DOI 10.1111/ens.12098 | 摘要 | b | 33 種螞蟻的 97 條發育速率回歸：中段溫度線性，門檻溫度與度日總和負相關 | 跨物種 |
+| R171 | Calabi & Porter (1989) *J. Insect Physiol.* DOI 10.1016/0022-1910(89)90127-3 | 經摘要工具（數字見引用文全文） | b | 每降 2°C 壽命增加約 14%；大工蟻比小工蟻多活 50～140% | *S. invicta*，非本種 |
+| R172 | Giraldo et al. (2016) DOI 10.1098/rspb.2015.2603 | 經摘要工具 | b | *Pheidole dentata* 小工蟻 25°C 中位 77 日，最長 140 日 | 同屬，非本種 |
+| R173 | San Juan et al. (2025) | 全文 | a | 本種攻擊火蟻時，死亡的多半是兵蟻 | 定性 |
+| R174 | Wheeler & Nijhout (1981) *Science*；(1984) | 摘要／經摘要工具 | b | 保幼激素在終齡敏感期決定是否發育成兵蟻；成年兵蟻以接觸抑制新兵蟻產生 | *P. bicarinata*，非本種 |
+| R175 | Suzzoni, Passera & Strambi (1982) | 全文 | b | 只有 24°C 以上才育出兵蟻；必須有蛋白食物；兵蟻少於 5% 時才產新兵蟻 | *P. pallidula*，非本種 |
+| R176 | Wetterer (2012) *Myrmecological News* 17:51–62 | 全文 | b（綜述） | 照護蚜蟲、介殼蟲與粉介殼蟲；吃人類食物；兵蟻「碾碎種子」（原文沒有引用來源） | 種子一說沒有一手研究 |
+| R177 | Peng et al. (2023) *Myrmecological News* 33:197–209. DOI 10.25849/myrmecol.news_033:197 | 全文 | **a（臺中）** | 營養階：都市 2.47 vs 城郊森林 1.86（太平），2.28 vs 1.61（潭子）；熱季與冷季無差異；都市有人類食物訊號 | 只能事後檢核，不能用來調參 |
+| R178 | Lach (2005) *Insectes Sociaux* 52:257. DOI 10.1007/s00040-005-0807-z | 摘要 | b | 本種遇到競爭者會退開；長腳捷山蟻取走的花蜜是本種的 11.3 倍 | 夏威夷 ʻōhiʻa 花 |
+| R179 | Hao & Liu (2009) *Formosan Entomologist* 29:239–249. DOI 10.6661/TESFE.2009020 | 全文 | a／b（臺灣，*Aphis gossypii*） | 族群成長在 10～30°C 都為正，25°C 最高；30°C 下降；世代 7～10 日（25～30°C）／約 30 日（10～15°C） | 實驗室；花園寄主不明 |
+| R180 | Yang et al. (2026) *J. Insect Science* 26(4):ieag084 | 經摘要工具（PMC 全文） | b | 臺中大豆蚜：春季 5 月初上升、6 月初崩落；秋季 9 月中高峰 | 作物田，主因是作物年齡 |
+| R181 | Chamuene et al. (2020) *Environmental Entomology* 49:66 | 摘要 | b | 雨與天敵是 *A. gossypii* 的關鍵死亡因子 | 巴西 |
+| R182 | Jha et al. (2009) *Bulletin of Insectology* 62:183 | 全文 | b | *Coccus viridis* 有螞蟻照護時較持久；動態極度多變 | 墨西哥 |
+| R183 | Zhou et al. (2017) *Scientific Reports* 7:959；Dungan & Kelly (2003)；Yao & Akimoto (2001) | 全文／經摘要工具 | b | 蜜露量隨溫度增加（粉介殼蟲）；雨會沖走蜜露；有照護的蚜蟲排泄頻率約加倍 | 不同物種的結果不一致 |
+| R184 | Corlett (1993) *J. Tropical Ecology* 9:501 | 摘要 | b | 香港灌叢 105 種植物的花期強烈季節性，5 月高峰 | 群落層級 |
+| R185 | Huang, Chen & Kao (2012) *Botanical Studies* 53:501 | 經摘要工具 | b | 中臺灣的白花鬼針草變種 *Bidens pilosa* var. *radiata* 全年開花；每朵小花約 6 日 | **只是 F08 的候選身分** |
+| R186 | Takkis et al. (2018) *Frontiers in Plant Science* 9:874 | 經摘要工具（PMC） | b | 花蜜分泌與溫度呈單峰，最適溫約等於該種花季的平均溫；雨會稀釋花蜜 | 地中海 6 種植物 |
+| R187 | Fellers & Fellers (1982). DOI 10.2307/2425390 | 摘要 | b | 地表的昆蟲屍體被螞蟻移走，中位數 3.75 分鐘 | 北美 |
+| R188 | Seastedt (1981). DOI 10.2307/2425017 | 摘要 | b | 地表的屍體很快被黃蜂與螞蟻取走；落葉層內的屍體可存在整年 | 北美 |

@@ -1,0 +1,3404 @@
+{
+ "schema": "antempire.day0-extremes.v1",
+ "diagnostic_not_target": true,
+ "rules_tag": "v18",
+ "start": "2027-09-23",
+ "days": 60,
+ "seeds": [
+  20270001,
+  20270002,
+  20270003,
+  20270004,
+  20270005,
+  20270006,
+  20270007,
+  20270008,
+  20270009,
+  20270010,
+  20270011,
+  20270012,
+  20270013,
+  20270014,
+  20270015,
+  20270016,
+  20270017,
+  20270018,
+  20270019,
+  20270020
+ ],
+ "results": [
+  {
+   "id": "E0",
+   "title": "基準（A1，秋，無修改）",
+   "seeds": 20,
+   "queen_alive_day60": 12,
+   "colony_end": 5,
+   "workers_day60_median": 5,
+   "sugar_income_median": 47.855,
+   "protein_income_median": 20.035,
+   "trips_per_active_forager_day_median": 2.605,
+   "max_trips_one_worker_day": 11,
+   "queen_death_day_median": 36.5,
+   "queen_death_reasons": {
+    "no_workers": 5,
+    "chronic_protein_deficit": 3
+   },
+   "rows": [
+    {
+     "seed": 20270001,
+     "queen_alive": true,
+     "workers": 13,
+     "brood": 9,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 63.47,
+     "protein": 47.33,
+     "trips_per_active_forager_day": 2.8,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270002,
+     "queen_alive": true,
+     "workers": 6,
+     "brood": 16,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 62.63,
+     "protein": 27.79,
+     "trips_per_active_forager_day": 2.61,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 5
+    },
+    {
+     "seed": 20270003,
+     "queen_alive": true,
+     "workers": 8,
+     "brood": 12,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 65.8,
+     "protein": 40.62,
+     "trips_per_active_forager_day": 2.87,
+     "max_trips_one_worker_day": 11,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270004,
+     "queen_alive": true,
+     "workers": 14,
+     "brood": 16,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 94.23,
+     "protein": 30.76,
+     "trips_per_active_forager_day": 2.6,
+     "max_trips_one_worker_day": 11,
+     "cancelled_no_time": 11
+    },
+    {
+     "seed": 20270005,
+     "queen_alive": true,
+     "workers": 0,
+     "brood": 1,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 26.76,
+     "protein": 12.51,
+     "trips_per_active_forager_day": 2.75,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 10
+    },
+    {
+     "seed": 20270006,
+     "queen_alive": true,
+     "workers": 6,
+     "brood": 16,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 48.56,
+     "protein": 42.25,
+     "trips_per_active_forager_day": 2.85,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 1
+    },
+    {
+     "seed": 20270007,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 39,
+     "queen_death": {
+      "day": 39,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 6.63,
+     "trips_per_active_forager_day": 1.79,
+     "max_trips_one_worker_day": 5,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270008,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 44,
+     "queen_death": {
+      "day": 44,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0.03,
+     "protein": 15.06,
+     "trips_per_active_forager_day": 2.41,
+     "max_trips_one_worker_day": 7,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270009,
+     "queen_alive": true,
+     "workers": 10,
+     "brood": 10,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 73.28,
+     "protein": 42.12,
+     "trips_per_active_forager_day": 2.85,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 4
+    },
+    {
+     "seed": 20270010,
+     "queen_alive": true,
+     "workers": 2,
+     "brood": 0,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 47.15,
+     "protein": 0,
+     "trips_per_active_forager_day": 2.51,
+     "max_trips_one_worker_day": 6,
+     "cancelled_no_time": 7
+    },
+    {
+     "seed": 20270011,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 28,
+     "queen_death": {
+      "day": 28,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0.03,
+     "protein": 17.46,
+     "trips_per_active_forager_day": 2.68,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270012,
+     "queen_alive": false,
+     "workers": 1,
+     "brood": 0,
+     "colony_end_day": null,
+     "queen_death": {
+      "day": 14,
+      "reason": "chronic_protein_deficit",
+      "triggers": [
+       "chronic_protein_deficit"
+      ]
+     },
+     "sugar": 42.95,
+     "protein": 11.37,
+     "trips_per_active_forager_day": 2.49,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 5
+    },
+    {
+     "seed": 20270013,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 33,
+     "queen_death": {
+      "day": 33,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 12.07,
+     "trips_per_active_forager_day": 1.8,
+     "max_trips_one_worker_day": 5,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270014,
+     "queen_alive": true,
+     "workers": 8,
+     "brood": 9,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 69.92,
+     "protein": 29.64,
+     "trips_per_active_forager_day": 2.74,
+     "max_trips_one_worker_day": 11,
+     "cancelled_no_time": 4
+    },
+    {
+     "seed": 20270015,
+     "queen_alive": true,
+     "workers": 7,
+     "brood": 10,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 77.68,
+     "protein": 31.28,
+     "trips_per_active_forager_day": 2.71,
+     "max_trips_one_worker_day": 10,
+     "cancelled_no_time": 4
+    },
+    {
+     "seed": 20270016,
+     "queen_alive": true,
+     "workers": 10,
+     "brood": 13,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 69.83,
+     "protein": 22.61,
+     "trips_per_active_forager_day": 2.64,
+     "max_trips_one_worker_day": 10,
+     "cancelled_no_time": 11
+    },
+    {
+     "seed": 20270017,
+     "queen_alive": false,
+     "workers": 3,
+     "brood": 0,
+     "colony_end_day": null,
+     "queen_death": {
+      "day": 34,
+      "reason": "chronic_protein_deficit",
+      "triggers": [
+       "chronic_protein_deficit"
+      ]
+     },
+     "sugar": 46.62,
+     "protein": 0,
+     "trips_per_active_forager_day": 2.3,
+     "max_trips_one_worker_day": 7,
+     "cancelled_no_time": 5
+    },
+    {
+     "seed": 20270018,
+     "queen_alive": false,
+     "workers": 4,
+     "brood": 0,
+     "colony_end_day": null,
+     "queen_death": {
+      "day": 56,
+      "reason": "chronic_protein_deficit",
+      "triggers": [
+       "chronic_protein_deficit"
+      ]
+     },
+     "sugar": 67.59,
+     "protein": 0.46,
+     "trips_per_active_forager_day": 2.31,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 33
+    },
+    {
+     "seed": 20270019,
+     "queen_alive": true,
+     "workers": 6,
+     "brood": 13,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 35.49,
+     "protein": 23.55,
+     "trips_per_active_forager_day": 2.24,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 1
+    },
+    {
+     "seed": 20270020,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 41,
+     "queen_death": {
+      "day": 41,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 10.33,
+     "trips_per_active_forager_day": 1.92,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 0
+    }
+   ]
+  },
+  {
+   "id": "E1",
+   "title": "巢口附近充足食物：F01 蜜露存量與上限 50 份，全部工蟻一開始就知道 N00–F01",
+   "seeds": 20,
+   "queen_alive_day60": 19,
+   "colony_end": 0,
+   "workers_day60_median": 7,
+   "sugar_income_median": 66.12,
+   "protein_income_median": 23.15,
+   "trips_per_active_forager_day_median": 2.635,
+   "max_trips_one_worker_day": 15,
+   "queen_death_day_median": 14,
+   "queen_death_reasons": {
+    "chronic_protein_deficit": 1
+   },
+   "rows": [
+    {
+     "seed": 20270001,
+     "queen_alive": true,
+     "workers": 12,
+     "brood": 9,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 67.04,
+     "protein": 33.95,
+     "trips_per_active_forager_day": 3.26,
+     "max_trips_one_worker_day": 14,
+     "cancelled_no_time": 1
+    },
+    {
+     "seed": 20270002,
+     "queen_alive": true,
+     "workers": 2,
+     "brood": 2,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 57.46,
+     "protein": 6.71,
+     "trips_per_active_forager_day": 2.41,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 2
+    },
+    {
+     "seed": 20270003,
+     "queen_alive": true,
+     "workers": 8,
+     "brood": 12,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 68.88,
+     "protein": 31.49,
+     "trips_per_active_forager_day": 2.61,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 2
+    },
+    {
+     "seed": 20270004,
+     "queen_alive": true,
+     "workers": 16,
+     "brood": 16,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 100.92,
+     "protein": 38.81,
+     "trips_per_active_forager_day": 2.64,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 2
+    },
+    {
+     "seed": 20270005,
+     "queen_alive": true,
+     "workers": 1,
+     "brood": 11,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 41.21,
+     "protein": 10.17,
+     "trips_per_active_forager_day": 2.26,
+     "max_trips_one_worker_day": 7,
+     "cancelled_no_time": 1
+    },
+    {
+     "seed": 20270006,
+     "queen_alive": true,
+     "workers": 7,
+     "brood": 15,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 72.13,
+     "protein": 20.74,
+     "trips_per_active_forager_day": 2.96,
+     "max_trips_one_worker_day": 11,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270007,
+     "queen_alive": true,
+     "workers": 8,
+     "brood": 12,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 60.75,
+     "protein": 21.92,
+     "trips_per_active_forager_day": 2.44,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 1
+    },
+    {
+     "seed": 20270008,
+     "queen_alive": true,
+     "workers": 5,
+     "brood": 14,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 65.37,
+     "protein": 31.11,
+     "trips_per_active_forager_day": 2.62,
+     "max_trips_one_worker_day": 10,
+     "cancelled_no_time": 1
+    },
+    {
+     "seed": 20270009,
+     "queen_alive": true,
+     "workers": 10,
+     "brood": 10,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 78.32,
+     "protein": 44.64,
+     "trips_per_active_forager_day": 2.71,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 2
+    },
+    {
+     "seed": 20270010,
+     "queen_alive": true,
+     "workers": 7,
+     "brood": 17,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 67.75,
+     "protein": 24.38,
+     "trips_per_active_forager_day": 2.63,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270011,
+     "queen_alive": true,
+     "workers": 2,
+     "brood": 8,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 46.44,
+     "protein": 8.97,
+     "trips_per_active_forager_day": 2.64,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 4
+    },
+    {
+     "seed": 20270012,
+     "queen_alive": false,
+     "workers": 1,
+     "brood": 0,
+     "colony_end_day": null,
+     "queen_death": {
+      "day": 14,
+      "reason": "chronic_protein_deficit",
+      "triggers": [
+       "chronic_protein_deficit"
+      ]
+     },
+     "sugar": 46.01,
+     "protein": 13.2,
+     "trips_per_active_forager_day": 2.53,
+     "max_trips_one_worker_day": 11,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270013,
+     "queen_alive": true,
+     "workers": 4,
+     "brood": 10,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 64.34,
+     "protein": 20.49,
+     "trips_per_active_forager_day": 2.67,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 8
+    },
+    {
+     "seed": 20270014,
+     "queen_alive": true,
+     "workers": 8,
+     "brood": 9,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 72.07,
+     "protein": 29.53,
+     "trips_per_active_forager_day": 2.65,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 1
+    },
+    {
+     "seed": 20270015,
+     "queen_alive": true,
+     "workers": 7,
+     "brood": 10,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 76.18,
+     "protein": 40.45,
+     "trips_per_active_forager_day": 2.67,
+     "max_trips_one_worker_day": 15,
+     "cancelled_no_time": 1
+    },
+    {
+     "seed": 20270016,
+     "queen_alive": true,
+     "workers": 7,
+     "brood": 13,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 66.59,
+     "protein": 16.56,
+     "trips_per_active_forager_day": 2.62,
+     "max_trips_one_worker_day": 11,
+     "cancelled_no_time": 5
+    },
+    {
+     "seed": 20270017,
+     "queen_alive": true,
+     "workers": 5,
+     "brood": 12,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 60.03,
+     "protein": 12.33,
+     "trips_per_active_forager_day": 2.37,
+     "max_trips_one_worker_day": 13,
+     "cancelled_no_time": 2
+    },
+    {
+     "seed": 20270018,
+     "queen_alive": true,
+     "workers": 10,
+     "brood": 19,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 81.1,
+     "protein": 36.45,
+     "trips_per_active_forager_day": 2.87,
+     "max_trips_one_worker_day": 10,
+     "cancelled_no_time": 4
+    },
+    {
+     "seed": 20270019,
+     "queen_alive": true,
+     "workers": 3,
+     "brood": 13,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 62.57,
+     "protein": 15.57,
+     "trips_per_active_forager_day": 2.48,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 3
+    },
+    {
+     "seed": 20270020,
+     "queen_alive": true,
+     "workers": 4,
+     "brood": 11,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 65.65,
+     "protein": 45.02,
+     "trips_per_active_forager_day": 2.95,
+     "max_trips_one_worker_day": 11,
+     "cancelled_no_time": 2
+    }
+   ]
+  },
+  {
+   "id": "E2",
+   "title": "食物全部在遠方：所有路段長度改為未知（每段 25 分鐘）",
+   "seeds": 20,
+   "queen_alive_day60": 14,
+   "colony_end": 5,
+   "workers_day60_median": 4.5,
+   "sugar_income_median": 49.655,
+   "protein_income_median": 18.535,
+   "trips_per_active_forager_day_median": 2.255,
+   "max_trips_one_worker_day": 6,
+   "queen_death_day_median": 36.5,
+   "queen_death_reasons": {
+    "no_workers": 5,
+    "chronic_protein_deficit": 1
+   },
+   "rows": [
+    {
+     "seed": 20270001,
+     "queen_alive": true,
+     "workers": 10,
+     "brood": 10,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 62.54,
+     "protein": 44.1,
+     "trips_per_active_forager_day": 2.51,
+     "max_trips_one_worker_day": 6,
+     "cancelled_no_time": 31
+    },
+    {
+     "seed": 20270002,
+     "queen_alive": true,
+     "workers": 4,
+     "brood": 11,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 60.86,
+     "protein": 17.5,
+     "trips_per_active_forager_day": 2.26,
+     "max_trips_one_worker_day": 6,
+     "cancelled_no_time": 27
+    },
+    {
+     "seed": 20270003,
+     "queen_alive": true,
+     "workers": 5,
+     "brood": 12,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 59.86,
+     "protein": 28.65,
+     "trips_per_active_forager_day": 2.67,
+     "max_trips_one_worker_day": 6,
+     "cancelled_no_time": 28
+    },
+    {
+     "seed": 20270004,
+     "queen_alive": true,
+     "workers": 11,
+     "brood": 15,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 78.12,
+     "protein": 22.9,
+     "trips_per_active_forager_day": 2.31,
+     "max_trips_one_worker_day": 6,
+     "cancelled_no_time": 30
+    },
+    {
+     "seed": 20270005,
+     "queen_alive": true,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 22.27,
+     "protein": 7.29,
+     "trips_per_active_forager_day": 2.06,
+     "max_trips_one_worker_day": 5,
+     "cancelled_no_time": 26
+    },
+    {
+     "seed": 20270006,
+     "queen_alive": true,
+     "workers": 5,
+     "brood": 13,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 43.45,
+     "protein": 34.04,
+     "trips_per_active_forager_day": 2.47,
+     "max_trips_one_worker_day": 6,
+     "cancelled_no_time": 15
+    },
+    {
+     "seed": 20270007,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 39,
+     "queen_death": {
+      "day": 39,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 6.63,
+     "trips_per_active_forager_day": 1.84,
+     "max_trips_one_worker_day": 5,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270008,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 44,
+     "queen_death": {
+      "day": 44,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0.03,
+     "protein": 14.51,
+     "trips_per_active_forager_day": 2.33,
+     "max_trips_one_worker_day": 6,
+     "cancelled_no_time": 2
+    },
+    {
+     "seed": 20270009,
+     "queen_alive": true,
+     "workers": 8,
+     "brood": 10,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 77.53,
+     "protein": 36.04,
+     "trips_per_active_forager_day": 2.25,
+     "max_trips_one_worker_day": 6,
+     "cancelled_no_time": 45
+    },
+    {
+     "seed": 20270010,
+     "queen_alive": true,
+     "workers": 2,
+     "brood": 1,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 49.29,
+     "protein": 0.55,
+     "trips_per_active_forager_day": 2.1,
+     "max_trips_one_worker_day": 5,
+     "cancelled_no_time": 23
+    },
+    {
+     "seed": 20270011,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 28,
+     "queen_death": {
+      "day": 28,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0.03,
+     "protein": 17.47,
+     "trips_per_active_forager_day": 2.69,
+     "max_trips_one_worker_day": 6,
+     "cancelled_no_time": 10
+    },
+    {
+     "seed": 20270012,
+     "queen_alive": true,
+     "workers": 8,
+     "brood": 10,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 63.74,
+     "protein": 19.65,
+     "trips_per_active_forager_day": 2.36,
+     "max_trips_one_worker_day": 6,
+     "cancelled_no_time": 44
+    },
+    {
+     "seed": 20270013,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 33,
+     "queen_death": {
+      "day": 33,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 12.07,
+     "trips_per_active_forager_day": 1.8,
+     "max_trips_one_worker_day": 5,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270014,
+     "queen_alive": true,
+     "workers": 8,
+     "brood": 9,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 75.66,
+     "protein": 19.57,
+     "trips_per_active_forager_day": 2.29,
+     "max_trips_one_worker_day": 6,
+     "cancelled_no_time": 34
+    },
+    {
+     "seed": 20270015,
+     "queen_alive": true,
+     "workers": 6,
+     "brood": 10,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 78.93,
+     "protein": 32.65,
+     "trips_per_active_forager_day": 2.18,
+     "max_trips_one_worker_day": 6,
+     "cancelled_no_time": 30
+    },
+    {
+     "seed": 20270016,
+     "queen_alive": true,
+     "workers": 5,
+     "brood": 12,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 49.16,
+     "protein": 23.4,
+     "trips_per_active_forager_day": 2.47,
+     "max_trips_one_worker_day": 6,
+     "cancelled_no_time": 18
+    },
+    {
+     "seed": 20270017,
+     "queen_alive": false,
+     "workers": 3,
+     "brood": 0,
+     "colony_end_day": null,
+     "queen_death": {
+      "day": 34,
+      "reason": "chronic_protein_deficit",
+      "triggers": [
+       "chronic_protein_deficit"
+      ]
+     },
+     "sugar": 50.02,
+     "protein": 0.36,
+     "trips_per_active_forager_day": 2.06,
+     "max_trips_one_worker_day": 6,
+     "cancelled_no_time": 32
+    },
+    {
+     "seed": 20270018,
+     "queen_alive": true,
+     "workers": 4,
+     "brood": 3,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 66.62,
+     "protein": 2.21,
+     "trips_per_active_forager_day": 2.13,
+     "max_trips_one_worker_day": 6,
+     "cancelled_no_time": 53
+    },
+    {
+     "seed": 20270019,
+     "queen_alive": true,
+     "workers": 7,
+     "brood": 11,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 30.12,
+     "protein": 26.99,
+     "trips_per_active_forager_day": 1.94,
+     "max_trips_one_worker_day": 6,
+     "cancelled_no_time": 11
+    },
+    {
+     "seed": 20270020,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 41,
+     "queen_death": {
+      "day": 41,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 8.28,
+     "trips_per_active_forager_day": 1.81,
+     "max_trips_one_worker_day": 6,
+     "cancelled_no_time": 2
+    }
+   ]
+  },
+  {
+   "id": "E3",
+   "title": "食源突然枯竭：第 20 日起所有蜜露寄主死亡、花蜜與屍體歸零",
+   "seeds": 20,
+   "queen_alive_day60": 3,
+   "colony_end": 17,
+   "workers_day60_median": 0,
+   "sugar_income_median": 24.27,
+   "protein_income_median": 12.77,
+   "trips_per_active_forager_day_median": 2.38,
+   "max_trips_one_worker_day": 12,
+   "queen_death_day_median": 48,
+   "queen_death_reasons": {
+    "chronic_sugar_deficit": 2,
+    "no_workers": 13,
+    "chronic_protein_deficit": 2
+   },
+   "rows": [
+    {
+     "seed": 20270001,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 7,
+     "colony_end_day": 52,
+     "queen_death": {
+      "day": 39,
+      "reason": "chronic_sugar_deficit",
+      "triggers": [
+       "chronic_sugar_deficit"
+      ]
+     },
+     "sugar": 23.85,
+     "protein": 34.33,
+     "trips_per_active_forager_day": 2.66,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270002,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 58,
+     "queen_death": {
+      "day": 58,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 25.05,
+     "protein": 12.56,
+     "trips_per_active_forager_day": 2.45,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270003,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 52,
+     "queen_death": {
+      "day": 52,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 24.69,
+     "protein": 24.45,
+     "trips_per_active_forager_day": 2.63,
+     "max_trips_one_worker_day": 12,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270004,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 59,
+     "queen_death": {
+      "day": 59,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 37.32,
+     "protein": 14.47,
+     "trips_per_active_forager_day": 2.52,
+     "max_trips_one_worker_day": 11,
+     "cancelled_no_time": 3
+    },
+    {
+     "seed": 20270005,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 48,
+     "queen_death": {
+      "day": 48,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 15.29,
+     "protein": 1.99,
+     "trips_per_active_forager_day": 2.48,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 2
+    },
+    {
+     "seed": 20270006,
+     "queen_alive": true,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 17.05,
+     "protein": 18.91,
+     "trips_per_active_forager_day": 2.22,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270007,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 39,
+     "queen_death": {
+      "day": 39,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 6.63,
+     "trips_per_active_forager_day": 1.79,
+     "max_trips_one_worker_day": 5,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270008,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 44,
+     "queen_death": {
+      "day": 44,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 12.51,
+     "trips_per_active_forager_day": 2.31,
+     "max_trips_one_worker_day": 7,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270009,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 54,
+     "queen_death": {
+      "day": 54,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 29.64,
+     "protein": 21.25,
+     "trips_per_active_forager_day": 2.38,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270010,
+     "queen_alive": true,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 19.32,
+     "protein": 0,
+     "trips_per_active_forager_day": 2.38,
+     "max_trips_one_worker_day": 6,
+     "cancelled_no_time": 4
+    },
+    {
+     "seed": 20270011,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 28,
+     "queen_death": {
+      "day": 28,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0.03,
+     "protein": 17.46,
+     "trips_per_active_forager_day": 2.68,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270012,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 37,
+     "queen_death": {
+      "day": 14,
+      "reason": "chronic_protein_deficit",
+      "triggers": [
+       "chronic_protein_deficit"
+      ]
+     },
+     "sugar": 25.53,
+     "protein": 0.95,
+     "trips_per_active_forager_day": 2.31,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 5
+    },
+    {
+     "seed": 20270013,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 33,
+     "queen_death": {
+      "day": 33,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 12.07,
+     "trips_per_active_forager_day": 1.8,
+     "max_trips_one_worker_day": 5,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270014,
+     "queen_alive": true,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 29.23,
+     "protein": 19.81,
+     "trips_per_active_forager_day": 2.65,
+     "max_trips_one_worker_day": 11,
+     "cancelled_no_time": 2
+    },
+    {
+     "seed": 20270015,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 54,
+     "queen_death": {
+      "day": 54,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 30.55,
+     "protein": 12.98,
+     "trips_per_active_forager_day": 2.65,
+     "max_trips_one_worker_day": 10,
+     "cancelled_no_time": 2
+    },
+    {
+     "seed": 20270016,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 58,
+     "queen_death": {
+      "day": 58,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 31.29,
+     "protein": 15.79,
+     "trips_per_active_forager_day": 2.68,
+     "max_trips_one_worker_day": 10,
+     "cancelled_no_time": 5
+    },
+    {
+     "seed": 20270017,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 44,
+     "queen_death": {
+      "day": 34,
+      "reason": "chronic_protein_deficit",
+      "triggers": [
+       "chronic_protein_deficit"
+      ]
+     },
+     "sugar": 25.38,
+     "protein": 0,
+     "trips_per_active_forager_day": 2.24,
+     "max_trips_one_worker_day": 7,
+     "cancelled_no_time": 4
+    },
+    {
+     "seed": 20270018,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 56,
+     "queen_death": {
+      "day": 56,
+      "reason": "chronic_sugar_deficit",
+      "triggers": [
+       "chronic_sugar_deficit"
+      ]
+     },
+     "sugar": 26.89,
+     "protein": 2.64,
+     "trips_per_active_forager_day": 2.16,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 17
+    },
+    {
+     "seed": 20270019,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 53,
+     "queen_death": {
+      "day": 53,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 5.3,
+     "protein": 15.04,
+     "trips_per_active_forager_day": 1.75,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270020,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 41,
+     "queen_death": {
+      "day": 41,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 10.33,
+     "trips_per_active_forager_day": 1.92,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 0
+    }
+   ]
+  },
+  {
+   "id": "E4",
+   "title": "費洛蒙消失：路徑訊號每日保留 0（招募與沿跡都無法使用）",
+   "seeds": 20,
+   "queen_alive_day60": 15,
+   "colony_end": 4,
+   "workers_day60_median": 7,
+   "sugar_income_median": 59.385,
+   "protein_income_median": 23.905,
+   "trips_per_active_forager_day_median": 2.7,
+   "max_trips_one_worker_day": 14,
+   "queen_death_day_median": 33,
+   "queen_death_reasons": {
+    "no_workers": 4,
+    "chronic_protein_deficit": 1
+   },
+   "rows": [
+    {
+     "seed": 20270001,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 33,
+     "queen_death": {
+      "day": 33,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0.35,
+     "protein": 13.22,
+     "trips_per_active_forager_day": 1.89,
+     "max_trips_one_worker_day": 6,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270002,
+     "queen_alive": true,
+     "workers": 1,
+     "brood": 4,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 50.94,
+     "protein": 7.57,
+     "trips_per_active_forager_day": 2.4,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 23
+    },
+    {
+     "seed": 20270003,
+     "queen_alive": true,
+     "workers": 8,
+     "brood": 12,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 64.14,
+     "protein": 35.43,
+     "trips_per_active_forager_day": 2.97,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 2
+    },
+    {
+     "seed": 20270004,
+     "queen_alive": true,
+     "workers": 11,
+     "brood": 16,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 84.79,
+     "protein": 32.68,
+     "trips_per_active_forager_day": 2.79,
+     "max_trips_one_worker_day": 11,
+     "cancelled_no_time": 3
+    },
+    {
+     "seed": 20270005,
+     "queen_alive": true,
+     "workers": 8,
+     "brood": 6,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 50.37,
+     "protein": 36.81,
+     "trips_per_active_forager_day": 2.69,
+     "max_trips_one_worker_day": 11,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270006,
+     "queen_alive": true,
+     "workers": 7,
+     "brood": 16,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 70.25,
+     "protein": 46.51,
+     "trips_per_active_forager_day": 2.95,
+     "max_trips_one_worker_day": 11,
+     "cancelled_no_time": 8
+    },
+    {
+     "seed": 20270007,
+     "queen_alive": true,
+     "workers": 8,
+     "brood": 6,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 62.07,
+     "protein": 16.99,
+     "trips_per_active_forager_day": 2.77,
+     "max_trips_one_worker_day": 13,
+     "cancelled_no_time": 11
+    },
+    {
+     "seed": 20270008,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 44,
+     "queen_death": {
+      "day": 44,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 21.96,
+     "trips_per_active_forager_day": 2.71,
+     "max_trips_one_worker_day": 7,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270009,
+     "queen_alive": true,
+     "workers": 10,
+     "brood": 10,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 74.88,
+     "protein": 25.2,
+     "trips_per_active_forager_day": 2.64,
+     "max_trips_one_worker_day": 10,
+     "cancelled_no_time": 3
+    },
+    {
+     "seed": 20270010,
+     "queen_alive": true,
+     "workers": 6,
+     "brood": 14,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 56.73,
+     "protein": 18.82,
+     "trips_per_active_forager_day": 3.01,
+     "max_trips_one_worker_day": 12,
+     "cancelled_no_time": 14
+    },
+    {
+     "seed": 20270011,
+     "queen_alive": true,
+     "workers": 3,
+     "brood": 7,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 24.99,
+     "protein": 10.91,
+     "trips_per_active_forager_day": 3.21,
+     "max_trips_one_worker_day": 13,
+     "cancelled_no_time": 2
+    },
+    {
+     "seed": 20270012,
+     "queen_alive": false,
+     "workers": 1,
+     "brood": 0,
+     "colony_end_day": null,
+     "queen_death": {
+      "day": 14,
+      "reason": "chronic_protein_deficit",
+      "triggers": [
+       "chronic_protein_deficit"
+      ]
+     },
+     "sugar": 41.5,
+     "protein": 19.73,
+     "trips_per_active_forager_day": 2.32,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270013,
+     "queen_alive": true,
+     "workers": 7,
+     "brood": 10,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 61.66,
+     "protein": 33.68,
+     "trips_per_active_forager_day": 2.62,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 5
+    },
+    {
+     "seed": 20270014,
+     "queen_alive": true,
+     "workers": 9,
+     "brood": 9,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 70.37,
+     "protein": 39.31,
+     "trips_per_active_forager_day": 2.72,
+     "max_trips_one_worker_day": 10,
+     "cancelled_no_time": 10
+    },
+    {
+     "seed": 20270015,
+     "queen_alive": true,
+     "workers": 7,
+     "brood": 9,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 77.26,
+     "protein": 27.19,
+     "trips_per_active_forager_day": 2.61,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 3
+    },
+    {
+     "seed": 20270016,
+     "queen_alive": true,
+     "workers": 9,
+     "brood": 13,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 61.39,
+     "protein": 28.56,
+     "trips_per_active_forager_day": 2.91,
+     "max_trips_one_worker_day": 11,
+     "cancelled_no_time": 7
+    },
+    {
+     "seed": 20270017,
+     "queen_alive": true,
+     "workers": 10,
+     "brood": 14,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 72.79,
+     "protein": 22.61,
+     "trips_per_active_forager_day": 2.69,
+     "max_trips_one_worker_day": 12,
+     "cancelled_no_time": 14
+    },
+    {
+     "seed": 20270018,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 33,
+     "queen_death": {
+      "day": 33,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 10.46,
+     "trips_per_active_forager_day": 2.09,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270019,
+     "queen_alive": true,
+     "workers": 12,
+     "brood": 10,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 57.38,
+     "protein": 49.02,
+     "trips_per_active_forager_day": 2.85,
+     "max_trips_one_worker_day": 14,
+     "cancelled_no_time": 1
+    },
+    {
+     "seed": 20270020,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 41,
+     "queen_death": {
+      "day": 41,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 8.87,
+     "trips_per_active_forager_day": 2.04,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 0
+    }
+   ]
+  },
+  {
+   "id": "E5",
+   "title": "連續降雨：月雨量 ×10、雨日數 ×3（氣候先驗，只在此診斷）",
+   "seeds": 20,
+   "queen_alive_day60": 15,
+   "colony_end": 4,
+   "workers_day60_median": 4,
+   "sugar_income_median": 46.37,
+   "protein_income_median": 16.615,
+   "trips_per_active_forager_day_median": 2.705,
+   "max_trips_one_worker_day": 11,
+   "queen_death_day_median": 39,
+   "queen_death_reasons": {
+    "no_workers": 4,
+    "chronic_protein_deficit": 1
+   },
+   "rows": [
+    {
+     "seed": 20270001,
+     "queen_alive": true,
+     "workers": 12,
+     "brood": 9,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 66.36,
+     "protein": 30.91,
+     "trips_per_active_forager_day": 2.83,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 2
+    },
+    {
+     "seed": 20270002,
+     "queen_alive": true,
+     "workers": 1,
+     "brood": 2,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 44.18,
+     "protein": 4.74,
+     "trips_per_active_forager_day": 2.19,
+     "max_trips_one_worker_day": 6,
+     "cancelled_no_time": 23
+    },
+    {
+     "seed": 20270003,
+     "queen_alive": true,
+     "workers": 8,
+     "brood": 11,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 58.57,
+     "protein": 38.99,
+     "trips_per_active_forager_day": 2.94,
+     "max_trips_one_worker_day": 11,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270004,
+     "queen_alive": true,
+     "workers": 12,
+     "brood": 18,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 91.95,
+     "protein": 30.77,
+     "trips_per_active_forager_day": 2.81,
+     "max_trips_one_worker_day": 11,
+     "cancelled_no_time": 15
+    },
+    {
+     "seed": 20270005,
+     "queen_alive": true,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 18.61,
+     "protein": 13.59,
+     "trips_per_active_forager_day": 2.85,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 2
+    },
+    {
+     "seed": 20270006,
+     "queen_alive": true,
+     "workers": 6,
+     "brood": 16,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 48.56,
+     "protein": 42.25,
+     "trips_per_active_forager_day": 2.85,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 1
+    },
+    {
+     "seed": 20270007,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 39,
+     "queen_death": {
+      "day": 39,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 4.19,
+     "trips_per_active_forager_day": 1.71,
+     "max_trips_one_worker_day": 4,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270008,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 44,
+     "queen_death": {
+      "day": 44,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 14.9,
+     "trips_per_active_forager_day": 2.42,
+     "max_trips_one_worker_day": 7,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270009,
+     "queen_alive": true,
+     "workers": 8,
+     "brood": 10,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 69.88,
+     "protein": 26.19,
+     "trips_per_active_forager_day": 2.83,
+     "max_trips_one_worker_day": 10,
+     "cancelled_no_time": 4
+    },
+    {
+     "seed": 20270010,
+     "queen_alive": true,
+     "workers": 3,
+     "brood": 2,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 53.76,
+     "protein": 8.09,
+     "trips_per_active_forager_day": 2.4,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 21
+    },
+    {
+     "seed": 20270011,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 28,
+     "queen_death": {
+      "day": 28,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0.03,
+     "protein": 17.46,
+     "trips_per_active_forager_day": 2.68,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270012,
+     "queen_alive": false,
+     "workers": 1,
+     "brood": 0,
+     "colony_end_day": null,
+     "queen_death": {
+      "day": 14,
+      "reason": "chronic_protein_deficit",
+      "triggers": [
+       "chronic_protein_deficit"
+      ]
+     },
+     "sugar": 42.74,
+     "protein": 0,
+     "trips_per_active_forager_day": 2.38,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 4
+    },
+    {
+     "seed": 20270013,
+     "queen_alive": true,
+     "workers": 7,
+     "brood": 10,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 62.37,
+     "protein": 42.04,
+     "trips_per_active_forager_day": 2.96,
+     "max_trips_one_worker_day": 11,
+     "cancelled_no_time": 14
+    },
+    {
+     "seed": 20270014,
+     "queen_alive": true,
+     "workers": 3,
+     "brood": 10,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 61.29,
+     "protein": 24.36,
+     "trips_per_active_forager_day": 2.73,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 5
+    },
+    {
+     "seed": 20270015,
+     "queen_alive": true,
+     "workers": 5,
+     "brood": 7,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 69.14,
+     "protein": 11.69,
+     "trips_per_active_forager_day": 2.5,
+     "max_trips_one_worker_day": 10,
+     "cancelled_no_time": 11
+    },
+    {
+     "seed": 20270016,
+     "queen_alive": true,
+     "workers": 8,
+     "brood": 13,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 56.05,
+     "protein": 25.84,
+     "trips_per_active_forager_day": 2.86,
+     "max_trips_one_worker_day": 10,
+     "cancelled_no_time": 9
+    },
+    {
+     "seed": 20270017,
+     "queen_alive": true,
+     "workers": 4,
+     "brood": 9,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 36.03,
+     "protein": 12.54,
+     "trips_per_active_forager_day": 2.22,
+     "max_trips_one_worker_day": 7,
+     "cancelled_no_time": 13
+    },
+    {
+     "seed": 20270018,
+     "queen_alive": true,
+     "workers": 4,
+     "brood": 12,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 38.55,
+     "protein": 15.77,
+     "trips_per_active_forager_day": 2.75,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 2
+    },
+    {
+     "seed": 20270019,
+     "queen_alive": true,
+     "workers": 6,
+     "brood": 8,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 28.31,
+     "protein": 20.93,
+     "trips_per_active_forager_day": 2.02,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 2
+    },
+    {
+     "seed": 20270020,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 41,
+     "queen_death": {
+      "day": 41,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 7.04,
+     "trips_per_active_forager_day": 1.88,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 0
+    }
+   ]
+  },
+  {
+   "id": "E6",
+   "title": "工蟻嗉囊全部滿載（A3）",
+   "seeds": 20,
+   "queen_alive_day60": 16,
+   "colony_end": 4,
+   "workers_day60_median": 6.5,
+   "sugar_income_median": 55.695,
+   "protein_income_median": 22.04,
+   "trips_per_active_forager_day_median": 2.61,
+   "max_trips_one_worker_day": 17,
+   "queen_death_day_median": 42.5,
+   "queen_death_reasons": {
+    "no_workers": 4
+   },
+   "rows": [
+    {
+     "seed": 20270001,
+     "queen_alive": true,
+     "workers": 11,
+     "brood": 10,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 66.11,
+     "protein": 22.74,
+     "trips_per_active_forager_day": 2.83,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 9
+    },
+    {
+     "seed": 20270002,
+     "queen_alive": true,
+     "workers": 1,
+     "brood": 1,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 53.91,
+     "protein": 5.11,
+     "trips_per_active_forager_day": 2.51,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 5
+    },
+    {
+     "seed": 20270003,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 38,
+     "queen_death": {
+      "day": 38,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 1.12,
+     "protein": 22.07,
+     "trips_per_active_forager_day": 2.26,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270004,
+     "queen_alive": true,
+     "workers": 11,
+     "brood": 9,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 79.4,
+     "protein": 29.64,
+     "trips_per_active_forager_day": 2.55,
+     "max_trips_one_worker_day": 12,
+     "cancelled_no_time": 36
+    },
+    {
+     "seed": 20270005,
+     "queen_alive": true,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 30.53,
+     "protein": 0,
+     "trips_per_active_forager_day": 1.98,
+     "max_trips_one_worker_day": 6,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270006,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 44,
+     "queen_death": {
+      "day": 44,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0.25,
+     "protein": 14.77,
+     "trips_per_active_forager_day": 1.89,
+     "max_trips_one_worker_day": 7,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270007,
+     "queen_alive": true,
+     "workers": 9,
+     "brood": 12,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 61.99,
+     "protein": 31.39,
+     "trips_per_active_forager_day": 2.61,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270008,
+     "queen_alive": true,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 11.9,
+     "protein": 19.41,
+     "trips_per_active_forager_day": 2.63,
+     "max_trips_one_worker_day": 7,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270009,
+     "queen_alive": true,
+     "workers": 12,
+     "brood": 10,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 75.1,
+     "protein": 57.25,
+     "trips_per_active_forager_day": 2.85,
+     "max_trips_one_worker_day": 10,
+     "cancelled_no_time": 3
+    },
+    {
+     "seed": 20270010,
+     "queen_alive": true,
+     "workers": 4,
+     "brood": 1,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 54.81,
+     "protein": 9.05,
+     "trips_per_active_forager_day": 2.59,
+     "max_trips_one_worker_day": 10,
+     "cancelled_no_time": 8
+    },
+    {
+     "seed": 20270011,
+     "queen_alive": true,
+     "workers": 1,
+     "brood": 8,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 32.25,
+     "protein": 8.27,
+     "trips_per_active_forager_day": 2.14,
+     "max_trips_one_worker_day": 7,
+     "cancelled_no_time": 34
+    },
+    {
+     "seed": 20270012,
+     "queen_alive": true,
+     "workers": 11,
+     "brood": 10,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 60.24,
+     "protein": 31.38,
+     "trips_per_active_forager_day": 2.93,
+     "max_trips_one_worker_day": 12,
+     "cancelled_no_time": 1
+    },
+    {
+     "seed": 20270013,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 44,
+     "queen_death": {
+      "day": 44,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 15.88,
+     "trips_per_active_forager_day": 1.96,
+     "max_trips_one_worker_day": 7,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270014,
+     "queen_alive": true,
+     "workers": 7,
+     "brood": 9,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 59.88,
+     "protein": 24.86,
+     "trips_per_active_forager_day": 2.71,
+     "max_trips_one_worker_day": 10,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270015,
+     "queen_alive": true,
+     "workers": 6,
+     "brood": 10,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 57.39,
+     "protein": 33.89,
+     "trips_per_active_forager_day": 2.61,
+     "max_trips_one_worker_day": 10,
+     "cancelled_no_time": 3
+    },
+    {
+     "seed": 20270016,
+     "queen_alive": true,
+     "workers": 8,
+     "brood": 13,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 56.58,
+     "protein": 18.25,
+     "trips_per_active_forager_day": 2.66,
+     "max_trips_one_worker_day": 17,
+     "cancelled_no_time": 6
+    },
+    {
+     "seed": 20270017,
+     "queen_alive": true,
+     "workers": 10,
+     "brood": 14,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 65.9,
+     "protein": 22.01,
+     "trips_per_active_forager_day": 2.72,
+     "max_trips_one_worker_day": 10,
+     "cancelled_no_time": 4
+    },
+    {
+     "seed": 20270018,
+     "queen_alive": true,
+     "workers": 9,
+     "brood": 19,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 64.12,
+     "protein": 39.39,
+     "trips_per_active_forager_day": 2.76,
+     "max_trips_one_worker_day": 11,
+     "cancelled_no_time": 5
+    },
+    {
+     "seed": 20270019,
+     "queen_alive": true,
+     "workers": 10,
+     "brood": 6,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 49.51,
+     "protein": 60.94,
+     "trips_per_active_forager_day": 2.8,
+     "max_trips_one_worker_day": 14,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270020,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 41,
+     "queen_death": {
+      "day": 41,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 11.56,
+     "trips_per_active_forager_day": 2.02,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 0
+    }
+   ]
+  },
+  {
+   "id": "E7",
+   "title": "只有一隻能覓食的工蟻（蟻后＋1 工蟻）",
+   "seeds": 20,
+   "queen_alive_day60": 1,
+   "colony_end": 19,
+   "workers_day60_median": 0,
+   "sugar_income_median": 0,
+   "protein_income_median": 0,
+   "trips_per_active_forager_day_median": 1.45,
+   "max_trips_one_worker_day": 8,
+   "queen_death_day_median": 28,
+   "queen_death_reasons": {
+    "no_workers": 17,
+    "chronic_sugar_and_protein_deficit": 1,
+    "chronic_protein_deficit": 1
+   },
+   "rows": [
+    {
+     "seed": 20270001,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 26,
+     "queen_death": {
+      "day": 26,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 2.17,
+     "trips_per_active_forager_day": 1.17,
+     "max_trips_one_worker_day": 2,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270002,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 19,
+     "queen_death": {
+      "day": 19,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0.03,
+     "protein": 0,
+     "trips_per_active_forager_day": 1,
+     "max_trips_one_worker_day": 1,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270003,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 16,
+     "queen_death": {
+      "day": 16,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270004,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 36,
+     "queen_death": {
+      "day": 36,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 2.42,
+     "trips_per_active_forager_day": 1.4,
+     "max_trips_one_worker_day": 2,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270005,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 30,
+     "queen_death": {
+      "day": 30,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 1.63,
+     "protein": 0,
+     "trips_per_active_forager_day": 2.5,
+     "max_trips_one_worker_day": 6,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270006,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 48,
+     "queen_death": {
+      "day": 48,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 4.06,
+     "protein": 2.72,
+     "trips_per_active_forager_day": 1.93,
+     "max_trips_one_worker_day": 8,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270007,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 31,
+     "queen_death": {
+      "day": 31,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270008,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 44,
+     "queen_death": {
+      "day": 44,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0.03,
+     "protein": 0,
+     "trips_per_active_forager_day": 1.5,
+     "max_trips_one_worker_day": 3,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270009,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 15,
+     "queen_death": {
+      "day": 15,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0.71,
+     "protein": 0,
+     "trips_per_active_forager_day": 2,
+     "max_trips_one_worker_day": 2,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270010,
+     "queen_alive": true,
+     "workers": 1,
+     "brood": 1,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 8.75,
+     "protein": 0.94,
+     "trips_per_active_forager_day": 2.08,
+     "max_trips_one_worker_day": 7,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270011,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 22,
+     "queen_death": {
+      "day": 22,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270012,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 14,
+     "queen_death": {
+      "day": 14,
+      "reason": "chronic_sugar_and_protein_deficit",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": 1,
+     "max_trips_one_worker_day": 1,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270013,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 33,
+     "queen_death": {
+      "day": 33,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0.88,
+     "trips_per_active_forager_day": 1,
+     "max_trips_one_worker_day": 1,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270014,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 34,
+     "queen_death": {
+      "day": 34,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 4.26,
+     "protein": 0,
+     "trips_per_active_forager_day": 1.5,
+     "max_trips_one_worker_day": 2,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270015,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 26,
+     "queen_death": {
+      "day": 26,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270016,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 28,
+     "queen_death": {
+      "day": 28,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0.86,
+     "trips_per_active_forager_day": 1,
+     "max_trips_one_worker_day": 1,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270017,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 46,
+     "queen_death": {
+      "day": 34,
+      "reason": "chronic_protein_deficit",
+      "triggers": [
+       "chronic_protein_deficit"
+      ]
+     },
+     "sugar": 8.8,
+     "protein": 0,
+     "trips_per_active_forager_day": 1.63,
+     "max_trips_one_worker_day": 4,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270018,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 33,
+     "queen_death": {
+      "day": 33,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": 1,
+     "max_trips_one_worker_day": 1,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270019,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 24,
+     "queen_death": {
+      "day": 24,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 1.72,
+     "trips_per_active_forager_day": 1.5,
+     "max_trips_one_worker_day": 2,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270020,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 27,
+     "queen_death": {
+      "day": 27,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0.58,
+     "trips_per_active_forager_day": 1,
+     "max_trips_one_worker_day": 1,
+     "cancelled_no_time": 0
+    }
+   ]
+  },
+  {
+   "id": "E8",
+   "title": "多隻工蟻同時前往一個食源：10 隻都知道 F01 並且全部覓食",
+   "seeds": 20,
+   "queen_alive_day60": 20,
+   "colony_end": 0,
+   "workers_day60_median": 8,
+   "sugar_income_median": 78.475,
+   "protein_income_median": 44.93,
+   "trips_per_active_forager_day_median": 2.505,
+   "max_trips_one_worker_day": 13,
+   "queen_death_day_median": null,
+   "queen_death_reasons": {},
+   "rows": [
+    {
+     "seed": 20270001,
+     "queen_alive": true,
+     "workers": 15,
+     "brood": 9,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 89.37,
+     "protein": 45.53,
+     "trips_per_active_forager_day": 2.46,
+     "max_trips_one_worker_day": 11,
+     "cancelled_no_time": 15
+    },
+    {
+     "seed": 20270002,
+     "queen_alive": true,
+     "workers": 6,
+     "brood": 16,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 72.34,
+     "protein": 47.25,
+     "trips_per_active_forager_day": 2.47,
+     "max_trips_one_worker_day": 13,
+     "cancelled_no_time": 3
+    },
+    {
+     "seed": 20270003,
+     "queen_alive": true,
+     "workers": 8,
+     "brood": 12,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 74.07,
+     "protein": 51.88,
+     "trips_per_active_forager_day": 2.51,
+     "max_trips_one_worker_day": 12,
+     "cancelled_no_time": 7
+    },
+    {
+     "seed": 20270004,
+     "queen_alive": true,
+     "workers": 16,
+     "brood": 16,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 112.21,
+     "protein": 46.29,
+     "trips_per_active_forager_day": 2.39,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 16
+    },
+    {
+     "seed": 20270005,
+     "queen_alive": true,
+     "workers": 5,
+     "brood": 9,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 52.9,
+     "protein": 23.17,
+     "trips_per_active_forager_day": 2.37,
+     "max_trips_one_worker_day": 10,
+     "cancelled_no_time": 4
+    },
+    {
+     "seed": 20270006,
+     "queen_alive": true,
+     "workers": 7,
+     "brood": 16,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 76.37,
+     "protein": 37.89,
+     "trips_per_active_forager_day": 2.67,
+     "max_trips_one_worker_day": 12,
+     "cancelled_no_time": 1
+    },
+    {
+     "seed": 20270007,
+     "queen_alive": true,
+     "workers": 9,
+     "brood": 12,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 67.43,
+     "protein": 23.73,
+     "trips_per_active_forager_day": 2.52,
+     "max_trips_one_worker_day": 9,
+     "cancelled_no_time": 5
+    },
+    {
+     "seed": 20270008,
+     "queen_alive": true,
+     "workers": 7,
+     "brood": 14,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 75.99,
+     "protein": 30.91,
+     "trips_per_active_forager_day": 2.43,
+     "max_trips_one_worker_day": 10,
+     "cancelled_no_time": 2
+    },
+    {
+     "seed": 20270009,
+     "queen_alive": true,
+     "workers": 12,
+     "brood": 9,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 89.58,
+     "protein": 64.47,
+     "trips_per_active_forager_day": 2.7,
+     "max_trips_one_worker_day": 12,
+     "cancelled_no_time": 5
+    },
+    {
+     "seed": 20270010,
+     "queen_alive": true,
+     "workers": 8,
+     "brood": 17,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 78.12,
+     "protein": 44.33,
+     "trips_per_active_forager_day": 2.54,
+     "max_trips_one_worker_day": 11,
+     "cancelled_no_time": 6
+    },
+    {
+     "seed": 20270011,
+     "queen_alive": true,
+     "workers": 4,
+     "brood": 11,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 61.11,
+     "protein": 36.45,
+     "trips_per_active_forager_day": 2.59,
+     "max_trips_one_worker_day": 12,
+     "cancelled_no_time": 6
+    },
+    {
+     "seed": 20270012,
+     "queen_alive": true,
+     "workers": 12,
+     "brood": 13,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 85.5,
+     "protein": 30.62,
+     "trips_per_active_forager_day": 2.39,
+     "max_trips_one_worker_day": 10,
+     "cancelled_no_time": 4
+    },
+    {
+     "seed": 20270013,
+     "queen_alive": true,
+     "workers": 7,
+     "brood": 10,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 76.03,
+     "protein": 47.86,
+     "trips_per_active_forager_day": 2.42,
+     "max_trips_one_worker_day": 10,
+     "cancelled_no_time": 11
+    },
+    {
+     "seed": 20270014,
+     "queen_alive": true,
+     "workers": 10,
+     "brood": 9,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 89.34,
+     "protein": 41.47,
+     "trips_per_active_forager_day": 2.7,
+     "max_trips_one_worker_day": 10,
+     "cancelled_no_time": 10
+    },
+    {
+     "seed": 20270015,
+     "queen_alive": true,
+     "workers": 8,
+     "brood": 10,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 90.52,
+     "protein": 51.96,
+     "trips_per_active_forager_day": 2.55,
+     "max_trips_one_worker_day": 12,
+     "cancelled_no_time": 3
+    },
+    {
+     "seed": 20270016,
+     "queen_alive": true,
+     "workers": 11,
+     "brood": 13,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 79.99,
+     "protein": 56.7,
+     "trips_per_active_forager_day": 2.65,
+     "max_trips_one_worker_day": 11,
+     "cancelled_no_time": 4
+    },
+    {
+     "seed": 20270017,
+     "queen_alive": true,
+     "workers": 5,
+     "brood": 15,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 67.25,
+     "protein": 22.3,
+     "trips_per_active_forager_day": 2.34,
+     "max_trips_one_worker_day": 11,
+     "cancelled_no_time": 4
+    },
+    {
+     "seed": 20270018,
+     "queen_alive": true,
+     "workers": 10,
+     "brood": 19,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 85.37,
+     "protein": 37.24,
+     "trips_per_active_forager_day": 2.45,
+     "max_trips_one_worker_day": 11,
+     "cancelled_no_time": 2
+    },
+    {
+     "seed": 20270019,
+     "queen_alive": true,
+     "workers": 13,
+     "brood": 12,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 82.3,
+     "protein": 55.61,
+     "trips_per_active_forager_day": 2.5,
+     "max_trips_one_worker_day": 13,
+     "cancelled_no_time": 11
+    },
+    {
+     "seed": 20270020,
+     "queen_alive": true,
+     "workers": 7,
+     "brood": 11,
+     "colony_end_day": null,
+     "queen_death": null,
+     "sugar": 78.83,
+     "protein": 52.93,
+     "trips_per_active_forager_day": 2.52,
+     "max_trips_one_worker_day": 10,
+     "cancelled_no_time": 2
+    }
+   ]
+  },
+  {
+   "id": "E9",
+   "title": "母巢通路中斷",
+   "not_implemented": "母巢連結尚未實作（docs/research-design-2026-11.md §1）；無法測試，不偽造結果"
+  },
+  {
+   "id": "E10",
+   "title": "蟻后存活但沒有工蟻（單獨蟻后，無幼體）",
+   "seeds": 20,
+   "queen_alive_day60": 0,
+   "colony_end": 20,
+   "workers_day60_median": 0,
+   "sugar_income_median": 0,
+   "protein_income_median": 0,
+   "trips_per_active_forager_day_median": null,
+   "max_trips_one_worker_day": 0,
+   "queen_death_day_median": 15,
+   "queen_death_reasons": {
+    "no_workers": 20
+   },
+   "rows": [
+    {
+     "seed": 20270001,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 18,
+     "queen_death": {
+      "day": 18,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270002,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 14,
+     "queen_death": {
+      "day": 14,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270003,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 14,
+     "queen_death": {
+      "day": 14,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270004,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 15,
+     "queen_death": {
+      "day": 15,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270005,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 15,
+     "queen_death": {
+      "day": 15,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270006,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 15,
+     "queen_death": {
+      "day": 15,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270007,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 14,
+     "queen_death": {
+      "day": 14,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270008,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 16,
+     "queen_death": {
+      "day": 16,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270009,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 15,
+     "queen_death": {
+      "day": 15,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270010,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 14,
+     "queen_death": {
+      "day": 14,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270011,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 16,
+     "queen_death": {
+      "day": 16,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270012,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 14,
+     "queen_death": {
+      "day": 14,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270013,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 21,
+     "queen_death": {
+      "day": 21,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270014,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 24,
+     "queen_death": {
+      "day": 24,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270015,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 14,
+     "queen_death": {
+      "day": 14,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270016,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 15,
+     "queen_death": {
+      "day": 15,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270017,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 14,
+     "queen_death": {
+      "day": 14,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270018,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 18,
+     "queen_death": {
+      "day": 18,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270019,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 19,
+     "queen_death": {
+      "day": 19,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    },
+    {
+     "seed": 20270020,
+     "queen_alive": false,
+     "workers": 0,
+     "brood": 0,
+     "colony_end_day": 16,
+     "queen_death": {
+      "day": 16,
+      "reason": "no_workers",
+      "triggers": [
+       "chronic_sugar_and_protein_deficit",
+       "no_workers"
+      ]
+     },
+     "sugar": 0,
+     "protein": 0,
+     "trips_per_active_forager_day": null,
+     "max_trips_one_worker_day": 0,
+     "cancelled_no_time": 0
+    }
+   ]
+  }
+ ]
+}
