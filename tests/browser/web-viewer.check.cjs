@@ -58,6 +58,13 @@ const read = (f) => JSON.parse(fs.readFileSync(path.join(DATA, f), 'utf8'));
         check(info.includes('位置為顯示插值'), `${name} ${meta.id}: the selected moving ant is labelled 「位置為顯示插值」`);
         if (meta.id === index.experiments[0].id) await page.screenshot({ path: `${out}/${name}-experiment-walking.png`, fullPage: true });
       }
+      // V2 layers: task colours follow the engine's day task; the legend explains them
+      await page.check('#ovTask'); await setDay(3, 30);
+      const tasks = await V(() => window.antempireViewer.antsOnScreen());
+      check(tasks.length === read(meta.file).days[1].end_state.workers.length && tasks.every((a) => a.task === (exp.days[2].tasks?.[a.id]?.task ?? read(meta.file).days[1].end_state.workers.find((w) => w.id === a.id)?.task)), `${name} ${meta.id}: ants coloured by the engine's day-3 task`);
+      const legend = await page.$eval('#legend', (e) => e.textContent);
+      check(legend.includes('覓食') && legend.includes('費洛蒙') && legend.includes('本日開始時'), `${name} ${meta.id}: legend explains task colours and the pheromone scale`);
+      await page.uncheck('#ovTask');
       // day crossing, deaths and eclosions (expectations from the exported engine data, not from the page)
       for (let d = 1; d < ndays; d++) {
         const day = exp.days[d - 1], died = day.events.filter((e) => e.type === 'worker_death').map((e) => e.id), born = day.events.filter((e) => e.type === 'eclosion').map((e) => e.new_worker_id);

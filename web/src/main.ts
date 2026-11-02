@@ -3,13 +3,13 @@
  * Day14 snapshot (static) and engine-generated experimental Day0 replays. It never runs the simulation, never
  * writes anything, and every position between two recorded points is a display interpolation (model.poseAt).
  */
-import { ACTION_LABEL, NEST, assertKind, REASON_LABEL, TASK_LABEL, describeEvent, displayPositions, eventsUntil, exploredEdges, poseAt, segmentsOf, stateAtStart, type Experiment, type Official, type Place, type Link } from './model.ts';
+import { ACTION_LABEL, NEST, assertKind, REASON_LABEL, TASK_LABEL, describeEvent, displayPositions, eventsUntil, exploredEdges, poseAt, segmentsOf, stateAtStart, taskOf, trailScale, type Experiment, type Official, type Place, type Link } from './model.ts';
 
 type Pos = Record<string, { x: number; y: number; known: boolean }>;
 interface Index { official: string; experiments: { id: string; file: string; title: string }[] }
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const canvas = $<HTMLCanvasElement>('map'), ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-const ui = { mode: $<HTMLSelectElement>('mode'), day: $<HTMLInputElement>('day'), minute: $<HTMLInputElement>('minute'), play: $<HTMLButtonElement>('play'), speed: $<HTMLSelectElement>('speed'), time: $('timeLabel'), badge: $('badge'), info: $('info'), events: $('events'), nest: $('nest'), weather: $('weather'), view: $<HTMLSelectElement>('view'), ovTrail: $<HTMLInputElement>('ovTrail'), ovExplored: $<HTMLInputElement>('ovExplored'), ovFood: $<HTMLInputElement>('ovFood'), ovLabels: $<HTMLInputElement>('ovLabels'), timeline: $('timeline') };
+const ui = { mode: $<HTMLSelectElement>('mode'), day: $<HTMLInputElement>('day'), minute: $<HTMLInputElement>('minute'), play: $<HTMLButtonElement>('play'), speed: $<HTMLSelectElement>('speed'), time: $('timeLabel'), badge: $('badge'), info: $('info'), events: $('events'), nest: $('nest'), weather: $('weather'), view: $<HTMLSelectElement>('view'), ovTrail: $<HTMLInputElement>('ovTrail'), ovExplored: $<HTMLInputElement>('ovExplored'), ovFood: $<HTMLInputElement>('ovFood'), ovLabels: $<HTMLInputElement>('ovLabels'), ovTask: $<HTMLInputElement>('ovTask'), legend: $('legend'), timeline: $('timeline') };
 
 /** Canvas colours come from the page's CSS tokens so both light and dark themes stay readable. */
 const tok = (name: string, fallback: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
@@ -26,7 +26,7 @@ async function init() {
   ui.day.oninput = () => { ui.minute.value = '0'; draw(); };
   ui.minute.oninput = () => draw();
   ui.play.onclick = () => { playing = !playing; ui.play.textContent = playing ? '暫停' : '播放'; last = performance.now(); if (playing) requestAnimationFrame(tick); };
-  for (const el of [ui.ovTrail, ui.ovExplored, ui.ovFood, ui.ovLabels, ui.view]) el.onchange = () => draw();
+  for (const el of [ui.ovTrail, ui.ovExplored, ui.ovFood, ui.ovLabels, ui.ovTask, ui.view]) el.onchange = () => draw();
   setupPanZoom();
   window.addEventListener('resize', () => { fit(); draw(); });
   await switchMode('official');
@@ -81,29 +81,54 @@ function setupPanZoom() {
 }
 
 /** Ants to draw now: [id, x, y]. Official: every living worker at its recorded day-end place. Experiment: engine poses. */
-function ants(): { id: string; x: number; y: number; interpolated: boolean; injured: boolean; trayAt?: string }[] {
+function ants(): { id: string; x: number; y: number; interpolated: boolean; injured: boolean; task: string | null; trayAt?: string }[] {
   if (official && !exp) {
     const alive = official.workers.filter((w) => w.status === 'alive');
-    return alive.map((w, i) => { const at = pos[w.location_at_day_end ?? NEST] ?? pos[NEST], a = (i / Math.max(1, alive.length)) * Math.PI * 2; return { id: w.id, x: at.x + Math.cos(a) * 4, y: at.y + Math.sin(a) * 4, interpolated: false, injured: !!w.injured_preexisting }; });
+    return alive.map((w, i) => { const at = pos[w.location_at_day_end ?? NEST] ?? pos[NEST], a = (i / Math.max(1, alive.length)) * Math.PI * 2; return { id: w.id, x: at.x + Math.cos(a) * 4, y: at.y + Math.sin(a) * 4, interpolated: false, injured: !!w.injured_preexisting, task: null }; });
   }
   if (!exp) return [];
   const day = Number(ui.day.value), d = exp.days[day - 1], s = stateAtStart(exp, day), t = Number(ui.minute.value);
   const inNest = s.workers.filter((w) => poseAt(d, w.id, t, pos).place === NEST);
   return s.workers.map((w) => {
-    const p = poseAt(d, w.id, t, pos);
-    if (p.place === NEST) { const i = inNest.indexOf(w), a = (i / Math.max(1, inNest.length)) * Math.PI * 2; return { id: w.id, x: p.x + Math.cos(a) * 4, y: p.y + Math.sin(a) * 4, interpolated: false, injured: w.injured }; }
+    const p = poseAt(d, w.id, t, pos), task = taskOf(d, s, w.id).task;
+    if (p.place === NEST) { const i = inNest.indexOf(w), a = (i / Math.max(1, inNest.length)) * Math.PI * 2; return { id: w.id, x: p.x + Math.cos(a) * 4, y: p.y + Math.sin(a) * 4, interpolated: false, injured: w.injured, task }; }
     const end = p.place.split('>').pop() as string, start = p.place.split('>')[0];
     // a walk touching a place with no recorded position is drawn at that tray slot (no invented garden position)
     const tray = pos[end]?.known === false ? end : pos[start]?.known === false ? start : undefined;
-    return { id: w.id, x: p.x, y: p.y, interpolated: p.interpolated && !tray, injured: w.injured, ...(tray ? { trayAt: tray } : {}) };
+    return { id: w.id, x: p.x, y: p.y, interpolated: p.interpolated && !tray, injured: w.injured, task, ...(tray ? { trayAt: tray } : {}) };
   });
+}
+
+/** Map symbol class of a place: from the world's recorded kind or the engine source type only. */
+function placeKind(p: Place, srcType?: string): 'nest' | 'honeydew' | 'nectar' | 'carcass' | 'other' {
+  if (p.id === NEST) return 'nest';
+  if (p.kind?.includes('honeydew') || srcType === 'honeydew') return 'honeydew';
+  if (p.kind?.includes('nectar') || srcType === 'nectar') return 'nectar';
+  if (p.kind?.includes('carcass') || p.kind?.includes('detritus') || srcType === 'carcass') return 'carcass';
+  return 'other';
+}
+const PLACE_LABEL = { nest: '主巢入口', honeydew: '蜜露（半翅目）', nectar: '花蜜', carcass: '屍體／碎屑（蛋白）', other: '其他地點' } as const;
+
+/** Legend: what every colour and line means, and where the drawn value comes from. */
+function renderLegend() {
+  const sw = (v: string) => `<span class="sw" style="background:var(${v})"></span>`;
+  const rows: string[] = [`<div class="row">${(Object.keys(PLACE_LABEL) as (keyof typeof PLACE_LABEL)[]).map((k) => `<span>${sw(`--place-${k}`)}${PLACE_LABEL[k]}</span>`).join('')}</div>`];
+  if (exp) {
+    const s = stateAtStart(exp, Number(ui.day.value)), tr = trailScale(s);
+    if (ui.ovTrail.checked) rows.push(`<div class="row"><span><span class="bar" style="border-top-width:3px;border-color:rgba(var(--trail),0.4)"></span><span class="bar" style="border-top-width:8px;border-color:rgba(var(--trail),0.9)"></span>費洛蒙：線越粗越濃＝引擎在<b>本日開始時</b>記錄的路段強度（遊戲單位，非化學濃度）；本日最強 ${tr.max.toFixed(2)}，${tr.edges} 條路段有訊號。畫面不在一天之內衰減或移動它。</span></div>`);
+    if (ui.ovExplored.checked) rows.push(`<div class="row"><span><span class="bar" style="border-top-width:5px;border-color:rgba(var(--explored),0.55)"></span>已探索路段：本日開始時存活工蟻記得的路段聯集（玩家視角；個別螞蟻只知道自己走過的）</span></div>`);
+    if (ui.ovTask.checked) rows.push(`<div class="row">${Object.entries(TASK_LABEL).map(([k, v]) => `<span>${sw(`--task-${k}`)}${v}</span>`).join('')}</div><div class="note">任務＝引擎記錄的當日任務（每日一次抽籤；被招募的非覓食者也可能出巢）</div>`);
+  } else rows.push('<div class="note">正式快照沒有費洛蒙與任務的引擎紀錄，所以不畫這些圖層。</div>');
+  if (ui.ovFood.checked) rows.push('<div class="row"><span><span class="bar" style="border-top-width:6px;border-color:var(--ink)"></span>食物存量：地點旁的長條＝引擎的現存量（糖或蛋白，份）</span></div>');
+  rows.push(`<div class="row"><span><span class="sw" style="background:var(--ant)"></span>工蟻</span><span><span class="sw" style="background:var(--muted)"></span>受傷</span><span><span class="sw" style="background:transparent;border:1px solid var(--muted)"></span>外圈＝兩個紀錄點之間（顯示插值）</span></div>`);
+  ui.legend.innerHTML = rows.join('');
 }
 
 function draw() {
   const W = canvas.width, H = canvas.height, dpr = window.devicePixelRatio || 1;
   const INK = tok('--ink', '#2f2a22'), LINK = tok('--link', '#b9ad8f'), MUTED = tok('--muted', '#8c8270'), ANT = tok('--ant', '#1d1d1d'), SEL = tok('--select', '#d62828'), TRAIL = tok('--trail', '196,76,32'), EXPL = tok('--explored', '46,125,90');
   ctx.fillStyle = tok('--ground', '#e9e2cf'); ctx.fillRect(0, 0, W, H);
-  if (ui.view.value === 'nest') { drawNest(); renderPanels(); return; }
+  if (ui.view.value === 'nest') { drawNest(); renderPanels(); renderLegend(); return; }
   const day = exp ? Number(ui.day.value) : 0, s = exp ? stateAtStart(exp, day) : null, explored = s ? exploredEdges(s) : new Set<string>();
   // links
   for (const l of links) {
@@ -121,7 +146,7 @@ function draw() {
   // places
   for (const p of places) {
     const q = pos[p.id], S = q.known ? toScreen(q.x, q.y) : trayScreen(p.id), src = s?.sources[p.id], r = (p.id === NEST ? 9 : 7) * dpr;
-    ctx.fillStyle = p.id === NEST ? '#6d4c2f' : p.kind?.includes('honeydew') || src?.type === 'honeydew' ? '#5f9e4a' : p.kind?.includes('nectar') || src?.type === 'nectar' ? '#e3b23c' : p.kind?.includes('carcass') || p.kind?.includes('detritus') || src?.type === 'carcass' ? '#8b5a3c' : '#a39b88';
+    ctx.fillStyle = tok(`--place-${placeKind(p, src?.type)}`, '#9a917d');
     ctx.beginPath(); ctx.arc(S.sx, S.sy, r, 0, Math.PI * 2); ctx.fill();
     if (ui.ovFood.checked && src) { const amt = src.type === 'carcass' ? src.protein : src.sugar; ctx.fillStyle = INK; ctx.fillRect(S.sx + r + 2 * dpr, S.sy - 3 * dpr, Math.min(60, amt * 8) * dpr, 6 * dpr); }
     if (ui.ovLabels.checked) {
@@ -133,14 +158,14 @@ function draw() {
   // ants
   for (const a of ants()) {
     const S = a.trayAt ? trayScreen(a.trayAt) : toScreen(a.x, a.y), sel = a.id === selected;
-    ctx.fillStyle = sel ? SEL : a.injured ? MUTED : ANT;
+    ctx.fillStyle = sel ? SEL : ui.ovTask.checked && exp && a.task ? tok(`--task-${a.task}`, ANT) : a.injured ? MUTED : ANT;
     ctx.beginPath(); ctx.ellipse(S.sx, S.sy, (sel ? 5 : 3.5) * dpr, (sel ? 3.2 : 2.3) * dpr, 0, 0, Math.PI * 2); ctx.fill();
     if (a.interpolated) { ctx.strokeStyle = MUTED; ctx.lineWidth = 1 * dpr; ctx.beginPath(); ctx.arc(S.sx, S.sy, 6 * dpr, 0, Math.PI * 2); ctx.stroke(); }
     if (sel) { ctx.fillStyle = SEL; ctx.font = `bold ${12 * dpr}px system-ui`; ctx.fillText(a.id, S.sx + 7 * dpr, S.sy + 4 * dpr); }
   }
   // scale bar
   const bar = 20 * cam.scale; ctx.fillStyle = INK; ctx.fillRect(12 * dpr, H - 18 * dpr, bar, 3 * dpr); ctx.font = `${11 * dpr}px system-ui`; ctx.fillText('20 cm（示意比例：方位＋約距離，非測量）', 12 * dpr, H - 24 * dpr);
-  renderPanels();
+  renderPanels(); renderLegend();
 }
 
 /** Nest view: the engine has NO nest geometry yet, so this draws only the individuals that exist, grouped by kind,
@@ -220,7 +245,7 @@ function tick(now: number) {
 
 /** Read-only hook for automated browser checks: on-screen ant positions (CSS px). Changes nothing. */
 (window as unknown as { antempireViewer: unknown }).antempireViewer = {
-  antsOnScreen: () => { const dpr = window.devicePixelRatio || 1, r = canvas.getBoundingClientRect(); return ants().map((a) => { const S = a.trayAt ? trayScreen(a.trayAt) : toScreen(a.x, a.y); return { id: a.id, x: r.left + S.sx / dpr, y: r.top + S.sy / dpr, interpolated: a.interpolated }; }); },
+  antsOnScreen: () => { const dpr = window.devicePixelRatio || 1, r = canvas.getBoundingClientRect(); return ants().map((a) => { const S = a.trayAt ? trayScreen(a.trayAt) : toScreen(a.x, a.y); return { id: a.id, x: r.left + S.sx / dpr, y: r.top + S.sy / dpr, interpolated: a.interpolated, task: a.task }; }); },
   selected: () => selected,
   state: () => ({ mode: exp ? exp.spec.id : 'official', official: !exp, day: exp ? Number(ui.day.value) : null, minute: exp ? Number(ui.minute.value) : null, workers: exp ? stateAtStart(exp, Number(ui.day.value)).workers.map((w) => w.id) : (official?.workers.filter((w) => w.status === 'alive').map((w) => w.id) ?? []), info: ui.info.textContent ?? '' }),
 };

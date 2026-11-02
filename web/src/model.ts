@@ -97,6 +97,22 @@ export function eventsUntil(d: ExperimentDay, t: number): SimEvent[] {
   return d.events.filter((e) => e.type !== 'worker_activity' && e.type !== 'route_step' && ((typeof e.minute === 'number' ? e.minute : typeof e.start === 'number' ? e.start : w + 1) <= t || t >= w));
 }
 
+/** The task the ENGINE recorded for this worker on this day (one daily draw; recruitment may send a non-forager out).
+ *  Falls back to the task in the start-of-day state when the export has no per-day task table. Never inferred. */
+export function taskOf(d: ExperimentDay, s: ColonySnap, workerId: string): { task: string | null; source: 'engine_day_task' | 'start_of_day_state' | 'none' } {
+  const t = d.tasks?.[workerId]?.task;
+  if (t) return { task: t, source: 'engine_day_task' };
+  const w = s.workers.find((x) => x.id === workerId);
+  return w ? { task: w.task, source: 'start_of_day_state' } : { task: null, source: 'none' };
+}
+
+/** Pheromone values to draw: the engine's trail strength per edge at the START of the day (game units, not a
+ *  chemical concentration). The viewer does not decay or animate them within the day. */
+export function trailScale(s: ColonySnap): { max: number; edges: number } {
+  const v = Object.values(s.trails).filter((x) => x > 0);
+  return { max: v.length ? Math.max(...v) : 0, edges: v.length };
+}
+
 /** Union of the route edges remembered by the workers alive at the start of the day (observer overlay). */
 export function exploredEdges(s: ColonySnap): Set<string> { return new Set(s.workers.flatMap((w) => w.route_edges)); }
 

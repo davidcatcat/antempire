@@ -28,7 +28,7 @@ import { exportOfficial, exportExperiment, EXPERIMENTS, layoutOf, WEB_DATA_DIR }
 import { REPO_ROOT, readJson, loadBundle } from '../cli/lib/load.ts';
 import { simulateWorldDay } from '../engine/index.ts';
 import { buildDay0, seasonStart } from '../cli/lib/day0.ts';
-import { assertKind, displayPositions, poseAt, stateAtStart, segmentsOf, eventsUntil, type Experiment } from '../web/src/model.ts';
+import { assertKind, taskOf, trailScale, displayPositions, poseAt, stateAtStart, segmentsOf, eventsUntil, type Experiment } from '../web/src/model.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
@@ -124,6 +124,15 @@ try {
     checks += exp.days.length * 6 + 4;
   }
   ok(eclosionsSeen > 0 && deathsSeen > 0, `eclosion (${eclosionsSeen}) and death (${deathsSeen}) boundaries were actually exercised`);
+  // 10. layers (V2): task colours and pheromone legend only use engine records
+  for (const exp of exps) for (let d = 1; d <= exp.days.length; d++) {
+    const day = exp.days[d - 1], st = stateAtStart(exp, d);
+    for (const w of st.workers) { const t = taskOf(day, st, w.id); assert.ok(t.source === 'engine_day_task' ? t.task === day.tasks![w.id].task : t.task === w.task, `${exp.spec.id} day ${d}: ${w.id} coloured by the engine's task`); }
+    assert.equal(taskOf(day, st, 'NOT-A-WORKER').task, null, 'no task invented for an unknown id');
+    const tr = trailScale(st), vals = Object.values(st.trails).filter((x) => x > 0);
+    assert.ok(tr.max === (vals.length ? Math.max(...vals) : 0) && tr.edges === vals.length, `${exp.spec.id} day ${d}: pheromone legend = engine trail values at the start of the day`);
+    checks += st.workers.length + 2;
+  }
   // 9. official and experiment data are never mixed
   const idx = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, WEB_DATA_DIR, 'index.json'), 'utf8'));
   const offFile = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, WEB_DATA_DIR, idx.official), 'utf8'));
