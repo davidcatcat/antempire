@@ -71,12 +71,18 @@ export interface ExperimentSpec { id: string; founding: FoundingId; season: Seas
 export const EXPERIMENTS: ExperimentSpec[] = [
   { id: 'day0-A1-autumn-20270001', founding: 'A1', season: 'autumn', seed: 20270001, days: 30 },
   { id: 'day0-A5-autumn-20270001', founding: 'A5', season: 'autumn', seed: 20270001, days: 30 },
+  // A4 (queen + carried pupae): the carried pupae eclose within the first days, so this replay covers eclosions
+  { id: 'day0-A4-autumn-20270001', founding: 'A4', season: 'autumn', seed: 20270001, days: 30 },
 ];
 export const DEFAULT_EXPERIMENT = EXPERIMENTS[0];
 
 export function exportExperiment(spec: ExperimentSpec = DEFAULT_EXPERIMENT): Any {
   const bundle = loadBundle(), rp = resolveBundle(bundle), init = buildDay0(spec.founding, spec.seed, seasonStart(spec.season), bundle);
-  const world = readJson('saves/world-state.json'); // map bearings/distances only (read-only)
+  // Garden GEOGRAPHY only (place names, bearing words, approximate distances) is read from the official world record,
+  // read-only, because it is the only place the garden layout is recorded; NO colony, individual, store or event data
+  // of the official world enters an experiment file (tests/web.test.ts checks this). P1-B will move the geography into
+  // shared spatial data used by both worlds.
+  const world = readJson('saves/world-state.json');
   const recorded = new Map(placesFromWorldRecord(world).map((p: Any) => [p.id, p]));
   const nodes = [...new Set(rp.world.routes.edges.flat())].sort();
   const places = nodes.map((id) => { const r = recorded.get(id) as Any; return { id, name: r?.name ?? id, bearing: r?.bearing ?? null, distance_cm: r?.distance_cm ?? null, kind: init.state.sources[id]?.type ?? (id === init.state.colonies[0].nest_node ? 'nest' : null), layout: r?.layout ?? null }; });
@@ -115,7 +121,7 @@ export function exportExperiment(spec: ExperimentSpec = DEFAULT_EXPERIMENT): Any
     schema: 'antempire.web.experiment-replay.v1', kind: 'experiment', official: false,
     note: '實驗世界（Day0 科學初始化），不是正式遊戲，也不會寫入正式存檔。所有個體、行動與事件都由目前的模擬引擎產生；畫面上兩個記錄點之間的移動是顯示用插值。',
     spec, engine_version: ENGINE_VERSION, rules_fingerprint: { engine: fp.engine, params: fp.params },
-    map: { unit: 'cm', layout_basis: '方位文字＋約距離（世界設定的敘事近似值），非測量；沒有記錄的地點列為位置未知', places, links },
+    map: { unit: 'cm', layout_basis: '方位文字＋約距離（世界設定的敘事近似值），非測量；沒有記錄的地點列為位置未知', geography_source: 'saves/world-state.json#world_map.locations（只讀花園地理：名稱、方位、約距離；不含正式世界的蟻群、個體、存糧或事件）', places, links },
     day0, days,
   };
 }

@@ -12,7 +12,13 @@
  *  6. the renderer is separated from the engine: web/src imports nothing from engine/ or cli/, never writes data,
  *     never uses randomness;
  *  7. the schematic layout comes only from the recorded bearing + approximate distance; places without them are
- *     marked unknown, never placed on the map.
+ *     marked unknown, never placed on the map;
+ *  8. life-cycle and replay boundaries (every experiment): an eclosed worker is drawn from the next day only, a dead
+ *     worker is not drawn after its death day, the population changes only by recorded eclosions and deaths, the day
+ *     boundary is exactly the engine's end-of-day state, and minutes/days outside the recorded replay are not
+ *     extrapolated;
+ *  9. official and experiment data are never mixed: each file declares its kind, the loader refuses the wrong kind,
+ *     experiment files hold no official colony data, the official snapshot holds no replay.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -22,7 +28,7 @@ import { exportOfficial, exportExperiment, EXPERIMENTS, layoutOf, WEB_DATA_DIR }
 import { REPO_ROOT, readJson, loadBundle } from '../cli/lib/load.ts';
 import { simulateWorldDay } from '../engine/index.ts';
 import { buildDay0, seasonStart } from '../cli/lib/day0.ts';
-import { displayPositions, poseAt, stateAtStart, segmentsOf, eventsUntil, type Experiment } from '../web/src/model.ts';
+import { assertKind, displayPositions, poseAt, stateAtStart, segmentsOf, eventsUntil, type Experiment } from '../web/src/model.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
@@ -47,20 +53,21 @@ try {
   const main = readJson('saves/main.json');
   ok(JSON.stringify(off.workers.map((w: Any) => [w.id, w.status])) === JSON.stringify(main.colony.workers.individuals.map((w: Any) => [w.id, w.status])), 'official snapshot: exactly the saved workers with their status');
   ok(off.read_only === true && off.sources.files['saves/main.json'] === sha('saves/main.json'), 'official snapshot records the hashes of the saves it read');
-  // 4. events and workers come from the engine
-  {
-    const spec = EXPERIMENTS[0], exp = exps[0], bundle = loadBundle();
+  // 4. events and workers come from the engine — for EVERY experiment scenario
+  EXPERIMENTS.forEach((spec, k) => {
+    const exp = exps[k], bundle = loadBundle();
     let s = buildDay0(spec.founding, spec.seed, seasonStart(spec.season), bundle).state;
+    let shown = 0;
     for (let i = 0; i < exp.days.length; i++) {
       const o = simulateWorldDay(s, bundle), engineEvents = [...o.result.world_events, ...o.result.colonies[0].events].map((e) => JSON.stringify(Object.fromEntries(Object.entries(e).filter(([k]) => !['assumption', 'hazards', 'sampling'].includes(k)))));
       const pool = new Map<string, number>(); for (const e of engineEvents) pool.set(e, (pool.get(e) ?? 0) + 1);
-      for (const e of exp.days[i].events) { const k = JSON.stringify(e), n = pool.get(k) ?? 0; assert.ok(n > 0, `day ${i + 1}: exported event not produced by the engine: ${k.slice(0, 160)}`); pool.set(k, n - 1); }
+      for (const e of exp.days[i].events) { const key = JSON.stringify(e), n = pool.get(key) ?? 0; assert.ok(n > 0, `${spec.id} day ${i + 1}: exported event not produced by the engine: ${key.slice(0, 160)}`); pool.set(key, n - 1); shown++; }
       const ids = new Set(stateAtStart(exp, i + 1).workers.map((w) => w.id)), engineIds = new Set(s.colonies[0].population.workers.map((w) => w.id));
-      assert.deepEqual([...ids].sort(), [...engineIds].sort(), `day ${i + 1}: drawn workers = engine workers at the start of the day`);
+      assert.deepEqual([...ids].sort(), [...engineIds].sort(), `${spec.id} day ${i + 1}: drawn workers = engine workers at the start of the day`);
       s = o.state;
     }
-    checks += exp.days.length * 2;
-  }
+    ok(shown > 0, `${spec.id}: ${shown} exported events, every one produced by the engine; drawn workers = engine workers on all ${exp.days.length} days`);
+  });
   // 5. interpolation
   for (const exp of exps) {
     const pos = displayPositions(exp.map.places);
@@ -88,7 +95,50 @@ try {
   ok(layoutOf('東北', 48)?.x === 33.94 && layoutOf('北', 92)?.y === 92 && layoutOf('未知', null) === null && layoutOf(null, 40) === null, 'layout only from recorded bearing + distance; unknown stays unknown');
   const pos = displayPositions(off.map.places);
   ok(off.map.places.filter((p: Any) => !p.layout).every((p: Any) => pos[p.id].known === false), 'places without a recorded position are flagged unknown (drawn in a separate tray)');
-  console.log(JSON.stringify({ passed: true, checks, experiments: EXPERIMENTS.map((e) => e.id) }, null, 2));
+  // 8. life-cycle and replay boundaries
+  let eclosionsSeen = 0, deathsSeen = 0;
+  for (const exp of exps) {
+    const id = exp.spec.id;
+    ok(stateAtStart(exp, 1) === exp.day0.state, `${id}: day 1 starts from the exported Day0 state`);
+    for (let d = 1; d <= exp.days.length; d++) {
+      const day = exp.days[d - 1], before = new Set(stateAtStart(exp, d).workers.map((w) => w.id)), after = day.end_state.workers.map((w) => w.id);
+      if (d < exp.days.length) assert.equal(stateAtStart(exp, d + 1), day.end_state, `${id} day ${d}: the next day starts exactly at the engine's end-of-day state`);
+      const born = day.events.filter((e) => e.type === 'eclosion').map((e) => e.new_worker_id as string), died = day.events.filter((e) => e.type === 'worker_death').map((e) => e.id as string);
+      for (const w of born) { assert.ok(!before.has(w) && after.includes(w), `${id} day ${d}: eclosed ${w} is drawn from the next day only`); eclosionsSeen++; }
+      for (const w of died) { assert.ok(before.has(w) && !after.includes(w), `${id} day ${d}: ${w} died this day and is not drawn afterwards`); deathsSeen++; }
+      assert.deepEqual([...before].filter((w) => !died.includes(w)).concat(born).sort(), [...after].sort(), `${id} day ${d}: population changes only by recorded eclosions and deaths`);
+      assert.equal(day.eclosions, born.length, `${id} day ${d}: eclosion count = eclosion events`);
+      // minutes: nothing before minute 0 or after the window is invented
+      const w = day.window_minutes ?? 360, all = eventsUntil(day, w);
+      assert.ok(eventsUntil(day, 0).every((e) => (typeof e.minute === 'number' ? e.minute : typeof e.start === 'number' ? e.start : Infinity) <= 0), `${id} day ${d}: at minute 0 only minute-0 events are shown`);
+      assert.ok(eventsUntil(day, w - 1e-6).every((e) => typeof e.minute === 'number' || typeof e.start === 'number'), `${id} day ${d}: end-of-day events (death, eclosion, laying) appear only when the window closes`);
+      assert.deepEqual(eventsUntil(day, w + 1e6), all, `${id} day ${d}: nothing is added after the window`);
+      const pos = displayPositions(exp.map.places);
+      for (const wk of stateAtStart(exp, d).workers.slice(0, 6)) {
+        assert.deepEqual(poseAt(day, wk.id, w, pos), poseAt(day, wk.id, w + 500, pos), `${id} day ${d}: ${wk.id} is not moved after the recorded window`);
+        const first = segmentsOf(day, wk.id)[0];
+        if (!first || (first.start as number) > 0) assert.equal(poseAt(day, wk.id, -5, pos).place, 'N00', `${id} day ${d}: before its first recorded segment ${wk.id} is drawn in the nest`);
+      }
+    }
+    for (const bad of [0, -1, exp.days.length + 1, 1.5]) assert.throws(() => stateAtStart(exp, bad), RangeError, `${id}: day ${bad} is outside the replay and refused`);
+    checks += exp.days.length * 6 + 4;
+  }
+  ok(eclosionsSeen > 0 && deathsSeen > 0, `eclosion (${eclosionsSeen}) and death (${deathsSeen}) boundaries were actually exercised`);
+  // 9. official and experiment data are never mixed
+  const idx = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, WEB_DATA_DIR, 'index.json'), 'utf8'));
+  const offFile = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, WEB_DATA_DIR, idx.official), 'utf8'));
+  ok(assertKind(offFile, 'official', idx.official) === offFile && !('days' in offFile) && !('spec' in offFile) && !('engine_version' in offFile), 'the official file is an official snapshot without any replay');
+  assert.throws(() => assertKind(offFile, 'experiment', idx.official), /not experiment data/); checks++;
+  ok(idx.experiments.length === EXPERIMENTS.length && idx.experiments.every((e: Any) => e.file !== idx.official), 'index lists each experiment once and never the official file as an experiment');
+  for (const e of idx.experiments) {
+    const f = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, WEB_DATA_DIR, e.file), 'utf8'));
+    ok(assertKind(f, 'experiment', e.file) === f && f.official === false, `${e.file}: declares itself experiment / not official`);
+    assert.throws(() => assertKind(f, 'official', e.file), /not official data/); checks++;
+    const spec = EXPERIMENTS.find((x) => x.id === e.id)!, engineDay0 = buildDay0(spec.founding, spec.seed, seasonStart(spec.season), loadBundle()).state.colonies[0];
+    ok(JSON.stringify(f.day0.state.workers.map((w: Any) => w.id)) === JSON.stringify(engineDay0.population.workers.map((w) => w.id)) && JSON.stringify(f.day0.state.brood.map((b: Any) => b.id)) === JSON.stringify(engineDay0.population.brood.map((b) => b.id)), `${e.file}: Day0 individuals come from the Day0 initializer, not from the official save`);
+    ok(typeof f.map.geography_source === 'string' && f.map.geography_source.includes('world_map.locations'), `${e.file}: only garden geography is read from the official record, and it says so`);
+  }
+  console.log(JSON.stringify({ passed: true, checks, experiments: EXPERIMENTS.map((e) => e.id), eclosions_checked: eclosionsSeen, deaths_checked: deathsSeen }, null, 2));
 } finally {
   for (const [f, h] of protectedFiles) assert.equal(sha(f), h, 'REAL SAVE CHANGED: ' + f);
   assert.equal(fs.readdirSync(path.join(REPO_ROOT, 'journal')).sort().join(), journalBefore, 'journal/ changed');

@@ -3,7 +3,7 @@
  * Day14 snapshot (static) and engine-generated experimental Day0 replays. It never runs the simulation, never
  * writes anything, and every position between two recorded points is a display interpolation (model.poseAt).
  */
-import { ACTION_LABEL, NEST, REASON_LABEL, TASK_LABEL, describeEvent, displayPositions, eventsUntil, exploredEdges, poseAt, segmentsOf, stateAtStart, type Experiment, type Official, type Place, type Link } from './model.ts';
+import { ACTION_LABEL, NEST, assertKind, REASON_LABEL, TASK_LABEL, describeEvent, displayPositions, eventsUntil, exploredEdges, poseAt, segmentsOf, stateAtStart, type Experiment, type Official, type Place, type Link } from './model.ts';
 
 type Pos = Record<string, { x: number; y: number; known: boolean }>;
 interface Index { official: string; experiments: { id: string; file: string; title: string }[] }
@@ -14,7 +14,7 @@ const ui = { mode: $<HTMLSelectElement>('mode'), day: $<HTMLInputElement>('day')
 /** Canvas colours come from the page's CSS tokens so both light and dark themes stay readable. */
 const tok = (name: string, fallback: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
 let index: Index, official: Official | null = null, exp: Experiment | null = null, pos: Pos = {}, places: Place[] = [], links: Link[] = [];
-let selected: string | null = null, playing = false, last = 0;
+let selected: string | null = null, playing = false, last = 0, modeRequest = 0;
 const cam = { x: 0, y: 0, scale: 3 };
 
 async function load<T>(file: string): Promise<T> { const r = await fetch('data/' + file); if (!r.ok) throw Error('cannot load ' + file); return r.json() as Promise<T>; }
@@ -34,14 +34,19 @@ async function init() {
 
 async function switchMode(id: string) {
   playing = false; ui.play.textContent = '播放'; selected = null;
+  const req = ++modeRequest; // a slower earlier load must never overwrite the world chosen later
   if (id === 'official') {
-    official ??= await load<Official>(index.official); exp = null;
+    const o = official ?? assertKind(await load<Official>(index.official), 'official', index.official);
+    if (req !== modeRequest) return;
+    official = o; exp = null;
     places = official.map.places; links = official.map.links;
     ui.badge.className = 'badge official'; ui.badge.textContent = `正式遊戲 Day${official.day}（${official.calendar_date}）唯讀快照：沒有逐分鐘紀錄，因此不播放動畫`;
     ui.timeline.hidden = true;
   } else {
     const meta = index.experiments.find((e) => e.id === id) as Index['experiments'][number];
-    exp = await load<Experiment>(meta.file); places = exp.map.places; links = exp.map.links;
+    const e = assertKind(await load<Experiment>(meta.file), 'experiment', meta.file);
+    if (req !== modeRequest) return;
+    exp = e; places = exp.map.places; links = exp.map.links;
     ui.badge.className = 'badge experiment'; ui.badge.textContent = `${meta.title}｜非正式、不寫入存檔｜引擎 ${exp.engine_version}`;
     ui.timeline.hidden = false; ui.day.min = '1'; ui.day.max = String(exp.days.length); ui.day.value = '1'; ui.minute.value = '0';
   }
@@ -217,6 +222,7 @@ function tick(now: number) {
 (window as unknown as { antempireViewer: unknown }).antempireViewer = {
   antsOnScreen: () => { const dpr = window.devicePixelRatio || 1, r = canvas.getBoundingClientRect(); return ants().map((a) => { const S = a.trayAt ? trayScreen(a.trayAt) : toScreen(a.x, a.y); return { id: a.id, x: r.left + S.sx / dpr, y: r.top + S.sy / dpr, interpolated: a.interpolated }; }); },
   selected: () => selected,
+  state: () => ({ mode: exp ? exp.spec.id : 'official', official: !exp, day: exp ? Number(ui.day.value) : null, minute: exp ? Number(ui.minute.value) : null, workers: exp ? stateAtStart(exp, Number(ui.day.value)).workers.map((w) => w.id) : (official?.workers.filter((w) => w.status === 'alive').map((w) => w.id) ?? []), info: ui.info.textContent ?? '' }),
 };
 
 init().catch((e) => { ui.badge.textContent = '載入失敗：' + (e as Error).message; });

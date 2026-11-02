@@ -31,9 +31,21 @@ export function displayPositions(places: Place[]): Record<string, { x: number; y
   return out;
 }
 
-/** The colony as it was at the START of experiment day `day` (= end of the previous day). */
+/** The colony as it was at the START of experiment day `day` (= end of the previous day). Days outside the
+ *  recorded replay (1 … days.length) are refused: the viewer never extrapolates beyond the engine's timeline. */
 export function stateAtStart(exp: Experiment, day: number): ColonySnap {
-  return day <= 1 ? exp.day0.state : exp.days[day - 2].end_state;
+  if (!Number.isInteger(day) || day < 1 || day > exp.days.length) throw new RangeError(`day ${day} is outside the recorded replay 1…${exp.days.length}`);
+  return day === 1 ? exp.day0.state : exp.days[day - 2].end_state;
+}
+
+/** The world kinds are never mixed: a file loaded for one mode must declare that mode. */
+export function assertKind<T extends { kind: string; schema: string }>(data: T, kind: 'official' | 'experiment', file: string): T {
+  const d = data as unknown as { kind: string; schema: string; official?: boolean; days?: unknown };
+  const ok = kind === 'official'
+    ? d.kind === 'official' && d.schema === 'antempire.web.official-snapshot.v1' && d.days === undefined
+    : d.kind === 'experiment' && d.schema === 'antempire.web.experiment-replay.v1' && d.official === false && Array.isArray(d.days);
+  if (!ok) throw new Error(`${file} is not ${kind} data (kind ${d.kind}, schema ${d.schema})`);
+  return data;
 }
 
 /** Recorded activity segments of one worker on one day, in time order. */
