@@ -406,3 +406,43 @@
 - R173（San Juan et al. 2025）：勘誤見 C6。
 
 **R173 勘誤（新增，不改舊列）**：舊列寫「本種攻擊火蟻時，死亡的多半是兵蟻」，與原文不符：原文那句出現在 *Pheidole* cf. *parva* 的段落，而且沒有說是哪一種的兵蟻。本種在 R173 的可用內容是：兵蟻把被小工蟻拉開的獵物或敵蟻切斷腳、觸角或斬首（定性）。〔設計文件衝突表 C6〕
+## 2026-11-02 第三階段：幼體發育溫度、成蟲死亡、蟻后批次產卵、食卵與幼體營養（R204–R227；研究與設計，未改規則）
+
+> 用於 `docs/research-design-phase3-lifecycle.md`；工作筆記 `reports/phase3-lifecycle/literature-notes.md`。
+> - 第二階段的 R189–R203 定義在 PR #34（尚未合併時，本段編號仍從 R204 起，不重複）。
+> - 「非本種」的數值一律不作為本種參數；本段沒有據此改任何參數。
+
+| ID | 文獻 | 讀取程度 | 分類 |
+|---|---|---|---|
+| R204 | Porter SD, Tschinkel WR (1985) Fire ant polymorphism: the ergonomics of brood production. *Behav. Ecol. Sociobiol.* 16:323–336 | 全文 | 非本種：*S. invicta* |
+| R205 | Tschinkel WR (1988) Social control of egg-laying rate in queens of the fire ant, *Solenopsis invicta*. *Physiol. Entomol.* 13:327–350 | 摘要頁影像 | 非本種 |
+| R206 | Tschinkel WR (1995) Stimulation of fire ant queen fecundity by a highly specific brood stage. *Ann. Entomol. Soc. Am.* 88:876–882 | 第 1 頁影像 | 非本種 |
+| R207 | Vargo EL (1989) On differential reproduction among queens in polygyne colonies of the fire ant *Solenopsis invicta*. *Actes Coll. Insectes Soc.* 5:109–116 | 全文（OCR） | 非本種 |
+| R208 | Tschinkel WR (1993a) Resource allocation, brood production and cannibalism during colony founding in the fire ant. *Behav. Ecol. Sociobiol.* 33:209–223 | 全文相關章節 | 非本種 |
+| R209 | Tschinkel WR (1993b) Sociometry and sociogenesis of colonies of the fire ant *Solenopsis invicta* during one annual cycle. *Ecol. Monogr.* 63:425–457 | 全文相關章節 | 非本種 |
+| R210 | Cassill DL, Tschinkel WR (1995) Allocation of liquid food to larvae via trophallaxis in colonies of the fire ant. *Anim. Behav.* 50:801–813 | 全文相關章節 | 非本種 |
+| R211 | Cassill DL, Tschinkel WR (1999) Effects of colony-level attributes on larval feeding in the fire ant. *Insectes Soc.* 46:261–266 | 摘要 | 非本種 |
+| R212 | Passera L (1973) Origine des soldats dans les sociétés de *Pheidole pallidula*. *Proc. VII Int. Congr. IUSSI*, London | 全文 | 非本種：同屬 *P. pallidula* |
+| R213 | Lillico-Ouachour A (2017) MSc thesis, McGill University（第 1 章 = Lillico-Ouachour & Abouheif 2017 *Curr. Opin. Insect Sci.* 19:43–51） | 全文相關章節 | 非本種：*Pheidole* 綜述 |
+| R214 | Rajakumar R et al. (2018) *Nature* 562:574–577. DOI 10.1038/s41586-018-0613-1 | 摘要 | 非本種：*Pheidole* |
+| R215 | Sorensen AA, Busch TM, Vinson SB (1983) *J. Kansas Entomol. Soc.* 56:140–150 | 經摘要工具 | 非本種：*S. invicta*；數字需要再核對 |
+| R216 | Huang MH, Wheeler DE, Fjerdingstad EJ (2013) *Mol. Ecol.* 22. DOI 10.1111/mec.12218 | 摘要 | 非本種：*Pheidole* 工蟻沒有卵巢 |
+| R217 | Schultner E, Gardner A, Karhunen M, Helanterä H (2014) *Am. Nat.* DOI 10.1086/678459 | 摘要 | 非本種：多種 *Formica* |
+| R218 | Warner MR, Lipponen J, Linksvayer TA (2017) bioRxiv 211573 | 摘要（預印本） | 非本種：*M. pharaonis* |
+| R219 | Kramer BH, Schaible R (2013) *PLoS ONE* 8:e61813 | 全文相關段落 | 一般；轉述 Calabi & Porter 1989 |
+| R220 | Jaimes-Nino LM, Oettler J (2025) *Biol. Rev.* DOI 10.1111/brv.70035 | 全文相關章節 | 一般；蟻后壽命資料的品質 |
+| R221 | Brière JF et al. (1999) *Environ. Entomol.* 28:22–29 | 摘要 | 一般方法 |
+| R222 | Colinet H et al. (2015) *Annu. Rev. Entomol.* 60:123–140 | 摘要（經工具） | 一般生理學 |
+| R223 | Penick CA, Tschinkel WR (2008) Thermoregulatory brood transport in the fire ant. *Insectes Soc.* 55. DOI 10.1007/s00040-008-0987-4 | 全文摘要 | 非本種 |
+| R224 | Asano E, Cassill DL (2012) *J. Theor. Biol.* 305:70–77 | 摘要 | 非本種，模型 |
+| R225 | Bar A, Shalev L, Scharf I (2022) *Biology* 11:1714 | 摘要 | 非本種：*Cataglyphis niger* |
+| R226 | Porter SD, Tschinkel WR (1993) Fire ant thermal preferences. *Behav. Ecol. Sociobiol.* 32:321–329 | 全文 | 非本種 |
+| R227 | Cassill DL, Tschinkel WR (2000) *J. Insect Physiol.* 46:933–939 | 全文 | 非本種 |
+
+**既有編號的附註**（第三階段新增附註，不改寫原有行）
+
+- R172 的措辭含糊：原文是「mortality is 50% at 77 days」，解讀為 77 日時存活 50%。
+- R94 有兩處內部不一致：
+  - 第 84 日的小工蟻存活數；
+  - 繁殖季節寫成「3～5 月」與「晚春到秋季」兩種。
+- GISD 的「壽命 78／38 日」不採用，理由見 `docs/research-design-phase3-lifecycle.md` §0。
