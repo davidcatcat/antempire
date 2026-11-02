@@ -208,6 +208,24 @@
       "save_schema": "antempire.engine-v2",
       "state_migration": null,
       "note": "個體行動時間軸與自主覓食（species activity.individual_timeline）；路段時間由世界記錄的長度÷本種沿跡速度計算，長度未知的路段沿用 25 分鐘。開關關閉時與 v16 逐位元組相同。"
+    },
+    {
+      "rules_version": "antempire.v2-review.18-founding-controls",
+      "tag": "v18",
+      "fingerprint": {
+        "engine": "4929b7dd03c4606d2f0389402e1f7547f0b3d9cc029c6a4439f52e90690e450f",
+        "params": "2ce4ed32919d3056efd1be7d19adc47f812646ee166429b4d147078fd141f2ce"
+      },
+      "approved_in": "創巢對照 PR（依賴 #28、#29、v17 PR；待 Owner 審閱；合併即核准）",
+      "golden": {
+        "traces": "tests/golden/v18-trace-sha256.json",
+        "reports": "reports/day15-134-v18-*",
+        "day0_traces": "tests/golden/day0-v18-trace-sha256.json"
+      },
+      "previous": "antempire.v2-review.17-activity-timeline",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null,
+      "note": "Day0 文獻對照情境 A4（蟻后＋10 蛹）與 A5（蟻后＋10 新羽化工蟻）；無工蟻期蟻后風險從第 14 日起（R136 Chang 1985）。"
     }
   ]
 }

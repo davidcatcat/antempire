@@ -7,8 +7,9 @@ import { initializeDay0, type Day0Output, type ParamBundle } from '../../engine/
 
 export const DAY0_DIR = 'scenarios/day0';
 export const CLIMATOLOGY = 'data/taichung-climatology-1991-2020.json';
-export type FoundingId = 'A1' | 'A2' | 'A3' | 'B' | 'C';
-export const SUPPORTED_FOUNDINGS: FoundingId[] = ['A1', 'A2', 'A3'];
+export type FoundingId = 'A1' | 'A2' | 'A3' | 'A4' | 'A5' | 'B' | 'C';
+/** v2-review.18: A4 (queen + 10 pupae) and A5 (queen + 10 callows) are the Chang 1985 controls. */
+export const SUPPORTED_FOUNDINGS: FoundingId[] = ['A1', 'A2', 'A3', 'A4', 'A5'];
 export const SEASONS = ['spring', 'summer', 'autumn', 'winter'] as const;
 export type Season = (typeof SEASONS)[number];
 

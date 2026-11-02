@@ -61,6 +61,22 @@ try {
     const world = (s: WorldState) => JSON.stringify([s.sources, s.ecology, s.climate]);
     ok(SUPPORTED_FOUNDINGS.every((f) => world(worlds[f]) === world(worlds.A1)), `${season}: the Day0 garden is identical whatever founding follows (ecology never reads the colony)`);
   }
+  // v2-review.18 Chang 1985 controls: A4 starts with pupae and NO worker; pupae do not become foragers at once
+  {
+    const s0 = buildDay0('A4', DAY0_SEEDS[0], seasonStart('autumn'), bundle).state, c = s0.colonies[0];
+    ok(c.population.workers.length === 0 && c.population.brood.length === 10 && c.population.brood.every((x) => x.stage === 'pupa'), 'A4: queen + 10 pupae, no worker at Day0');
+    let s = s0, firstWorkers = -1, queenAliveUntilEclosion = true;
+    for (let d = 1; d <= 30 && firstWorkers < 0; d++) {
+      const o = simulateWorldDay(s, bundle), cc = o.state.colonies[0], ev = o.result.colonies[0].events as Any[];
+      ok(!ev.some((e) => e.type === 'egg_laid'), 'A4: the queen alone does not lay (oviposition needs a worker)');
+      if (cc.population.workers.length) { firstWorkers = d; ok(cc.population.workers.every((w) => w.age_days <= 1 && w.age_origin === 'born_after_v2_migration' && w.task !== 'forage'), 'A4: the first workers eclose from the pupae as callows, not as experienced foragers'); }
+      if (!cc.population.queen_alive) queenAliveUntilEclosion = false;
+      s = o.state;
+    }
+    ok(firstWorkers > 1 && queenAliveUntilEclosion, `A4: pupae eclose on day ${firstWorkers} (development time, not instantly); the queen survives the workerless days`);
+    const a5 = buildDay0('A5', DAY0_SEEDS[0], seasonStart('autumn'), bundle).state.colonies[0];
+    ok(a5.population.workers.length === 10 && a5.population.workers.every((w) => w.age_days === 0 && w.age_origin === 'founded_day0_newly_eclosed_callow'), 'A5: 10 newly eclosed founders (age 0)');
+  }
   // refused inputs
   const base = day0Inputs('A1'), clim = base.climatology;
   const untagged = structuredClone(base); delete untagged.founding.workers.assumption;
@@ -87,7 +103,7 @@ try {
     }
     day1++;
   }
-  ok(day1 === 240 && walkedEdges > 0, `Day0 -> Day1 in ${day1} runs; ${walkedEdges} remembered edges, each walked by that worker on Day1`);
+  ok(day1 === SUPPORTED_FOUNDINGS.length * SEASONS.length * DAY0_SEEDS.length && walkedEdges > 0, `Day0 -> Day1 in ${day1} runs; ${walkedEdges} remembered edges, each walked by that worker on Day1`);
 
   // 5. 90-day audits
   const ORDER: Record<string, number> = { egg: 0, larva: 1, pupa: 2 };
@@ -110,7 +126,7 @@ try {
     }
     audited++;
   }
-  ok(audited === 24, `90-day stage / route / age audits in ${audited} runs`);
+  ok(audited === SUPPORTED_FOUNDINGS.length * SEASONS.length * 2, `90-day stage / route / age audits in ${audited} runs`);
 
   // 6. determinism
   const run = (seed: number) => { let s = buildDay0('A2', seed, seasonStart('autumn'), bundle).state; const out: string[] = []; for (let d = 0; d < 30; d++) { const o = simulateWorldDay(s, bundle); out.push(JSON.stringify([o.result, o.state])); s = o.state; } return out.join('\n'); };

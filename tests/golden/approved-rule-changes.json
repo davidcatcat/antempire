@@ -314,6 +314,17 @@
       "file": "species:pheidole-megacephala",
       "path": "activity.recruit_min_crop_fill_fraction",
       "to": 0.5
+    },
+    {
+      "rules_version": "antempire.v2-review.18-founding-controls",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, item 3.1/3.2; pending Owner review)",
+      "kind": "param",
+      "file": "species:pheidole-megacephala",
+      "path": "starvation.queen_zero_worker_hazard_after_days",
+      "legacy_path": "starvation.queen_zero_worker_hazard_after_days",
+      "from": 3,
+      "to": 14,
+      "description": "lone-queen hazard starts after 14 workerless days (Chang 1985, this species: queens without workers died within 2–3 weeks); 3 days killed ~95% of lone queens before day 14. Found while building the A4 (queen + 10 pupae) control the Owner asked for."
     }
   ]
 }
