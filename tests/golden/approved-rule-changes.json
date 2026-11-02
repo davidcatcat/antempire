@@ -144,6 +144,14 @@
       "kind": "engine",
       "day14_output_unchanged": true,
       "description": "engine/initialization.ts builds a Day0 world (garden warm-up + founding propagule); validateWorld accepts sim_day >= 0; Day14 route evidence is never given to workers that eclosed in the simulation. Every Day14-start output is byte-identical to v2-review.14 (tests/rules-isolation.test.ts), so nothing needs neutralising."
+    },
+    {
+      "rules_version": "antempire.v2-review.16-death-diagnostics",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, item 3.2; pending Owner review)",
+      "kind": "engine",
+      "diagnostics_only": true,
+      "normalise_output": "death_diagnostics_v16",
+      "description": "queen_death names the active trigger(s) (chronic sugar / protein / both deficit, no workers) and which one set the applied hazard (max rule), records hazards and sampling, natural queen hazard 'not_modelled'; worker_death records its competing natural and starvation hazards. No probability, draw or state changes: undoing the added fields reproduces v2-review.15 byte for byte."
     }
   ]
 }

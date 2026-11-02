@@ -21,7 +21,12 @@ export function workerSurvival(world: WorldState, colony: ColonyState, sp: Speci
     let starvation = 0;
     if (stores.sugar_gap_days >= st.worker_mortality_starts_days) starvation = clamp(st.worker_daily_hazard_base + (stores.sugar_gap_days - st.worker_mortality_starts_days) * st.worker_daily_hazard_slope, 0, st.worker_starvation_hazard_cap);
     const risk = clamp(1 - (1 - natural) * (1 - starvation), 0, life.adult_total_daily_hazard_cap);
-    if (g() < risk) { summary.worker_deaths++; events.push({ type: 'worker_death', id: w.id, reason: starvation > 0 ? 'starvation_or_natural_competing_hazards_scenario' : 'natural_or_injury_assumed', risk_assumption: round(risk) }); }
+    if (g() < risk) {
+      summary.worker_deaths++;
+      // v2-review.16 diagnostics: the two hazards compete in ONE draw, so the cause cannot be split; both
+      // components and the sampling rule are recorded instead of naming a single physiological cause.
+      events.push({ type: 'worker_death', id: w.id, reason: starvation > 0 ? 'starvation_or_natural_competing_hazards_scenario' : 'natural_or_injury_assumed', risk_assumption: round(risk), hazards: { natural_age_injury: round(natural), sugar_deficit_starvation: round(starvation), sugar_gap_days: stores.sugar_gap_days, age_days: w.age_days, injured: w.injured }, sampling: 'one uniform draw < 1-(1-natural)(1-starvation), capped at adult_total_daily_hazard_cap; competing risks, cause not separable' });
+    }
     else {
       // v2-review.12: an abrasion can close, a lost or damaged appendage never regrows (adult insects do not
       // moult); an unrecorded type keeps the earlier rule. A worker without injury_type is 'unknown'.
@@ -42,8 +47,22 @@ export function queenSurvival(world: WorldState, colony: ColonyState, sp: Specie
   stores.no_worker_days = pop.workers.length === 0 ? (stores.no_worker_days || 0) + 1 : 0;
   const zeroWorkers = stores.no_worker_days >= st.queen_zero_worker_hazard_after_days;
   const queenRisk = zeroWorkers ? Math.max(st.queen_daily_hazard, st.queen_zero_worker_starved_daily_hazard) : st.queen_daily_hazard;
-  if (pop.queen_alive && ((stores.stress_days >= st.queen_hazard_after_days) || zeroWorkers) && colonyDice(world, colony, 'queen_survival')() < queenRisk) {
-    pop.queen_alive = false; events.push({ type: 'queen_death', id: colony.queen_id, reason: 'prolonged_energy_or_protein_deficit_scenario' });
+  const deficit = stores.stress_days >= st.queen_hazard_after_days;
+  if (pop.queen_alive && (deficit || zeroWorkers) && colonyDice(world, colony, 'queen_survival')() < queenRisk) {
+    pop.queen_alive = false;
+    // v2-review.16 diagnostics (probabilities and draws unchanged): name the trigger(s) that were active and
+    // which one set the applied hazard (the rule takes the MAX, it does not combine them). There is no
+    // natural/age hazard for the queen in this engine; that is recorded as not modelled, not as zero risk.
+    const sugarLong = stores.sugar_gap_days >= st.queen_hazard_after_days, proteinLong = stores.protein_gap_days >= st.queen_hazard_after_days;
+    const deficitKind = sugarLong && proteinLong ? 'chronic_sugar_and_protein_deficit' : sugarLong ? 'chronic_sugar_deficit' : proteinLong ? 'chronic_protein_deficit' : null;
+    const applied = zeroWorkers && st.queen_zero_worker_starved_daily_hazard >= st.queen_daily_hazard ? 'no_workers' : deficitKind;
+    events.push({
+      type: 'queen_death', id: colony.queen_id, reason: applied ?? 'unclassified',
+      active_triggers: [...(deficitKind ? [deficitKind] : []), ...(zeroWorkers ? ['no_workers'] : [])],
+      hazards: { nutritional_deficit: deficit ? st.queen_daily_hazard : 0, no_workers: zeroWorkers ? st.queen_zero_worker_starved_daily_hazard : 0, natural_age: 'not_modelled', applied: round(queenRisk) },
+      sugar_gap_days: stores.sugar_gap_days, protein_gap_days: stores.protein_gap_days, no_worker_days: stores.no_worker_days,
+      sampling: 'one uniform draw < applied hazard; applied = max(active trigger hazards), not a product of competing risks',
+    });
   }
 }
 

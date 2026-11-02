@@ -172,6 +172,24 @@
       "save_schema": "antempire.engine-v2",
       "state_migration": null,
       "note": "Day14 起算的所有輸出與 v14 逐位元組相同（tests/rules-isolation.test.ts）；新增的是 Day0 初始化能力。正式存檔仍是 Day14，本版不切換正式存檔，也不開始正式 Day0。"
+    },
+    {
+      "rules_version": "antempire.v2-review.16-death-diagnostics",
+      "tag": "v16",
+      "fingerprint": {
+        "engine": "435669bec4dc1e5cfbaa4e327ce0a21dd40be4fd20738de1004446e706bd6287",
+        "params": "e80a019a4f2d103e624d108177aa352fa1892307cbb0b33713bad92290aaf123"
+      },
+      "approved_in": "死亡診斷 PR（依賴 #28；待 Owner 審閱；合併即核准）",
+      "golden": {
+        "traces": "tests/golden/v16-trace-sha256.json",
+        "reports": "reports/day15-134-v16-*",
+        "day0_traces": "tests/golden/day0-v16-trace-sha256.json"
+      },
+      "previous": "antempire.v2-review.15-day0-initialization",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null,
+      "note": "只增加死亡事件的診斷欄位；機率、抽樣與狀態不變（tests/rules-isolation.test.ts 移除新增欄位後重現 v15 的 Day14 與 Day0 golden）。"
     }
   ]
 }
