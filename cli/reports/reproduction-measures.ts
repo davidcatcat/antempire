@@ -11,7 +11,7 @@
  *    assumption: true — 遊戲假設 (an evaluation definition, not a biological threshold; no literature gives a
  *    "sustained reproduction" criterion for this species). It is never used to choose parameters.
  *
- * Bins: 30-day windows counted from Day1 (Day1–30, …, Day331–360, Day361–365). The engine has workers only
+ * Bins: 30-day windows counted from Day1 (Day1–30, …, Day331–360, and the PARTIAL bin Day361–365). The engine has workers only
  * (no sexual brood), so every eclosion is a worker eclosion.
  */
 export const BIN_DAYS = 30;
@@ -40,7 +40,10 @@ export function reproductionMeasures(run: Run) {
   const ownSecondHalf = from(own, SUSTAINED_REPRODUCTION.second_half_from_day), eggsLast = from(eggs, SUSTAINED_REPRODUCTION.last_eggs_from_day);
   return {
     any_own_worker_eclosion: run.own_eclosions > 0,
-    own_eclosion_windows: own.slice(0, 12).filter((x) => x > 0).length,
+    // Issue #43 F07 (2026-11-03): every bin with data counts, including the partial Day361–365 bin. The v1 value
+    // (first 12 bins = Day1–360 only) is kept under an explicit name for traceability.
+    own_eclosion_windows: own.filter((x) => x > 0).length,
+    own_eclosion_windows_first_360: own.slice(0, 12).filter((x) => x > 0).length,
     own_eclosions_second_half: ownSecondHalf,
     eggs_last_95_days: eggsLast,
     sustained_reproduction_candidate: queen && workers > 0 && ownSecondHalf > 0 && eggsLast > 0,

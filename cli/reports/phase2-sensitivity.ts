@@ -57,7 +57,7 @@ export const shardJobs = (i: number, n: number, list = jobs()) => list.filter((_
 /** Raw seed-row columns (positional arrays in the file). Nothing is aggregated away. */
 export const ROW_COLUMNS = [
   'season', 'seed', 'queen_alive_365', 'workers_365', 'growth_365', 'max_workers', 'colony_end_day', 'queen_death_day', 'queen_death_reason',
-  'any_own_worker_eclosion_365', 'own_eclosions', 'own_eclosion_windows', 'own_eclosions_second_half', 'eggs_last_95_days', 'sustained_reproduction_candidate',
+  'any_own_worker_eclosion_365', 'own_eclosions', 'own_eclosion_windows', 'own_eclosion_windows_first_360', 'own_eclosions_second_half', 'eggs_last_95_days', 'sustained_reproduction_candidate',
   'eggs_laid', 'own_eclosions_by_30d', 'eggs_laid_by_30d', 'last_own_eclosion_day', 'last_egg_day',
   'trips', 'active_forager_days', 'explorations', 'recruitment', 'sugar_income', 'protein_income', 'sugar_demand', 'protein_demand', 'stop_reasons',
 ] as const;
@@ -78,7 +78,7 @@ export function seedRow(j: Pick<Job, 'founding'>, season: (typeof SEASONS)[numbe
   return {
     season, seed, queen_alive_365: !c.extinct && !!c.queen, workers_365: c.extinct ? 0 : c.workers, growth_365: c.extinct ? 'extinct' : c.growth,
     max_workers: r.max_workers, colony_end_day: r.colony_end_day, queen_death_day: r.queen_death?.day ?? null, queen_death_reason: r.queen_death?.reason ?? null,
-    any_own_worker_eclosion_365: m.any_own_worker_eclosion, own_eclosions: r.own_eclosions, own_eclosion_windows: m.own_eclosion_windows,
+    any_own_worker_eclosion_365: m.any_own_worker_eclosion, own_eclosions: r.own_eclosions, own_eclosion_windows: m.own_eclosion_windows, own_eclosion_windows_first_360: m.own_eclosion_windows_first_360,
     own_eclosions_second_half: m.own_eclosions_second_half, eggs_last_95_days: m.eggs_last_95_days, sustained_reproduction_candidate: m.sustained_reproduction_candidate,
     eggs_laid: r.totals.eggs_laid, own_eclosions_by_30d: r.own_eclosions_by_30d, eggs_laid_by_30d: r.eggs_laid_by_30d, last_own_eclosion_day: r.last_own_eclosion_day, last_egg_day: r.last_egg_day,
     trips: r.totals.trips, active_forager_days: r.activity?.active_worker_days ?? 0, explorations: r.totals.explorations, recruitment: r.totals.recruitment,
@@ -93,10 +93,20 @@ export function runJob(j: Job): Any {
   return { ...j, variant_params_sha: variantParamsSha(b), rows };
 }
 
+/** Every input of the evaluation besides the engine and parameter files (Issue #43 R12): Day0 scenarios (founding,
+ *  garden, seasons), the Day0 initializer CLI, the evaluation and measure code, and this script. */
+export const INPUT_FILES = (): string[] => [
+  ...fs.readdirSync(path.join(REPO_ROOT, 'scenarios/day0')).filter((f) => f.endsWith('.json')).sort().map((f) => `scenarios/day0/${f}`),
+  'cli/lib/day0.ts', 'cli/lib/load.ts', 'cli/reports/day0-evaluation.ts', 'cli/reports/reproduction-measures.ts', 'cli/reports/phase2-sensitivity.ts',
+];
+export function inputManifest(): Record<string, string> {
+  return Object.fromEntries(INPUT_FILES().map((f) => [f, sha(fs.readFileSync(path.join(REPO_ROOT, f), 'utf8'))]));
+}
+
 /** Everything a batch depends on; a shard made under a different configuration is refused at merge. */
 export function configHash(list = jobs()): string {
-  const fp = rulesFingerprint(), self = fs.readFileSync(new URL(import.meta.url), 'utf8');
-  return sha(JSON.stringify({ schema: SCHEMA, engine: fp.engine, params: fp.params, engine_version: ENGINE_VERSION, jobs: list, seeds: DAY0_SEEDS, seasons: SEASONS, columns: ROW_COLUMNS, script: sha(self), measures: SUSTAINED_REPRODUCTION.id }));
+  const fp = rulesFingerprint();
+  return sha(JSON.stringify({ schema: SCHEMA, engine: fp.engine, params: fp.params, engine_version: ENGINE_VERSION, jobs: list, seeds: DAY0_SEEDS, seasons: SEASONS, columns: ROW_COLUMNS, inputs: inputManifest(), measures: SUSTAINED_REPRODUCTION.id }));
 }
 
 // ---------------------------------------------------------------------------------------------- batches
@@ -186,11 +196,11 @@ export function serialise(doc: Any): string {
   return L.join('\n') + '\n';
 }
 
-export function buildDoc(all: Any[], batch: string, cfg: string): Any {
+export function buildDoc(all: Any[], batch: string, cfg: string, extra: Any = {}): Any {
   const fp = rulesFingerprint();
   return {
     schema: SCHEMA, diagnostic_not_target: true, no_best_value_selected: true, rules_tag: RULES_TAG, engine_version: ENGINE_VERSION,
-    rules_fingerprint: { engine: fp.engine, params: fp.params }, batch_id: batch, config_hash: cfg,
+    rules_fingerprint: { engine: fp.engine, params: fp.params }, batch_id: batch, config_hash: cfg, input_manifest: inputManifest(), ...extra,
     baseline: BASELINE, baseline_note: 'Owner 2026-11-02：兩者維持 0.5，只作為既有對照基準（遊戲假設），不是已知值，也不是最佳值。',
     seeds: DAY0_SEEDS, seasons: SEASONS, horizon_days: 365, rows_per_job: ROWS_PER_JOB, row_columns: ROW_COLUMNS,
     measures: { any_own_worker_eclosion_365: '年度內曾有自產工蟻羽化（原稱「有效繁殖」）：整個觀察期間 Day1～365 累積的事件，不是 Day365 當天的狀態', queen_alive_365: 'Day365 當天的狀態', workers_365: 'Day365 當天的狀態', growth_365: 'Day365 當天的狀態（相對於 Day0）', sustained_reproduction_candidate: SUSTAINED_REPRODUCTION },
@@ -232,6 +242,8 @@ export function validate(doc: Any, opts: { day0Eval?: Any; tables?: string; curr
       if (r.any_own_worker_eclosion_365 !== r.own_eclosions > 0) err(`job ${j.id} ${k}: eclosion flag inconsistent`);
       if (r.own_eclosions_by_30d.reduce((x: number, y: number) => x + y, 0) !== r.own_eclosions) err(`job ${j.id} ${k}: own eclosion bins ≠ total`);
       if (r.eggs_laid_by_30d.reduce((x: number, y: number) => x + y, 0) !== r.eggs_laid) err(`job ${j.id} ${k}: egg bins ≠ total`);
+      const bins = r.own_eclosions_by_30d as number[];
+      if (r.own_eclosion_windows !== bins.filter((x) => x > 0).length || r.own_eclosion_windows_first_360 !== bins.slice(0, 12).filter((x) => x > 0).length) err(`job ${j.id} ${k}: eclosion window counts inconsistent with the bins (F07)`);
       if (r.sustained_reproduction_candidate !== (r.queen_alive_365 && r.workers_365 > 0 && r.own_eclosions_second_half > 0 && r.eggs_last_95_days > 0)) err(`job ${j.id} ${k}: sustained flag inconsistent`);
     }
     if (seen.size !== pairs.size) err(`job ${j.id}: ${seen.size} distinct season/seed pairs ≠ ${pairs.size}`);
@@ -247,6 +259,10 @@ export function validate(doc: Any, opts: { day0Eval?: Any; tables?: string; curr
   if (doc.rules_fingerprint?.engine !== cur.engine) err('engine fingerprint ≠ current engine (results are stale: rerun or archive them)');
   if (doc.rules_fingerprint?.params !== cur.params) err('parameter fingerprint ≠ current parameter files (results are stale: rerun or archive them)');
   if (doc.engine_version !== ENGINE_VERSION) err(`engine_version ${doc.engine_version} ≠ ${ENGINE_VERSION}`);
+  // R12: every evaluation input (scenarios, initializer, measures, scripts) must equal what produced or re-derived the data
+  const man = inputManifest(), stale = Object.keys({ ...man, ...(doc.input_manifest ?? {}) }).filter((f) => man[f] !== doc.input_manifest?.[f]);
+  if (stale.length) err(`input files changed since the data were produced or re-derived (rerun or archive): ${stale.join(', ')}`);
+  checks.input_manifest_files = Object.keys(man).length - stale.length;
   let shaOk = 0;
   for (const j of doc.jobs) { if (j.variant_params_sha === variantParamsSha(variantBundle(j))) shaOk++; else err(`job ${j.id}: parameter hash differs from official parameters + its two values`); }
   checks.variant_param_hashes_ok = shaOk;
@@ -291,7 +307,7 @@ export function tables(doc: Any): string {
     const pick = (f: string, v: number) => (key === 'caf' ? J(f, v, 0.5) : J(f, 0.5, v));
     L.push(`## ${param}（另一參數固定 0.5）`, '', '格內：蟻后存活〔Day365 狀態〕／有工蟻〔Day365 狀態〕／曾有自產工蟻羽化〔Day1～365 累積事件〕／持續繁殖候選〔狀態＋事件〕／成長·持平·衰退·只剩蟻后·全滅〔Day365 狀態〕', '', `| 情境 | ${LEVELS.join(' | ')} |`, `|---|${LEVELS.map(() => '---').join('|')}|`);
     for (const f of SUPPORTED_FOUNDINGS) L.push(`| ${f} | ${LEVELS.map((v) => { const j = pick(f, v); return j ? cell(S[j.id].all) : '—'; }).join(' | ')} |`);
-    L.push('', `| 情境 | 每隻出巢工蟻每日趟數：${LEVELS.join(' / ')} | 糖收入中位：${LEVELS.join(' / ')} | 有自產羽化的 30 日區間數中位：${LEVELS.join(' / ')} |`, '|---|---|---|---|');
+    L.push('', `| 情境 | 每隻出巢工蟻每日趟數：${LEVELS.join(' / ')} | 糖收入中位：${LEVELS.join(' / ')} | 有自產羽化的 30 日區間數中位（共 13 格，最後一格為 Day361～365）：${LEVELS.join(' / ')} |`, '|---|---|---|---|');
     for (const f of SUPPORTED_FOUNDINGS) { const js = LEVELS.map((v) => pick(f, v)); L.push(`| ${f} | ${js.map((j) => (j ? S[j.id].all.trips_per_active_forager_day ?? '—' : '—')).join(' / ')} | ${js.map((j) => (j ? S[j.id].all.sugar_income_median ?? '—' : '—')).join(' / ')} | ${js.map((j) => (j ? S[j.id].all.own_eclosion_windows_median ?? '—' : '—')).join(' / ')} |`); }
     L.push('');
   }
