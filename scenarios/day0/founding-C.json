@@ -1,0 +1,14 @@
+{
+  "schema": "antempire.day0-founding.v1",
+  "id": "C",
+  "title": "多蟻后分巢：多隻蟻后＋工蟻",
+  "species_id": "pheidole-megacephala",
+  "mode": "polygyne_budding",
+  "engine_supported": false,
+  "missing_mechanisms": [
+    "蟻群狀態只有一個 queen_alive／queen_id，無法表示多隻蟻后",
+    "多蟻后的產卵分配、營養競爭與個別死亡",
+    "蟻后之間與工蟻對蟻后的互動"
+  ],
+  "note": "引擎目前不支持；不得用一隻蟻后的狀態冒充多蟻后，因此**不執行**。"
+}

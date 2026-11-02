@@ -137,6 +137,13 @@
       "from": false,
       "to": true,
       "description": "each worker plans only over edges it walked (route_memory); naive workers follow locally sensed trail hop by hop, otherwise explore one unknown edge from a known node; edges learned only by walking; Day14 route memory only from cited history records; false = v2-review.13 whole-graph routing"
+    },
+    {
+      "rules_version": "antempire.v2-review.15-day0-initialization",
+      "approved_in": "Owner instruction 2026-11-02 (Day0 scientific initialization; pending Owner review)",
+      "kind": "engine",
+      "day14_output_unchanged": true,
+      "description": "engine/initialization.ts builds a Day0 world (garden warm-up + founding propagule); validateWorld accepts sim_day >= 0; Day14 route evidence is never given to workers that eclosed in the simulation. Every Day14-start output is byte-identical to v2-review.14 (tests/rules-isolation.test.ts), so nothing needs neutralising."
     }
   ]
 }

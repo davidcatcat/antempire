@@ -154,6 +154,24 @@
       "previous": "antempire.v2-review.13-egg-sugar-settles-crops",
       "save_schema": "antempire.engine-v2",
       "state_migration": "worker route_memory is created at the first v14 day by engine/navigation.ts ensureRouteMemory() from world day15_migration.worker_route_evidence (recorded history only); no existing field is rewritten"
+    },
+    {
+      "rules_version": "antempire.v2-review.15-day0-initialization",
+      "tag": "v15",
+      "fingerprint": {
+        "engine": "928040c800ecfb5d3f44e28349443072e641e2b5eb98d1064c93fa326d647bb4",
+        "params": "e80a019a4f2d103e624d108177aa352fa1892307cbb0b33713bad92290aaf123"
+      },
+      "approved_in": "Day0 科學初始化 PR（待 Owner 審閱；合併即核准）",
+      "golden": {
+        "traces": "tests/golden/v15-trace-sha256.json",
+        "reports": "reports/day15-134-v15-*",
+        "day0_traces": "tests/golden/day0-v15-trace-sha256.json"
+      },
+      "previous": "antempire.v2-review.14-individual-route-memory",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null,
+      "note": "Day14 起算的所有輸出與 v14 逐位元組相同（tests/rules-isolation.test.ts）；新增的是 Day0 初始化能力。正式存檔仍是 Day14，本版不切換正式存檔，也不開始正式 Day0。"
     }
   ]
 }

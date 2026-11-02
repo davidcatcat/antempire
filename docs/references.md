@@ -266,3 +266,30 @@
 | R133 | Vázquez, Koehler & Pereira (2019, 卷期 2020), *Comparative Quantification of Trail-Following Behavior in Pest Ants*. *Insects* 11(1):5. DOI 10.3390/insects11010005；**六種螞蟻含本種與 *Solenopsis invicta***，佛州實驗室，同種腹部萃取物畫線、錄影 | **全文已讀**（圖中數值未讀） | 本種沿跡速度約 17 mm/s（紅火蟻約 9.6）；去程比回程較貼近路線（回程側偏 1.7 vs 去程 1.1 mm）；約 80% 的個體走完 150 mm 測試段（物種間無差異）。**機制：沿跡是在路線兩側擺動前進，回巢時稍差；可用『每段離開路線』的機率表示**。速度、偏移、完成率都是實驗室人工路線條件，**不可直接套用**；未量測路線壽命、岔路選擇與招募 |
 | R134 | Freas, Buehlmann & Spetch (2026), *Combining social and private information: How ants use pheromones and learnt cues to navigate*. *Learning & Behavior* 54(1):23–36. DOI 10.3758/s13420-025-00697-w；PMC12999738；**跨物種綜述**（*Formica*、*Lasius*、*Paraponera*、*Pheidole oxyops* 等） | **全文已讀** | 費洛蒙路徑是學習個體路線的「鷹架」；**有經驗的工蟻在衝突時常優先使用個體記憶**，權重依物種與資訊可靠度而定；費洛蒙本身沒有方向性，方向來自記憶或路網幾何；學到的路線資訊可以相當穩定。**本種沒有個體記憶的資料**；綜述沒有可用的權重公式或學習次數 |
 | R135 | Mothapo & Wossler (2014), *Resource competition assays between the African big-headed ant, Pheidole megacephala (Fabricius) and the invasive Argentine ant, Linepithema humile (Mayr): mechanisms of inter-specific displacement*. *Ecological Entomology* 39(4):501–510. DOI 10.1111/een.12126；**本種 vs *L. humile***，實驗室 | **僅查核摘要** | 摘要：兩種同時找到共享資源，但本種一發現餌就以高種間攻擊性驅離 *L. humile* 並控制到實驗結束；群體打鬥結果取決於數量優勢。**沒有讀到任何數字**，只供多蟻群競爭設計（#9）作方向參考 |
+
+## 2026-11-02 Day0 創巢方式與生活史（R136–R142；規則更新 v2-review.15，Day0 初始化）
+
+> 本段只用於 Day0 情境的依據與驗證，**沒有據此改任何物種參數**（參數變更需另開規則更新 PR）。已有的 R94（Yuan 2026）、R99（Sarnat 2015）、R101／R110（Fournier 2012）、R97（Wills et al. 2014）在本輪重新核對；R97 補作者：Wills, Moreau, Wray, Hoffmann & Suarez (2014), *Biol. J. Linn. Soc.* 113(2):423–438, DOI 10.1111/bij.12386。
+
+| ID | 研究 | 讀取程度 | 支持的內容 | 不可外推之處 |
+|---|---|---|---|---|
+| R136 | Chang (1985), *Colony revival, and notes on rearing and life history of the big-headed ant*. *Proc. Hawaiian Entomol. Soc.* 25:53–58；**本種**，夏威夷，實驗室 26–27°C、50%RH，每處理 6 重複、追蹤 7 週 | **全文已讀** | 唯一的「創巢群最小組成」一手實驗：蟻后＋10 蛹 6/6 成長；**蟻后＋10 隻野外小工蟻：2/6 蟻后死亡，其餘 4 巢「very weak」**；蟻后＋大工蟻、蟻后＋幼蟲、單獨蟻后都失敗（蟻后不照顧自己產的卵）。31 日產卵 97～292 粒（約 3～9 粒／日，成批產）；只有 38% 卵成為幼蟲（被吃）。小工蟻卵→成蟲 34～38 日（平均最短時間） | 用的是野外成熟群的蟻后，不是剛交配的創巢蟻后；有人工餵食；「最短時間」與 R94 的平均值不是同一種量。Liu 2022 引述為「1 蟻后＋至少 10 工蟻足以存活」是過度引申 |
+| R137 | Wetterer (2007), *Biology and impacts of Pacific Island invasive species. 3. The African big-headed ant*. *Pacific Science* 61(4):437–456. DOI 10.2984/1534-6188(2007)61[437:BAIOPI]2.0.CO;2 | 全文已讀（綜述） | 分巢＝一或多隻蟻后帶一群工蟻分出（引 Beardsley 1982）；野外活動低於約 5°C 停止、24～30°C 最活躍（引 Carnegie 1960） | 全為二手；Beardsley 1982 原文（R139）中查不到這段分巢描述 |
+| R138 | Reimer & Gonzalez-Hernandez (1993), *Evidence for colony founding by haplometrosis in the big-headed ant*. *Acta Horticulturae* 334:397–406. DOI 10.17660/ActaHortic.1993.334.42 | **只讀摘要**（經摘要工具） | 實驗室中單一蟻后可以創巢：設置後 1～2 日產卵，約 200 日後工蟻密度達分群建立的水準；「野外未驗證」 | 不知蟻后來源、是否餵食（封閉或半封閉）、樣本數與成功率、溫度；**不足以設定情境 B 的參數** |
+| R139 | Beardsley, Su, McEwen & Gerling (1982), *Field investigations on the interrelationships of the big-headed ant, the gray pineapple mealybug, and pineapple mealybug wilt disease in Hawaii*. *Proc. Hawaiian Entomol. Soc.* 24:51–67 | 全文已讀（OCR） | 多蟻后群；「交配後的蟻后必須回到既有巢才能存活」（無資料的陳述）；鳳梨田由邊緣向內擴散，約 2.5 年遍及全部田區；3～4 月大雨後蟻數下降十倍以上 | 陳述沒有數據；鳳梨田不是住家花園 |
+| R140 | Reimer (1991), *HITAHR Research Extension Series* 134:16–20 | 全文已讀（OCR 差，族群組成圖讀不到） | 螞蟻「以分巢方式」由田邊進入無蟻田區，約 0.46±0.09 m／日；巢在空心鳳梨殘株中 | 擴散速度是田間推論，沒有觀察到分巢群本身的組成 |
+| R141 | Liu, Tseng, Tatsuta, Tsuji, Tay, Singham, Yang & Neoh (2022), *Population genetic structure of the globally introduced big-headed ant in Taiwan*. *Ecology and Evolution* 12(12):e9660. DOI 10.1002/ece3.9660 | 全文與附錄已讀 | **臺灣（含臺中 8 群）**：遺傳多樣性低、43% 變異在群間、無距離隔離（推測人為跳躍擴散）；臺中有 TW1、TW3 粒線體單倍型；初步觀察相距 >100 m 的群會互相攻擊；初步判斷取樣區無隱存種 | 沒有蟻后數、巢密度、分巢或季節資料；100 m 與「無隱存種」都是未附數據的初步結果 |
+| R142 | Sameshima, Miura & Matsumoto (2004), *Evolution & Development* 6(5):336–341. DOI 10.1111/j.1525-142X.2004.04041.x | 只讀摘要 | 品級差異在終齡幼蟲翅芽發育中出現 | 沒有研究品級決定的觸發條件；不足以實作 major 生產（#25） |
+
+**R94（Yuan 2026）本輪補讀全文與附表 S1～S3**：
+- 實驗條件：南寧引入族群，28±1°C、70±5%RH、16L:8D，餵麵包蟲＋10% 蔗糖；採集的是含蟻后與幼體的巢片段，每群 2～7 隻蟻后。
+- 工蟻發育：卵 7.69 日（孵化 89%）；卵→成蟲 28.73±2.83 日（24～34）；繁殖蟻 37.6 日。
+- 工蟻壽命（28°C、食物無限）：小工蟻平均 26.25 日（中位 28）；兵蟻平均 56 日（中位 70）。新羽化群中兵蟻佔 11.86%。
+- 產卵是「一批後暫停到該批接近前蛹」；季節：冬季與早春只有工蟻幼體，兵蟻與繁殖蟻幼體從春末開始。
+- 創巢「未直接觀察」；單后創巢與分巢都是引述他文。
+- 第三齡幼蟲到前蛹的數量下降原因不明，**不能當發育存活率**。
+
+**對 Day0 的意義**：
+- 分巢（情境 A）是文獻最支持的方式，但分巢群的實際組成（工蟻數、是否帶幼體）**沒有任何實測**，所以 10 隻工蟻、幼體數與嗉囊載量全是遊戲假設。
+- R136 是唯一可對照的實驗：「蟻后＋10 隻野外小工蟻」在**有人工餵食**的條件下仍然很弱、1/3 蟻后 7 週內死亡。
+- 單后獨立創巢（B）只有一篇摘要（R138）；多蟻后（C）有文獻（R94、R101），但引擎無法表示。

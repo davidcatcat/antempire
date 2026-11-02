@@ -9,6 +9,8 @@
  *   v2-review.12 (injury types; multipliers back to 1, migration switch off) -> reproduces tests/golden/v11-trace-sha256.json
  *   v2-review.13 (egg-laying sugar settles crops; switch off) -> reproduces tests/golden/v12-trace-sha256.json
  *   v2-review.14 (individual route memory; switch off) -> reproduces tests/golden/v13-trace-sha256.json
+ *   v2-review.15 (Day0 initialization; engine-only, declared day14_output_unchanged) -> the current engine with
+ *                nothing undone reproduces tests/golden/v14-trace-sha256.json
  * Each step undoes its own changes AND every later step's, so step N is compared with the engine as it was.
  */
 import assert from 'node:assert/strict';
@@ -27,12 +29,13 @@ const STEPS = [
   { version: 'antempire.v2-review.12-injury-types', previousGolden: 'tests/golden/v11-trace-sha256.json' },
   { version: 'antempire.v2-review.13-egg-sugar-settles-crops', previousGolden: 'tests/golden/v12-trace-sha256.json' },
   { version: 'antempire.v2-review.14-individual-route-memory', previousGolden: 'tests/golden/v13-trace-sha256.json' },
+  { version: 'antempire.v2-review.15-day0-initialization', previousGolden: 'tests/golden/v14-trace-sha256.json' },
 ];
 const ORDER = STEPS.map((s) => s.version);
 const results: Record<string, string> = {};
 for (const step of STEPS) {
   const own = approvedChanges().filter((c) => c.rules_version === step.version);
-  assert.ok(own.length > 0 && own.every((c) => ['param', 'param_removed', 'param_switch', 'param_added'].includes(c.kind)), `${step.version} must be a parameter/switch-only update for this check`);
+  assert.ok(own.length > 0 && own.every((c) => ['param', 'param_removed', 'param_switch', 'param_added'].includes(c.kind) || (c.kind === 'engine' && (c as { day14_output_unchanged?: boolean }).day14_output_unchanged === true)), `${step.version} must be a parameter/switch-only update for this check`);
   const changes = approvedChanges().filter((c) => ORDER.indexOf(c.rules_version) >= ORDER.indexOf(step.version));
   const revert = (b: ParamBundle) => { for (const c of [...changes].reverse()) revertChange(b, c); };
   const golden = readJson(step.previousGolden);

@@ -9,6 +9,8 @@ export type { WorldDayResult, ColonyDayResult } from './day.ts';
 export { simulateDay, legacyToWorldState, legacyView, legacyColonyMeta } from './legacy.ts';
 export type { LegacyV2State, LegacyDayOutput } from './legacy.ts';
 export { migrationState, metadataPreview } from './migration.ts';
+export { initializeDay0, FoundingNotSupported } from './initialization.ts';
+export type { Day0Input, Day0Output } from './initialization.ts';
 export type { MigrationRefs } from './migration.ts';
 export { resolveBundle, resolveSpecies, resolveWorld, validateParamTree, num, ALLOWED_BASIS } from './params.ts';
 export type { ParamBundle, ParamFile, SpeciesParams, WorldParams, ScenarioColony } from './params.ts';

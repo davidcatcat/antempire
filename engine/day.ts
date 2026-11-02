@@ -29,12 +29,17 @@ import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from '
  *                request, #13 injury classification; Day15 migration reads the type from the injury records)
  *   v2-review.13 bug fix: egg-laying sugar also leaves worker crops (crops stay a subset of the sugar ledger)
  *   v2-review.14 individual route memory and local exploration (#8; species switch navigation.individual_route_memory)
+ *   v2-review.15 Day0 initialization (engine/initialization.ts): states may start at Day0; Day14 route evidence
+ *                is never given to workers that eclosed in the simulation (Day14 outputs byte-identical)
  */
-export const ENGINE_VERSION = 'antempire.v2-review.14-individual-route-memory';
+export const ENGINE_VERSION = 'antempire.v2-review.15-day0-initialization';
 /** Implementation of that behaviour (bumped for refactors that keep results byte-identical). */
 export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
-/** The v2 engine only applies to states at or after the completed Day14 checkpoint. */
-const ENGINE_FIRST_STATE_DAY = 14;
+/**
+ * v2-review.15: a world may start at Day0 (built by engine/initialization.ts, never by the Day14 migration).
+ * The Day14 checkpoint is still the first state of the OFFICIAL save; that is enforced by the save tools.
+ */
+const ENGINE_FIRST_STATE_DAY = 0;
 
 export const NATURAL_EVENT_TYPES: ReadonlySet<string> = new Set(['new_food_source', 'source_batch_consumed', 'food_delivered', 'insect_immigration', 'insect_natural_death', 'insect_population_birth', 'insect_background_death', 'physical_scout_visit', 'discovery', 'scouted_empty', 'nest_local_route_learning', 'local_contact_cue', 'local_brood_begging_contact', 'local_unloading_feedback', 'host_plant_death', 'hemipteran_colony_change', 'local_recruitment', 'route_step', 'route_timeout', 'trail_decay', 'trail_deposited', 'local_trail_choice', 'food_collected', 'trophallaxis', 'protein_cached_at_nest', 'live_prey_encounter', 'prey_escaped', 'local_alarm_signal', 'long_range_recruitment_trail', 'hunt_recruitment', 'joint_prey_transport', 'waiting_prey_joined', 'route_memory_initialized', 'exploration_step', 'exploration_no_new_direction', 'exploration_found_nothing', 'insect_predation', 'hatch', 'pupation', 'eclosion', 'egg_laid', 'worker_death', 'brood_death', 'injury_recovery', 'queen_death']);
 

@@ -1,0 +1,85 @@
+{
+  "schema": "antempire.day0-founding.v1",
+  "id": "A1",
+  "title": "分巢：1 蟻后＋10 工蟻，無幼體、無存糧",
+  "species_id": "pheidole-megacephala",
+  "mode": "budding",
+  "engine_supported": true,
+  "note": "Owner 指定的第一組文獻啟發情境。初始數量與組成全部是遊戲假設，不保證存活。",
+  "nest_node": "N00",
+  "colony_identity": {
+    "id": "C1",
+    "queen_id": "Q001",
+    "rng_namespace": "D0|",
+    "worker_id_prefix": "W",
+    "egg_id_prefix": "E",
+    "id_number_width": 3,
+    "note": "識別碼與亂數命名空間（純標籤，不是生物數值）；Day0 世界從 W001／E001 起編號，與 Day1～14 正式歷史無關"
+  },
+  "queens": {
+    "value": 1,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "description": "蟻后數（一隻已交配、正在產卵的蟻后）"
+  },
+  "workers": {
+    "value": 10,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "description": "隨蟻后分出的工蟻數",
+    "basis_note": "分巢（budding）的機制有文獻方向（見 docs/day0-initialization.md）；『十隻』是 Owner 指定的第一組情境，不是實測的分巢群大小"
+  },
+  "worker_age_days_min": {
+    "value": 7,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "description": "創巢工蟻年齡下限（日）；每隻在範圍內依世界種子抽樣"
+  },
+  "worker_age_days_max": {
+    "value": 60,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "description": "創巢工蟻年齡上限（日）"
+  },
+  "worker_caste": "minor",
+  "worker_caste_note": "目前引擎沒有 major 生產（castes.major_worker_production_enabled=false），創巢工蟻全部視為 minor；major 待 #25",
+  "eggs": {
+    "value": 0,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "description": "隨分巢帶來的卵數"
+  },
+  "larvae": {
+    "value": 0,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "description": "隨分巢帶來的幼蟲數"
+  },
+  "pupae": {
+    "value": 0,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "description": "隨分巢帶來的蛹數"
+  },
+  "carried_brood_progress": {
+    "value": 0.5,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "description": "帶來的卵／幼蟲在該階段已完成的比例（年齡未知，取一半）"
+  },
+  "worker_crop_fill_fraction": {
+    "value": 0,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "description": "創巢工蟻嗉囊中糖的填滿比例（×物種嗉囊容量），計入蟻群糖帳"
+  },
+  "stores_protein": {
+    "value": 0,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "description": "巢內蛋白存量（新巢沒有存糧）"
+  },
+  "injuries": "none",
+  "route_memory": "empty: 新巢工蟻沒有走過新巢周圍的任何路段",
+  "known_sources": "none"
+}
