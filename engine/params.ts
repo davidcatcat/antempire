@@ -99,6 +99,7 @@ export function resolveSpecies(file: ParamFile) {
     food_handling: section(file, 'food_handling', ['carcass_access_probability', 'liquid_collection_probability', 'crop_load_sugar_min', 'crop_load_sugar_max', 'crop_load_protein_min', 'crop_load_protein_max'] as const),
     recruitment: section(file, 'recruitment', ['recruitment_probability', 'recruitment_max_followers', 'trail_daily_retention', 'trail_deposit_per_success', 'trail_min_detectable', 'trail_max_strength', 'follow_intermediate_source_probability', 'trail_follow_max_hops'] as const),
     trophallaxis: section(file, 'trophallaxis', ['crop_capacity', 'max_trophallaxis_contacts', 'transfer_max_portions'] as const),
+    navigation: { individual_route_memory: bool(file, 'navigation.individual_route_memory') },
     predation: {
       ...section(file, 'predation', ['live_prey_encounter_probability', 'large_prey_min_team', 'live_prey_capture_probability', 'large_prey_escape_while_recruiting_probability', 'large_prey_max_team'] as const),
       simultaneous_site_group_hunting: bool(file, 'predation.simultaneous_site_group_hunting'),
@@ -118,6 +119,23 @@ export type SpeciesParams = ReturnType<typeof resolveSpecies>;
 export interface ScenarioColony {
   id: string; species_id: string; nest_node: string; queen_id: string;
   worker_id_prefix: string; egg_id_prefix: string; id_number_width: number; rng_namespace: string;
+}
+
+/**
+ * v2-review.14: edges each pre-existing worker is RECORDED to have walked in Day1–14 (world
+ * day15_migration.worker_route_evidence). Every edge must exist in the topology and carry a citation.
+ */
+function routeEvidence(file: ParamFile, edges: [string, string][]): Record<string, { edges: string[]; citations: string[] }> {
+  const raw = at(file, 'day15_migration.worker_route_evidence.workers') as Record<string, Json> | undefined;
+  const valid = new Set(edges.map(([a, b]) => [a, b].sort().join(':')));
+  const out: Record<string, { edges: string[]; citations: string[] }> = {};
+  for (const [id, rec] of Object.entries(raw ?? {})) {
+    const r = rec as { edges?: Json; citations?: Json };
+    if (!Array.isArray(r.edges) || !Array.isArray(r.citations) || !r.citations.length) throw Error('route evidence for ' + id + ' needs edges and citations');
+    for (const e of r.edges) if (typeof e !== 'string' || !valid.has(e)) throw Error('NO_GOD_MODE: route evidence edge not in topology: ' + String(e));
+    out[id] = { edges: r.edges as string[], citations: r.citations.map(String) };
+  }
+  return out;
 }
 
 export function resolveWorld(file: ParamFile) {
@@ -154,6 +172,7 @@ export function resolveWorld(file: ParamFile) {
     prey: section(file, 'prey', ['large_prey_fraction', 'small_prey_protein', 'large_prey_protein'] as const),
     routes: { edges: edges as [string, string][], route_edge_minutes: num(file, 'routes.route_edge_minutes') },
     background_rivals: rivals,
+    route_evidence: routeEvidence(file, edges as [string, string][]),
   };
 }
 export type WorldParams = ReturnType<typeof resolveWorld>;

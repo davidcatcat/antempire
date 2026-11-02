@@ -7,6 +7,7 @@ import { adjacencyOf, edgeKey, routeEdges } from './routes.ts';
 import type { Rng } from './rng.ts';
 import type { SpeciesParams, WorldParams } from './params.ts';
 import type { ColonyState, SimEvent, Source, Worker } from './types.ts';
+import { knownEmpty } from './navigation.ts';
 
 export function decayTrails(colony: ColonyState, sp: SpeciesParams, events: SimEvent[]): void {
   const trails = colony.trail_by_edge, r = sp.recruitment.trail_daily_retention, limit = sp.recruitment.trail_min_detectable;
@@ -33,9 +34,10 @@ export function fullTrail(colony: ColonyState, sp: SpeciesParams, route: string[
 
 /**
  * A worker without a known source follows detectable trail edges outward from the nest, choosing each
- * hop by local signal strength only. Returns the first non-empty source reached, or null.
+ * hop by local signal strength only (it senses only the edges leaving the node it stands on). Returns the
+ * first non-empty source reached, or null. The route is learned only when the worker walks it.
  */
-export function followLocalTrail(world: { sources: Record<string, Source> }, colony: ColonyState, sp: SpeciesParams, wp: WorldParams, worker: Worker, g: Rng, events: SimEvent[]): { source: Source; route: string[] } | null {
+export function followLocalTrail(world: { sources: Record<string, Source> }, colony: ColonyState, sp: SpeciesParams, wp: WorldParams, worker: Worker, g: Rng, events: SimEvent[], ownPerception = false): { source: Source; route: string[] } | null {
   const adjacency = adjacencyOf(wp), trails = colony.trail_by_edge, limit = sp.recruitment.trail_min_detectable;
   let at = colony.nest_node;
   const path = [at], seen = new Set([at]);
@@ -48,7 +50,9 @@ export function followLocalTrail(world: { sources: Record<string, Source> }, col
     events.push({ type: 'local_trail_choice', worker: worker.id, from: at, to: next, local_signal: trails[edgeKey(at, next)], assumption: true });
     at = next; path.push(at); seen.add(at);
     const source = world.sources[at];
-    if (!source || colony.source_knowledge[at]?.presence === 'scouted_empty') continue;
+    // v2-review.14 (ownPerception): whether this node has food is judged from what the worker perceives on
+    // arrival and its own memory, not from the colony's bookkeeping flag.
+    if (!source || (ownPerception ? source.host_alive === false || knownEmpty(worker, at) : colony.source_knowledge[at]?.presence === 'scouted_empty')) continue;
     const outgoing = (adjacency[at] || []).filter((n) => !seen.has(n) && (trails[edgeKey(at, n)] || 0) >= limit);
     if (outgoing.length && g() < sp.recruitment.follow_intermediate_source_probability) continue;
     return { source, route: path };

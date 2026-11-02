@@ -2,19 +2,21 @@
  * Port of sim/test_naturalism.cjs (v6: 214 checks). No-god-mode regression. Never writes saves.
  * Two checks run per tracked insect death and one per physical scout visit in the 30-day trajectory, so the
  * exact count depends on the rules version: v6–v2-review.8 = 214 (18 insect deaths, 1 scout visit);
- * v2-review.9 (#10, simultaneous site-window hunting) = 213 (17 insect deaths, 2 scout visits). The count must
+ * v2-review.9 (#10, simultaneous site-window hunting) to v2-review.13 = 213 (17 insect deaths, 2 scout visits);
+ * v2-review.14 (#8, individual route memory) = 211 (17 insect deaths, 0 v12-style scout visits: exploration replaces
+ * them and is checked separately below and in tests/navigation.test.ts). The count must
  * equal the current version's expected value exactly; every assertion must pass.
  */
 import { simulateDay, foragingTemperatureFactor, resolveSpecies } from '../engine/index.ts';
 import { bundle, counter, fixture, MAIN_SPECIES, setParam, species } from './lib/harness.ts';
 
 const LEGACY_CHECK_COUNT = 214;
-const EXPECTED_CHECK_COUNT = 213; // v2-review.9
+const EXPECTED_CHECK_COUNT = 211; // v2-review.14
 const initial = fixture(), p = bundle(), sp = resolveSpecies(species(p));
 const clone = structuredClone;
 if (!(foragingTemperatureFactor(sp, 12) < foragingTemperatureFactor(sp, 20) && foragingTemperatureFactor(sp, 25) === 1)) throw Error('low temperature must suppress foraging');
 const c = counter(), { ok, denied } = c;
-const supportedTypes = new Set(['new_food_source', 'source_batch_consumed', 'food_delivered', 'insect_immigration', 'insect_natural_death', 'insect_population_birth', 'insect_background_death', 'physical_scout_visit', 'discovery', 'scouted_empty', 'nest_local_route_learning', 'local_contact_cue', 'local_brood_begging_contact', 'local_unloading_feedback', 'host_plant_death', 'hemipteran_colony_change', 'local_recruitment', 'route_step', 'route_timeout', 'trail_decay', 'trail_deposited', 'local_trail_choice', 'food_collected', 'trophallaxis', 'protein_cached_at_nest', 'live_prey_encounter', 'prey_escaped', 'local_alarm_signal', 'long_range_recruitment_trail', 'hunt_recruitment', 'joint_prey_transport', 'waiting_prey_joined', 'insect_predation', 'hatch', 'pupation', 'eclosion', 'egg_laid', 'worker_death', 'brood_death', 'injury_recovery', 'queen_death']);
+const supportedTypes = new Set(['new_food_source', 'source_batch_consumed', 'food_delivered', 'insect_immigration', 'insect_natural_death', 'insect_population_birth', 'insect_background_death', 'physical_scout_visit', 'discovery', 'scouted_empty', 'nest_local_route_learning', 'local_contact_cue', 'local_brood_begging_contact', 'local_unloading_feedback', 'host_plant_death', 'hemipteran_colony_change', 'local_recruitment', 'route_step', 'route_timeout', 'trail_decay', 'trail_deposited', 'local_trail_choice', 'food_collected', 'trophallaxis', 'protein_cached_at_nest', 'live_prey_encounter', 'prey_escaped', 'local_alarm_signal', 'long_range_recruitment_trail', 'hunt_recruitment', 'joint_prey_transport', 'waiting_prey_joined', 'route_memory_initialized', 'exploration_step', 'exploration_no_new_direction', 'exploration_found_nothing', 'insect_predation', 'hatch', 'pupation', 'eclosion', 'egg_laid', 'worker_death', 'brood_death', 'injury_recovery', 'queen_death']);
 const anyState = (x: unknown) => x as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 const withOverride = anyState(clone(initial)); withOverride.force_food = { site: 'N00', sugar: 100 }; denied(() => simulateDay(withOverride, p));
 const withDrama = anyState(clone(initial)); withDrama.make_sure_queen_survives = true; denied(() => simulateDay(withDrama, p));
@@ -74,16 +76,20 @@ for (let i = 0; i < 30; i++) {
 }
 // Isolated scout reachability proof: the targeted ant is NOT told where hidden food is.
 // A high search rate is used only inside this QA fixture, never in the actual game.
+// v2-review.14: exploration replaces the v2-review.12 scout visit. Worker 0 has walked N00–U01 (and knows that
+// place); everyone else has walked nothing. An explorer can only step one edge beyond a place it knows.
 const scoutFixture = clone(initial), searchSettings = clone(p);
-for (const worker of scoutFixture.population.workers) { worker.known_sources = []; worker.age_days = 20; }
+for (const worker of scoutFixture.population.workers) { worker.known_sources = []; worker.age_days = 20; (worker as any).route_memory = { origin: 'qa', edges: {}, empty_sites: {} }; } // eslint-disable-line @typescript-eslint/no-explicit-any
 scoutFixture.population.workers[0].known_sources = ['U01'];
+(scoutFixture.population.workers[0] as any).route_memory.edges = { 'N00:U01': { acquired: 'walked', first_day: 14, last_day: 14 } }; // eslint-disable-line @typescript-eslint/no-explicit-any
 setParam(searchSettings, MAIN_SPECIES, 'scouting.scout_discovery_probability', 1);
 setParam(searchSettings, MAIN_SPECIES, 'task_allocation.forage_baseline_probability', 1000);
 const forcedSearchTrial = simulateDay(scoutFixture, searchSettings);
-const found = forcedSearchTrial.events.filter((e) => e.type === 'physical_scout_visit');
-ok(found.every((e) => e.site === 'F10' && e.via === 'U01'), 'scouting can visit ONLY locally reachable F10 via U01, not remote F04/F05');
-ok(found.length >= 1, 'scout must actually traverse known neighbor under the high-search QA fixture');
+const found = forcedSearchTrial.events.filter((e) => e.type === 'exploration_step');
+const w0 = scoutFixture.population.workers[0].id, nestNeighbours = ['F01', 'F07', 'F08', 'F11', 'U00', 'U01'];
+ok(found.every((e) => (e.worker === w0 ? (e.from === 'N00' && nestNeighbours.includes(e.to as string)) || (e.from === 'U01' && e.to === 'F10') : e.from === 'N00' && nestNeighbours.includes(e.to as string))) && !found.some((e) => e.to === 'F04' || e.to === 'F05'), 'exploration reaches ONLY places adjacent to a known place (F10 only via known U01), never remote F04/F05');
+ok(found.length >= 1, 'explorers must actually traverse an edge under the high-search QA fixture');
 ok(insectDeaths === carcasses, 'background food and prey originates from distinct tracked insect deaths');
-const result = { passed: c.checks, expected_v9: EXPECTED_CHECK_COUNT, legacy_v6_passed: LEGACY_CHECK_COUNT, days: 30, events_natural_only: true, seeded_replay: true, no_direct_interventions: true, insectDeaths, carcasses, workerDeaths, physicalScoutingEvents: scouts, canonical_save_changed: false };
+const result = { passed: c.checks, expected_current: EXPECTED_CHECK_COUNT, legacy_v6_passed: LEGACY_CHECK_COUNT, days: 30, events_natural_only: true, seeded_replay: true, no_direct_interventions: true, insectDeaths, carcasses, workerDeaths, physicalScoutingEvents: scouts, canonical_save_changed: false };
 console.log(JSON.stringify(result, null, 2));
 if (c.checks !== EXPECTED_CHECK_COUNT) { console.error(`naturalism check count ${c.checks} != expected ${EXPECTED_CHECK_COUNT} (v6: ${LEGACY_CHECK_COUNT})`); process.exit(1); }
