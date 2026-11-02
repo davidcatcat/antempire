@@ -137,6 +137,7 @@ Day7→Day8，168→**192模擬小時**。既有F01蚜蟲清晨產少量可及�
 - [西屯區真實天氣資料規範](docs/weather-data-policy.md) — 官方觀測、預報、日曆錨點與缺測規則
 - [Day0 科學初始化與全生命週期評估](docs/day0-initialization.md) — **評估用，不是正式存檔**：花園生態暖機＋分巢創巢群，`npm run evaluate:day0`（20 種子 × 365 日 × 四季）；結果見 [reports/day0-evaluation.md](reports/day0-evaluation.md)
 - [Day0 引擎修正與年度評估總報告（2026-11）](reports/day0-final-report-2026-11.md) — v16～v18 的修正、四季 × 五種創巢 × 20 種子結果、極端情境、尚未完成的機制；[研究與設計](docs/research-design-2026-11.md)
+- [工作包 C 設計：個體營養的實體食物區室與轉移（Issue #43 F01、A08；2026-11-03，未實作）](docs/design-wpc-food-compartments.md)
 - [P1-B 研究與設計：巢穴空間與引擎／畫面共用的花園空間資料（2026-11，未實作）](docs/research-design-p1b-nest-space.md)
 - [P1-A 研究與設計：大工蟻（形態、分化、營養成本、嗉囊與液體搬運、防衛與招募、存活；2026-11，未實作）](docs/research-design-p1a-majors.md)
 - [第三階段研究與設計：幼體發育溫度、工蟻與兵蟻壽命、蟻后批次產卵、食卵與幼體營養（2026-11，未實作）](docs/research-design-phase3-lifecycle.md)
