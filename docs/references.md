@@ -305,8 +305,8 @@
 | R133（補充） | Vázquez, Koehler & Pereira (2020), *Insects* 11:5 | 全文 | **本種**沿跡速度 17.0±0.39 mm/s；去程 18.5、回程 15.5 | 實驗室木橋、飢餓 24～72 h；試驗溫度沒寫（飼養 22～27°C）。野外可能較快（R143） |
 | R143 | Hurlbert, Ballantyne & Powell (2008), *Ecological Entomology* 33:144 | 全文 | 所有物種步行速度都隨溫度上升；同種在野外常比實驗室快（例：*S. invicta* 16.7 vs 9.6 mm/s） | 不含本種；係數不可套用 |
 | R144 | Popp & Dornhaus (2024), *PLoS ONE* e0299432 | 全文 | 探索中的工蟻比沿跡慢（*Temnothorax* 8.5～9.5 mm/s） | 非本種；本種離跡速度未知，`off_trail_speed_factor` 是遊戲假設 |
-| R145 | Chen & Neoh (2023), *Frontiers in Ecology and Evolution* 11:1044485 | 全文 | **臺中**：本種在 42°C（都市）／44°C（森林）完全熱昏迷；都市樣點主要在白天活動，森林日夜都有 | 「09:00～15:00 佔 87.9%」是所有蟻種合計，不是本種 |
-| R146 | Asfiya et al. (2016), *Myrmecological News* 22:43 | 全文 | **本種**：餌站佔用率在地表 41.9°C 時降到一半；地下 18～28°C 時餌站上最多（>300 隻） | 澳洲樣點；不能直接決定每日活動時窗 |
+| R145 | Chen & Neoh (2023), *Frontiers in Ecology and Evolution* 11:1044485. DOI 10.3389/fevo.2023.1044485 | 全文（含圖 2 目測） | **臺中太平**：誘餌陷阱 00:00 起**連續 72 小時、每 3 小時收集一次**，包含本種（都市 2019-03-26～28、森林 2019-05-11～13）；都市的本種多在白天、夜間較低但仍有捕獲，森林的本種日夜相近。實驗室升溫：本種小工蟻在 42°C（都市，1 群 31 隻）／44°C（森林，3 群 24 隻）完全熱昏迷（**CTmax**，不是停止覓食的溫度）。〔2026-11-02 更正：原寫「都市樣點主要在白天活動，森林日夜都有」而未寫明是 72 小時逐 3 小時取樣，第二階段文件因此誤稱「查無本種逐時研究」〕 | 「09:00～15:00 佔 87.9%」是所有蟻種合計，不是本種；都市與森林的取樣日期不同，差異不能全部歸因於棲地；量的是活動密度，不是每隻工蟻的活動時間；鮪魚誘餌可能有偏差 |
+| R146 | Asfiya et al. (2016), *Myrmecological News* 22:43 | 全文 | **本種**：昆士蘭樣點中，**餌站螞蟻裡本種所佔的比例**在地表 41.9°C 時降到一半（群落組成指標，不是本種停止覓食的溫度）；西澳地下 18～28°C 時餌站上最多（>300 隻）；實驗室 1 小時暴露 50% 存活 34.6／38.2／44.6°C（西澳乾燥／西澳潮濕／昆士蘭）。〔**2026-11-02 更正**：本行原寫「餌站佔用率在地表 41.9°C 時降到一半」，**這是錯的**——41.9°C 是本種在餌站中所佔比例的一半點，不是餌站佔用率〕 | 澳洲樣點；西澳只在白天兩個時段取樣，沒有夜間；不能直接決定每日活動時窗或高溫停止門檻 |
 | R147 | Greenwald, Segre & Feinerman (2015), *Scientific Reports* 5:12496；Greenwald, Baltiansky & Feinerman (2018), *eLife* 7:e31730 | 全文 | 覓食者每次回巢交出約一半嗉囊；**出巢頻率隨巢內飽足下降**，覓食者只依**自己嗉囊的變化**決定（v17 `continue_crop_emptied_weight` 的機制） | *Camponotus sanctus*，非本種；沒有可用的機率數值 |
 | R148 | Baltiansky, Frankel & Feinerman (2023), *eLife* 12:e77659 | 全文 | 同上機制：卸貨慢則在巢內停留較久 | 非本種 |
 | R149 | Mailleux et al. (2000) *Animal Behaviour* 59:1061；(2006) *J Exp Biol* 209:4224 | 摘要 | 工蟻只有裝到「想要的量」才留跡招募，否則不留跡回巢；飢餓時門檻提高（v17 `recruit_min_crop_fill_fraction` 的機制） | *Lasius niger*，非本種；門檻數值為遊戲假設 |
@@ -372,3 +372,144 @@
 | R186 | Takkis et al. (2018) *Frontiers in Plant Science* 9:874 | 經摘要工具（PMC） | b | 花蜜分泌與溫度呈單峰，最適溫約等於該種花季的平均溫；雨會稀釋花蜜 | 地中海 6 種植物 |
 | R187 | Fellers & Fellers (1982). DOI 10.2307/2425390 | 摘要 | b | 地表的昆蟲屍體被螞蟻移走，中位數 3.75 分鐘 | 北美 |
 | R188 | Seastedt (1981). DOI 10.2307/2425017 | 摘要 | b | 地表的屍體很快被黃蜂與螞蟻取走；落葉層內的屍體可存在整年 | 北美 |
+
+## 2026-11-02 第二階段：一日活動時窗與一天之內換工作（R189–R203；研究與設計，未改規則）
+
+> 用於 `docs/research-design-phase2-activity-tasks.md`。
+> - 分級：a＝本種，b＝其他物種（非本種），c＝查無。
+> - 本種的逐時（含夜間）一手資料只有 **R145**（臺中，72 小時、每 3 小時；見上方 v17 段落 R145 行，2026-11-02 更正）。**查無本種任務分配、年齡分工或一天之內換工作的一手研究。**
+> - 〔2026-11-02 更正：本段原寫「查無本種逐時、夜間覓食或任務分配的一手研究」，「逐時、夜間」部分是錯的。〕
+> - 2026-11-02 再補查：本種另有 R228 Castiñeiras 1982（24 小時，**已找到研究摘要，原始逐時數據未核實**）與 R229 Su 1979（08:30～22:30）；R167 Phillips 1933 重讀有清晨、傍晚、夜間最活躍的描述（見本段表末）。
+> - 本段沒有據此改任何參數。
+
+**R146 描述更正**：已在 v17 段落的 R146 原行直接更正（2026-11-02，Owner 審閱 PR #34 要求在原錯誤處更正）。原行寫「餌站佔用率在地表 41.9°C 時降到一半」是錯的；原文是本種在**餌站螞蟻中所佔比例**於地表 41.9°C 時降到一半。另補讀：
+- 西澳上午（07:30～10:30）的招募較下午（12:30～15:30）多，3 個樣點中有 2 個顯著；
+- 地下 18～28°C 時餌站最多；
+- **沒有夜間取樣**。
+
+| ID | 研究 | 讀取 | 分級 | 支持的內容 | 不可外推之處 |
+|---|---|---|---|---|---|
+| R228 | Castiñeiras A. (1982) Actividad forrajera de *Pheidole megacephala* (Hymenoptera: Formicidae: Myrmecinae). *Ciencia y Técnica en la Agricultura. Protección de Plantas* 5(3):55–64（INISAV，哈瓦那；西班牙文，英西摘要）。AGRIS 647245ed2c1d629bc9796862 | **只有摘要**（AGRIS 雙語摘要）；全文未取得 | a | 1980 年每月一次、每 2 小時：氣溫、相對濕度與 5 個鮮魚餌上的工蟻數；活動涵蓋 24 小時，與溫濕度非線性相關；月份效應顯著、時段效應不顯著；有迴歸式（係數未讀到） | **已找到研究摘要，原始逐時數據未核實**；1 個蟻群、古巴；誘餌計數 |
+| R229 | Su T. H. (1979) *The biology and control of the big-headed ant and its associated mealybugs in Hawaiian pineapple fields*. PhD dissertation, University of Hawaii（UMI 8012266；ScholarSpace） | 全文（掃描） | a | 檀香山 Manoa 校園：08:30～22:30 每 2 小時的誘餌樁，傍晚到夜間約為白天 2 倍（表 3 計算的比值） | 季節與溫度未記錄；22:30 後無資料；油脂餌；只作驗證型態 |
+| R189 | Loke & Lee (2004) *Sociobiology* 43:211 | 經摘要工具（未核實） | a | 室內：上午 8～12 時高峰；覓食距離 1.82～3.34 m | 室內食品櫃，數字未核實 |
+| R190 | Cerdá, Retana & Cros (1998) *Functional Ecology* 12:45. DOI 10.1046/j.1365-2435.1998.00160.x | 全文 | b | *Pheidole pallidula*：地表 24°C 活動最高，10～46°C 有活動；怕熱的優勢種在夏季轉為夜間活動；活動曲線升得快、降得慢 | 地中海氣候，同屬但非本種 |
+| R191 | Whitford et al. (1981) *American Midland Naturalist* 105:159. DOI 10.2307/2425021 | 全文（掃描邊緣缺字） | b | 沙漠 *Pheidole* 3 種只在地表 15～35°C 活動；隨季節在夜間與白天之間轉換 | 沙漠食種子種 |
+| R192 | Bestelmeyer (2000) *J. Animal Ecology* 69:998 | 摘要 | b | 優勢種在中高溫最活躍，活動曲線單峰 | 查科群落 |
+| R193 | Stuble et al. (2013) *Ecology and Evolution* 3:482. DOI 10.1002/ece3.473 | 全文 | b | 物種的 CTmax 可預測其平均覓食溫度 | 溫帶森林種 |
+| R194 | Gordon (1989) *Animal Behaviour* 38:194. DOI 10.1016/S0003-3472(89)80082-X | 全文 | b | 數小時內換任務，而且不對稱：改去覓食容易，覓食者幾乎不換 | *Pogonomyrmex barbatus* |
+| R195 | Gordon & Mehdiabadi (1999) *BES* 45:370. DOI 10.1007/s002650050573 | 全文 | b | 開始工作的機率隨接觸率上升；作者支持帶雜訊的隨機規則 | 同上 |
+| R196 | Detrain & Pasteels (1991) *J. Insect Behavior* 4:157. DOI 10.1007/BF01054609 | 全文 | b | *P. pallidula*：每種觸角邀請下，小工蟻與兵蟻開始移動／離巢的比例；兵蟻門檻較高、反應較短 | 同屬，實驗室 |
+| R197 | Sempo & Detrain (2010) *J. Insect Science* 10:3. DOI 10.1673/031.010.0301 | 全文 | b | *P. pallidula* 巢內活躍比例：小工蟻 70%、兵蟻 51% | 同屬，28°C 實驗室 |
+| R198 | Robinson, Feinerman & Franks (2009) *Proc. R. Soc. B* 276:4373. DOI 10.1098/rspb.2009.1244 | 經摘要工具 | b | 較瘦（腹部乾重較低）的工蟻在斷食後先開始覓食，與年齡無關 | *Temnothorax* |
+| R199 | Cassill & Tschinkel (1999) *BES* 45:301 | 摘要 | b | 體型與年齡定大方向，嗉囊飽足與換工作做微調 | *Solenopsis invicta* |
+| R200 | Pless et al. (2015) *PLoS ONE* 10:e0141971 | 摘要 | b | 回巢覓食者的接觸會啟動等待中的覓食者 | *P. barbatus* |
+| R201 | Ulrich et al. (2018) *Nature* 560:635. DOI 10.1038/s41586-018-0422-6 | 全文 | b | 固定門檻的反應模型 | *Ooceraea biroi*；刺激是全群需求，**不可照搬** |
+| R202 | Ravary et al. (2007) *Curr Biol* 17:1308；Mersch et al. (2013) *Science* 340:1090；Charbonneau & Dornhaus (2015) *BES* 69:1459；Mertl & Traniello (2009) *BES* 63:1411 | 摘要／經摘要工具 | b | 依經驗專化；依年齡與空間漂移；有一致不活動的個體；*Pheidole* 兵蟻不擅照護 | 多物種 |
+| R203 | Dussutour & Simpson (2009) *Current Biology* 19:740 | 摘要 | b | 有無幼蟲會改變覓食者的採集量與營養比例 | 物種未核對 |
+
+**R167 Phillips (1933) 重讀補充（2026-11-02，新增，不改舊列）**：夏威夷鳳梨田：本種「最活躍在清晨、傍晚與夜間，盡量避開熱處」（p.146）；冬季低溫使夜間野外活動停止，其他季節全天都可見（p.148）；實驗室約 10 隻工蟻＋5 隻兵蟻緩慢降溫：約 16.7°C 遲緩、約 10°C 癱瘓，回溫後多數恢復（樣本極小）；巢總在潮濕處；大雨淹巢溺死（p.144–145）。定性，文獻支持方向；數值信心低。
+
+## 2026-11-02 P1-B 巢穴與空間（R290–R311；研究與設計，未改規則）
+
+> 用於 `docs/research-design-p1b-nest-space.md`；工作筆記 `reports/p1b-nest-space/literature-notes.md`。其他段落的編號（R189–R203 #34、R204–R227 #38、R228–R259 P0-A、R260–R275 P1-A）不重複。
+> **禁止套用**：R303、R304、R308 列出的是他種的深層地下巢與筏，只作反例。
+> 2026-11-03 修正：#40 合併時本段表格只有表頭（建立段落時的擷取錯誤，表格分隔線被當成段落結尾），R290～R311 二十二列由設計文件 §7 原樣補回。
+
+| ID | 文獻 | 物種／分級 | 讀取 | 用途 |
+|---|---|---|---|---|
+| R290 | Forel 1893, *Trans. Ent. Soc. London* 1893:333–418（H. H. Smith 野外筆記，pp. 417–418），Zenodo DOI 10.5281/zenodo.6293000 | 本種 a（軼聞） | 全文摘錄 | 淺巢、扁平巢室、紙板狀巢壁、分支巢 |
+| R291 | Hoffmann, Andersen & Hill 1999, *Oecologia* 120:595–604, DOI 10.1007/PL00008824 | 本種 a | 摘要 | 排水線、遮蔽微地點、季節性擴縮 |
+| R292 | Milligan et al. 2022, *J. Ecology* 110:359–373, DOI 10.1111/1365-2745.13803 | 本種 a | 摘要 | 根際築巢 |
+| R293 | Wetterer 2002, *Pacific Science* 56:125–135, DOI 10.1353/psc.2002.0019 | 本種 a | 搜尋摘錄 | 石下、倒木下 |
+| R294 | Jackson 2023，Pacific Pests, Pathogens, Weeds & Pesticides，Bigheaded ant (361) | 本種 a（灰色文獻） | 全文 | 落葉、樹皮巢；分巢 |
+| R295 | Droual & Topoff 1981, *Psyche* 88:135–150, DOI 10.1155/1981/43265 | *P. hyatti*／*P. desertorum*（b） | 全文 | 遷巢頻率、回舊巢、雨後遷巢、蟻后步行 |
+| R296 | Moyano & Feener 2014, *Insectes Sociaux* 61:71–81, DOI 10.1007/s00040-013-0327-1 | *P. dentata*（b） | 摘要 | VPD 觸發遷巢；雨無影響 |
+| R297 | Wilson 1986, *Insectes Sociaux* 33:458–469, DOI 10.1007/BF02223951 | *Pheidole* 屬（b） | 摘要 | 巢口碰水引發警報與撤離 |
+| R298 | LeBrun, Moffett & Holway 2011, *Insectes Sociaux* 58:263–269, DOI 10.1007/s00040-011-0151-4 | 含兩種大頭家蟻（b） | 全文 | 雨後築圍堤 |
+| R299 | Kolay & Annagiri 2015, *Sci. Rep.* 5:13716, DOI 10.1038/srep13716 | *Diacamma indicum*（b） | 全文 | 入口高程、雨後修入口、淹水撤離 |
+| R300 | McGlynn 2012, *Annu. Rev. Entomol.* 57:291–308, DOI 10.1146/annurev-ento-120710-100708 | 綜述（b） | 摘要 | 遷巢原因分類 |
+| R301 | Debout et al. 2007, *Biol. J. Linn. Soc.* 90:319–348, DOI 10.1111/j.1095-8312.2007.00728.x | 綜述 | 僅書目 | 多巢定義 |
+| R302 | Robinson 2014, *Curr. Opin. Insect Sci.* 5:37–43, DOI 10.1016/j.cois.2014.09.002 | 綜述 | 僅書目 | 多巢定義 |
+| R303 | Forti et al. 2007, *Insect Science* 14:437–442, DOI 10.1111/j.1744-7917.2007.00171.x | *P. oxyops*（b） | 搜尋摘錄（數字需再核） | **反例：深約 5 m，禁止套用** |
+| R304 | Tschinkel 2015, *J. Bioeconomics* 17:271–291, DOI 10.1007/s10818-015-9203-6 | 綜述（b） | 僅書目 | **禁止套用的地下巢清單** |
+| R305 | Monaenkova et al. 2015, *J. Exp. Biol.* 218:1295–1305, DOI 10.1242/jeb.113795 | *S. invicta*（b） | 摘要 | 濕度窗口、固定大小的土粒 |
+| R306 | Toffin et al. 2009, *PNAS* 106:18616–18620, DOI 10.1073/pnas.0902685106 | *Messor sancta*（b） | 摘要 | 巢形由擁擠產生 |
+| R307 | Buhl et al. 2005, *Behav. Ecol. Sociobiol.* 58:9–17, DOI 10.1007/s00265-004-0906-2 | *Messor*（b） | 僅書目 | 自組織挖掘 |
+| R308 | Mlot, Tovey & Hu 2011, *PNAS* 108:7669–7673, DOI 10.1073/pnas.1016658108 | *S. invicta*（b） | 僅書目 | **禁止：筏** |
+| R309 | Campbell & Norman 1998, *An Introduction to Environmental Biophysics*（Springer），DOI 10.1007/978-1-4612-1626-1 | 一般土壤物理 | 教科書 | 溫度隨深度衰減 |
+| R310 | 中央氣象署臺中氣象站頁（stn_id=8），1991–2020 平年值：23.3°C、1773.0 mm、113.7 雨日、日照 2043.2 h | 實測統計 | 全文 | 氣候先驗；日照介面 |
+| R311 | Lenoir et al. 2025, *Naturae* 2025(4):35–43, DOI 10.5852/naturae2025a4 | 本種 a | 摘要 | 溫帶只見於加溫溫室（覆蓋與保溫的重要性） |
+
+**R116 補充（新增，不改舊列）**：R116＝Tsuji & Win (2025) *Biology Open* 14:bio061976，DOI 10.1242/bio.061976（舊列缺作者與 DOI）。實驗室多巢、無兵蟻：相連的巢共享工蟻與食物，切斷連結後幼體生產崩潰；野外「巢常在約 1 m 內」只是定性描述。
+## 2026-11-02 P1-A 大工蟻（R260–R275；研究與設計，未改規則）
+
+> 用於 `docs/research-design-p1a-majors.md`；工作筆記 `reports/p1a-majors/literature-notes.md`。R189–R203（PR #34）、R204–R227（PR #38）、R228–R259（P0-A）在其他 PR；本段不重複編號。
+
+| ID | 文獻 | 讀取 | 分級 | 支持的內容 | 不可外推之處 |
+|---|---|---|---|---|---|
+| R260 | Tsuji K. (1990) Nutrient storage in the major workers of *Pheidole ryukyuensis*. *Appl. Entomol. Zool.* 25:283–287. DOI 10.1303/aez.25.283 | 頁面影像全文 | 非本種 | replete major 使 minor 斷食存活 31.3 vs 8.0 日；非 replete major 13.9 日；**作者觀察本種「顯然沒有 replete」** | 單一群、24°C；本種一句為個人觀察 |
+| R261 | Sempo G., Detrain C. (2010) *J. Insect Sci.* 10:3. DOI 10.1673/031.010.0301 | 全文 | 非本種 *P. pallidula* | major 活動 40–50%、minor ≈ 70%；改變比例時 major 不補位；replete major 最多 32%（引 R271） | 無女王實驗群 |
+| R262 | Sempo G., Detrain C. (2004) *Insectes Soc.* 51:48–54 | 經摘要工具 | 非本種 | major 做 minor 行為庫的 69%，含育幼；行為庫大小受觀察次數影響 | 數字未逐字核對 |
+| R263 | Detrain C. (1990) *Actes Coll. Insectes Soc.* 6:131–139 | 全文 | 非本種 | major 對路徑費洛蒙與觸角邀請的反應閾值較高；只在大型、搬不動的食物時被招募 | 實驗室 |
+| R264 | Detrain C., Pasteels J. M., Deneubourg J.-L. (1988) *Actes Coll. Insectes Soc.* 4:87–94 | 全文 | 非本種 | 路徑費洛蒙主要由 minor 產生；major 循跡較好；major 切斷獵物骨片、殺死入侵者 | 人工路徑 |
+| R265 | Detrain C., Pasteels J. M. (1991) *J. Insect Behav.* 4:157–176. DOI 10.1007/BF01054609 | 經摘要工具 | 非本種 | 同 R263（期刊版） | 未讀全文 |
+| R266 | Detrain C., Pasteels J. M. (1992) *Behav. Ecol. Sociobiol.* 29:405–412. DOI 10.1007/BF00170170 | 經摘要工具 | 非本種 | 兩形態共同防衛；防衛策略由招募者的基本行為湧現 | 未讀全文 |
+| R267 | Wilson E. O. (1984) *Behav. Ecol. Sociobiol.* 16:89–98 | 二手（經 R261、R97） | 非本種 | minor 少時 major 擴大行為庫（待命階級） | R261 指出抽樣偏差 |
+| R268 | Bonabeau E., Theraulaz G., Deneubourg J.-L. (1996) *Proc. R. Soc. B* 263:1565–1569. DOI 10.1098/rspb.1996.0229 | 經摘要工具 | 模型 | 固定反應閾值模型可重現 *Pheidole* 分工 | 閾值數值是模型值 |
+| R269 | Wheeler D. E., Nijhout H. F. (1983) *J. Insect Physiol.* 29:847–854. DOI 10.1016/0022-1910(83)90151-8 | 經摘要工具 | 非本種 *P. bicarinata* | 敏感期約終齡第 4–6 日；劑量高延後化蛹、低則提早 | 外用類似物，非自然營養 |
+| R270 | Passera L., Roncin E., Kaufmann B., Keller L. (1996) *Nature* 379:630–631. DOI 10.1038/379630a0 | 經摘要工具 | 非本種 *P. pallidula* | 接觸競爭群後兵蟻增加 | 與本種 R97 結果方向不同 |
+| R271 | Lachaud J.-P. et al. (1992) In Billen J. (ed.) *Biology and Evolution of Social Insects*, pp. 153–160 | 二手（經 R261、R116） | 非本種 | major 儲脂、replete 最多 32% | 未讀原文 |
+| R272 | Chown S. L. et al. (2007) *Funct. Ecol.* 21:282–290. DOI 10.1111/j.1365-2435.2007.01245.x | 經摘要工具 | 一般生理學 | 8 種多型蟻種內代謝縮放指數 0.67–1.0 | 不含本種 |
+| R273 | Mertl A. L., Sorenson M. D., Traniello J. F. A. (2010) *Insectes Soc.* 57:441–452. DOI 10.1007/s00040-010-0102-5 | 經摘要工具 | 非本種 | 招募越強的種，餌上 major 比例越高 | 種間比較 |
+| R274 | Lin Minghui（指導 B. Guénard），HKU Summer Research Fellowship 海報 F11（無日期，約 2021） | 全文（海報） | 本種？（未明寫） | major 比例 0/10/20/30% 時，30% 的取食率最高 | **未經審查**；時態混雜；只作定性參考 |
+| R275 | Creighton W. S., Creighton M. P. (1959)（*P. militicida*） | 二手／經摘要工具 | 非本種 | 只有 major 的巢也從不嘗試打開種子 | 二手 |
+
+**既有 ID 的補讀**（只新增說明，不改舊列；2026-11-02 P1-A 補讀）：
+- R97（Wills et al. 2014）全文：乾重（圖讀）major 390–1110 µg、minor 63–97 µg；major 比例 0.06–0.25；完全二態。
+- R99（Sarnat et al. 2015）：major 頭寬 1.10–1.54 mm、minor 0.50–0.61 mm。
+- R132（Dejean et al. 2005）：受招募者中兵蟻 1.07% vs 8.16%；嗉囊 0.08 vs 0.26 mg；外掛液滴。
+- R98／R107（Dejean et al. 2007）：minor 0.35 mg、major 1.65 mg；蛾卵招募中兵蟻約 28–32%，兵蟻咬開卵。
+- R116（Tsuji & Win 2025）：本種 200 隻 minor 鮮重 48.0 mg；文中把 major 當 replete 是屬級泛論。
+- R173（San Juan et al. 2025）：勘誤見 C6。
+
+**R173 勘誤（新增，不改舊列）**：舊列寫「本種攻擊火蟻時，死亡的多半是兵蟻」，與原文不符：原文那句出現在 *Pheidole* cf. *parva* 的段落，而且沒有說是哪一種的兵蟻。本種在 R173 的可用內容是：兵蟻把被小工蟻拉開的獵物或敵蟻切斷腳、觸角或斬首（定性）。〔設計文件衝突表 C6〕
+## 2026-11-02 第三階段：幼體發育溫度、成蟲死亡、蟻后批次產卵、食卵與幼體營養（R204–R227；研究與設計，未改規則）
+
+> 用於 `docs/research-design-phase3-lifecycle.md`；工作筆記 `reports/phase3-lifecycle/literature-notes.md`。
+> - 第二階段的 R189–R203 定義在 PR #34（尚未合併時，本段編號仍從 R204 起，不重複）。
+> - 「非本種」的數值一律不作為本種參數；本段沒有據此改任何參數。
+
+| ID | 文獻 | 讀取程度 | 分類 |
+|---|---|---|---|
+| R204 | Porter SD, Tschinkel WR (1985) Fire ant polymorphism: the ergonomics of brood production. *Behav. Ecol. Sociobiol.* 16:323–336 | 全文 | 非本種：*S. invicta* |
+| R205 | Tschinkel WR (1988) Social control of egg-laying rate in queens of the fire ant, *Solenopsis invicta*. *Physiol. Entomol.* 13:327–350 | 摘要頁影像 | 非本種 |
+| R206 | Tschinkel WR (1995) Stimulation of fire ant queen fecundity by a highly specific brood stage. *Ann. Entomol. Soc. Am.* 88:876–882 | 第 1 頁影像 | 非本種 |
+| R207 | Vargo EL (1989) On differential reproduction among queens in polygyne colonies of the fire ant *Solenopsis invicta*. *Actes Coll. Insectes Soc.* 5:109–116 | 全文（OCR） | 非本種 |
+| R208 | Tschinkel WR (1993a) Resource allocation, brood production and cannibalism during colony founding in the fire ant. *Behav. Ecol. Sociobiol.* 33:209–223 | 全文相關章節 | 非本種 |
+| R209 | Tschinkel WR (1993b) Sociometry and sociogenesis of colonies of the fire ant *Solenopsis invicta* during one annual cycle. *Ecol. Monogr.* 63:425–457 | 全文相關章節 | 非本種 |
+| R210 | Cassill DL, Tschinkel WR (1995) Allocation of liquid food to larvae via trophallaxis in colonies of the fire ant. *Anim. Behav.* 50:801–813 | 全文相關章節 | 非本種 |
+| R211 | Cassill DL, Tschinkel WR (1999) Effects of colony-level attributes on larval feeding in the fire ant. *Insectes Soc.* 46:261–266 | 摘要 | 非本種 |
+| R212 | Passera L (1973) Origine des soldats dans les sociétés de *Pheidole pallidula*. *Proc. VII Int. Congr. IUSSI*, London | 全文 | 非本種：同屬 *P. pallidula* |
+| R213 | Lillico-Ouachour A (2017) MSc thesis, McGill University（第 1 章 = Lillico-Ouachour & Abouheif 2017 *Curr. Opin. Insect Sci.* 19:43–51） | 全文相關章節 | 非本種：*Pheidole* 綜述 |
+| R214 | Rajakumar R et al. (2018) *Nature* 562:574–577. DOI 10.1038/s41586-018-0613-1 | 摘要 | 非本種：*Pheidole* |
+| R215 | Sorensen AA, Busch TM, Vinson SB (1983) *J. Kansas Entomol. Soc.* 56:140–150 | 經摘要工具 | 非本種：*S. invicta*；數字需要再核對 |
+| R216 | Huang MH, Wheeler DE, Fjerdingstad EJ (2013) *Mol. Ecol.* 22. DOI 10.1111/mec.12218 | 摘要 | 非本種：*Pheidole* 工蟻沒有卵巢 |
+| R217 | Schultner E, Gardner A, Karhunen M, Helanterä H (2014) *Am. Nat.* DOI 10.1086/678459 | 摘要 | 非本種：多種 *Formica* |
+| R218 | Warner MR, Lipponen J, Linksvayer TA (2017) bioRxiv 211573 | 摘要（預印本） | 非本種：*M. pharaonis* |
+| R219 | Kramer BH, Schaible R (2013) *PLoS ONE* 8:e61813 | 全文相關段落 | 一般；轉述 Calabi & Porter 1989 |
+| R220 | Jaimes-Nino LM, Oettler J (2025) *Biol. Rev.* DOI 10.1111/brv.70035 | 全文相關章節 | 一般；蟻后壽命資料的品質 |
+| R221 | Brière JF et al. (1999) *Environ. Entomol.* 28:22–29 | 摘要 | 一般方法 |
+| R222 | Colinet H et al. (2015) *Annu. Rev. Entomol.* 60:123–140 | 摘要（經工具） | 一般生理學 |
+| R223 | Penick CA, Tschinkel WR (2008) Thermoregulatory brood transport in the fire ant. *Insectes Soc.* 55. DOI 10.1007/s00040-008-0987-4 | 全文摘要 | 非本種 |
+| R224 | Asano E, Cassill DL (2012) *J. Theor. Biol.* 305:70–77 | 摘要 | 非本種，模型 |
+| R225 | Bar A, Shalev L, Scharf I (2022) *Biology* 11:1714 | 摘要 | 非本種：*Cataglyphis niger* |
+| R226 | Porter SD, Tschinkel WR (1993) Fire ant thermal preferences. *Behav. Ecol. Sociobiol.* 32:321–329 | 全文 | 非本種 |
+| R227 | Cassill DL, Tschinkel WR (2000) *J. Insect Physiol.* 46:933–939 | 全文 | 非本種 |
+
+**既有編號的附註**（第三階段新增附註，不改寫原有行）
+
+- R172 的措辭含糊：原文是「mortality is 50% at 77 days」，解讀為 77 日時存活 50%。
+- R94 有兩處內部不一致：
+  - 第 84 日的小工蟻存活數；
+  - 繁殖季節寫成「3～5 月」與「晚春到秋季」兩種。
+- GISD 的「壽命 78／38 日」不採用，理由見 `docs/research-design-phase3-lifecycle.md` §0。
