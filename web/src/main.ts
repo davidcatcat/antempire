@@ -3,7 +3,7 @@
  * Day14 snapshot (static) and engine-generated experimental Day0 replays. It never runs the simulation, never
  * writes anything, and every position between two recorded points is a display interpolation (model.poseAt).
  */
-import { ACTION_LABEL, NEST, assertKind, REASON_LABEL, TASK_LABEL, describeEvent, displayPositions, eventsUntil, exploredEdges, poseAt, segmentsOf, stateAtStart, taskOf, trailScale, type Experiment, type Official, type Place, type Link } from './model.ts';
+import { ACTION_LABEL, NEST, assertKind, REASON_LABEL, TASK_LABEL, describeEvent, displayPositions, eventsUntil, exploredEdges, poseAt, segmentsOf, stateAtStart, taskOf, trailScale, type Experiment, type Official, type Place, type Link, stateAt, isSettled, isTimed, windowOf, SETTLEMENT_STEP } from './model.ts';
 
 type Pos = Record<string, { x: number; y: number; known: boolean }>;
 interface Index { official: string; experiments: { id: string; file: string; title: string }[] }
@@ -87,7 +87,7 @@ function ants(): { id: string; x: number; y: number; interpolated: boolean; inju
     return alive.map((w, i) => { const at = pos[w.location_at_day_end ?? NEST] ?? pos[NEST], a = (i / Math.max(1, alive.length)) * Math.PI * 2; return { id: w.id, x: at.x + Math.cos(a) * 4, y: at.y + Math.sin(a) * 4, interpolated: false, injured: !!w.injured_preexisting, task: null }; });
   }
   if (!exp) return [];
-  const day = Number(ui.day.value), d = exp.days[day - 1], s = stateAtStart(exp, day), t = Number(ui.minute.value);
+  const day = Number(ui.day.value), d = exp.days[day - 1], t = Number(ui.minute.value), s = stateAt(exp, day, t);
   const inNest = s.workers.filter((w) => poseAt(d, w.id, t, pos).place === NEST);
   return s.workers.map((w) => {
     const p = poseAt(d, w.id, t, pos), task = taskOf(d, s, w.id).task;
@@ -117,7 +117,7 @@ function renderLegend() {
     const s = stateAtStart(exp, Number(ui.day.value)), tr = trailScale(s);
     if (ui.ovTrail.checked) rows.push(`<div class="row"><span><span class="bar" style="border-top-width:3px;border-color:rgba(var(--trail),0.4)"></span><span class="bar" style="border-top-width:8px;border-color:rgba(var(--trail),0.9)"></span>費洛蒙：線越粗越濃＝引擎在<b>本日開始時</b>記錄的路段強度（遊戲單位，非化學濃度）；本日最強 ${tr.max.toFixed(2)}，${tr.edges} 條路段有訊號。畫面不在一天之內衰減或移動它。</span></div>`);
     if (ui.ovExplored.checked) rows.push(`<div class="row"><span><span class="bar" style="border-top-width:5px;border-color:rgba(var(--explored),0.55)"></span>已探索路段：本日開始時存活工蟻記得的路段聯集（玩家視角；個別螞蟻只知道自己走過的）</span></div>`);
-    if (ui.ovTask.checked) rows.push(`<div class="row">${Object.entries(TASK_LABEL).map(([k, v]) => `<span>${sw(`--task-${k}`)}${v}</span>`).join('')}</div><div class="note">任務＝引擎記錄的當日任務（每日一次抽籤；被招募的非覓食者也可能出巢）</div>`);
+    if (ui.ovTask.checked) rows.push(`<div class="row">${Object.entries(TASK_LABEL).map(([k, v]) => `<span>${sw(`--task-${k}`)}${v}</span>`).join('')}</div><div class="note">顏色＝引擎記錄的<b>當日任務摘要</b>（日終的最後紀錄；不是逐分鐘的目前任務：被招募前也已顯示為覓食）</div>`);
   } else rows.push('<div class="note">正式快照沒有費洛蒙與任務的引擎紀錄，所以不畫這些圖層。</div>');
   if (ui.ovFood.checked) rows.push('<div class="row"><span><span class="bar" style="border-top-width:6px;border-color:var(--ink)"></span>食物存量：地點旁的長條＝引擎的現存量（糖或蛋白，份）</span></div>');
   rows.push(`<div class="row"><span><span class="sw" style="background:var(--ant)"></span>工蟻</span><span><span class="sw" style="background:var(--muted)"></span>受傷</span><span><span class="sw" style="background:transparent;border:1px solid var(--muted)"></span>外圈＝兩個紀錄點之間（顯示插值）</span></div>`);
@@ -178,7 +178,7 @@ function drawNest() {
   ctx.font = `${11 * dpr}px system-ui`; ctx.fillText('引擎目前沒有巢室與通道結構，只畫出實際存在的個體。', 14 * dpr, 70 * dpr);
   let queen: boolean, workers: string[], brood: { id: string; stage: string }[];
   if (official && !exp) { queen = official.queen.status !== 'dead'; workers = official.workers.filter((w) => w.status === 'alive' && (w.location_at_day_end ?? NEST) === NEST).map((w) => w.id); brood = official.brood.filter((b) => b.living); }
-  else if (exp) { const day = Number(ui.day.value), d = exp.days[day - 1], s0 = stateAtStart(exp, day), t = Number(ui.minute.value); queen = s0.queen_alive; workers = s0.workers.filter((w) => poseAt(d, w.id, t, pos).place === NEST).map((w) => w.id); brood = s0.brood; }
+  else if (exp) { const day = Number(ui.day.value), d = exp.days[day - 1], t = Number(ui.minute.value), s0 = stateAt(exp, day, t); queen = s0.queen_alive; workers = s0.workers.filter((w) => poseAt(d, w.id, t, pos).place === NEST).map((w) => w.id); brood = s0.brood; }
   else return;
   const row = (y: number, title: string, items: string[], draw: (x: number, y: number) => void) => {
     ctx.fillStyle = '#f3ead8'; ctx.font = `bold ${12 * dpr}px system-ui`; ctx.fillText(`${title}（${items.length}）`, 14 * dpr, y);
@@ -204,9 +204,9 @@ function renderPanels() {
     return;
   }
   if (!exp) return;
-  const day = Number(ui.day.value), d = exp.days[day - 1], s = stateAtStart(exp, day), t = Number(ui.minute.value), wmin = d.window_minutes ?? 360;
-  ui.minute.max = String(wmin);
-  ui.time.textContent = `Day${d.day}（${d.date}）第 ${t.toFixed(0)} 分鐘／活動時窗 ${wmin} 分鐘`;
+  const day = Number(ui.day.value), d = exp.days[day - 1], t = Number(ui.minute.value), s = stateAt(exp, day, t), wmin = windowOf(d), settled = isSettled(d, t);
+  ui.minute.max = String(wmin + SETTLEMENT_STEP);
+  ui.time.textContent = settled ? `Day${d.day}（${d.date}）日終結算後：死亡、羽化、產卵與發育已套用（引擎沒有記錄這些事件的時刻）` : `Day${d.day}（${d.date}）第 ${t.toFixed(0)} 分鐘／活動時窗 ${wmin} 分鐘｜蟻群名冊為本日開始時`;
   ui.weather.textContent = `氣溫 ${d.weather.air_temp_c.toFixed(1)}°C｜巢溫 ${d.weather.nest_temp_c.toFixed(1)}°C｜${d.weather.wet ? `雨 ${d.weather.rain_mm.toFixed(1)} mm` : '無雨'}`;
   const stage = (st: string) => s.brood.filter((b) => b.stage === st).length;
   ui.nest.innerHTML = `<b>蟻后</b> ${s.queen_alive ? '存活' : '已死亡'}　<b>工蟻</b> ${s.workers.length}　<b>卵／幼蟲／蛹</b> ${stage('egg')}／${stage('larva')}／${stage('pupa')}<br><b>巢內存糧</b> 糖 ${s.stores.sugar.toFixed(2)}、蛋白 ${s.stores.protein.toFixed(2)} 份（一日開始時）<br><b>今日</b> 收入 糖 ${d.income.sugar.toFixed(2)}／蛋白 ${d.income.protein.toFixed(2)}；產卵 ${d.eggs_laid}；羽化 ${d.eclosions}；工蟻死亡 ${d.worker_deaths}`;
@@ -215,14 +215,14 @@ function renderPanels() {
     const p = poseAt(d, w.id, t, pos), seg = p.segment, task = d.tasks?.[w.id], mine = eventsUntil(d, t).filter((e) => e.worker === w.id || e.by === w.id || e.to === w.id).slice(-8);
     const segs = segmentsOf(d, w.id).filter((x) => (x.start as number) <= t);
     ui.info.innerHTML = `<h3>${w.id}</h3><p>物種：熱帶大頭家蟻（小工蟻；引擎尚未模擬大工蟻）｜年齡 ${w.age_days} 日${w.injured ? `｜受傷（${w.injury_type ?? '類型未記錄'}）` : ''}</p>
-      <p>今日任務：${TASK_LABEL[task?.task ?? w.task] ?? task?.task ?? w.task}；出巢 ${task?.trips ?? 0} 趟、成功 ${task?.successes ?? 0}${task?.stop_reason && (p.action === 'in_nest' || t >= wmin) ? `；停止原因 ${REASON_LABEL[task.stop_reason] ?? task.stop_reason}` : ''}</p>
+      <p>今日紀錄任務（日摘要，不是逐分鐘的目前任務）：${TASK_LABEL[task?.task ?? w.task] ?? task?.task ?? w.task}；出巢 ${task?.trips ?? 0} 趟、成功 ${task?.successes ?? 0}${task?.stop_reason && (p.action === 'in_nest' || t >= wmin) ? `；停止原因 ${REASON_LABEL[task.stop_reason] ?? task.stop_reason}` : ''}</p>
       <p>現在：${ACTION_LABEL[p.action] ?? p.action} @ ${p.place}${seg ? `（${(seg.start as number).toFixed(1)}–${(seg.end as number).toFixed(1)} 分）` : ''}${p.interpolated ? '<span class="tag">位置為顯示插值</span>' : ''}</p>
       <p>嗉囊糖（一日開始）：${w.crop_sugar.toFixed(2)} 份｜記得的地點：${w.known_sources.join('、') || '無'}｜走過的路段：${w.route_edges.join('、') || '無'}</p>
       <p>今日到目前為止的行動：${segs.length ? segs.map((x) => `${(x.start as number).toFixed(0)}′ ${ACTION_LABEL[x.action as string] ?? x.action}`).join(' → ') : '在巢內（沒有外出紀錄）'}</p>
       <p>最近事件：${mine.map(describeEvent).join('；') || '—'}</p>`;
   } else ui.info.innerHTML = '<p class="note">點選地圖上的工蟻查看資料。黑點＝工蟻；外圈＝正在兩個紀錄點之間（顯示插值）。</p>';
   const evs = eventsUntil(d, t).slice(-30).reverse();
-  ui.events.innerHTML = evs.map((e) => `<div>${typeof e.minute === 'number' ? (e.minute as number).toFixed(0) + '′' : '日終'} ${describeEvent(e)}</div>`).join('') || '<p class="note">到目前為止沒有事件。</p>';
+  ui.events.innerHTML = evs.map((e) => `<div>${typeof e.minute === 'number' ? (e.minute as number).toFixed(0) + '′' : isTimed(e) ? (e.start as number).toFixed(0) + '′' : '日終（無時刻）'} ${describeEvent(e)}</div>`).join('') || '<p class="note">到目前為止沒有事件。</p>';
 }
 
 function pick(e: PointerEvent) {
@@ -236,7 +236,7 @@ function pick(e: PointerEvent) {
 function tick(now: number) {
   if (!playing || !exp) return;
   const dt = (now - last) / 1000; last = now;
-  const d = exp.days[Number(ui.day.value) - 1], max = d.window_minutes ?? 360;
+  const d = exp.days[Number(ui.day.value) - 1], max = windowOf(d) + SETTLEMENT_STEP;
   let t = Number(ui.minute.value) + dt * Number(ui.speed.value);
   if (t > max) { if (Number(ui.day.value) < exp.days.length) { ui.day.value = String(Number(ui.day.value) + 1); t = 0; } else { t = max; playing = false; ui.play.textContent = '播放'; } }
   ui.minute.value = String(t); draw();
@@ -247,7 +247,7 @@ function tick(now: number) {
 (window as unknown as { antempireViewer: unknown }).antempireViewer = {
   antsOnScreen: () => { const dpr = window.devicePixelRatio || 1, r = canvas.getBoundingClientRect(); return ants().map((a) => { const S = a.trayAt ? trayScreen(a.trayAt) : toScreen(a.x, a.y); return { id: a.id, x: r.left + S.sx / dpr, y: r.top + S.sy / dpr, interpolated: a.interpolated, task: a.task }; }); },
   selected: () => selected,
-  state: () => ({ mode: exp ? exp.spec.id : 'official', official: !exp, day: exp ? Number(ui.day.value) : null, minute: exp ? Number(ui.minute.value) : null, workers: exp ? stateAtStart(exp, Number(ui.day.value)).workers.map((w) => w.id) : (official?.workers.filter((w) => w.status === 'alive').map((w) => w.id) ?? []), info: ui.info.textContent ?? '' }),
+  state: () => ({ mode: exp ? exp.spec.id : 'official', official: !exp, day: exp ? Number(ui.day.value) : null, minute: exp ? Number(ui.minute.value) : null, workers: exp ? stateAt(exp, Number(ui.day.value), Number(ui.minute.value)).workers.map((w) => w.id) : (official?.workers.filter((w) => w.status === 'alive').map((w) => w.id) ?? []), info: ui.info.textContent ?? '' }),
 };
 
 init().catch((e) => { ui.badge.textContent = '載入失敗：' + (e as Error).message; });

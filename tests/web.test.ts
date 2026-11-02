@@ -28,7 +28,7 @@ import { exportOfficial, exportExperiment, EXPERIMENTS, layoutOf, WEB_DATA_DIR }
 import { REPO_ROOT, readJson, loadBundle } from '../cli/lib/load.ts';
 import { simulateWorldDay } from '../engine/index.ts';
 import { buildDay0, seasonStart } from '../cli/lib/day0.ts';
-import { assertKind, taskOf, trailScale, displayPositions, poseAt, stateAtStart, segmentsOf, eventsUntil, type Experiment } from '../web/src/model.ts';
+import { type SimEvent, assertKind, taskOf, trailScale, stateAt, isTimed, SETTLEMENT_STEP, displayPositions, poseAt, stateAtStart, segmentsOf, eventsUntil, type Experiment } from '../web/src/model.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
@@ -108,11 +108,19 @@ try {
       for (const w of died) { assert.ok(before.has(w) && !after.includes(w), `${id} day ${d}: ${w} died this day and is not drawn afterwards`); deathsSeen++; }
       assert.deepEqual([...before].filter((w) => !died.includes(w)).concat(born).sort(), [...after].sort(), `${id} day ${d}: population changes only by recorded eclosions and deaths`);
       assert.equal(day.eclosions, born.length, `${id} day ${d}: eclosion count = eclosion events`);
-      // minutes: nothing before minute 0 or after the window is invented
-      const w = day.window_minutes ?? 360, all = eventsUntil(day, w);
-      assert.ok(eventsUntil(day, 0).every((e) => (typeof e.minute === 'number' ? e.minute : typeof e.start === 'number' ? e.start : Infinity) <= 0), `${id} day ${d}: at minute 0 only minute-0 events are shown`);
-      assert.ok(eventsUntil(day, w - 1e-6).every((e) => typeof e.minute === 'number' || typeof e.start === 'number'), `${id} day ${d}: end-of-day events (death, eclosion, laying) appear only when the window closes`);
-      assert.deepEqual(eventsUntil(day, w + 1e6), all, `${id} day ${d}: nothing is added after the window`);
+      // minutes: nothing before minute 0 is shown; untimed (end-of-day) events only after the settlement step
+      const w = day.window_minutes ?? 360, all = eventsUntil(day, w + SETTLEMENT_STEP);
+      assert.ok(eventsUntil(day, 0).every((e) => isTimed(e) && ((e.minute ?? e.start) as number) <= 0), `${id} day ${d}: at minute 0 only minute-0 events are shown`);
+      assert.ok(eventsUntil(day, w).every(isTimed), `${id} day ${d}: end-of-day events (death, eclosion, laying) are NOT shown at any clock minute inside the window`);
+      assert.deepEqual(eventsUntil(day, w + 1e6), all, `${id} day ${d}: nothing is added after the settlement step`);
+      assert.equal(all.length, day.events.filter((e) => e.type !== 'worker_activity' && e.type !== 'route_step').length, `${id} day ${d}: after settlement every recorded event is listed`);
+      // drawn colony: start-of-day during the window, end-of-day after the settlement step
+      assert.equal(stateAt(exp, d, w), stateAtStart(exp, d), `${id} day ${d}: inside the window the drawn colony is the start-of-day state`);
+      assert.equal(stateAt(exp, d, w + SETTLEMENT_STEP), day.end_state, `${id} day ${d}: after settlement the drawn colony is the engine's end-of-day state (deaths and eclosions applied)`);
+      // one individual, one activity at a time (Issue #43 F03 would show up here in exported data)
+      const byW = new Map<string, SimEvent[]>();
+      for (const e of day.events.filter((x) => x.type === 'worker_activity')) byW.set(e.worker as string, [...(byW.get(e.worker as string) ?? []), e]);
+      for (const [wk, segs] of byW) { const sorted = [...segs].sort((a, b) => (a.start as number) - (b.start as number)); for (let i = 1; i < sorted.length; i++) assert.ok((sorted[i].start as number) >= (sorted[i - 1].end as number) - 1e-6, `${id} day ${d}: ${wk} has overlapping activities ${JSON.stringify([sorted[i - 1], sorted[i]])}`); }
       const pos = displayPositions(exp.map.places);
       for (const wk of stateAtStart(exp, d).workers.slice(0, 6)) {
         assert.deepEqual(poseAt(day, wk.id, w, pos), poseAt(day, wk.id, w + 500, pos), `${id} day ${d}: ${wk.id} is not moved after the recorded window`);
