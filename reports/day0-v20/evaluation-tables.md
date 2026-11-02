@@ -257,9 +257,9 @@
 | autumn | F01:sugar 4771.642；F04:sugar 2760.565；F05:sugar 1192.028；F07:protein 2002.675；F08:sugar 1.06；F10:sugar 1350.725；F11:protein 1855.951 | natural_or_injury_assumed 1144；starvation_or_natural_competing_hazards_scenario 189 | larva:chronic_protein_shortage_game_scenario 17 | no_workers [chronic_sugar_and_protein_deficit+no_workers] 4 |
 | winter | F01:sugar 5293.918；F04:sugar 2842.616；F05:sugar 1447.21；F07:protein 2158.099；F08:sugar 9.675；F10:sugar 1716.173；F11:protein 2009.783 | natural_or_injury_assumed 1162；starvation_or_natural_competing_hazards_scenario 149 | larva:chronic_protein_shortage_game_scenario 57；larva:unattended_brood_no_worker_care_game_assumption 2 | no_workers [chronic_sugar_and_protein_deficit+no_workers] 3 |
 
-## 四項指標分開（v2-review.19 起）：蟻后存活／有工蟻／有效繁殖（自產卵羽化 ≥1）／成長分類（成長·持平·衰退·只剩蟻后·全滅）
+## 四項指標分開（v2-review.19 起）：蟻后存活／有工蟻／截至該日曾有自產工蟻羽化／成長分類（成長·持平·衰退·只剩蟻后·全滅）
 
-> 成長分類以 Day0 的「工蟻＋帶來的蛹」為參考數。有效繁殖只計這次模擬中蟻后產下的卵羽化成的工蟻，不計創巢時帶來的幼體。
+> 蟻后存活、有工蟻、成長分類是**該檢查日當天的狀態**；「曾有自產工蟻羽化」（2026-11-02 起的名稱，原稱「有效繁殖」）是**從 Day1 到該檢查日累積的事件**：只要曾有一隻這次模擬中蟻后產下的卵羽化成工蟻就算（不計創巢時帶來的幼體），該檢查日時蟻群可能已滅亡；它不表示繁殖能持續。持續繁殖見下一節。成長分類以 Day0 的「工蟻＋帶來的蛹」為參考數。
 
 | 情境 | 季節 | Day30 | Day90 | Day180 | Day365 |
 |---|---|---|---|---|---|
@@ -283,6 +283,33 @@
 | A5 | summer | 20／15／0／0·0·15·5·0 | 13／12／11／6·2·4·1·7 | 11／11／11／11·0·0·0·9 | 11／11／11／11·0·0·0·9 |
 | A5 | autumn | 20／17／0／0·0·17·3·0 | 17／16／16／13·1·2·1·3 | 16／16／16／15·0·1·0·4 | 16／16／16／14·1·1·0·4 |
 | A5 | winter | 20／18／0／0·0·18·2·0 | 18／18／17／4·3·11·0·2 | 18／18／18／18·0·0·0·2 | 17／17／18／17·0·0·0·3 |
+
+## 持續繁殖（持續繁殖候選定義 v1；評估定義，不是生物學門檻，也不是調參目標）
+
+> 【Day365 狀態】蟻后存活 且 有工蟻；【期間事件】後半年（Day181～365）至少 1 隻自產工蟻羽化 且 最後 95 日（Day271～365）蟻后有產卵。「最後 95 日有產卵」受開始季節影響：春季開始的最後 95 日落在冬季（12 月中～3 月），夏季開始落在春季，秋季開始落在夏季，冬季開始落在秋季。冬季停產在野外可能正常，所以各季分開看，也同時列出各組成項目。
+
+| 情境 | 季節 | 符合候選定義（/20） | 有自產工蟻羽化的 30 日區間數中位（共 13 格，最後一格為 Day361～365 的 5 日；2026-11-03 起計入，Issue #43 F07） | 後半年自產工蟻羽化數中位 |
+|---|---|---:|---:|---:|
+| A1 | spring | 10 | 7 | 16 |
+| A1 | summer | 5 | 0 | 0 |
+| A1 | autumn | 13 | 11 | 47 |
+| A1 | winter | 13 | 11 | 42.5 |
+| A2 | spring | 17 | 12 | 48.5 |
+| A2 | summer | 7 | 0.5 | 0 |
+| A2 | autumn | 17 | 11.5 | 53 |
+| A2 | winter | 17 | 11 | 46.5 |
+| A3 | spring | 12 | 11 | 42.5 |
+| A3 | summer | 10 | 7 | 20.5 |
+| A3 | autumn | 15 | 12 | 52 |
+| A3 | winter | 16 | 11.5 | 49.5 |
+| A4 | spring | 6 | 0 | 0 |
+| A4 | summer | 6 | 0 | 0 |
+| A4 | autumn | 11 | 10.5 | 47 |
+| A4 | winter | 3 | 0 | 0 |
+| A5 | spring | 15 | 12 | 44 |
+| A5 | summer | 11 | 11 | 37.5 |
+| A5 | autumn | 16 | 11.5 | 52.5 |
+| A5 | winter | 17 | 11 | 49.5 |
 
 ## 個體行動（v2-review.17 起；20 種子合計）
 

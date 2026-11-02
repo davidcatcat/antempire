@@ -28,6 +28,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { loadBundle, readJson, REPO_ROOT } from '../lib/load.ts';
 import { rulesFingerprint } from '../lib/fingerprint.ts';
+import { bundleAtVersion, registryVersions } from '../lib/rules-version.ts';
 import { DAY0_SEEDS, runDay0 } from './day0-evaluation.ts';
 import { SEASONS, SUPPORTED_FOUNDINGS, type FoundingId } from '../lib/day0.ts';
 import { RULES_TAG } from './winter-multiseed.ts';
@@ -36,8 +37,14 @@ import { ENGINE_VERSION, type ParamBundle } from '../../engine/index.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 const SP = 'pheidole-megacephala';
-export const OUT = path.join(REPO_ROOT, 'reports/phase2-sensitivity');
+/** Data directory per rules version: v2-review.19 data stay in their original place; later versions get their own
+ *  directory, so a rules update never overwrites earlier research data (Owner 2026-11-03). */
+export const LEGACY_DIR_TAG = 'v19';
+export const outDirFor = (tag: string) => path.join(REPO_ROOT, tag === LEGACY_DIR_TAG ? 'reports/phase2-sensitivity' : `reports/phase2-sensitivity-${tag}`);
+export const OUT = outDirFor(RULES_TAG);
 export const WORK = path.join(OUT, '.work');
+/** Every committed sensitivity data directory, oldest first. */
+export const dataDirs = (): string[] => fs.readdirSync(path.join(REPO_ROOT, 'reports')).filter((d) => /^phase2-sensitivity(-v\d+)?$/.test(d) && fs.existsSync(path.join(REPO_ROOT, 'reports', d, 'sensitivity.json'))).sort().map((d) => path.join(REPO_ROOT, 'reports', d));
 export const SCHEMA = 'antempire.phase2-sensitivity.v2';
 export const LEVELS = [0.25, 0.5, 0.75, 1.0];
 export const BASELINE = { continue_after_failure_probability: 0.5, recruit_min_crop_fill_fraction: 0.5 } as const;
@@ -66,8 +73,8 @@ export const toArray = (r: Row) => ROW_COLUMNS.map((c) => r[c]);
 export const toObject = (a: Any[]): Row => Object.fromEntries(ROW_COLUMNS.map((c, i) => [c, a[i]])) as Row;
 
 /** Parameter bundle of one variant: the official files with the two activity values replaced, nothing else. */
-export function variantBundle(j: Pick<Job, 'caf' | 'rmin'>): ParamBundle {
-  const b = loadBundle(), act = (b.species[SP] as Any).activity;
+export function variantBundle(j: Pick<Job, 'caf' | 'rmin'>, base: () => ParamBundle = loadBundle): ParamBundle {
+  const b = base(), act = (b.species[SP] as Any).activity;
   act.continue_after_failure_probability.value = j.caf; act.recruit_min_crop_fill_fraction.value = j.rmin;
   return b;
 }
@@ -217,6 +224,7 @@ export interface Validation { ok: boolean; errors: string[]; checks: Record<stri
  * only its two values replaced; tables regenerated from the data equal the committed tables.
  */
 export function validate(doc: Any, opts: { day0Eval?: Any; tables?: string; current?: { engine: string; params: string } } = {}): Validation {
+  const archived = doc.engine_version !== ENGINE_VERSION; // data of an earlier rules version, kept as produced
   const errors: string[] = [], checks: Record<string, Any> = {}, err = (m: string) => errors.push(m);
   const expect = jobs();
   if (doc.schema !== SCHEMA) err(`schema ${doc.schema}`);
@@ -256,15 +264,30 @@ export function validate(doc: Any, opts: { day0Eval?: Any; tables?: string; curr
   checks.summaries_recomputed = Object.keys(re).length - diff.length;
   // fingerprints
   const cur = opts.current ?? (() => { const f = rulesFingerprint(); return { engine: f.engine, params: f.params }; })();
-  if (doc.rules_fingerprint?.engine !== cur.engine) err('engine fingerprint ≠ current engine (results are stale: rerun or archive them)');
-  if (doc.rules_fingerprint?.params !== cur.params) err('parameter fingerprint ≠ current parameter files (results are stale: rerun or archive them)');
-  if (doc.engine_version !== ENGINE_VERSION) err(`engine_version ${doc.engine_version} ≠ ${ENGINE_VERSION}`);
-  // R12: every evaluation input (scenarios, initializer, measures, scripts) must equal what produced or re-derived the data
+  if (!archived) {
+    if (doc.rules_fingerprint?.engine !== cur.engine) err('engine fingerprint ≠ current engine (results are stale: rerun or archive them)');
+    if (doc.rules_fingerprint?.params !== cur.params) err('parameter fingerprint ≠ current parameter files (results are stale: rerun or archive them)');
+  } else {
+    // Archived data (Owner 2026-11-03: never overwrite earlier research data): the recorded fingerprints must be the
+    // registry's fingerprints of the version that produced them; the data are re-verified below with that version's
+    // parameters (rebuilt by undoing later approved switches) and, in tests, by re-running fixed seeds.
+    const reg = registryVersions().find((r) => r.rules_version === doc.engine_version);
+    if (!reg) err(`archived data: rules version ${doc.engine_version} is not in rules/registry.json`);
+    else if (reg.fingerprint.engine !== doc.rules_fingerprint?.engine || reg.fingerprint.params !== doc.rules_fingerprint?.params) err(`archived data: fingerprints differ from the registry entry of ${doc.engine_version}`);
+    checks.archived_rules_version = doc.engine_version;
+  }
+  // R12: every evaluation input (scenarios, initializer, measures, scripts) must equal what produced or re-derived the data.
+  // For archived data only THIS script may differ (its output location and validation changed; results do not depend on
+  // it — the fixed-seed reruns in tests/phase2-sensitivity.test.ts check that); every other input must be unchanged.
   const man = inputManifest(), stale = Object.keys({ ...man, ...(doc.input_manifest ?? {}) }).filter((f) => man[f] !== doc.input_manifest?.[f]);
-  if (stale.length) err(`input files changed since the data were produced or re-derived (rerun or archive): ${stale.join(', ')}`);
+  const allowed: string[] = archived ? stale.filter((f) => f === 'cli/reports/phase2-sensitivity.ts') : [];
+  const blocking = stale.filter((f) => !allowed.includes(f));
+  if (blocking.length) err(`input files changed since the data were produced or re-derived (rerun or archive): ${blocking.join(', ')}`);
+  if (allowed.length) checks.archived_tool_changed = allowed;
   checks.input_manifest_files = Object.keys(man).length - stale.length;
   let shaOk = 0;
-  for (const j of doc.jobs) { if (j.variant_params_sha === variantParamsSha(variantBundle(j))) shaOk++; else err(`job ${j.id}: parameter hash differs from official parameters + its two values`); }
+  const base = archived ? () => bundleAtVersion(doc.engine_version, { forHash: true }) : loadBundle;
+  for (const j of doc.jobs) { if (j.variant_params_sha === variantParamsSha(variantBundle(j, base))) shaOk++; else err(`job ${j.id}: parameter hash differs from the ${archived ? doc.engine_version : 'current'} parameters + its two values`); }
   checks.variant_param_hashes_ok = shaOk;
   // baseline = independent Day0 evaluation of the same rules
   if (opts.day0Eval) {
@@ -322,16 +345,18 @@ export function tables(doc: Any): string {
 
 // ---------------------------------------------------------------------------------------------- CLI
 const arg = (k: string) => { const i = process.argv.indexOf(k); return i >= 0 ? process.argv[i + 1] : undefined; };
-export function validateCommitted(): Validation {
-  const doc = JSON.parse(fs.readFileSync(path.join(OUT, 'sensitivity.json'), 'utf8'));
-  return validate(doc, { day0Eval: readJson(`reports/day0-${doc.rules_tag}/evaluation.json`), tables: fs.readFileSync(path.join(OUT, 'sensitivity-tables.md'), 'utf8') });
+export function validateCommitted(dir: string = OUT): Validation {
+  const doc = JSON.parse(fs.readFileSync(path.join(dir, 'sensitivity.json'), 'utf8'));
+  return validate(doc, { day0Eval: readJson(`reports/day0-${doc.rules_tag}/evaluation.json`), tables: fs.readFileSync(path.join(dir, 'sensitivity-tables.md'), 'utf8') });
 }
+/** Parameters that reproduce the rules version that produced `doc` (runnable: switches set to their old values). */
+export const runnableBundleFor = (doc: Any) => (doc.engine_version === ENGINE_VERSION ? loadBundle : () => bundleAtVersion(doc.engine_version));
 
 if (import.meta.main) {
   if (process.argv.includes('--validate')) {
-    const v = validateCommitted();
-    console.log(JSON.stringify(v, null, 2));
-    if (!v.ok) process.exit(1);
+    const all = Object.fromEntries(dataDirs().map((d) => [path.relative(REPO_ROOT, d), validateCommitted(d)]));
+    console.log(JSON.stringify(all, null, 2));
+    if (Object.values(all).some((v) => !v.ok)) process.exit(1);
   } else if (arg('--shard')) {
     const [i, n] = arg('--shard')!.split('/').map(Number), batch = arg('--batch'), dir = arg('--dir');
     if (!batch || !dir) throw Error('--shard needs --batch and --dir (use --run to start a batch)');

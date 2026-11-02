@@ -16,34 +16,42 @@ import os from 'node:os';
 import path from 'node:path';
 import { readJson } from '../cli/lib/load.ts';
 import {
-  OUT, ROW_COLUMNS, ROWS_PER_JOB, assertShardsOk, jobs, mergeShards, seedRow, spawnShards, toObject, validate, validateCommitted, variantBundle, writeShard, type Job,
+  OUT, dataDirs, runnableBundleFor, ROW_COLUMNS, ROWS_PER_JOB, assertShardsOk, jobs, mergeShards, seedRow, spawnShards, toObject, validate, validateCommitted, variantBundle, writeShard, type Job,
 } from '../cli/reports/phase2-sensitivity.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
 
-// 1. committed results
-const text = fs.readFileSync(path.join(OUT, 'sensitivity.json'), 'utf8'), doc = JSON.parse(text);
-const v = validateCommitted();
-ok(v.ok, `committed sensitivity results validate:\n${v.errors.join('\n')}`);
-ok(v.checks.jobs === 44 && v.checks.rows === 44 * 80 && v.checks.season_seed_pairs_per_job === 80, `44 × 80 rows (${JSON.stringify(v.checks)})`);
-ok(v.checks.baseline_rows_equal_day0_evaluation === '400/400', `baseline rows equal the v19 Day0 evaluation (${v.checks.baseline_rows_equal_day0_evaluation})`);
-ok(v.checks.summaries_recomputed === 44 && v.checks.variant_param_hashes_ok === 44 && v.checks.tables_regenerated_equal === true, 'summaries, parameter hashes and tables recomputed');
-
-// 2. layout: complete but compact
-const lines = text.split('\n');
-ok(lines.length < 5000, `compact layout: ${lines.length} lines (was > 100 000)`);
-ok(lines.filter((l) => l.startsWith('[') && l.replace(/,$/, '').endsWith(']')).length >= 44 * 80, 'one raw seed row per line');
-ok(!/^\s/m.test(text), 'no indentation');
-ok(doc.jobs.every((j: Any) => j.rows.every((r: Any[]) => r.length === ROW_COLUMNS.length)), 'every row has every column');
-
-// 3. fixed-seed reruns of non-baseline variants (and one grid cell)
-const RERUN: [string, string, number][] = [['caf0.25_rmin0.5_A4', 'winter', 20270003], ['caf0.5_rmin1_A5', 'spring', 20270010], ['caf0.75_rmin0.25_A1', 'autumn', 20270020], ['caf1_rmin0.5_A2', 'summer', 20270007]];
-for (const [id, season, seed] of RERUN) {
-  const j = doc.jobs.find((x: Any) => x.id === id), stored = j.rows.map(toObject).find((r: Any) => r.season === season && r.seed === seed);
-  const fresh = seedRow(j, season as Any, seed, variantBundle(j));
-  assert.deepEqual(JSON.parse(JSON.stringify(fresh)), stored, `${id} ${season} ${seed} reproduces`); checks++;
+// 1–3 for EVERY committed data directory (v2-review.19 data are archived, never overwritten; later versions have their own)
+let text = '', doc: Any = null;
+const dirs = dataDirs();
+ok(dirs.length >= 1, `sensitivity data directories: ${dirs.map((d) => path.basename(d)).join(', ')}`);
+for (const dir of dirs) {
+  const t = fs.readFileSync(path.join(dir, 'sensitivity.json'), 'utf8'), dc = JSON.parse(t), name = path.basename(dir);
+  if (!doc) { text = t; doc = dc; }
+  // 1. committed results
+  const v = validateCommitted(dir);
+  ok(v.ok, `${name}: committed sensitivity results validate:\n${v.errors.join('\n')}`);
+  ok(v.checks.jobs === 44 && v.checks.rows === 44 * 80 && v.checks.season_seed_pairs_per_job === 80, `${name}: 44 × 80 rows (${JSON.stringify(v.checks)})`);
+  ok(v.checks.baseline_rows_equal_day0_evaluation === '400/400', `${name}: baseline rows equal the ${dc.rules_tag} Day0 evaluation (${v.checks.baseline_rows_equal_day0_evaluation})`);
+  ok(v.checks.summaries_recomputed === 44 && v.checks.variant_param_hashes_ok === 44 && v.checks.tables_regenerated_equal === true, `${name}: summaries, parameter hashes and tables recomputed`);
+  // 2. layout: complete but compact
+  const lines = t.split('\n');
+  ok(lines.length < 5000, `${name}: compact layout: ${lines.length} lines (was > 100 000)`);
+  ok(lines.filter((l) => l.startsWith('[') && l.replace(/,$/, '').endsWith(']')).length >= 44 * 80, `${name}: one raw seed row per line`);
+  ok(!/^\s/m.test(t), `${name}: no indentation`);
+  ok(dc.jobs.every((j: Any) => j.rows.every((r: Any[]) => r.length === ROW_COLUMNS.length)), `${name}: every row has every column`);
+  // 3. fixed-seed reruns of non-baseline variants (and one grid cell), with the parameters of the version that produced
+  // the data (archived v2-review.19 data: current engine with the later switches set back, which reproduces v19 exactly)
+  const base = runnableBundleFor(dc);
+  const RERUN: [string, string, number][] = [['caf0.25_rmin0.5_A4', 'winter', 20270003], ['caf0.5_rmin1_A5', 'spring', 20270010], ['caf0.75_rmin0.25_A1', 'autumn', 20270020], ['caf1_rmin0.5_A2', 'summer', 20270007]];
+  for (const [id, season, seed] of RERUN) {
+    const j = dc.jobs.find((x: Any) => x.id === id), stored = j.rows.map(toObject).find((r: Any) => r.season === season && r.seed === seed);
+    const fresh = seedRow(j, season as Any, seed, variantBundle(j, base));
+    assert.deepEqual(JSON.parse(JSON.stringify(fresh)), stored, `${name}: ${id} ${season} ${seed} reproduces`); checks++;
+  }
 }
+void OUT;
 
 // 4. the validator catches corruption
 const day0Eval = readJson(`reports/day0-${doc.rules_tag}/evaluation.json`);
@@ -55,7 +63,7 @@ const bad = (mutate: (d: Any) => void, expect: RegExp, why: string) => {
 bad((d) => d.jobs[3].rows.pop(), /rows ≠ 80|distinct season\/seed/, 'dropped row');
 bad((d) => { d.jobs[5].rows[1] = [...d.jobs[5].rows[0]]; }, /duplicate season\/seed/, 'duplicated row');
 bad((d) => { d.summaries[d.jobs[0].id].all.queen_alive_365 += 1; }, /summaries differ/, 'edited summary');
-bad((d) => { d.rules_fingerprint.engine = '0'.repeat(64); }, /engine fingerprint/, 'other engine fingerprint');
+bad((d) => { d.rules_fingerprint.engine = '0'.repeat(64); }, /fingerprint/, 'other engine fingerprint');
 bad((d) => { d.jobs[7].variant_params_sha = 'x'; }, /parameter hash/, 'other parameter values');
 bad((d) => { const j = d.jobs.find((x: Any) => x.id === 'caf0.5_rmin0.5_A3'); j.rows[0][ROW_COLUMNS.indexOf('trips')] += 1; }, /baseline .* differs from the Day0 evaluation/, 'baseline drift');
 bad((d) => { d.jobs.pop(); }, /jobs 43|missing job/, 'missing job');
