@@ -438,9 +438,32 @@
 
 > 用於 `docs/research-design-p1b-nest-space.md`；工作筆記 `reports/p1b-nest-space/literature-notes.md`。其他段落的編號（R189–R203 #34、R204–R227 #38、R228–R259 P0-A、R260–R275 P1-A）不重複。
 > **禁止套用**：R303、R304、R308 列出的是他種的深層地下巢與筏，只作反例。
+> 2026-11-03 修正：#40 合併時本段表格只有表頭（建立段落時的擷取錯誤，表格分隔線被當成段落結尾），R290～R311 二十二列由設計文件 §7 原樣補回。
 
 | ID | 文獻 | 物種／分級 | 讀取 | 用途 |
-|
+|---|---|---|---|---|
+| R290 | Forel 1893, *Trans. Ent. Soc. London* 1893:333–418（H. H. Smith 野外筆記，pp. 417–418），Zenodo DOI 10.5281/zenodo.6293000 | 本種 a（軼聞） | 全文摘錄 | 淺巢、扁平巢室、紙板狀巢壁、分支巢 |
+| R291 | Hoffmann, Andersen & Hill 1999, *Oecologia* 120:595–604, DOI 10.1007/PL00008824 | 本種 a | 摘要 | 排水線、遮蔽微地點、季節性擴縮 |
+| R292 | Milligan et al. 2022, *J. Ecology* 110:359–373, DOI 10.1111/1365-2745.13803 | 本種 a | 摘要 | 根際築巢 |
+| R293 | Wetterer 2002, *Pacific Science* 56:125–135, DOI 10.1353/psc.2002.0019 | 本種 a | 搜尋摘錄 | 石下、倒木下 |
+| R294 | Jackson 2023，Pacific Pests, Pathogens, Weeds & Pesticides，Bigheaded ant (361) | 本種 a（灰色文獻） | 全文 | 落葉、樹皮巢；分巢 |
+| R295 | Droual & Topoff 1981, *Psyche* 88:135–150, DOI 10.1155/1981/43265 | *P. hyatti*／*P. desertorum*（b） | 全文 | 遷巢頻率、回舊巢、雨後遷巢、蟻后步行 |
+| R296 | Moyano & Feener 2014, *Insectes Sociaux* 61:71–81, DOI 10.1007/s00040-013-0327-1 | *P. dentata*（b） | 摘要 | VPD 觸發遷巢；雨無影響 |
+| R297 | Wilson 1986, *Insectes Sociaux* 33:458–469, DOI 10.1007/BF02223951 | *Pheidole* 屬（b） | 摘要 | 巢口碰水引發警報與撤離 |
+| R298 | LeBrun, Moffett & Holway 2011, *Insectes Sociaux* 58:263–269, DOI 10.1007/s00040-011-0151-4 | 含兩種大頭家蟻（b） | 全文 | 雨後築圍堤 |
+| R299 | Kolay & Annagiri 2015, *Sci. Rep.* 5:13716, DOI 10.1038/srep13716 | *Diacamma indicum*（b） | 全文 | 入口高程、雨後修入口、淹水撤離 |
+| R300 | McGlynn 2012, *Annu. Rev. Entomol.* 57:291–308, DOI 10.1146/annurev-ento-120710-100708 | 綜述（b） | 摘要 | 遷巢原因分類 |
+| R301 | Debout et al. 2007, *Biol. J. Linn. Soc.* 90:319–348, DOI 10.1111/j.1095-8312.2007.00728.x | 綜述 | 僅書目 | 多巢定義 |
+| R302 | Robinson 2014, *Curr. Opin. Insect Sci.* 5:37–43, DOI 10.1016/j.cois.2014.09.002 | 綜述 | 僅書目 | 多巢定義 |
+| R303 | Forti et al. 2007, *Insect Science* 14:437–442, DOI 10.1111/j.1744-7917.2007.00171.x | *P. oxyops*（b） | 搜尋摘錄（數字需再核） | **反例：深約 5 m，禁止套用** |
+| R304 | Tschinkel 2015, *J. Bioeconomics* 17:271–291, DOI 10.1007/s10818-015-9203-6 | 綜述（b） | 僅書目 | **禁止套用的地下巢清單** |
+| R305 | Monaenkova et al. 2015, *J. Exp. Biol.* 218:1295–1305, DOI 10.1242/jeb.113795 | *S. invicta*（b） | 摘要 | 濕度窗口、固定大小的土粒 |
+| R306 | Toffin et al. 2009, *PNAS* 106:18616–18620, DOI 10.1073/pnas.0902685106 | *Messor sancta*（b） | 摘要 | 巢形由擁擠產生 |
+| R307 | Buhl et al. 2005, *Behav. Ecol. Sociobiol.* 58:9–17, DOI 10.1007/s00265-004-0906-2 | *Messor*（b） | 僅書目 | 自組織挖掘 |
+| R308 | Mlot, Tovey & Hu 2011, *PNAS* 108:7669–7673, DOI 10.1073/pnas.1016658108 | *S. invicta*（b） | 僅書目 | **禁止：筏** |
+| R309 | Campbell & Norman 1998, *An Introduction to Environmental Biophysics*（Springer），DOI 10.1007/978-1-4612-1626-1 | 一般土壤物理 | 教科書 | 溫度隨深度衰減 |
+| R310 | 中央氣象署臺中氣象站頁（stn_id=8），1991–2020 平年值：23.3°C、1773.0 mm、113.7 雨日、日照 2043.2 h | 實測統計 | 全文 | 氣候先驗；日照介面 |
+| R311 | Lenoir et al. 2025, *Naturae* 2025(4):35–43, DOI 10.5852/naturae2025a4 | 本種 a | 摘要 | 溫帶只見於加溫溫室（覆蓋與保溫的重要性） |
 
 **R116 補充（新增，不改舊列）**：R116＝Tsuji & Win (2025) *Biology Open* 14:bio061976，DOI 10.1242/bio.061976（舊列缺作者與 DOI）。實驗室多巢、無兵蟻：相連的巢共享工蟻與食物，切斷連結後幼體生產崩潰；野外「巢常在約 1 m 內」只是定性描述。
 ## 2026-11-02 P1-A 大工蟻（R260–R275；研究與設計，未改規則）
