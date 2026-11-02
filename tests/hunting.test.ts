@@ -27,6 +27,8 @@ import { bundle, counter, fixture, MAIN_SPECIES, setParam } from './lib/harness.
 const c = counter(), { ok } = c;
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 const SITE = 'F07';
+/** v2-review.14: a worker told it knows F07 must also have walked the way there (N00–F07). */
+const KNOWS_SITE = () => ({ origin: 'test fixture', edges: { 'F07:N00': { acquired: 'walked', first_day: 14, last_day: 14 } }, empty_sites: {} });
 const forced = (o: { encounter?: number; large?: number; capture?: number; escape?: number; team?: number; cap?: number }) => {
   const b = bundle();
   setParam(b, MAIN_SPECIES, 'predation.live_prey_encounter_probability', o.encounter ?? 1);
@@ -138,7 +140,7 @@ function day(reverse: boolean) {
   const b = forced({}); setParam(b, MAIN_SPECIES, 'scouting.scout_discovery_probability', 0); setParam(b, MAIN_SPECIES, 'task_allocation.forage_baseline_probability', 1000);
   const s: LegacyV2State = fixture();
   s.sources[SITE].batches = []; s.sources[SITE].protein = 0; s.ecology.insects_by_site[SITE].living = 10;
-  for (const w of s.population.workers) { w.known_sources = [SITE]; w.age_days = 20; w.site_memory = {}; }
+  for (const w of s.population.workers) { w.known_sources = [SITE]; w.age_days = 20; w.site_memory = {}; (w as Any).route_memory = KNOWS_SITE(); }
   if (reverse) s.population.workers.reverse();
   return simulateDay(s, b).events.filter((e) => ['live_prey_encounter', 'insect_predation', 'prey_escaped', 'joint_prey_transport', 'hunt_recruitment'].includes(e.type));
 }
@@ -177,7 +179,7 @@ let hunts = 0, recruitHunts = 0;
   const b = forced({}); setParam(b, MAIN_SPECIES, 'scouting.scout_discovery_probability', 0); setParam(b, MAIN_SPECIES, 'task_allocation.forage_baseline_probability', 1000); setParam(b, MAIN_SPECIES, 'food_handling.carcass_access_probability', 1);
   const s: LegacyV2State = fixture();
   s.sources[SITE].batches = [{ event_id: 'TEST-LEFTOVER', original_day: 14, protein: 0.1, age_days: 0, origin: 'test fixture leftover' } as Any]; s.sources[SITE].protein = 0.1; s.ecology.insects_by_site[SITE].living = 10;
-  for (const w of s.population.workers) { w.known_sources = [SITE]; w.age_days = 20; w.site_memory = {}; }
+  for (const w of s.population.workers) { w.known_sources = [SITE]; w.age_days = 20; w.site_memory = {}; (w as Any).route_memory = KNOWS_SITE(); }
   const ev = simulateDay(s, b).events;
   const took = ev.filter((e) => e.type === 'source_batch_consumed' && e.source_event_id === 'TEST-LEFTOVER').map((e) => e.worker as string);
   const first = ev.find((e) => e.type === 'insect_predation') as Any;
@@ -212,7 +214,7 @@ function lateDays(on: boolean) {
   for (let seed = 1; seed <= 40; seed++) {
     const s: LegacyV2State = fixture(); s.seed = seed;
     s.sources[SITE].batches = []; s.sources[SITE].protein = 0; s.ecology.insects_by_site[SITE].living = 10;
-    for (const w of s.population.workers) { w.known_sources = [SITE]; w.age_days = 20; w.site_memory = {}; }
+    for (const w of s.population.workers) { w.known_sources = [SITE]; w.age_days = 20; w.site_memory = {}; (w as Any).route_memory = KNOWS_SITE(); }
     out.push(simulateDay(s, b).events);
   }
   return out;

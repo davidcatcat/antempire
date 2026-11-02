@@ -697,6 +697,69 @@
       ]
     },
     "worker_known_sources_note": "由 Day1～14 歷史中各工蟻親身走過的路線整理（原寫死於 sim/migrate_day15.cjs migrationState() workerKnowledge）。",
+    "worker_route_evidence": {
+      "note": "v2-review.14：每隻既有工蟻在 Day1～14 正式紀錄中『確實走過』的路段（以排序後的節點名稱以 ':' 連接），每筆附出處。只收錄紀錄明確顯示該工蟻實際走過的路段；路徑不明確的造訪不建立路段；不從世界地圖反推。沒有列出的工蟻從零路線記憶開始（eclosed_in_simulation／no_recorded_route）。",
+      "workers": {
+        "W005": {
+          "edges": [
+            "F01:N00"
+          ],
+          "citations": [
+            "journal/v2-day-0008.md:14「W005依自己的F01舊路線清晨出巢」",
+            "journal/v2-day-0001.md:21「W005循舊路徑的局部記憶探索東北葉背…帶回微量含糖液」",
+            "saves/main.json W005 v2_latest.site_sequence N00→F01→N00（Day14）"
+          ]
+        },
+        "W006": {
+          "edges": [
+            "F11:N00"
+          ],
+          "citations": [
+            "journal/v2-day-0006.md:30「W006前往F11腐葉堆」",
+            "saves/main.json W006 v2_latest.site_sequence N00→F11→N00（Day14）"
+          ]
+        },
+        "W011": {
+          "edges": [
+            "F07:N00",
+            "F11:N00"
+          ],
+          "citations": [
+            "journal/v2-day-0009.md:17「W011搜尋既有F07死蟲位置，…空載返巢」",
+            "journal/v2-day-0003.md:41「W011找到一小片可搬運的節肢動物遺骸並帶回」（F11）"
+          ]
+        },
+        "W015": {
+          "edges": [
+            "F08:N00",
+            "N00:U00"
+          ],
+          "citations": [
+            "journal/v2-day-0004.md:31「W015自主改到西北小白花F08探索」",
+            "journal/v2-day-0005.md:45「W015踏入U00的外緣」（註：存檔當日未登錄此路段；依日誌『踏入』採計，見 PR 說明）"
+          ]
+        },
+        "W016": {
+          "edges": [
+            "N00:U00"
+          ],
+          "citations": [
+            "journal/v2-day-0008.md:28「補記它實際走通的`N00→U00`與`U00→U01`局部通路」（U00–U01 不是目前路網的路段，故只採計 N00:U00）"
+          ]
+        },
+        "W017": {
+          "edges": [
+            "F08:N00"
+          ],
+          "citations": [
+            "journal/v2-day-0009.md:18「W017到達、採得並成功帶回一筆液態糖源」",
+            "saves/world-state.json#/foraging_economy/day7_record trip V2D7-E07 route N00→F08→N00"
+          ]
+        }
+      },
+      "not_recorded": "W004、W007、W008、W009、W010、W012、W013、W014：Day1～14 紀錄中沒有可確認的路網路段（巢內活動、只『接近』或路徑不明確，例如 W010 到 F05／F10 的路線沒有記錄中間節點）。W016 到 U01 的實際路線是 N00→U00→U01，但目前路網沒有 U00–U01 路段，因此不建立任何到 U01 的路段（路網與紀錄的不一致待 Owner 決定）。",
+      "evidence_source": "由 Day1～14 正式日誌與存檔逐筆核對（完整證據表：每條路段的全部引用見 PR 說明附件）；舊歷史未修改。"
+    },
     "F01_census": {
       "hemipteran_kind": "aphid",
       "host_plants": {
