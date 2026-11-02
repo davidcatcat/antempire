@@ -1,0 +1,1383 @@
+{
+ "schema": "antempire.rules-update-v17-evidence.v1",
+ "diagnostic_not_target": true,
+ "seeds": [
+  20270001,
+  20270002,
+  20270003,
+  20270004,
+  20270005,
+  20270006,
+  20270007,
+  20270008,
+  20270009,
+  20270010,
+  20270011,
+  20270012,
+  20270013,
+  20270014,
+  20270015,
+  20270016,
+  20270017,
+  20270018,
+  20270019,
+  20270020
+ ],
+ "note": "same seed = different random path between v16 and v17; compare distributions",
+ "results": [
+  {
+   "variant": "v16 (timeline off)",
+   "queen_alive_365_total": 4,
+   "runs": 240,
+   "rows": {
+    "A1/spring": {
+     "queen_alive_365": 0,
+     "colony_end": 20,
+     "workers_365_median": 0,
+     "workers_90_median": 0,
+     "sugar_income_median": 20.96,
+     "protein_income_median": 5.87,
+     "trips_per_active_forager_day": null,
+     "eclosions_total": 11
+    },
+    "A1/summer": {
+     "queen_alive_365": 0,
+     "colony_end": 20,
+     "workers_365_median": 0,
+     "workers_90_median": 0,
+     "sugar_income_median": 3.65,
+     "protein_income_median": 6.53,
+     "trips_per_active_forager_day": null,
+     "eclosions_total": 2
+    },
+    "A1/autumn": {
+     "queen_alive_365": 1,
+     "colony_end": 19,
+     "workers_365_median": 0,
+     "workers_90_median": 0,
+     "sugar_income_median": 37.81,
+     "protein_income_median": 10.26,
+     "trips_per_active_forager_day": null,
+     "eclosions_total": 145
+    },
+    "A1/winter": {
+     "queen_alive_365": 0,
+     "colony_end": 20,
+     "workers_365_median": 0,
+     "workers_90_median": 0,
+     "sugar_income_median": 19.39,
+     "protein_income_median": 6.96,
+     "trips_per_active_forager_day": null,
+     "eclosions_total": 32
+    },
+    "A2/spring": {
+     "queen_alive_365": 0,
+     "colony_end": 20,
+     "workers_365_median": 0,
+     "workers_90_median": 0,
+     "sugar_income_median": 21.92,
+     "protein_income_median": 7.62,
+     "trips_per_active_forager_day": null,
+     "eclosions_total": 27
+    },
+    "A2/summer": {
+     "queen_alive_365": 0,
+     "colony_end": 20,
+     "workers_365_median": 0,
+     "workers_90_median": 0,
+     "sugar_income_median": 1.89,
+     "protein_income_median": 7.29,
+     "trips_per_active_forager_day": null,
+     "eclosions_total": 9
+    },
+    "A2/autumn": {
+     "queen_alive_365": 2,
+     "colony_end": 18,
+     "workers_365_median": 0,
+     "workers_90_median": 0,
+     "sugar_income_median": 34.15,
+     "protein_income_median": 10.02,
+     "trips_per_active_forager_day": null,
+     "eclosions_total": 135
+    },
+    "A2/winter": {
+     "queen_alive_365": 0,
+     "colony_end": 20,
+     "workers_365_median": 0,
+     "workers_90_median": 0,
+     "sugar_income_median": 14.31,
+     "protein_income_median": 7.28,
+     "trips_per_active_forager_day": null,
+     "eclosions_total": 108
+    },
+    "A3/spring": {
+     "queen_alive_365": 0,
+     "colony_end": 20,
+     "workers_365_median": 0,
+     "workers_90_median": 0,
+     "sugar_income_median": 0.21,
+     "protein_income_median": 13.18,
+     "trips_per_active_forager_day": null,
+     "eclosions_total": 23
+    },
+    "A3/summer": {
+     "queen_alive_365": 0,
+     "colony_end": 20,
+     "workers_365_median": 0,
+     "workers_90_median": 0,
+     "sugar_income_median": 0,
+     "protein_income_median": 8.31,
+     "trips_per_active_forager_day": null,
+     "eclosions_total": 14
+    },
+    "A3/autumn": {
+     "queen_alive_365": 1,
+     "colony_end": 19,
+     "workers_365_median": 0,
+     "workers_90_median": 1,
+     "sugar_income_median": 39.9,
+     "protein_income_median": 16.28,
+     "trips_per_active_forager_day": null,
+     "eclosions_total": 180
+    },
+    "A3/winter": {
+     "queen_alive_365": 0,
+     "colony_end": 20,
+     "workers_365_median": 0,
+     "workers_90_median": 0,
+     "sugar_income_median": 2.52,
+     "protein_income_median": 14.72,
+     "trips_per_active_forager_day": null,
+     "eclosions_total": 47
+    }
+   }
+  },
+  {
+   "variant": "v17",
+   "queen_alive_365_total": 133,
+   "runs": 240,
+   "rows": {
+    "A1/spring": {
+     "queen_alive_365": 9,
+     "colony_end": 11,
+     "workers_365_median": 0,
+     "workers_90_median": 3,
+     "sugar_income_median": 78.57,
+     "protein_income_median": 36.12,
+     "trips_per_active_forager_day": 2.549,
+     "eclosions_total": 774
+    },
+    "A1/summer": {
+     "queen_alive_365": 9,
+     "colony_end": 11,
+     "workers_365_median": 0,
+     "workers_90_median": 2.5,
+     "sugar_income_median": 77.38,
+     "protein_income_median": 35.58,
+     "trips_per_active_forager_day": 2.596,
+     "eclosions_total": 746
+    },
+    "A1/autumn": {
+     "queen_alive_365": 10,
+     "colony_end": 10,
+     "workers_365_median": 5,
+     "workers_90_median": 5.5,
+     "sugar_income_median": 250.37,
+     "protein_income_median": 112.22,
+     "trips_per_active_forager_day": 2.558,
+     "eclosions_total": 909
+    },
+    "A1/winter": {
+     "queen_alive_365": 12,
+     "colony_end": 8,
+     "workers_365_median": 14,
+     "workers_90_median": 7,
+     "sugar_income_median": 508.05,
+     "protein_income_median": 216.04,
+     "trips_per_active_forager_day": 2.611,
+     "eclosions_total": 1026
+    },
+    "A2/spring": {
+     "queen_alive_365": 12,
+     "colony_end": 8,
+     "workers_365_median": 13.5,
+     "workers_90_median": 11.5,
+     "sugar_income_median": 539.33,
+     "protein_income_median": 217.66,
+     "trips_per_active_forager_day": 2.563,
+     "eclosions_total": 1148
+    },
+    "A2/summer": {
+     "queen_alive_365": 9,
+     "colony_end": 11,
+     "workers_365_median": 0,
+     "workers_90_median": 1.5,
+     "sugar_income_median": 127.89,
+     "protein_income_median": 24.82,
+     "trips_per_active_forager_day": 2.567,
+     "eclosions_total": 799
+    },
+    "A2/autumn": {
+     "queen_alive_365": 16,
+     "colony_end": 4,
+     "workers_365_median": 15.5,
+     "workers_90_median": 13,
+     "sugar_income_median": 608.36,
+     "protein_income_median": 245.27,
+     "trips_per_active_forager_day": 2.611,
+     "eclosions_total": 1453
+    },
+    "A2/winter": {
+     "queen_alive_365": 15,
+     "colony_end": 5,
+     "workers_365_median": 16,
+     "workers_90_median": 10,
+     "sugar_income_median": 663.69,
+     "protein_income_median": 228.17,
+     "trips_per_active_forager_day": 2.633,
+     "eclosions_total": 1415
+    },
+    "A3/spring": {
+     "queen_alive_365": 10,
+     "colony_end": 10,
+     "workers_365_median": 4,
+     "workers_90_median": 6,
+     "sugar_income_median": 294.18,
+     "protein_income_median": 118.4,
+     "trips_per_active_forager_day": 2.556,
+     "eclosions_total": 893
+    },
+    "A3/summer": {
+     "queen_alive_365": 8,
+     "colony_end": 12,
+     "workers_365_median": 0,
+     "workers_90_median": 1,
+     "sugar_income_median": 60.57,
+     "protein_income_median": 14.8,
+     "trips_per_active_forager_day": 2.524,
+     "eclosions_total": 725
+    },
+    "A3/autumn": {
+     "queen_alive_365": 11,
+     "colony_end": 9,
+     "workers_365_median": 9.5,
+     "workers_90_median": 10,
+     "sugar_income_median": 534.1,
+     "protein_income_median": 211.7,
+     "trips_per_active_forager_day": 2.59,
+     "eclosions_total": 979
+    },
+    "A3/winter": {
+     "queen_alive_365": 12,
+     "colony_end": 8,
+     "workers_365_median": 13.5,
+     "workers_90_median": 6.5,
+     "sugar_income_median": 471.5,
+     "protein_income_median": 205.76,
+     "trips_per_active_forager_day": 2.6,
+     "eclosions_total": 1019
+    }
+   }
+  },
+  {
+   "variant": "v17 legacy 25-min edges",
+   "queen_alive_365_total": 102,
+   "runs": 240,
+   "rows": {
+    "A1/spring": {
+     "queen_alive_365": 5,
+     "colony_end": 15,
+     "workers_365_median": 0,
+     "workers_90_median": 2,
+     "sugar_income_median": 58,
+     "protein_income_median": 19.01,
+     "trips_per_active_forager_day": 2.161,
+     "eclosions_total": 431
+    },
+    "A1/summer": {
+     "queen_alive_365": 3,
+     "colony_end": 17,
+     "workers_365_median": 0,
+     "workers_90_median": 0,
+     "sugar_income_median": 54.23,
+     "protein_income_median": 10.06,
+     "trips_per_active_forager_day": 2.223,
+     "eclosions_total": 283
+    },
+    "A1/autumn": {
+     "queen_alive_365": 11,
+     "colony_end": 9,
+     "workers_365_median": 5,
+     "workers_90_median": 9,
+     "sugar_income_median": 445.32,
+     "protein_income_median": 166.19,
+     "trips_per_active_forager_day": 2.216,
+     "eclosions_total": 831
+    },
+    "A1/winter": {
+     "queen_alive_365": 12,
+     "colony_end": 8,
+     "workers_365_median": 9,
+     "workers_90_median": 6.5,
+     "sugar_income_median": 455.14,
+     "protein_income_median": 154.86,
+     "trips_per_active_forager_day": 2.244,
+     "eclosions_total": 892
+    },
+    "A2/spring": {
+     "queen_alive_365": 8,
+     "colony_end": 12,
+     "workers_365_median": 0,
+     "workers_90_median": 5,
+     "sugar_income_median": 131.92,
+     "protein_income_median": 34.04,
+     "trips_per_active_forager_day": 2.209,
+     "eclosions_total": 704
+    },
+    "A2/summer": {
+     "queen_alive_365": 6,
+     "colony_end": 14,
+     "workers_365_median": 0,
+     "workers_90_median": 0.5,
+     "sugar_income_median": 43.6,
+     "protein_income_median": 15.55,
+     "trips_per_active_forager_day": 2.162,
+     "eclosions_total": 520
+    },
+    "A2/autumn": {
+     "queen_alive_365": 14,
+     "colony_end": 6,
+     "workers_365_median": 8.5,
+     "workers_90_median": 10.5,
+     "sugar_income_median": 528.76,
+     "protein_income_median": 190.6,
+     "trips_per_active_forager_day": 2.223,
+     "eclosions_total": 1132
+    },
+    "A2/winter": {
+     "queen_alive_365": 10,
+     "colony_end": 10,
+     "workers_365_median": 4.5,
+     "workers_90_median": 8,
+     "sugar_income_median": 313.78,
+     "protein_income_median": 112.62,
+     "trips_per_active_forager_day": 2.225,
+     "eclosions_total": 895
+    },
+    "A3/spring": {
+     "queen_alive_365": 6,
+     "colony_end": 14,
+     "workers_365_median": 0,
+     "workers_90_median": 3,
+     "sugar_income_median": 60.74,
+     "protein_income_median": 18.52,
+     "trips_per_active_forager_day": 2.17,
+     "eclosions_total": 479
+    },
+    "A3/summer": {
+     "queen_alive_365": 4,
+     "colony_end": 15,
+     "workers_365_median": 0,
+     "workers_90_median": 0,
+     "sugar_income_median": 42.1,
+     "protein_income_median": 11.12,
+     "trips_per_active_forager_day": 2.194,
+     "eclosions_total": 444
+    },
+    "A3/autumn": {
+     "queen_alive_365": 12,
+     "colony_end": 8,
+     "workers_365_median": 8,
+     "workers_90_median": 5.5,
+     "sugar_income_median": 504.16,
+     "protein_income_median": 162.01,
+     "trips_per_active_forager_day": 2.174,
+     "eclosions_total": 902
+    },
+    "A3/winter": {
+     "queen_alive_365": 11,
+     "colony_end": 9,
+     "workers_365_median": 11.5,
+     "workers_90_median": 5,
+     "sugar_income_median": 453.03,
+     "protein_income_median": 145.25,
+     "trips_per_active_forager_day": 2.179,
+     "eclosions_total": 845
+    }
+   }
+  },
+  {
+   "variant": "v17 tortuosity 3",
+   "queen_alive_365_total": 137,
+   "runs": 240,
+   "rows": {
+    "A1/spring": {
+     "queen_alive_365": 10,
+     "colony_end": 10,
+     "workers_365_median": 6,
+     "workers_90_median": 3,
+     "sugar_income_median": 222.69,
+     "protein_income_median": 100.81,
+     "trips_per_active_forager_day": 2.56,
+     "eclosions_total": 819
+    },
+    "A1/summer": {
+     "queen_alive_365": 8,
+     "colony_end": 12,
+     "workers_365_median": 0,
+     "workers_90_median": 0.5,
+     "sugar_income_median": 66.61,
+     "protein_income_median": 13.6,
+     "trips_per_active_forager_day": 2.56,
+     "eclosions_total": 671
+    },
+    "A1/autumn": {
+     "queen_alive_365": 13,
+     "colony_end": 7,
+     "workers_365_median": 10.5,
+     "workers_90_median": 10,
+     "sugar_income_median": 556.45,
+     "protein_income_median": 218.37,
+     "trips_per_active_forager_day": 2.586,
+     "eclosions_total": 1109
+    },
+    "A1/winter": {
+     "queen_alive_365": 13,
+     "colony_end": 7,
+     "workers_365_median": 14,
+     "workers_90_median": 7,
+     "sugar_income_median": 599.58,
+     "protein_income_median": 205.37,
+     "trips_per_active_forager_day": 2.591,
+     "eclosions_total": 1108
+    },
+    "A2/spring": {
+     "queen_alive_365": 12,
+     "colony_end": 8,
+     "workers_365_median": 13,
+     "workers_90_median": 11,
+     "sugar_income_median": 462.9,
+     "protein_income_median": 206.04,
+     "trips_per_active_forager_day": 2.587,
+     "eclosions_total": 1099
+    },
+    "A2/summer": {
+     "queen_alive_365": 10,
+     "colony_end": 10,
+     "workers_365_median": 4.5,
+     "workers_90_median": 3,
+     "sugar_income_median": 258.35,
+     "protein_income_median": 108.76,
+     "trips_per_active_forager_day": 2.564,
+     "eclosions_total": 875
+    },
+    "A2/autumn": {
+     "queen_alive_365": 14,
+     "colony_end": 6,
+     "workers_365_median": 11.5,
+     "workers_90_median": 11.5,
+     "sugar_income_median": 511.37,
+     "protein_income_median": 233.5,
+     "trips_per_active_forager_day": 2.591,
+     "eclosions_total": 1246
+    },
+    "A2/winter": {
+     "queen_alive_365": 15,
+     "colony_end": 5,
+     "workers_365_median": 16.5,
+     "workers_90_median": 12,
+     "sugar_income_median": 638.98,
+     "protein_income_median": 231.37,
+     "trips_per_active_forager_day": 2.603,
+     "eclosions_total": 1449
+    },
+    "A3/spring": {
+     "queen_alive_365": 11,
+     "colony_end": 9,
+     "workers_365_median": 7,
+     "workers_90_median": 9,
+     "sugar_income_median": 415.84,
+     "protein_income_median": 157.37,
+     "trips_per_active_forager_day": 2.568,
+     "eclosions_total": 930
+    },
+    "A3/summer": {
+     "queen_alive_365": 7,
+     "colony_end": 13,
+     "workers_365_median": 0,
+     "workers_90_median": 0.5,
+     "sugar_income_median": 57.48,
+     "protein_income_median": 17.69,
+     "trips_per_active_forager_day": 2.545,
+     "eclosions_total": 623
+    },
+    "A3/autumn": {
+     "queen_alive_365": 12,
+     "colony_end": 8,
+     "workers_365_median": 12,
+     "workers_90_median": 11,
+     "sugar_income_median": 583.04,
+     "protein_income_median": 224,
+     "trips_per_active_forager_day": 2.567,
+     "eclosions_total": 1070
+    },
+    "A3/winter": {
+     "queen_alive_365": 12,
+     "colony_end": 8,
+     "workers_365_median": 14.5,
+     "workers_90_median": 6.5,
+     "sugar_income_median": 534.26,
+     "protein_income_median": 205.7,
+     "trips_per_active_forager_day": 2.581,
+     "eclosions_total": 1052
+    }
+   }
+  },
+  {
+   "variant": "v17 off_trail_speed_factor ×0.5",
+   "queen_alive_365_total": 43,
+   "runs": 80,
+   "rows": {
+    "A1/spring": {
+     "queen_alive_365": 12,
+     "colony_end": 8,
+     "workers_365_median": 12,
+     "workers_90_median": 11,
+     "sugar_income_median": 496.86,
+     "protein_income_median": 229.24,
+     "trips_per_active_forager_day": 2.571,
+     "eclosions_total": 1009
+    },
+    "A1/summer": {
+     "queen_alive_365": 9,
+     "colony_end": 11,
+     "workers_365_median": 0,
+     "workers_90_median": 1,
+     "sugar_income_median": 65.85,
+     "protein_income_median": 13.6,
+     "trips_per_active_forager_day": 2.552,
+     "eclosions_total": 740
+    },
+    "A1/autumn": {
+     "queen_alive_365": 10,
+     "colony_end": 10,
+     "workers_365_median": 4.5,
+     "workers_90_median": 5.5,
+     "sugar_income_median": 246.13,
+     "protein_income_median": 118.63,
+     "trips_per_active_forager_day": 2.575,
+     "eclosions_total": 895
+    },
+    "A1/winter": {
+     "queen_alive_365": 12,
+     "colony_end": 8,
+     "workers_365_median": 13.5,
+     "workers_90_median": 7,
+     "sugar_income_median": 496.94,
+     "protein_income_median": 206.59,
+     "trips_per_active_forager_day": 2.628,
+     "eclosions_total": 1022
+    }
+   }
+  },
+  {
+   "variant": "v17 off_trail_speed_factor ×2",
+   "queen_alive_365_total": 42,
+   "runs": 80,
+   "rows": {
+    "A1/spring": {
+     "queen_alive_365": 12,
+     "colony_end": 8,
+     "workers_365_median": 12,
+     "workers_90_median": 7,
+     "sugar_income_median": 446.26,
+     "protein_income_median": 214.88,
+     "trips_per_active_forager_day": 2.571,
+     "eclosions_total": 972
+    },
+    "A1/summer": {
+     "queen_alive_365": 8,
+     "colony_end": 12,
+     "workers_365_median": 0,
+     "workers_90_median": 0.5,
+     "sugar_income_median": 65.85,
+     "protein_income_median": 15.59,
+     "trips_per_active_forager_day": 2.57,
+     "eclosions_total": 672
+    },
+    "A1/autumn": {
+     "queen_alive_365": 10,
+     "colony_end": 10,
+     "workers_365_median": 3.5,
+     "workers_90_median": 5,
+     "sugar_income_median": 255.78,
+     "protein_income_median": 112.03,
+     "trips_per_active_forager_day": 2.581,
+     "eclosions_total": 890
+    },
+    "A1/winter": {
+     "queen_alive_365": 12,
+     "colony_end": 8,
+     "workers_365_median": 12,
+     "workers_90_median": 7,
+     "sugar_income_median": 533.06,
+     "protein_income_median": 205.69,
+     "trips_per_active_forager_day": 2.607,
+     "eclosions_total": 1031
+    }
+   }
+  },
+  {
+   "variant": "v17 search_minutes ×0.5",
+   "queen_alive_365_total": 44,
+   "runs": 80,
+   "rows": {
+    "A1/spring": {
+     "queen_alive_365": 10,
+     "colony_end": 10,
+     "workers_365_median": 6,
+     "workers_90_median": 7,
+     "sugar_income_median": 265.07,
+     "protein_income_median": 115.35,
+     "trips_per_active_forager_day": 2.555,
+     "eclosions_total": 916
+    },
+    "A1/summer": {
+     "queen_alive_365": 10,
+     "colony_end": 10,
+     "workers_365_median": 7,
+     "workers_90_median": 4,
+     "sugar_income_median": 261.13,
+     "protein_income_median": 92.06,
+     "trips_per_active_forager_day": 2.592,
+     "eclosions_total": 835
+    },
+    "A1/autumn": {
+     "queen_alive_365": 11,
+     "colony_end": 9,
+     "workers_365_median": 10,
+     "workers_90_median": 9,
+     "sugar_income_median": 479.15,
+     "protein_income_median": 221.39,
+     "trips_per_active_forager_day": 2.586,
+     "eclosions_total": 969
+    },
+    "A1/winter": {
+     "queen_alive_365": 13,
+     "colony_end": 7,
+     "workers_365_median": 13.5,
+     "workers_90_median": 6.5,
+     "sugar_income_median": 592.3,
+     "protein_income_median": 217.7,
+     "trips_per_active_forager_day": 2.63,
+     "eclosions_total": 1114
+    }
+   }
+  },
+  {
+   "variant": "v17 search_minutes ×2",
+   "queen_alive_365_total": 40,
+   "runs": 80,
+   "rows": {
+    "A1/spring": {
+     "queen_alive_365": 9,
+     "colony_end": 11,
+     "workers_365_median": 0,
+     "workers_90_median": 5.5,
+     "sugar_income_median": 90.63,
+     "protein_income_median": 19.18,
+     "trips_per_active_forager_day": 2.551,
+     "eclosions_total": 776
+    },
+    "A1/summer": {
+     "queen_alive_365": 8,
+     "colony_end": 12,
+     "workers_365_median": 0,
+     "workers_90_median": 0.5,
+     "sugar_income_median": 63.54,
+     "protein_income_median": 13.26,
+     "trips_per_active_forager_day": 2.563,
+     "eclosions_total": 670
+    },
+    "A1/autumn": {
+     "queen_alive_365": 11,
+     "colony_end": 9,
+     "workers_365_median": 8.5,
+     "workers_90_median": 10.5,
+     "sugar_income_median": 468.7,
+     "protein_income_median": 209.89,
+     "trips_per_active_forager_day": 2.566,
+     "eclosions_total": 982
+    },
+    "A1/winter": {
+     "queen_alive_365": 12,
+     "colony_end": 8,
+     "workers_365_median": 13.5,
+     "workers_90_median": 7,
+     "sugar_income_median": 505.8,
+     "protein_income_median": 196.52,
+     "trips_per_active_forager_day": 2.601,
+     "eclosions_total": 1051
+    }
+   }
+  },
+  {
+   "variant": "v17 liquid_fill_minutes_full_crop ×0.5",
+   "queen_alive_365_total": 44,
+   "runs": 80,
+   "rows": {
+    "A1/spring": {
+     "queen_alive_365": 9,
+     "colony_end": 11,
+     "workers_365_median": 0,
+     "workers_90_median": 6,
+     "sugar_income_median": 177.15,
+     "protein_income_median": 54.47,
+     "trips_per_active_forager_day": 2.585,
+     "eclosions_total": 773
+    },
+    "A1/summer": {
+     "queen_alive_365": 9,
+     "colony_end": 11,
+     "workers_365_median": 0,
+     "workers_90_median": 1.5,
+     "sugar_income_median": 87.99,
+     "protein_income_median": 37.19,
+     "trips_per_active_forager_day": 2.606,
+     "eclosions_total": 710
+    },
+    "A1/autumn": {
+     "queen_alive_365": 12,
+     "colony_end": 8,
+     "workers_365_median": 11.5,
+     "workers_90_median": 8.5,
+     "sugar_income_median": 556.11,
+     "protein_income_median": 227.92,
+     "trips_per_active_forager_day": 2.579,
+     "eclosions_total": 1067
+    },
+    "A1/winter": {
+     "queen_alive_365": 14,
+     "colony_end": 6,
+     "workers_365_median": 15.5,
+     "workers_90_median": 6.5,
+     "sugar_income_median": 518.51,
+     "protein_income_median": 206.92,
+     "trips_per_active_forager_day": 2.621,
+     "eclosions_total": 1164
+    }
+   }
+  },
+  {
+   "variant": "v17 liquid_fill_minutes_full_crop ×2",
+   "queen_alive_365_total": 41,
+   "runs": 80,
+   "rows": {
+    "A1/spring": {
+     "queen_alive_365": 8,
+     "colony_end": 12,
+     "workers_365_median": 0,
+     "workers_90_median": 5,
+     "sugar_income_median": 95.97,
+     "protein_income_median": 27.07,
+     "trips_per_active_forager_day": 2.534,
+     "eclosions_total": 762
+    },
+    "A1/summer": {
+     "queen_alive_365": 9,
+     "colony_end": 11,
+     "workers_365_median": 0,
+     "workers_90_median": 2,
+     "sugar_income_median": 92.11,
+     "protein_income_median": 22.08,
+     "trips_per_active_forager_day": 2.564,
+     "eclosions_total": 784
+    },
+    "A1/autumn": {
+     "queen_alive_365": 12,
+     "colony_end": 8,
+     "workers_365_median": 10.5,
+     "workers_90_median": 8,
+     "sugar_income_median": 510.22,
+     "protein_income_median": 219.89,
+     "trips_per_active_forager_day": 2.602,
+     "eclosions_total": 1045
+    },
+    "A1/winter": {
+     "queen_alive_365": 12,
+     "colony_end": 7,
+     "workers_365_median": 12,
+     "workers_90_median": 6.5,
+     "sugar_income_median": 488.93,
+     "protein_income_median": 197.52,
+     "trips_per_active_forager_day": 2.593,
+     "eclosions_total": 1056
+    }
+   }
+  },
+  {
+   "variant": "v17 unload_minutes ×0.5",
+   "queen_alive_365_total": 43,
+   "runs": 80,
+   "rows": {
+    "A1/spring": {
+     "queen_alive_365": 10,
+     "colony_end": 10,
+     "workers_365_median": 6,
+     "workers_90_median": 7.5,
+     "sugar_income_median": 297.36,
+     "protein_income_median": 129.49,
+     "trips_per_active_forager_day": 2.54,
+     "eclosions_total": 908
+    },
+    "A1/summer": {
+     "queen_alive_365": 9,
+     "colony_end": 11,
+     "workers_365_median": 0,
+     "workers_90_median": 2.5,
+     "sugar_income_median": 112.43,
+     "protein_income_median": 17.81,
+     "trips_per_active_forager_day": 2.604,
+     "eclosions_total": 752
+    },
+    "A1/autumn": {
+     "queen_alive_365": 11,
+     "colony_end": 9,
+     "workers_365_median": 8,
+     "workers_90_median": 11,
+     "sugar_income_median": 473.79,
+     "protein_income_median": 223.74,
+     "trips_per_active_forager_day": 2.608,
+     "eclosions_total": 976
+    },
+    "A1/winter": {
+     "queen_alive_365": 13,
+     "colony_end": 7,
+     "workers_365_median": 14,
+     "workers_90_median": 6.5,
+     "sugar_income_median": 544.98,
+     "protein_income_median": 212.77,
+     "trips_per_active_forager_day": 2.635,
+     "eclosions_total": 1131
+    }
+   }
+  },
+  {
+   "variant": "v17 unload_minutes ×2",
+   "queen_alive_365_total": 43,
+   "runs": 80,
+   "rows": {
+    "A1/spring": {
+     "queen_alive_365": 13,
+     "colony_end": 7,
+     "workers_365_median": 13,
+     "workers_90_median": 9,
+     "sugar_income_median": 481.01,
+     "protein_income_median": 221.81,
+     "trips_per_active_forager_day": 2.562,
+     "eclosions_total": 1072
+    },
+    "A1/summer": {
+     "queen_alive_365": 6,
+     "colony_end": 14,
+     "workers_365_median": 0,
+     "workers_90_median": 0,
+     "sugar_income_median": 63.41,
+     "protein_income_median": 12.28,
+     "trips_per_active_forager_day": 2.572,
+     "eclosions_total": 508
+    },
+    "A1/autumn": {
+     "queen_alive_365": 11,
+     "colony_end": 9,
+     "workers_365_median": 6.5,
+     "workers_90_median": 7,
+     "sugar_income_median": 445.79,
+     "protein_income_median": 208.45,
+     "trips_per_active_forager_day": 2.569,
+     "eclosions_total": 964
+    },
+    "A1/winter": {
+     "queen_alive_365": 13,
+     "colony_end": 7,
+     "workers_365_median": 14,
+     "workers_90_median": 7.5,
+     "sugar_income_median": 524.59,
+     "protein_income_median": 213.52,
+     "trips_per_active_forager_day": 2.599,
+     "eclosions_total": 1101
+    }
+   }
+  },
+  {
+   "variant": "v17 rest_between_trips_minutes ×0.5",
+   "queen_alive_365_total": 46,
+   "runs": 80,
+   "rows": {
+    "A1/spring": {
+     "queen_alive_365": 11,
+     "colony_end": 9,
+     "workers_365_median": 13,
+     "workers_90_median": 7.5,
+     "sugar_income_median": 404.56,
+     "protein_income_median": 164.69,
+     "trips_per_active_forager_day": 2.62,
+     "eclosions_total": 904
+    },
+    "A1/summer": {
+     "queen_alive_365": 7,
+     "colony_end": 13,
+     "workers_365_median": 0,
+     "workers_90_median": 0,
+     "sugar_income_median": 66.65,
+     "protein_income_median": 13.02,
+     "trips_per_active_forager_day": 2.579,
+     "eclosions_total": 571
+    },
+    "A1/autumn": {
+     "queen_alive_365": 15,
+     "colony_end": 5,
+     "workers_365_median": 14,
+     "workers_90_median": 9.5,
+     "sugar_income_median": 576.49,
+     "protein_income_median": 220.37,
+     "trips_per_active_forager_day": 2.649,
+     "eclosions_total": 1230
+    },
+    "A1/winter": {
+     "queen_alive_365": 13,
+     "colony_end": 7,
+     "workers_365_median": 15.5,
+     "workers_90_median": 6,
+     "sugar_income_median": 554.75,
+     "protein_income_median": 211.23,
+     "trips_per_active_forager_day": 2.648,
+     "eclosions_total": 1092
+    }
+   }
+  },
+  {
+   "variant": "v17 rest_between_trips_minutes ×2",
+   "queen_alive_365_total": 44,
+   "runs": 80,
+   "rows": {
+    "A1/spring": {
+     "queen_alive_365": 9,
+     "colony_end": 11,
+     "workers_365_median": 0,
+     "workers_90_median": 2,
+     "sugar_income_median": 60.1,
+     "protein_income_median": 19.74,
+     "trips_per_active_forager_day": 2.52,
+     "eclosions_total": 753
+    },
+    "A1/summer": {
+     "queen_alive_365": 10,
+     "colony_end": 10,
+     "workers_365_median": 2.5,
+     "workers_90_median": 3.5,
+     "sugar_income_median": 253.38,
+     "protein_income_median": 107.62,
+     "trips_per_active_forager_day": 2.547,
+     "eclosions_total": 799
+    },
+    "A1/autumn": {
+     "queen_alive_365": 11,
+     "colony_end": 9,
+     "workers_365_median": 8,
+     "workers_90_median": 9.5,
+     "sugar_income_median": 468.73,
+     "protein_income_median": 206.73,
+     "trips_per_active_forager_day": 2.54,
+     "eclosions_total": 980
+    },
+    "A1/winter": {
+     "queen_alive_365": 14,
+     "colony_end": 6,
+     "workers_365_median": 16.5,
+     "workers_90_median": 6,
+     "sugar_income_median": 561.37,
+     "protein_income_median": 199.24,
+     "trips_per_active_forager_day": 2.602,
+     "eclosions_total": 1177
+    }
+   }
+  },
+  {
+   "variant": "v17 continue_base ×0.5",
+   "queen_alive_365_total": 39,
+   "runs": 80,
+   "rows": {
+    "A1/spring": {
+     "queen_alive_365": 8,
+     "colony_end": 12,
+     "workers_365_median": 0,
+     "workers_90_median": 3,
+     "sugar_income_median": 101.6,
+     "protein_income_median": 27.22,
+     "trips_per_active_forager_day": 2.349,
+     "eclosions_total": 668
+    },
+    "A1/summer": {
+     "queen_alive_365": 7,
+     "colony_end": 13,
+     "workers_365_median": 0,
+     "workers_90_median": 0.5,
+     "sugar_income_median": 65.77,
+     "protein_income_median": 11.97,
+     "trips_per_active_forager_day": 2.351,
+     "eclosions_total": 570
+    },
+    "A1/autumn": {
+     "queen_alive_365": 9,
+     "colony_end": 11,
+     "workers_365_median": 0,
+     "workers_90_median": 1.5,
+     "sugar_income_median": 52.02,
+     "protein_income_median": 17.12,
+     "trips_per_active_forager_day": 2.378,
+     "eclosions_total": 747
+    },
+    "A1/winter": {
+     "queen_alive_365": 15,
+     "colony_end": 5,
+     "workers_365_median": 16.5,
+     "workers_90_median": 6,
+     "sugar_income_median": 549.39,
+     "protein_income_median": 200.95,
+     "trips_per_active_forager_day": 2.418,
+     "eclosions_total": 1140
+    }
+   }
+  },
+  {
+   "variant": "v17 continue_base ×2",
+   "queen_alive_365_total": 54,
+   "runs": 80,
+   "rows": {
+    "A1/spring": {
+     "queen_alive_365": 13,
+     "colony_end": 7,
+     "workers_365_median": 12.5,
+     "workers_90_median": 13,
+     "sugar_income_median": 594.25,
+     "protein_income_median": 259.04,
+     "trips_per_active_forager_day": 2.908,
+     "eclosions_total": 1182
+    },
+    "A1/summer": {
+     "queen_alive_365": 11,
+     "colony_end": 9,
+     "workers_365_median": 12,
+     "workers_90_median": 4.5,
+     "sugar_income_median": 450.37,
+     "protein_income_median": 202.23,
+     "trips_per_active_forager_day": 2.9,
+     "eclosions_total": 958
+    },
+    "A1/autumn": {
+     "queen_alive_365": 16,
+     "colony_end": 4,
+     "workers_365_median": 12,
+     "workers_90_median": 10.5,
+     "sugar_income_median": 638.13,
+     "protein_income_median": 256.52,
+     "trips_per_active_forager_day": 2.958,
+     "eclosions_total": 1380
+    },
+    "A1/winter": {
+     "queen_alive_365": 14,
+     "colony_end": 6,
+     "workers_365_median": 14.5,
+     "workers_90_median": 8,
+     "sugar_income_median": 605.52,
+     "protein_income_median": 236.65,
+     "trips_per_active_forager_day": 2.987,
+     "eclosions_total": 1234
+    }
+   }
+  },
+  {
+   "variant": "v17 continue_crop_emptied_weight ×0.5",
+   "queen_alive_365_total": 32,
+   "runs": 80,
+   "rows": {
+    "A1/spring": {
+     "queen_alive_365": 8,
+     "colony_end": 12,
+     "workers_365_median": 0,
+     "workers_90_median": 2.5,
+     "sugar_income_median": 77.01,
+     "protein_income_median": 20.42,
+     "trips_per_active_forager_day": 2.333,
+     "eclosions_total": 620
+    },
+    "A1/summer": {
+     "queen_alive_365": 2,
+     "colony_end": 18,
+     "workers_365_median": 0,
+     "workers_90_median": 0,
+     "sugar_income_median": 50.27,
+     "protein_income_median": 8.63,
+     "trips_per_active_forager_day": 2.345,
+     "eclosions_total": 197
+    },
+    "A1/autumn": {
+     "queen_alive_365": 12,
+     "colony_end": 8,
+     "workers_365_median": 9,
+     "workers_90_median": 6.5,
+     "sugar_income_median": 494.33,
+     "protein_income_median": 193.86,
+     "trips_per_active_forager_day": 2.34,
+     "eclosions_total": 990
+    },
+    "A1/winter": {
+     "queen_alive_365": 10,
+     "colony_end": 10,
+     "workers_365_median": 5.5,
+     "workers_90_median": 6,
+     "sugar_income_median": 291.6,
+     "protein_income_median": 115.56,
+     "trips_per_active_forager_day": 2.348,
+     "eclosions_total": 841
+    }
+   }
+  },
+  {
+   "variant": "v17 continue_crop_emptied_weight ×2",
+   "queen_alive_365_total": 47,
+   "runs": 80,
+   "rows": {
+    "A1/spring": {
+     "queen_alive_365": 9,
+     "colony_end": 11,
+     "workers_365_median": 0,
+     "workers_90_median": 3,
+     "sugar_income_median": 96.76,
+     "protein_income_median": 39.15,
+     "trips_per_active_forager_day": 2.72,
+     "eclosions_total": 820
+    },
+    "A1/summer": {
+     "queen_alive_365": 11,
+     "colony_end": 9,
+     "workers_365_median": 17.5,
+     "workers_90_median": 4.5,
+     "sugar_income_median": 456.79,
+     "protein_income_median": 209.64,
+     "trips_per_active_forager_day": 2.7,
+     "eclosions_total": 945
+    },
+    "A1/autumn": {
+     "queen_alive_365": 13,
+     "colony_end": 7,
+     "workers_365_median": 13,
+     "workers_90_median": 13,
+     "sugar_income_median": 618.87,
+     "protein_income_median": 252.42,
+     "trips_per_active_forager_day": 2.731,
+     "eclosions_total": 1185
+    },
+    "A1/winter": {
+     "queen_alive_365": 14,
+     "colony_end": 6,
+     "workers_365_median": 16,
+     "workers_90_median": 7,
+     "sugar_income_median": 594.78,
+     "protein_income_median": 234.46,
+     "trips_per_active_forager_day": 2.761,
+     "eclosions_total": 1178
+    }
+   }
+  },
+  {
+   "variant": "v17 continue_after_failure_probability ×0.5",
+   "queen_alive_365_total": 23,
+   "runs": 80,
+   "rows": {
+    "A1/spring": {
+     "queen_alive_365": 5,
+     "colony_end": 15,
+     "workers_365_median": 0,
+     "workers_90_median": 0.5,
+     "sugar_income_median": 52.52,
+     "protein_income_median": 9.76,
+     "trips_per_active_forager_day": 2.068,
+     "eclosions_total": 391
+    },
+    "A1/summer": {
+     "queen_alive_365": 6,
+     "colony_end": 14,
+     "workers_365_median": 0,
+     "workers_90_median": 0,
+     "sugar_income_median": 50.48,
+     "protein_income_median": 10.34,
+     "trips_per_active_forager_day": 2.063,
+     "eclosions_total": 495
+    },
+    "A1/autumn": {
+     "queen_alive_365": 7,
+     "colony_end": 13,
+     "workers_365_median": 0,
+     "workers_90_median": 0,
+     "sugar_income_median": 45.46,
+     "protein_income_median": 12.83,
+     "trips_per_active_forager_day": 2.07,
+     "eclosions_total": 553
+    },
+    "A1/winter": {
+     "queen_alive_365": 5,
+     "colony_end": 15,
+     "workers_365_median": 0,
+     "workers_90_median": 0.5,
+     "sugar_income_median": 41.87,
+     "protein_income_median": 9.54,
+     "trips_per_active_forager_day": 2.069,
+     "eclosions_total": 430
+    }
+   }
+  },
+  {
+   "variant": "v17 continue_after_failure_probability ×2",
+   "queen_alive_365_total": 78,
+   "runs": 80,
+   "rows": {
+    "A1/spring": {
+     "queen_alive_365": 20,
+     "colony_end": 0,
+     "workers_365_median": 15,
+     "workers_90_median": 16.5,
+     "sugar_income_median": 741.43,
+     "protein_income_median": 303.16,
+     "trips_per_active_forager_day": 9.083,
+     "eclosions_total": 1855
+    },
+    "A1/summer": {
+     "queen_alive_365": 20,
+     "colony_end": 0,
+     "workers_365_median": 19.5,
+     "workers_90_median": 16,
+     "sugar_income_median": 822.35,
+     "protein_income_median": 297.77,
+     "trips_per_active_forager_day": 9.258,
+     "eclosions_total": 1896
+    },
+    "A1/autumn": {
+     "queen_alive_365": 19,
+     "colony_end": 1,
+     "workers_365_median": 15,
+     "workers_90_median": 15,
+     "sugar_income_median": 750.78,
+     "protein_income_median": 308.32,
+     "trips_per_active_forager_day": 9.071,
+     "eclosions_total": 1797
+    },
+    "A1/winter": {
+     "queen_alive_365": 19,
+     "colony_end": 1,
+     "workers_365_median": 17,
+     "workers_90_median": 9,
+     "sugar_income_median": 748.9,
+     "protein_income_median": 307.15,
+     "trips_per_active_forager_day": 8.814,
+     "eclosions_total": 1727
+    }
+   }
+  },
+  {
+   "variant": "v17 recruit_min_crop_fill_fraction ×0.5",
+   "queen_alive_365_total": 45,
+   "runs": 80,
+   "rows": {
+    "A1/spring": {
+     "queen_alive_365": 8,
+     "colony_end": 12,
+     "workers_365_median": 0,
+     "workers_90_median": 3.5,
+     "sugar_income_median": 72.03,
+     "protein_income_median": 19,
+     "trips_per_active_forager_day": 2.711,
+     "eclosions_total": 742
+    },
+    "A1/summer": {
+     "queen_alive_365": 11,
+     "colony_end": 9,
+     "workers_365_median": 13.5,
+     "workers_90_median": 4.5,
+     "sugar_income_median": 450.9,
+     "protein_income_median": 171.23,
+     "trips_per_active_forager_day": 2.737,
+     "eclosions_total": 906
+    },
+    "A1/autumn": {
+     "queen_alive_365": 12,
+     "colony_end": 8,
+     "workers_365_median": 11,
+     "workers_90_median": 8.5,
+     "sugar_income_median": 491.08,
+     "protein_income_median": 230,
+     "trips_per_active_forager_day": 2.736,
+     "eclosions_total": 1042
+    },
+    "A1/winter": {
+     "queen_alive_365": 14,
+     "colony_end": 6,
+     "workers_365_median": 15.5,
+     "workers_90_median": 7.5,
+     "sugar_income_median": 624.05,
+     "protein_income_median": 236.16,
+     "trips_per_active_forager_day": 2.801,
+     "eclosions_total": 1255
+    }
+   }
+  },
+  {
+   "variant": "v17 recruit_min_crop_fill_fraction ×2",
+   "queen_alive_365_total": 24,
+   "runs": 80,
+   "rows": {
+    "A1/spring": {
+     "queen_alive_365": 6,
+     "colony_end": 14,
+     "workers_365_median": 0,
+     "workers_90_median": 4,
+     "sugar_income_median": 65.86,
+     "protein_income_median": 32.99,
+     "trips_per_active_forager_day": 2.474,
+     "eclosions_total": 527
+    },
+    "A1/summer": {
+     "queen_alive_365": 3,
+     "colony_end": 17,
+     "workers_365_median": 0,
+     "workers_90_median": 0,
+     "sugar_income_median": 24.37,
+     "protein_income_median": 11.48,
+     "trips_per_active_forager_day": 2.438,
+     "eclosions_total": 276
+    },
+    "A1/autumn": {
+     "queen_alive_365": 7,
+     "colony_end": 13,
+     "workers_365_median": 0,
+     "workers_90_median": 0.5,
+     "sugar_income_median": 58.32,
+     "protein_income_median": 30.13,
+     "trips_per_active_forager_day": 2.462,
+     "eclosions_total": 623
+    },
+    "A1/winter": {
+     "queen_alive_365": 8,
+     "colony_end": 12,
+     "workers_365_median": 0,
+     "workers_90_median": 6,
+     "sugar_income_median": 186.1,
+     "protein_income_median": 163.34,
+     "trips_per_active_forager_day": 2.486,
+     "eclosions_total": 821
+    }
+   }
+  }
+ ]
+}

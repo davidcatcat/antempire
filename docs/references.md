@@ -310,7 +310,7 @@
 | R147 | Greenwald, Segre & Feinerman (2015), *Scientific Reports* 5:12496；Greenwald, Baltiansky & Feinerman (2018), *eLife* 7:e31730 | 全文 | 覓食者每次回巢交出約一半嗉囊；**出巢頻率隨巢內飽足下降**，覓食者只依**自己嗉囊的變化**決定（v17 `continue_crop_emptied_weight` 的機制） | *Camponotus sanctus*，非本種；沒有可用的機率數值 |
 | R148 | Baltiansky, Frankel & Feinerman (2023), *eLife* 12:e77659 | 全文 | 同上機制：卸貨慢則在巢內停留較久 | 非本種 |
 | R149 | Mailleux et al. (2000) *Animal Behaviour* 59:1061；(2006) *J Exp Biol* 209:4224 | 摘要 | 工蟻只有裝到「想要的量」才留跡招募，否則不留跡回巢；飢餓時門檻提高（v17 `recruit_min_crop_fill_fraction` 的機制） | *Lasius niger*，非本種；門檻數值為遊戲假設 |
-| R150 | Gordon et al. (2011), *Behavioral Ecology* 22:429 | 經摘要工具 | 回巢的覓食者調節出巢率：移除回巢者後 2～3 分鐘出巢減少 | *Pogonomyrmex barbatus*，非本種 |
+| R150 | Gordon et al. (2011), *Behavioral Ecology* 22:429；Beverly et al. (2009), *Behavioral Ecology* 20:633 | 經摘要工具／摘要 | 回巢的覓食者調節出巢率：移除回巢者後 2～3 分鐘出巢減少；多數覓食者一天少趟、少數多趟，會回到上次地點附近約 0.5 m | *Pogonomyrmex barbatus*，非本種 |
 | R151 | Charbonneau, Sasaki & Dornhaus (2017), *PLoS ONE* e0184074 | 全文 | 任何時刻都有超過一半的工蟻處於不活動狀態（社會性昆蟲普遍現象） | 不能當作休息時間或比例 |
 | R152 | Dussutour et al. (2009) *J Exp Biol* 212:2337（＝R21／R96，補充讀取） | 經摘要工具 | **本種**：招募流量約 20 分鐘達到高峰後持平；覓食與探索費洛蒙的半衰期約 10 與 17 分鐘 | 大群（1000～1500 隻）、飢餓 5 日、25°C；數字來自摘要工具且說法前後不一致，**未採用任何數值** |
 
