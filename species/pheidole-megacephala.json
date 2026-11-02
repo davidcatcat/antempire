@@ -427,23 +427,25 @@
     "queen_zero_worker_hazard_after_days": {
       "value": 14,
       "assumption": true,
-      "rationale": "v2-review.18：無工蟻期蟻后的額外風險從第 14 日起（Chang 1985 的單獨蟻后 2～3 週內死亡）。v2-review.17 以前為第 3 日（遊戲假設，原為工蟻全滅後的崩潰情境設計），會讓約 95% 的單獨蟻后在 14 日前死亡，與本種實驗矛盾",
-      "basis": "文獻支持",
+      "rationale": "v2-review.18：無工蟻期蟻后的額外風險從第 14 日起（由 Chang 1985 單獨蟻后 2～3 週內死亡推得）。v2-review.17 以前為第 3 日（遊戲假設），會讓約 95% 的單獨蟻后在 14 日前死亡，與本種實驗的時間範圍矛盾。v2-review.19 更正標示：起算日是遊戲假設，不是文獻實測",
+      "basis": "遊戲假設",
       "legacy_path": "sim/params.json#starvation.queen_zero_worker_hazard_after_days",
-      "source": "R136 Chang 1985（Proc. Hawaiian Entomol. Soc. 25:53–58，本種，全文）：沒有工蟻的蟻后（單獨、或只帶 10 幼蟲）在 2～3 週內死亡；蟻后＋10 蛹 6/6 存活成長",
       "extrapolation_limit": "實驗室 26～27°C、成熟野外蟻后、有人工供食；每日風險 0.24（queen_zero_worker_starved_daily_hazard）仍為遊戲假設，使第 14 日後中位約 3 日內死亡，落在 2～3 週",
       "changed_in": {
         "rules_version": "antempire.v2-review.18-founding-controls",
         "approved_in": "Owner instruction 2026-11-02 (Day0 engine corrections, item 3.1/3.2; pending Owner review)",
         "from": 3
-      }
+      },
+      "mechanism_basis": "文獻支持（方向與時間範圍）：R136 Chang 1985（本種，全文）：沒有工蟻的蟻后在 2～3 週內死亡",
+      "basis_note": "「第 14 日起算」是由 Chang 的「2～3 週」推得的遊戲假設，不是實測的起算日；Chang 只記錄死亡發生在 2～3 週內，沒有逐日死亡率"
     },
     "queen_zero_worker_starved_daily_hazard": {
       "value": 0.24,
       "assumption": true,
       "rationale": "no workers plus prolonged food deficit elevates death risk; game assumption",
       "basis": "遊戲假設",
-      "legacy_path": "sim/params.json#starvation.queen_zero_worker_starved_daily_hazard"
+      "legacy_path": "sim/params.json#starvation.queen_zero_worker_starved_daily_hazard",
+      "basis_note": "遊戲假設：每日 0.24 沒有任何文獻；與起算日 14 合起來，使單獨蟻后的死亡日中位約 15～17 日，落在 Chang 1985 的 2～3 週範圍（只是範圍相容，不是校準或實測）"
     },
     "larva_daily_hazard_cap": {
       "value": 0.75,

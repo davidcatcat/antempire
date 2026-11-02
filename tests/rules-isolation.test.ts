@@ -16,6 +16,7 @@
  *   v2-review.17 (individual activity timeline; switch off, new parameters unused) -> reproduces
  *                tests/golden/v16-trace-sha256.json and the v16 Day0 golden
  *   v2-review.18 (lone-queen hazard from day 14; A4/A5 scenario files are not engine input) -> reproduces v17
+ *   v2-review.19 (parameter source labels only) -> the current engine reproduces v18 unchanged
  * Every step also undoes the output normalisers of its own and later diagnostics-only versions.
  * Each step undoes its own changes AND every later step's, so step N is compared with the engine as it was.
  */
@@ -43,12 +44,13 @@ const STEPS = [
   { version: 'antempire.v2-review.16-death-diagnostics', previousGolden: 'tests/golden/v15-trace-sha256.json' },
   { version: 'antempire.v2-review.17-activity-timeline', previousGolden: 'tests/golden/v16-trace-sha256.json' },
   { version: 'antempire.v2-review.18-founding-controls', previousGolden: 'tests/golden/v17-trace-sha256.json' },
+  { version: 'antempire.v2-review.19-evaluation-corrections', previousGolden: 'tests/golden/v18-trace-sha256.json' },
 ];
 const ORDER = STEPS.map((s) => s.version);
 const results: Record<string, string> = {};
 for (const step of STEPS) {
   const own = approvedChanges().filter((c) => c.rules_version === step.version);
-  assert.ok(own.length > 0 && own.every((c) => ['param', 'param_removed', 'param_switch', 'param_added'].includes(c.kind) || (c.kind === 'engine' && ((c as { day14_output_unchanged?: boolean }).day14_output_unchanged === true || (c as { diagnostics_only?: boolean }).diagnostics_only === true))), `${step.version} must be a parameter/switch-only update for this check`);
+  assert.ok(own.length > 0 && own.every((c) => ['param', 'param_removed', 'param_switch', 'param_added'].includes(c.kind) || (c.kind === 'param_metadata' && (c as { day14_output_unchanged?: boolean }).day14_output_unchanged === true) || (c.kind === 'engine' && ((c as { day14_output_unchanged?: boolean }).day14_output_unchanged === true || (c as { diagnostics_only?: boolean }).diagnostics_only === true))), `${step.version} must be a parameter/switch-only update for this check`);
   const changes = approvedChanges().filter((c) => ORDER.indexOf(c.rules_version) >= ORDER.indexOf(step.version));
   const revert = (b: ParamBundle) => { for (const c of [...changes].reverse()) revertChange(b, c); };
   const golden = readJson(step.previousGolden);

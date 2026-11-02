@@ -33,6 +33,11 @@ export function runDay0(founding: FoundingId, season: Season, seed: number, bund
   const start = seasonStart(season), init = buildDay0(founding, seed, start, bundle);
   let s = init.state;
   const c0 = s.colonies[0];
+  // v2-review.19: separate measures. Reference adults at Day0 = founding workers + carried pupae (A4 starts
+  // with pupae only). Effective reproduction counts ONLY adults eclosed from eggs laid during the run.
+  const initialBrood = new Set(c0.population.brood.map((b) => b.id)), n0 = c0.population.workers.length + c0.population.brood.filter((b) => b.stage === 'pupa').length;
+  const founders = new Set(c0.population.workers.map((w) => w.id));
+  let ownEclosions = 0, maxWorkers = c0.population.workers.length, maxWorkersDay = 0;
   const day0 = { date: s.calendar_date, workers: c0.population.workers.length, brood: c0.population.brood.length, sugar: c0.stores.sugar, protein: c0.stores.protein, worker_ages: c0.population.workers.map((w) => w.age_days), warmup_events: init.warmup.events.length, warmup_carcass_protein: r3(Object.values(s.sources).filter((x) => x.type === 'carcass').reduce((a, x) => a + x.protein, 0)), honeydew_hosts_alive: Object.values(s.sources).filter((x) => x.type === 'honeydew' && x.host_alive).map((x) => x.id) };
   const cum = { income: { sugar: 0, protein: 0 }, consumed: { sugar: 0, protein: 0 }, demand: { sugar: 0, protein: 0 }, eggs_laid: 0, hatch: 0, pupation: 0, eclosion: 0, worker_deaths: 0, brood_deaths: 0, trips: 0, successes: 0, explorations: 0, exploration_found_nothing: 0, discoveries: 0, recruitment: 0, trail_choices: 0, trophallaxis: 0, predation: 0, repair_worker_days: 0, forage_worker_days: 0, nurse_worker_days: 0 };
   const act: Any = { outside_minutes: 0, travel_minutes: 0, search_minutes: 0, handling_minutes: 0, prey_holding_minutes: 0, unload_minutes: 0, cancelled_no_time: 0, no_route: 0, active_worker_days: 0, worker_days: 0, rest_minutes_active_foragers: 0, recruitment_failed: 0, trips_hist: {}, stop_reasons: {} };
@@ -66,6 +71,7 @@ export function runDay0(founding: FoundingId, season: Season, seed: number, bund
     if (sm.eggs_laid && firstEggDay === null) firstEggDay = d;
     if (sm.eclosions && firstEclosionDay === null) firstEclosionDay = d;
     for (const e of ev as Any[]) {
+      if (e.type === 'eclosion' && !initialBrood.has(e.source_brood_id)) ownEclosions++;
       if (e.type === 'food_collected') inc(bySite, `${e.site}:${e.macro}`, e.portions);
       else if (e.type === 'exploration_step') cum.explorations++;
       else if (e.type === 'exploration_found_nothing') cum.exploration_found_nothing++;
@@ -80,17 +86,20 @@ export function runDay0(founding: FoundingId, season: Season, seed: number, bund
       if (KEY_EVENTS.has(e.type)) { chain.push({ day: d, type: e.type, ...(e.reason ? { reason: e.reason } : {}), ...(e.stage ? { stage: e.stage } : {}), ...(e.site ? { site: e.site } : {}), sugar_gap_days: s.colonies[0].stores.sugar_gap_days, protein_gap_days: s.colonies[0].stores.protein_gap_days }); if (chain.length > 12) chain.shift(); }
     }
     const pop = s.colonies[0].population;
+    if (pop.workers.length > maxWorkers) { maxWorkers = pop.workers.length; maxWorkersDay = d; }
     if (!pop.workers.length && zeroWorkerDay === null) zeroWorkerDay = d;
     if (!pop.queen_alive && !pop.workers.length && endDay === null) endDay = d;
     if (CHECKPOINTS.includes(d)) {
       const k = edgesKnown(s);
-      checkpoints[d] = { date: s.calendar_date, queen: pop.queen_alive, workers: pop.workers.length, minor_workers: pop.workers.length, major_workers: null, eggs: pop.brood.filter((b) => b.stage === 'egg').length, larvae: pop.brood.filter((b) => b.stage === 'larva').length, pupae: pop.brood.filter((b) => b.stage === 'pupa').length, stock: { ...s.colonies[0].stores }, cumulative: structuredClone(cum), mean_edges_known_per_worker: k.length ? r3(k.reduce((a, b) => a + b, 0) / k.length) : null, workers_with_any_route: k.filter((x) => x > 0).length, sites_discovered: Object.keys(firstDiscovery).length };
+      const wk = pop.workers.length;
+      checkpoints[d] = { growth: !pop.queen_alive && !wk ? 'extinct' : !wk ? 'no_workers_queen_alive' : wk > n0 ? 'grew' : wk === n0 ? 'held' : 'declined', founders_alive: pop.workers.filter((w) => founders.has(w.id)).length, own_eclosions_so_far: ownEclosions, date: s.calendar_date, queen: pop.queen_alive, workers: pop.workers.length, minor_workers: pop.workers.length, major_workers: null, eggs: pop.brood.filter((b) => b.stage === 'egg').length, larvae: pop.brood.filter((b) => b.stage === 'larva').length, pupae: pop.brood.filter((b) => b.stage === 'pupa').length, stock: { ...s.colonies[0].stores }, cumulative: structuredClone(cum), mean_edges_known_per_worker: k.length ? r3(k.reduce((a, b) => a + b, 0) / k.length) : null, workers_with_any_route: k.filter((x) => x > 0).length, sites_discovered: Object.keys(firstDiscovery).length };
     }
     if (endDay !== null) { for (const cp of CHECKPOINTS) if (cp > d && !checkpoints[cp]) checkpoints[cp] = { extinct: true }; break; }
   }
   const mean = (xs: number[]) => (xs.length ? r3(xs.reduce((a, b) => a + b, 0) / xs.length) : null);
   return {
     founding, season, seed, start_date: start, day0,
+    reference_adults_day0: n0, own_eclosions: ownEclosions, max_workers: maxWorkers, max_workers_day: maxWorkersDay,
     queen_death_day: queenDeathDay, queen_death_reason: queenDeathReason, queen_death: queenDeath, zero_worker_day: zeroWorkerDay, colony_end_day: endDay,
     first_egg_day: firstEggDay, first_eclosion_day: firstEclosionDay, max_sugar_gap_days: sugarGapMax, max_protein_gap_days: proteinGapMax,
     totals: cum, income_by_site: bySite, first_discovery_day_by_site: firstDiscovery, worker_death_reasons: workerDeath, brood_death_reasons: broodDeath,
@@ -107,6 +116,9 @@ function aggregate(runs: Any[]): Any {
     const ws = at.map((x) => (x.extinct ? 0 : x.workers));
     out.checkpoints[cp] = {
       queen_alive: alive.filter((x) => x.queen).length, colonies_with_workers: ws.filter((x) => x > 0).length,
+      effective_reproduction: runs.filter((r) => (r.checkpoints[cp]?.own_eclosions_so_far ?? r.own_eclosions) > 0).length,
+      growth: at.reduce((o: Any, x) => { const k = x.extinct ? 'extinct' : x.growth; o[k] = (o[k] ?? 0) + 1; return o; }, {}),
+      founders_alive_median: median(at.map((x) => (x.extinct ? 0 : x.founders_alive ?? 0))),
       workers_min: Math.min(...ws), workers_median: median(ws), workers_max: Math.max(...ws),
       brood_median: median(at.map((x) => (x.extinct ? 0 : x.eggs + x.larvae + x.pupae))),
       eggs_laid_median: median(runs.map((r) => (r.checkpoints[cp]?.cumulative ?? r.totals).eggs_laid)),
@@ -170,6 +182,11 @@ function tables(doc: Any): string {
     for (const season of Object.keys(doc.groups[f])) { const g = doc.groups[f][season], j = (o: Any) => Object.entries(o).sort().map(([k, v]) => `${k} ${v}`).join('；') || '—'; L.push(`| ${season} | ${j(g.income_by_site_total)} | ${j(g.worker_death_reasons_total)} | ${j(g.brood_death_reasons_total)} | ${j(g.queen_death_reasons)} |`); }
     L.push('');
   }
+  L.push('## 四項指標分開（v2-review.19 起）：蟻后存活／有工蟻／有效繁殖（自產卵羽化 ≥1）／成長分類（成長·持平·衰退·只剩蟻后·全滅）', '');
+  L.push('> 成長分類以 Day0 的「工蟻＋帶來的蛹」為參考數。有效繁殖只計這次模擬中蟻后產下的卵羽化成的工蟻，不計創巢時帶來的幼體。', '');
+  L.push('| 情境 | 季節 | Day30 | Day90 | Day180 | Day365 |', '|---|---|---|---|---|---|');
+  for (const f of doc.foundings_run) for (const season of Object.keys(doc.groups[f])) { const g = doc.groups[f][season]; L.push(`| ${f} | ${season} | ${[30, 90, 180, 365].map((cp) => { const x = g.checkpoints[cp], gr = x.growth; return `${x.queen_alive}／${x.colonies_with_workers}／${x.effective_reproduction}／${gr.grew ?? 0}·${gr.held ?? 0}·${gr.declined ?? 0}·${gr.no_workers_queen_alive ?? 0}·${gr.extinct ?? 0}`; }).join(' | ')} |`); }
+  L.push('');
   L.push('## 個體行動（v2-review.17 起；20 種子合計）', '');
   L.push('| 情境 | 季節 | 有出巢的工蟻日 | 每隻出巢工蟻每日趟數 | 每隻出巢工蟻每日外出分鐘 | 步行／搜尋／採集／守獵物／卸貨（分鐘） | 出巢工蟻巢內時間（分鐘） | 因時間不足取消 | 沒有路線而未出勤 | 招募失敗 | 停止原因 |', '|---|---|---:|---:|---:|---|---:|---:|---:|---:|---|');
   for (const f of doc.foundings_run) for (const season of Object.keys(doc.groups[f])) { const a = doc.groups[f][season].activity; L.push(`| ${f} | ${season} | ${a.active_forager_days} | ${a.trips_per_active_forager_day ?? '—'} | ${a.outside_min_per_active_forager_day ?? '—'} | ${a.travel_minutes}／${a.search_minutes}／${a.handling_minutes}／${a.prey_holding_minutes}／${a.unload_minutes} | ${a.rest_minutes_active_foragers} | ${a.cancelled_no_time} | ${a.no_route} | ${a.recruitment_failed} | ${Object.entries(a.stop_reasons).sort().map(([k, v]) => k + ' ' + v).join('；') || '—'} |`); }

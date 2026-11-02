@@ -226,6 +226,24 @@
       "save_schema": "antempire.engine-v2",
       "state_migration": null,
       "note": "Day0 文獻對照情境 A4（蟻后＋10 蛹）與 A5（蟻后＋10 新羽化工蟻）；無工蟻期蟻后風險從第 14 日起（R136 Chang 1985）。"
+    },
+    {
+      "rules_version": "antempire.v2-review.19-evaluation-corrections",
+      "tag": "v19",
+      "fingerprint": {
+        "engine": "5e2bbea88168d5734fd76d48d7700ffd9717719908793a0d50df9c903a41a1f3",
+        "params": "5ae610a28a7fceff4062095ea68479a9cee8099ed5e73860bc3beeb49c1a9567"
+      },
+      "approved_in": "評估方法修正 PR（第一階段；待 Owner 審閱；合併即核准）",
+      "golden": {
+        "traces": "tests/golden/v19-trace-sha256.json",
+        "reports": "reports/day15-134-v19-*",
+        "day0_traces": "tests/golden/day0-v19-trace-sha256.json"
+      },
+      "previous": "antempire.v2-review.18-founding-controls",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null,
+      "note": "只更正參數來源標示（無工蟻蟻后風險是遊戲假設）；模擬輸出與 v18 逐位元組相同。另修正 E2／E5 極端情境的實驗設計並分開報告四項存活指標（評估工具，不是引擎）。"
     }
   ]
 }
