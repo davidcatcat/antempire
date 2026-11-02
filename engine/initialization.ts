@@ -108,7 +108,7 @@ export function initializeDay0(input: Day0Input, bundle: ParamBundle): Day0Outpu
     const crop = round(fill * sp.trophallaxis.crop_capacity);
     workers.push({
       id: ident.worker_id_prefix + String(i).padStart(width, '0'), alive: true, age_days: ageMin + Math.floor(ageDice() * (ageMax - ageMin + 1)),
-      age_origin: 'founded_day0_propagule_game_assumption', injured: false, task: 'rest', known_sources: [], last_location: nest,
+      age_origin: founding.founder_age_origin === 'callow' ? 'founded_day0_newly_eclosed_callow' : 'founded_day0_propagule_game_assumption', injured: false, task: 'rest', known_sources: [], last_location: nest,
       local_sensory: { own_crop_sugar_fill: fill, peer_sugar_hunger: ls.default_peer_sugar_hunger, peer_protein_request: ls.default_peer_protein_request, direct_brood_begging: ls.default_direct_brood_begging, unload_feedback: { sugar: ls.unload_feedback_default, protein: ls.unload_feedback_default }, origin: 'own crop fill = the scenario crop load the worker carries (its own body); peer/brood/unloading cues = species defaults (no contacts at the new nest yet)' },
       route_memory: { origin: 'founded_day0', edges: {}, empty_sites: {} },
       ...(crop > 0 ? { crop_cargo_sugar: crop } : {}),

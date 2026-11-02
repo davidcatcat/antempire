@@ -33,8 +33,9 @@ import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from '
  *                is never given to workers that eclosed in the simulation (Day14 outputs byte-identical)
  *   v2-review.16 death diagnostics: queen_death names its active triggers and the hazard that applied; worker_death records its competing hazards (no probability or draw changed)
  *   v2-review.17 individual activity timeline and autonomous foraging loop (species switch activity.individual_timeline; edge lengths from the world record)
+ *   v2-review.18 Day0 founding controls A4 (queen + 10 pupae) and A5 (queen + 10 callows); lone-queen hazard from day 14 (Chang 1985)
  */
-export const ENGINE_VERSION = 'antempire.v2-review.17-activity-timeline';
+export const ENGINE_VERSION = 'antempire.v2-review.18-founding-controls';
 /** Implementation of that behaviour (bumped for refactors that keep results byte-identical). */
 export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
 /**

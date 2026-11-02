@@ -1,0 +1,86 @@
+{
+  "schema": "antempire.day0-founding.v1",
+  "id": "A4",
+  "title": "蟻后＋10 蛹（Chang 1985 對照組）",
+  "species_id": "pheidole-megacephala",
+  "mode": "budding",
+  "engine_supported": true,
+  "note": "文獻對照情境：Chang 1985（R136）蟻后＋10 蛹，6/6 實驗巢在 7 週內成長。蛹依引擎的發育規則羽化成新工蟻（不會瞬間變成能覓食的成熟工蟻）；羽化前沒有工蟻的期間，蟻后不被餵食、不產卵，並套用無工蟻期風險（v2-review.18 依 R136 修正起算日）。Chang 的實驗有人工餵食，花園中沒有。",
+  "nest_node": "N00",
+  "colony_identity": {
+    "id": "C1",
+    "queen_id": "Q001",
+    "rng_namespace": "D0|",
+    "worker_id_prefix": "W",
+    "egg_id_prefix": "E",
+    "id_number_width": 3,
+    "note": "識別碼與亂數命名空間（純標籤，不是生物數值）；Day0 世界從 W001／E001 起編號，與 Day1～14 正式歷史無關"
+  },
+  "queens": {
+    "value": 1,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "description": "蟻后數（一隻已交配、正在產卵的蟻后）"
+  },
+  "workers": {
+    "value": 0,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "description": "隨蟻后分出的工蟻數",
+    "basis_note": "Chang 1985（R136）的實驗組成；實驗室 26～27°C、人工餵食、成熟野外蟻后，與花園自然創巢不同"
+  },
+  "worker_age_days_min": {
+    "value": 0,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "description": "（無創巢工蟻）"
+  },
+  "worker_age_days_max": {
+    "value": 0,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "description": "（無創巢工蟻）"
+  },
+  "worker_caste": "minor",
+  "worker_caste_note": "目前引擎沒有 major 生產（castes.major_worker_production_enabled=false），創巢工蟻全部視為 minor；major 待 #25",
+  "eggs": {
+    "value": 0,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "description": "隨分巢帶來的卵數"
+  },
+  "larvae": {
+    "value": 0,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "description": "隨分巢帶來的幼蟲數"
+  },
+  "pupae": {
+    "value": 10,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "description": "隨蟻后帶來的蛹數（Chang 1985：10 蛹）"
+  },
+  "carried_brood_progress": {
+    "value": 0.5,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "description": "帶來的蛹在蛹期已完成的比例（Chang 未記錄蛹齡，取一半；遊戲假設）"
+  },
+  "worker_crop_fill_fraction": {
+    "value": 0,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "description": "創巢工蟻嗉囊中糖的填滿比例（×物種嗉囊容量），計入蟻群糖帳"
+  },
+  "stores_protein": {
+    "value": 0,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "description": "巢內蛋白存量（新巢沒有存糧）"
+  },
+  "injuries": "none",
+  "route_memory": "empty: 新巢工蟻沒有走過新巢周圍的任何路段",
+  "known_sources": "none",
+  "founder_age_origin": "none"
+}

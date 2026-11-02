@@ -15,6 +15,7 @@
  *                normaliser) reproduces tests/golden/v15-trace-sha256.json
  *   v2-review.17 (individual activity timeline; switch off, new parameters unused) -> reproduces
  *                tests/golden/v16-trace-sha256.json and the v16 Day0 golden
+ *   v2-review.18 (lone-queen hazard from day 14; A4/A5 scenario files are not engine input) -> reproduces v17
  * Every step also undoes the output normalisers of its own and later diagnostics-only versions.
  * Each step undoes its own changes AND every later step's, so step N is compared with the engine as it was.
  */
@@ -41,6 +42,7 @@ const STEPS = [
   { version: 'antempire.v2-review.15-day0-initialization', previousGolden: 'tests/golden/v14-trace-sha256.json' },
   { version: 'antempire.v2-review.16-death-diagnostics', previousGolden: 'tests/golden/v15-trace-sha256.json' },
   { version: 'antempire.v2-review.17-activity-timeline', previousGolden: 'tests/golden/v16-trace-sha256.json' },
+  { version: 'antempire.v2-review.18-founding-controls', previousGolden: 'tests/golden/v17-trace-sha256.json' },
 ];
 const ORDER = STEPS.map((s) => s.version);
 const results: Record<string, string> = {};
@@ -62,7 +64,7 @@ for (const step of STEPS) {
   const day0Prev = step.previousGolden.replace('tests/golden/', 'tests/golden/day0-');
   if (fs.existsSync(path.join(REPO_ROOT, day0Prev))) {
     const g0 = readJson(day0Prev);
-    for (const c of DAY0_GOLDEN_CASES) {
+    for (const c of DAY0_GOLDEN_CASES.filter((x) => g0.cases[x.name])) { // foundings added later have no earlier golden
       const bundle = loadBundle(); revert(bundle);
       const got = traceDay0(c, { bundle, normalise: (x) => normaliseOutput(x, changes) });
       assert.ok(got.day0_sha256 === g0.cases[c.name].day0_sha256 && got.sha256 === g0.cases[c.name].sha256, `${step.version}: Day0 ${c.name} differs from ${day0Prev}`);

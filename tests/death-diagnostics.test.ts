@@ -23,8 +23,8 @@ const cases: [string, (c: Any) => void, string, string[], number][] = [
   ['protein deficit only', (c) => { c.stores.protein_gap_days = 20; c.stores.sugar_gap_days = 0; c.stores.stress_days = 20; }, 'chronic_protein_deficit', ['chronic_protein_deficit'], st.queen_daily_hazard],
   ['sugar deficit only', (c) => { c.stores.sugar_gap_days = 20; c.stores.stress_days = 20; }, 'chronic_sugar_deficit', ['chronic_sugar_deficit'], st.queen_daily_hazard],
   ['both deficits', (c) => { c.stores.sugar_gap_days = 20; c.stores.protein_gap_days = 15; c.stores.stress_days = 20; }, 'chronic_sugar_and_protein_deficit', ['chronic_sugar_and_protein_deficit'], st.queen_daily_hazard],
-  ['no workers, fed', (c) => { c.population.workers = []; c.stores.no_worker_days = 5; }, 'no_workers', ['no_workers'], Math.max(st.queen_daily_hazard, st.queen_zero_worker_starved_daily_hazard)],
-  ['no workers and sugar deficit', (c) => { c.population.workers = []; c.stores.no_worker_days = 5; c.stores.sugar_gap_days = 14; c.stores.stress_days = 14; }, 'no_workers', ['chronic_sugar_deficit', 'no_workers'], Math.max(st.queen_daily_hazard, st.queen_zero_worker_starved_daily_hazard)],
+  ['no workers, fed', (c) => { c.population.workers = []; c.stores.no_worker_days = st.queen_zero_worker_hazard_after_days + 2; }, 'no_workers', ['no_workers'], Math.max(st.queen_daily_hazard, st.queen_zero_worker_starved_daily_hazard)],
+  ['no workers and sugar deficit', (c) => { c.population.workers = []; c.stores.no_worker_days = st.queen_zero_worker_hazard_after_days + 2; c.stores.sugar_gap_days = 14; c.stores.stress_days = 14; }, 'no_workers', ['chronic_sugar_deficit', 'no_workers'], Math.max(st.queen_daily_hazard, st.queen_zero_worker_starved_daily_hazard)],
 ];
 for (const [name, setup, reason, triggers, applied] of cases) {
   const { ev } = first(setup);
