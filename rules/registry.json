@@ -303,8 +303,8 @@
       "rules_version": "antempire.v2-review.23-local-trail-deposit",
       "tag": "v23",
       "fingerprint": {
-        "engine": "ebc9dccc128036e443f36a8b9ba7073798ecc4ee419ca3e50d453dd9ba8645c8",
-        "params": "d2c713e10154e3e9ad1a90634fd69e3cad6265a9a77b909d9db933ca438bbc74"
+        "engine": "b6687bc410bd283fe6183dfaf8cde473552d88f2102a0a6ae9d9dc10c395b005",
+        "params": "a1fe85118344a18593e837e269d98bc5adf3c732736dca8646aed6264d0dec2a"
       },
       "approved_in": "Owner instruction 2026-11-03 (Codex Issue #61 R3-05; separate rules-update PR for Owner review, not merged by Claude)",
       "golden": {

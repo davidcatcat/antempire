@@ -78,6 +78,8 @@ const ACTIVITY_KEYS = ['trail_walking_speed_mm_s', 'off_trail_speed_factor', 'se
 
 export function resolveSpecies(file: ParamFile) {
   if (file.schema !== 'antempire.species-params.v1') throw Error('Unknown species params schema ' + String(file.schema));
+  // v2-review.23: per-edge trail marks are queue events of the v2-review.20 event clock; without it the switch would do nothing silently
+  if (at(file, 'activity.local_trail_deposit_v23') === true && at(file, 'activity.local_causality_v20') !== true) throw Error('activity.local_trail_deposit_v23 requires activity.local_causality_v20');
   const p = {
     species_id: str(file, 'species_id'),
     castes: {

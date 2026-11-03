@@ -8,7 +8,9 @@
  *     of the old model, NOT a correctness pass); with it ON W002 marks F10–U01 at the minute it has walked it.
  *  L  locality invariant over real days (5 foundings x 4 seasons x 2 seeds x 20 days): every mark is laid by a worker on
  *     that edge — the same worker has a route_step on that edge ending at exactly the mark's minute, entered at
- *     `walked_from`; no mark is written at the nest for a remote edge; `deposited` reconstructs `intensity`.
+ *     `walked_from`; no mark is written at the nest for a remote edge; `deposited` reconstructs `intensity`. Pairing:
+ *     every edge of a walk home that ends in unloading is marked by that worker at that edge's end; no edge of a walk
+ *     home that ends without unloading is marked.
  *  N  normal foraging (fixture): each edge of the return walk is marked once, far edge first, at the minute the forager
  *     finished it; the far edge's mark is earlier than the unloading.
  *  E  empty return (fixture): a forager that finds nothing walks home and marks nothing.
@@ -67,6 +69,31 @@ const checkLocal = (ev: Any[], nest: string, where: string) => {
   return n;
 };
 
+/**
+ * Pairing on real days (independent review of bec2071): every walk home that ends in an unloading (the worker carried
+ * food) has a laden_return mark by that worker on EVERY edge, at that edge's end minute; every walk home that ends without
+ * unloading (empty return) has none. Returns [laden edges, empty edges] checked.
+ */
+const LADEN_KINDS = new Set(['foraging_return', 'recruit_return', 'joint_prey_transport']);
+const checkPairing = (ev: Any[], nest: string, where: string): [number, number] => {
+  const steps = ev.filter((e) => e.type === 'route_step'), marks = deposits(ev).filter((d) => d.cause === 'laden_return');
+  let laden = 0, empty = 0;
+  for (let i = 0; i < steps.length; i++) {
+    const last = steps[i];
+    if (last.to !== nest || !LADEN_KINDS.has(last.kind)) continue;
+    // the walk: consecutive steps of this worker, same kind, back from its arrival at the nest
+    const walk = [last];
+    for (let j = i - 1; j >= 0; j--) { const st = steps[j]; if (st.worker !== last.worker) continue; if (st.to === walk[0].from && st.kind === last.kind && st.to !== nest) walk.unshift(st); else break; }
+    const unloaded = unloads(ev, last.worker).some((u: Any) => Math.abs(u.start - last.minute) < 1e-9);
+    for (const st of walk) {
+      const has = marks.some((d) => d.worker === st.worker && d.edge === ekey(st.from, st.to) && Math.abs(d.minute - st.minute) < 1e-9);
+      if (unloaded) { assert.ok(has, `${where}: ${st.worker} carried food home but left no mark on ${st.from}–${st.to} at ${st.minute}`); laden++; }
+      else { assert.ok(!has, `${where}: ${st.worker} came home empty but marked ${st.from}–${st.to} at ${st.minute}`); empty++; }
+    }
+  }
+  return [laden, empty];
+};
+
 // ---------------------------------------------------------------- A: Appendix A, W002 on F10–U01
 if (want('A')) {
   // days 0..15 under v2-review.22 so that day 16 starts from the state Codex used
@@ -91,17 +118,18 @@ if (want('A')) {
 
 // ---------------------------------------------------------------- L: locality invariant over real days
 if (want('L')) {
-  let days = 0, marks = 0, laden = 0, hunt = 0;
+  let days = 0, marks = 0, laden = 0, hunt = 0, pairedLaden = 0, pairedEmpty = 0;
   for (const founding of ['A1', 'A2', 'A3', 'A4', 'A5'] as Any[]) for (const date of ['2027-03-21', '2027-06-21', '2027-09-23', '2027-12-22']) for (const seed of [1, 2]) {
     let s = buildDay0(founding, seed, date, B_ON).state;
     for (let d = 0; d < 20; d++) {
       const o = simulateWorldDay(s, B_ON);
-      for (const c of o.result.colonies) { const ev: Any[] = c.events; marks += checkLocal(ev, s.colonies[0].nest_node, `L ${founding} ${date} seed ${seed} day ${o.day}`); laden += ev.filter((e) => e.type === 'trail_deposited' && e.cause === 'laden_return').length; hunt += ev.filter((e) => e.type === 'trail_deposited' && e.cause === 'hunt_recruit').length; }
+      for (const c of o.result.colonies) { const ev: Any[] = c.events, where = `L ${founding} ${date} seed ${seed} day ${o.day}`; marks += checkLocal(ev, s.colonies[0].nest_node, where); const [pl, pe] = checkPairing(ev, s.colonies[0].nest_node, where); pairedLaden += pl; pairedEmpty += pe; laden += ev.filter((e) => e.type === 'trail_deposited' && e.cause === 'laden_return').length; hunt += ev.filter((e) => e.type === 'trail_deposited' && e.cause === 'hunt_recruit').length; }
       s = o.state; days++;
     }
   }
   ok(days === 800 && marks > 0 && laden > 0, `L: ${days} colony-days, ${marks} marks all laid on the edge being walked (${laden} laden returns, ${hunt} hunt recruiters)`);
-  console.log(`L: ${days} colony-days, ${marks} marks (${laden} laden_return, ${hunt} hunt_recruit)`);
+  ok(pairedLaden > 0 && pairedEmpty > 0, `L pairing: ${pairedLaden} edges walked home with food all marked; ${pairedEmpty} edges walked home empty all unmarked`);
+  console.log(`L: ${days} colony-days, ${marks} marks (${laden} laden_return, ${hunt} hunt_recruit); pairing ${pairedLaden} laden edges marked, ${pairedEmpty} empty edges unmarked`);
 }
 
 // ---------------------------------------------------------------- fixtures N, E, R
@@ -145,6 +173,7 @@ if (want('D')) {
     let s = buildDay0('A1', seed, '2027-06-21', B_ON).state;
     for (let d = 0; d < 15; d++) {
       const o = simulateWorldDay(s, B_ON), ev: Any[] = o.result.colonies[0].events;
+      checkPairing(ev, s.colonies[0].nest_node, `D seed ${seed} day ${o.day}`);
       const marked = new Set(deposits(ev).map((x) => stepEnding(ev, x)));
       for (const st of ev.filter((e) => e.type === 'route_step')) {
         walkSteps++;
@@ -158,9 +187,9 @@ if (want('D')) {
   console.log(`D: ${markedSteps}/${walkSteps} walked edges marked, ${emptyReturnSteps} empty-return edges unmarked`);
 }
 if (want('R')) {
-  // W001 forages; W002 (no known source) decides at the nest while W001 is between Y and the nest: with the switch on it
-  // senses nothing on N00–X (W001 has not walked it yet) but the remote marks exist in the colony state. Every walking
-  // minute equals the speed from the trail laid on that edge up to the minute the edge was entered.
+  // Non-regression (holds for both settings, as v22 never laid trail from the future): every walking minute equals the
+  // speed from the trail laid on that edge up to the minute the edge was entered. Discriminating: with the switch on the
+  // recruiter's remote edge F01–Y is marked before it starts unloading; with it off, at the minute it starts.
   const speedCheck = (ev: Any[], q: Any, p: Any, where: string) => {
     let n = 0;
     const steps = ev.filter((e) => e.type === 'route_step');
@@ -183,6 +212,8 @@ if (want('R')) {
     const n = speedCheck(ev, w.q, p, `R switch ${on}`);
     ok(n > 0, `R (switch ${on}): ${n} walked edges each at the speed of the trail laid on it by the minute it was entered`);
     const recruits = ev.filter((e) => e.type === 'local_recruitment');
+    const u = unloads(ev, 'W001')[0], far = deposits(ev).find((d) => d.worker === 'W001' && d.edge === 'F01:Y');
+    ok(u && far && (on ? far.minute < u.start - 1e-9 : Math.abs(far.minute - u.start) < 1e-9), `R (switch ${on}): the remote edge F01–Y is marked at ${far?.minute}; unloading starts at ${u?.start}`);
     if (on) {
       ok(recruits.length > 0, 'R fixture: W001 recruited a nestmate at the end of unloading');
       for (const r of recruits) {
