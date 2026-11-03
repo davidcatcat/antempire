@@ -96,6 +96,36 @@ ok(timeToReach(0, 10, 0) === Infinity && timeToReach(5, 5, 0) === 0, 'timeToReac
   const gap = structuredClone(good); gap[1].t_start_s += 1; gap[1].t_end_s += 1;
   ok(checkTrajectory(Po, gap, 17).some((m) => /gap/.test(m)), 'time gap detected');
 }
+// ---- 5b. review of PR #72: each consistency check catches its defect; cross-passage jumps; no time reversal
+{
+  const base = walk(Po, agent('R', 'P-open'), 200, 17).intervals;
+  const neg = structuredClone(base); neg[0].t_end_s = neg[0].t_start_s - 1; neg[0].speed_mm_s = 0; neg[0].s_end_mm = neg[0].s_start_mm; neg[0].distance_mm = 0;
+  ok(checkTrajectory(Po, neg, 17).some((m) => /negative duration/.test(m)), 'negative duration detected');
+  const off = structuredClone(base); off[0].s_start_mm = -5; off[0].distance_mm = 205; off[0].t_end_s = 205 / 17;
+  ok(checkTrajectory(Po, off, 17).some((m) => /off the passage/.test(m)), 'off-passage arc length detected');
+  const back = structuredClone(base); back[0].dir = -1;
+  ok(checkTrajectory(Po, back, 17).some((m) => /against its heading/.test(m)), 'moving against the recorded direction detected');
+  const head = structuredClone(base); head[0].heading = [0, 1, 0];
+  ok(checkTrajectory(Po, head, 17).some((m) => /heading/.test(m)), 'corrupted heading detected');
+  const endp = structuredClone(base); endp[0].end_mm = [999, 0, 0];
+  ok(checkTrajectory(Po, endp, 17).some((m) => /start\/end point/.test(m)), 'corrupted end point detected');
+  const other = structuredClone(base).concat(walk(Po, agent('X', 'P-open', 200, 1, base[0].t_end_s), 300, 17).intervals);
+  ok(checkTrajectory(Po, other, 17).some((m) => /another agent/.test(m)), 'records of two agents in one trajectory detected');
+  // jump to another passage: time gap and position jump are both caught (geometry given)
+  const both = { ...structuredClone(stone), passages: [...stone.passages, ...open.passages] } as PhysicsGeometry;
+  const jump = base.concat(walk(Pd, agent('R', 'P-detour', 50, 1, 999), 100, 17).intervals);
+  const jm = checkTrajectory(both, jump, 17);
+  ok(jm.some((m) => /time gap/.test(m)) && jm.some((m) => /teleport/.test(m)), `cross-passage jump detected (${jm.slice(0, 2)})`);
+  throws(() => wait(Pd, agent('R', 'P-open'), 1, 'yield'), /is on/, 'wait on the wrong passage refused');
+  throws(() => walk(Po, agent('R', 'P-open', -50), 100, 17), /outside passage/, 'agent outside the passage refused');
+  throws(() => walk(Po, agent('R', 'P-open', 100, 1, 10), 200, 17, { until_s: 9 }), /before the agent clock/, 'until before the clock refused');
+  const edge = walk(Po, agent('R', 'P-open', 100, 1, 10), 200, 17, { until_s: 10 - 5e-10 });
+  ok(edge.intervals.length === 0 && edge.agent.t_s === 10 && edge.agent.s_mm === 100, 'until a hair before the clock is clamped: no backwards step, no clock reversal');
+  ok(wait(Po, agent('R', 'P-open'), 0, 'yield').agent.state === 'waiting' && wait(Po, agent('R', 'P-open'), 0, null).agent.state === 'stopped', 'zero wait sets the state');
+  throws(() => summarize(other, 17), /one agent/, 'summarize refuses mixed agents');
+  const sb = walk(Po, agent('R', 'P-open'), 100, 18.5, { speed_basis: 'outbound on trail, Vázquez 2020 (文獻支持), trait 1' }).intervals[0];
+  ok(sb.speed_basis?.includes('Vázquez'), 'records can carry where their speed came from');
+}
 // ---- 6. units: mm, s; conversions; agreement with the engine's existing route-level walking time
 ok(near(mmPerS_from_cmPerMin(cmPerMin_from_mmPerS(17)), 17) && near(cmPerMin_from_mmPerS(17), 102) && mm_from_cm(1) === 10 && minutes_from_s(60) === 1, 'unit conversions (17 mm/s = 102 cm/min)');
 {
@@ -130,7 +160,8 @@ ok(near(mmPerS_from_cmPerMin(cmPerMin_from_mmPerS(17)), 17) && near(cmPerMin_fro
     prevErr = err;
     // sampling the analytic trajectory at any Δt never shows the ant past the goal or jumping more than v·Δt
     const tr = walk(Po, agent('I', 'P-open'), 123.4, 17).intervals; let last = 0;
-    for (let k = 0; k * dt <= exact + dt; k++) { const st = stateAt(tr, Math.min(k * dt, exact))!; ok(st.s_mm <= 123.4 + 1e-9 && st.s_mm - last <= 17 * dt + 1e-9, `Δt=${dt} sample ${k}: no overshoot, no jump`); last = st.s_mm; if (k > 30) break; }
+    let bad = 0, n = 0; for (let k = 0; k * dt <= exact + dt; k++) { const st = stateAt(tr, Math.min(k * dt, exact))!; if (!(st.s_mm <= 123.4 + 1e-9 && st.s_mm - last <= 17 * dt + 1e-9)) bad++; last = st.s_mm; n++; }
+    ok(bad === 0 && n >= Math.floor(exact / dt), `Δt=${dt}: all ${n} samples of the whole walk: no overshoot, no jump`);
   }
 }
 // ---- 9. MV-2 speed model: direction-dependent candidates, unknown stays unknown, persistent individual trait
@@ -160,7 +191,16 @@ ok(cand.individual_cv.value === null && individualSpeedFactor(1, 'W001', null) =
   const canon = JSON.stringify(orderEvents(tie));
   for (const p of [[0, 1, 2, 3], [3, 2, 1, 0], [2, 0, 3, 1], [1, 3, 0, 2]]) ok(JSON.stringify(orderEvents(p.map((i) => tie[i]))) === canon, `event order invariant to input permutation ${p}`);
 }
+// ---- 10b. orderEvents: explicit kind priority; non-finite times refused; full-record tie-break
+{
+  const same: WorldEvent[] = [{ t_s: 5, kind: 'depart', agent: 'A', ref: null }, { t_s: 5, kind: 'arrive', agent: 'A', ref: null }];
+  ok(orderEvents(same, ['arrive', 'depart'])[0].kind === 'arrive' && orderEvents(same, ['depart', 'arrive'])[0].kind === 'depart', 'kind priority table decides same-time order');
+  throws(() => orderEvents([{ t_s: NaN, kind: 'x', agent: 'A', ref: null }]), /non-finite/, 'NaN time refused');
+  const twins = [{ t_s: 1, kind: 'x', agent: 'A', ref: null, extra: 2 }, { t_s: 1, kind: 'x', agent: 'A', ref: null, extra: 1 }];
+  ok(JSON.stringify(orderEvents(twins)) === JSON.stringify(orderEvents([...twins].reverse())), 'events equal in all four keys still order independently of input');
+}
 // ---- 11. evidence labels of the candidate file
+ok(cand.trail_speed_mm_s.outbound.ci95_mm_s === 0.53 && cand.trail_speed_mm_s.returning.ci95_mm_s === 0.54 && /returning from a food source/.test(cand.trail_speed_mm_s.direction_difference), 'per-leg 95% CIs and the possible load confound recorded');
 ok(cand.trail_speed_mm_s.outbound.basis === '文獻支持' && /Vázquez/.test(cand.trail_speed_mm_s.outbound.source) && cand.trail_speed_mm_s.conditions.length >= 4, 'speed candidates cite Vázquez 2020 with conditions');
 ok(/不把方向差異解釋為負重/.test(cand.trail_speed_mm_s.direction_difference), 'direction difference explicitly NOT attributed to load');
 ok(cand.off_trail_factor.basis === '遊戲假設' && Object.keys(cand.not_modelled).sort().join() === 'crowding,load,slope,temperature', 'off-trail factor labelled game assumption; slope/temperature/load/crowding declared not modelled');
