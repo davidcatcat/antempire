@@ -1,10 +1,11 @@
 {
-  "schema": "antempire.world-geometry.v1",
-  "physics_schema": "antempire.physics-geometry.v1",
+  "schema": "antempire.physics-geometry.v1",
+  "layer_of": "antempire.world-geometry.v1",
+  "world_geometry_ref": null,
   "world_id": "synthetic-narrow-corridor",
   "geometry_version": "0.1.0",
   "synthetic": true,
-  "synthetic_note": "狹窄通道：兩端是開闊地，中間 60 mm 長、寬 1.0 mm 的通道（兩側是牆）。",
+  "synthetic_note": "狹窄通道：通路本身寬 20 mm（兩端是開闊地），中間 x=20～80 mm 兩側有牆，牆距中心線 0.5 mm，可用寬度 1.0 mm。",
   "frame": {
     "units": "mm",
     "axes": {
@@ -73,6 +74,7 @@
           ]
         ]
       },
+      "base_z_mm": 0,
       "height_mm": 10,
       "provenance": {
         "source": "synthetic_scenario",
@@ -105,6 +107,7 @@
           ]
         ]
       },
+      "base_z_mm": 0,
       "height_mm": 10,
       "provenance": {
         "source": "synthetic_scenario",
@@ -129,7 +132,7 @@
           0
         ]
       ],
-      "width_mm": 1.0,
+      "width_mm": 20,
       "route_edge_ref": null,
       "provenance": {
         "source": "synthetic_scenario",

@@ -1,6 +1,7 @@
 {
-  "schema": "antempire.world-geometry.v1",
-  "physics_schema": "antempire.physics-geometry.v1",
+  "schema": "antempire.physics-geometry.v1",
+  "layer_of": "antempire.world-geometry.v1",
+  "world_geometry_ref": null,
   "world_id": "synthetic-open-plane",
   "geometry_version": "0.1.0",
   "synthetic": true,

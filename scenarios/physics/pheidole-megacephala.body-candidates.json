@@ -6,16 +6,21 @@
     "minor": {
       "body_length_mm": {
         "value": 2.5,
-        "assumption": false,
+        "assumption": true,
         "basis": "文獻支持",
         "source": "Yuan et al. 2026 (R94) §3.2: 'Minor worker … Body length ca. 2.5 mm'",
-        "limits": "約值；未報告樣本數與變異；體長不是碰撞寬度"
+        "limits": "約值；廣西實驗室族群（28±1 °C）；未報告樣本數與變異；體長不是碰撞寬度"
       },
       "head_width_mm": {
         "value": null,
+        "range": [
+          0.5,
+          0.61
+        ],
         "assumption": true,
-        "basis": "遊戲假設",
-        "unknown_reason": "Yuan 2026 沒有報告小工蟻頭寬"
+        "basis": "文獻支持",
+        "source": "R99 Sarnat et al. 2015（docs/references.md 第 494 行摘錄）：minor 頭寬 0.50–0.61 mm",
+        "limits": "分類學標本的範圍，不是本巢實測；Yuan 2026 沒有報告小工蟻頭寬"
       },
       "effective_collision_width_mm": {
         "value": null,
@@ -25,33 +30,39 @@
         ],
         "assumption": true,
         "basis": "遊戲假設",
-        "unknown_reason": "本種沒有『行走時身體（含腳）所占寬度』的量測；範圍是工程候選，用來做敏感度，不是量測"
+        "unknown_reason": "本種沒有『行走時身體（含腳）所占寬度』的量測",
+        "reasoning": "下限 0.5 = R99 小工蟻頭寬的最小值（行走時所占寬度不會小於頭寬）；上限 0.8 是工程候選，代表腳向兩側張開，約為頭寬上限 0.61 再加約 0.2 mm；沒有量測支持上限。只用於敏感度。"
       }
     },
     "major": {
       "body_length_mm": {
         "value": 3.5,
-        "assumption": false,
+        "assumption": true,
         "basis": "文獻支持",
         "source": "Yuan et al. 2026 (R94) §3.2: 'Soldier (major worker) … Body length ca. 3.5 mm'",
-        "limits": "約值"
+        "limits": "約值；廣西實驗室族群；未報告樣本數與變異"
       },
       "head_width_mm": {
         "value": 1.3,
-        "assumption": false,
+        "range": [
+          1.1,
+          1.54
+        ],
+        "assumption": true,
         "basis": "文獻支持",
-        "source": "Yuan et al. 2026 (R94) §3.2: 'Head massive, about 1.3 mm wide'",
-        "limits": "約值；頭寬是碰撞寬度的下限，不等於行走時所占寬度"
+        "source": "Yuan et al. 2026 (R94) §3.2: 'Head massive, about 1.3 mm wide'；R99 Sarnat et al. 2015：major 頭寬 1.10–1.54 mm",
+        "limits": "約值與分類學範圍；頭寬是碰撞寬度的下限，不等於行走時所占寬度"
       },
       "effective_collision_width_mm": {
         "value": null,
         "candidate_range": [
-          1.3,
+          1.1,
           1.8
         ],
         "assumption": true,
         "basis": "遊戲假設",
-        "unknown_reason": "下限取頭寬（文獻）；上限是工程候選（腳張開）"
+        "unknown_reason": "本種沒有大工蟻行走時所占寬度的量測",
+        "reasoning": "下限 1.1 = R99 大工蟻頭寬的最小值（Yuan 2026 的 1.3 在範圍內）；上限 1.8 是工程候選，約為頭寬上限 1.54 再加約 0.25 mm（腳張開）；沒有量測支持上限。只用於敏感度。"
       }
     }
   },
