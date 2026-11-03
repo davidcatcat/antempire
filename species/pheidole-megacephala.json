@@ -489,7 +489,9 @@
       "reference_for_mechanism_only": [],
       "basis": "遊戲假設",
       "legacy_path": "sim/params.json#starvation.unattended_pupa_max_days"
-    }
+    },
+    "daily_care_snapshot_v21": true,
+    "daily_care_snapshot_v21_note": "模型開關（v2-review.21，Issue #50／#49 N1）。true＝同一日的幼體照護暴露一律依該時間步進開始時的工蟻（當日開始時有沒有工蟻），先算完所有卵、幼蟲、蛹的發育、無照護天數與死亡，再一次提交當日羽化的新工蟻；新工蟻編號依來源蛹的編號由小到大分配；保育工蟻接觸幼蟲時的均勻抽籤依幼蟲編號順序對應，不依儲存陣列的位置。當日羽化的工蟻不替同一日其他幼體提供照護（時間解析度假設：引擎沒有羽化時刻與照護接觸事件，不能假設剛羽化工蟻立即具備完整照護能力）。false＝v2-review.20：迴圈中羽化的工蟻立即加入，陣列中排在後面的幼體因此被視為有照護（只供隔離證明 tests/rules-isolation.test.ts 使用）。沒有新增數值參數。"
   },
   "worker_lifespan": {
     "natural_daily_base_hazard": {

@@ -24,7 +24,7 @@ jobs:
         run: npm run typecheck
       - name: Golden test (current-rules reports byte-identical + 28 Day14 full-output traces + 24 Day0 traces)
         run: npm run test:golden
-      - name: Naturalism (no-god-mode checks; 214 under v2-review.20)
+      - name: Naturalism (no-god-mode checks; 216 under v2-review.20 and v2-review.21)
         run: npm run test:naturalism
       - name: Save conservation (saves/main.json + saves/world-state.json)
         run: npm run check:saves
