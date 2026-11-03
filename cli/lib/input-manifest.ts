@@ -37,8 +37,11 @@ export function importClosure(entry: string, root = REPO_ROOT, within = 'cli/'):
     if (seen.has(f) || !f.startsWith(within)) continue;
     seen.add(f);
     const src = fs.readFileSync(path.join(root, f), 'utf8');
-    for (const m of src.matchAll(/(?:^|\n)\s*(?:import|export)[^'"\n]*?from\s+['"](\.{1,2}\/[^'"]+)['"]|(?:^|\n)\s*import\s+['"](\.{1,2}\/[^'"]+)['"]/g)) {
-      const spec = m[1] ?? m[2], target = path.posix.normalize(path.posix.join(path.posix.dirname(f), spec));
+    // every relative module specifier in an import/export ... from '...', a side-effect import or a dynamic import(),
+    // including multi-line import lists (independent review of #54)
+    const specs = [...src.matchAll(/\bfrom\s+['"](\.{1,2}\/[^'"]+)['"]|\bimport\s*\(?\s*['"](\.{1,2}\/[^'"]+)['"]/g)].map((m) => m[1] ?? m[2]);
+    for (const spec of specs) {
+      const target = path.posix.normalize(path.posix.join(path.posix.dirname(f), spec));
       if (target.endsWith('.ts')) todo.push(target);
     }
   }

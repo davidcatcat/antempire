@@ -278,7 +278,8 @@ export function validate(doc: Any, opts: { day0Eval?: Any; tables?: string; curr
   }
   // R12 / Issue #51: every evaluation input must equal what produced (or re-verified) the data.
   const man = inputManifest(root);
-  if (!isLegacyManifest(doc.input_manifest)) {
+  if (!doc.input_manifest || typeof doc.input_manifest !== 'object') err('no input_manifest recorded: the inputs that produced these data are unknown (rerun)');
+  else if (!isLegacyManifest(doc.input_manifest)) {
     // manifest v2: code (import closure) and data (files actually read, with content hashes) recorded at generation
     const m = doc.input_manifest as InputManifest;
     const code = Object.keys({ ...man.code, ...m.code }).filter((f) => man.code[f] !== m.code[f]);
@@ -302,6 +303,16 @@ export function validate(doc: Any, opts: { day0Eval?: Any; tables?: string; curr
     if (changed.length > allowed.length) err(`input files changed since the data were produced or re-derived (rerun or archive): ${changed.filter((f) => !allowed.includes(f)).join(', ')}`);
     if (allowed.length) checks.archived_tool_changed = allowed;
     const gap = Object.keys(man.data).filter((f) => !(f in old)), att = opts.attestation;
+    // the attestation must belong to THESE data and say what it claims (independent review of #54): same batch and
+    // rules version, every baseline row re-run and equal, and the approved-change entries that rebuilt the old
+    // parameters for the re-run (versions after the data's version, up to the engine that ran it) still the same.
+    if (att) {
+      const nBase = doc.jobs.filter((x: Any) => x.caf === BASELINE.continue_after_failure_probability && x.rmin === BASELINE.recruit_min_crop_fill_fraction).reduce((a: number, j: Any) => a + j.rows.length, 0);
+      if (att.schema !== ATTESTATION_SCHEMA) err(`attestation: schema ${att.schema} ≠ ${ATTESTATION_SCHEMA}`);
+      if (att.data_batch !== doc.batch_id || att.data_rules_version !== doc.engine_version) err(`attestation belongs to other data (batch ${att.data_batch}, ${att.data_rules_version})`);
+      if (!(att.verified_by?.rows_rerun === nBase && att.verified_by?.rows_equal === nBase)) err(`attestation does not show every baseline row re-run and equal (${att.verified_by?.rows_equal}/${att.verified_by?.rows_rerun} of ${nBase})`);
+      if (att.undo_chain_sha !== undoChainSha(doc.engine_version, att.run_with_engine, root)) err('attestation: the approved rule changes used to rebuild the old parameters have changed since the re-verification (stale: re-attest)');
+    }
     const unattested = gap.filter((f) => !att?.data?.[f]);
     if (unattested.length) err(`provenance gap: ${unattested.join(', ')} not recorded when the data were produced and not re-verified (rerun, or attest with --attest)`);
     const drifted = gap.filter((f) => att?.data?.[f] && att.data[f].sha256 !== man.data[f].sha256);
@@ -369,6 +380,14 @@ export function tables(doc: Any): string {
 // ---------------------------------------------------------------------------------------------- CLI
 const arg = (k: string) => { const i = process.argv.indexOf(k); return i >= 0 ? process.argv[i + 1] : undefined; };
 export const ATTESTATION = 'provenance-attestation.json';
+export const ATTESTATION_SCHEMA = 'antempire.provenance-attestation.v1';
+/** sha256 of the approved rule-change entries bundleAtVersion undoes for data of `from`, as of engine version `upTo`. */
+export function undoChainSha(from: string, upTo: string, root = REPO_ROOT): string {
+  // the registry order decides which approved changes are undone, so both files are bound
+  const versions = (readJson('rules/registry.json', root).versions as Any[]).map((v) => v.rules_version), lo = versions.indexOf(from), hi = versions.indexOf(upTo);
+  const changes = (readJson('tests/golden/approved-rule-changes.json', root).changes as Any[]).filter((c) => { const i = versions.indexOf(c.rules_version); return i > lo && i <= hi; });
+  return sha(JSON.stringify({ versions: versions.slice(Math.max(lo, 0), hi + 1), changes }));
+}
 export function validateCommitted(dir: string = OUT, root = REPO_ROOT): Validation {
   const doc = JSON.parse(fs.readFileSync(path.join(dir, 'sensitivity.json'), 'utf8')), att = path.join(dir, ATTESTATION);
   return validate(doc, { root, day0Eval: readJson(`reports/day0-${doc.rules_tag}/evaluation.json`, root), tables: fs.readFileSync(path.join(dir, 'sensitivity-tables.md'), 'utf8'), attestation: fs.existsSync(att) ? JSON.parse(fs.readFileSync(att, 'utf8')) : undefined });
@@ -392,9 +411,11 @@ export function attest(dir: string): { ok: boolean; rows: number; equal: number;
   if (equal !== rows) return { ok: false, rows, equal };
   const gap = Object.keys(man.data).filter((f) => !(f in doc.input_manifest));
   const out = {
-    schema: 'antempire.provenance-attestation.v1', attested_on: new Date().toISOString().slice(0, 10), issue: 'Issue #51 (#49 N3)',
+    schema: ATTESTATION_SCHEMA, attested_on: new Date().toISOString().slice(0, 10), issue: 'Issue #51 (#49 N3)',
     statement: 'LATER RE-VERIFICATION, not a record made when these data were produced. The data files below were not recorded at generation time. With exactly these files and the rules version that produced the data, every stored baseline row was re-run and reproduced byte for byte. This shows the stored rows are consistent with these inputs; it cannot prove which files were present at generation time.',
     data_rules_version: doc.engine_version, run_with_engine: ENGINE_VERSION, data_batch: doc.batch_id,
+    undo_chain_sha: undoChainSha(doc.engine_version, ENGINE_VERSION),
+    scope: 'baseline rows (caf 0.5, rmin 0.5) = 400 of 3,520 rows; the other rows are covered by the per-job parameter hashes and the fixed-seed reruns in tests/phase2-sensitivity.test.ts, not by this re-run',
     verified_by: { method: 'rerun of every baseline row (caf 0.5, rmin 0.5) and byte comparison with the stored row', rows_rerun: rows, rows_equal: equal },
     data: Object.fromEntries(gap.map((f) => [f, dataEntry(f)])),
   };

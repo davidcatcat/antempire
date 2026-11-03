@@ -18,11 +18,17 @@
   - 用產生該資料的規則版本，加上目前的資料檔，重跑全部 400 筆基準列；逐位元組相同才寫入。
   - v19、v20 都是 400/400。
   - 它只能證明「儲存的列與這些輸入一致」，不能證明產生當時用的是哪個檔案。
+  - 範圍：只重跑基準列（caf 0.5、rmin 0.5），即 3,520 列中的 400 列；其餘列由各工作的參數雜湊與 `tests/phase2-sensitivity.test.ts` 的固定種子重跑涵蓋，不在此事後驗證內（寫在 `scope` 欄位）。
+  - 事後驗證檔本身也要驗證（獨立審查 #54）：schema、資料批次與規則版本必須與該目錄的資料相同，`rows_equal` 必須等於 `rows_rerun` 且為 400；`undo_chain_sha` 綁定重建舊參數所用的 `rules/registry.json` 版本順序與 `tests/golden/approved-rule-changes.json` 的相關條目，這兩個檔之後若改變，事後驗證就失效，要重新驗證。手改或從別的目錄複製的事後驗證檔都會被拒絕。
+  - 目前的事後驗證是用 v2-review.21 引擎（`run_with_engine`）重建舊規則版本所做。
 - 驗證器規則：
   - 舊清單中仍被讀取的檔案必須相同；
   - 舊清單沒有記錄的資料檔，必須有事後驗證，且雜湊相同；
   - 缺事後驗證就報 provenance gap（無效）；
   - 舊清單中已不再讀取的檔案只列出，不比較，因為無關的檔案改變不應讓資料失效。
+  - 資料目錄缺少 `input_manifest` 時報錯，不會當掉；
+  - 已知限制（Issue #57）：舊清單以外、現在 import closure 會讀到的 cli 程式，產生時沒有記錄，只列在 `code_files_not_recorded_at_generation`，無法比對。
+- import closure 會辨識多行的 `import { … } from '…'`、副作用 import 與動態 `import()`。
 
 ## 測試
 `tests/issue51-input-manifest.test.ts` 全部在暫存的 repository 副本中修改檔案，不碰真正的檔案：

@@ -91,5 +91,33 @@ try {
   ok(!v6.ok && v6.errors.some((e) => /input data changed.*taichung-climatology/.test(e)), `6: a climate change invalidates it (${v6.errors[0]})`);
   u3();
   ok(validate(doc, opts).ok, '6: restored → valid');
+  // 7 independent review of #54: an attestation is only accepted for the data it was made for, as it was made
+  const dirs = dirsTmp(), [d19, d20] = dirs, att19 = fs.readFileSync(path.join(d19, ATTESTATION), 'utf8'), att20 = fs.readFileSync(path.join(d20, ATTESTATION), 'utf8');
+  const withAtt = (d: string, text: string) => { fs.writeFileSync(path.join(d, ATTESTATION), text); const v = validateCommitted(d, tmp); return v; };
+  { // tampered: climate changed and the attestation edited to the new hash with rows_equal 0
+    const u = edit(CLIMATE, (j) => { j.monthly_climatology[0].mean_air_temperature_c = 27; });
+    const a = JSON.parse(att19); a.data[CLIMATE].sha256 = inputManifest(tmp).data[CLIMATE].sha256; a.verified_by.rows_equal = 0;
+    const v = withAtt(d19, JSON.stringify(a)); u();
+    ok(!v.ok && v.errors.some((e) => /every baseline row/.test(e)), `7: a hand-edited attestation is rejected (${v.errors.find((e) => /attestation/.test(e))})`);
+  }
+  { const v = withAtt(d19, att20); ok(!v.ok && v.errors.some((e) => /belongs to other data/.test(e)), `7: v20's attestation copied into the v19 directory is rejected (${v.errors.find((e) => /attestation/.test(e))})`); }
+  { const v = withAtt(d19, JSON.stringify({ data: { [CLIMATE]: { sha256: inputManifest(tmp).data[CLIMATE].sha256 } } })); ok(!v.ok && v.errors.some((e) => /attestation/.test(e)), `7: a minimal hand-made attestation is rejected (${v.errors.find((e) => /attestation/.test(e))})`); }
+  withAtt(d19, att19);
+  ok(allValid().every((v) => v.ok), '7: the real attestations still validate');
+  { // the approved rule changes that rebuild the old parameters for the re-run must not change after the attestation
+    const u = edit('tests/golden/approved-rule-changes.json', (j) => { const c = j.changes.find((x: Any) => x.rules_version === 'antempire.v2-review.20-local-causality'); c.from = !c.from; });
+    const v = validateCommitted(d19, tmp); u();
+    ok(!v.ok && v.errors.some((e) => /approved rule changes/.test(e)), `7: flipping an undone switch in approved-rule-changes.json invalidates the attested data (${v.errors.find((e) => /approved/.test(e))})`);
+  }
+  // 8 a multi-line import is followed by the import closure
+  { const f = path.join(tmp, 'cli/lib/day0.ts'), orig = fs.readFileSync(f, 'utf8');
+    fs.writeFileSync(path.join(tmp, 'cli/lib/zz-probe.ts'), 'export const ZZ = 1;\n');
+    fs.writeFileSync(f, `import {\n  ZZ,\n} from './zz-probe.ts';\nvoid ZZ;\n${orig}`);
+    const closure = inputManifest(tmp).code; fs.writeFileSync(f, orig); fs.rmSync(path.join(tmp, 'cli/lib/zz-probe.ts'));
+    ok('cli/lib/zz-probe.ts' in closure, '8: a multi-line import is in the import closure'); }
+  // 9 data without any input manifest: a validation error, not a crash
+  { const doc = JSON.parse(fs.readFileSync(path.join(d20, 'sensitivity.json'), 'utf8')); delete doc.input_manifest;
+    const v = validate(doc, { root: tmp, day0Eval: readJson(`reports/day0-${doc.rules_tag}/evaluation.json`, tmp) });
+    ok(!v.ok && v.errors.some((e) => /no input_manifest/.test(e)), `9: missing input manifest reported (${v.errors.find((e) => /manifest/.test(e))})`); }
 } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
 console.log(`issue51-input-manifest: ${checks} checks passed`);

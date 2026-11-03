@@ -4,8 +4,10 @@
   "issue": "Issue #51 (#49 N3)",
   "statement": "LATER RE-VERIFICATION, not a record made when these data were produced. The data files below were not recorded at generation time. With exactly these files and the rules version that produced the data, every stored baseline row was re-run and reproduced byte for byte. This shows the stored rows are consistent with these inputs; it cannot prove which files were present at generation time.",
   "data_rules_version": "antempire.v2-review.19-evaluation-corrections",
-  "run_with_engine": "antempire.v2-review.20-local-causality",
+  "run_with_engine": "antempire.v2-review.21-brood-care-snapshot",
   "data_batch": "20261102T181624449Z-fd4af3c0",
+  "undo_chain_sha": "dbf08256273fbd9268a5b2e5e42726fd17f3acd53700c7f02a46b244d84c8e72",
+  "scope": "baseline rows (caf 0.5, rmin 0.5) = 400 of 3,520 rows; the other rows are covered by the per-job parameter hashes and the fixed-seed reruns in tests/phase2-sensitivity.test.ts, not by this re-run",
   "verified_by": {
     "method": "rerun of every baseline row (caf 0.5, rmin 0.5) and byte comparison with the stored row",
     "rows_rerun": 400,
