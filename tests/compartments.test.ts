@@ -25,7 +25,8 @@ const C = { id: 'C1', nest_node: 'N00' }, U = 1_000_000;
 /** Replay a synthetic event list with explicit start/end compartments (sources checked). */
 const synth = (events: Any[], start: Compartments, end: Compartments, ledgerStart = { sugar: 0, protein: 0 }, ledgerEnd = { sugar: 0, protein: 0 }, summary: Any = {}) => {
   const { transfers, ledger } = dayTransfers(events, summary, C, 1);
-  return { transfers, ledger, r: replayTransfers(start, transfers, ledger, end, { nest: 'N00', colony: 'C1', ledgerStart, ledgerEnd, checkSources: true }) };
+  const workerOrder = Object.keys(start).filter((k) => k.startsWith('crop:')).map((k) => k.slice(5)).sort();
+  return { transfers, ledger, r: replayTransfers(start, transfers, ledger, end, { nest: 'N00', colony: 'C1', workerOrder, ledgerStart, ledgerEnd, checkSources: true }) };
 };
 const comp = (x: Record<string, [number, number]>): Compartments => Object.fromEntries(Object.entries(x).map(([k, [s, p]]) => [k, { sugar: s * U, protein: p * U }]));
 
@@ -40,7 +41,7 @@ const comp = (x: Record<string, [number, number]>): Compartments => Object.fromE
   ok(new Set(transfers.map((x) => x.transfer_id)).size === transfers.length && transfers.every((x) => /^FT-1-C1-\d+$/.test(x.transfer_id)), 'N2: global transfer ids');
   // the first C1 version's path (collect straight into the crop AND unload into the crop) must be rejected by the replay
   const old: FoodTransfer[] = transfers.map((x) => ({ ...x, ...(x.cause === 'collect' ? { recipient: { kind: 'crop' as const, id: 'W1' } } : {}), ...(x.cause === 'unload' ? { source: { kind: 'external' as const, id: 'in_transit:W1' } } : {}) }));
-  const bad = replayTransfers(comp({ 'source:F1': [1, 0], 'crop:W1': [0, 0] }), old, [], comp({ 'source:F1': [0, 0], 'crop:W1': [1, 0] }), { nest: 'N00', colony: 'C1', ledgerStart: { sugar: 0, protein: 0 }, ledgerEnd: { sugar: 0, protein: 0 }, checkSources: true });
+  const bad = replayTransfers(comp({ 'source:F1': [1, 0], 'crop:W1': [0, 0] }), old, [], comp({ 'source:F1': [0, 0], 'crop:W1': [1, 0] }), { nest: 'N00', colony: 'C1', workerOrder: ['W1'], ledgerStart: { sugar: 0, protein: 0 }, ledgerEnd: { sugar: 0, protein: 0 }, checkSources: true });
   ok(!bad.physical_verified, `N2: the double-credit path is rejected (${bad.errors.slice(0, 2).join('; ')})`);
 }
 
@@ -74,7 +75,9 @@ rejected('the same delivery input twice', [col('W1', 'F1', 'sugar', 1, 1), del('
 rejected('the same collection input twice', [col('W1', 'F1', 'sugar', 1, 1), col('W1', 'F1', 'sugar', 1, 1), del('W1', 'F1', 'sugar', 1, 2)], comp({ 'source:F1': [2, 0], 'crop:W1': [0, 0] }), comp({ 'source:F1': [1, 0], 'crop:W1': [1, 0] }), /still in transit|source:F1: replay/, { sugar: 0, protein: 0 }, { sugar: U, protein: 0 });
 rejected('a source holding too little', [col('W1', 'F1', 'sugar', 1, 1), del('W1', 'F1', 'sugar', 1, 2)], comp({ 'source:F1': [0.5, 0], 'crop:W1': [0, 0] }), comp({ 'source:F1': [0, 0], 'crop:W1': [1, 0] }), /source:F1 holds 500000/);
 rejected('food appearing without a transfer', [], comp({ 'crop:W1': [0, 0] }), comp({ 'crop:W1': [0.2, 0] }), /appeared without a transfer/);
-{ // transport across a day boundary: day 1 ends with the load in transit (the end snapshot carries it), day 2 delivers it
+{ // transport across a day boundary: day 1 ends with the load in transit (the end snapshot carries it), day 2 delivers it.
+  // SYNTHETIC ONLY: the engine itself never ends a day with a worker outside (activityDay throws), so colonyCompartments
+  // never contains in_transit; this checks that the replay API would carry such a load correctly if a future clock allows it.
   const d1 = synth([col('W1', 'F1', 'sugar', 1, 359)], comp({ 'source:F1': [1, 0], 'crop:W1': [0, 0] }), comp({ 'source:F1': [0, 0], 'crop:W1': [0, 0], 'in_transit:W1': [1, 0] }));
   const d2 = synth([del('W1', 'F1', 'sugar', 1, 3)], comp({ 'source:F1': [0, 0], 'crop:W1': [0, 0], 'in_transit:W1': [1, 0] }), comp({ 'source:F1': [0, 0], 'crop:W1': [1, 0], 'in_transit:W1': [0, 0] }), { sugar: 0, protein: 0 }, { sugar: U, protein: 0 });
   ok(d1.r.physical_verified && d2.r.physical_verified, `S cross-day transport: carried in transit over the day boundary, delivered once (${[...d1.r.errors, ...d2.r.errors].join('; ')})`);
@@ -86,7 +89,34 @@ rejected('food appearing without a transfer', [], comp({ 'crop:W1': [0, 0] }), c
   const { r, transfers } = synth([], comp({ 'crop:W1': [0.5, 0], 'nest_unlocated:C1': [0.5, 0] }), comp({ 'crop:W1': [0.2, 0], 'nest_unlocated:C1': [0.5, 0] }), { sugar: U, protein: 0 }, { sugar: 0.7 * U, protein: 0 }, summary);
   const m = transfers.find((x) => x.cause === 'metabolism');
   ok(m?.attribution === 'unknown' && m.source.kind === 'colony_ledger_aggregate', 'S settlement: metabolism has attribution unknown and the aggregate as its source');
-  ok(r.physical_verified && r.unattributed.sugar === 0.3 * U && r.unattributed_by_compartment['crop:W1']?.sugar === 0.3 * U, `S settlement: pool closes; the 0.3 taken from W1's crop is reported as unattributed (${JSON.stringify(r.unattributed_by_compartment)})`);
+  ok(r.physical_verified && r.unattributed.sugar === 0.3 * U && r.unattributed_by_compartment['crop:W1']?.sugar === 0.3 * U, `S settlement: replayed with the engine's rule; the 0.3 taken from W1's crop is reported as unattributed (${JSON.stringify(r.unattributed_by_compartment)})`);
+  ok(r.engine_abstractions_used.includes('settlement_from_crops_in_worker_array_order'), 'S settlement: the engine abstraction it relied on is reported');
+}
+// ---------------------------------------------------------------- R: independent review of f7aba02 (reproductions)
+{ // C: the engine moved 0.3 W1 -> W3 and settlement then drained W3; the record says W1 -> W2. C': the trophallaxis record is missing.
+  const summary = { mass_ledger: { metabolized: { sugar: 0.3, protein: 0 }, storage_overflow_not_retained: { sugar: 0, protein: 0 } } };
+  const start = comp({ 'crop:W1': [1, 0], 'crop:W2': [0, 0], 'crop:W3': [0, 0], 'nest_unlocated:C1': [0, 0] });
+  const end = comp({ 'crop:W1': [0.4, 0], 'crop:W2': [0, 0], 'crop:W3': [0.3, 0], 'nest_unlocated:C1': [0, 0] }); // engine: W1 gave 0.3 to W3, metabolism took 0.3 from W1 (array order)
+  const right = synth([tro('W1', 'W3', 0.3)], start, end, { sugar: U, protein: 0 }, { sugar: 0.7 * U, protein: 0 }, summary);
+  ok(right.r.physical_verified, `R: the true path (W1 -> W3, then settlement in array order) is verified (${right.r.errors.join('; ')})`);
+  const wrong = synth([tro('W1', 'W2', 0.3)], start, end, { sugar: U, protein: 0 }, { sugar: 0.7 * U, protein: 0 }, summary);
+  ok(!wrong.r.physical_verified && wrong.r.errors.some((e) => /crop:W(2|3)/.test(e)), `R (repro C): a trophallaxis credited to the wrong worker is rejected (${wrong.r.errors.slice(0, 2).join('; ')})`);
+  const missing = synth([], start, end, { sugar: U, protein: 0 }, { sugar: 0.7 * U, protein: 0 }, summary);
+  ok(!missing.r.physical_verified, `R (repro C'): a missing trophallaxis is rejected (${missing.r.errors.slice(0, 2).join('; ')})`);
+}
+{ // B: an extra transfer from an untracked 'external' source, and ledger entries that disagree with the transfers
+  const { transfers, ledger } = dayTransfers([col('W1', 'F1', 'sugar', 1, 1), del('W1', 'F1', 'sugar', 1, 2)], {}, C, 1);
+  const extra: FoodTransfer = { ...transfers[1], transfer_id: 'FT-X', source: { kind: 'external', id: 'x' } };
+  const r1 = replayTransfers(comp({ 'source:F1': [1, 0], 'crop:W1': [0, 0] }), [...transfers, extra], ledger, comp({ 'source:F1': [0, 0], 'crop:W1': [2, 0] }), { nest: 'N00', colony: 'C1', workerOrder: ['W1'], ledgerStart: { sugar: 0, protein: 0 }, ledgerEnd: { sugar: U, protein: 0 }, checkSources: true });
+  ok(!r1.physical_verified && r1.errors.some((e) => /cannot come from external/.test(e)), `R (repro B): food from an untracked source is rejected (${r1.errors[0]})`);
+  const r2 = replayTransfers(comp({ 'source:F1': [1, 0], 'crop:W1': [0, 0] }), transfers, [], comp({ 'source:F1': [0, 0], 'crop:W1': [1, 0] }), { nest: 'N00', colony: 'C1', workerOrder: ['W1'], ledgerStart: { sugar: 0, protein: 0 }, ledgerEnd: { sugar: 0, protein: 0 }, checkSources: true });
+  ok(!r2.physical_verified && r2.errors.some((e) => /ledger records 0/.test(e)), `R (repro B): an unload with no ledger entry is rejected (${r2.errors[0]})`);
+}
+rejected('trophallaxis to a worker carrying a load outside (repro D)', [col('W2', 'F1', 'sugar', 0.2, 1), tro('W1', 'W2', 0.3)], comp({ 'source:F1': [1, 0], 'crop:W1': [1, 0], 'crop:W2': [0, 0] }), comp({ 'source:F1': [0.8, 0], 'crop:W1': [0.7, 0], 'crop:W2': [0.3, 0], 'in_transit:W2': [0.2, 0] }), /while carrying a load outside/);
+{ // E: a dead worker's crop sugar stays in the nest ledger — replayed exactly, and reported as an engine abstraction
+  const { r } = synth([{ type: 'worker_death', id: 'W2' }], comp({ 'crop:W1': [0, 0], 'crop:W2': [0.4, 0], 'nest_unlocated:C1': [0.1, 0] }), comp({ 'crop:W1': [0, 0], 'nest_unlocated:C1': [0.5, 0] }), { sugar: 0.5 * U, protein: 0 }, { sugar: 0.5 * U, protein: 0 });
+  ok(r.physical_verified && r.dead_worker_crops_to_ledger.includes('crop:W2') && r.engine_abstractions_used.includes('dead_worker_crop_kept_in_nest_ledger'), `R (repro E): the dead worker's crop goes to the unlocated nest sugar by an explicit transfer, reported as an engine abstraction (${r.errors.join('; ')})`);
+  ok(r.resolved.some((x) => x.cause === 'death' && x.amount_microportions === 0.4 * U), 'R (repro E): the death transfer records the amount moved');
 }
 
 // ---------------------------------------------------------------- E: the current engine, every colony-day replayed
@@ -105,6 +135,7 @@ const runDays = (sc: string, seed: number, season: string, n: number, collect = 
       assert.ok(rep.physical_verified && rep.ledger_only_closed, `E ${sc}/${seed}/${season} day ${o.day}: ${rep.errors.slice(0, 3).join(' | ')}`); checks++;
       for (const x of rep.transfers) { assert.ok(!allIds.has(x.transfer_id), `T8: transfer id ${x.transfer_id} reused`); allIds.add(x.transfer_id); if (x.cause === 'trophallaxis') troph++; if (x.attribution === 'unknown') unattributed[x.food_type] += x.amount_microportions; }
       deaths += rep.dead_worker_crops_to_ledger.length;
+      assert.equal(rep.sources_checked, false, 'real engine days: sources are not balance-checked (stated in the result)'); checks++;
     }
     s = o.state;
     if (!after.population.queen_alive && !after.population.workers.length) break;
