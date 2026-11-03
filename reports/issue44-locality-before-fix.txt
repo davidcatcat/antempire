@@ -1,0 +1,59 @@
+# PR #44：tests/issue44-locality.test.ts 在修正前的結果（H、E、P、T 在 c87896f；W、S、J 在 4c409eb）
+# 指令：ISSUE44_SOFT=1 ISSUE44_ONLY=<H|E|P|T> node tests/issue44-locality.test.ts（在 c87896f 的工作樹執行，測試檔為本次版本）
+# G（泛用不變量）需要修正後才有的 trail_deposited.minute，無法在修正前評估。
+
+## section H on c87896f (before the fix)
+issue44-locality: 15 FAILED checks:
+- H1: W002 walks home along F07>X>N00 (walked F07>N00)
+- H1: W002 route steps on the way home = its own route (F07>N00)
+- H1: W002 walking home takes the 12.745098 min of its own route (took 11.764706)
+- H2: W002 walks home along F07>X>N00 (walked F07>N00)
+- H2: W002 route steps on the way home = its own route (F07>N00)
+- H2: W002 walking home takes the 12.745098 min of its own route (took 5.882353)
+- H3: W002 walks home along F07>X>N00 (walked F07>N00)
+- H3: W002 route steps on the way home = its own route (F07>N00)
+- H3: W002 walking home takes the 15.686274 min of its own route (took 5.882353)
+- H3: W003 walks home along F07>X>N00 (walked F07>N00)
+- H3: W003 route steps on the way home = its own route (F07>N00)
+- H3: W003 walking home takes the 15.686274 min of its own route (took 5.882353)
+- H4: W002 walks home along F07>X>N00 (walked F07>N00)
+- H4: W002 route steps on the way home = its own route (F07>N00)
+- H4: W002 walking home takes the 12.745098 min of its own route (took 11.764706)
+issue44-locality: 27 checks passed
+## section E on c87896f (before the fix)
+issue44-locality: 4 FAILED checks:
+- E1 seed 5: identical behaviour before reaching F01 whether or not F01 has an extra exit (remote map not perceived)
+- E1 seed 6: identical behaviour before reaching F01 whether or not F01 has an extra exit (remote map not perceived)
+- E1 seed 7: identical behaviour before reaching F01 whether or not F01 has an extra exit (remote map not perceived)
+- E2: after standing at F01 the worker has recorded its exits (null)
+issue44-locality: 7 checks passed
+## section P on c87896f (before the fix)
+issue44-locality: 2 FAILED checks:
+- P: the finder marks each edge when it has walked it ([["N00:X",null,25.529412],["F07:X",null,19.647059]])
+- P: W002 at 24.529412 cannot sense a trail the finder has not laid yet on X–N00 ({"type":"local_trail_choice","worker":"W002","from":"N00","to":"X","local_signal":0.35,"minute":24.529412,"assumption":true})
+issue44-locality: 4 checks passed
+## section T on c87896f (before the fix)
+issue44-locality: 1 FAILED checks:
+- T: the decision at the nest (depart or cancel) is the same whether or not a remote edge carries pheromone
+issue44-locality: 1 checks passed
+
+# 獨立審查（session_01FN3JKKsVhsNw872572dMYi）指出的缺陷：新增的 W、S、J 節在 4c409eb 上的結果
+## section W on 4c409eb (before the independent-review fixes)
+issue44-locality: 5 FAILED checks:
+- W hold (X edges 550 cm, window 54, team 3): nobody outside after the window ({"type":"worker_activity","worker":"W002","start":37.294118,"end":58.862746,"duration":21.568628,"place":"F07>X>N00","action":"foraging_return","assumption":true})
+- W hold (X edges 600 cm, window 58, team 3): nobody outside after the window ({"type":"worker_activity","worker":"W002","start":37.294118,"end":60.82353,"duration":23.529412,"place":"F07>X>N00","action":"foraging_return","assumption":true})
+- W trail chain (window 80): the follower is home inside the window ({"type":"worker_activity","worker":"W001","start":50,"end":100,"duration":50,"place":"J2>J1>N00","action":"foraging_return","assumption":true})
+- W trail chain (window 140): the follower is home inside the window ({"type":"worker_activity","worker":"W001","start":75,"end":150,"duration":75,"place":"J3>J2>J1>N00","action":"foraging_return","assumption":true})
+- W trail chain (window 280): the follower is home inside the window ({"type":"worker_activity","worker":"W001","start":150,"end":300,"duration":150,"place":"J6>J5>J4>J3>J2>J1>N00","action":"foraging_return","assumption":true})
+issue44-locality: 125 checks passed
+## section S on 4c409eb (before the independent-review fixes)
+issue44-locality: 1 FAILED checks:
+- S: W002 enters X–F07 at 23.529412, after the mark at 19.647059, and walks it at trail speed (5.882353 min; on-trail 2.941176)
+issue44-locality: 1 checks passed
+## section J on 4c409eb (before the independent-review fixes)
+issue44-locality: 1 FAILED checks:
+- J: W002 has learned the edge F07–N00 it carried the prey along (N00:X, F07:X)
+issue44-locality: 1 checks passed
+
+# 獨立複審（f863c55）新發現：W 節「W unload」在 f863c55 上的結果
+- W unload (unknown-length edge, window 105): unloading ends inside the window ({"type":"worker_activity","worker":"W001","start":105,"end":107,"duration":2,"place":"N00","action":"unload","outcome":"protein 0.75, 0 contacts","assumption":true})

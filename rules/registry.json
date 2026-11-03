@@ -244,6 +244,24 @@
       "save_schema": "antempire.engine-v2",
       "state_migration": null,
       "note": "只更正參數來源標示（無工蟻蟻后風險是遊戲假設）；模擬輸出與 v18 逐位元組相同。另修正 E2／E5 極端情境的實驗設計並分開報告四項存活指標（評估工具，不是引擎）。"
+    },
+    {
+      "rules_version": "antempire.v2-review.20-local-causality",
+      "tag": "v20",
+      "fingerprint": {
+        "engine": "08b20394fbeead3ad56482b3f5e0484692017ffba80d5ad49e16aa590919cff3",
+        "params": "7fcc5e6a19fa5797a69cf2f3a7321464cfdfa46c9eb84a2f01c0668b69f3909a"
+      },
+      "approved_in": "Owner instruction 2026-11-03 (Issue #43 WP-B; pending Owner review)",
+      "golden": {
+        "traces": "tests/golden/v20-trace-sha256.json",
+        "reports": "reports/day15-134-v20-*",
+        "day0_traces": "tests/golden/day0-v20-trace-sha256.json"
+      },
+      "previous": "antempire.v2-review.19-evaluation-corrections",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null,
+      "note": "Issue #43 F02-F05 and R11 local-causality fixes on the individual timeline, plus the PR #44 review fixes (own return routes, remembered exits, timed trail marks, pheromone-free planning) (switch activity.local_causality_v20)"
     }
   ]
 }

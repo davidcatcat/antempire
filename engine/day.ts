@@ -35,8 +35,9 @@ import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from '
  *   v2-review.17 individual activity timeline and autonomous foraging loop (species switch activity.individual_timeline; edge lengths from the world record)
  *   v2-review.18 Day0 founding controls A4 (queen + 10 pupae) and A5 (queen + 10 callows); lone-queen hazard from day 14 (Chang 1985)
  *   v2-review.19 evaluation corrections: parameter-source labels corrected (lone-queen hazard is a game assumption); no simulation output changes
+ *   v2-review.20 (Issue #43 F02–F05, R11): stepwise trail following with arrival-only perception; interrupted search closed at the interruption; joining a held prey needs no other unreserved prey; every outside interval charged once; routes learned on arrival; recruitment at the end of unloading. Switch activity.local_causality_v20.
  */
-export const ENGINE_VERSION = 'antempire.v2-review.19-evaluation-corrections';
+export const ENGINE_VERSION = 'antempire.v2-review.20-local-causality';
 /** Implementation of that behaviour (bumped for refactors that keep results byte-identical). */
 export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
 /**
@@ -45,7 +46,7 @@ export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
  */
 const ENGINE_FIRST_STATE_DAY = 0;
 
-export const NATURAL_EVENT_TYPES: ReadonlySet<string> = new Set(['new_food_source', 'source_batch_consumed', 'food_delivered', 'insect_immigration', 'insect_natural_death', 'insect_population_birth', 'insect_background_death', 'physical_scout_visit', 'discovery', 'scouted_empty', 'nest_local_route_learning', 'local_contact_cue', 'local_brood_begging_contact', 'local_unloading_feedback', 'host_plant_death', 'hemipteran_colony_change', 'local_recruitment', 'route_step', 'route_timeout', 'trail_decay', 'trail_deposited', 'local_trail_choice', 'food_collected', 'trophallaxis', 'protein_cached_at_nest', 'live_prey_encounter', 'prey_escaped', 'local_alarm_signal', 'long_range_recruitment_trail', 'hunt_recruitment', 'joint_prey_transport', 'waiting_prey_joined', 'route_memory_initialized', 'worker_activity', 'forager_stopped', 'action_cancelled_no_time', 'no_route_cannot_depart', 'recruitment_no_nestmate', 'recruitment_failed', 'exploration_step', 'exploration_no_new_direction', 'exploration_found_nothing', 'insect_predation', 'hatch', 'pupation', 'eclosion', 'egg_laid', 'worker_death', 'brood_death', 'injury_recovery', 'queen_death']);
+export const NATURAL_EVENT_TYPES: ReadonlySet<string> = new Set(['new_food_source', 'source_batch_consumed', 'food_delivered', 'insect_immigration', 'insect_natural_death', 'insect_population_birth', 'insect_background_death', 'physical_scout_visit', 'discovery', 'scouted_empty', 'nest_local_route_learning', 'local_contact_cue', 'local_brood_begging_contact', 'local_unloading_feedback', 'host_plant_death', 'hemipteran_colony_change', 'local_recruitment', 'route_step', 'route_timeout', 'trail_decay', 'trail_deposited', 'local_trail_choice', 'food_collected', 'trophallaxis', 'protein_cached_at_nest', 'live_prey_encounter', 'prey_escaped', 'local_alarm_signal', 'long_range_recruitment_trail', 'hunt_recruitment', 'joint_prey_transport', 'waiting_prey_joined', 'route_memory_initialized', 'worker_activity', 'forager_stopped', 'action_cancelled_no_time', 'no_route_cannot_depart', 'recruitment_no_nestmate', 'recruitment_failed', 'exploration_step', 'exploration_no_new_direction', 'exploration_found_nothing', 'trail_lost', 'insect_predation', 'hatch', 'pupation', 'eclosion', 'egg_laid', 'worker_death', 'brood_death', 'injury_recovery', 'queen_death']);
 
 /** Structural validation of a world (legacy error messages preserved). */
 export function validateWorld(s: WorldState): void {
