@@ -285,7 +285,7 @@
       "rules_version": "antempire.v2-review.22-engine-food-transfers",
       "tag": "v22",
       "fingerprint": {
-        "engine": "a14fecd2ce5b2b369dad8c447fb8f568849b688638b2c0962840d3c847d1a8ab",
+        "engine": "8cbbf1d56eb9fcb0970d380f423f950e79dd71ccb24c6c70df6909aea479a13d",
         "params": "bb40b5d47da830f4b7e4daf6484b9d36898936bc4474eb8a43a9bf572cca9181"
       },
       "approved_in": "Owner instruction 2026-11-03 (D4-A/D7-A next phase, work package C2; PR for Owner review, not merged by Claude)",
@@ -297,7 +297,7 @@
       "previous": "antempire.v2-review.21-brood-care-snapshot",
       "save_schema": "antempire.engine-v2",
       "state_migration": null,
-      "note": "Work package C2: the engine records every food movement between compartments as a food_transfer event and checks per-compartment and source closure daily; diagnostics only (no quantity, draw, decision or state changed)"
+      "note": "Work package C2: the engine records every food movement between compartments as a food_transfer event and checks per-compartment and source closure daily; diagnostics only (no quantity, draw, decision or simulation state changed; saved event lists and journals grow)"
     }
   ]
 }

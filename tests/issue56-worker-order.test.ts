@@ -75,9 +75,10 @@ const report: Record<string, Any> = {};
     let a: Any = buildDay0(sc as Any, seed, season, b).state, z: Any = structuredClone(a);
     z.colonies[0].population.workers.reverse();
     assert.equal(norm(a.colonies[0]), norm(z.colonies[0]), 'same individuals at the start'); checks++;
-    let first: Any = null;
+    let first: Any = null, popDay: number | null = null;
     for (let d = 0; d < 90 && !first; d++) {
       const oa: Any = simulateWorldDay(a, b), oz: Any = simulateWorldDay(z, b);
+      if (JSON.stringify(oa.result.colonies[0].summary.population) !== JSON.stringify(oz.result.colonies[0].summary.population)) popDay ??= oa.day;
       if (norm(oa.state.colonies[0]) !== norm(oz.state.colonies[0])) {
         const ta = engineTransfers(oa.result.colonies[0].events), tz = engineTransfers(oz.result.colonies[0].events);
         const key = (x: Any) => `${x.cause} ${x.source.kind}:${x.source.id} -> ${x.recipient.kind}:${x.recipient.id} ${x.portions}`;
@@ -89,8 +90,8 @@ const report: Record<string, Any> = {};
       }
       a = oa.state; z = oz.state;
     }
-    // then: when do the population trajectories (workers, brood) themselves differ?
-    let popDay: number | null = null;
+    // then: when do the population trajectories (workers, brood) themselves differ? (checked from the first day on;
+    // only the colony is compared: world sources and ecology are not part of this comparison)
     for (let d = 0; d < 120 && popDay === null; d++) {
       const oa: Any = simulateWorldDay(a, b), oz: Any = simulateWorldDay(z, b), pa = oa.result.colonies[0].summary.population, pz = oz.result.colonies[0].summary.population;
       if (JSON.stringify(pa) !== JSON.stringify(pz)) popDay = oa.day;

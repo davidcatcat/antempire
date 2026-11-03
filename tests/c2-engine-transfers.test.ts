@@ -24,6 +24,7 @@ import { ENGINE_VERSION, simulateWorldDay, checkColonyFood, colonySnapshot, chec
 import { engineTransfers, replayEngineColonyDay } from '../cli/lib/engine-transfers.ts';
 import { dayTransfers, replayColonyDay, toMicro } from '../cli/lib/compartments.ts';
 import { fixture, MAIN_SPECIES } from './lib/harness.ts';
+import { bindFoodTransfers, foodTransfer } from '../engine/transfers.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
@@ -116,6 +117,8 @@ if (!ONLY || ONLY.includes('F')) {
     ['trophallaxis outside its unloading (minute changed)', (xs) => { const t = xs.find((x) => x.cause === 'trophallaxis'); if (!t) return false; t.minute = (t.minute ?? 0) + 7; return true; }, true],
     ['trophallaxis away from the nest', (xs) => { const t = xs.find((x) => x.cause === 'trophallaxis'); if (!t) return false; t.contact.recipient_location = 'F01'; return true; }, true],
   ];
+  // independent review of 31cf796: food type is part of the engine check (sugar relabelled as protein through a crop)
+  injections.push(['sugar collected and unloaded relabelled as protein', (xs) => { const u = xs.find((x) => x.cause === 'unload' && x.recipient.kind === 'crop'); const c = u && xs.find((x) => x.cause === 'collect' && x.recipient.id === u.source.id && x.food_type === 'sugar'); if (!u || !c) return false; u.food_type = 'protein'; c.food_type = 'protein'; return true; }]);
   for (const [name, f, cliOnly] of injections) { const m = pick(f); assert.ok(m, `F ${name}: no sample day to inject into`); both(name, m as Any, cliOnly); }
   // missing death transfer: needs a day on which a worker with sugar in its crop died
   let deathDay: Any = null;
@@ -123,6 +126,12 @@ if (!ONLY || ONLY.includes('F')) {
   ok(deathDay, 'F: found a day on which a worker died with sugar in its crop');
   const noDeath = mutate(deathDay, (xs) => { const t = xs.find((x) => x.cause === 'death_crop_to_nest_ledger'); t.type = 'removed'; return true; });
   both('death transfer missing', noDeath as Any);
+  // a bound transfer list rejects a negative or non-finite amount instead of dropping it
+  for (const bad of [-0.1, Number.NaN]) {
+    const ev: Any[] = []; bindFoodTransfers(ev, 1, 'C'); let t = '';
+    try { foodTransfer(ev, { minute: null, phase: 'nest_settlement', source: { kind: 'cache', id: 'N' }, recipient: { kind: 'metabolized', id: 'C' }, food_type: 'protein', portions: bad, cause: 'metabolism', attribution: 'unknown' }); } catch (e) { t = String(e); }
+    ok(/invalid amount/.test(t) && ev.length === 0, `F: a transfer of ${bad} portions throws instead of being dropped`);
+  }
   // world-wide source check (synthetic world of two sites)
   const world: Any = { sources: { S1: { id: 'S1', sugar: 2, protein: 0 }, S2: { id: 'S2', sugar: 3, protein: 0 } } };
   const start = sourceSnapshot(world);

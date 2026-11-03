@@ -7,11 +7,14 @@
  *   - phases are ordered: all foraging transfers before the nest settlement, settlement in the engine's day order
  *     (storage overflow, metabolism, deaths, eggs);
  *   - every trophallaxis happens at the nest, right after the donor's own unloading at the same minute, and the
- *     recipient is in the nest (the engine's contact rule; no separate contact event exists);
+ *     recipient is in the nest. NOTE: this checks the engine's own record for SELF-CONSISTENCY (location and minute are
+ *     fields the engine writes; on the legacy path both minutes are null); it does not show that the recipient was
+ *     physically there (no separate contact event or nest space exists yet);
  *   - replaying all transfers from the start state reproduces every compartment of the end state exactly:
  *     each living worker's crop, the unlocated nest sugar, the protein cache; nothing left in transit; dead
- *     workers' crops empty. Sources are shared by colonies and balanced world-wide by the engine itself
- *     (engine/transfers.ts checkSources; its fault injection is tested in tests/c2-engine-transfers.test.ts).
+ *     workers' crops empty. Sources are shared by colonies and balanced world-wide only by the engine itself
+ *     (engine/transfers.ts checkSources; its fault injection is tested in tests/c2-engine-transfers.test.ts): this reader
+ *     has no independent source check, because the source state after the ecology step is not in the output.
  * Unlike the C1 reconstruction (cli/lib/compartments.ts), nothing is inferred: every settlement draw names its crop,
  * so the C1 KNOWN LIMIT (crops emptied by the settlement) does not apply to engine-recorded days.
  */
@@ -77,7 +80,7 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
     (by_attribution[x.attribution] ??= { sugar: 0, protein: 0 })[x.food_type] += a;
     by_cause[x.cause] = (by_cause[x.cause] ?? 0) + 1;
     if (x.attribution === 'unknown') (unattributed_by_cause[x.cause] ??= { sugar: 0, protein: 0 })[x.food_type] += a;
-    // colony compartments (sources are balanced world-wide by replayEngineSources)
+    // colony compartments (sources are balanced world-wide only by the engine's checkSources)
     if (x.source.kind !== 'source' && x.source.kind !== 'insect' && HOLDS[x.source.kind]) {
       const s = k(x.source, x.food_type), h = cur.get(s) ?? 0;
       if (h < a) err(`${x.transfer_id}: ${s} holds ${h} µp, cannot give ${a}`);

@@ -36,6 +36,8 @@ export interface FoodTransferInput {
 export const FOOD_TRANSFER_SCHEMA = 'antempire.food-transfer.v1';
 /** Compartments whose contents the engine holds and the closure check follows. */
 export const TRACKED_KINDS: ReadonlySet<FoodKind> = new Set(['source', 'in_transit', 'crop', 'cache', 'nest_unlocated']);
+/** Which food each nest compartment can hold (crops and the unlocated nest sugar hold sugar; the cache holds protein). */
+const HOLDS: Partial<Record<FoodKind, 'sugar' | 'protein'>> = { crop: 'sugar', nest_unlocated: 'sugar', cache: 'protein' };
 
 interface Binding { day: number; colony: string; n: number }
 const BOUND = new WeakMap<SimEvent[], Binding>();
@@ -45,7 +47,10 @@ export function bindFoodTransfers(events: SimEvent[], day: number, colony: strin
 /** Record one transfer. A no-op for event lists that were not bound (callers outside runWorldDay). */
 export function foodTransfer(events: SimEvent[], t: FoodTransferInput): void {
   const b = BOUND.get(events);
-  if (!b || !(t.portions > 0)) return;
+  if (!b) return;
+  // a bound list never silently drops a bad amount (independent review of 31cf796): zero is "nothing moved"
+  if (!Number.isFinite(t.portions) || t.portions < 0) throw Error(`FOOD_TRANSFER: invalid amount ${t.portions} for ${t.cause}`);
+  if (t.portions === 0) return;
   b.n++;
   events.push({ type: 'food_transfer', schema: FOOD_TRANSFER_SCHEMA, transfer_id: `FT-${b.day}-${b.colony}-${b.n}`, day: b.day, colony: b.colony, ...t, portions: round(t.portions) });
 }
@@ -62,7 +67,7 @@ export function recordSettlement(events: SimEvent[], colony: ColonyState, draws:
 }
 
 const micro = (x: number): number => Math.round(x * 1e6);
-const key = (r: FoodRef) => `${r.kind}:${r.id}`;
+const key = (r: FoodRef, f: 'sugar' | 'protein') => `${r.kind}:${r.id}:${f}`;
 const isTransfer = (e: SimEvent) => e.type === 'food_transfer';
 
 /** Start-of-day holdings of one colony (micro-portions), taken before foraging. */
@@ -75,34 +80,36 @@ export function colonySnapshot(colony: ColonyState): ColonyFoodSnapshot {
  * Per-compartment closure of one colony-day: replay this day's transfers in order from the start snapshot; no
  * compartment may go negative; at the end every living worker's crop, the unlocated nest sugar and the protein
  * cache must equal the state exactly, nothing may be left in transit, and a dead worker's crop must be empty.
- * Throws (the day is not produced) on any difference. Requires crops to be a subset of the ledger (v2-review.13).
+ * Sugar and protein are followed separately; a crop or the unlocated nest sugar may hold only sugar, the cache only
+ * protein. Throws (the day is not produced) on any difference. Requires crops to be a subset of the ledger (v2-review.13).
  */
 export function checkColonyFood(start: ColonyFoodSnapshot, colony: ColonyState, events: SimEvent[]): void {
   const cur = new Map<string, number>(), add = (k: string, v: number) => cur.set(k, (cur.get(k) ?? 0) + v);
   let cropSum = 0;
-  for (const [id, v] of start.crops) { cur.set(`crop:${id}`, v); cropSum += v; }
-  const unl = `nest_unlocated:${colony.id}`, cache = `cache:${colony.nest_node}`;
+  for (const [id, v] of start.crops) { cur.set(`crop:${id}:sugar`, v); cropSum += v; }
+  const unl = `nest_unlocated:${colony.id}:sugar`, cache = `cache:${colony.nest_node}:protein`;
   cur.set(unl, start.sugar - cropSum); cur.set(cache, start.protein);
   if ((cur.get(unl) as number) < 0) throw Error(`FOOD_TRANSFER: ${colony.id} starts the day with crops above the sugar ledger`);
   const fail = (m: string) => { throw Error(`FOOD_TRANSFER ${colony.id}: ${m}`); };
   for (const e of events.filter(isTransfer)) {
     const x = e as unknown as FoodTransferInput & { transfer_id: string }, a = micro(x.portions);
+    for (const r of [x.source, x.recipient]) { const h = HOLDS[r.kind]; if (h && h !== x.food_type) fail(`${x.transfer_id} moves ${x.food_type} through ${r.kind}:${r.id}, which holds only ${h}`); }
     // sources are shared by all colonies and are checked world-wide (checkSources); only the colony side is followed here
     if (TRACKED_KINDS.has(x.source.kind) && x.source.kind !== 'source') {
-      const k = key(x.source), h = cur.get(k) ?? 0;
+      const k = key(x.source, x.food_type), h = cur.get(k) ?? 0;
       if (h < a) fail(`${x.transfer_id} takes ${a} µp ${x.food_type} from ${k}, which holds ${h}`);
       cur.set(k, h - a);
     }
-    if (TRACKED_KINDS.has(x.recipient.kind) && x.recipient.kind !== 'source') add(key(x.recipient), a);
+    if (TRACKED_KINDS.has(x.recipient.kind) && x.recipient.kind !== 'source') add(key(x.recipient, x.food_type), a);
   }
   const alive = new Set(colony.population.workers.map((w) => w.id));
   let endCrops = 0;
   for (const w of colony.population.workers) {
     const v = micro(w.crop_cargo_sugar || 0); endCrops += v;
-    if ((cur.get(`crop:${w.id}`) ?? 0) !== v) fail(`crop:${w.id} is ${v} µp, the transfers give ${cur.get(`crop:${w.id}`) ?? 0}`);
+    if ((cur.get(`crop:${w.id}:sugar`) ?? 0) !== v) fail(`crop:${w.id} is ${v} µp, the transfers give ${cur.get(`crop:${w.id}:sugar`) ?? 0}`);
   }
   for (const [k, v] of cur) {
-    if (k.startsWith('crop:') && !alive.has(k.slice(5)) && v !== 0) fail(`${k} of a worker that is gone still holds ${v} µp`);
+    if (k.startsWith('crop:') && !alive.has(k.split(':')[1]) && v !== 0) fail(`${k} of a worker that is gone still holds ${v} µp`);
     if (k.startsWith('in_transit:') && v !== 0) fail(`${k} still holds ${v} µp at the end of the day`);
   }
   if ((cur.get(unl) as number) !== micro(colony.stores.sugar) - endCrops) fail(`${unl} is ${micro(colony.stores.sugar) - endCrops} µp, the transfers give ${cur.get(unl)}`);
