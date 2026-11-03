@@ -4,8 +4,8 @@
  "rules_tag": "v20",
  "engine_version": "antempire.v2-review.20-local-causality",
  "rules_fingerprint": {
-  "engine": "e574aa99a2b78907eccb9edb0e3dcbf50e2cb2420d6323ff5eeb2279648a2105",
-  "params": "c3ace93d179da3c08dd730936c742eeff98147990ed211b167ec448716371641"
+  "engine": "08b20394fbeead3ad56482b3f5e0484692017ffba80d5ad49e16aa590919cff3",
+  "params": "7fcc5e6a19fa5797a69cf2f3a7321464cfdfa46c9eb84a2f01c0668b69f3909a"
  },
  "official_saves_used": false,
  "seeds": [
@@ -616,9 +616,9 @@
    },
    "autumn": {
     "runs": 20,
-    "colony_end": 5,
-    "colony_end_day_median": 44,
-    "queen_dead_by_365": 6,
+    "colony_end": 6,
+    "colony_end_day_median": 62,
+    "queen_dead_by_365": 7,
     "laid_any_egg": 16,
     "any_eclosion": 16,
     "checkpoints": {
@@ -698,9 +698,9 @@
       "workers_median": 7,
       "workers_max": 13,
       "brood_median": 9,
-      "eggs_laid_median": 15,
+      "eggs_laid_median": 14.5,
       "eclosions_median": 4.5,
-      "sugar_income_median": 61.917,
+      "sugar_income_median": 60.247,
       "protein_income_median": 21.271,
       "discoveries_median": 10.5,
       "mean_edges_known_median": 3.7
@@ -720,137 +720,137 @@
       "workers_median": 10,
       "workers_max": 17,
       "brood_median": 8,
-      "eggs_laid_median": 22,
+      "eggs_laid_median": 21.5,
       "eclosions_median": 12,
       "sugar_income_median": 92.294,
       "protein_income_median": 32.972,
       "discoveries_median": 15,
-      "mean_edges_known_median": 4.321
+      "mean_edges_known_median": 4.196
      },
      "120": {
       "queen_alive": 16,
       "colonies_with_workers": 16,
       "any_own_worker_eclosion": 16,
       "growth": {
-       "grew": 12,
+       "grew": 11,
+       "declined": 3,
        "held": 2,
-       "extinct": 4,
+       "extinct": 4
+      },
+      "founders_alive_median": 0,
+      "workers_min": 0,
+      "workers_median": 11.5,
+      "workers_max": 19,
+      "brood_median": 6,
+      "eggs_laid_median": 25.5,
+      "eclosions_median": 17.5,
+      "sugar_income_median": 122.739,
+      "protein_income_median": 54.495,
+      "discoveries_median": 17.5,
+      "mean_edges_known_median": 4.585
+     },
+     "180": {
+      "queen_alive": 14,
+      "colonies_with_workers": 14,
+      "any_own_worker_eclosion": 16,
+      "growth": {
+       "grew": 12,
+       "extinct": 6,
        "declined": 2
       },
       "founders_alive_median": 0,
       "workers_min": 0,
-      "workers_median": 12,
+      "workers_median": 13,
       "workers_max": 19,
       "brood_median": 7,
-      "eggs_laid_median": 26.5,
-      "eclosions_median": 17.5,
-      "sugar_income_median": 122.739,
-      "protein_income_median": 54.495,
-      "discoveries_median": 18.5,
-      "mean_edges_known_median": 4.668
-     },
-     "180": {
-      "queen_alive": 15,
-      "colonies_with_workers": 15,
-      "any_own_worker_eclosion": 16,
-      "growth": {
-       "grew": 13,
-       "declined": 2,
-       "extinct": 5
-      },
-      "founders_alive_median": 0,
-      "workers_min": 0,
-      "workers_median": 13.5,
-      "workers_max": 19,
-      "brood_median": 7.5,
-      "eggs_laid_median": 39.5,
-      "eclosions_median": 29,
-      "sugar_income_median": 187.628,
-      "protein_income_median": 97.652,
-      "discoveries_median": 24.5,
+      "eggs_laid_median": 39,
+      "eclosions_median": 28.5,
+      "sugar_income_median": 184.404,
+      "protein_income_median": 96.916,
+      "discoveries_median": 22.5,
       "mean_edges_known_median": 5.2
      },
      "365": {
-      "queen_alive": 14,
-      "colonies_with_workers": 15,
+      "queen_alive": 13,
+      "colonies_with_workers": 14,
       "any_own_worker_eclosion": 16,
       "growth": {
-       "grew": 13,
-       "declined": 2,
-       "extinct": 5
+       "grew": 12,
+       "extinct": 6,
+       "declined": 2
       },
       "founders_alive_median": 0,
       "workers_min": 0,
-      "workers_median": 12.5,
+      "workers_median": 11.5,
       "workers_max": 26,
-      "brood_median": 8.5,
-      "eggs_laid_median": 92,
-      "eclosions_median": 81,
-      "sugar_income_median": 628.422,
-      "protein_income_median": 219.092,
-      "discoveries_median": 41.5,
+      "brood_median": 7.5,
+      "eggs_laid_median": 89,
+      "eclosions_median": 79,
+      "sugar_income_median": 562.735,
+      "protein_income_median": 217.31,
+      "discoveries_median": 37.5,
       "mean_edges_known_median": 5.462
      }
     },
     "income_by_site_total": {
-     "F11:protein": 1776.969,
-     "F01:sugar": 4508.784,
-     "F05:sugar": 1321.467,
-     "F07:protein": 1919.842,
+     "F11:protein": 1650.844,
+     "F01:sugar": 4326.739,
+     "F05:sugar": 1159.092,
+     "F07:protein": 1807.035,
      "F08:sugar": 1.351,
-     "F10:sugar": 1598.286,
-     "F04:sugar": 1900.685
+     "F10:sugar": 1487.546,
+     "F04:sugar": 1770.973
     },
     "worker_death_reasons_total": {
-     "natural_or_injury_assumed": 1079,
-     "starvation_or_natural_competing_hazards_scenario": 154
+     "natural_or_injury_assumed": 1011,
+     "starvation_or_natural_competing_hazards_scenario": 155
     },
     "brood_death_reasons_total": {
-     "larva:chronic_protein_shortage_game_scenario": 43
+     "larva:chronic_protein_shortage_game_scenario": 50
     },
     "queen_death_reasons": {
-     "no_workers [chronic_sugar_and_protein_deficit+no_workers]": 4,
+     "no_workers [chronic_sugar_and_protein_deficit+no_workers]": 5,
      "chronic_protein_deficit [chronic_protein_deficit]": 2
     },
     "activity": {
-     "active_forager_days": 33314,
-     "worker_days": 76251,
-     "trips_per_active_forager_day": 2.57,
-     "outside_min_per_active_forager_day": 73.33,
-     "travel_minutes": 2221170.227,
-     "search_minutes": 161181.978,
-     "handling_minutes": 60546.82,
+     "active_forager_days": 31344,
+     "worker_days": 71651,
+     "trips_per_active_forager_day": 2.564,
+     "outside_min_per_active_forager_day": 72.258,
+     "travel_minutes": 2056933.074,
+     "search_minutes": 151181.978,
+     "handling_minutes": 56754.559,
      "prey_holding_minutes": 0,
-     "unload_minutes": 64978,
-     "rest_minutes_active_foragers": 9485163.03,
-     "cancelled_no_time": 1864,
+     "unload_minutes": 60928,
+     "rest_minutes_active_foragers": 8958042.438,
+     "cancelled_no_time": 1692,
      "no_route": 167,
-     "recruitment_failed": 395,
+     "recruitment_failed": 351,
      "trips_per_forager_day_histogram": {
-      "1": 11136,
-      "2": 8381,
-      "3": 6005,
-      "4": 3525,
-      "5": 2062,
-      "6": 1137,
-      "7": 526,
-      "8": 293,
-      "9": 133,
-      "10": 63,
-      "11": 27,
-      "12": 14,
-      "13": 7,
-      "14": 3,
+      "1": 10533,
+      "2": 7871,
+      "3": 5649,
+      "4": 3303,
+      "5": 1927,
+      "6": 1065,
+      "7": 492,
+      "8": 275,
+      "9": 125,
+      "10": 58,
+      "11": 24,
+      "12": 12,
+      "13": 6,
+      "14": 2,
       "15": 1,
       "16": 1
      },
      "stop_reasons": {
-      "own_motivation_after_unloading": 8808,
-      "in_nest_task": 42783,
+      "own_motivation_after_unloading": 8312,
+      "in_nest_task": 40153,
       "no_known_route_and_no_exploration": 155,
-      "gave_up_after_unsuccessful_trip": 22634,
-      "no_time_left_in_activity_window": 1839,
-      "activity_window_closed": 32
+      "gave_up_after_unsuccessful_trip": 21336,
+      "no_time_left_in_activity_window": 1670,
+      "activity_window_closed": 25
      }
     },
     "garden_food_mean_median": {
@@ -862,27 +862,27 @@
      "protein": 1.743
     },
     "totals": {
-     "trips": 85627,
-     "successes": 32489,
-     "explorations": 2303,
-     "exploration_found_nothing": 985,
-     "discoveries": 843,
-     "recruitment": 20576,
-     "trail_choices": 965,
-     "trophallaxis": 38564,
-     "predation": 284,
-     "eggs_laid": 1444,
-     "hatch": 1407,
-     "pupation": 1317,
-     "eclosion": 1273,
-     "repair_worker_days": 10102
+     "trips": 80353,
+     "successes": 30464,
+     "explorations": 2198,
+     "exploration_found_nothing": 943,
+     "discoveries": 780,
+     "recruitment": 19268,
+     "trail_choices": 895,
+     "trophallaxis": 36115,
+     "predation": 268,
+     "eggs_laid": 1348,
+     "hatch": 1314,
+     "pupation": 1220,
+     "eclosion": 1181,
+     "repair_worker_days": 9442
     },
     "mean_nest_temperature_c_median": 23.916,
     "reproduction_365": {
      "definition": "sustained_reproduction_candidate_v1",
-     "sustained_reproduction_candidate": 14,
-     "own_eclosion_windows_median": 11.5,
-     "own_eclosions_second_half_median": 52.5
+     "sustained_reproduction_candidate": 13,
+     "own_eclosion_windows_median": 11,
+     "own_eclosions_second_half_median": 50
     }
    },
    "winter": {
@@ -5159,21 +5159,21 @@
      "worker_days": 83666,
      "trips_per_active_forager_day": 2.604,
      "outside_min_per_active_forager_day": 73.092,
-     "travel_minutes": 2404058.743,
+     "travel_minutes": 2404056.684,
      "search_minutes": 177710.334,
      "handling_minutes": 65181.812,
      "prey_holding_minutes": 0,
      "unload_minutes": 69958,
-     "rest_minutes_active_foragers": 10320131.125,
-     "cancelled_no_time": 1738,
+     "rest_minutes_active_foragers": 10320133.184,
+     "cancelled_no_time": 1736,
      "no_route": 112,
      "recruitment_failed": 339,
      "trips_per_forager_day_histogram": {
       "1": 12074,
-      "2": 8995,
+      "2": 8996,
       "3": 6394,
       "4": 3877,
-      "5": 2257,
+      "5": 2256,
       "6": 1314,
       "7": 642,
       "8": 333,
@@ -5189,9 +5189,9 @@
      "stop_reasons": {
       "in_nest_task": 47359,
       "no_known_route_and_no_exploration": 94,
-      "gave_up_after_unsuccessful_trip": 24935,
+      "gave_up_after_unsuccessful_trip": 24937,
       "own_motivation_after_unloading": 9534,
-      "no_time_left_in_activity_window": 1720,
+      "no_time_left_in_activity_window": 1718,
       "activity_window_closed": 24
      }
     },
@@ -5204,12 +5204,12 @@
      "protein": 1.885
     },
     "totals": {
-     "trips": 94296,
+     "trips": 94293,
      "successes": 34979,
      "explorations": 2451,
      "exploration_found_nothing": 1047,
      "discoveries": 1029,
-     "recruitment": 22630,
+     "recruitment": 22627,
      "trail_choices": 1049,
      "trophallaxis": 41318,
      "predation": 269,
@@ -29408,90 +29408,105 @@
     ]
    },
    "reference_adults_day0": 10,
-   "own_eclosions": 95,
+   "own_eclosions": 3,
    "own_eclosions_by_30d": [
     0,
-    4,
-    4,
-    7,
-    9,
-    9,
-    7,
-    9,
-    14,
-    9,
-    9,
-    13,
-    1
+    3,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
    ],
    "eggs_laid_by_30d": [
     9,
-    9,
-    10,
+    3,
     6,
-    9,
-    6,
-    8,
-    13,
-    11,
-    7,
-    14,
-    10,
-    2
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
    ],
-   "last_own_eclosion_day": 365,
-   "last_egg_day": 365,
-   "max_workers": 27,
-   "max_workers_day": 278,
-   "queen_death_day": null,
-   "queen_death_reason": null,
-   "queen_death": null,
-   "zero_worker_day": null,
-   "colony_end_day": null,
+   "last_own_eclosion_day": 49,
+   "last_egg_day": 81,
+   "max_workers": 10,
+   "max_workers_day": 0,
+   "queen_death_day": 144,
+   "queen_death_reason": "no_workers",
+   "queen_death": {
+    "day": 144,
+    "reason": "no_workers",
+    "active_triggers": [
+     "chronic_sugar_and_protein_deficit",
+     "no_workers"
+    ],
+    "hazards": {
+     "nutritional_deficit": 0.008,
+     "no_workers": 0.24,
+     "natural_age": "not_modelled",
+     "applied": 0.24
+    },
+    "sugar_gap_days": 28,
+    "protein_gap_days": 63,
+    "no_worker_days": 17
+   },
+   "zero_worker_day": 128,
+   "colony_end_day": 144,
    "first_egg_day": 11,
    "first_eclosion_day": 43,
-   "max_sugar_gap_days": 3,
-   "max_protein_gap_days": 9,
+   "max_sugar_gap_days": 28,
+   "max_protein_gap_days": 63,
    "totals": {
     "income": {
-     "sugar": 658.093,
-     "protein": 249.608
+     "sugar": 73.22,
+     "protein": 10.68
     },
     "consumed": {
-     "sugar": 645.672,
-     "protein": 154.191
+     "sugar": 71.783,
+     "protein": 8.161
     },
     "demand": {
-     "sugar": 671.189,
-     "protein": 162.219
+     "sugar": 81.626,
+     "protein": 19.337
     },
-    "eggs_laid": 114,
-    "hatch": 111,
-    "pupation": 100,
-    "eclosion": 95,
-    "worker_deaths": 80,
-    "brood_deaths": 8,
-    "trips": 5718,
-    "successes": 2238,
-    "explorations": 127,
-    "exploration_found_nothing": 48,
-    "discoveries": 79,
-    "recruitment": 1388,
-    "trail_choices": 82,
-    "trophallaxis": 2691,
-    "predation": 16,
-    "repair_worker_days": 715,
-    "forage_worker_days": 2174,
-    "nurse_worker_days": 1093
+    "eggs_laid": 18,
+    "hatch": 18,
+    "pupation": 3,
+    "eclosion": 3,
+    "worker_deaths": 13,
+    "brood_deaths": 15,
+    "trips": 444,
+    "successes": 213,
+    "explorations": 22,
+    "exploration_found_nothing": 6,
+    "discoveries": 16,
+    "recruitment": 80,
+    "trail_choices": 12,
+    "trophallaxis": 242,
+    "predation": 0,
+    "repair_worker_days": 55,
+    "forage_worker_days": 204,
+    "nurse_worker_days": 125
    },
    "income_by_site": {
     "F08:sugar": 0.033,
-    "F05:sugar": 183.742,
-    "F10:sugar": 111.46,
-    "F04:sugar": 175.558,
-    "F07:protein": 123.488,
-    "F01:sugar": 187.293,
-    "F11:protein": 126.125
+    "F05:sugar": 21.367,
+    "F10:sugar": 0.72,
+    "F04:sugar": 45.846,
+    "F07:protein": 10.681,
+    "F01:sugar": 5.248
    },
    "first_discovery_day_by_site": {
     "F08": 3,
@@ -29503,62 +29518,55 @@
     "F11": 10
    },
    "worker_death_reasons": {
-    "natural_or_injury_assumed": 80
+    "natural_or_injury_assumed": 12,
+    "starvation_or_natural_competing_hazards_scenario": 1
    },
    "brood_death_reasons": {
-    "larva:chronic_protein_shortage_game_scenario": 8
+    "larva:chronic_protein_shortage_game_scenario": 15
    },
    "activity": {
-    "outside_minutes": 207085.89,
-    "travel_minutes": 192093.049,
-    "search_minutes": 10854,
-    "handling_minutes": 4138.84,
+    "outside_minutes": 29056.483,
+    "travel_minutes": 27855.896,
+    "search_minutes": 854,
+    "handling_minutes": 346.579,
     "prey_holding_minutes": 0,
-    "unload_minutes": 4476,
-    "cancelled_no_time": 217,
+    "unload_minutes": 426,
+    "cancelled_no_time": 45,
     "no_route": 11,
-    "active_worker_days": 2163,
-    "worker_days": 5099,
-    "rest_minutes_active_foragers": 567118.111,
-    "recruitment_failed": 59,
+    "active_worker_days": 193,
+    "worker_days": 499,
+    "rest_minutes_active_foragers": 39997.519,
+    "recruitment_failed": 15,
     "trips_hist": {
-     "1": 667,
-     "2": 570,
-     "3": 392,
-     "4": 242,
-     "5": 142,
-     "6": 77,
-     "7": 35,
-     "8": 18,
-     "9": 8,
-     "10": 5,
-     "11": 3,
-     "12": 2,
-     "13": 1,
-     "14": 1
+     "1": 64,
+     "2": 60,
+     "3": 36,
+     "4": 20,
+     "5": 7,
+     "6": 5,
+     "7": 1
     },
     "stop_reasons": {
-     "in_nest_task": 2925,
+     "in_nest_task": 295,
      "no_known_route_and_no_exploration": 11,
-     "gave_up_after_unsuccessful_trip": 1383,
-     "no_time_left_in_activity_window": 212,
-     "own_motivation_after_unloading": 561,
-     "activity_window_closed": 7
+     "gave_up_after_unsuccessful_trip": 85,
+     "no_time_left_in_activity_window": 43,
+     "own_motivation_after_unloading": 65
     }
    },
    "garden_food_mean": {
-    "sugar": 13.379,
-    "protein": 2.589
+    "sugar": 19.122,
+    "protein": 5.538
    },
    "garden_food_at_sites_known_by_workers_mean": {
-    "sugar": 10.734,
-    "protein": 2.126
+    "sugar": 11.606,
+    "protein": 1.918
    },
    "temperature": {
-    "mean_air_c": 23.694,
-    "mean_nest_c": 23.676,
+    "mean_air_c": 21.281,
+    "mean_nest_c": 21.34,
     "min_nest_c": 15.288,
-    "days": 365
+    "days": 144
    },
    "checkpoints": {
     "1": {
@@ -29688,8 +29696,8 @@
      "larvae": 5,
      "pupae": 0,
      "stock": {
-      "sugar": 3.276534,
-      "protein": 4.122472,
+      "sugar": 2.722664,
+      "protein": 0.994042,
       "sugar_gap_days": 0,
       "protein_gap_days": 0,
       "stress_days": 0,
@@ -29698,15 +29706,15 @@
      },
      "cumulative": {
       "income": {
-       "sugar": 39.541,
-       "protein": 10.583
+       "sugar": 39.01,
+       "protein": 7.455
       },
       "consumed": {
-       "sugar": 35.546,
+       "sugar": 35.569,
        "protein": 5.201
       },
       "demand": {
-       "sugar": 39.404,
+       "sugar": 39.427,
        "protein": 6.116
       },
       "eggs_laid": 9,
@@ -29715,15 +29723,15 @@
       "eclosion": 0,
       "worker_deaths": 4,
       "brood_deaths": 0,
-      "trips": 288,
-      "successes": 130,
+      "trips": 275,
+      "successes": 118,
       "explorations": 22,
       "exploration_found_nothing": 6,
       "discoveries": 16,
-      "recruitment": 57,
+      "recruitment": 51,
       "trail_choices": 7,
-      "trophallaxis": 159,
-      "predation": 1,
+      "trophallaxis": 150,
+      "predation": 0,
       "repair_worker_days": 24,
       "forage_worker_days": 118,
       "nurse_worker_days": 46
@@ -29735,296 +29743,278 @@
     "60": {
      "growth": "declined",
      "founders_alive": 1,
-     "own_eclosions_so_far": 4,
+     "own_eclosions_so_far": 3,
      "date": "2027-11-22",
      "queen": true,
-     "workers": 4,
-     "minor_workers": 4,
+     "workers": 3,
+     "minor_workers": 3,
      "major_workers": null,
-     "eggs": 2,
-     "larvae": 4,
+     "eggs": 0,
+     "larvae": 0,
      "pupae": 0,
      "stock": {
-      "sugar": 2.983002,
-      "protein": 3.391599,
+      "sugar": 2.38531,
+      "protein": 0,
       "sugar_gap_days": 0,
-      "protein_gap_days": 0,
-      "stress_days": 0,
+      "protein_gap_days": 22,
+      "stress_days": 22,
       "queen_laid_yesterday": false,
       "no_worker_days": 0
      },
      "cumulative": {
       "income": {
-       "sugar": 62.639,
-       "protein": 17.991
+       "sugar": 57.876,
+       "protein": 8.97
       },
       "consumed": {
-       "sugar": 58.218,
-       "protein": 12.079
+       "sugar": 54.534,
+       "protein": 7.29
       },
       "demand": {
-       "sugar": 63.622,
-       "protein": 17.983
+       "sugar": 60.998,
+       "protein": 14.859
       },
-      "eggs_laid": 18,
-      "hatch": 16,
-      "pupation": 4,
-      "eclosion": 4,
+      "eggs_laid": 12,
+      "hatch": 12,
+      "pupation": 3,
+      "eclosion": 3,
       "worker_deaths": 10,
-      "brood_deaths": 8,
-      "trips": 423,
-      "successes": 203,
-      "explorations": 24,
-      "exploration_found_nothing": 7,
-      "discoveries": 17,
-      "recruitment": 87,
-      "trail_choices": 9,
-      "trophallaxis": 234,
-      "predation": 1,
-      "repair_worker_days": 42,
-      "forage_worker_days": 175,
-      "nurse_worker_days": 87
+      "brood_deaths": 9,
+      "trips": 369,
+      "successes": 171,
+      "explorations": 22,
+      "exploration_found_nothing": 6,
+      "discoveries": 16,
+      "recruitment": 68,
+      "trail_choices": 12,
+      "trophallaxis": 208,
+      "predation": 0,
+      "repair_worker_days": 37,
+      "forage_worker_days": 165,
+      "nurse_worker_days": 90
      },
-     "mean_edges_known_per_worker": 4.25,
-     "workers_with_any_route": 4,
+     "mean_edges_known_per_worker": 4,
+     "workers_with_any_route": 3,
      "sites_discovered": 7
     },
     "90": {
      "growth": "declined",
      "founders_alive": 0,
-     "own_eclosions_so_far": 8,
+     "own_eclosions_so_far": 3,
      "date": "2027-12-22",
      "queen": true,
-     "workers": 7,
-     "minor_workers": 7,
+     "workers": 2,
+     "minor_workers": 2,
      "major_workers": null,
-     "eggs": 3,
-     "larvae": 7,
-     "pupae": 2,
+     "eggs": 1,
+     "larvae": 1,
+     "pupae": 0,
      "stock": {
-      "sugar": 3.977814,
+      "sugar": 1.026553,
       "protein": 0,
       "sugar_gap_days": 0,
-      "protein_gap_days": 1,
-      "stress_days": 1,
+      "protein_gap_days": 9,
+      "stress_days": 9,
       "queen_laid_yesterday": false,
       "no_worker_days": 0
      },
      "cumulative": {
       "income": {
-       "sugar": 84.579,
-       "protein": 23.634
+       "sugar": 68.89,
+       "protein": 10.68
       },
       "consumed": {
-       "sugar": 78.366,
-       "protein": 19.715
+       "sugar": 66.427,
+       "protein": 8.161
       },
       "demand": {
-       "sugar": 83.77,
-       "protein": 26.05
+       "sugar": 72.891,
+       "protein": 17.624
       },
-      "eggs_laid": 28,
-      "hatch": 25,
-      "pupation": 10,
-      "eclosion": 8,
+      "eggs_laid": 18,
+      "hatch": 17,
+      "pupation": 3,
+      "eclosion": 3,
       "worker_deaths": 11,
-      "brood_deaths": 8,
-      "trips": 565,
-      "successes": 269,
-      "explorations": 27,
-      "exploration_found_nothing": 8,
-      "discoveries": 19,
-      "recruitment": 119,
-      "trail_choices": 13,
-      "trophallaxis": 305,
-      "predation": 1,
-      "repair_worker_days": 61,
-      "forage_worker_days": 238,
-      "nurse_worker_days": 130
+      "brood_deaths": 13,
+      "trips": 422,
+      "successes": 201,
+      "explorations": 22,
+      "exploration_found_nothing": 6,
+      "discoveries": 16,
+      "recruitment": 80,
+      "trail_choices": 12,
+      "trophallaxis": 235,
+      "predation": 0,
+      "repair_worker_days": 49,
+      "forage_worker_days": 192,
+      "nurse_worker_days": 112
      },
-     "mean_edges_known_per_worker": 5.571,
-     "workers_with_any_route": 7,
+     "mean_edges_known_per_worker": 3,
+     "workers_with_any_route": 2,
      "sites_discovered": 7
     },
     "120": {
-     "growth": "grew",
+     "growth": "declined",
      "founders_alive": 0,
-     "own_eclosions_so_far": 15,
+     "own_eclosions_so_far": 3,
      "date": "2028-01-21",
      "queen": true,
-     "workers": 12,
-     "minor_workers": 12,
+     "workers": 1,
+     "minor_workers": 1,
      "major_workers": null,
-     "eggs": 2,
-     "larvae": 4,
-     "pupae": 5,
+     "eggs": 0,
+     "larvae": 0,
+     "pupae": 0,
      "stock": {
-      "sugar": 9.370959,
-      "protein": 11.728246,
-      "sugar_gap_days": 0,
-      "protein_gap_days": 0,
-      "stress_days": 0,
+      "sugar": 0,
+      "protein": 0,
+      "sugar_gap_days": 4,
+      "protein_gap_days": 39,
+      "stress_days": 39,
       "queen_laid_yesterday": false,
       "no_worker_days": 0
      },
      "cumulative": {
       "income": {
-       "sugar": 116.279,
-       "protein": 52.303
+       "sugar": 73.22,
+       "protein": 10.68
       },
       "consumed": {
-       "sugar": 104.196,
-       "protein": 28.375
+       "sugar": 71.783,
+       "protein": 8.161
       },
       "demand": {
-       "sugar": 109.6,
-       "protein": 36.403
+       "sugar": 80.196,
+       "protein": 19.101
       },
-      "eggs_laid": 34,
-      "hatch": 32,
-      "pupation": 20,
-      "eclosion": 15,
-      "worker_deaths": 13,
-      "brood_deaths": 8,
-      "trips": 870,
-      "successes": 412,
-      "explorations": 33,
-      "exploration_found_nothing": 10,
-      "discoveries": 23,
-      "recruitment": 207,
-      "trail_choices": 17,
-      "trophallaxis": 410,
-      "predation": 3,
-      "repair_worker_days": 82,
-      "forage_worker_days": 351,
-      "nurse_worker_days": 194
+      "eggs_laid": 18,
+      "hatch": 18,
+      "pupation": 3,
+      "eclosion": 3,
+      "worker_deaths": 12,
+      "brood_deaths": 15,
+      "trips": 443,
+      "successes": 213,
+      "explorations": 22,
+      "exploration_found_nothing": 6,
+      "discoveries": 16,
+      "recruitment": 80,
+      "trail_choices": 12,
+      "trophallaxis": 242,
+      "predation": 0,
+      "repair_worker_days": 54,
+      "forage_worker_days": 203,
+      "nurse_worker_days": 123
      },
-     "mean_edges_known_per_worker": 5,
-     "workers_with_any_route": 12,
+     "mean_edges_known_per_worker": 3,
+     "workers_with_any_route": 1,
      "sites_discovered": 7
     },
     "180": {
-     "growth": "grew",
-     "founders_alive": 0,
-     "own_eclosions_so_far": 33,
-     "date": "2028-03-21",
-     "queen": true,
-     "workers": 18,
-     "minor_workers": 18,
-     "major_workers": null,
-     "eggs": 3,
-     "larvae": 3,
-     "pupae": 2,
-     "stock": {
-      "sugar": 14.698382,
-      "protein": 11.908133,
-      "sugar_gap_days": 0,
-      "protein_gap_days": 0,
-      "stress_days": 0,
-      "queen_laid_yesterday": false,
-      "no_worker_days": 0
-     },
-     "cumulative": {
-      "income": {
-       "sugar": 200.518,
-       "protein": 96.894
-      },
-      "consumed": {
-       "sugar": 181.903,
-       "protein": 46.912
-      },
-      "demand": {
-       "sugar": 187.307,
-       "protein": 54.94
-      },
-      "eggs_laid": 49,
-      "hatch": 46,
-      "pupation": 35,
-      "eclosion": 33,
-      "worker_deaths": 25,
-      "brood_deaths": 8,
-      "trips": 1829,
-      "successes": 729,
-      "explorations": 58,
-      "exploration_found_nothing": 23,
-      "discoveries": 35,
-      "recruitment": 423,
-      "trail_choices": 30,
-      "trophallaxis": 655,
-      "predation": 8,
-      "repair_worker_days": 205,
-      "forage_worker_days": 728,
-      "nurse_worker_days": 384
-     },
-     "mean_edges_known_per_worker": 4.5,
-     "workers_with_any_route": 13,
-     "sites_discovered": 7
+     "extinct": true
     },
     "365": {
-     "growth": "grew",
-     "founders_alive": 0,
-     "own_eclosions_so_far": 95,
-     "date": "2028-09-22",
-     "queen": true,
-     "workers": 25,
-     "minor_workers": 25,
-     "major_workers": null,
-     "eggs": 3,
-     "larvae": 3,
-     "pupae": 5,
-     "stock": {
-      "sugar": 3.30059,
-      "protein": 14.498768,
-      "sugar_gap_days": 0,
-      "protein_gap_days": 0,
-      "stress_days": 0,
-      "queen_laid_yesterday": true,
-      "no_worker_days": 0
-     },
-     "cumulative": {
-      "income": {
-       "sugar": 658.093,
-       "protein": 249.608
-      },
-      "consumed": {
-       "sugar": 645.672,
-       "protein": 154.191
-      },
-      "demand": {
-       "sugar": 671.189,
-       "protein": 162.219
-      },
-      "eggs_laid": 114,
-      "hatch": 111,
-      "pupation": 100,
-      "eclosion": 95,
-      "worker_deaths": 80,
-      "brood_deaths": 8,
-      "trips": 5718,
-      "successes": 2238,
-      "explorations": 127,
-      "exploration_found_nothing": 48,
-      "discoveries": 79,
-      "recruitment": 1388,
-      "trail_choices": 82,
-      "trophallaxis": 2691,
-      "predation": 16,
-      "repair_worker_days": 715,
-      "forage_worker_days": 2174,
-      "nurse_worker_days": 1093
-     },
-     "mean_edges_known_per_worker": 6.16,
-     "workers_with_any_route": 24,
-     "sites_discovered": 7
+     "extinct": true
     }
    },
+   "last_key_events": [
+    {
+     "day": 74,
+     "type": "egg_laid",
+     "sugar_gap_days": 0,
+     "protein_gap_days": 0
+    },
+    {
+     "day": 78,
+     "type": "worker_death",
+     "reason": "natural_or_injury_assumed",
+     "sugar_gap_days": 0,
+     "protein_gap_days": 0
+    },
+    {
+     "day": 81,
+     "type": "egg_laid",
+     "sugar_gap_days": 0,
+     "protein_gap_days": 0
+    },
+    {
+     "day": 88,
+     "type": "brood_death",
+     "reason": "chronic_protein_shortage_game_scenario",
+     "stage": "larva",
+     "sugar_gap_days": 0,
+     "protein_gap_days": 7
+    },
+    {
+     "day": 89,
+     "type": "brood_death",
+     "reason": "chronic_protein_shortage_game_scenario",
+     "stage": "larva",
+     "sugar_gap_days": 0,
+     "protein_gap_days": 8
+    },
+    {
+     "day": 90,
+     "type": "brood_death",
+     "reason": "chronic_protein_shortage_game_scenario",
+     "stage": "larva",
+     "sugar_gap_days": 0,
+     "protein_gap_days": 9
+    },
+    {
+     "day": 90,
+     "type": "brood_death",
+     "reason": "chronic_protein_shortage_game_scenario",
+     "stage": "larva",
+     "sugar_gap_days": 0,
+     "protein_gap_days": 9
+    },
+    {
+     "day": 94,
+     "type": "brood_death",
+     "reason": "chronic_protein_shortage_game_scenario",
+     "stage": "larva",
+     "sugar_gap_days": 0,
+     "protein_gap_days": 13
+    },
+    {
+     "day": 97,
+     "type": "brood_death",
+     "reason": "chronic_protein_shortage_game_scenario",
+     "stage": "larva",
+     "sugar_gap_days": 0,
+     "protein_gap_days": 16
+    },
+    {
+     "day": 98,
+     "type": "worker_death",
+     "reason": "natural_or_injury_assumed",
+     "sugar_gap_days": 0,
+     "protein_gap_days": 17
+    },
+    {
+     "day": 128,
+     "type": "worker_death",
+     "reason": "starvation_or_natural_competing_hazards_scenario",
+     "sugar_gap_days": 12,
+     "protein_gap_days": 47
+    },
+    {
+     "day": 144,
+     "type": "queen_death",
+     "reason": "no_workers",
+     "sugar_gap_days": 28,
+     "protein_gap_days": 63
+    }
+   ],
    "reproduction": {
     "any_own_worker_eclosion": true,
-    "own_eclosion_windows": 12,
-    "own_eclosion_windows_first_360": 11,
-    "own_eclosions_second_half": 62,
-    "eggs_last_95_days": 33,
-    "sustained_reproduction_candidate": true
+    "own_eclosion_windows": 1,
+    "own_eclosion_windows_first_360": 1,
+    "own_eclosions_second_half": 0,
+    "eggs_last_95_days": 0,
+    "sustained_reproduction_candidate": false
    }
   },
   {
@@ -227480,7 +227470,7 @@
      "protein": 144.747
     },
     "demand": {
-     "sugar": 697.142,
+     "sugar": 697.141,
      "protein": 149.242
     },
     "eggs_laid": 98,
@@ -227489,12 +227479,12 @@
     "eclosion": 89,
     "worker_deaths": 83,
     "brood_deaths": 1,
-    "trips": 6186,
+    "trips": 6183,
     "successes": 2186,
     "explorations": 176,
     "exploration_found_nothing": 82,
     "discoveries": 85,
-    "recruitment": 1375,
+    "recruitment": 1372,
     "trail_choices": 75,
     "trophallaxis": 2702,
     "predation": 14,
@@ -227527,24 +227517,24 @@
     "larva:chronic_protein_shortage_game_scenario": 1
    },
    "activity": {
-    "outside_minutes": 169288.591,
-    "travel_minutes": 153730.372,
+    "outside_minutes": 169286.532,
+    "travel_minutes": 153728.313,
     "search_minutes": 11608,
     "handling_minutes": 3950.22,
     "prey_holding_minutes": 0,
     "unload_minutes": 4372,
-    "cancelled_no_time": 88,
+    "cancelled_no_time": 86,
     "no_route": 5,
     "active_worker_days": 2336,
     "worker_days": 5511,
-    "rest_minutes_active_foragers": 667299.409,
+    "rest_minutes_active_foragers": 667301.468,
     "recruitment_failed": 21,
     "trips_hist": {
      "1": 744,
-     "2": 607,
+     "2": 608,
      "3": 418,
      "4": 235,
-     "5": 147,
+     "5": 146,
      "6": 93,
      "7": 45,
      "8": 25,
@@ -227557,10 +227547,10 @@
     },
     "stop_reasons": {
      "in_nest_task": 3172,
-     "gave_up_after_unsuccessful_trip": 1680,
+     "gave_up_after_unsuccessful_trip": 1682,
      "no_known_route_and_no_exploration": 3,
      "own_motivation_after_unloading": 569,
-     "no_time_left_in_activity_window": 87
+     "no_time_left_in_activity_window": 85
     }
    },
    "garden_food_mean": {
@@ -228008,7 +227998,7 @@
        "protein": 144.747
       },
       "demand": {
-       "sugar": 697.142,
+       "sugar": 697.141,
        "protein": 149.242
       },
       "eggs_laid": 98,
@@ -228017,12 +228007,12 @@
       "eclosion": 89,
       "worker_deaths": 83,
       "brood_deaths": 1,
-      "trips": 6186,
+      "trips": 6183,
       "successes": 2186,
       "explorations": 176,
       "exploration_found_nothing": 82,
       "discoveries": 85,
-      "recruitment": 1375,
+      "recruitment": 1372,
       "trail_choices": 75,
       "trophallaxis": 2702,
       "predation": 14,

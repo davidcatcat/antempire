@@ -249,8 +249,8 @@
       "rules_version": "antempire.v2-review.20-local-causality",
       "tag": "v20",
       "fingerprint": {
-        "engine": "e574aa99a2b78907eccb9edb0e3dcbf50e2cb2420d6323ff5eeb2279648a2105",
-        "params": "c3ace93d179da3c08dd730936c742eeff98147990ed211b167ec448716371641"
+        "engine": "08b20394fbeead3ad56482b3f5e0484692017ffba80d5ad49e16aa590919cff3",
+        "params": "7fcc5e6a19fa5797a69cf2f3a7321464cfdfa46c9eb84a2f01c0668b69f3909a"
       },
       "approved_in": "Owner instruction 2026-11-03 (Issue #43 WP-B; pending Owner review)",
       "golden": {

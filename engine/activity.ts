@@ -370,7 +370,7 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
       const hold = lateJoin ? holds.find((h) => h.site === site.id && h.minute < t && t <= h.resolveAt) : undefined;
       // v2-review.20 (PR #44 independent review): a worker joins only if, after the hold is resolved and the prey handled,
       // it can still walk home along its own route inside the window (otherwise it would be out after the window closes).
-      const lateOk = (h: PreyHold) => !V20 || h.resolveAt + ac.protein_handling_minutes + planLeg(ownTrip(a, trip).route) <= W + 1e-9;
+      const lateOk = (h: PreyHold) => !V20 || h.resolveAt + ac.protein_handling_minutes + planLeg(ownTrip(a, trip).route) + ac.unload_minutes <= W + 1e-9;
       if (hold && !lateOk(hold)) { a.stats.cancelled_no_time++; events.push({ type: 'action_cancelled_no_time', worker: a.w.id, minute: round(t), action: 'join_waiting_prey', assumption: true }); }
       else if (hold && hold.holders.length + hold.joiners.length + hold.recruits.length + (hold.finderComes ? 1 : 0) < sp.predation.large_prey_max_team) {
         hold.joiners.push(a.w.id); a.hold = hold; hold.since[a.w.id] = t;
@@ -424,7 +424,9 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
     // Long-range recruitment: the finder walks home laying a trail and leads idle nestmates back.
     events.push({ type: 'local_alarm_signal', site: site.id, worker: a.w.id, minute: round(t), short_range_joiners: team.slice(1).map((m) => m.w.id), assumption: true });
     const leg = planLeg(trip.route);
-    if (t + 3 * leg + ac.protein_handling_minutes > W) {
+    // v2-review.20 (independent re-review): carrying the prey home ends with unloading, which must also fit the window
+    const unloadAfterHunt = V20 ? ac.unload_minutes : 0;
+    if (t + 3 * leg + ac.protein_handling_minutes + unloadAfterHunt > W) {
       events.push({ type: 'prey_escaped', site: site.id, worker: a.w.id, minute: round(t), reason: 'insufficient_team_no_time_to_recruit', participants: team.map((m) => m.w.id), assumption: true });
       for (const m of team) goHome(m, t, ownTrip(m, trip), null, 'foraging_return');
       return;
@@ -434,7 +436,7 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
     // home along its OWN route inside the window after the hold is resolved and the prey handled; otherwise it leaves now.
     let holders = team.slice(1);
     if (V20) holders = holders.filter((m) => {
-      if (resolveAt + ac.protein_handling_minutes + planLeg(ownTrip(m, trip).route) <= W + 1e-9) return true;
+      if (resolveAt + ac.protein_handling_minutes + planLeg(ownTrip(m, trip).route) + ac.unload_minutes <= W + 1e-9) return true;
       m.stats.cancelled_no_time++; events.push({ type: 'action_cancelled_no_time', worker: m.w.id, minute: round(t), action: 'hold_prey', assumption: true });
       goHome(m, t, ownTrip(m, trip), null, 'foraging_return');
       return false;

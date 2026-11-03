@@ -25,11 +25,11 @@
 | autumn | 1 | 20/20 | 20/20 | 9/10/10 | 0 | 0 | 0 | 0 | 0 | 0 | 0.106 |
 | autumn | 7 | 20/20 | 20/20 | 7/9/10 | 0 | 0 | 0 | 8.962 | 2.306 | 4 | 2.15 |
 | autumn | 30 | 18/20 | 17/20 | 0/5.5/8 | 6.5 | 6.5 | 0 | 34.764 | 14.037 | 8 | 4.667 |
-| autumn | 60 | 16/20 | 17/20 | 0/7/13 | 9 | 15 | 4.5 | 61.917 | 21.271 | 10.5 | 3.7 |
-| autumn | 90 | 16/20 | 16/20 | 0/10/17 | 8 | 22 | 12 | 92.294 | 32.972 | 15 | 4.321 |
-| autumn | 120 | 16/20 | 16/20 | 0/12/19 | 7 | 26.5 | 17.5 | 122.739 | 54.495 | 18.5 | 4.668 |
-| autumn | 180 | 15/20 | 15/20 | 0/13.5/19 | 7.5 | 39.5 | 29 | 187.628 | 97.652 | 24.5 | 5.2 |
-| autumn | 365 | 14/20 | 15/20 | 0/12.5/26 | 8.5 | 92 | 81 | 628.422 | 219.092 | 41.5 | 5.462 |
+| autumn | 60 | 16/20 | 17/20 | 0/7/13 | 9 | 14.5 | 4.5 | 60.247 | 21.271 | 10.5 | 3.7 |
+| autumn | 90 | 16/20 | 16/20 | 0/10/17 | 8 | 21.5 | 12 | 92.294 | 32.972 | 15 | 4.196 |
+| autumn | 120 | 16/20 | 16/20 | 0/11.5/19 | 6 | 25.5 | 17.5 | 122.739 | 54.495 | 17.5 | 4.585 |
+| autumn | 180 | 14/20 | 14/20 | 0/13/19 | 7 | 39 | 28.5 | 184.404 | 96.916 | 22.5 | 5.2 |
+| autumn | 365 | 13/20 | 14/20 | 0/11.5/26 | 7.5 | 89 | 79 | 562.735 | 217.31 | 37.5 | 5.462 |
 | winter | 1 | 20/20 | 20/20 | 9/10/10 | 0 | 0 | 0 | 0 | 0 | 0 | 0.156 |
 | winter | 7 | 20/20 | 20/20 | 8/9/10 | 0 | 0 | 0 | 9.253 | 1.515 | 4 | 2.173 |
 | winter | 30 | 19/20 | 20/20 | 2/6/8 | 3.5 | 3.5 | 0 | 23.441 | 9.055 | 9 | 4.292 |
@@ -43,14 +43,14 @@
 |---|---:|---:|---:|---:|---|---|---:|---:|---:|---:|---:|
 | spring | 10/20 | 116.5 | 17/20 | 17/20 | 61919/23004 | 1832/752 | 14597 | 25008 | 203 | 7061 | 23.88 |
 | summer | 13/20 | 56 | 11/20 | 8/20 | 39844/14745 | 1213/527 | 9485 | 16377 | 124 | 4748 | 27.974 |
-| autumn | 5/20 | 44 | 16/20 | 16/20 | 85627/32489 | 2303/985 | 20576 | 38564 | 284 | 10102 | 23.916 |
+| autumn | 6/20 | 62 | 16/20 | 16/20 | 80353/30464 | 2198/943 | 19268 | 36115 | 268 | 9442 | 23.916 |
 | winter | 6/20 | 114 | 19/20 | 17/20 | 85042/31847 | 2301/906 | 20118 | 37398 | 275 | 9470 | 23.743 |
 
 | 季節 | 各地點收入（份，20 種子合計） | 工蟻死因 | 幼體死因 | 蟻后死因 |
 |---|---|---|---|---|
 | spring | F01:sugar 3409.981；F04:sugar 1889.999；F05:sugar 752.578；F07:protein 1322.387；F08:sugar 5.356；F10:sugar 564.17；F11:protein 1278.272 | natural_or_injury_assumed 811；starvation_or_natural_competing_hazards_scenario 102 | larva:chronic_protein_shortage_game_scenario 122；larva:unattended_brood_no_worker_care_game_assumption 9 | chronic_protein_deficit [chronic_protein_deficit] 5；no_workers [chronic_sugar_and_protein_deficit+no_workers] 5 |
 | summer | F01:sugar 1991.356；F04:sugar 1138.7；F05:sugar 475.243；F07:protein 926.813；F08:sugar 0.008；F10:sugar 549.589；F11:protein 834.514 | natural_or_injury_assumed 527；starvation_or_natural_competing_hazards_scenario 134 | larva:chronic_protein_shortage_game_scenario 32；larva:unattended_brood_no_worker_care_game_assumption 3 | chronic_protein_deficit [chronic_protein_deficit] 2；no_workers [chronic_sugar_and_protein_deficit+no_workers] 11 |
-| autumn | F01:sugar 4508.784；F04:sugar 1900.685；F05:sugar 1321.467；F07:protein 1919.842；F08:sugar 1.351；F10:sugar 1598.286；F11:protein 1776.969 | natural_or_injury_assumed 1079；starvation_or_natural_competing_hazards_scenario 154 | larva:chronic_protein_shortage_game_scenario 43 | chronic_protein_deficit [chronic_protein_deficit] 2；no_workers [chronic_sugar_and_protein_deficit+no_workers] 4 |
+| autumn | F01:sugar 4326.739；F04:sugar 1770.973；F05:sugar 1159.092；F07:protein 1807.035；F08:sugar 1.351；F10:sugar 1487.546；F11:protein 1650.844 | natural_or_injury_assumed 1011；starvation_or_natural_competing_hazards_scenario 155 | larva:chronic_protein_shortage_game_scenario 50 | chronic_protein_deficit [chronic_protein_deficit] 2；no_workers [chronic_sugar_and_protein_deficit+no_workers] 5 |
 | winter | F01:sugar 4520.213；F04:sugar 2447.415；F05:sugar 1357.861；F07:protein 1747.057；F08:sugar 15.347；F10:sugar 1056.181；F11:protein 1630.721 | natural_or_injury_assumed 1037；starvation_or_natural_competing_hazards_scenario 144 | larva:chronic_protein_shortage_game_scenario 55；larva:unattended_brood_no_worker_care_game_assumption 13 | chronic_protein_deficit [chronic_protein_deficit] 1；chronic_sugar_deficit [chronic_sugar_deficit] 1；no_workers [chronic_sugar_and_protein_deficit+no_workers] 4 |
 
 ## 情境 A2
@@ -247,7 +247,7 @@
 |---|---:|---:|---:|---:|---|---|---:|---:|---:|---:|---:|
 | spring | 6/20 | 42.5 | 16/20 | 15/20 | 83902/30721 | 2250/946 | 20133 | 32784 | 309 | 9143 | 23.77 |
 | summer | 9/20 | 41 | 13/20 | 12/20 | 63039/23081 | 1852/770 | 15115 | 24709 | 209 | 7259 | 24.052 |
-| autumn | 4/20 | 40.5 | 16/20 | 16/20 | 94296/34979 | 2451/1047 | 22630 | 41318 | 269 | 10950 | 23.916 |
+| autumn | 4/20 | 40.5 | 16/20 | 16/20 | 94293/34979 | 2451/1047 | 22627 | 41318 | 269 | 10950 | 23.916 |
 | winter | 4/20 | 39.5 | 16/20 | 16/20 | 94414/35427 | 2467/1024 | 22791 | 42329 | 305 | 10429 | 23.721 |
 
 | 季節 | 各地點收入（份，20 種子合計） | 工蟻死因 | 幼體死因 | 蟻后死因 |
@@ -265,7 +265,7 @@
 |---|---|---|---|---|---|
 | A1 | spring | 20／18／0／0·0·18·2·0 | 14／16／17／6·0·10·0·4 | 11／11／17／7·1·3·0·9 | 10／10／17／9·0·1·0·10 |
 | A1 | summer | 18／14／0／0·0·14·5·1 | 9／8／8／2·0·6·1·11 | 7／7／8／6·0·1·0·13 | 7／7／8／6·0·1·0·13 |
-| A1 | autumn | 18／17／0／0·0·17·2·1 | 16／16／16／9·2·5·0·4 | 15／15／16／13·0·2·0·5 | 14／15／16／13·0·2·0·5 |
+| A1 | autumn | 18／17／0／0·0·17·2·1 | 16／16／16／9·2·5·0·4 | 14／14／16／12·0·2·0·6 | 13／14／16／12·0·2·0·6 |
 | A1 | winter | 19／20／0／0·0·20·0·0 | 18／17／17／5·1·11·1·2 | 16／15／17／13·1·1·1·4 | 14／14／17／14·0·0·0·6 |
 | A2 | spring | 20／19／0／2·2·15·1·0 | 17／17／18／14·0·3·0·3 | 16／16／18／15·0·1·0·4 | 16／16／18／15·0·1·0·4 |
 | A2 | summer | 18／16／0／3·0·13·3·1 | 12／12／10／4·0·8·0·8 | 10／11／11／10·0·1·0·9 | 10／10／11／9·1·0·0·10 |
@@ -292,7 +292,7 @@
 |---|---|---:|---:|---:|
 | A1 | spring | 10 | 8 | 20.5 |
 | A1 | summer | 7 | 0 | 0 |
-| A1 | autumn | 14 | 11.5 | 52.5 |
+| A1 | autumn | 13 | 11 | 50 |
 | A1 | winter | 14 | 11 | 45 |
 | A2 | spring | 16 | 12 | 48 |
 | A2 | summer | 10 | 6 | 21 |
@@ -317,7 +317,7 @@
 |---|---|---:|---:|---:|---|---:|---:|---:|---:|---|
 | A1 | spring | 24109 | 2.568 | 66.14 | 1435203.351／116527.745／42832.89／0／46008 | 7038668.01 | 1044 | 137 | 245 | activity_window_closed 14；gave_up_after_unsuccessful_trip 16308；in_nest_task 31240；no_known_route_and_no_exploration 124；no_time_left_in_activity_window 1029；own_motivation_after_unloading 6758 |
 | A1 | summer | 15740 | 2.531 | 68.458 | 974882.152／74872.705／27775.995／0／29490 | 4559379.151 | 779 | 182 | 159 | activity_window_closed 10；gave_up_after_unsuccessful_trip 10726；in_nest_task 20428；no_known_route_and_no_exploration 166；no_time_left_in_activity_window 775；own_motivation_after_unloading 4226 |
-| A1 | autumn | 33314 | 2.57 | 73.33 | 2221170.227／161181.978／60546.82／0／64978 | 9485163.03 | 1864 | 167 | 395 | activity_window_closed 32；gave_up_after_unsuccessful_trip 22634；in_nest_task 42783；no_known_route_and_no_exploration 155；no_time_left_in_activity_window 1839；own_motivation_after_unloading 8808 |
+| A1 | autumn | 31344 | 2.564 | 72.258 | 2056933.074／151181.978／56754.559／0／60928 | 8958042.438 | 1692 | 167 | 351 | activity_window_closed 25；gave_up_after_unsuccessful_trip 21336；in_nest_task 40153；no_known_route_and_no_exploration 155；no_time_left_in_activity_window 1670；own_motivation_after_unloading 8312 |
 | A1 | winter | 32555 | 2.612 | 70.433 | 2074250.958／160276.073／58431.759／0／63694 | 9363147.222 | 1411 | 120 | 288 | activity_window_closed 23；gave_up_after_unsuccessful_trip 22416；in_nest_task 41265；no_known_route_and_no_exploration 95；no_time_left_in_activity_window 1399；own_motivation_after_unloading 8717 |
 | A2 | spring | 38905 | 2.571 | 67.119 | 2355249.503／187885.022／68130.444／0／73280 | 11321255.059 | 1579 | 116 | 321 | activity_window_closed 34；gave_up_after_unsuccessful_trip 26793；in_nest_task 49084；no_known_route_and_no_exploration 102；no_time_left_in_activity_window 1565；own_motivation_after_unloading 10513 |
 | A2 | summer | 22435 | 2.543 | 67.733 | 1372615.241／107308.076／39655.753／0／42572 | 6514448.931 | 1002 | 174 | 244 | activity_window_closed 14；gave_up_after_unsuccessful_trip 15266；in_nest_task 29687；no_known_route_and_no_exploration 162；no_time_left_in_activity_window 994；own_motivation_after_unloading 6158 |
@@ -333,14 +333,14 @@
 | A4 | winter | 5457 | 2.583 | 71.151 | 352320.56／26436／9516.652／0／10344 | 1565902.773 | 259 | 112 | 76 | activity_window_closed 1；gave_up_after_unsuccessful_trip 3780；in_nest_task 7592；no_known_route_and_no_exploration 102；no_time_left_in_activity_window 257；own_motivation_after_unloading 1416 |
 | A5 | spring | 32863 | 2.553 | 69.397 | 2065539.359／157647.743／57392.483／0／61442 | 9488658.415 | 1343 | 107 | 264 | activity_window_closed 20；gave_up_after_unsuccessful_trip 22424；in_nest_task 41431；no_known_route_and_no_exploration 85；no_time_left_in_activity_window 1328；own_motivation_after_unloading 9090 |
 | A5 | summer | 24287 | 2.596 | 61.63 | 1335235.8／118187.334／43393.288／0／46162 | 7200341.624 | 806 | 133 | 165 | activity_window_closed 11；gave_up_after_unsuccessful_trip 16758；in_nest_task 32164；no_known_route_and_no_exploration 115；no_time_left_in_activity_window 791；own_motivation_after_unloading 6726 |
-| A5 | autumn | 36214 | 2.604 | 73.092 | 2404058.743／177710.334／65181.812／0／69958 | 10320131.125 | 1738 | 112 | 339 | activity_window_closed 24；gave_up_after_unsuccessful_trip 24935；in_nest_task 47359；no_known_route_and_no_exploration 94；no_time_left_in_activity_window 1720；own_motivation_after_unloading 9534 |
+| A5 | autumn | 36214 | 2.604 | 73.092 | 2404056.684／177710.334／65181.812／0／69958 | 10320133.184 | 1736 | 112 | 339 | activity_window_closed 24；gave_up_after_unsuccessful_trip 24937；in_nest_task 47359；no_known_route_and_no_exploration 94；no_time_left_in_activity_window 1718；own_motivation_after_unloading 9534 |
 | A5 | winter | 36424 | 2.592 | 74.503 | 2470549.498／177685.631／65452.361／0／70854 | 10328098.539 | 1906 | 118 | 399 | activity_window_closed 33；gave_up_after_unsuccessful_trip 24885；in_nest_task 45893；no_known_route_and_no_exploration 100；no_time_left_in_activity_window 1889；own_motivation_after_unloading 9616 |
 
 | 情境 | 季節 | 每隻出巢工蟻每日趟數分布（趟:工蟻日） | 花園每日食物存量中位（糖／蛋白，份） | 其中在工蟻走過的地點（糖／蛋白） |
 |---|---|---|---|---|
 | A1 | spring | 1:8149 2:6131 3:4260 4:2440 5:1498 6:792 7:400 8:233 9:97 10:59 11:24 12:15 13:3 14:6 16:2 | 10.975／2.469 | 7.41／1.737 |
 | A1 | summer | 1:5341 2:4049 3:2857 4:1575 5:942 6:500 7:227 8:113 9:75 10:32 11:18 12:7 13:2 14:2 | 11.081／4.107 | 4.051／1.572 |
-| A1 | autumn | 1:11136 2:8381 3:6005 4:3525 5:2062 6:1137 7:526 8:293 9:133 10:63 11:27 12:14 13:7 14:3 15:1 16:1 | 9.972／2.28 | 7.403／1.743 |
+| A1 | autumn | 1:10533 2:7871 3:5649 4:3303 5:1927 6:1065 7:492 8:275 9:125 10:58 11:24 12:12 13:6 14:2 15:1 16:1 | 9.972／2.28 | 7.403／1.743 |
 | A1 | winter | 1:10786 2:8250 3:5651 4:3434 5:2047 6:1140 7:600 8:320 9:167 10:94 11:32 12:20 13:5 14:5 15:2 16:2 | 9.686／2.47 | 7.164／1.846 |
 | A2 | spring | 1:13345 2:9884 3:6482 4:4094 5:2359 6:1333 7:701 8:322 9:200 10:105 11:41 12:21 13:5 14:7 15:2 16:2 17:1 20:1 | 9.202／1.906 | 7.224／1.636 |
 | A2 | summer | 1:7748 2:5736 3:3795 4:2331 5:1316 6:725 7:409 8:206 9:88 10:40 11:22 12:14 13:2 14:2 15:1 | 10.491／2.815 | 5.931／1.382 |
@@ -356,7 +356,7 @@
 | A4 | winter | 1:1853 2:1353 3:927 4:588 5:371 6:178 7:103 8:39 9:22 10:11 11:7 12:1 13:4 | 16.405／4.543 | 1.42／0.502 |
 | A5 | spring | 1:11459 2:8138 3:5569 4:3466 5:1995 6:1106 7:567 8:292 9:132 10:79 11:38 12:11 13:6 14:3 16:2 | 10.445／2.136 | 7.037／1.639 |
 | A5 | summer | 1:8249 2:6046 3:4111 4:2598 5:1485 6:887 7:458 8:240 9:120 10:49 11:17 12:16 13:6 14:3 15:1 16:1 | 9.627／2.53 | 5.156／1.393 |
-| A5 | autumn | 1:12074 2:8995 3:6394 4:3877 5:2257 6:1314 7:642 8:333 9:178 10:80 11:48 12:10 13:6 14:4 15:1 16:1 | 10.075／2.297 | 7.097／1.885 |
+| A5 | autumn | 1:12074 2:8996 3:6394 4:3877 5:2256 6:1314 7:642 8:333 9:178 10:80 11:48 12:10 13:6 14:4 15:1 16:1 | 10.075／2.297 | 7.097／1.885 |
 | A5 | winter | 1:12162 2:9212 3:6393 4:3820 5:2222 6:1272 7:684 8:351 9:173 10:74 11:34 12:8 13:10 14:4 15:3 16:1 17:1 | 9.951／2.241 | 7.228／1.651 |
 
 ## 未執行的創巢方式

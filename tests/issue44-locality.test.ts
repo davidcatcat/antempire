@@ -246,13 +246,28 @@ if (want('W')) {
     const { events: ev } = run(s, p, q), late = insideWindow(ev, window); cases++;
     ok(ev.some((e) => e.type === 'local_trail_choice') && late.length === 0, `W trail chain (window ${window}): the follower is home inside the window (${JSON.stringify(late[0] ?? null)})`);
   }
+  // re-review finding: the hunt/hold time checks left out unloading. Finder alone on an edge of unknown length (25 min),
+  // one idle nestmate to recruit, window exactly = encounter + 3 legs + handling: unloading must still end inside it.
+  { const s = fresh(), c = s.colonies[0], p = structuredClone(SP), q = structuredClone(WP);
+    s.ecology.insects_by_site.F07.living = 3; s.sources.F07.batches = []; s.sources.F07.protein = 0; c.trail_by_edge = {};
+    Object.assign(p.predation, { live_prey_encounter_probability: 1, live_prey_capture_probability: 1, large_prey_escape_while_recruiting_probability: 0, large_prey_min_team: 2 });
+    p.recruitment.recruitment_probability = 0; p.activity.continue_after_failure_probability = 0; p.activity.continue_base = 0; p.activity.continue_crop_emptied_weight = 0; p.activity.continue_brood_need_weight = 0; q.prey.large_prey_fraction = 1;
+    c.population.workers = c.population.workers.slice(0, 2);
+    q.routes.edges = [['N00', 'F07']]; q.routes.edge_length_cm = {};
+    const leg = q.routes.route_edge_minutes, window = leg + p.activity.search_minutes + 3 * leg + p.activity.protein_handling_minutes;
+    p.foraging_activity.daily_window_minutes = window;
+    forager(c.population.workers[0], ['F07'], ['N00', 'F07']);
+    Object.assign(c.population.workers[1], { task: 'nurse', last_location: 'N00', age_days: 60 });
+    const { events: ev } = run(s, p, q, 1), late = insideWindow(ev, window); cases++;
+    ok(late.length === 0, `W unload (unknown-length edge, window ${window}): unloading ends inside the window (${JSON.stringify(late[0] ?? null)})`);
+  }
   // and over real days
   let segs = 0;
   for (const seed of [1, 2, 3, 4, 5, 6]) {
     let st = buildDay0('A1', seed, '2027-09-23', b).state;
     for (let d = 0; d < 20; d++) { const o = simulateWorldDay(st, b), ev: Any[] = o.result.colonies[0].events; segs += ev.filter((e) => e.type === 'worker_activity').length; assert.equal(insideWindow(ev, SP.foraging_activity.daily_window_minutes).length, 0, `W seed ${seed} day ${o.day}: activity after the window`); checks++; st = o.state; }
   }
-  ok(cases === 9 && segs > 0, `W: ${cases} fixtures and ${segs} activity records over 120 colony-days end inside the window`);
+  ok(cases === 10 && segs > 0, `W: ${cases} fixtures and ${segs} activity records over 120 colony-days end inside the window`);
 }
 
 // ---------------------------------------------------------------- S: walking speed is read on the edge the worker is on

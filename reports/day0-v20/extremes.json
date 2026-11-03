@@ -56,7 +56,7 @@
    "colony_end": 3,
    "workers_day60_median": 7,
    "own_eclosions_median": 4.5,
-   "eggs_laid_median": 15,
+   "eggs_laid_median": 14.5,
    "queen_death_day_median": 34,
    "queen_death_reasons": {
     "no_workers": 3,
@@ -74,7 +74,7 @@
    "activity_wet_vs_dry_median": {
     "forage_task_share_wet": 0.333,
     "forage_task_share_dry": 0.517,
-    "trips_per_worker_wet": 0.617,
+    "trips_per_worker_wet": 0.591,
     "trips_per_worker_dry": 1.296,
     "income_per_worker_wet": 0.069,
     "income_per_worker_dry": 0.236
@@ -773,12 +773,12 @@
     {
      "seed": 20270002,
      "queen_alive": true,
-     "workers": 4,
-     "brood": 6,
+     "workers": 3,
+     "brood": 0,
      "colony_end_day": null,
      "queen_death": null,
-     "eggs_laid": 18,
-     "own_eclosions": 4,
+     "eggs_laid": 12,
+     "own_eclosions": 3,
      "reference_adults_day0": 10,
      "growth": "declined",
      "weather": {
@@ -789,14 +789,14 @@
       "mean_soil_dry_days": 0.411
      },
      "activity_wet_vs_dry": {
-      "forage_task_share_wet": 0.277,
-      "forage_task_share_dry": 0.487,
-      "trips_per_worker_wet": 0.67,
-      "trips_per_worker_dry": 1.205,
-      "income_per_worker_wet": 0.154,
-      "income_per_worker_dry": 0.231
+      "forage_task_share_wet": 0.255,
+      "forage_task_share_dry": 0.47,
+      "trips_per_worker_wet": 0.442,
+      "trips_per_worker_dry": 1.071,
+      "income_per_worker_wet": 0.098,
+      "income_per_worker_dry": 0.194
      },
-     "mean_travel_minutes_per_trip": 55.158,
+     "mean_travel_minutes_per_trip": 59.297,
      "days": [
       {
        "day": 1,
@@ -982,8 +982,8 @@
        "workers": 8,
        "forage_task": 8,
        "active_foragers": 8,
-       "trips": 26,
-       "income": 4.252
+       "trips": 22,
+       "income": 2.752
       },
       {
        "day": 18,
@@ -1005,7 +1005,7 @@
        "forage_task": 1,
        "active_foragers": 1,
        "trips": 4,
-       "income": 0.889
+       "income": 0.91
       },
       {
        "day": 20,
@@ -1038,7 +1038,7 @@
        "forage_task": 6,
        "active_foragers": 6,
        "trips": 18,
-       "income": 5.331
+       "income": 4.941
       },
       {
        "day": 23,
@@ -1049,7 +1049,7 @@
        "forage_task": 3,
        "active_foragers": 3,
        "trips": 7,
-       "income": 1.997
+       "income": 1.825
       },
       {
        "day": 24,
@@ -1057,10 +1057,10 @@
        "rain_mm": 0,
        "soil": 0.004954,
        "workers": 7,
-       "forage_task": 5,
-       "active_foragers": 5,
-       "trips": 12,
-       "income": 0.969
+       "forage_task": 6,
+       "active_foragers": 6,
+       "trips": 15,
+       "income": 2.549
       },
       {
        "day": 25,
@@ -1092,8 +1092,8 @@
        "workers": 6,
        "forage_task": 2,
        "active_foragers": 2,
-       "trips": 4,
-       "income": 0.736
+       "trips": 2,
+       "income": 0
       },
       {
        "day": 28,
@@ -1112,10 +1112,10 @@
        "rain_mm": 2.540318,
        "soil": 0.631422,
        "workers": 6,
-       "forage_task": 5,
-       "active_foragers": 5,
-       "trips": 20,
-       "income": 6.121
+       "forage_task": 4,
+       "active_foragers": 4,
+       "trips": 10,
+       "income": 3.659
       },
       {
        "day": 30,
@@ -1167,10 +1167,10 @@
        "rain_mm": 0,
        "soil": 0.905,
        "workers": 5,
-       "forage_task": 3,
-       "active_foragers": 3,
-       "trips": 4,
-       "income": 0.894
+       "forage_task": 1,
+       "active_foragers": 1,
+       "trips": 1,
+       "income": 0
       },
       {
        "day": 35,
@@ -1180,8 +1180,8 @@
        "workers": 5,
        "forage_task": 5,
        "active_foragers": 5,
-       "trips": 14,
-       "income": 3.852
+       "trips": 11,
+       "income": 3.963
       },
       {
        "day": 36,
@@ -1192,7 +1192,7 @@
        "forage_task": 3,
        "active_foragers": 3,
        "trips": 4,
-       "income": 1.179
+       "income": 0.974
       },
       {
        "day": 37,
@@ -1200,10 +1200,10 @@
        "rain_mm": 0,
        "soil": 0.658071,
        "workers": 5,
-       "forage_task": 1,
-       "active_foragers": 1,
-       "trips": 2,
-       "income": 0
+       "forage_task": 4,
+       "active_foragers": 4,
+       "trips": 9,
+       "income": 2.277
       },
       {
        "day": 38,
@@ -1224,8 +1224,8 @@
        "workers": 5,
        "forage_task": 2,
        "active_foragers": 2,
-       "trips": 8,
-       "income": 1.281
+       "trips": 5,
+       "income": 0.12
       },
       {
        "day": 40,
@@ -1233,10 +1233,10 @@
        "rain_mm": 0,
        "soil": 0.459452,
        "workers": 5,
-       "forage_task": 3,
-       "active_foragers": 3,
-       "trips": 5,
-       "income": 1.005
+       "forage_task": 4,
+       "active_foragers": 4,
+       "trips": 8,
+       "income": 0.724
       },
       {
        "day": 41,
@@ -1246,8 +1246,8 @@
        "workers": 5,
        "forage_task": 1,
        "active_foragers": 1,
-       "trips": 1,
-       "income": 0
+       "trips": 2,
+       "income": 0.649
       },
       {
        "day": 42,
@@ -1279,8 +1279,8 @@
        "workers": 5,
        "forage_task": 3,
        "active_foragers": 3,
-       "trips": 9,
-       "income": 2.603
+       "trips": 5,
+       "income": 1.263
       },
       {
        "day": 45,
@@ -1309,18 +1309,18 @@
        "wet": false,
        "rain_mm": 0,
        "soil": 0.81665,
-       "workers": 6,
+       "workers": 4,
        "forage_task": 1,
        "active_foragers": 1,
-       "trips": 4,
-       "income": 0.937
+       "trips": 2,
+       "income": 0.807
       },
       {
        "day": 48,
        "wet": false,
        "rain_mm": 0,
        "soil": 0.734485,
-       "workers": 6,
+       "workers": 4,
        "forage_task": 1,
        "active_foragers": 1,
        "trips": 1,
@@ -1331,7 +1331,7 @@
        "wet": false,
        "rain_mm": 0,
        "soil": 0.658071,
-       "workers": 6,
+       "workers": 4,
        "forage_task": 1,
        "active_foragers": 1,
        "trips": 1,
@@ -1343,10 +1343,10 @@
        "rain_mm": 0,
        "soil": 0.587006,
        "workers": 6,
-       "forage_task": 6,
-       "active_foragers": 6,
-       "trips": 12,
-       "income": 4.613
+       "forage_task": 4,
+       "active_foragers": 4,
+       "trips": 11,
+       "income": 4.202
       },
       {
        "day": 51,
@@ -1364,32 +1364,32 @@
        "wet": false,
        "rain_mm": 0,
        "soil": 0.459452,
-       "workers": 7,
+       "workers": 6,
        "forage_task": 1,
        "active_foragers": 1,
-       "trips": 2,
-       "income": 0.826
+       "trips": 3,
+       "income": 1.317
       },
       {
        "day": 53,
        "wet": false,
        "rain_mm": 0,
        "soil": 0.40229,
-       "workers": 6,
-       "forage_task": 4,
-       "active_foragers": 4,
-       "trips": 9,
-       "income": 2.428
+       "workers": 5,
+       "forage_task": 1,
+       "active_foragers": 1,
+       "trips": 3,
+       "income": 1.26
       },
       {
        "day": 54,
        "wet": false,
        "rain_mm": 0,
        "soil": 0.34913,
-       "workers": 6,
-       "forage_task": 3,
-       "active_foragers": 3,
-       "trips": 7,
+       "workers": 5,
+       "forage_task": 2,
+       "active_foragers": 2,
+       "trips": 6,
        "income": 0
       },
       {
@@ -1397,29 +1397,29 @@
        "wet": false,
        "rain_mm": 0,
        "soil": 0.299691,
-       "workers": 6,
+       "workers": 5,
        "forage_task": 2,
        "active_foragers": 2,
-       "trips": 4,
-       "income": 1.082
+       "trips": 3,
+       "income": 0.481
       },
       {
        "day": 56,
        "wet": true,
        "rain_mm": 10.351253,
        "soil": 0.719519,
-       "workers": 5,
-       "forage_task": 5,
-       "active_foragers": 5,
-       "trips": 11,
-       "income": 2.103
+       "workers": 4,
+       "forage_task": 3,
+       "active_foragers": 3,
+       "trips": 5,
+       "income": 1.25
       },
       {
        "day": 57,
        "wet": true,
        "rain_mm": 14.80917,
        "soil": 1,
-       "workers": 5,
+       "workers": 4,
        "forage_task": 1,
        "active_foragers": 1,
        "trips": 2,
@@ -1430,33 +1430,33 @@
        "wet": false,
        "rain_mm": 0,
        "soil": 0.905,
-       "workers": 4,
+       "workers": 3,
        "forage_task": 1,
        "active_foragers": 1,
        "trips": 1,
-       "income": 0.32
+       "income": 0
       },
       {
        "day": 59,
        "wet": false,
        "rain_mm": 0,
        "soil": 0.81665,
-       "workers": 4,
-       "forage_task": 4,
-       "active_foragers": 4,
-       "trips": 22,
-       "income": 6.027
+       "workers": 3,
+       "forage_task": 0,
+       "active_foragers": 0,
+       "trips": 0,
+       "income": 0
       },
       {
        "day": 60,
        "wet": false,
        "rain_mm": 0,
        "soil": 0.734485,
-       "workers": 4,
+       "workers": 3,
        "forage_task": 2,
        "active_foragers": 2,
-       "trips": 5,
-       "income": 1.356
+       "trips": 4,
+       "income": 1.095
       }
      ]
     },
@@ -78861,14 +78861,14 @@
       "mean_soil_dry_days": 0.393
      },
      "activity_wet_vs_dry": {
-      "forage_task_share_wet": 0.432,
+      "forage_task_share_wet": 0.42,
       "forage_task_share_dry": 0.523,
-      "trips_per_worker_wet": 0.954,
-      "trips_per_worker_dry": 1.246,
+      "trips_per_worker_wet": 0.941,
+      "trips_per_worker_dry": 1.23,
       "income_per_worker_wet": 0.051,
-      "income_per_worker_dry": 0.123
+      "income_per_worker_dry": 0.117
      },
-     "mean_travel_minutes_per_trip": 39.65,
+     "mean_travel_minutes_per_trip": 40.531,
      "days": [
       {
        "day": 1,
@@ -79054,8 +79054,8 @@
        "workers": 8,
        "forage_task": 8,
        "active_foragers": 8,
-       "trips": 26,
-       "income": 4.252
+       "trips": 22,
+       "income": 2.752
       },
       {
        "day": 18,
@@ -79077,7 +79077,7 @@
        "forage_task": 1,
        "active_foragers": 1,
        "trips": 4,
-       "income": 0.889
+       "income": 0.91
       },
       {
        "day": 20,
@@ -79162,9 +79162,9 @@
        "rain_mm": 12.039141,
        "soil": 0.604409,
        "workers": 6,
-       "forage_task": 5,
-       "active_foragers": 5,
-       "trips": 10,
+       "forage_task": 4,
+       "active_foragers": 4,
+       "trips": 9,
        "income": 1.5
       },
       {

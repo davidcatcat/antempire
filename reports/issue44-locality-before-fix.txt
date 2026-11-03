@@ -54,3 +54,6 @@ issue44-locality: 1 checks passed
 issue44-locality: 1 FAILED checks:
 - J: W002 has learned the edge F07–N00 it carried the prey along (N00:X, F07:X)
 issue44-locality: 1 checks passed
+
+# 獨立複審（f863c55）新發現：W 節「W unload」在 f863c55 上的結果
+- W unload (unknown-length edge, window 105): unloading ends inside the window ({"type":"worker_activity","worker":"W001","start":105,"end":107,"duration":2,"place":"N00","action":"unload","outcome":"protein 0.75, 0 contacts","assumption":true})
