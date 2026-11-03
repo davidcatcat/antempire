@@ -24,7 +24,10 @@ export type MotionState = 'moving' | 'stopped' | 'waiting';
 /** Travel direction relative to the nest, as used by the speed model (Vázquez et al. 2020 measured outbound/returning). */
 export type TravelLeg = 'outbound' | 'returning' | 'unknown';
 
-/** Time tolerance (s) and length tolerance (mm) for continuity checks: numerical, not model parameters. */
+/**
+ * Time tolerance (s) and length tolerance (mm) for continuity checks: numerical, not model parameters. T_EPS is absolute:
+ * physics clocks are scene seconds (minutes to hours), far below ~1e7 s where float spacing would exceed it.
+ */
 export const T_EPS = 1e-9;
 export const S_EPS = 1e-9;
 
@@ -68,6 +71,8 @@ export interface MotionInterval {
   start_mm: [number, number, number];
   end_mm: [number, number, number];
   model_ref: string;
+  /** where the walking speed came from (leg, trail, trait, evidence basis), when the caller knows it */
+  speed_basis?: string | null;
 }
 
 export const MODEL_REF = 'MV-1 piecewise-constant speed on PH-1 lanes; slope and temperature effects not modelled';
@@ -138,15 +143,16 @@ export function timeToReach(s0: number, s1: number, v: number): number {
  * Walk the agent towards arc length `target_s` at constant speed v, stopping early at time `until_s` if given.
  * Returns the move intervals (split at centre-line vertices) and the updated agent. Pure: the input agent is not mutated.
  */
-export function walk(p: Passage, a: AgentKinematics, target_s: number, v: number, opts: { until_s?: number; cause?: string | null; cause_ref?: string | null } = {}): { agent: AgentKinematics; intervals: MotionInterval[] } {
+export function walk(p: Passage, a: AgentKinematics, target_s: number, v: number, opts: { until_s?: number; cause?: string | null; cause_ref?: string | null; speed_basis?: string | null } = {}): { agent: AgentKinematics; intervals: MotionInterval[] } {
   if (p.id !== a.passage) throw Error(`PHYSICS: agent ${a.id} is on ${a.passage}, not ${p.id}`);
   const arcs = vertexArcs(p), L = arcs[arcs.length - 1];
+  if (!(a.s_mm >= -S_EPS && a.s_mm <= L + S_EPS)) throw Error(`PHYSICS: agent ${a.id} at s=${a.s_mm} is outside passage ${p.id} [0, ${L}]`);
   if (target_s < -S_EPS || target_s > L + S_EPS) throw Error(`PHYSICS: target ${target_s} mm outside passage ${p.id} [0, ${L}]`);
   const goal = Math.max(0, Math.min(L, target_s));
   if ((goal - a.s_mm) * a.dir < -S_EPS) throw Error(`PHYSICS: agent ${a.id} cannot walk backwards (target ${goal}, at ${a.s_mm}, dir ${a.dir}); turn first`);
   if (!(v > 0) || !Number.isFinite(v)) throw Error(`PHYSICS: walking speed ${v} mm/s must be positive and finite (use wait() for zero speed)`);
-  const until = opts.until_s ?? Infinity;
-  if (until < a.t_s - T_EPS) throw Error(`PHYSICS: until ${until} s is before the agent clock ${a.t_s} s`);
+  if (opts.until_s !== undefined && opts.until_s < a.t_s - T_EPS) throw Error(`PHYSICS: until ${opts.until_s} s is before the agent clock ${a.t_s} s`);
+  const until = Math.max(a.t_s, opts.until_s ?? Infinity);          // never earlier than the agent clock (no time reversal)
   // the full walk ends at t_end; if until comes first, the ant stops where it is at `until`
   const t_full = a.t_s + timeToReach(a.s_mm, goal, v);
   const t_end = Math.min(t_full, until);
@@ -164,7 +170,7 @@ export function walk(p: Passage, a: AgentKinematics, target_s: number, v: number
     intervals.push({
       agent: a.id, passage: p.id, kind: 'move', cause: opts.cause ?? null, cause_ref: opts.cause_ref ?? null,
       t_start_s: t, t_end_s: sNext === s_end ? t_end : t + dt, s_start_mm: s, s_end_mm: sNext, distance_mm: Math.abs(sNext - s), speed_mm_s: v, dir: a.dir,
-      heading: tuple(h), start_mm: tuple(positionAt(p, s)), end_mm: tuple(positionAt(p, sNext)), model_ref: MODEL_REF,
+      heading: tuple(h), start_mm: tuple(positionAt(p, s)), end_mm: tuple(positionAt(p, sNext)), model_ref: MODEL_REF, speed_basis: opts.speed_basis ?? null,
     });
     t = sNext === s_end ? t_end : t + dt; s = sNext;
   }
@@ -173,8 +179,9 @@ export function walk(p: Passage, a: AgentKinematics, target_s: number, v: number
 
 /** Stand still for `duration_s` (state 'waiting' when there is a cause such as yielding, 'stopped' otherwise). */
 export function wait(p: Passage, a: AgentKinematics, duration_s: number, cause: string | null, cause_ref: string | null = null): { agent: AgentKinematics; intervals: MotionInterval[] } {
+  if (p.id !== a.passage) throw Error(`PHYSICS: agent ${a.id} is on ${a.passage}, not ${p.id}`);
   if (!(duration_s >= 0) || !Number.isFinite(duration_s)) throw Error(`PHYSICS: wait duration ${duration_s} s must be finite and ≥ 0`);
-  if (duration_s === 0) return { agent: { ...a, speed_mm_s: 0 }, intervals: [] };
+  if (duration_s === 0) return { agent: { ...a, speed_mm_s: 0, state: cause === null ? 'stopped' : 'waiting' }, intervals: [] };
   const pos = tuple(positionAt(p, a.s_mm)), kind = cause === null ? 'stop' : 'wait';
   return {
     agent: { ...a, t_s: a.t_s + duration_s, speed_mm_s: 0, state: cause === null ? 'stopped' : 'waiting' },
@@ -211,6 +218,7 @@ export interface TripSummary {
 
 export function summarize(traj: MotionInterval[], free_speed_mm_s: number | null): TripSummary {
   if (!traj.length) throw Error('PHYSICS: empty trajectory');
+  if (traj.some((r) => r.agent !== traj[0].agent)) throw Error('PHYSICS: a trip summary covers one agent');
   let path = 0, mt = 0, wt = 0, st = 0;
   for (const r of traj) {
     const dt = r.t_end_s - r.t_start_s;
@@ -226,25 +234,34 @@ export function summarize(traj: MotionInterval[], free_speed_mm_s: number | null
 }
 
 /**
- * Physical consistency of a trajectory (used by tests and by the collision layer): contiguous in time and space (no
- * teleport), non-negative durations, distance = speed × duration, positions on the passage, speed ≤ vmax.
- * Returns a list of violations (empty = consistent).
+ * Physical consistency of one agent's trajectory (used by tests and by the collision layer): one agent; contiguous in
+ * time across all records and in space (same passage: same arc length; passage change: same world point, i.e. the lanes
+ * must meet there); non-negative durations; distance = speed × duration; positions on each record's own passage; stored
+ * start/end points and heading agree with the arc lengths; speed ≤ vmax. `p` is the single passage, or the geometry when
+ * the trajectory may change passage. Returns violations (empty = consistent).
  */
-export function checkTrajectory(p: Passage, traj: MotionInterval[], vmax_mm_s: number): string[] {
-  const out: string[] = [], L = vertexArcs(p).at(-1)!;
+export function checkTrajectory(p: Passage | PhysicsGeometry, traj: MotionInterval[], vmax_mm_s: number): string[] {
+  const out: string[] = [];
+  const lane = (id: string): Passage | null => ('passages' in p ? p.passages.find((x) => x.id === id) ?? null : p.id === id ? p : null);
+  const near3 = (a: [number, number, number], b: Vec3) => Math.hypot(a[0] - b.x, a[1] - b.y, a[2] - b.z) <= 1e-6;
   traj.forEach((r, i) => {
-    const dt = r.t_end_s - r.t_start_s, tag = `${r.agent}#${i}`;
+    const dt = r.t_end_s - r.t_start_s, tag = `${r.agent}#${i}`, q = lane(r.passage);
+    if (r.agent !== traj[0].agent) out.push(`${tag}: record of another agent in the trajectory`);
+    if (!q) { out.push(`${tag}: passage ${r.passage} not given`); return; }
+    const L = vertexArcs(q).at(-1)!;
     if (dt < -T_EPS) out.push(`${tag}: negative duration`);
     if (Math.abs(Math.abs(r.s_end_mm - r.s_start_mm) - r.speed_mm_s * dt) > 1e-6 * Math.max(1, r.distance_mm)) out.push(`${tag}: |Δs| ≠ v·Δt`);
     if (Math.abs(r.distance_mm - Math.abs(r.s_end_mm - r.s_start_mm)) > S_EPS) out.push(`${tag}: distance mismatch`);
     if ((r.s_end_mm - r.s_start_mm) * r.dir < -S_EPS) out.push(`${tag}: moved against its heading`);
     if (r.s_start_mm < -S_EPS || r.s_end_mm > L + S_EPS || r.s_end_mm < -S_EPS || r.s_start_mm > L + S_EPS) out.push(`${tag}: off the passage`);
+    if (!near3(r.start_mm, positionAt(q, r.s_start_mm)) || !near3(r.end_mm, positionAt(q, r.s_end_mm))) out.push(`${tag}: stored start/end point does not match the arc length`);
+    if (r.kind === 'move' && r.distance_mm > S_EPS) { const h = headingAt(q, r.s_start_mm, r.dir); if (!r.heading || !near3(r.heading, h)) out.push(`${tag}: stored heading does not match the lane`); }
     if (r.speed_mm_s > vmax_mm_s + 1e-12) out.push(`${tag}: speed ${r.speed_mm_s} > vmax ${vmax_mm_s}`);
     if (r.kind !== 'move' && r.speed_mm_s !== 0) out.push(`${tag}: ${r.kind} with non-zero speed`);
     if (i > 0) {
-      const q = traj[i - 1];
-      if (q.passage === r.passage && Math.abs(q.t_end_s - r.t_start_s) > T_EPS) out.push(`${tag}: time gap/overlap ${q.t_end_s} → ${r.t_start_s}`);
-      if (q.passage === r.passage && Math.abs(q.s_end_mm - r.s_start_mm) > S_EPS) out.push(`${tag}: teleport ${q.s_end_mm} → ${r.s_start_mm} mm`);
+      const prev = traj[i - 1];
+      if (Math.abs(prev.t_end_s - r.t_start_s) > T_EPS) out.push(`${tag}: time gap/overlap ${prev.t_end_s} → ${r.t_start_s}`);
+      if (prev.passage === r.passage ? Math.abs(prev.s_end_mm - r.s_start_mm) > S_EPS : Math.hypot(prev.end_mm[0] - r.start_mm[0], prev.end_mm[1] - r.start_mm[1], prev.end_mm[2] - r.start_mm[2]) > 1e-6) out.push(`${tag}: teleport (${prev.passage} s=${prev.s_end_mm} → ${r.passage} s=${r.s_start_mm})`);
     }
   });
   return out;
@@ -277,6 +294,8 @@ export function legSpeed(m: SpeedModel, leg: TravelLeg, onTrail: boolean): numbe
  * Persistent individual speed multiplier (dimensionless, mean 1): drawn ONCE per individual from a named stream keyed by
  * (seed, agent id), so it does not depend on array order or on how many other ants exist. Log-normal with the given CV
  * (keeps speed positive). individual_cv null → 1 for everyone (variation unknown, not invented).
+ * Model assumption (stated): ONE factor per individual scales every leg and on/off-trail walking alike, so an ant's rank
+ * among its nestmates is the same in every condition. No species data supports or refutes this.
  */
 export function individualSpeedFactor(seed: number, agentId: string, individual_cv: number | null): number {
   if (individual_cv === null || individual_cv === 0) return 1;
@@ -295,9 +314,14 @@ export function individualSpeed(m: SpeedModel, seed: number, agentId: string, le
 
 export interface WorldEvent { t_s: number; kind: string; agent: string; ref: string | null }
 /**
- * Canonical order of world events: by time, then kind, then agent id, then ref. Never by array or insertion order, so
- * the same set of events always replays in the same order (tests: array-order invariance).
+ * Canonical order of world events: by time, then kind (by `kindPriority` when given — e.g. arrivals before departures at
+ * the same instant — otherwise by name, which carries no causal meaning), then agent id, then ref, then the whole record.
+ * Never by array or insertion order, so the same set of events always replays in the same order. Non-finite times are
+ * refused.
  */
-export function orderEvents<E extends WorldEvent>(events: readonly E[]): E[] {
-  return [...events].sort((a, b) => a.t_s - b.t_s || (a.kind < b.kind ? -1 : a.kind > b.kind ? 1 : 0) || (a.agent < b.agent ? -1 : a.agent > b.agent ? 1 : 0) || ((a.ref ?? '') < (b.ref ?? '') ? -1 : (a.ref ?? '') > (b.ref ?? '') ? 1 : 0));
+export function orderEvents<E extends WorldEvent>(events: readonly E[], kindPriority: readonly string[] = []): E[] {
+  for (const e of events) if (!Number.isFinite(e.t_s)) throw Error(`PHYSICS: event ${e.kind}/${e.agent} has a non-finite time ${e.t_s}`);
+  const rank = (k: string) => { const i = kindPriority.indexOf(k); return i < 0 ? kindPriority.length : i; };
+  const cmp = (x: string, y: string) => (x < y ? -1 : x > y ? 1 : 0);
+  return [...events].sort((a, b) => a.t_s - b.t_s || rank(a.kind) - rank(b.kind) || cmp(a.kind, b.kind) || cmp(a.agent, b.agent) || cmp(a.ref ?? '', b.ref ?? '') || cmp(JSON.stringify(a), JSON.stringify(b)));
 }

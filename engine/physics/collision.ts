@@ -21,8 +21,14 @@
  *    exact ties are broken by a named random stream keyed by the sorted pair of ids, never by array order;
  *  - across lanes (e.g. at a crossing): the ant that has the other more directly ahead stops until the other's body has
  *    cleared; ties as above.
- *  - Turning around takes no time; passing abreast in a wide section costs no time; no slow-down from load, slope or
- *    temperature (no species data; stated limits).
+ *  - Turning around takes no time; backing out is at the ant's own free speed; passing abreast in a wide section costs no
+ *    time; no slow-down from load, slope or temperature (no species data; stated limits).
+ *  - NOT LOCAL (CLAUDE.md §2.1, disclosed): choosing who yields compares both ants (way back; cosines), and the crossing
+ *    back-out and resume use the other ant's remaining path. These are pairwise engineering solvers, not information an
+ *    ant could sense; they must be replaced or backed by evidence before joining the official model.
+ *  - Cost: every event step re-evaluates all agents and all broadphase pairs, so wall time grows roughly with N² on dense
+ *    lattices (measured 250/500/1000 ants: ≈0.75/1.8/7.9 s for 5 simulated s); an event queue with local invalidation is
+ *    the next step for 10⁴ ants. Narrow-section boundaries are precomputed per distinct pair of widths (0.01 mm scan).
  *  - A configuration this version cannot resolve (e.g. a backing-out ant blocked from behind) is reported as an
  *    `unresolved` event and the ants involved stop: never an overlap, never a silent fix.
  *
@@ -270,6 +276,24 @@ export function simulate(cfg: SimConfig): SimResult {
     }
   };
 
+  // ---- stuck detection: a standing waiter whose partner has stopped for good, or a ring of standing waiters, can never
+  // move again in this version: report it as `unresolved` (never a silent wait)
+  const WAIT_MODES = new Set<Mode>(['follow', 'yield_wait', 'cross_wait']);
+  const detectStuck = (t: number) => {
+    for (let changed = true; changed;) {
+      changed = false;
+      for (const a of rts) {
+        if (!WAIT_MODES.has(a.mode) || a.v !== 0 || !a.partner) continue;
+        const p = byId.get(a.partner)!;
+        if (terminal(p)) { unresolved(t, a, p, `waits for ${p.id}, which has stopped for good (${p.mode})`); changed = true; continue; }
+        const ring: RT[] = [a];
+        let q = p;
+        while (WAIT_MODES.has(q.mode) && q.v === 0 && q.partner && !ring.includes(q)) { ring.push(q); q = byId.get(q.partner)!; }
+        if (q === a && ring.length > 1) { for (let i = 0; i < ring.length; i++) if (!terminal(ring[i])) unresolved(t, ring[i], ring[(i + 1) % ring.length], `mutual wait (${ring.map((r) => r.id).join(' → ')} → ${a.id})`); changed = true; }
+      }
+    }
+  };
+
   // ---- event prediction
   interface Cand { t: number; kind: string; a: string; b: string | null; data?: number }
   const linRoot = (d0: number, rate: number, target: number) => { if (rate === 0) return Infinity; const dt = (target - d0) / rate; return dt >= 0 ? dt : Infinity; };
@@ -327,6 +351,8 @@ export function simulate(cfg: SimConfig): SimResult {
       if (!inContact.has(key) && dd > c + S_EPS) out.push({ t: t + first(c), kind: 'contact_start', a: a.id, b: b.id });
       if (inContact.has(key) && dd < c + CONTACT_EXIT_EPS) out.push({ t: t + later(c + CONTACT_EXIT_EPS), kind: 'contact_end', a: a.id, b: b.id });
       if (dd > mm + S_EPS) out.push({ t: t + first(mm), kind: 'disc_touch', a: a.id, b: b.id });
+      // already touching and still closing (e.g. starting at exactly one body length apart): handle now
+      else if (dd <= mm + 1e-7 && B < -1e-12) out.push({ t, kind: 'disc_touch', a: a.id, b: b.id });
       for (const [y, p] of [[a, b], [b, a]] as const) if (y.mode === 'cross_wait' && y.partner === p.id && !y.waitRoom) {
         // resume once the other has passed: its remaining path stays ≥ M from y, and it is ≥ M from y's own remaining path
         // memoised while neither ant's motion changes (the answer is the same absolute time)
@@ -416,7 +442,13 @@ export function simulate(cfg: SimConfig): SimResult {
         boundaryDone.add(`${a.id}|${bnd}|${a.open.t}|${a.open.v}`);
         for (const o of rts) {
           if (o === a || !sameLane(a, o)) continue;
-          if (o.mode === 'follow' && o.partner === a.id) continue;            // already waiting for a
+          if (o.mode === 'follow' && o.partner === a.id) {
+            // o is already waiting for a. Fine only if o's body ends at the boundary; if it reaches into the narrow part,
+            // a would squeeze in beside it: report, never overlap
+            const oFar = o.s + m * o.L / 2;
+            if ((oFar - bnd) * m > 1e-9 && Math.abs(o.s - a.s) < M(a, o) - S_EPS && narrowAt(a.p, a.w + o.w, bnd + m * EDGE_EPS)) { unresolved(t, a, o, 'would enter a narrow section beside an ant that is waiting for it'); return; }
+            continue;
+          }
           if (Math.abs(o.s - a.s) >= M(a, o) - S_EPS) continue;               // not beside a
           if (!(o.s - o.L / 2 <= bnd + 1e-9 && bnd - 1e-9 <= o.s + o.L / 2)) continue;
           if (!narrowAt(a.p, a.w + o.w, bnd + m * EDGE_EPS)) continue;
@@ -445,6 +477,7 @@ export function simulate(cfg: SimConfig): SimResult {
             if ((m > 0 && back <= 1e-9) || (m < 0 && back >= Lp - 1e-9)) return null;  // narrow up to the passage end: no room behind
             const target = back - m * (EDGE_EPS + x.L / 2);
             if (target < 0 || target > Lp) return null;
+            if (narrowOver(x.p, T, target - x.L / 2, target + x.L / 2)) return null;   // another pinch right behind: no room to wait
             // the stretch it would back through must be free of other bodies (no chain retreat in this version)
             const lo2 = Math.min(target, x.s) - x.L / 2, hi2 = Math.max(target, x.s) + x.L / 2, partner = x === lo ? hi : lo;
             if (rts.some((o) => o !== x && o !== partner && sameLane(o, x) && o.s + o.L / 2 > lo2 + 1e-9 && o.s - o.L / 2 < hi2 - 1e-9)) return null;
@@ -478,9 +511,11 @@ export function simulate(cfg: SimConfig): SimResult {
         const y = Math.abs(ca - cb) <= 1e-12 ? byId.get(yielder(cfg, a.id, b.id))! : ca > cb ? a : b, other = y === a ? b : a;
         if (y.mode === 'retreat' || other.mode === 'retreat') { unresolved(t, y, other, 'backing-out ant blocked across lanes'); return; }
         const tie = Math.abs(ca - cb) <= 1e-12 ? '; tie broken by named stream physics.yield' : '';
-        // the yielder must stand clear of the other's remaining path, or the other would walk into it
-        const mm = M(y, other);
-        if (clearance(other, positionAt(y.p, y.s)) >= mm - 1e-9) {
+        if (terminal(other)) { unresolved(t, y, other, `blocked across lanes by an ant that has stopped for good (${other.mode})`); return; }
+        // the yielder must stand clear of the other's remaining path, or the other would walk into it. If the other is not
+        // walking now (not started, or itself waiting), standing still is safe: nothing is coming towards the yielder.
+        const mm = M(y, other), otherWalking = other.v !== 0 && (other.mode === 'free' || other.mode === 'follow');
+        if (!otherWalking || clearance(other, positionAt(y.p, y.s)) >= mm - 1e-9) {
           y.mode = 'cross_wait'; y.partner = other.id; modeMotion(y, t);
           ev(t, 'cross_wait', y, other, `stops: the other is more directly ahead (cosine ${Math.max(ca, cb).toFixed(3)})${tie}`);
           return;
@@ -527,6 +562,7 @@ export function simulate(cfg: SimConfig): SimResult {
       const due = cands.filter((c) => c.t <= tn + T_EPS).sort((x, y) => KIND_ORDER.indexOf(x.kind) - KIND_ORDER.indexOf(y.kind) || (x.a < y.a ? -1 : x.a > y.a ? 1 : 0) || ((x.b ?? '') < (y.b ?? '') ? -1 : (x.b ?? '') > (y.b ?? '') ? 1 : 0));
       for (const c of due) handle(c, t);
       resolveFollow(t);
+      detectStuck(t);
       if (stats.steps > 1e7) throw Error('PHYSICS: event budget exceeded (Zeno or runaway)');
     }
   }
@@ -541,8 +577,8 @@ export function simulate(cfg: SimConfig): SimResult {
 
 /**
  * Independent check of a simulation result (tests): samples every trajectory at every record boundary and every dt and
- * verifies that no two bodies are in mutually exclusive positions, no body is in a section too narrow for it, and no
- * body passed an entrance narrower than it. Returns violations (empty = none).
+ * verifies that no two bodies are in mutually exclusive positions (21 samples per overlap region), no body is in a section
+ * too narrow for it (21 samples per body), and no body straddles an entrance narrower than it. Returns violations.
  */
 export function checkExclusion(cfg: SimConfig, res: SimResult, dt: number): string[] {
   const g = cfg.geometry, out: string[] = [], specs = new Map(cfg.agents.map((a) => [a.id, a]));
@@ -555,8 +591,12 @@ export function checkExclusion(cfg: SimConfig, res: SimResult, dt: number): stri
   for (const t of [...times].sort((a, b) => a - b)) {
     const S = new Map(ids.map((id) => [id, sAt(id, t)]));
     for (const id of ids) {
-      const a = specs.get(id)!, p = passageOf(g, a.passage), s = S.get(id)!;
-      for (const x of [s - a.body.length_mm / 2 + 1e-6, s, s + a.body.length_mm / 2 - 1e-6]) if (x >= 0 && x <= laneLength(p) && usableWidth(g, p, x) < width(id) - 1e-9) { out.push(`t=${t}: ${id} is in a section narrower than its width at s=${x}`); break; }
+      const a = specs.get(id)!, p = passageOf(g, a.passage), s = S.get(id)!, Lb = a.body.length_mm, Lp = laneLength(p);
+      for (let k = 0; k <= 20; k++) { const x = s - Lb / 2 + 1e-6 + ((Lb - 2e-6) * k) / 20; if (x >= 0 && x <= Lp && usableWidth(g, p, x) < width(id) - 1e-9) { out.push(`t=${t}: ${id} is in a section narrower than its width at s=${x}`); break; } }
+      for (const e of g.entrances) if (e.passage_ref === a.passage && e.aperture_width_mm !== null && e.aperture_width_mm < width(id) - 1e-9) {
+        const se = arcPositionOf(p, { x: e.position_mm[0], y: e.position_mm[1] });
+        if (s - Lb / 2 < se - 1e-6 && se + 1e-6 < s + Lb / 2) out.push(`t=${t}: ${id} is passing entrance ${e.id} (aperture ${e.aperture_width_mm} mm) with width ${width(id)} mm`);
+      }
     }
     for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) {
       const A = specs.get(ids[i])!, B = specs.get(ids[j])!, sa = S.get(A.id)!, sb = S.get(B.id)!, mm = (A.body.length_mm + B.body.length_mm) / 2;
