@@ -285,7 +285,7 @@
       "rules_version": "antempire.v2-review.22-engine-food-transfers",
       "tag": "v22",
       "fingerprint": {
-        "engine": "c851f178bbf2454be1eda31acb7735b1dc99b06b974327d75cae06f3b72148b0",
+        "engine": "88ffd0e9edeb493daaf9cf1de003ba1a7906dc204439aa3f0bae8c965561ca3b",
         "params": "bb40b5d47da830f4b7e4daf6484b9d36898936bc4474eb8a43a9bf572cca9181"
       },
       "approved_in": "Owner instruction 2026-11-03 (D4-A/D7-A next phase, work package C2; PR for Owner review, not merged by Claude)",

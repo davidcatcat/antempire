@@ -27,6 +27,7 @@ import type { ColonyState, SimEvent, WorldState } from './types.ts';
 export type FoodKind = 'source' | 'insect' | 'in_transit' | 'crop' | 'cache' | 'nest_unlocated' | 'metabolized' | 'egg' | 'loss';
 export interface FoodRef { kind: FoodKind; id: string }
 export type FoodCause = 'collect' | 'prey_kill' | 'unload' | 'trophallaxis' | 'storage_overflow' | 'metabolism' | 'lay_egg' | 'death_crop_to_nest_ledger';
+export type FoodPhase = 'foraging' | 'nest_settlement';
 export interface FoodTransferInput {
   minute: number | null; phase: 'foraging' | 'nest_settlement';
   source: FoodRef; recipient: FoodRef; food_type: 'sugar' | 'protein'; portions: number;
@@ -80,19 +81,20 @@ export function colonySnapshot(colony: ColonyState): ColonyFoodSnapshot {
 
 /**
  * Issue #61 R3-08: the legal compartments of one colony-day, built from AUTHORITATIVE state and events only:
- * crops and transit loads of workers present at the start or the end of the day; caches of the colony's nests;
- * the colony's own unlocated sugar and metabolism; eggs laid that day (egg_laid event) that exist at the end;
- * insects killed that day (insect_predation event); the storage-overflow sink. Anything else is not a compartment.
+ * crops and transit loads of workers that existed WHEN the transfer happened (foraging phase: workers present at the
+ * start of the day — eclosions and deaths come later in the day; nest settlement: present at the start or the end);
+ * caches of the colony's nests; the colony's own unlocated sugar and metabolism; eggs laid that day (egg_laid event)
+ * that exist at the end; insects killed that day (insect_predation event); the storage-overflow sink.
  */
-export function legalColonyRef(start: ColonyFoodSnapshot, colony: ColonyState, events: SimEvent[]): (r: FoodRef) => boolean {
-  const workers = new Set([...start.crops.keys(), ...colony.population.workers.map((w) => w.id)]);
+export function legalColonyRef(start: ColonyFoodSnapshot, colony: ColonyState, events: SimEvent[]): (r: FoodRef, phase: FoodPhase) => boolean {
+  const atStart = new Set(start.crops.keys()), workers = new Set([...atStart, ...colony.population.workers.map((w) => w.id)]);
   const nests = new Set([...start.nests, ...colonyNests(colony)]);
   const laid = new Set(events.filter((e) => e.type === 'egg_laid').map((e) => String(e.id)));
   const eggs = new Set(colony.population.brood.filter((b) => laid.has(b.id)).map((b) => b.id));
   const kills = new Set(events.filter((e) => e.type === 'insect_predation').map((e) => String(e.event_id)));
-  return (r) => {
+  return (r, phase) => {
     switch (r.kind) {
-      case 'crop': case 'in_transit': return workers.has(r.id);
+      case 'crop': case 'in_transit': return phase === 'foraging' ? atStart.has(r.id) : workers.has(r.id);
       case 'cache': return nests.has(r.id);
       case 'nest_unlocated': case 'metabolized': return r.id === colony.id;
       case 'egg': return eggs.has(r.id);
@@ -102,6 +104,41 @@ export function legalColonyRef(start: ColonyFoodSnapshot, colony: ColonyState, e
       default: return false;
     }
   };
+}
+
+/** The paths each cause may take, [source kinds, recipient kinds] (the engine's own table; the cli reader has its own). */
+const PATHS: Record<FoodCause, [string[], string[]]> = {
+  collect: [['source'], ['in_transit']], prey_kill: [['insect'], ['source']], unload: [['in_transit'], ['crop', 'cache']], trophallaxis: [['crop'], ['crop']],
+  storage_overflow: [['crop', 'nest_unlocated', 'cache'], ['loss']], metabolism: [['crop', 'nest_unlocated', 'cache'], ['metabolized']],
+  lay_egg: [['crop', 'nest_unlocated', 'cache'], ['egg']], death_crop_to_nest_ledger: [['crop'], ['nest_unlocated']],
+};
+/**
+ * Path, holder and one-shot rules of one transfer (Issue #61 R3-08, independent review of 7ae0967):
+ *   - the cause allows this source and recipient kind;
+ *   - an unload moves a transit load into the crop of the SAME worker (or a nest cache), never into another's crop;
+ *   - a trophallaxis is between two different crops;
+ *   - a kill is a one-shot compartment: one prey_kill per insect_predation, to that event's site, of exactly the protein
+ *     of the carcass the engine created for it (new_food_source with the same id).
+ */
+function checkPathAndKills(colonyId: string, events: SimEvent[]): void {
+  const fail = (m: string) => { throw Error(`FOOD_TRANSFER ${colonyId}: ${m}`); };
+  const kills = new Map(events.filter((e) => e.type === 'insect_predation').map((e) => [String(e.event_id), String(e.site)]));
+  const carcass = new Map(events.filter((e) => e.type === 'new_food_source' && e.caused_by_event_id === e.id).map((e) => [String(e.id), micro(Number(e.protein_portions))]));
+  const used = new Set<string>();
+  for (const e of events.filter(isTransfer)) {
+    const x = e as unknown as FoodTransferInput & { transfer_id: string }, p = PATHS[x.cause];
+    if (!p) fail(`${x.transfer_id} has unknown cause ${x.cause}`);
+    if (!p[0].includes(x.source.kind) || !p[1].includes(x.recipient.kind)) fail(`${x.transfer_id}: ${x.cause} from ${x.source.kind} to ${x.recipient.kind} is not a possible path`);
+    if (x.cause === 'unload' && x.recipient.kind === 'crop' && x.recipient.id !== x.source.id) fail(`${x.transfer_id} unloads the transit load of ${x.source.id} into the crop of ${x.recipient.id}`);
+    if (x.cause === 'trophallaxis' && x.source.id === x.recipient.id) fail(`${x.transfer_id} is a trophallaxis of ${x.source.id} with itself`);
+    if (x.cause === 'prey_kill') {
+      if (used.has(x.source.id)) fail(`${x.transfer_id} credits kill ${x.source.id} a second time`);
+      used.add(x.source.id);
+      if (kills.get(x.source.id) !== x.recipient.id) fail(`${x.transfer_id} credits kill ${x.source.id} to source:${x.recipient.id}, the kill was at ${kills.get(x.source.id)}`);
+      if (carcass.get(x.source.id) !== micro(x.portions)) fail(`${x.transfer_id} credits ${micro(x.portions)} µp for kill ${x.source.id}, its carcass holds ${carcass.get(x.source.id)}`);
+    }
+  }
+  for (const k of kills.keys()) if (!used.has(k)) fail(`kill ${k} has no prey_kill transfer`);
 }
 
 /**
@@ -120,10 +157,11 @@ export function checkColonyFood(start: ColonyFoodSnapshot, colony: ColonyState, 
   if ((cur.get(unl) as number) < 0) throw Error(`FOOD_TRANSFER: ${colony.id} starts the day with crops above the sugar ledger`);
   const fail = (m: string) => { throw Error(`FOOD_TRANSFER ${colony.id}: ${m}`); };
   const legal = legalColonyRef(start, colony, events);
+  checkPathAndKills(colony.id, events);
   for (const e of events.filter(isTransfer)) {
     const x = e as unknown as FoodTransferInput & { transfer_id: string; colony: string }, a = micro(x.portions);
     if (x.colony !== colony.id) fail(`${x.transfer_id} is recorded for colony ${x.colony}`);
-    for (const r of [x.source, x.recipient]) if (!legal(r)) fail(`${x.transfer_id} uses ${r.kind}:${r.id}, which is not a compartment of this colony on this day (Issue #61 R3-08)`);
+    for (const r of [x.source, x.recipient]) if (!legal(r, x.phase)) fail(`${x.transfer_id} uses ${r.kind}:${r.id}, which is not a compartment of this colony on this day (Issue #61 R3-08)`);
     for (const r of [x.source, x.recipient]) { const h = HOLDS[r.kind]; if (h && h !== x.food_type) fail(`${x.transfer_id} moves ${x.food_type} through ${r.kind}:${r.id}, which holds only ${h}`); }
     // sources are shared by all colonies and are checked world-wide (checkSources); only the colony side is followed here
     if (TRACKED_KINDS.has(x.source.kind) && x.source.kind !== 'source') {

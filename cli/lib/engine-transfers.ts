@@ -47,17 +47,29 @@ export interface EngineReplay {
  * start and end colony states and the day's events (independently of the engine's roster): crops / transit loads of
  * workers present at the start or the end; caches of the colony's nests; its own unlocated sugar and metabolism;
  * eggs laid that day (egg_laid) that exist at the end; insects killed that day (insect_predation); storage overflow.
+ * Independent review of 7ae0967: a worker is legal only while it exists (foraging phase: present at the start of the
+ * day); an unload goes into the carrier's own crop; each kill is credited once, at its site, with its carcass's protein.
+ * KNOWN LIMITS (not reconciled; F01/A08, C3-C5): the split of the colony ledger between the metabolized / egg / loss
+ * sinks is not compared with the engine's consumption and egg costs; a worker's task (role) is not checked.
  */
 export function replayEngineColonyDay(start: ColonyState, end: ColonyState, events: SimEvent[], day: number, sourceIds: ReadonlySet<string>): EngineReplay {
   const errors: string[] = [], err = (m: string) => { if (errors.length < 50) errors.push(m); };
   const nestsOf = (c: ColonyState): string[] => [c.nest_node]; // one nest today; a list so several nests can be added
+  // a worker is a compartment only while it exists: foraging-phase transfers may name only workers present at the start of
+  // the day (eclosions and deaths happen later); settlement transfers may name workers present at the start or the end
+  const startWorkers = new Set(start.population.workers.map((w) => w.id));
   const workerIds = new Set([...start.population.workers, ...end.population.workers].map((w) => w.id));
   const nestIds = new Set([...nestsOf(start), ...nestsOf(end)]);
   const laidToday = new Set((events as Any[]).filter((e) => e.type === 'egg_laid').map((e) => String(e.id)));
   const eggIds = new Set(end.population.brood.map((b) => b.id).filter((id) => laidToday.has(id)));
-  const killIds = new Set((events as Any[]).filter((e) => e.type === 'insect_predation').map((e) => String(e.event_id)));
+  const killSite = new Map((events as Any[]).filter((e) => e.type === 'insect_predation').map((e) => [String(e.event_id), String(e.site)]));
+  const killIds = new Set(killSite.keys());
+  // the carcass each kill created (new_food_source caused by that kill): a kill is credited once, with exactly that protein
+  const killYield = new Map((events as Any[]).filter((e) => e.type === 'new_food_source' && killIds.has(String(e.caused_by_event_id))).map((e) => [String(e.caused_by_event_id), toMicro(Number(e.protein_portions))]));
+  const credited = new Set<string>();
+  let curPhase = 'foraging';
   const exists = (r: { kind: string; id: string }): boolean => ({
-    crop: () => workerIds.has(r.id), in_transit: () => workerIds.has(r.id), cache: () => nestIds.has(r.id),
+    crop: () => (curPhase === 'foraging' ? startWorkers : workerIds).has(r.id), in_transit: () => (curPhase === 'foraging' ? startWorkers : workerIds).has(r.id), cache: () => nestIds.has(r.id),
     nest_unlocated: () => r.id === start.id, metabolized: () => r.id === start.id, egg: () => eggIds.has(r.id),
     insect: () => killIds.has(r.id), loss: () => r.id === 'storage_overflow', source: () => sourceIds.has(r.id),
   } as Record<string, () => boolean>)[r.kind]?.() ?? false;
@@ -80,6 +92,14 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
     if (!ends[0].includes(x.source.kind) || !ends[1].includes(x.recipient.kind)) err(`${x.transfer_id}: ${x.cause} from ${x.source.kind} to ${x.recipient.kind} is not a possible path`);
     if (ATTRIBUTION[x.cause] !== x.attribution) err(`${x.transfer_id}: ${x.cause} must have attribution ${ATTRIBUTION[x.cause]}, has ${x.attribution}`);
     for (const r of [x.source, x.recipient]) if (HOLDS[r.kind] && !HOLDS[r.kind].includes(x.food_type)) err(`${x.transfer_id}: ${r.kind} cannot hold ${x.food_type}`);
+    curPhase = x.phase;
+    if (x.cause === 'unload' && x.recipient.kind === 'crop' && x.recipient.id !== x.source.id) err(`${x.transfer_id}: the transit load of ${x.source.id} is unloaded into the crop of ${x.recipient.id}`);
+    if (x.cause === 'prey_kill') {
+      if (credited.has(x.source.id)) err(`${x.transfer_id}: kill ${x.source.id} credited twice`);
+      credited.add(x.source.id);
+      if (killSite.has(x.source.id) && killSite.get(x.source.id) !== x.recipient.id) err(`${x.transfer_id}: kill ${x.source.id} happened at ${killSite.get(x.source.id)}, credited to ${x.recipient.id}`);
+      if (killYield.get(x.source.id) !== a) err(`${x.transfer_id}: kill ${x.source.id} credited ${a} µp, its carcass is ${killYield.get(x.source.id)} µp`);
+    }
     for (const r of [x.source, x.recipient]) if (!exists(r)) err(`${x.transfer_id}: ${r.kind}:${r.id} is not a compartment of ${start.id} on day ${day} (R3-08)`);
     // phase order
     if (x.phase === 'foraging' && phase !== 'foraging') err(`${x.transfer_id}: foraging transfer after the nest settlement began`);
@@ -107,6 +127,7 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
     }
     if (x.recipient.kind !== 'source' && HOLDS[x.recipient.kind]) cur.set(k(x.recipient, x.food_type), (cur.get(k(x.recipient, x.food_type)) ?? 0) + a);
   });
+  for (const kId of killIds) if (!credited.has(kId)) err(`kill ${kId} has no prey_kill transfer`);
   let endCrops = 0;
   const alive = new Set(end.population.workers.map((w) => w.id));
   for (const w of end.population.workers) {

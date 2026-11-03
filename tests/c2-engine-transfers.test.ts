@@ -207,6 +207,77 @@ if (!ONLY || ONLY.includes('R')) {
   }
 }
 
+// ---------------------------------------------------------------- R2: independent review of 7ae0967 (counterexamples)
+// Each injection keeps every amount balanced, so only the new rule can reject it; before this fix both the engine and
+// the reader ACCEPTED 1b (a worker eclosing in today's settlement credited at a foraging minute), the duplicated kill and
+// the misdirected unload.
+if (!ONLY || ONLY.includes('R')) {
+  const engineThrows = (f: () => void) => { try { f(); return ''; } catch (e) { return String(e); } };
+  const renumber = (events: Any[], day: number, colony: string) => { let i = 0; for (const e of events) if (e.type === 'food_transfer') e.transfer_id = `FT-${day}-${colony}-${++i}`; };
+  type Day = { before: Any; after: Any; events: Any[]; day: number; sources: Set<string> };
+  const findDay = (pred: (d: Day) => boolean): Day | null => {
+    for (const sc of ['A1', 'A4', 'A5']) for (const seed of [1, 2, 3]) {
+      let s: Any = buildDay0(sc as Any, seed, '2027-09-23', b).state;
+      for (let d = 0; d < 60; d++) { const before = structuredClone(s.colonies[0]), src = sourceIds(s), o: Any = simulateWorldDay(s, b); const x = { before, after: o.state.colonies[0], events: o.result.colonies[0].events, day: o.day, sources: src }; if (pred(x)) return x; s = o.state; }
+    }
+    return null;
+  };
+  const both = (x: Day, events: Any[], name: string, engineRe: RegExp, readerRe: RegExp) => {
+    const t = engineThrows(() => checkColonyFood(colonySnapshot(x.before), x.after, events));
+    const rep = replayEngineColonyDay(x.before, x.after, events, x.day, x.sources);
+    // C2_R2_PROBE=1 only records what each check does (used to record that the checks of 7ae0967 accepted these)
+    if (process.env.C2_R2_PROBE) { console.log(JSON.stringify({ probe: name, engine_colony_check: t ? 'rejects' : 'ACCEPTS', reader: rep.ok ? 'ACCEPTS' : 'rejects', reader_errors: rep.errors.slice(0, 2) })); return; }
+    ok(engineRe.test(t), `R2 ${name}: the engine rejects (${t.slice(0, 140)})`);
+    ok(!rep.ok && rep.errors.some((e) => readerRe.test(e)), `R2 ${name}: the reader rejects (${rep.errors.find((e) => readerRe.test(e)) ?? rep.errors[0]})`);
+  };
+  { // 1b: a trophallaxis at a foraging minute credited to a worker that ecloses only in today's settlement
+    const xs = (d: Day) => engineTransfers(d.events) as Any[];
+    const pick = (d: Day) => {
+      const born = d.after.population.workers.map((w: Any) => w.id).filter((id: string) => !d.before.population.workers.some((w: Any) => w.id === id));
+      if (!born.length) return null;
+      const t = xs(d).find((x) => x.cause === 'trophallaxis' && xs(d).some((m) => m.cause === 'metabolism' && m.source.kind === 'crop' && m.source.id === x.recipient.id && m.portions >= x.portions));
+      return t ? { born: born[0], t } : null;
+    };
+    const day = findDay((d) => !!pick(d));
+    assert.ok(day, 'R2 1b: a day with an eclosion, and a trophallaxis whose recipient later pays metabolism from its crop'); checks++;
+    const p = pick(day as Day) as Any, events = structuredClone((day as Day).events);
+    const T = events.find((e: Any) => e.transfer_id === p.t.transfer_id), R = T.recipient.id, a = T.portions;
+    T.recipient = { kind: 'crop', id: p.born };
+    const draw = events.find((e: Any) => e.type === 'food_transfer' && e.cause === 'metabolism' && e.source.kind === 'crop' && e.source.id === R);
+    draw.portions = Math.round((draw.portions - a) * 1e6) / 1e6;
+    events.splice(events.indexOf(draw), 0, { ...structuredClone(draw), source: { kind: 'crop', id: p.born }, portions: a });
+    if (!(draw.portions > 0)) events.splice(events.indexOf(draw), 1);
+    renumber(events, (day as Day).day, (day as Day).before.id);
+    both(day as Day, events, `1b (${p.born} ecloses in the settlement, credited at minute ${T.minute})`, new RegExp(`${p.born}.*R3-08`), new RegExp(`crop:${p.born} is not a compartment`));
+  }
+  { // kills: one-shot, at the kill's site, with exactly its carcass's protein
+    const day = findDay((d) => engineTransfers(d.events).some((x) => x.cause === 'prey_kill') && Object.keys(d.before).length > 0);
+    assert.ok(day, 'R2 kills: a day with a prey kill'); checks++;
+    const kill = (events: Any[]) => events.find((e: Any) => e.type === 'food_transfer' && e.cause === 'prey_kill');
+    { const events = structuredClone((day as Day).events), k = kill(events); events.splice(events.indexOf(k) + 1, 0, structuredClone(k)); renumber(events, (day as Day).day, (day as Day).before.id);
+      both(day as Day, events, 'the same kill credited twice', /second time/, /credited twice/); }
+    { const events = structuredClone((day as Day).events), k = kill(events), other = [...(day as Day).sources].find((id) => id !== k.recipient.id); k.recipient.id = other;
+      both(day as Day, events, `a kill credited to another site (${other})`, /the kill was at/, /happened at/); }
+    { const events = structuredClone((day as Day).events), k = kill(events); k.portions = Math.round(k.portions * 2 * 1e6) / 1e6;
+      both(day as Day, events, 'a kill credited with more protein than its carcass', /carcass holds/, /its carcass is/); }
+    { const events = structuredClone((day as Day).events), k = kill(events); events.splice(events.indexOf(k), 1); renumber(events, (day as Day).day, (day as Day).before.id);
+      both(day as Day, events, 'a kill with no prey_kill transfer', /no prey_kill/, /no prey_kill/); }
+  }
+  { // holder pairing (reviewer's 2c): part of W's transit load goes straight into R's crop instead of W's crop followed by
+    // the trophallaxis W -> R of that amount (balanced: every crop ends as before)
+    const xsOf = (d: Any) => engineTransfers(d.events) as Any[];
+    const day = samples.find((d) => xsOf(d).some((u, i) => u.cause === 'unload' && u.recipient.kind === 'crop' && xsOf(d)[i + 1]?.cause === 'trophallaxis' && xsOf(d)[i + 1].source.id === u.source.id && xsOf(d)[i + 1].portions < u.portions)) as Day;
+    assert.ok(day, 'R2 holder: a sugar unload followed by a trophallaxis from the same worker'); checks++;
+    const events = structuredClone(day.events), xs = events.filter((e: Any) => e.type === 'food_transfer');
+    const i = xs.findIndex((u: Any, j: number) => u.cause === 'unload' && u.recipient.kind === 'crop' && xs[j + 1]?.cause === 'trophallaxis' && xs[j + 1].source.id === u.source.id && xs[j + 1].portions < u.portions);
+    const U = xs[i], T = xs[i + 1], R = T.recipient.id;
+    U.portions = Math.round((U.portions - T.portions) * 1e6) / 1e6;
+    events.splice(events.indexOf(T), 1, { ...structuredClone(U), recipient: { kind: 'crop', id: R }, portions: T.portions });
+    renumber(events, day.day, day.before.id);
+    both(day, events, `part of ${U.source.id}'s transit load unloaded into the crop of ${R}`, /unloads the transit load/, /is unloaded into the crop of/);
+  }
+}
+
 // ---------------------------------------------------------------- T: determinism
 if (!ONLY || ONLY.includes('T')) {
   const a = runWorld(buildDay0('A1' as Any, 7, '2027-09-23', b).state, 20, 'T', false), z = runWorld(buildDay0('A1' as Any, 7, '2027-09-23', b).state, 20, 'T', false);
