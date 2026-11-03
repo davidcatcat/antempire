@@ -40,9 +40,27 @@ export interface EngineReplay {
   unattributed_by_cause: Record<string, { sugar: number; protein: number }>;
 }
 
-/** Replay one colony-day of engine-recorded transfers from `start` (deep copy taken before the day) to `end`. */
-export function replayEngineColonyDay(start: ColonyState, end: ColonyState, events: SimEvent[], day: number): EngineReplay {
+/**
+ * Replay one colony-day of engine-recorded transfers from `start` (deep copy taken before the day) to `end`.
+ * `sourceIds`: the world's food-source ids that day (a collection or a kill may only name a real source).
+ * Issue #61 R3-08: every source and recipient must be a compartment of THIS colony on this day, built here from the
+ * start and end colony states and the day's events (independently of the engine's roster): crops / transit loads of
+ * workers present at the start or the end; caches of the colony's nests; its own unlocated sugar and metabolism;
+ * eggs laid that day (egg_laid) that exist at the end; insects killed that day (insect_predation); storage overflow.
+ */
+export function replayEngineColonyDay(start: ColonyState, end: ColonyState, events: SimEvent[], day: number, sourceIds: ReadonlySet<string>): EngineReplay {
   const errors: string[] = [], err = (m: string) => { if (errors.length < 50) errors.push(m); };
+  const nestsOf = (c: ColonyState): string[] => [c.nest_node]; // one nest today; a list so several nests can be added
+  const workerIds = new Set([...start.population.workers, ...end.population.workers].map((w) => w.id));
+  const nestIds = new Set([...nestsOf(start), ...nestsOf(end)]);
+  const laidToday = new Set((events as Any[]).filter((e) => e.type === 'egg_laid').map((e) => String(e.id)));
+  const eggIds = new Set(end.population.brood.map((b) => b.id).filter((id) => laidToday.has(id)));
+  const killIds = new Set((events as Any[]).filter((e) => e.type === 'insect_predation').map((e) => String(e.event_id)));
+  const exists = (r: { kind: string; id: string }): boolean => ({
+    crop: () => workerIds.has(r.id), in_transit: () => workerIds.has(r.id), cache: () => nestIds.has(r.id),
+    nest_unlocated: () => r.id === start.id, metabolized: () => r.id === start.id, egg: () => eggIds.has(r.id),
+    insect: () => killIds.has(r.id), loss: () => r.id === 'storage_overflow', source: () => sourceIds.has(r.id),
+  } as Record<string, () => boolean>)[r.kind]?.() ?? false;
   const xs = engineTransfers(events), by_cause: Record<string, number> = {}, by_attribution: Record<string, { sugar: number; protein: number }> = {}, unattributed_by_cause: Record<string, { sugar: number; protein: number }> = {};
   const cur = new Map<string, number>(), k = (r: { kind: string; id: string }, f: string) => `${r.kind}:${r.id}:${f}`;
   let crops = 0;
@@ -62,6 +80,7 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
     if (!ends[0].includes(x.source.kind) || !ends[1].includes(x.recipient.kind)) err(`${x.transfer_id}: ${x.cause} from ${x.source.kind} to ${x.recipient.kind} is not a possible path`);
     if (ATTRIBUTION[x.cause] !== x.attribution) err(`${x.transfer_id}: ${x.cause} must have attribution ${ATTRIBUTION[x.cause]}, has ${x.attribution}`);
     for (const r of [x.source, x.recipient]) if (HOLDS[r.kind] && !HOLDS[r.kind].includes(x.food_type)) err(`${x.transfer_id}: ${r.kind} cannot hold ${x.food_type}`);
+    for (const r of [x.source, x.recipient]) if (!exists(r)) err(`${x.transfer_id}: ${r.kind}:${r.id} is not a compartment of ${start.id} on day ${day} (R3-08)`);
     // phase order
     if (x.phase === 'foraging' && phase !== 'foraging') err(`${x.transfer_id}: foraging transfer after the nest settlement began`);
     if (x.phase === 'nest_settlement') {
@@ -94,9 +113,11 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
     const v = toMicro(w.crop_cargo_sugar || 0); endCrops += v;
     if ((cur.get(`crop:${w.id}:sugar`) ?? 0) !== v) err(`crop:${w.id}: state ${v} µp, replay ${cur.get(`crop:${w.id}:sugar`) ?? 0}`);
   }
+  // every compartment touched must have a legal end state, not only the expected nest and colony
   for (const [key, v] of cur) {
-    if (key.startsWith('in_transit:') && v !== 0) err(`${key}: ${v} µp still in transit`);
-    if (key.startsWith('crop:') && !alive.has(key.split(':')[1]) && v !== 0) err(`${key}: a worker that is gone still holds ${v} µp`);
+    if (key.startsWith('in_transit:')) { if (v !== 0) err(`${key}: ${v} µp still in transit`); }
+    else if (key.startsWith('crop:')) { if (!alive.has(key.split(':')[1]) && v !== 0) err(`${key}: a worker that is gone still holds ${v} µp`); }
+    else if (key !== unl && key !== cache) err(`${key}: ${v} µp at the end of the day in a compartment that has no end state`);
   }
   if ((cur.get(unl) as number) !== toMicro(end.stores.sugar) - endCrops) err(`${unl}: state ${toMicro(end.stores.sugar) - endCrops} µp, replay ${cur.get(unl)}`);
   if ((cur.get(cache) as number) !== toMicro(end.stores.protein)) err(`${cache}: state ${toMicro(end.stores.protein)} µp, replay ${cur.get(cache)}`);

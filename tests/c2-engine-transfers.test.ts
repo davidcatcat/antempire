@@ -11,6 +11,8 @@
  *     a settlement draw, missing death transfer, wrong attribution, trophallaxis outside its unloading; both the cli
  *     reader and the engine's own check (checkColonyFood) must reject; the engine's world-wide source check
  *     (checkSources) must reject a collection credited to the wrong site.
+ *  R  Issue #61 R3-08: transfers through compartments that do not exist (Appendix A and variants) are rejected by the
+ *     engine's colony check, its world source check and the reader.
  *  T  replay determinism: the same input gives a byte-identical transfer sequence.
  * The diagnostics-only claim (removing the transfers gives v2-review.21 byte for byte) is proven in
  * tests/rules-isolation.test.ts (normaliser food_transfer_events_v22).
@@ -35,7 +37,8 @@ const ONLY = process.env.C2_ONLY;
 const stats = { colony_days: 0, transfers: 0, by_cause: {} as Record<string, number>, unattributed: { sugar: 0, protein: 0 }, c1_evidence_limited_days_fully_checked: 0, c1_agree_days: 0 };
 const ids = new Set<string>();
 const sig = (x: Any, amount: number) => `${x.cause}|${x.source.kind}:${x.source.id}|${x.recipient.kind}:${x.recipient.id}|${x.food_type}|${amount}`;
-const samples: { before: Any; after: Any; events: Any[]; day: number }[] = [];
+const samples: { before: Any; after: Any; events: Any[]; day: number; sources: Set<string> }[] = [];
+const sourceIds = (w: Any) => new Set<string>(Object.keys(w.sources));
 function runWorld(s: WorldState, n: number, label: string, collect = true): string[] {
   const seqs: string[] = [];
   ids.clear(); // transfer ids are unique within one world (FT-<day>-<colony>-<n>)
@@ -43,7 +46,7 @@ function runWorld(s: WorldState, n: number, label: string, collect = true): stri
     const befores = s.colonies.map((c) => structuredClone(c)), o: Any = simulateWorldDay(s, b);
     for (const [i, r] of o.result.colonies.entries()) {
       const before = befores[i], after = o.state.colonies.find((c: Any) => c.id === r.colony_id);
-      const rep = replayEngineColonyDay(before, after, r.events, o.day);
+      const rep = replayEngineColonyDay(before, after, r.events, o.day, sourceIds(s));
       seqs.push(JSON.stringify(engineTransfers(r.events)));
       if (!collect) continue;
       assert.ok(rep.ok, `E ${label} day ${o.day} ${r.colony_id}: ${rep.errors.slice(0, 3).join(' | ')}`); checks++;
@@ -57,7 +60,7 @@ function runWorld(s: WorldState, n: number, label: string, collect = true): stri
       assert.deepEqual(c2, c1, `E ${label} day ${o.day}: engine foraging transfers differ from the C1 reconstruction`); checks++; stats.c1_agree_days++;
       const c1rep = replayColonyDay(before, after, r.events, r.summary, o.day, true);
       if (c1rep.evidence_limited_compartments.length) stats.c1_evidence_limited_days_fully_checked++;
-      if (samples.length < 400 && engineTransfers(r.events).some((x) => x.cause === 'trophallaxis')) samples.push({ before, after, events: r.events, day: o.day });
+      if (samples.length < 400 && engineTransfers(r.events).some((x) => x.cause === 'trophallaxis')) samples.push({ before, after, events: r.events, day: o.day, sources: sourceIds(s) });
     }
     s = o.state;
     if (s.colonies.every((c) => !c.population.queen_alive && !c.population.workers.length)) break;
@@ -84,7 +87,7 @@ if (!ONLY || ONLY.includes('M')) {
   for (let d = 0; d < 40; d++) {
     const befores = s.colonies.map((c) => structuredClone(c)), o: Any = simulateWorldDay(s, two);
     for (const [i, r] of o.result.colonies.entries()) {
-      const rep = replayEngineColonyDay(befores[i], o.state.colonies[i], r.events, o.day);
+      const rep = replayEngineColonyDay(befores[i], o.state.colonies[i], r.events, o.day, sourceIds(s));
       assert.ok(rep.ok, `M day ${o.day} ${r.colony_id}: ${rep.errors.slice(0, 3).join(' | ')}`); checks++;
       assert.ok(engineTransfers(r.events).every((x) => x.transfer_id.startsWith(`FT-${o.day}-${r.colony_id}-`) && x.colony === r.colony_id), 'M: transfer ids carry their colony'); checks++;
     }
@@ -97,15 +100,15 @@ if (!ONLY || ONLY.includes('M')) {
 if (!ONLY || ONLY.includes('F')) {
   if (!samples.length) runWorld(buildDay0('A1' as Any, 1, '2027-09-23', b).state, 60, 'F-samples');
   const engineRejects = (s: { before: Any; after: Any; events: Any[] }) => { try { checkColonyFood(colonySnapshot(s.before), s.after, s.events); return false; } catch (e) { return /FOOD_TRANSFER/.test(String(e)); } };
-  const both = (name: string, s: { before: Any; after: Any; events: Any[]; day: number }, cliOnly = false) => {
-    const rep = replayEngineColonyDay(s.before, s.after, s.events, s.day);
+  const both = (name: string, s: { before: Any; after: Any; events: Any[]; day: number; sources: Set<string> }, cliOnly = false) => {
+    const rep = replayEngineColonyDay(s.before, s.after, s.events, s.day, s.sources);
     ok(!rep.ok, `F ${name}: the cli reader rejects (${rep.errors[0]})`);
     if (!cliOnly) ok(engineRejects(s), `F ${name}: the engine's own check rejects`);
   };
   const mutate = (s: (typeof samples)[number], f: (xs: Any[], events: Any[]) => boolean) => { const events = structuredClone(s.events); const xs = events.filter((e: Any) => e.type === 'food_transfer'); return f(xs, events) ? { ...s, events } : null; };
   const pick = (f: (xs: Any[], events: Any[]) => boolean) => { for (const s of samples) { const m = mutate(s, f); if (m) return m; } return null; };
   // the unmodified samples pass both
-  ok(samples.every((s) => replayEngineColonyDay(s.before, s.after, s.events, s.day).ok && !engineRejects(s)), `F: ${samples.length} unmodified sample days pass both checks`);
+  ok(samples.every((s) => replayEngineColonyDay(s.before, s.after, s.events, s.day, s.sources).ok && !engineRejects(s)), `F: ${samples.length} unmodified sample days pass both checks`);
   const injections: [string, (xs: Any[], events: Any[]) => boolean, boolean?][] = [
     ['trophallaxis credited to another worker', (xs) => { const t = xs.find((x) => x.cause === 'trophallaxis'); const other = t && xs.find((x) => x.recipient.kind === 'crop' && x.recipient.id !== t.recipient.id && x.recipient.id !== t.source.id); if (!t || !other) return false; t.recipient.id = other.recipient.id; return true; }],
     ['trophallaxis transfer missing', (xs) => { const t = xs.find((x) => x.cause === 'trophallaxis'); if (!t) return false; t.type = 'removed'; return true; }],
@@ -122,7 +125,7 @@ if (!ONLY || ONLY.includes('F')) {
   for (const [name, f, cliOnly] of injections) { const m = pick(f); assert.ok(m, `F ${name}: no sample day to inject into`); both(name, m as Any, cliOnly); }
   // missing death transfer: needs a day on which a worker with sugar in its crop died
   let deathDay: Any = null;
-  for (const sc of ['A1', 'A2', 'A3']) { if (deathDay) break; let s: Any = buildDay0(sc as Any, 3, '2027-12-22', b).state; for (let d = 0; d < 120 && !deathDay; d++) { const before = structuredClone(s.colonies[0]), o: Any = simulateWorldDay(s, b); if (engineTransfers(o.result.colonies[0].events).some((x) => x.cause === 'death_crop_to_nest_ledger')) deathDay = { before, after: o.state.colonies[0], events: o.result.colonies[0].events, day: o.day }; s = o.state; } }
+  for (const sc of ['A1', 'A2', 'A3']) { if (deathDay) break; let s: Any = buildDay0(sc as Any, 3, '2027-12-22', b).state; for (let d = 0; d < 120 && !deathDay; d++) { const before = structuredClone(s.colonies[0]), o: Any = simulateWorldDay(s, b); if (engineTransfers(o.result.colonies[0].events).some((x) => x.cause === 'death_crop_to_nest_ledger')) deathDay = { before, after: o.state.colonies[0], events: o.result.colonies[0].events, day: o.day, sources: sourceIds(s) }; s = o.state; } }
   ok(deathDay, 'F: found a day on which a worker died with sugar in its crop');
   const noDeath = mutate(deathDay, (xs) => { const t = xs.find((x) => x.cause === 'death_crop_to_nest_ledger'); t.type = 'removed'; return true; });
   both('death transfer missing', noDeath as Any);
@@ -133,14 +136,75 @@ if (!ONLY || ONLY.includes('F')) {
     ok(/invalid amount/.test(t) && ev.length === 0, `F: a transfer of ${bad} portions throws instead of being dropped`);
   }
   // world-wide source check (synthetic world of two sites)
-  const world: Any = { sources: { S1: { id: 'S1', sugar: 2, protein: 0 }, S2: { id: 'S2', sugar: 3, protein: 0 } } };
+  const world: Any = { sources: { S1: { id: 'S1', sugar: 2, protein: 0 }, S2: { id: 'S2', sugar: 3, protein: 0 } }, colonies: [{ id: 'C', population: { workers: [{ id: 'W1' }] } }] };
   const start = sourceSnapshot(world);
   world.sources.S1.sugar = 1.5;
-  const coll = (site: string) => [{ type: 'food_transfer', transfer_id: 'FT-1-C-1', source: { kind: 'source', id: site }, recipient: { kind: 'in_transit', id: 'W1' }, food_type: 'sugar', portions: 0.5 }] as Any;
+  const coll = (site: string) => [{ type: 'food_transfer', transfer_id: 'FT-1-C-1', colony: 'C', source: { kind: 'source', id: site }, recipient: { kind: 'in_transit', id: 'W1' }, food_type: 'sugar', portions: 0.5 }] as Any;
   let threw = ''; try { checkSources(start, world, [coll('S1')]); } catch (e) { threw = String(e); }
   ok(threw === '', 'F: a correctly sourced collection passes the engine source check');
   threw = ''; try { checkSources(start, world, [coll('S2')]); } catch (e) { threw = String(e); }
   ok(/FOOD_TRANSFER: source:S1/.test(threw), `F: a collection credited to the wrong site is rejected by the engine source check (${threw.slice(0, 90)})`);
+}
+
+// ---------------------------------------------------------------- R: Issue #61 R3-08 (phantom compartments)
+// Before the fix (5d5c9d6) Appendix A was ACCEPTED by the engine's colony check, the world source check and the reader
+// (reports/issue61/appendix-a-before-fix-5d5c9d6.txt). Now every one of them must reject it.
+if (!ONLY || ONLY.includes('R')) {
+  const engineThrows = (f: () => void) => { try { f(); return ''; } catch (e) { return String(e); } };
+  { // Appendix A, verbatim: real source S1 loses 0.5 protein to a worker and a nest that do not exist
+    const w0: Any = buildDay0('A1' as Any, 1, '2027-09-23', b).state, c: Any = structuredClone(w0.colonies[0]);
+    const base = { type: 'food_transfer', schema: 'antempire.food-transfer.v1', day: 1, colony: c.id, minute: 1, phase: 'foraging', food_type: 'protein', portions: 0.5, attribution: 'individual' };
+    const ev: Any[] = [
+      { ...base, transfer_id: `FT-1-${c.id}-1`, cause: 'collect', source: { kind: 'source', id: 'S1' }, recipient: { kind: 'in_transit', id: 'NONEXISTENT_WORKER' } },
+      { ...base, transfer_id: `FT-1-${c.id}-2`, cause: 'unload', source: { kind: 'in_transit', id: 'NONEXISTENT_WORKER' }, recipient: { kind: 'cache', id: 'NONEXISTENT_NEST' } },
+    ];
+    const t1 = engineThrows(() => checkColonyFood(colonySnapshot(c), c, ev));
+    ok(/NONEXISTENT_WORKER|NONEXISTENT_NEST/.test(t1) && /R3-08/.test(t1), `R Appendix A: the engine colony check rejects (${t1.slice(0, 120)})`);
+    const cli = replayEngineColonyDay(c, c, ev, 1, new Set(['S1']));
+    ok(!cli.ok && cli.errors.some((e) => /NONEXISTENT_WORKER/.test(e)) && cli.errors.some((e) => /NONEXISTENT_NEST/.test(e)), `R Appendix A: the reader rejects (${cli.errors[0]})`);
+    const w: Any = { sources: { S1: { id: 'S1', sugar: 0, protein: 1 } } }, st = sourceSnapshot(w); w.sources.S1.protein = 0.5;
+    const t2 = engineThrows(() => checkSources(st, w, [ev]));
+    ok(/not in the world/.test(t2), `R Appendix A: the world source check rejects transfers of a colony that is not in the world (${t2.slice(0, 100)})`);
+    const w2: Any = { sources: { S1: { id: 'S1', sugar: 0, protein: 1 } }, colonies: [c] }, st2 = sourceSnapshot(w2); w2.sources.S1.protein = 0.5;
+    const t3 = engineThrows(() => checkSources(st2, w2, [ev]));
+    ok(/NONEXISTENT_WORKER/.test(t3) && /R3-08/.test(t3), `R Appendix A: the world source check rejects a collection by a worker that does not exist (${t3.slice(0, 100)})`);
+  }
+  // variants on a real engine day: one illegal compartment at a time, amounts kept balanced so only the id is wrong
+  const day = samples.find((x) => engineTransfers(x.events).some((t) => t.cause === 'unload' && t.recipient.kind === 'cache') && engineTransfers(x.events).some((t) => t.cause === 'metabolism'));
+  assert.ok(day, 'R: a sample day with a protein unload and metabolism'); checks++;
+  const vary = (name: string, f: (xs: Any[]) => boolean) => {
+    const events = structuredClone((day as Any).events), xs = events.filter((e: Any) => e.type === 'food_transfer');
+    assert.ok(f(xs), `R ${name}: injection applies`);
+    const t = engineThrows(() => checkColonyFood(colonySnapshot((day as Any).before), (day as Any).after, events));
+    const rep = replayEngineColonyDay((day as Any).before, (day as Any).after, events, (day as Any).day, (day as Any).sources);
+    ok(/FOOD_TRANSFER/.test(t), `R ${name}: the engine rejects (${t.slice(0, 110)})`);
+    ok(!rep.ok, `R ${name}: the reader rejects (${rep.errors[0]})`);
+  };
+  vary('protein unloaded into the cache of a nest that does not exist', (xs) => { const u = xs.find((x) => x.cause === 'unload' && x.recipient.kind === 'cache'); u.recipient.id = 'N99'; return true; });
+  vary('trophallaxis into the crop of a worker that does not exist', (xs) => { const t = xs.find((x) => x.cause === 'trophallaxis'); t.recipient.id = 'W999'; return true; });
+  vary('metabolism charged to another colony', (xs) => { const t = xs.find((x) => x.cause === 'metabolism'); t.recipient.id = 'C9'; return true; });
+  vary('unlocated sugar of another colony', (xs) => { const t = xs.find((x) => x.source.kind === 'nest_unlocated') ?? xs.find((x) => x.cause === 'metabolism'); t.source = { kind: 'nest_unlocated', id: 'C9' }; return true; });
+  vary('storage overflow into an unknown sink', (xs) => { const t = xs.find((x) => x.cause === 'metabolism'); t.recipient = { kind: 'loss', id: 'somewhere' }; t.cause = 'storage_overflow'; return true; });
+  vary('a transfer recorded for another colony', (xs) => { xs[0].colony = 'C9'; return true; });
+  { // an egg that was not laid / a kill that did not happen
+    const eggDay = samples.find((x) => engineTransfers(x.events).some((t) => t.cause === 'lay_egg'));
+    if (eggDay) { const events = structuredClone(eggDay.events); events.filter((e: Any) => e.type === 'food_transfer' && e.cause === 'lay_egg').forEach((e: Any) => { e.recipient.id = 'E999999'; });
+      ok(/R3-08/.test(engineThrows(() => checkColonyFood(colonySnapshot(eggDay.before), eggDay.after, events))) && !replayEngineColonyDay(eggDay.before, eggDay.after, events, eggDay.day, eggDay.sources).ok, 'R egg that was not laid: engine and reader reject'); }
+  }
+  { // the reader also rejects a source the world does not have
+    const events = structuredClone((day as Any).events), c = events.find((e: Any) => e.type === 'food_transfer' && e.cause === 'collect');
+    c.source.id = 'NOT_A_SITE';
+    ok(!replayEngineColonyDay((day as Any).before, (day as Any).after, events, (day as Any).day, (day as Any).sources).ok, 'R unknown source: the reader rejects');
+  }
+  { // two colonies: a collection credited to a worker of the OTHER colony is rejected by the world source check
+    const meta = legacyColonyMeta(b.world.scenario_colonies as Any), base = legacyToWorldState(fixture(), meta), second: Any = structuredClone(base.colonies[0]);
+    Object.assign(second, { id: 'B', nest_node: 'U00', rng_namespace: 'B|', worker_id_prefix: 'B-W', egg_id_prefix: 'B-E' }); second.population.workers = second.population.workers.slice(0, 3).map((w: Any, i: number) => ({ ...w, id: `B-W9${i}` }));
+    const w: Any = { ...structuredClone(base), colonies: [structuredClone(base.colonies[0]), second] }, site = Object.keys(w.sources)[0]; w.sources[site].sugar = 1; const st = sourceSnapshot(w);
+    w.sources[site].sugar = Math.round((w.sources[site].sugar - 0.5) * 1e6) / 1e6;
+    const ev: Any[] = [{ type: 'food_transfer', transfer_id: 'FT-1-' + w.colonies[0].id + '-1', colony: w.colonies[0].id, cause: 'collect', source: { kind: 'source', id: site }, recipient: { kind: 'in_transit', id: 'B-W90' }, food_type: 'sugar', portions: 0.5 }];
+    const t = engineThrows(() => checkSources(st, w, [ev, []]));
+    ok(/B-W90/.test(t), `R two colonies: a collection by a worker of the other colony is rejected (${t.slice(0, 100)})`);
+  }
 }
 
 // ---------------------------------------------------------------- T: determinism

@@ -71,9 +71,37 @@ const key = (r: FoodRef, f: 'sugar' | 'protein') => `${r.kind}:${r.id}:${f}`;
 const isTransfer = (e: SimEvent) => e.type === 'food_transfer';
 
 /** Start-of-day holdings of one colony (micro-portions), taken before foraging. */
-export interface ColonyFoodSnapshot { crops: Map<string, number>; sugar: number; protein: number }
+export interface ColonyFoodSnapshot { crops: Map<string, number>; sugar: number; protein: number; nests: string[] }
+/** The nests of a colony. Today one (`nest_node`); a list so that several nests can be added without changing callers. */
+export const colonyNests = (colony: ColonyState): string[] => [colony.nest_node];
 export function colonySnapshot(colony: ColonyState): ColonyFoodSnapshot {
-  return { crops: new Map(colony.population.workers.map((w) => [w.id, micro(w.crop_cargo_sugar || 0)])), sugar: micro(colony.stores.sugar), protein: micro(colony.stores.protein) };
+  return { crops: new Map(colony.population.workers.map((w) => [w.id, micro(w.crop_cargo_sugar || 0)])), sugar: micro(colony.stores.sugar), protein: micro(colony.stores.protein), nests: colonyNests(colony) };
+}
+
+/**
+ * Issue #61 R3-08: the legal compartments of one colony-day, built from AUTHORITATIVE state and events only:
+ * crops and transit loads of workers present at the start or the end of the day; caches of the colony's nests;
+ * the colony's own unlocated sugar and metabolism; eggs laid that day (egg_laid event) that exist at the end;
+ * insects killed that day (insect_predation event); the storage-overflow sink. Anything else is not a compartment.
+ */
+export function legalColonyRef(start: ColonyFoodSnapshot, colony: ColonyState, events: SimEvent[]): (r: FoodRef) => boolean {
+  const workers = new Set([...start.crops.keys(), ...colony.population.workers.map((w) => w.id)]);
+  const nests = new Set([...start.nests, ...colonyNests(colony)]);
+  const laid = new Set(events.filter((e) => e.type === 'egg_laid').map((e) => String(e.id)));
+  const eggs = new Set(colony.population.brood.filter((b) => laid.has(b.id)).map((b) => b.id));
+  const kills = new Set(events.filter((e) => e.type === 'insect_predation').map((e) => String(e.event_id)));
+  return (r) => {
+    switch (r.kind) {
+      case 'crop': case 'in_transit': return workers.has(r.id);
+      case 'cache': return nests.has(r.id);
+      case 'nest_unlocated': case 'metabolized': return r.id === colony.id;
+      case 'egg': return eggs.has(r.id);
+      case 'insect': return kills.has(r.id);
+      case 'loss': return r.id === 'storage_overflow';
+      case 'source': return true; // sources are shared; their existence is checked world-wide (checkSources)
+      default: return false;
+    }
+  };
 }
 
 /**
@@ -91,8 +119,11 @@ export function checkColonyFood(start: ColonyFoodSnapshot, colony: ColonyState, 
   cur.set(unl, start.sugar - cropSum); cur.set(cache, start.protein);
   if ((cur.get(unl) as number) < 0) throw Error(`FOOD_TRANSFER: ${colony.id} starts the day with crops above the sugar ledger`);
   const fail = (m: string) => { throw Error(`FOOD_TRANSFER ${colony.id}: ${m}`); };
+  const legal = legalColonyRef(start, colony, events);
   for (const e of events.filter(isTransfer)) {
-    const x = e as unknown as FoodTransferInput & { transfer_id: string }, a = micro(x.portions);
+    const x = e as unknown as FoodTransferInput & { transfer_id: string; colony: string }, a = micro(x.portions);
+    if (x.colony !== colony.id) fail(`${x.transfer_id} is recorded for colony ${x.colony}`);
+    for (const r of [x.source, x.recipient]) if (!legal(r)) fail(`${x.transfer_id} uses ${r.kind}:${r.id}, which is not a compartment of this colony on this day (Issue #61 R3-08)`);
     for (const r of [x.source, x.recipient]) { const h = HOLDS[r.kind]; if (h && h !== x.food_type) fail(`${x.transfer_id} moves ${x.food_type} through ${r.kind}:${r.id}, which holds only ${h}`); }
     // sources are shared by all colonies and are checked world-wide (checkSources); only the colony side is followed here
     if (TRACKED_KINDS.has(x.source.kind) && x.source.kind !== 'source') {
@@ -108,9 +139,11 @@ export function checkColonyFood(start: ColonyFoodSnapshot, colony: ColonyState, 
     const v = micro(w.crop_cargo_sugar || 0); endCrops += v;
     if ((cur.get(`crop:${w.id}:sugar`) ?? 0) !== v) fail(`crop:${w.id} is ${v} µp, the transfers give ${cur.get(`crop:${w.id}:sugar`) ?? 0}`);
   }
+  // every compartment that was touched must have a legal end state (not only the expected nest and colony)
   for (const [k, v] of cur) {
-    if (k.startsWith('crop:') && !alive.has(k.split(':')[1]) && v !== 0) fail(`${k} of a worker that is gone still holds ${v} µp`);
-    if (k.startsWith('in_transit:') && v !== 0) fail(`${k} still holds ${v} µp at the end of the day`);
+    if (k.startsWith('crop:')) { if (!alive.has(k.split(':')[1]) && v !== 0) fail(`${k} of a worker that is gone still holds ${v} µp`); }
+    else if (k.startsWith('in_transit:')) { if (v !== 0) fail(`${k} still holds ${v} µp at the end of the day`); }
+    else if (k !== unl && k !== cache) fail(`${k} holds ${v} µp at the end of the day but has no end state`);
   }
   if ((cur.get(unl) as number) !== micro(colony.stores.sugar) - endCrops) fail(`${unl} is ${micro(colony.stores.sugar) - endCrops} µp, the transfers give ${cur.get(unl)}`);
   if ((cur.get(cache) as number) !== micro(colony.stores.protein)) fail(`${cache} is ${micro(colony.stores.protein)} µp, the transfers give ${cur.get(cache)}`);
@@ -120,9 +153,24 @@ export function checkColonyFood(start: ColonyFoodSnapshot, colony: ColonyState, 
 export function sourceSnapshot(world: WorldState): Map<string, { sugar: number; protein: number }> {
   return new Map(Object.values(world.sources).map((s) => [s.id, { sugar: micro(s.sugar || 0), protein: micro(s.protein || 0) }]));
 }
-/** World-wide source closure over all colonies' foraging: start + kills - collections = end, per site and food. */
+/** World-wide source closure over all colonies' foraging: start + kills - collections = end, per site and food.
+ *  `colonyEvents[i]` are the events of `world.colonies[i]`; every transfer touching a source must be recorded for that
+ *  colony, and its colony side (the transit load it fills, the insect it kills) must belong to that colony (R3-08). */
 export function checkSources(start: Map<string, { sugar: number; protein: number }>, world: WorldState, colonyEvents: SimEvent[][]): void {
   const cur = new Map([...start].map(([k, v]) => [k, { ...v }]));
+  colonyEvents.forEach((events, i) => {
+    const colony = world.colonies?.[i];
+    const transfers = events.filter(isTransfer);
+    if (!colony) { if (transfers.length) throw Error(`FOOD_TRANSFER: transfers recorded for a colony that is not in the world (list ${i})`); return; }
+    const workers = new Set(colony.population.workers.map((w) => w.id)), kills = new Set(events.filter((e) => e.type === 'insect_predation').map((e) => String(e.event_id)));
+    for (const e of transfers) {
+      const x = e as unknown as FoodTransferInput & { transfer_id: string; colony: string };
+      if (x.source.kind !== 'source' && x.recipient.kind !== 'source') continue;
+      if (x.colony !== colony.id) throw Error(`FOOD_TRANSFER: ${x.transfer_id} is recorded for colony ${x.colony}, in the events of ${colony.id}`);
+      const other = x.source.kind === 'source' ? x.recipient : x.source;
+      if (!(other.kind === 'in_transit' && workers.has(other.id)) && !(other.kind === 'insect' && kills.has(other.id))) throw Error(`FOOD_TRANSFER: ${x.transfer_id} links a source with ${other.kind}:${other.id}, which is not a worker or a recorded kill of ${colony.id} (Issue #61 R3-08)`);
+    }
+  });
   for (const events of colonyEvents) for (const e of events.filter(isTransfer)) {
     const x = e as unknown as FoodTransferInput & { transfer_id: string }, a = micro(x.portions);
     if (x.source.kind === 'source') { const s = cur.get(x.source.id); if (!s || s[x.food_type] < a) throw Error(`FOOD_TRANSFER: ${x.transfer_id} takes ${a} µp from source:${x.source.id}, which holds ${s?.[x.food_type]}`); s[x.food_type] -= a; }
