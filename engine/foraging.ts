@@ -6,6 +6,7 @@
  */
 import { clamp, round } from './math.ts';
 import type { Rng } from './rng.ts';
+import { foodTransfer } from './transfers.ts';
 import { goHome, routeTo, travel, type Trip } from './routes.ts';
 import { decayTrails, depositTrail, followLocalTrail, fullTrail } from './trails.ts';
 import { ensureRouteMemory, knownEmpty, knownNodes, knownRoute, learnRoute, markEmpty, unknownExits } from './navigation.ts';
@@ -72,6 +73,7 @@ export function prey(world: WorldState, sp: SpeciesParams, wp: WorldParams, site
   site.protein = round(site.batches.reduce((a, b) => a + b.protein, 0));
   events.push({ type: 'insect_predation', site: site.id, event_id: id, team, size: large ? 'large' : 'small', count_after: pop.living, assumption: true });
   events.push({ type: 'new_food_source', id, site: site.id, protein_portions: quantity, caused_by_event_id: id, causal_basis: 'tracked live insect predation', assumption: true });
+  foodTransfer(events, { minute: null, phase: 'foraging', source: { kind: 'insect', id: id }, recipient: { kind: 'source', id: site.id }, food_type: 'protein', portions: quantity, cause: 'prey_kill', attribution: 'individual', basis: 'tracked live insect killed by the hunters; becomes carcass food at the site (portion size: game assumption)' });
   return true;
 }
 
@@ -91,6 +93,7 @@ function collect(world: WorldState, colony: ColonyState, sp: SpeciesParams, wp: 
   if (macro === 'sugar') source.sugar = round(source.sugar - load);
   else takeProtein(source, worker, load, events);
   events.push({ type: 'food_collected', worker: worker.id, site: source.id, macro, portions: load, location: source.id, assumption: true });
+  foodTransfer(events, { minute: null, phase: 'foraging', source: { kind: 'source', id: source.id }, recipient: { kind: 'in_transit', id: worker.id }, food_type: macro, portions: load, cause: 'collect', attribution: 'individual' });
   return { macro, load };
 }
 
@@ -172,11 +175,13 @@ function concludeHunt(ctx: HuntContext, source: Source, st: HuntState, at: numbe
   source.protein = round(source.batches.reduce((a, b) => a + b.protein, 0));
   events.push({ type: 'insect_predation', site: source.id, event_id: id, team: present.map((m) => m.worker.id), minute: at, size: large ? 'large' : 'small', count_after: pop.living, assumption: true });
   events.push({ type: 'new_food_source', id, site: source.id, protein_portions: quantity, caused_by_event_id: id, causal_basis: 'tracked live insect predation', assumption: true });
+  foodTransfer(events, { minute: at, phase: 'foraging', source: { kind: 'insect', id: id }, recipient: { kind: 'source', id: source.id }, food_type: 'protein', portions: quantity, cause: 'prey_kill', attribution: 'individual', basis: 'tracked live insect killed by the hunters; becomes carcass food at the site (portion size: game assumption)' });
   // Joint retrieval: the whole prey is carried home by the team, shared equally (mass conserved exactly).
   const share = round(quantity / present.length), shares = new Map(present.map((m, i) => [m, i === present.length - 1 ? round(quantity - share * (present.length - 1)) : share]));
   for (const m of present) {
     takeProtein(source, m.worker, shares.get(m) as number, events);
     events.push({ type: 'food_collected', worker: m.worker.id, site: source.id, macro: 'protein', portions: shares.get(m), location: source.id, minute: at, prey_event_id: id, assumption: true });
+    foodTransfer(events, { minute: at, phase: 'foraging', source: { kind: 'source', id: source.id }, recipient: { kind: 'in_transit', id: m.worker.id }, food_type: 'protein', portions: shares.get(m) as number, cause: 'collect', attribution: 'individual', contact: { prey_event_id: id } });
   }
   events.push({ type: 'joint_prey_transport', site: source.id, event_id: id, minute: at, carriers: present.map((m) => ({ worker: m.worker.id, portions: shares.get(m) })), assumption: true });
   lock((m) => shares.get(m) ?? 0, id);

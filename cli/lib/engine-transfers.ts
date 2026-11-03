@@ -1,0 +1,101 @@
+/**
+ * Work package C2: an INDEPENDENT reader of the food_transfer events the engine records itself (engine/transfers.ts,
+ * v2-review.22). The engine checks its own closure every day; this is a second implementation in cli/ that shares
+ * no code with it, used by the tests and reports to verify that the engine's records are complete and consistent:
+ *   - every transfer id is unique and numbered in order for the colony-day; schema, units, kinds and causes are valid;
+ *   - the attribution is the one the cause allows (individual acts / aggregate rule / engine bookkeeping rule);
+ *   - phases are ordered: all foraging transfers before the nest settlement, settlement in the engine's day order
+ *     (storage overflow, metabolism, deaths, eggs);
+ *   - every trophallaxis happens at the nest, right after the donor's own unloading at the same minute, and the
+ *     recipient is in the nest (the engine's contact rule; no separate contact event exists);
+ *   - replaying all transfers from the start state reproduces every compartment of the end state exactly:
+ *     each living worker's crop, the unlocated nest sugar, the protein cache; nothing left in transit; dead
+ *     workers' crops empty. Sources are shared by colonies and balanced world-wide by the engine itself
+ *     (engine/transfers.ts checkSources; its fault injection is tested in tests/c2-engine-transfers.test.ts).
+ * Unlike the C1 reconstruction (cli/lib/compartments.ts), nothing is inferred: every settlement draw names its crop,
+ * so the C1 KNOWN LIMIT (crops emptied by the settlement) does not apply to engine-recorded days.
+ */
+import { toMicro } from './compartments.ts';
+import type { ColonyState, SimEvent } from '../../engine/index.ts';
+
+type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
+export interface EngineTransfer { type: 'food_transfer'; schema: string; transfer_id: string; day: number; colony: string; minute: number | null; phase: 'foraging' | 'nest_settlement'; source: { kind: string; id: string }; recipient: { kind: string; id: string }; food_type: 'sugar' | 'protein'; portions: number; cause: string; attribution: string; nest_ledger_delta?: number; contact?: Any; basis?: string }
+export const engineTransfers = (events: SimEvent[]): EngineTransfer[] => events.filter((e) => e.type === 'food_transfer') as unknown as EngineTransfer[];
+
+const ATTRIBUTION: Record<string, string> = { collect: 'individual', prey_kill: 'individual', unload: 'individual', trophallaxis: 'individual', storage_overflow: 'unknown', metabolism: 'unknown', lay_egg: 'unknown', death_crop_to_nest_ledger: 'engine_rule' };
+const SETTLEMENT_ORDER = ['storage_overflow', 'metabolism', 'death_crop_to_nest_ledger', 'lay_egg'];
+const HOLDS: Record<string, ('sugar' | 'protein')[]> = { crop: ['sugar'], nest_unlocated: ['sugar'], cache: ['protein'], in_transit: ['sugar', 'protein'], source: ['sugar', 'protein'] };
+const ENDPOINTS: Record<string, [string[], string[]]> = { // allowed [source kinds, recipient kinds] per cause
+  collect: [['source'], ['in_transit']], prey_kill: [['insect'], ['source']], unload: [['in_transit'], ['crop', 'cache']], trophallaxis: [['crop'], ['crop']],
+  storage_overflow: [['crop', 'nest_unlocated', 'cache'], ['loss']], metabolism: [['crop', 'nest_unlocated', 'cache'], ['metabolized']], lay_egg: [['crop', 'nest_unlocated', 'cache'], ['egg']], death_crop_to_nest_ledger: [['crop'], ['nest_unlocated']],
+};
+
+export interface EngineReplay {
+  ok: boolean; errors: string[]; transfers: number;
+  by_cause: Record<string, number>; by_attribution: Record<string, { sugar: number; protein: number }>;
+  /** micro-portions taken from the colony ledger by aggregate rules (F01/A08), by cause */
+  unattributed_by_cause: Record<string, { sugar: number; protein: number }>;
+}
+
+/** Replay one colony-day of engine-recorded transfers from `start` (deep copy taken before the day) to `end`. */
+export function replayEngineColonyDay(start: ColonyState, end: ColonyState, events: SimEvent[], day: number): EngineReplay {
+  const errors: string[] = [], err = (m: string) => { if (errors.length < 50) errors.push(m); };
+  const xs = engineTransfers(events), by_cause: Record<string, number> = {}, by_attribution: Record<string, { sugar: number; protein: number }> = {}, unattributed_by_cause: Record<string, { sugar: number; protein: number }> = {};
+  const cur = new Map<string, number>(), k = (r: { kind: string; id: string }, f: string) => `${r.kind}:${r.id}:${f}`;
+  let crops = 0;
+  for (const w of start.population.workers) { const v = toMicro(w.crop_cargo_sugar || 0); cur.set(`crop:${w.id}:sugar`, v); crops += v; }
+  const unl = `nest_unlocated:${start.id}:sugar`, cache = `cache:${start.nest_node}:protein`;
+  cur.set(unl, toMicro(start.stores.sugar) - crops); cur.set(cache, toMicro(start.stores.protein));
+  if ((cur.get(unl) as number) < 0) err('start: crops exceed the sugar ledger');
+  let phase = 'foraging', settleStep = 0, lastUnload: { worker: string; minute: number | null } | null = null;
+  xs.forEach((x, i) => {
+    const id = `FT-${day}-${start.id}-${i + 1}`;
+    if (x.transfer_id !== id) err(`transfer ${i + 1}: id ${x.transfer_id}, expected ${id}`);
+    if (x.schema !== 'antempire.food-transfer.v1' || x.day !== day || x.colony !== start.id) err(`${x.transfer_id}: schema/day/colony fields wrong`);
+    const a = toMicro(x.portions);
+    if (!(a > 0) || Math.abs(x.portions * 1e6 - a) > 1e-3) err(`${x.transfer_id}: amount ${x.portions} is not a positive six-decimal portion`);
+    const ends = ENDPOINTS[x.cause];
+    if (!ends) { err(`${x.transfer_id}: unknown cause ${x.cause}`); return; }
+    if (!ends[0].includes(x.source.kind) || !ends[1].includes(x.recipient.kind)) err(`${x.transfer_id}: ${x.cause} from ${x.source.kind} to ${x.recipient.kind} is not a possible path`);
+    if (ATTRIBUTION[x.cause] !== x.attribution) err(`${x.transfer_id}: ${x.cause} must have attribution ${ATTRIBUTION[x.cause]}, has ${x.attribution}`);
+    for (const r of [x.source, x.recipient]) if (HOLDS[r.kind] && !HOLDS[r.kind].includes(x.food_type)) err(`${x.transfer_id}: ${r.kind} cannot hold ${x.food_type}`);
+    // phase order
+    if (x.phase === 'foraging' && phase !== 'foraging') err(`${x.transfer_id}: foraging transfer after the nest settlement began`);
+    if (x.phase === 'nest_settlement') {
+      phase = 'nest_settlement';
+      const step = SETTLEMENT_ORDER.indexOf(x.cause);
+      if (step < 0) err(`${x.transfer_id}: ${x.cause} is not a settlement cause`); else if (step < settleStep) err(`${x.transfer_id}: ${x.cause} out of the engine's settlement order`); else settleStep = step;
+    } else if (SETTLEMENT_ORDER.includes(x.cause)) err(`${x.transfer_id}: ${x.cause} recorded in the foraging phase`);
+    // trophallaxis causality: at the nest, right after the donor's own unloading at the same minute
+    if (x.cause === 'unload') lastUnload = { worker: x.source.id, minute: x.minute };
+    else if (x.cause === 'trophallaxis') {
+      if (!lastUnload || lastUnload.worker !== x.source.id || lastUnload.minute !== x.minute) err(`${x.transfer_id}: trophallaxis from ${x.source.id} is not part of its own unloading`);
+      if (x.contact?.location !== start.nest_node || x.contact?.recipient_location !== start.nest_node) err(`${x.transfer_id}: trophallaxis not at the nest`);
+      if (x.source.id === x.recipient.id) err(`${x.transfer_id}: trophallaxis to itself`);
+    } else if (x.cause !== 'collect' && x.cause !== 'prey_kill') lastUnload = null;
+    // unattributed accounting
+    (by_attribution[x.attribution] ??= { sugar: 0, protein: 0 })[x.food_type] += a;
+    by_cause[x.cause] = (by_cause[x.cause] ?? 0) + 1;
+    if (x.attribution === 'unknown') (unattributed_by_cause[x.cause] ??= { sugar: 0, protein: 0 })[x.food_type] += a;
+    // colony compartments (sources are balanced world-wide by replayEngineSources)
+    if (x.source.kind !== 'source' && x.source.kind !== 'insect' && HOLDS[x.source.kind]) {
+      const s = k(x.source, x.food_type), h = cur.get(s) ?? 0;
+      if (h < a) err(`${x.transfer_id}: ${s} holds ${h} µp, cannot give ${a}`);
+      cur.set(s, h - a);
+    }
+    if (x.recipient.kind !== 'source' && HOLDS[x.recipient.kind]) cur.set(k(x.recipient, x.food_type), (cur.get(k(x.recipient, x.food_type)) ?? 0) + a);
+  });
+  let endCrops = 0;
+  const alive = new Set(end.population.workers.map((w) => w.id));
+  for (const w of end.population.workers) {
+    const v = toMicro(w.crop_cargo_sugar || 0); endCrops += v;
+    if ((cur.get(`crop:${w.id}:sugar`) ?? 0) !== v) err(`crop:${w.id}: state ${v} µp, replay ${cur.get(`crop:${w.id}:sugar`) ?? 0}`);
+  }
+  for (const [key, v] of cur) {
+    if (key.startsWith('in_transit:') && v !== 0) err(`${key}: ${v} µp still in transit`);
+    if (key.startsWith('crop:') && !alive.has(key.split(':')[1]) && v !== 0) err(`${key}: a worker that is gone still holds ${v} µp`);
+  }
+  if ((cur.get(unl) as number) !== toMicro(end.stores.sugar) - endCrops) err(`${unl}: state ${toMicro(end.stores.sugar) - endCrops} µp, replay ${cur.get(unl)}`);
+  if ((cur.get(cache) as number) !== toMicro(end.stores.protein)) err(`${cache}: state ${toMicro(end.stores.protein)} µp, replay ${cur.get(cache)}`);
+  return { ok: errors.length === 0, errors, transfers: xs.length, by_cause, by_attribution, unattributed_by_cause };
+}

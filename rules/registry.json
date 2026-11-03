@@ -280,6 +280,24 @@
       "save_schema": "antempire.engine-v2",
       "state_migration": null,
       "note": "Issue #49 N1: brood care exposure from the workers at the start of the step; eclosions committed after all brood; worker ids and nurse larva draws in id order (switch brood_care.daily_care_snapshot_v21)"
+    },
+    {
+      "rules_version": "antempire.v2-review.22-engine-food-transfers",
+      "tag": "v22",
+      "fingerprint": {
+        "engine": "a14fecd2ce5b2b369dad8c447fb8f568849b688638b2c0962840d3c847d1a8ab",
+        "params": "bb40b5d47da830f4b7e4daf6484b9d36898936bc4474eb8a43a9bf572cca9181"
+      },
+      "approved_in": "Owner instruction 2026-11-03 (D4-A/D7-A next phase, work package C2; PR for Owner review, not merged by Claude)",
+      "golden": {
+        "traces": "tests/golden/v22-trace-sha256.json",
+        "reports": "reports/day15-134-v22-*",
+        "day0_traces": "tests/golden/day0-v22-trace-sha256.json"
+      },
+      "previous": "antempire.v2-review.21-brood-care-snapshot",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null,
+      "note": "Work package C2: the engine records every food movement between compartments as a food_transfer event and checks per-compartment and source closure daily; diagnostics only (no quantity, draw, decision or state changed)"
     }
   ]
 }

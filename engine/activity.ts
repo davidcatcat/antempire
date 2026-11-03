@@ -23,6 +23,7 @@
  */
 import { clamp, round } from './math.ts';
 import type { Rng } from './rng.ts';
+import { foodTransfer } from './transfers.ts';
 import { adjacencyOf, edgeKey } from './routes.ts';
 import { depositTrail, fullTrail, followLocalTrail } from './trails.ts';
 import { knownEmpty, knownNodes, knownRoute, learnRoute, markEmpty, perceiveExits, rememberedUnknownExits, unknownExits } from './navigation.ts';
@@ -353,6 +354,7 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
     if (macro === 'sugar') site.sugar = round(site.sugar - load); else takeProtein(site, w, load, events);
     const handling = macro === 'sugar' ? round(ac.liquid_fill_minutes_full_crop * load / sp.trophallaxis.crop_capacity) : ac.protein_handling_minutes;
     events.push({ type: 'food_collected', worker: w.id, site: site.id, macro, portions: load, location: site.id, minute: round(t), assumption: true });
+    foodTransfer(events, { minute: round(t), phase: 'foraging', source: { kind: 'source', id: site.id }, recipient: { kind: 'in_transit', id: w.id }, food_type: macro, portions: load, cause: 'collect', attribution: 'individual' });
     a.stats.handling_minutes = round(a.stats.handling_minutes + handling);
     seg(a, t, t + handling, site.id, 'collect', `${macro} ${load}`);
     goHome(a, round(t + handling), trip, { macro, load, source: site.id }, trip.kind === 'recruit' ? 'recruit_return' : 'foraging_return');
@@ -395,12 +397,14 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
     site.protein = round(site.batches.reduce((x, b) => x + b.protein, 0));
     events.push({ type: 'insect_predation', site: site.id, event_id: id, team: members.map((m) => m.w.id), minute: round(t), size: large ? 'large' : 'small', count_after: pop.living, assumption: true });
     events.push({ type: 'new_food_source', id, site: site.id, protein_portions: quantity, caused_by_event_id: id, causal_basis: 'tracked live insect predation', assumption: true });
+    foodTransfer(events, { minute: round(t), phase: 'foraging', source: { kind: 'insect', id: id }, recipient: { kind: 'source', id: site.id }, food_type: 'protein', portions: quantity, cause: 'prey_kill', attribution: 'individual', basis: 'tracked live insect killed by the hunters; becomes carcass food at the site (portion size: game assumption)' });
     const share = round(quantity / members.length), loads = members.map((_, i) => (i === members.length - 1 ? round(quantity - share * (members.length - 1)) : share));
     if (members.length > 1) events.push({ type: 'joint_prey_transport', site: site.id, event_id: id, minute: round(t), carriers: members.map((m, i) => ({ worker: m.w.id, portions: loads[i] })), assumption: true });
     members.forEach((m, i) => {
       const load = loads[i];
       takeProtein(site, m.w, load, events);
       events.push({ type: 'food_collected', worker: m.w.id, site: site.id, macro: 'protein', portions: load, location: site.id, minute: round(t), prey_event_id: id, assumption: true });
+      foodTransfer(events, { minute: round(t), phase: 'foraging', source: { kind: 'source', id: site.id }, recipient: { kind: 'in_transit', id: m.w.id }, food_type: 'protein', portions: load, cause: 'collect', attribution: 'individual', contact: { prey_event_id: id } });
       m.hold = undefined;
       m.stats.handling_minutes = round(m.stats.handling_minutes + ac.protein_handling_minutes);
       seg(m, t, t + ac.protein_handling_minutes, site.id, 'prey_handling', `protein ${load}`);
@@ -541,7 +545,7 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
     if (!V20) summary.extra_sugar_cost = round(summary.extra_sugar_cost + round((t - (a.departed ?? t)) * ac.active_minute_sugar_cost));
     if (!cargo) { restThenDecide(a, t, true); return; }
     const g = dice(a, 'unload');
-    const transfer = handoff(colony, sp, w, cargo.macro, cargo.load, events, g, cargo.source);
+    const transfer = handoff(colony, sp, w, cargo.macro, cargo.load, events, g, cargo.source, t);
     summary.income[cargo.macro] = round(summary.income[cargo.macro] + cargo.load); summary.foraging_successes++; a.stats.successes++;
     (summary.foraging_workers_by_macro as { sugar: Set<string>; protein: Set<string> })[cargo.macro].add(w.id);
     (w.site_memory ??= {})[cargo.source] = { last_success_portions: cargo.load, last_visit_day: learnDay };
