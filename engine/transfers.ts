@@ -129,6 +129,8 @@ const FOOD_KINDS: ReadonlySet<string> = new Set(['source', 'insect', 'in_transit
  * Runtime shape of every transfer record before any field is used (Codex review of 1bdba72, F1: records may come from
  * JSON, where the TypeScript types prove nothing). Throws a FOOD_TRANSFER error naming the record.
  */
+/** The attribution each cause carries (written here independently of the cli reader's table). */
+const ATTRIBUTION_OF: Record<FoodCause, 'individual' | 'unknown' | 'engine_rule'> = { collect: 'individual', prey_kill: 'individual', unload: 'individual', trophallaxis: 'individual', storage_overflow: 'unknown', metabolism: 'unknown', lay_egg: 'unknown', death_crop_to_nest_ledger: 'engine_rule' };
 /** Minutes in a day: the latest a timed (foraging) record can be. */
 const DAY_MINUTES = 1440;
 export function assertTransferShape(colonyId: string, events: SimEvent[]): void {
@@ -164,6 +166,10 @@ export function assertTransferShape(colonyId: string, events: SimEvent[]): void 
     if (x.food_type !== 'sugar' && x.food_type !== 'protein') fail(`food_type ${JSON.stringify(x.food_type)} is not sugar or protein`);
     if (typeof x.portions !== 'number' || !Number.isFinite(x.portions) || !(x.portions > 0)) fail(`portions ${JSON.stringify(x.portions)} is not a positive finite number`);
     if (Math.abs((x.portions as number) * 1e6 - Math.round((x.portions as number) * 1e6)) > 1e-3) fail(`portions ${x.portions} has more than six decimals`);
+    // review of 3acfa0b: an amount must be at least one micro-portion (a 0 µp record is a phantom transfer)
+    if (micro(x.portions as number) < 1) fail(`portions ${x.portions} is less than one micro-portion`);
+    // review of 3acfa0b: the attribution is fixed by the cause (individual act, aggregate rule, bookkeeping rule)
+    if (x.attribution !== ATTRIBUTION_OF[x.cause as FoodCause]) fail(`${x.cause} must have attribution ${ATTRIBUTION_OF[x.cause as FoodCause]}, has ${JSON.stringify(x.attribution)}`);
   });
 }
 

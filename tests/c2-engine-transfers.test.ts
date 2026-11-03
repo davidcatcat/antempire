@@ -379,6 +379,8 @@ if (!ONLY || ONLY.includes('S')) {
   probe(d5, 'a record that is an array', (ev) => { const i = ev.indexOf(first(ev)); ev[i] = Object.assign([], first(ev)); }, /array/, /not an object/);
   probe(d5, 'a source given as an array', (ev) => { const f = first(ev); f.source = Object.assign([], f.source); }, /source missing or not an object/, /source missing or not an object/);
   probe(d5, 'portions with seven decimals', (ev) => { first(ev).portions = Math.round(first(ev).portions * 1e6) / 1e6 + 1e-7; }, /six decimals/, /six-decimal/);
+  probe(d5, 'a phantom transfer of less than one micro-portion', (ev) => { const u = ev.find((e: Any) => e.type === 'food_transfer' && e.cause === 'unload'); ev.splice(ev.indexOf(u) + 1, 0, { ...structuredClone(u), portions: 5e-10 }); renumber(ev, d5); }, /micro-portion/, /six-decimal portion/);
+  probe(d5, 'an attribution that does not belong to the cause', (ev) => { const c = ev.find((e: Any) => e.type === 'food_transfer' && e.cause === 'collect'); c.attribution = 'engine_rule'; }, /must have attribution individual/, /must have attribution individual/);
   probe(d5, 'a null element in the event list', (ev) => { ev.splice(1, 0, null); }, /not an event object/, /not an event object/);
   probe(d5, "cause 'toString' (prototype name)", (ev) => { first(ev).cause = 'toString'; }, /unknown cause "toString"/, /unknown cause "toString"/);
   // the world source check alone (it runs alone when the colony check is not defined): cause, phase and path are its own
