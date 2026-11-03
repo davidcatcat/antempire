@@ -23,7 +23,7 @@ import type { ColonyState, SimEvent } from '../../engine/index.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 export interface EngineTransfer { type: 'food_transfer'; schema: string; transfer_id: string; day: number; colony: string; minute: number | null; phase: 'foraging' | 'nest_settlement'; source: { kind: string; id: string }; recipient: { kind: string; id: string }; food_type: 'sugar' | 'protein'; portions: number; cause: string; attribution: string; nest_ledger_delta?: number; contact?: Any; basis?: string }
-export const engineTransfers = (events: SimEvent[]): EngineTransfer[] => events.filter((e) => e.type === 'food_transfer') as unknown as EngineTransfer[];
+export const engineTransfers = (events: SimEvent[]): EngineTransfer[] => events.filter((e) => typeof e === 'object' && e !== null && (e as { type?: unknown }).type === 'food_transfer') as unknown as EngineTransfer[];
 
 const ATTRIBUTION: Record<string, string> = { collect: 'individual', prey_kill: 'individual', unload: 'individual', trophallaxis: 'individual', storage_overflow: 'unknown', metabolism: 'unknown', lay_egg: 'unknown', death_crop_to_nest_ledger: 'engine_rule' };
 const SETTLEMENT_ORDER = ['storage_overflow', 'metabolism', 'death_crop_to_nest_ledger', 'lay_egg'];
@@ -32,6 +32,43 @@ const ENDPOINTS: Record<string, [string[], string[]]> = { // allowed [source kin
   collect: [['source'], ['in_transit']], prey_kill: [['insect'], ['source']], unload: [['in_transit'], ['crop', 'cache']], trophallaxis: [['crop'], ['crop']],
   storage_overflow: [['crop', 'nest_unlocated', 'cache'], ['loss']], metabolism: [['crop', 'nest_unlocated', 'cache'], ['metabolized']], lay_egg: [['crop', 'nest_unlocated', 'cache'], ['egg']], death_crop_to_nest_ledger: [['crop'], ['nest_unlocated']],
 };
+
+/** The phase each cause belongs to (written here independently of the engine's table). */
+const PHASE_OF_CAUSE: Record<string, 'foraging' | 'nest_settlement'> = { collect: 'foraging', prey_kill: 'foraging', unload: 'foraging', trophallaxis: 'foraging', storage_overflow: 'nest_settlement', metabolism: 'nest_settlement', death_crop_to_nest_ledger: 'nest_settlement', lay_egg: 'nest_settlement' };
+const KINDS = new Set(['source', 'insect', 'in_transit', 'crop', 'cache', 'nest_unlocated', 'metabolized', 'egg', 'loss']);
+const ATTRIBUTIONS = new Set(['individual', 'unknown', 'engine_rule']);
+const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+const nonEmpty = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
+/**
+ * Codex review of 1bdba72, F1: runtime schema of one record, checked BEFORE any field is used (records come from JSON;
+ * TypeScript types prove nothing at run time). Returns the problems found; a record with any problem is not replayed, so
+ * an undefined phase can never select a roster and a missing field can never crash the reader.
+ */
+export function recordSchemaErrors(x: unknown, where: string): string[] {
+  const out: string[] = [];
+  if (!isObj(x)) return [`${where}: not an object`];
+  const label = nonEmpty(x.transfer_id) ? x.transfer_id : where;
+  if (!nonEmpty(x.transfer_id)) out.push(`${where}: transfer_id missing or not a string`);
+  if (x.schema !== 'antempire.food-transfer.v1') out.push(`${label}: schema ${JSON.stringify(x.schema)} is not antempire.food-transfer.v1`);
+  if (!Number.isInteger(x.day)) out.push(`${label}: day ${JSON.stringify(x.day)} is not an integer`);
+  if (!nonEmpty(x.colony)) out.push(`${label}: colony missing or not a string`);
+  if (x.phase !== 'foraging' && x.phase !== 'nest_settlement') out.push(`${label}: phase ${JSON.stringify(x.phase)} is not a defined phase (foraging | nest_settlement)`);
+  if (typeof x.cause !== 'string' || !Object.hasOwn(PHASE_OF_CAUSE, x.cause)) out.push(`${label}: unknown cause ${JSON.stringify(x.cause)}`);
+  else if ((x.phase === 'foraging' || x.phase === 'nest_settlement') && PHASE_OF_CAUSE[x.cause] !== x.phase) out.push(`${label}: ${x.cause} belongs to phase ${PHASE_OF_CAUSE[x.cause]}, recorded as ${x.phase}`);
+  for (const side of ['source', 'recipient'] as const) {
+    const r = x[side];
+    if (!isObj(r)) { out.push(`${label}: ${side} missing or not an object`); continue; } // isObj excludes arrays
+    if (typeof r.kind !== 'string' || !KINDS.has(r.kind)) out.push(`${label}: ${side} kind ${JSON.stringify(r.kind)} is not a compartment kind`);
+    if (!nonEmpty(r.id)) out.push(`${label}: ${side} id ${JSON.stringify(r.id)} is not a non-empty string`);
+  }
+  if (x.food_type !== 'sugar' && x.food_type !== 'protein') out.push(`${label}: food_type ${JSON.stringify(x.food_type)} is not sugar or protein`);
+  if (typeof x.portions !== 'number' || !Number.isFinite(x.portions) || !(x.portions > 0)) out.push(`${label}: portions ${JSON.stringify(x.portions)} is not a positive finite number`);
+  if (!ATTRIBUTIONS.has(x.attribution as string)) out.push(`${label}: attribution ${JSON.stringify(x.attribution)} is not defined`);
+  if (Array.isArray(x)) out.push(`${label}: the record is an array, not an object`);
+  if (x.phase === 'foraging' && !(x.minute === null || (typeof x.minute === 'number' && Number.isFinite(x.minute) && x.minute >= 0 && x.minute <= 1440))) out.push(`${label}: minute ${JSON.stringify(x.minute)} is not null or a minute of the day (0..1440)`);
+  if (x.phase === 'nest_settlement' && x.minute !== null) out.push(`${label}: a nest-settlement record has minute ${JSON.stringify(x.minute)} (settlement is not timed yet)`);
+  return out;
+}
 
 export interface EngineReplay {
   ok: boolean; errors: string[]; transfers: number;
@@ -54,6 +91,10 @@ export interface EngineReplay {
  */
 export function replayEngineColonyDay(start: ColonyState, end: ColonyState, events: SimEvent[], day: number, sourceIds: ReadonlySet<string>): EngineReplay {
   const errors: string[] = [], err = (m: string) => { if (errors.length < 50) errors.push(m); };
+  // independent review of 9888217 (F-d): the event list itself is checked before anything reads it
+  if (!Array.isArray(events)) return { ok: false, errors: ['the event list is not an array'], transfers: 0, by_cause: {}, by_attribution: {}, unattributed_by_cause: {} };
+  const notObjects = events.map((e, i) => (typeof e === 'object' && e !== null ? -1 : i)).filter((i) => i >= 0);
+  if (notObjects.length) return { ok: false, errors: notObjects.slice(0, 50).map((i) => `event ${i} is ${JSON.stringify(events[i])}, not an event object`), transfers: 0, by_cause: {}, by_attribution: {}, unattributed_by_cause: {} };
   const nestsOf = (c: ColonyState): string[] => [c.nest_node]; // one nest today; a list so several nests can be added
   // a worker is a compartment only while it exists: foraging-phase transfers may name only workers present at the start of
   // the day (eclosions and deaths happen later); settlement transfers may name workers present at the start or the end
@@ -83,6 +124,8 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
   let phase = 'foraging', settleStep = 0, lastUnload: { worker: string; minute: number | null } | null = null;
   xs.forEach((x, i) => {
     const id = `FT-${day}-${start.id}-${i + 1}`;
+    const bad = recordSchemaErrors(x, `transfer ${i + 1}`);
+    if (bad.length) { for (const m of bad) err(m); return; } // never use a field of a malformed record
     if (x.transfer_id !== id) err(`transfer ${i + 1}: id ${x.transfer_id}, expected ${id}`);
     if (x.schema !== 'antempire.food-transfer.v1' || x.day !== day || x.colony !== start.id) err(`${x.transfer_id}: schema/day/colony fields wrong`);
     const a = toMicro(x.portions);

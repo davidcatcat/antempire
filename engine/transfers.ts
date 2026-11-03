@@ -69,7 +69,7 @@ export function recordSettlement(events: SimEvent[], colony: ColonyState, draws:
 
 const micro = (x: number): number => Math.round(x * 1e6);
 const key = (r: FoodRef, f: 'sugar' | 'protein') => `${r.kind}:${r.id}:${f}`;
-const isTransfer = (e: SimEvent) => e.type === 'food_transfer';
+const isTransfer = (e: SimEvent) => typeof e === 'object' && e !== null && (e as { type?: unknown }).type === 'food_transfer';
 
 /** Start-of-day holdings of one colony (micro-portions), taken before foraging. */
 export interface ColonyFoodSnapshot { crops: Map<string, number>; sugar: number; protein: number; nests: string[] }
@@ -124,8 +124,58 @@ const PATHS: Record<FoodCause, [string[], string[]]> = {
 const PHASE_OF: Record<FoodCause, FoodPhase> = { collect: 'foraging', prey_kill: 'foraging', unload: 'foraging', trophallaxis: 'foraging', storage_overflow: 'nest_settlement', metabolism: 'nest_settlement', death_crop_to_nest_ledger: 'nest_settlement', lay_egg: 'nest_settlement' };
 /** The engine's settlement order (engine/day.ts): overflow, metabolism, deaths, eggs. */
 const SETTLE_STEP: Partial<Record<FoodCause, number>> = { storage_overflow: 0, metabolism: 1, death_crop_to_nest_ledger: 2, lay_egg: 3 };
+const FOOD_KINDS: ReadonlySet<string> = new Set(['source', 'insect', 'in_transit', 'crop', 'cache', 'nest_unlocated', 'metabolized', 'egg', 'loss']);
+/**
+ * Runtime shape of every transfer record before any field is used (Codex review of 1bdba72, F1: records may come from
+ * JSON, where the TypeScript types prove nothing). Throws a FOOD_TRANSFER error naming the record.
+ */
+/** The attribution each cause carries (written here independently of the cli reader's table). */
+const ATTRIBUTION_OF: Record<FoodCause, 'individual' | 'unknown' | 'engine_rule'> = { collect: 'individual', prey_kill: 'individual', unload: 'individual', trophallaxis: 'individual', storage_overflow: 'unknown', metabolism: 'unknown', lay_egg: 'unknown', death_crop_to_nest_ledger: 'engine_rule' };
+/** Minutes in a day: the latest a timed (foraging) record can be. */
+const DAY_MINUTES = 1440;
+export function assertTransferShape(colonyId: string, events: SimEvent[]): void {
+  if (!Array.isArray(events)) throw Error(`FOOD_TRANSFER ${colonyId}: the event list is not an array`);
+  const ids = new Set<string>();
+  let day: unknown;
+  events.forEach((e, i) => {
+    // independent review of 9888217 (F-d): a list element that is not an object is a located error, not a crash
+    if (typeof e !== 'object' || e === null) throw Error(`FOOD_TRANSFER ${colonyId}: event ${i} is ${JSON.stringify(e)}, not an event object`);
+    if (!isTransfer(e)) return;
+    const x = e as Record<string, unknown>, name = typeof x.transfer_id === 'string' && x.transfer_id ? x.transfer_id : `event ${i}`;
+    const fail = (m: string) => { throw Error(`FOOD_TRANSFER ${colonyId}: ${name}: ${m}`); };
+    if (Array.isArray(e)) fail('the record is an array, not an object');
+    if (typeof x.transfer_id !== 'string' || !x.transfer_id) fail('transfer_id missing');
+    if (ids.has(x.transfer_id as string)) fail('transfer_id used twice'); ids.add(x.transfer_id as string);
+    if (x.schema !== 'antempire.food-transfer.v1') fail(`schema ${JSON.stringify(x.schema)} is not antempire.food-transfer.v1`);
+    if (!Number.isInteger(x.day)) fail(`day ${JSON.stringify(x.day)} is not an integer`);
+    if (day === undefined) day = x.day; else if (x.day !== day) fail(`day ${JSON.stringify(x.day)} differs from the other records (${JSON.stringify(day)})`);
+    if (typeof x.colony !== 'string' || !x.colony) fail('colony missing');
+    if (x.attribution !== 'individual' && x.attribution !== 'unknown' && x.attribution !== 'engine_rule') fail(`attribution ${JSON.stringify(x.attribution)} is not defined`);
+    if (x.phase !== 'foraging' && x.phase !== 'nest_settlement') fail(`phase ${JSON.stringify(x.phase)} is not foraging or nest_settlement`);
+    if (typeof x.cause !== 'string' || !Object.prototype.hasOwnProperty.call(PHASE_OF, x.cause)) fail(`unknown cause ${JSON.stringify(x.cause)}`);
+    // a foraging record has a minute of the day (or null on the untimed legacy path); a settlement record is not timed
+    if (x.phase === 'foraging' && !(x.minute === null || (typeof x.minute === 'number' && Number.isFinite(x.minute) && x.minute >= 0 && x.minute <= DAY_MINUTES))) fail(`minute ${JSON.stringify(x.minute)} is not null or a minute of the day (0..${DAY_MINUTES})`);
+    if (x.phase === 'nest_settlement' && x.minute !== null) fail(`a nest-settlement record has minute ${JSON.stringify(x.minute)} (settlement is not timed)`);
+    for (const side of ['source', 'recipient']) {
+      const r = x[side] as Record<string, unknown> | null | undefined;
+      if (typeof r !== 'object' || r === null || Array.isArray(r)) fail(`${side} missing or not an object`);
+      const ref = r as Record<string, unknown>;
+      if (typeof ref.kind !== 'string' || !FOOD_KINDS.has(ref.kind)) fail(`${side} kind ${JSON.stringify(ref.kind)} is not a compartment kind`);
+      if (typeof ref.id !== 'string' || !ref.id) fail(`${side} id ${JSON.stringify(ref.id)} is not a non-empty string`);
+    }
+    if (x.food_type !== 'sugar' && x.food_type !== 'protein') fail(`food_type ${JSON.stringify(x.food_type)} is not sugar or protein`);
+    if (typeof x.portions !== 'number' || !Number.isFinite(x.portions) || !(x.portions > 0)) fail(`portions ${JSON.stringify(x.portions)} is not a positive finite number`);
+    if (Math.abs((x.portions as number) * 1e6 - Math.round((x.portions as number) * 1e6)) > 1e-3) fail(`portions ${x.portions} has more than six decimals`);
+    // review of 3acfa0b: an amount must be at least one micro-portion (a 0 µp record is a phantom transfer)
+    if (micro(x.portions as number) < 1) fail(`portions ${x.portions} is less than one micro-portion`);
+    // review of 3acfa0b: the attribution is fixed by the cause (individual act, aggregate rule, bookkeeping rule)
+    if (x.attribution !== ATTRIBUTION_OF[x.cause as FoodCause]) fail(`${x.cause} must have attribution ${ATTRIBUTION_OF[x.cause as FoodCause]}, has ${JSON.stringify(x.attribution)}`);
+  });
+}
+
 function checkPathAndKills(colonyId: string, events: SimEvent[]): void {
   const fail = (m: string) => { throw Error(`FOOD_TRANSFER ${colonyId}: ${m}`); };
+  assertTransferShape(colonyId, events);
   // the phase a record declares must be the phase of its cause, and phases follow the engine's day order (the roster's
   // time rule depends on it; independent review of 4a78ee4)
   let step = -1;
@@ -171,6 +221,7 @@ export function checkColonyFood(start: ColonyFoodSnapshot, colony: ColonyState, 
   cur.set(unl, start.sugar - cropSum); cur.set(cache, start.protein);
   if ((cur.get(unl) as number) < 0) throw Error(`FOOD_TRANSFER: ${colony.id} starts the day with crops above the sugar ledger`);
   const fail = (m: string) => { throw Error(`FOOD_TRANSFER ${colony.id}: ${m}`); };
+  assertTransferShape(colony.id, events); // before any field of any event is read (legalColonyRef reads the events)
   const legal = legalColonyRef(start, colony, events);
   checkPathAndKills(colony.id, events);
   for (const e of events.filter(isTransfer)) {
@@ -213,13 +264,19 @@ export function checkSources(start: Map<string, { sugar: number; protein: number
   const cur = new Map([...start].map(([k, v]) => [k, { ...v }]));
   colonyEvents.forEach((events, i) => {
     const colony = world.colonies?.[i];
+    assertTransferShape(colony?.id ?? `list ${i}`, events);
     const transfers = events.filter(isTransfer);
     if (!colony) { if (transfers.length) throw Error(`FOOD_TRANSFER: transfers recorded for a colony that is not in the world (list ${i})`); return; }
+    assertTransferShape(colony.id, events);
     const workers = new Set(colony.population.workers.map((w) => w.id)), kills = new Set(events.filter((e) => e.type === 'insect_predation').map((e) => String(e.event_id)));
     for (const e of transfers) {
       const x = e as unknown as FoodTransferInput & { transfer_id: string; colony: string };
       if (x.source.kind !== 'source' && x.recipient.kind !== 'source') continue;
       if (x.colony !== colony.id) throw Error(`FOOD_TRANSFER: ${x.transfer_id} is recorded for colony ${x.colony}, in the events of ${colony.id}`);
+      // independent review of 9888217 (F-c): the world check ties cause, phase and path itself (it also runs alone when
+      // the colony check is not defined): a source is only collected from (collect) or credited by a kill (prey_kill)
+      const ok = (x.cause === 'collect' && x.phase === 'foraging' && x.source.kind === 'source' && x.recipient.kind === 'in_transit') || (x.cause === 'prey_kill' && x.phase === 'foraging' && x.source.kind === 'insect' && x.recipient.kind === 'source');
+      if (!ok) throw Error(`FOOD_TRANSFER: ${x.transfer_id} (${x.cause}, ${x.phase}) moves food ${x.source.kind} -> ${x.recipient.kind}, which is not a collection or a kill`);
       const other = x.source.kind === 'source' ? x.recipient : x.source;
       if (!(other.kind === 'in_transit' && workers.has(other.id)) && !(other.kind === 'insect' && kills.has(other.id))) throw Error(`FOOD_TRANSFER: ${x.transfer_id} links a source with ${other.kind}:${other.id}, which is not a worker or a recorded kill of ${colony.id} (Issue #61 R3-08)`);
     }
