@@ -538,3 +538,19 @@
   - 第 84 日的小工蟻存活數；
   - 繁殖季節寫成「3～5 月」與「晚春到秋季」兩種。
 - GISD 的「壽命 78／38 日」不採用，理由見 `docs/research-design-phase3-lifecycle.md` §0。
+
+## 2026-11-03 費洛蒙候選模型研究（R344–R345；工作包 C，`docs/research-pheromone-models-2026-11.md`）
+> 編號從 R344 起，避開 PR #59 使用的 R330～R343。閱讀程度如實標記。
+| ID | 文獻 | 閱讀程度 | 用途 | 限制 |
+|---|---|---|---|---|
+| R344 | Dussutour, Beekman, Nicolis & Meyer (2009) *Noise improves collective decision-making by ants in dynamic environments*. *Proc R Soc B* 276(1677):4353–4361. [PMC2817102](https://pmc.ncbi.nlm.nih.gov/articles/PMC2817102/)；**本種** | 全文，經摘要工具；方程式是圖片，未讀到 | 21 巢；Y 橋短支 60 mm、長支 180 mm；靜態與動態（封住短支）實驗；每支以一個費洛蒙量建模 | 實驗室條件；擬合值的單位未確認；作者沒有自稱「單一費洛蒙模型」 |
+| R345 | Detrain, Pasteels & Deneubourg (1991) *Psyche* 98:21（MIT Psyche 線上版）；**非本種**：*Pheidole pallidula* | OCR 掃描，經摘要工具 | 探索者也拖腹留跡（同屬他種） | 他種；OCR 文字；不可作本種參數 |
+
+R21／R96／R152（Dussutour et al. 2009 *J Exp Biol*）補充：關鍵數字已用第二次擷取核對：
+- 半衰期取食 10.06 分、探索 17.46 分；
+- 60 mm 橋、25±1 °C、飢餓 5 日；
+- 實驗 1 在 85 分、實驗 2 在 30 分後不再偏好。
+
+實驗 3、4 的數字仍需逐頁對 PDF 核對。
+
+R102（Saund & Friedman 2023）補充：論文全文與摘要都沒讀到，只讀了作者公開的程式 `github.com/docxology/ant-pheromone`。程式可能和發表版不同，不得引用為論文結論。
