@@ -298,6 +298,24 @@
       "save_schema": "antempire.engine-v2",
       "state_migration": null,
       "note": "Work package C2: the engine records every food movement between compartments as a food_transfer event and checks per-compartment and source closure daily; diagnostics only (no quantity, draw, decision or simulation state changed; saved event lists and journals grow)"
+    },
+    {
+      "rules_version": "antempire.v2-review.23-local-trail-deposit",
+      "tag": "v23",
+      "fingerprint": {
+        "engine": "ebc9dccc128036e443f36a8b9ba7073798ecc4ee419ca3e50d453dd9ba8645c8",
+        "params": "d2c713e10154e3e9ad1a90634fd69e3cad6265a9a77b909d9db933ca438bbc74"
+      },
+      "approved_in": "Owner instruction 2026-11-03 (Codex Issue #61 R3-05; separate rules-update PR for Owner review, not merged by Claude)",
+      "golden": {
+        "traces": "tests/golden/v23-trace-sha256.json",
+        "reports": "reports/day15-134-v23-*",
+        "day0_traces": "tests/golden/day0-v23-trace-sha256.json"
+      },
+      "previous": "antempire.v2-review.22-engine-food-transfers",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null,
+      "note": "Codex Issue #61 R3-05: a worker carrying food home marks each edge at the minute it has walked it (event-clock trail event), not the whole route at the nest (switch activity.local_trail_deposit_v23)"
     }
   ]
 }
