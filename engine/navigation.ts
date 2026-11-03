@@ -24,6 +24,9 @@ export interface RouteMemory {
   edges: Record<string, EdgeMemory>;
   /** Sites this worker reached and found without any food source (dead host, nothing there), by day. */
   empty_sites: Record<string, number>;
+  /** v2-review.20 (PR #44 review): the exits THIS worker perceived while standing at a node (sorted), recorded when it
+   *  had walked there. Used to plan exploration beyond a node it is not standing on; absent = never observed there. */
+  perceived_exits?: Record<string, string[]>;
 }
 
 const memoryOf = (w: Worker): RouteMemory | undefined => w.route_memory as RouteMemory | undefined;
@@ -85,6 +88,19 @@ export function knownNodes(worker: Worker, from: string): string[] {
 /** Edges leaving `node` that the worker perceives on arrival there but has never walked (sorted). */
 export function unknownExits(worker: Worker, wp: WorldParams, node: string): string[] {
   return [...(adjacencyOf(wp)[node] ?? [])].filter((n) => !knowsEdge(worker, node, n)).sort();
+}
+
+/** v2-review.20: record the exits of the node the worker stands on (local perception, stored as its own observation). */
+export function perceiveExits(worker: Worker, wp: WorldParams, node: string): void {
+  const m = memoryOf(worker);
+  if (m) (m.perceived_exits ??= {})[node] = [...(adjacencyOf(wp)[node] ?? [])].sort();
+}
+
+/** v2-review.20: never-walked exits of a REMOTE node as the worker itself recorded them there; null if it never stood
+ *  there in the simulation (then it knows nothing beyond that node). Reads no world map. */
+export function rememberedUnknownExits(worker: Worker, node: string): string[] | null {
+  const seen = memoryOf(worker)?.perceived_exits?.[node];
+  return seen ? seen.filter((n) => !knowsEdge(worker, node, n)) : null;
 }
 
 export const markEmpty = (worker: Worker, site: string, day: number): void => { const m = memoryOf(worker); if (m) m.empty_sites[site] = day; };

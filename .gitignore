@@ -2,5 +2,5 @@ node_modules/
 saves/.txn/
 saves/.advance.lock
 *.advance-tmp
-reports/phase2-sensitivity/.work/
+reports/phase2-sensitivity*/.work/
 web/dist/
