@@ -36,8 +36,9 @@ import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from '
  *   v2-review.18 Day0 founding controls A4 (queen + 10 pupae) and A5 (queen + 10 callows); lone-queen hazard from day 14 (Chang 1985)
  *   v2-review.19 evaluation corrections: parameter-source labels corrected (lone-queen hazard is a game assumption); no simulation output changes
  *   v2-review.20 (Issue #43 F02–F05, R11): stepwise trail following with arrival-only perception; interrupted search closed at the interruption; joining a held prey needs no other unreserved prey; every outside interval charged once; routes learned on arrival; recruitment at the end of unloading. Switch activity.local_causality_v20.
+ *   v2-review.21 (Issue #50 / #49 N1): brood care exposure from the workers present at the start of the step; eclosions committed after all brood is processed, ids in source-pupa order. Switch brood_care.daily_care_snapshot_v21.
  */
-export const ENGINE_VERSION = 'antempire.v2-review.20-local-causality';
+export const ENGINE_VERSION = 'antempire.v2-review.21-brood-care-snapshot';
 /** Implementation of that behaviour (bumped for refactors that keep results byte-identical). */
 export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
 /**
