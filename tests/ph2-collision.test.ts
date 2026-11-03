@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { REPO_ROOT } from '../cli/lib/load.ts';
 import type { PhysicsGeometry } from '../engine/physics/geometry.ts';
-import { checkTrajectory, passageOf } from '../engine/physics/kinematics.ts';
+import { checkTrajectory, passageOf, positionAt, laneLength } from '../engine/physics/kinematics.ts';
 import { type SimAgentSpec, type SimConfig, type SimResult, type PhysObject, type ReachDisc, simulate, checkExclusion, gridPairs, bruteForcePairs, pickUp, drop, narrowSections, usableWidth } from '../engine/physics/collision.ts';
 import { rng } from '../engine/rng.ts';
 
@@ -39,6 +39,14 @@ const consistent = (cfg: SimConfig, r: SimResult, why: string) => {
   for (const a of cfg.agents) { const v = checkTrajectory(passageOf(cfg.geometry, a.passage), r.intervals[a.id], vmax); ok(v.length === 0, `${why}: ${a.id} trajectory continuous, |Δs| = v·Δt, no overspeed (${v.slice(0, 2)})`); }
 };
 
+const noSilentWait = (r: SimResult) => {
+  const unresolvedIds = new Set(r.events.filter((e) => e.kind === 'unresolved').flatMap((e) => [e.agent, e.other]));
+  return Object.entries(r.final).every(([id, f]) => ['arrived', 'blocked'].includes(f.mode) || (f.mode === 'unresolved' && unresolvedIds.has(id)) || !['follow', 'yield_wait', 'cross_wait'].includes(f.mode) || (() => {
+    // a waiter at the horizon must be waiting for an ant that can still move
+    const last = [...r.events].reverse().find((e) => (e.kind === 'follow_start' || e.kind === 'yield_start' || e.kind === 'cross_wait' || e.kind === 'obstruction') && e.agent === id);
+    return !last?.other || !['arrived', 'blocked', 'unresolved'].includes(r.final[last.other].mode);
+  })());
+};
 // ---- geometry helpers: usable width and narrow sections of the corridor
 const cor = geo('narrow-corridor'), Pc = passageOf(cor, 'P-corridor');
 ok(near(usableWidth(cor, Pc, 50), 1.0) && near(usableWidth(cor, Pc, 5), 20), 'usable width: 1.0 mm between the walls, 20 mm in the open');
@@ -165,8 +173,96 @@ const solo = (id: string, s: number, d: 1 | -1, goal: number, v: number) => arri
     for (const a of agents) ok(checkTrajectory(Pc, res.intervals[a.id], 19).length === 0, `traffic seed ${seed}: ${a.id} trajectory consistent`);
     for (const f of Object.values(res.final)) tally[f.mode] = (tally[f.mode] ?? 0) + 1;
     ok(res.events.filter((e) => e.kind === 'unresolved').every((e) => typeof e.detail === 'string' && e.other !== null), `traffic seed ${seed}: every unresolved jam names the ants and the reason`);
+    ok(noSilentWait(res), `traffic seed ${seed}: no ant ends waiting for an ant that has stopped for good (silent deadlock)`);
   }
   console.error(`two-way single-file traffic, 12 seeds × 8 ants, final states: ${JSON.stringify(tally)}`);
+  ok((tally.arrived ?? 0) + (tally.unresolved ?? 0) + (tally.blocked ?? 0) === 96, `traffic: every ant either arrives or is reported (${JSON.stringify(tally)})`);
+}
+// ---- 9c. independent review of #73: regressions for every reproducer
+{
+  const cr = geo('crossing');
+  // P1-1: discs starting exactly one body length apart, E walking at N (standing until t=100): E must stop, not pass through
+  for (const s0 of [247.5, 247.5 - 5e-10]) {
+    const r1 = run(cr, [ant('E', 'P-east-west', s0, 1, 500, 10), ant('N', 'P-north-south', 250, 1, 250.0000001, 10, { start_t_s: 100 })], { horizon_s: 3 });
+    ok(checkExclusion(r1.cfg, r1.res, 0.01).length === 0 && r1.res.events.some((e) => e.kind === 'cross_wait' && e.agent === 'E'), `touching start (E at ${s0}): E stops instead of walking through N`);
+  }
+  // P1-2: an ant that has arrived on the crossing is never brought back to life; the passer is reported
+  const r2 = run(cr, [ant('E', 'P-east-west', 200, 1, 250, 10), ant('N', 'P-north-south', 200, 1, 500, 10, { start_t_s: 3 })], { horizon_s: 30 });
+  ok(r2.res.final.E.mode === 'arrived' && r2.res.final.N.mode === 'unresolved' && checkExclusion(r2.cfg, r2.res, 0.01).length === 0, `arrived ant stays arrived; the blocked passer is reported (${JSON.stringify(r2.res.final)})`);
+  // M6: a 1.2 mm major starting with its front exactly at the wall section is stopped there
+  const s6 = narrowSections(cor, Pc, 1.2)[0][0];
+  const r6 = run(cor, [ant('M', 'P-corridor', s6 - 1.25, 1, 98, 10, { body: { length_mm: 2.5, width_mm: 1.2, contact_reach_mm: 1 } })], { horizon_s: 3 });
+  ok(r6.res.final.M.mode === 'blocked' && checkExclusion(r6.cfg, r6.res, 0.01).length === 0, 'front exactly at a too-narrow section: blocked at once (no walking through walls)');
+  // M2: two ants abreast at t=0 with A's front exactly at the single-file boundary: A waits, no squeeze
+  const b2 = narrowSections(cor, Pc, 2 * wHi)[0][0];
+  const r7 = run(cor, [ant('A', 'P-corridor', b2 - 1.25, 1, 98, 10), ant('B', 'P-corridor', b2 - 0.5, 1, 98, 10, { start_t_s: 5 })], { horizon_s: 3 });
+  ok(checkExclusion(r7.cfg, r7.res, 0.01).length === 0 && r7.res.events.some((e) => e.kind === 'obstruction' && e.agent === 'A'), 'abreast at the boundary at t=0: the one entering waits');
+  // a second pinch right behind the back-out point: no silent deadlock
+  const dp = structuredClone(cor) as Any; dp.world_id = 'synthetic-double-pinch';
+  dp.obstacles = [
+    { id: 'O-n', kind: 'wall', shape: { type: 'polygon', points_mm: [[40, 0.5], [60, 0.5], [60, 10], [40, 10]] }, base_z_mm: 0, height_mm: 10, provenance: cor.obstacles[0].provenance },
+    { id: 'O-s', kind: 'wall', shape: { type: 'polygon', points_mm: [[40, -0.5], [40, -10], [60, -10], [60, -0.5]] }, base_z_mm: 0, height_mm: 10, provenance: cor.obstacles[0].provenance },
+    { id: 'O-c1', kind: 'stone', shape: { type: 'circle', center_mm: [37, 0.8], radius_mm: 0.3 }, base_z_mm: 0, height_mm: 10, provenance: cor.obstacles[0].provenance },
+    { id: 'O-c2', kind: 'stone', shape: { type: 'circle', center_mm: [37, -0.8], radius_mm: 0.3 }, base_z_mm: 0, height_mm: 10, provenance: cor.obstacles[0].provenance },
+  ];
+  for (const [s1, s2] of [[30, 59], [33, 70], [25, 62], [35, 90]]) {
+    const r8 = run(dp, [ant('W1', 'P-corridor', s1, 1, 98, vOut), ant('W2', 'P-corridor', s2, -1, 2, vRet)], { horizon_s: 20 });
+    ok(checkExclusion(r8.cfg, r8.res, 0.005).length === 0 && noSilentWait(r8.res) && Object.values(r8.res.final).every((f) => f.mode === 'arrived' || f.mode === 'unresolved'), `double pinch W1@${s1} W2@${s2}: no overlap, no silent wait (${JSON.stringify(Object.values(r8.res.final).map((f) => f.mode))})`);
+  }
+  // seeded generators from the review (random lanes at random angles; random pinches, loads, goals in narrow parts)
+  const crossingCase = (seed: number): SimConfig => {
+    const r = rng(seed * 7919), g = structuredClone(cr) as Any; g.world_id = 'synthetic-fuzz';
+    g.surfaces[0].polygon_mm = [[-300, -300], [300, -300], [300, 300], [-300, 300]];
+    const prov = cr.passages[0].provenance, nl = 2 + Math.floor(r() * 3), lanes: Any[] = [];
+    for (let i = 0; i < nl; i++) {
+      const a = r() * Math.PI, R = 60, off = (r() - 0.5) * 10, bend = r() < 0.5;
+      const p0 = [Math.cos(a) * -R - Math.sin(a) * off, Math.sin(a) * -R + Math.cos(a) * off, 0], p2 = [Math.cos(a) * R - Math.sin(a) * off, Math.sin(a) * R + Math.cos(a) * off, 0];
+      const mid = bend ? [(p0[0] + p2[0]) / 2 + (r() - 0.5) * 20, (p0[1] + p2[1]) / 2 + (r() - 0.5) * 20, 0] : null;
+      lanes.push({ id: `P${i}`, centerline_mm: mid ? [p0, mid, p2] : [p0, p2], width_mm: 20, route_edge_ref: null, provenance: prov });
+    }
+    g.passages = lanes;
+    const na = 2 + Math.floor(r() * 5), agents: SimAgentSpec[] = [];
+    for (let k = 0; k < na; k++) {
+      const lane = lanes[k % nl], Lp = laneLength(lane), d = (r() < 0.5 ? 1 : -1) as 1 | -1;
+      const s = d > 0 ? 5 + r() * 30 + Math.floor(k / nl) * 6 : Lp - 5 - r() * 30 - Math.floor(k / nl) * 6, Lb = 1.5 + r() * 2.5;
+      agents.push(ant(`a${k}`, lane.id, s, d, d > 0 ? Lp - 1 : 1, 5 + r() * 20, { start_t_s: r() * 3, body: { length_mm: Lb, width_mm: 0.5 + r() * 0.4, contact_reach_mm: r() } }));
+    }
+    return { geometry: g, agents, horizon_s: 20, seed, window_s: [0.05, 1, 7][seed % 3] };
+  };
+  const laneCase = (seed: number): SimConfig => {
+    const r = rng(seed * 104729), g = structuredClone(cor) as Any; g.world_id = 'synthetic-fuzz2';
+    const prov = cor.obstacles[0].provenance, bend = r() < 0.5;
+    g.passages[0].centerline_mm = bend ? [[0, 0, 0], [50, 0, 0], [100, 8, 0]] : [[0, 0, 0], [100, 0, 0]];
+    const P = g.passages[0], obs: Any[] = [], np = 3 + Math.floor(r() * 6);
+    for (let i = 0; i < np; i++) {
+      const x = 10 + r() * 80, q = positionAt(P, x), rad = 0.2 + r() * 2, half = 0.45 + r() * 0.5;
+      obs.push({ id: `c${i}n`, kind: 'stone', shape: { type: 'circle', center_mm: [q.x, q.y + half + rad], radius_mm: rad }, base_z_mm: 0, height_mm: 5, provenance: prov });
+      if (r() < 0.6) obs.push({ id: `c${i}s`, kind: 'stone', shape: { type: 'circle', center_mm: [q.x + (r() - 0.5), q.y - half - rad], radius_mm: rad }, base_z_mm: 0, height_mm: 5, provenance: prov });
+    }
+    g.obstacles = obs;
+    const Lp = laneLength(P), na = 4 + Math.floor(r() * 6), agents: SimAgentSpec[] = [], objects: PhysObject[] = [];
+    for (let k = 0; k < na; k++) {
+      const d = (r() < 0.5 ? 1 : -1) as 1 | -1, Lb = 1.5 + r() * 2.5, s = d > 0 ? 2 + r() * 90 : Lp - 2 - r() * 90;
+      const goal = r() < 0.3 ? (d > 0 ? s + 5 + r() * (Lp - 2 - s - 5) : s - 5 - r() * (s - 7)) : (d > 0 ? Lp - 2 : 2);
+      let load: string | null = null; if (r() < 0.2) { load = `o${k}`; objects.push({ id: load, width_mm: 0.5 + r() * 0.6, holder: `a${k}` }); }
+      agents.push(ant(`a${k}`, P.id, s, d, Math.max(0, Math.min(Lp, goal)), 5 + r() * 20, { start_t_s: r() * 4, load, body: { length_mm: Lb, width_mm: 0.4 + r() * 0.5, contact_reach_mm: r() } }));
+    }
+    return { geometry: g, agents, objects, horizon_s: 25, seed, window_s: [0.05, 1, 7][seed % 3] };
+  };
+  const fuzzRun = (cfg: SimConfig, label: string) => {
+    let res: SimResult;
+    try { res = simulate(cfg); } catch (e) { if (/same space|narrower than its width|inconsistent/.test(String(e))) return; throw e; }
+    ok(checkExclusion(cfg, res, 0.005).length === 0, `${label}: no mutually exclusive positions`);
+    ok(cfg.agents.every((a) => checkTrajectory(cfg.geometry, res.intervals[a.id], Math.max(...cfg.agents.map((x) => x.free_speed_mm_s))).length === 0), `${label}: trajectories consistent`);
+    ok(JSON.stringify(simulate({ ...cfg, agents: [...cfg.agents].reverse() })) === JSON.stringify(res), `${label}: input order invariant`);
+    ok(noSilentWait(res), `${label}: no silent wait`);
+  };
+  for (const seed of [152, 1301, 1585, 1750, 1001, 1002, 1003, 1004]) fuzzRun(crossingCase(seed), `crossing fuzz seed ${seed}`);
+  for (const seed of [5167, 1, 2, 3, 4, 5, 6, 7]) fuzzRun(laneCase(seed), `lane fuzz seed ${seed}`);
+  // broadphase window does not change crossing events
+  const wc = run(cr, [ant('E', 'P-east-west', 0, 1, 500, 10), ant('N', 'P-north-south', 0, 1, 500, 10)]);
+  const sigc = (r: SimResult) => r.events.map((e) => `${e.kind}|${e.agent}|${e.other}`).join(',');
+  for (const H of [0.05, 7]) { const r = simulate({ ...wc.cfg, window_s: H }); ok(sigc(r) === sigc(wc.res) && r.events.every((e, i) => Math.abs(e.t_s - wc.res.events[i].t_s) < 1e-9), `crossing: window ${H} s gives the same events`); }
 }
 // ---- 10. no food, no organisms: the result holds only motion; the agent set is unchanged
 {
