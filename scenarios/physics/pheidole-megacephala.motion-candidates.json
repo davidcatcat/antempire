@@ -1,0 +1,55 @@
+{
+  "schema": "antempire.physics-motion-candidates.v1",
+  "species_id": "pheidole-megacephala",
+  "status": "實驗用候選值；不是物種參數檔（species/*.json），不進正式模擬。運動層併入每日循環時，要經規則更新 PR 移入物種參數。",
+  "trail_speed_mm_s": {
+    "pooled": {
+      "value": 17.0,
+      "assumption": true,
+      "basis": "文獻支持",
+      "source": "R133 Vázquez, Koehler & Pereira 2020, Insects 11:5 (PMC7022549)：本種沿跡速度 17.0 ± 0.39 mm/s",
+      "same_as_engine": "species/pheidole-megacephala.json activity.trail_walking_speed_mm_s = 17（v17 起已在正式引擎中使用）"
+    },
+    "outbound": {
+      "value": 18.5,
+      "assumption": true,
+      "basis": "文獻支持",
+      "source": "R133 Vázquez et al. 2020：離巢方向（outbound）18.5 mm/s"
+    },
+    "returning": {
+      "value": 15.5,
+      "assumption": true,
+      "basis": "文獻支持",
+      "source": "R133 Vázquez et al. 2020：回巢方向（returning）15.5 mm/s"
+    },
+    "conditions": [
+      "實驗室木橋上 150 mm 的人工路線，以同種腹部己烷萃取物畫線（0.09 工蟻當量/cm）",
+      "每種 5 次試驗、每個場地 400 隻工蟻；試驗前飢餓 24～72 h",
+      "試驗溫度沒有報告（飼養溫度 22～27 °C）",
+      "± 依圖 2 圖說是平均值的 95% 信賴區間（內文沒有再確認）；個體數 n 沒有報告",
+      "內文對速度的定義有排版錯誤，無法確認是瞬時速度或路段平均"
+    ],
+    "direction_difference": "去程與回程速度不同。論文沒有說明回程工蟻是否帶食物，也沒有把差異歸因於負重；討論把貼近路線程度的差異連到雙向交通。**本模型不把方向差異解釋為負重效應**，只按『離巢／回巢』兩個方向使用。",
+    "extrapolation_limit": "人工路線、平滑木面、單一（未報告）溫度。花園土面、落葉、坡度、溫度、擁擠都可能改變速度，方向與大小未知。不得當成野外速度。"
+  },
+  "off_trail_factor": {
+    "value": 0.5,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "source": "沿用正式引擎 species/pheidole-megacephala.json activity.off_trail_speed_factor（v17，遊戲假設）；本種沒有離跡速度資料"
+  },
+  "individual_cv": {
+    "value": null,
+    "assumption": true,
+    "basis": "遊戲假設",
+    "unknown_reason": "Vázquez 2020 只報告平均值與信賴區間，沒有個體間變異；本種沒有找到個體步行速度分布。null＝不加入個體差異（不捏造）。",
+    "sensitivity_candidates": [0.1, 0.3],
+    "sensitivity_note": "只用於測試個體特質介面與敏感度，不是量測"
+  },
+  "not_modelled": {
+    "slope": "沒有本種坡度與速度的資料；速度沿 3D 路線長度計算，坡度不改變速度",
+    "temperature": "外溫動物步行速度隨溫度改變是一般生理學方向；本種沒有溫度—速度曲線，MV-1 不模擬",
+    "load": "沒有本種負重與速度的資料；不使用固定減速比例",
+    "crowding": "擁擠造成的減速由 PH-2 的實際接觸／讓路產生，不使用固定比例"
+  }
+}
