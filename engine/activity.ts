@@ -25,7 +25,7 @@ import { clamp, round } from './math.ts';
 import type { Rng } from './rng.ts';
 import { adjacencyOf, edgeKey } from './routes.ts';
 import { depositTrail, fullTrail, followLocalTrail } from './trails.ts';
-import { knownEmpty, knownNodes, knownRoute, learnRoute, markEmpty, unknownExits } from './navigation.ts';
+import { knownEmpty, knownNodes, knownRoute, learnRoute, markEmpty, perceiveExits, rememberedUnknownExits, unknownExits } from './navigation.ts';
 import { sourceSum } from './ecology.ts';
 import { handoff } from './nutrition.ts';
 import { colonyDice, localSignals, rainActivity } from './workers.ts';
@@ -43,12 +43,13 @@ export interface WorkerActivityStats {
 }
 const newStats = (): WorkerActivityStats => ({ trips: 0, successes: 0, outside_minutes: 0, travel_minutes: 0, search_minutes: 0, handling_minutes: 0, prey_holding_minutes: 0, unload_minutes: 0, explorations: 0, cancelled_no_time: 0, no_route: 0, recruited_by: null, recruits_led: 0, stop_reason: null });
 
-interface Agent { w: Worker; actions: number; token: number; stats: WorkerActivityStats; state: 'nest' | 'out' | 'done'; hold?: PreyHold; departed?: number; restFrom?: number; busyUntil?: number; openSearch?: { ev: SimEvent; end: number }; pendingLearn?: { at: number; route: string[]; kind: string }[] }
+interface Agent { w: Worker; actions: number; token: number; stats: WorkerActivityStats; state: 'nest' | 'out' | 'done'; hold?: PreyHold; departed?: number; restFrom?: number; busyUntil?: number; openSearch?: { ev: SimEvent; end: number }; pendingLearn?: { at: number; route: string[]; kind: string }[]; trip?: Trip }
 interface Trip { site: string; route: string[]; kind: 'forage' | 'explore' | 'explore_base' | 'trail' | 'recruit' | 'hunt_recruit'; leftAt: number; recruiter?: string }
 interface Cargo { macro: Macro; load: number; source: string; prey_event_id?: string }
-type Kind = 'home' | 'arrive' | 'resolve' | 'searched' | 'recruit' | 'decide';
-const KIND_ORDER: Record<Kind, number> = { home: 0, arrive: 1, resolve: 2, searched: 3, recruit: 4, decide: 5 };
-interface QEvent { t: number; kind: Kind; id: string; token: number; trip?: Trip; cargo?: Cargo | null; hold?: PreyHold; afterFailure?: boolean; g?: Rng }
+type Kind = 'trail' | 'home' | 'arrive' | 'resolve' | 'searched' | 'recruit' | 'decide';
+/** 'trail' (v2-review.20 only): a mark laid on one edge, applied before anything else that happens at the same minute. */
+const KIND_ORDER: Record<Kind, number> = { trail: -1, home: 0, arrive: 1, resolve: 2, searched: 3, recruit: 4, decide: 5 };
+interface QEvent { t: number; kind: Kind; id: string; token: number; trip?: Trip; cargo?: Cargo | null; hold?: PreyHold; afterFailure?: boolean; g?: Rng; edge?: [string, string] }
 /** A large prey waiting at a site for long-range recruits (v9/v11 semantics on the continuous clock). */
 interface PreyHold { site: string; finder: string; large: boolean; g: Rng; minute: number; resolveAt: number; holders: string[]; recruits: string[]; joiners: string[]; finderComes: boolean; route: string[]; since: Record<string, number> }
 
@@ -63,6 +64,15 @@ export function edgeMinutes(sp: SpeciesParams, wp: WorldParams, colony: ColonySt
   const onTrail = (colony.trail_by_edge[key] || 0) >= sp.recruitment.trail_min_detectable;
   const speed = sp.activity.trail_walking_speed_mm_s * (onTrail ? 1 : sp.activity.off_trail_speed_factor);
   return { minutes: round((len * 10 * wp.routes.path_tortuosity) / speed / 60), basis: 'length' };
+}
+
+/** v2-review.20 (PR #44 review): minutes to walk one edge as used for PLANNING (does a trip fit the activity window,
+ *  how long a held prey waits). It reads no pheromone: a worker cannot sense trail on an edge it is not on. It uses
+ *  the off-trail speed, the slowest the walk can actually be, so a planned trip never ends later than planned. */
+export function edgePlanMinutes(sp: SpeciesParams, wp: WorldParams, a: string, b: string): number {
+  const len = wp.routes.edge_length_cm[edgeKey(a, b)];
+  if (len === undefined) return wp.routes.route_edge_minutes;
+  return round((len * 10 * wp.routes.path_tortuosity) / (sp.activity.trail_walking_speed_mm_s * sp.activity.off_trail_speed_factor) / 60);
 }
 
 export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
@@ -110,10 +120,11 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
   const knowledge = (id: string) => colony.source_knowledge[id];
 
   /** Walk `route` edge by edge from minute t0; returns arrival minute. Edges are learned as they are walked. */
-  const walk = (a: Agent, route: string[], t0: number, kind: string, learn: boolean): number => {
+  const walk = (a: Agent, route: string[], t0: number, kind: string, learn: boolean, edgeEnds?: number[]): number => {
     let t = t0;
     for (let i = 1; i < route.length; i++) {
       t = round(t + edgeMinutes(sp, wp, colony, route[i - 1], route[i]).minutes);
+      edgeEnds?.push(t);
       events.push({ type: 'route_step', worker: a.w.id, from: route[i - 1], to: route[i], minute: t, kind, assumption: true });
     }
     // v2-review.20 (Issue #43 R11): a route is learned when the worker has walked it (at arrival), not at departure.
@@ -126,12 +137,18 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
   const flushLearning = (a: Agent, now: number) => {
     if (!a.pendingLearn?.length) return;
     const keep: NonNullable<Agent['pendingLearn']> = [];
-    for (const p of a.pendingLearn) if (p.at <= now + 1e-9) learnRoute(a.w, p.route, p.kind, learnDay); else keep.push(p);
+    // v2-review.20 (PR #44 review): having walked the route, the worker has stood at each of its nodes and recorded the
+    // exits it perceived there (its own observation memory; the world map is not consulted later from elsewhere).
+    for (const p of a.pendingLearn) if (p.at <= now + 1e-9) { learnRoute(a.w, p.route, p.kind, learnDay); for (const n of p.route) perceiveExits(a.w, wp, n); } else keep.push(p);
     a.pendingLearn = keep;
   };
   const legOf = (route: string[]) => { let m = 0; for (let i = 1; i < route.length; i++) m += edgeMinutes(sp, wp, colony, route[i - 1], route[i]).minutes; return round(m); };
+  /** Walking minutes used for planning: v2-review.20 reads no pheromone (edgePlanMinutes); v2-review.19 read the trail on every edge. */
+  const planLeg = (route: string[]) => { if (!V20) return legOf(route); let m = 0; for (let i = 1; i < route.length; i++) m += edgePlanMinutes(sp, wp, route[i - 1], route[i]); return round(m); };
   /** Can a full trip along `route` (out, search, longest handling, back, unload) still end inside today's window? */
-  const fits = (route: string[], t: number) => t + 2 * legOf(route) + ac.search_minutes + Math.max(ac.liquid_fill_minutes_full_crop, ac.protein_handling_minutes) + ac.unload_minutes <= W + 1e-9;
+  const fits = (route: string[], t: number) => t + 2 * planLeg(route) + ac.search_minutes + Math.max(ac.liquid_fill_minutes_full_crop, ac.protein_handling_minutes) + ac.unload_minutes <= W + 1e-9;
+  /** v2-review.20 (PR #44 review): the outbound trip a worker actually walked, so it goes home along its OWN route. */
+  const ownTrip = (m: Agent, fallback: Trip): Trip => (V20 && m.trip ? { ...m.trip, kind: 'forage', leftAt: fallback.leftAt } : fallback);
   const stop = (a: Agent, t: number, reason: string) => { a.state = 'done'; a.stats.stop_reason = reason; events.push({ type: 'forager_stopped', worker: a.w.id, minute: round(t), reason, assumption: true }); };
   const cancelNoTime = (a: Agent, t: number, what: string) => { a.stats.cancelled_no_time++; events.push({ type: 'action_cancelled_no_time', worker: a.w.id, minute: round(t), action: what, assumption: true }); stop(a, t, 'no_time_left_in_activity_window'); };
   const startTrip = (a: Agent, t: number, trip: Trip, walkKind: string) => {
@@ -161,7 +178,13 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
   /** Local exploration from the worker's own map (v2-review.14 rule on the timeline). */
   const explore = (a: Agent, t: number, g: Rng): boolean => {
     const w = a.w, bases = knownNodes(w, nest), base = bases[Math.floor(g() * bases.length)], toBase = knownRoute(w, nest, base) as string[];
-    const exits = unknownExits(w, wp, base);
+    // v2-review.20 (PR #44 review, R11c): the exits of the node it stands on (the nest) are perceived now; beyond a
+    // remote node the worker knows only the exits it recorded itself when it stood there (none recorded = unknown,
+    // so it walks there to look). v2-review.19 read the remote node's exits from the world map.
+    let exits: string[];
+    if (!V20) exits = unknownExits(w, wp, base);
+    else if (base === nest) { perceiveExits(w, wp, nest); exits = unknownExits(w, wp, nest); }
+    else exits = rememberedUnknownExits(w, base) ?? [];
     if (!exits.length) {
       // The worker perceives the exits only where it stands: at the nest now, or after walking to the base node.
       if (base === nest) { events.push({ type: 'exploration_no_new_direction', worker: w.id, node: base, minute: round(t), assumption: true }); return false; }
@@ -197,7 +220,7 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
       return true;
     }
     // already outside: walk on along the next edge only if the whole way home still fits the window
-    if (!fits(route, a.departed ?? t) && t + legOf(route) > W) return false;
+    if (!fits(route, a.departed ?? t) && t + planLeg(route) > W) return false;
     const arriveAt = walk(a, [at, next], t, 'trail_follow', true);
     push({ t: arriveAt, kind: 'arrive', id: a.w.id, token: a.token, trip: { site: next, route, kind: 'trail', leftAt: a.departed ?? t } });
     return true;
@@ -251,7 +274,21 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
   const arrive = (a: Agent, t: number, trip: Trip) => {
     const w = a.w, site = world.sources[trip.site];
     w.last_location = trip.site;
+    if (V20) a.trip = trip;
     if (V20 && trip.kind === 'trail' && arriveOnTrail(a, t, trip)) return;
+    if (V20 && trip.kind === 'explore_base') {
+      // v2-review.20: standing at the base node now, the worker perceives its exits (recorded on arrival) and may walk
+      // on along one it has never walked, if the whole way home still fits the window.
+      const exits = unknownExits(w, wp, trip.site), g = dice(a, 'explore_node');
+      if (exits.length) {
+        const next = exits[Math.floor(g() * exits.length)], route = [...trip.route, next];
+        if (t + planLeg([trip.site, next]) + planLeg(route) + ac.search_minutes + Math.max(ac.liquid_fill_minutes_full_crop, ac.protein_handling_minutes) + ac.unload_minutes <= W + 1e-9) {
+          const at = walk(a, [trip.site, next], t, 'explore', true);
+          push({ t: at, kind: 'arrive', id: w.id, token: a.token, trip: { site: next, route, kind: 'explore', leftAt: trip.leftAt } });
+          return;
+        }
+      }
+    }
     if (trip.kind === 'explore_base') { events.push({ type: 'exploration_no_new_direction', worker: w.id, node: trip.site, minute: round(t), assumption: true }); goHome(a, t, trip, null, 'explore_return'); return; }
     if (trip.kind === 'explore') {
       events.push({ type: 'exploration_step', worker: w.id, from: trip.route.at(-2), to: trip.site, minute: round(t), route: trip.route, assumption: true });
@@ -322,7 +359,9 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
   // ---- predation on the continuous clock (v9–v11 rules) ----------------------------------------------
   const capture = (site: Source, members: Agent[], t: number, large: boolean, g: Rng, finder: string, route: string[]): void => {
     const pr = sp.predation, pop = world.ecology.insects_by_site[site.id];
-    if (g() > pr.live_prey_capture_probability) { events.push({ type: 'prey_escaped', site: site.id, worker: finder, minute: round(t), reason: 'failed_capture', participants: members.map((m) => m.w.id), assumption: true }); for (const m of members) { m.hold = undefined; (m.w.site_memory ??= {})[site.id] = { last_success_portions: 0, last_visit_day: learnDay }; goHome(m, t, { site: site.id, route, kind: 'forage', leftAt: t }, null, 'foraging_return'); } return; }
+    // v2-review.20 (PR #44 review): without prey each worker walks home along its own outbound route; `route` is the
+    // route of the team carrying a captured prey together (chosen by the caller from a carrier that walked it).
+    if (g() > pr.live_prey_capture_probability) { events.push({ type: 'prey_escaped', site: site.id, worker: finder, minute: round(t), reason: 'failed_capture', participants: members.map((m) => m.w.id), assumption: true }); for (const m of members) { m.hold = undefined; (m.w.site_memory ??= {})[site.id] = { last_success_portions: 0, last_visit_day: learnDay }; goHome(m, t, ownTrip(m, { site: site.id, route, kind: 'forage', leftAt: t }), null, 'foraging_return'); } return; }
     pop.living--; pop.cumulative_deaths++;
     const quantity = large ? wp.prey.large_prey_protein : wp.prey.small_prey_protein, id = 'HUNT-D' + (world.sim_day + 1) + '-' + site.id + '-' + pop.cumulative_deaths;
     site.batches.push({ event_id: id, original_day: world.sim_day + 1, protein: quantity, age_days: 0, origin: 'captured existing tracked insect; prey-size assumption' });
@@ -356,18 +395,22 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
     if (!large || team.length >= pr.large_prey_min_team) { capture(site, team, t, large, g, a.w.id, trip.route); return; }
     // Long-range recruitment: the finder walks home laying a trail and leads idle nestmates back.
     events.push({ type: 'local_alarm_signal', site: site.id, worker: a.w.id, minute: round(t), short_range_joiners: team.slice(1).map((m) => m.w.id), assumption: true });
-    const leg = legOf(trip.route);
+    const leg = planLeg(trip.route);
     if (t + 3 * leg + ac.protein_handling_minutes > W) {
       events.push({ type: 'prey_escaped', site: site.id, worker: a.w.id, minute: round(t), reason: 'insufficient_team_no_time_to_recruit', participants: team.map((m) => m.w.id), assumption: true });
-      for (const m of team) goHome(m, t, trip, null, 'foraging_return');
+      for (const m of team) goHome(m, t, ownTrip(m, trip), null, 'foraging_return');
       return;
     }
     const hold: PreyHold = { site: site.id, finder: a.w.id, large, g, minute: t, resolveAt: round(t + 2 * leg), holders: team.slice(1).map((m) => m.w.id), recruits: [], joiners: [], finderComes: false, route: trip.route, since: Object.fromEntries(team.slice(1).map((m) => [m.w.id, t])) };
     holds.push(hold); reserved[site.id] = (reserved[site.id] ?? 0) + 1;
     for (const m of team.slice(1)) m.hold = hold;
     a.token++;
-    const home = walk(a, [...trip.route].reverse(), t, 'hunt_recruit_trail_home', false);
-    depositTrail(colony, sp, trip.route, a.w, events);
+    const back = [...trip.route].reverse(), ends: number[] = [];
+    const home = walk(a, back, t, 'hunt_recruit_trail_home', false, ends);
+    // v2-review.20 (PR #44 review): the finder lays the trail as it walks home; each edge carries the mark from the
+    // minute the finder has walked it (v2-review.19 marked the whole route at the encounter, before it was walked).
+    if (V20) back.slice(1).forEach((n, i) => push({ t: ends[i], kind: 'trail', id: a.w.id, token: -1, edge: [back[i], n] }));
+    else depositTrail(colony, sp, trip.route, a.w, events);
     events.push({ type: 'long_range_recruitment_trail', worker: a.w.id, site: site.id, minute: round(home), physical_route: trip.route, assumption: true });
     push({ t: home, kind: 'home', id: a.w.id, token: a.token, trip: { ...trip, kind: 'hunt_recruit' }, cargo: null, hold });
     push({ t: hold.resolveAt, kind: 'resolve', id: a.w.id, token: -1, hold });
@@ -387,11 +430,12 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
     // The finder and its recruits walk the marked route together; they arrive when the prey is resolved.
     const arrive = walk(a, hold.route, t, 'hunt_recruit_lead', true);
     hold.finderComes = true; hold.resolveAt = arrive; a.hold = hold; a.state = 'out'; a.departed = t; a.stats.trips++; summary.foraging_trips++; hold.since[a.w.id] = arrive;
+    if (V20) a.trip = { site: hold.site, route: hold.route, kind: 'hunt_recruit', leftAt: t };
     for (let i = 0; i < n; i++) {
       const f = pool.splice(Math.floor(g() * pool.length), 1)[0];
       endRest(f, t, 'interrupted_by_recruitment');
       walk(f, hold.route, t, 'hunt_recruit_follow_trail', true);
-      f.departed = t; hold.since[f.w.id] = arrive; f.state = 'out'; f.hold = hold; f.token++; f.stats.trips++; f.stats.recruited_by = a.w.id; a.stats.recruits_led++; summary.foraging_trips++; summary.recruited++;
+      f.departed = t; hold.since[f.w.id] = arrive; f.state = 'out'; f.hold = hold; f.token++; if (V20) f.trip = { site: hold.site, route: hold.route, kind: 'hunt_recruit', leftAt: t }; f.stats.trips++; f.stats.recruited_by = a.w.id; a.stats.recruits_led++; summary.foraging_trips++; summary.recruited++;
       if (f.w.task !== 'forage') { summary.tasks[f.w.task as keyof typeof summary.tasks]--; f.w.task = 'forage'; summary.tasks.forage++; }
       events.push({ type: 'hunt_recruitment', by: a.w.id, to: f.w.id, site: hold.site, minute: round(t), physical_route: hold.route, signal_dependent: true, assumption: true });
       hold.recruits.push(f.w.id);
@@ -408,11 +452,19 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
     for (const m of members) { const from = hold.since[m.w.id] ?? t; m.stats.prey_holding_minutes = round(m.stats.prey_holding_minutes + Math.max(0, t - from)); if (t > from) seg(m, from, t, hold.site, 'hold_prey'); m.w.last_location = hold.site; }
     const escape = (reason: string) => {
       events.push({ type: 'prey_escaped', site: hold.site, worker: hold.finder, minute: round(t), reason, participants: members.map((m) => m.w.id), assumption: true });
-      for (const m of members) { m.hold = undefined; goHome(m, t, { site: hold.site, route: hold.route, kind: 'forage', leftAt: t }, null, 'foraging_return'); }
+      for (const m of members) { m.hold = undefined; goHome(m, t, ownTrip(m, { site: hold.site, route: hold.route, kind: 'forage', leftAt: t }), null, 'foraging_return'); }
     };
     if (hold.g() < pr.large_prey_escape_while_recruiting_probability) { escape('escaped_while_recruiting'); return; }
     if (members.length < pr.large_prey_min_team) { escape(hold.finderComes ? 'insufficient_team_after_recruitment' : 'insufficient_team_no_recruits'); return; }
-    capture(site, members, t, hold.large, hold.g, hold.finder, hold.route);
+    // v2-review.20 (PR #44 review): the team carries the prey home together along a route one of its carriers walked:
+    // the finder's marked route when the finder is among them, otherwise the route of the carrier that has been at
+    // the prey longest (ties: worker id). Model assumption (game rule); v2-review.19 always used the finder's route.
+    let teamRoute = hold.route;
+    if (V20 && !members.some((m) => m.w.id === hold.finder)) {
+      const first = [...members].sort((x, y) => (hold.since[x.w.id] ?? t) - (hold.since[y.w.id] ?? t) || idOrder(x.w.id, y.w.id))[0];
+      teamRoute = first.trip?.route ?? hold.route;
+    }
+    capture(site, members, t, hold.large, hold.g, hold.finder, teamRoute);
   };
 
   // ---- back at the nest --------------------------------------------------------------------------------
@@ -440,7 +492,7 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
     const done = round(t + ac.unload_minutes); a.busyUntil = done;
     a.stats.unload_minutes = round(a.stats.unload_minutes + ac.unload_minutes);
     seg(a, t, done, nest, 'unload', `${cargo.macro} ${cargo.load}, ${transfer.count} contacts`);
-    depositTrail(colony, sp, trip.route, w, events);
+    depositTrail(colony, sp, trip.route, w, events, V20 ? t : undefined);
     // v2-review.20 (Issue #43 R11): recruitment and the next decision happen when unloading ENDS (minute `done`),
     // with the nestmates actually in the nest at that minute; nothing is committed for the future at minute t.
     if (V20) push({ t: done, kind: 'recruit', id: w.id, token: a.token, trip, cargo, g });
@@ -483,6 +535,7 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
   for (const w of foragers) { const a = agents.get(w.id) as Agent; push({ t: 0, kind: 'decide', id: w.id, token: a.token }); }
   while (queue.length) {
     const e = queue.shift() as QEvent; clock = e.t;
+    if (e.kind === 'trail') { depositTrail(colony, sp, e.edge as [string, string], (agents.get(e.id) as Agent).w, events, e.t); continue; }
     if (e.kind === 'resolve') { for (const x of agents.values()) if (x.hold === e.hold) flushLearning(x, e.t); if (holds.includes(e.hold as PreyHold)) resolveHold(e.hold as PreyHold, e.t); continue; }
     const a = agents.get(e.id) as Agent;
     flushLearning(a, e.t);

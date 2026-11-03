@@ -1,0 +1,38 @@
+# PR #44 補充審查：tests/issue44-locality.test.ts 在修正前（commit c87896f）的結果
+# 指令：ISSUE44_SOFT=1 ISSUE44_ONLY=<H|E|P|T> node tests/issue44-locality.test.ts（在 c87896f 的工作樹執行，測試檔為本次版本）
+# G（泛用不變量）需要修正後才有的 trail_deposited.minute，無法在修正前評估。
+
+## section H on c87896f (before the fix)
+issue44-locality: 15 FAILED checks:
+- H1: W002 walks home along F07>X>N00 (walked F07>N00)
+- H1: W002 route steps on the way home = its own route (F07>N00)
+- H1: W002 walking home takes the 12.745098 min of its own route (took 11.764706)
+- H2: W002 walks home along F07>X>N00 (walked F07>N00)
+- H2: W002 route steps on the way home = its own route (F07>N00)
+- H2: W002 walking home takes the 12.745098 min of its own route (took 5.882353)
+- H3: W002 walks home along F07>X>N00 (walked F07>N00)
+- H3: W002 route steps on the way home = its own route (F07>N00)
+- H3: W002 walking home takes the 15.686274 min of its own route (took 5.882353)
+- H3: W003 walks home along F07>X>N00 (walked F07>N00)
+- H3: W003 route steps on the way home = its own route (F07>N00)
+- H3: W003 walking home takes the 15.686274 min of its own route (took 5.882353)
+- H4: W002 walks home along F07>X>N00 (walked F07>N00)
+- H4: W002 route steps on the way home = its own route (F07>N00)
+- H4: W002 walking home takes the 12.745098 min of its own route (took 11.764706)
+issue44-locality: 27 checks passed
+## section E on c87896f (before the fix)
+issue44-locality: 4 FAILED checks:
+- E1 seed 5: identical behaviour before reaching F01 whether or not F01 has an extra exit (remote map not perceived)
+- E1 seed 6: identical behaviour before reaching F01 whether or not F01 has an extra exit (remote map not perceived)
+- E1 seed 7: identical behaviour before reaching F01 whether or not F01 has an extra exit (remote map not perceived)
+- E2: after standing at F01 the worker has recorded its exits (null)
+issue44-locality: 7 checks passed
+## section P on c87896f (before the fix)
+issue44-locality: 2 FAILED checks:
+- P: the finder marks each edge when it has walked it ([["N00:X",null,25.529412],["F07:X",null,19.647059]])
+- P: W002 at 24.529412 cannot sense a trail the finder has not laid yet on X–N00 ({"type":"local_trail_choice","worker":"W002","from":"N00","to":"X","local_signal":0.35,"minute":24.529412,"assumption":true})
+issue44-locality: 4 checks passed
+## section T on c87896f (before the fix)
+issue44-locality: 1 FAILED checks:
+- T: the decision at the nest (depart or cancel) is the same whether or not a remote edge carries pheromone
+issue44-locality: 1 checks passed

@@ -249,8 +249,8 @@
       "rules_version": "antempire.v2-review.20-local-causality",
       "tag": "v20",
       "fingerprint": {
-        "engine": "6afb2dee37a25315c511d20a5a3448ec63ad226ff1f2a22ed5285c98adbff570",
-        "params": "cd04705e3e0ca071b02e7265d9b7bd11f121c9734ad99215d2e41dd1771143b7"
+        "engine": "f1a5b74aec60d3cc80664e71c7718f1b3ce1e16cb5c69859a1d595099a999fbb",
+        "params": "276fd2df43a8560e95516ebcd174d5e9a29c54a8fa972a8f8922f8be05139758"
       },
       "approved_in": "Owner instruction 2026-11-03 (Issue #43 WP-B; pending Owner review)",
       "golden": {
@@ -261,7 +261,7 @@
       "previous": "antempire.v2-review.19-evaluation-corrections",
       "save_schema": "antempire.engine-v2",
       "state_migration": null,
-      "note": "Issue #43 F02-F05 and R11 local-causality fixes on the individual timeline (switch activity.local_causality_v20)"
+      "note": "Issue #43 F02-F05 and R11 local-causality fixes on the individual timeline, plus the PR #44 review fixes (own return routes, remembered exits, timed trail marks, pheromone-free planning) (switch activity.local_causality_v20)"
     }
   ]
 }

@@ -7,14 +7,15 @@
  * them and is checked separately below and in tests/navigation.test.ts);
  * v2-review.17 (activity timeline) = 212 (17 insect deaths; the exploration-reach check is split into two
  * checks because a worker may now walk to a place earlier the same day and explore beyond it);
- * v2-review.20 (Issue #43 local-causality fixes) = 214 (18 insect deaths; the trajectory changed, no check removed). The count must
+ * v2-review.20 (Issue #43 local-causality fixes) = 214 (18 insect deaths; the trajectory changed, no check removed); after the
+ * PR #44 review fixes (own return routes, remembered exits, timed trail marks, pheromone-free planning) = 216 (19 insect deaths). The count must
  * equal the current version's expected value exactly; every assertion must pass.
  */
 import { simulateDay, foragingTemperatureFactor, resolveSpecies } from '../engine/index.ts';
 import { bundle, counter, fixture, MAIN_SPECIES, setParam, species } from './lib/harness.ts';
 
 const LEGACY_CHECK_COUNT = 214;
-const EXPECTED_CHECK_COUNT = 214; // v2-review.20 (18 insect deaths in the 30-day trajectory; v17–v19: 212)
+const EXPECTED_CHECK_COUNT = 216; // v2-review.20 after the PR #44 review fixes (19 insect deaths in the 30-day trajectory; first v20 draft: 214; v17–v19: 212)
 const initial = fixture(), p = bundle(), sp = resolveSpecies(species(p));
 const clone = structuredClone;
 if (!(foragingTemperatureFactor(sp, 12) < foragingTemperatureFactor(sp, 20) && foragingTemperatureFactor(sp, 25) === 1)) throw Error('low temperature must suppress foraging');

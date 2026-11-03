@@ -18,12 +18,13 @@ export function decayTrails(colony: ColonyState, sp: SpeciesParams, events: SimE
   }
 }
 
-/** A worker who successfully delivered food marks every edge it walked. */
-export function depositTrail(colony: ColonyState, sp: SpeciesParams, route: string[], worker: Worker, events: SimEvent[]): void {
+/** A worker who successfully delivered food marks every edge it walked. `minute` (v2-review.20, activity timeline):
+ *  the minute the marks exist from; recorded in the event so that every later trail reading can be checked against it. */
+export function depositTrail(colony: ColonyState, sp: SpeciesParams, route: string[], worker: Worker, events: SimEvent[], minute?: number): void {
   const trails = colony.trail_by_edge;
   for (const edge of routeEdges(route)) {
     trails[edge] = round(Math.min(sp.recruitment.trail_max_strength, (trails[edge] || 0) + sp.recruitment.trail_deposit_per_success));
-    events.push({ type: 'trail_deposited', edge, worker: worker.id, intensity: trails[edge], assumption: true });
+    events.push({ type: 'trail_deposited', edge, worker: worker.id, intensity: trails[edge], ...(minute === undefined ? {} : { minute: round(minute) }), assumption: true });
   }
 }
 
