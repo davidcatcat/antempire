@@ -1,0 +1,41 @@
+{
+  "schema": "antempire.physics-interaction-candidates.v1",
+  "species_id": "pheidole-megacephala",
+  "status": "實驗用候選值與候選規則；不是物種參數檔，不進正式模擬。併入每日循環前要經規則更新 PR，並先找本種證據。",
+  "contact_reach_mm": {
+    "value": null,
+    "candidate_range": [0.5, 1.5],
+    "assumption": true,
+    "basis": "遊戲假設",
+    "unknown_reason": "本種沒有找到觸角長度或『觸角能碰到另一隻工蟻的距離』的量測。",
+    "reasoning": "接觸定義為兩隻身體的間距小於觸角向前伸出的距離。範圍只是讓接觸早於身體相碰的工程候選，用於敏感度；不是量測。"
+  },
+  "body": "見 pheidole-megacephala.body-candidates.json（體長：文獻支持；碰撞寬度：候選範圍）",
+  "rules": {
+    "single_file_follow": {
+      "basis": "物理推論",
+      "statement": "單行通道中，後面的工蟻無法超越，所以速度不能超過前面那隻。這是不可重疊的結果，不是減速比例。"
+    },
+    "head_on_back_out": {
+      "assumption": true,
+      "basis": "遊戲假設",
+      "statement": "單行通道中迎面相遇時，其中一隻退回自己來的那一端，在寬處等對方通過，再繼續前進。退的是回頭路較短的一隻；完全相同時以命名亂數流 physics.yield（以兩者 ID 排序後為鍵）決定。",
+      "unknown_reason": "本種沒有找到窄道相遇的行為資料。退回、等待、轉身所需時間都未量測；轉身時間設為 0。"
+    },
+    "crossing_stop": {
+      "assumption": true,
+      "basis": "遊戲假設",
+      "statement": "不同通道的兩隻在交叉處相碰時，對方較在正前方的那一隻停下，等對方身體離開再走。"
+    },
+    "wide_passing": {
+      "assumption": true,
+      "basis": "遊戲假設",
+      "statement": "通道可用寬度 ≥ 兩者寬度和時，兩隻可並排通過，不花額外時間；橫向位置不模擬，所以寬通道上的接觸標為『可能』（certain: false）。"
+    },
+    "contact_is_not_behaviour": {
+      "basis": "Issue #68 原則",
+      "statement": "接觸只是有時間與位置的事件，不代表任何行為（交哺、招募、攻擊等由 C3–C5 依局部訊號決定）。本模組不讀也不改任何食物。"
+    }
+  },
+  "not_modelled": ["橫向位置與側身", "攀爬越過障礙物", "負重與速度的關係", "推擠、拖拉與受傷", "轉身時間", "多隻同時卡住時的連鎖退讓（回報 unresolved）"]
+}
