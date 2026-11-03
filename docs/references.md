@@ -560,7 +560,7 @@
 | R364 | Kay, Rostampour & Sterner (2006) *Funct. Ecol.* 20:1037–1044；**非本種**：*Tetramorium caespitum* | 摘要 | B |
 | R365 | Kay, Scott, Schade & Hobbie (2004) *Ecol. Lett.* 7:1024–1028；**非本種**：*Formica obscuripes* | 摘要 | B |
 | R366 | Csata & Dussutour (2019) *Myrmecol. News* 29:111–124，DOI 10.25849/myrmecol.news_029:111 | 全文 | B（綜述） |
-| R367 | Cornelius & Grace (1997) *J. Entomol. Sci.* 32:421–429；**本種** | 摘要（DOI 10.18474/0749-8004-32.4.421 的 Crossref 查詢未成功） | A（待讀全文；摘要說覓食率不受幼體影響，與 R366 的引用相反） |
+| R367 | Cornelius & Grace (1997) *J. Entomol. Sci.* 32:421–429，DOI 10.18474/0749-8004-32.4.421；**本種**與 *Ochetellus glaber* | 摘要（出版商頁面；全文 PDF 也在出版商網站，尚未讀） | A（待讀全文；摘要說覓食率不受幼體影響，與 R366 的引用相反） |
 | R368 | Tschinkel (1988) *Behav. Ecol. Sociobiol.* 22:103–115；**非本種**：*Solenopsis invicta* | 只有搜尋摘錄 | B |
 | R369 | Richardson (1981) *Water Resour. Res.* 17:182–190（雨量為指數分布）；Richardson & Wright (1984) USDA-ARS ARS-8（WGEN，gamma 雨量） | 摘要／搜尋摘錄 | B（方法） |
 | R370 | Wilks & Wilby (1999) *Prog. Phys. Geogr.* 23:329–357，DOI 10.1177/030913339902300302 | 摘要 | B（方法） |
