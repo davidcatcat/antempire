@@ -85,9 +85,9 @@ geometry.ts（PH-1）  ←  kinematics.ts（MV-1/2）  ←  collision.ts（PH-2/
   |---|---|
   | `ph1-geometry` | 86 |
   | `physics-isolation` | 70+ |
-  | `mv1-kinematics` | 174 |
+  | `mv1-kinematics` | 91（取樣檢查已合併為每個 Δt 一項） |
   | `ph2-collision` | 205 |
-  | `physics-two-ant` | 23 |
+  | `physics-two-ant` | 25 |
 
   - Owner 列出的 12 項工程測試對照，見 #73 的說明。
   - 雙工蟻實驗的引擎結果與手算解析解相差 0。

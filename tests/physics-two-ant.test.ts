@@ -27,6 +27,9 @@ ok(new Set(e.sensitivity.filter((r) => r.width_mm === 0.8).map((r) => r.ants.W2.
 ok(Object.keys(e.tie.yielder_counts).sort().join() === 'W1,W2' && e.tie.yielder_counts.W1 + e.tie.yielder_counts.W2 === e.tie.seeds, `tie: both ants give way in some seeds (${JSON.stringify(e.tie.yielder_counts)})`);
 const cv = e.convergence;
 ok(cv.every((x) => x.yielder === 'W2') && Math.abs(cv.at(-1)!.W1_err_s) < 1e-5 && Math.abs(cv.at(-1)!.W2_err_s) < 1e-5 && Math.abs(cv[0].W2_err_s) > 100 * Math.abs(cv.at(-1)!.W2_err_s), `fixed-step reference converges to the engine as Δt → 0 (${cv.map((x) => x.W2_err_s.toExponential(1)).join(' → ')})`);
+const og = e.convergence_offgrid.rows;
+ok(og.slice(1).every((x, i) => Math.abs(x.W2_err_s) < 0.2 * Math.abs(og[i].W2_err_s)), `off-grid speeds: the fixed-step error falls about tenfold per decade of Δt (${og.map((x) => x.W2_err_s.toExponential(1)).join(' → ')})`);
+ok(Math.abs(e.analytic.section_end_mm - (80 + Math.sqrt(0.64 - 0.25))) < 1e-12, 'closed form uses the wall-corner geometry by hand (no engine geometry code)');
 // the committed report is exactly what the experiment produces now
 const committed = fs.readFileSync(path.join(REPO_ROOT, 'reports/physics-two-ant-corridor.md'), 'utf8');
 ok(committed === report(e), 'reports/physics-two-ant-corridor.md is regenerated output (run: node prototypes/physics/two-ant-corridor.ts > reports/physics-two-ant-corridor.md)');

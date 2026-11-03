@@ -121,19 +121,25 @@ export function fixedStepReference(width: number, reach: number, dt: number, spe
  * one body length; W2 (shorter way back) backs out to just outside the single-file section; W1 walks behind it at W2's
  * speed; W2 resumes when W1's centre is one body length past it.
  */
-export function analyticMain(width: number): { W1: number; W2: number; touch_s: number } {
-  const { geom, L, model } = setup(), sec = narrowSections(geom, passageOf(geom, 'P-corridor'), 2 * width)[0];
-  const v1 = legSpeed(model, 'outbound', true)!, v2 = legSpeed(model, 'returning', true)!, s10 = 2, s20 = 98, eps = 1e-6;
+export function analyticMain(width: number): { W1: number; W2: number; touch_s: number; section_end_mm: number } {
+  const { L, model } = setup();
+  // the walls are 0.5 mm from the centre-line between x=20 and x=80; past the corner the usable width is
+  // 2·hypot(x − 80, 0.5), so two bodies of width w fit again from x = 80 + √(w² − 0.25) (closed form, no engine geometry)
+  const sectionEnd = 80 + Math.sqrt(width * width - 0.25);
+  // the engine's numerical margins (collision.ts EDGE_EPS: distance kept outside the section; CONTACT_EXIT_EPS: hysteresis)
+  const EDGE_EPS = 1e-6, CONTACT_EXIT_EPS = 1e-6;
+  const v1 = legSpeed(model, 'outbound', true)!, v2 = legSpeed(model, 'returning', true)!, s10 = 2, s20 = 98;
   const tTouch = (s20 - s10 - L) / (v1 + v2), s1t = s10 + v1 * tTouch, s2t = s20 - v2 * tTouch;
-  const target = sec[1] + eps + L / 2, tBack = tTouch + (target - s2t) / v2, s1b = s1t + v2 * (tBack - tTouch);
-  const W1 = tBack + (98 - s1b) / v1, tResume = tBack + (target + L + eps - s1b) / v1, W2 = tResume + (target - 2) / v2;
-  return { W1, W2, touch_s: tTouch };
+  const target = sectionEnd + EDGE_EPS + L / 2, tBack = tTouch + (target - s2t) / v2, s1b = s1t + v2 * (tBack - tTouch);
+  const W1 = tBack + (98 - s1b) / v1, tResume = tBack + (target + L + CONTACT_EXIT_EPS - s1b) / v1, W2 = tResume + (target - 2) / v2;
+  return { W1, W2, touch_s: tTouch, section_end_mm: sectionEnd };
 }
 
 export interface Experiment {
   sources: Record<string, string>;
   main: RunSummary; control: RunSummary;
-  analytic: { W1: number; W2: number; touch_s: number; engine_minus_analytic_s: [number, number] };
+  analytic: { W1: number; W2: number; touch_s: number; section_end_mm: number; engine_minus_analytic_s: [number, number] };
+  convergence_offgrid: { speeds_mm_s: [number, number]; rows: { dt_s: number; W1_err_s: number; W2_err_s: number; yielder: string }[] };
   sensitivity: RunSummary[];
   tie: { seeds: number; yielder_counts: Record<string, number>; same_speed_mm_s: number };
   convergence: { dt_s: number; W1_err_s: number; W2_err_s: number; yielder: string }[];
@@ -150,7 +156,11 @@ export function runExperiment(): Experiment {
   const exact = main.ants;
   const convergence = [0.1, 0.01, 0.001, 0.0001, 0.00001].map((dt) => { const r = fixedStepReference(wHi, rMid, dt); return { dt_s: dt, W1_err_s: r.W1 - exact.W1.arrive_s!, W2_err_s: r.W2 - exact.W2.arrive_s!, yielder: r.yielder }; });
   const an = analyticMain(wHi);
-  return { sources: SOURCES, main, control, analytic: { ...an, engine_minus_analytic_s: [exact.W1.arrive_s! - an.W1, exact.W2.arrive_s! - an.W2] }, sensitivity, tie: { seeds: 40, yielder_counts: counts, same_speed_mm_s: vSame }, convergence };
+  // off-grid speeds (not decimal-friendly) so that event times do not fall on the Δt grid: clean first-order convergence
+  const off: [number, number] = [legSpeed(model, 'outbound', true)!, 15.37];
+  const offExact = runOne('offgrid', wHi, rMid, true, 1, off).summary.ants;
+  const convergence_offgrid = { speeds_mm_s: off, rows: [0.1, 0.01, 0.001, 0.0001, 0.00001].map((dt) => { const r = fixedStepReference(wHi, rMid, dt, off); return { dt_s: dt, W1_err_s: r.W1 - offExact.W1.arrive_s!, W2_err_s: r.W2 - offExact.W2.arrive_s!, yielder: r.yielder }; }) };
+  return { sources: SOURCES, main, control, analytic: { ...an, engine_minus_analytic_s: [exact.W1.arrive_s! - an.W1, exact.W2.arrive_s! - an.W2] }, convergence_offgrid, sensitivity, tie: { seeds: 40, yielder_counts: counts, same_speed_mm_s: vSame }, convergence };
 }
 
 const f = (x: number | null | undefined, d = 3) => (x === null || x === undefined || Number.isNaN(x) ? '—' : x.toFixed(d));
@@ -162,9 +172,12 @@ export function report(e: Experiment): string {
 > 由 \`prototypes/physics/two-ant-corridor.ts\` 產生；\`tests/physics-two-ant.test.ts\` 會重跑並比對本檔末的 JSON。合成場景，不是臺中西屯花園，不產生任何存檔、日誌或遊戲日。所有回應規則是**候選規則**（見 \`${SOURCES.interaction}\`），不是本種實測行為。
 
 ## 設定
-- 場景：\`${SOURCES.geometry}\`。通路長 100 mm、寬 20 mm；x=20～80 mm 兩側有牆，可用寬度 1.0 mm。
+- 場景：\`${SOURCES.geometry}\`。通路長 100 mm、寬 20 mm；x=20～80 mm 兩側有牆，可用寬度 1.0 mm。牆角之外的可用寬度是 2·√(dx²+0.5²)，所以兩隻 0.8 mm 寬的工蟻要到 x = 80 + √(0.8²−0.5²) = ${f(e.analytic.section_end_mm, 4)} mm 之外才能並排；單行段因此是 [19.3755, 80.6245] mm，比牆稍長。
 - W1：從 s=2 mm（巢端）往外走，速度是 Vázquez 2020 的離巢速度 18.5 mm/s。W2：從 s=98 mm 回巢，速度是回巢速度 15.5 mm/s。兩隻同時出發。
 - 身體：體長 2.5 mm（Yuan 2026，文獻支持）。碰撞寬度與觸角可及距離是候選範圍（遊戲假設），主實驗取寬度上限 0.8 mm、可及距離 1.0 mm，另做敏感度。
+- 回應規則的假設（遊戲假設）：
+  - 讓路的那隻以**自己的自由速度**退後，轉身時間為 0；這兩點決定了大部分延遲。
+  - 「回頭路較短的那隻退」是兩隻成對的物理解法，不是任何一隻螞蟻能知道的資訊（CLAUDE.md §2.1）。
 - 對照組：同一通路拿掉兩側的牆。
 
 ## 主實驗與對照
@@ -186,7 +199,7 @@ ${ant(e.control, 'W2')}
 - W1 沒有停下，但有一段被限制在 W2 的速度，所以移動中平均速度降到 ${f(e.main.ants.W1.mean_moving_speed, 2)} mm/s。
 - 延遲都來自實際的讓路與跟隨，不是固定減速比例。
 - **解析解核對**：照規則手算的抵達時間 W1 ${f(e.analytic.W1, 9)} s、W2 ${f(e.analytic.W2, 9)} s，引擎差 ${e.analytic.engine_minus_analytic_s.map((x) => x.toExponential(1)).join('、')} s。
-- 沒有牆時只有一次「可能」的接觸，抵達時間與單獨行走相同：**接觸本身不改變任何事**。
+- 沒有牆時只有一次「可能」的接觸，抵達時間與單獨行走相同。這只代表**本版的接觸不觸發任何行為**（C3–C5 尚未接上），不是生物學主張。
 - 路線長 > 位移：讓路者多走了退後與回來的距離。
 
 ## 敏感度（碰撞寬度 × 觸角可及距離，均為遊戲假設的候選）
@@ -194,21 +207,27 @@ ${ant(e.control, 'W2')}
 |---|---|---|---|---|---|---|---|---|
 ${e.sensitivity.map(row).join('\n')}
 
-- 寬度 0.5 mm 時兩隻可並排通過牆間（1.0 ≥ 2×0.5），沒有阻擋。寬度 ≥ 0.65 mm 時一定要讓路。**結果取決於本種沒有量測的碰撞寬度。**
+- 寬度 0.5 mm 正好在臨界點上：2×0.5 = 1.0 不小於可用寬度 1.0，所以兩隻以零間隙並排通過。只要寬度大於 0.5 mm 就一定要讓路（本表的 0.65 與 0.8 都是）。**結果取決於本種沒有量測的碰撞寬度。**
 - 觸角可及距離只改變接觸發生的時刻，不改變阻擋與抵達。
 
 ## 平手（兩隻同速 ${f(e.tie.same_speed_mm_s, 1)} mm/s、位置對稱，${e.tie.seeds} 個種子）
 讓路者次數：${Object.entries(e.tie.yielder_counts).map(([k, v]) => `${k} ${v}`).join('、')}。平手由命名亂數流 \`physics.yield\` 決定，與輸入順序無關。
 
 ## 時間解析度收斂（獨立的固定步長參考實作，同一套規則）
+主實驗的速度（18.5／15.5 mm/s）：
 | Δt (s) | W1 抵達誤差 (s) | W2 抵達誤差 (s) | 讓路者 |
 |---|---|---|---|
 ${e.convergence.map((c) => `| ${c.dt_s} | ${c.W1_err_s.toExponential(2)} | ${c.W2_err_s.toExponential(2)} | ${c.yielder} |`).join('\n')}
 
-- 固定步長版本的誤差隨 Δt 縮小，收斂到事件驅動引擎的結果。
-- 下降不完全單調：相碰時刻是否剛好落在格點上，會讓誤差忽大忽小。
-- 大 Δt（0.1 s）會讓相碰時的位置誤差到 1 mm 量級，抵達誤差也到 0.07 s。
-- 事件驅動引擎本身沒有時間步，與解析解一致。
+不在格點上的速度（${e.convergence_offgrid.speeds_mm_s.join('／')} mm/s）：
+| Δt (s) | W1 抵達誤差 (s) | W2 抵達誤差 (s) | 讓路者 |
+|---|---|---|---|
+${e.convergence_offgrid.rows.map((c) => `| ${c.dt_s} | ${c.W1_err_s.toExponential(2)} | ${c.W2_err_s.toExponential(2)} | ${c.yielder} |`).join('\n')}
+
+- 固定步長參考實作把「退到定點」與「恢復前進」都延到下一個格點，沒有內插。
+  - 主實驗的距離與速度都是十進位整齊的數字，所以每一級 Δt 的殘差剛好相同：W2 停在 Δt = 0.01～0.0001 的平台。這是參考實作的離散化造成的，不是格點對齊的問題，也不是引擎的誤差。
+  - 換成不在格點上的速度，誤差就隨 Δt 一階下降（約每級 1/10）。
+- 事件驅動引擎本身沒有時間步，與手算解析解一致（差 0）。
 
 ## 與科學觀察的比較（Owner 指定項目）與驗證限制
 | 項目 | 本模型 | 本種資料 | 可否驗證 |
