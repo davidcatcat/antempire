@@ -16,14 +16,15 @@
  *    unload transfer is placed before the trophallaxis of the same handoff (code order, engine/nutrition.ts handoff).
  *  - nest-ledger membership (food entering / leaving stores.sugar / stores.protein) is recorded SEPARATELY as
  *    LedgerEntry; it is accounting, not a physical move, and is never counted as a second income.
- *  - metabolism, egg costs and storage overflow are taken by the engine from the AGGREGATE ledger (settleCrops in
- *    worker-array order is an engine abstraction, Issue #43 F01/A08); they are recorded with attribution 'unknown'
- *    and checked only at pool level. A dead worker's crop sugar stays in the engine ledger (no corpse compartment yet,
- *    C5). These are reported, not hidden, and never given an invented source.
- * Two different results are therefore reported:
- *   physical_verified — every individual/located transfer replayed with source balance, no negative compartment,
- *     nothing left in transit, and each located compartment consistent with the snapshot;
- *   ledger_only — the pool and nest ledger close exactly, but the individual source of the unattributed use is unknown.
+ *  - metabolism, egg costs and storage overflow are taken by the engine from the AGGREGATE ledger (Issue #43 F01/A08);
+ *    they carry attribution 'unknown' and are replayed with the engine's own deterministic rule (settleCrops: crops in
+ *    worker-array order, then the unlocated nest sugar), never given an invented individual source;
+ *  - a dead worker's crop sugar stays in the engine ledger (no corpse compartment until C5): attribution 'engine_rule'.
+ * The replay then requires EVERY compartment of the end snapshot to equal the replay exactly.
+ * KNOWN LIMIT (independent review of a80b92e): the engine gives only start-of-day and end-of-day states. When the
+ * settlement empties a crop, the end state no longer shows which worker held that food after foraging, so a
+ * misrouted or missing trophallaxis between such crops cannot be detected from cli/ alone. Every result lists those
+ * crops (`evidence_limited_compartments`); full checking needs engine-side transfer events (C2).
  * Units: game portions (NOT mg); exact integer micro-portions (10⁻⁶ portion), the engine's six-decimal resolution.
  */
 import type { ColonyState, SimEvent } from '../../engine/index.ts';
@@ -41,8 +42,9 @@ export type TransferCause = 'collect' | 'unload' | 'trophallaxis' | 'metabolism'
 export interface FoodTransfer {
   type: 'food_transfer'; transfer_id: string; day: number; colony: string; minute: number | null; phase: 'foraging' | 'nest_settlement';
   location: string; source: CompartmentRef; recipient: CompartmentRef; food_type: FoodType; amount_microportions: number; cause: TransferCause;
-  /** 'individual' = the engine names the individual source and recipient; 'unknown' = the engine takes it from the aggregate ledger. */
-  attribution: 'individual' | 'unknown';
+  /** 'individual' = the engine names the individual source and recipient; 'unknown' = the engine takes it from the aggregate
+   *  ledger; 'engine_rule' = an engine bookkeeping rule, not an individual act (a dead worker's crop kept in the ledger). */
+  attribution: 'individual' | 'unknown' | 'engine_rule';
   /** Ids of the engine events that record this physical act (`E-<day>-<colony>-<index>`); one act may be logged by several events. */
   event_ids: string[];
   /** For trophallaxis: the engine logs the contact only as the trophallaxis event itself (no separate contact event). */
@@ -126,7 +128,7 @@ export function dayTransfers(events: SimEvent[], summary: Any, colony: { id: str
   ev.forEach((e, i) => {
     if (e.type !== 'worker_death') return;
     // amount resolved by the replay: whatever the dead worker's crop holds at that moment (it stays in the nest ledger)
-    transfers.push({ type: 'food_transfer', transfer_id: `FT-${day}-${colony.id}-${transfers.length + 1}`, day, colony: colony.id, minute: null, phase: 'nest_settlement', location: nest, source: { kind: 'crop', id: e.id }, recipient: { kind: 'nest_unlocated', id: colony.id }, food_type: 'sugar', amount_microportions: 0, amount_rule: 'all_held', cause: 'death', attribution: 'individual', event_ids: [eid(i)], engine_note: 'engine abstraction until C5: a dead worker keeps no corpse compartment; its crop sugar stays in the nest ledger' });
+    transfers.push({ type: 'food_transfer', transfer_id: `FT-${day}-${colony.id}-${transfers.length + 1}`, day, colony: colony.id, minute: null, phase: 'nest_settlement', location: nest, source: { kind: 'crop', id: e.id }, recipient: { kind: 'nest_unlocated', id: colony.id }, food_type: 'sugar', amount_microportions: 0, amount_rule: 'all_held', cause: 'death', attribution: 'engine_rule', event_ids: [eid(i)], engine_note: 'engine abstraction until C5: a dead worker keeps no corpse compartment; its crop sugar stays in the nest ledger' });
   });
   ev.forEach((e, i) => {
     if (e.type !== 'egg_laid') return;
@@ -154,6 +156,9 @@ export interface ReplayResult {
   engine_abstractions_used: string[];
   /** Crops of workers that died; their sugar stayed in the nest ledger (no corpse compartment until C5). */
   dead_worker_crops_to_ledger: string[];
+  /** Crops that took part in foraging-phase transfers and were then emptied by the settlement rule: for these the end
+   *  state cannot show a misrouted or missing trophallaxis (KNOWN LIMIT; needs engine-side transfer events, C2). */
+  evidence_limited_compartments: string[];
   /** Whether source compartments were balance-checked (false for real engine days: ecology production is not evented). */
   sources_checked: boolean;
   /** Transfers with amounts resolved by the replay (deaths). */
@@ -177,7 +182,7 @@ export interface ReplayResult {
  * `checkSources`: balance-check source compartments too (synthetic tests). On real engine days ecology production is
  * not evented, so sources are not checked (`sources_checked: false`).
  */
-export function replayTransfers(start: Compartments, transfers: FoodTransfer[], ledger: LedgerEntry[], end: Compartments, opts: { nest: string; colony: string; workerOrder: string[]; ledgerStart: Record<FoodType, number>; ledgerEnd: Record<FoodType, number>; checkSources?: boolean }): ReplayResult {
+export function replayTransfers(start: Compartments, transfers: FoodTransfer[], ledger: LedgerEntry[], end: Compartments, opts: { nest: string; colony: string; workerOrder: string[]; ledgerStart: Record<FoodType, number>; ledgerEnd: Record<FoodType, number>; checkSources?: boolean; eggSettlesCrops?: boolean }): ReplayResult {
   const cur: Compartments = structuredClone(start), errors: string[] = [], seen = new Set<string>(), resolved: FoodTransfer[] = [];
   const unattributed = { sugar: 0, protein: 0 }, byComp: Record<string, Record<FoodType, number>> = {}, abstractions = new Set<string>(), deadCrops: string[] = [];
   const order = [...opts.workerOrder], unl = `nest_unlocated:${opts.colony}`, cache = `cache:${opts.nest}`;
@@ -185,6 +190,7 @@ export function replayTransfers(start: Compartments, transfers: FoodTransfer[], 
   const isTracked = (r: CompartmentRef) => TRACKED.has(r.kind) && (r.kind !== 'source' || !!opts.checkSources);
   const take = (k: string, f: FoodType, a: number) => { get(k)[f] -= a; ((byComp[k] ??= { sugar: 0, protein: 0 })[f] += a); };
   let phase: 'foraging' | 'nest_settlement' = 'foraging';
+  const touched = new Set<string>(), limited: string[] = [];
   const endOfForaging = () => {
     for (const [k, v] of Object.entries(cur)) if (k.startsWith('in_transit:')) for (const f of ['sugar', 'protein'] as const) if (v[f] !== (end[k]?.[f] ?? 0)) errors.push(`${k}: ${v[f]} µp ${f} still in transit after foraging with no recipient (carrier died, unloading missing, or a collection logged twice)`);
   };
@@ -211,8 +217,10 @@ export function replayTransfers(start: Compartments, transfers: FoodTransfer[], 
     if (x.source.kind === 'colony_ledger_aggregate') {
       // nest settlement, attribution unknown: the engine's own rule (settleCrops) decides which compartment loses it
       let left = x.amount_microportions;
+      // egg sugar leaves the crops only when the species rule nutrition.egg_laying_settles_crops is on (engine/queen.ts)
+      const fromCrops = !(x.cause === 'lay_egg' && opts.eggSettlesCrops === false);
       if (x.food_type === 'sugar') {
-        for (const w of order) { const k = `crop:${w}`, h = cur[k]?.sugar ?? 0, a = Math.min(h, left); if (a > 0) { take(k, 'sugar', a); left -= a; abstractions.add('settlement_from_crops_in_worker_array_order'); } if (!left) break; }
+        if (fromCrops) for (const w of order) { const k = `crop:${w}`, h = cur[k]?.sugar ?? 0, a = Math.min(h, left); if (a > 0) { take(k, 'sugar', a); left -= a; abstractions.add('settlement_from_crops_in_worker_array_order'); } if (!left) break; }
         if (left) { const h = cur[unl]?.sugar ?? 0; if (h < left) errors.push(`${x.transfer_id}: unattributed ${x.cause} ${x.amount_microportions} µp sugar exceeds the nest sugar`); take(unl, 'sugar', Math.min(h, left)); }
       } else { const h = cur[cache]?.protein ?? 0; if (h < left) errors.push(`${x.transfer_id}: unattributed ${x.cause} ${left} µp protein exceeds the cache`); take(cache, 'protein', Math.min(h, left)); }
       unattributed[x.food_type] += x.amount_microportions;
@@ -222,10 +230,12 @@ export function replayTransfers(start: Compartments, transfers: FoodTransfer[], 
       s[x.food_type] -= x.amount_microportions;
     }
     if (isTracked(x.recipient)) get(key(x.recipient))[x.food_type] += x.amount_microportions;
+    if (x.phase === 'foraging') for (const r of [x.source, x.recipient]) if (r.kind === 'crop') touched.add(key(r));
     resolved.push(x);
   }
   if (phase === 'foraging') endOfForaging();
   for (const k of new Set([...Object.keys(cur), ...Object.keys(end)])) {
+    if (k.startsWith('crop:') && (byComp[k]?.sugar ?? 0) > 0 && (cur[k]?.sugar ?? 0) === 0 && touched.has(k)) limited.push(k);
     if (k.startsWith('source:') && !opts.checkSources) continue;
     for (const f of ['sugar', 'protein'] as const) {
       const r = cur[k]?.[f] ?? 0, e = end[k]?.[f] ?? 0;
@@ -243,13 +253,13 @@ export function replayTransfers(start: Compartments, transfers: FoodTransfer[], 
   }
   const ledgerOk = (['sugar', 'protein'] as const).every((f) => opts.ledgerStart[f] + ledger.filter((x) => x.food_type === f && x.direction === 'in').reduce((a, x) => a + x.amount_microportions, 0) - ledger.filter((x) => x.food_type === f && x.direction === 'out').reduce((a, x) => a + x.amount_microportions, 0) === opts.ledgerEnd[f]);
   if (!ledgerOk) errors.push('nest ledger does not close: start + delivered − used ≠ end');
-  return { physical_verified: errors.length === 0, ledger_only_closed: ledgerOk, errors, unattributed, unattributed_by_compartment: byComp, engine_abstractions_used: [...abstractions].sort(), dead_worker_crops_to_ledger: deadCrops, sources_checked: !!opts.checkSources, resolved, replayed: cur };
+  return { physical_verified: errors.length === 0, ledger_only_closed: ledgerOk, errors, unattributed, unattributed_by_compartment: byComp, engine_abstractions_used: [...abstractions].sort(), dead_worker_crops_to_ledger: deadCrops, evidence_limited_compartments: limited.sort(), sources_checked: !!opts.checkSources, resolved, replayed: cur };
 }
 
 /** Convenience: replay one engine colony-day from its start state, events, summary and end state. */
-export function replayColonyDay(startColony: ColonyState, endColony: ColonyState, events: SimEvent[], summary: Any, day: number): ReplayResult & { transfers: FoodTransfer[]; ledger: LedgerEntry[] } {
+export function replayColonyDay(startColony: ColonyState, endColony: ColonyState, events: SimEvent[], summary: Any, day: number, eggSettlesCrops = true): ReplayResult & { transfers: FoodTransfer[]; ledger: LedgerEntry[] } {
   const { transfers, ledger } = dayTransfers(events, summary, endColony, day);
   const start = colonyCompartments(startColony), end = colonyCompartments(endColony);
-  const r = replayTransfers(start, transfers, ledger, end, { nest: endColony.nest_node, colony: endColony.id, workerOrder: startColony.population.workers.map((w) => w.id), ledgerStart: { sugar: toMicro(startColony.stores.sugar), protein: toMicro(startColony.stores.protein) }, ledgerEnd: { sugar: toMicro(endColony.stores.sugar), protein: toMicro(endColony.stores.protein) } });
+  const r = replayTransfers(start, transfers, ledger, end, { nest: endColony.nest_node, colony: endColony.id, workerOrder: startColony.population.workers.map((w) => w.id), ledgerStart: { sugar: toMicro(startColony.stores.sugar), protein: toMicro(startColony.stores.protein) }, ledgerEnd: { sugar: toMicro(endColony.stores.sugar), protein: toMicro(endColony.stores.protein) }, eggSettlesCrops });
   return { ...r, transfers, ledger };
 }

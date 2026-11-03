@@ -7,8 +7,12 @@
  *      donor holding food (no contact possible), trophallaxis away from the nest, sugar and protein carried separately,
  *      carrier dies in transit, unloading missing, the same event input twice, transport across a day boundary,
  *      a source holding too little.
- *  E   the current engine (v2-review.20 on main): 5 foundings × 4 seasons × 45 days; every colony-day replayed —
- *      physical transfers verified, nest ledger exact, the unattributed (F01/A08) use reported per food type.
+ *  R/K reproductions from the independent reviews; K1 shows the KNOWN LIMIT (a misrouted trophallaxis between crops the
+ *      settlement then empties is not detectable from start/end states; such crops are listed), K3 the
+ *      egg_laying_settles_crops flag, K4 the engine_rule label of a dead worker's crop.
+ *  E   the current engine on main (ENGINE_VERSION printed): 5 foundings × 4 seasons × 45 days; every colony-day
+ *      replayed — physical transfers verified, nest ledger exact, the unattributed (F01/A08) use and the
+ *      evidence-limited crops reported.
  *  T8  replay determinism; transfer ids unique across all days.
  * The v19 run of the first C1 version (858 colony-days, totals only) is history: it did not check the transfer path and
  * is NOT evidence for this version.
@@ -119,22 +123,61 @@ rejected('trophallaxis to a worker carrying a load outside (repro D)', [col('W2'
   ok(r.resolved.some((x) => x.cause === 'death' && x.amount_microportions === 0.4 * U), 'R (repro E): the death transfer records the amount moved');
 }
 
+// ---------------------------------------------------------------- K: independent review of a80b92e
+{ // K1 KNOWN LIMIT (stated, not hidden): the settlement empties both possible recipients, so the end state cannot tell
+  // W1 -> W2 from W1 -> W3. Both records replay; the result names the crops whose evidence the settlement erased.
+  const summary = { mass_ledger: { metabolized: { sugar: 0.3, protein: 0 }, storage_overflow_not_retained: { sugar: 0, protein: 0 } } };
+  const start = comp({ 'crop:W1': [0.3, 0], 'crop:W2': [0, 0], 'crop:W3': [0, 0], 'nest_unlocated:C1': [0, 0] });
+  const end = comp({ 'crop:W1': [0, 0], 'crop:W2': [0, 0], 'crop:W3': [0, 0], 'nest_unlocated:C1': [0, 0] });
+  const truth = synth([tro('W1', 'W3', 0.3)], start, end, { sugar: 0.3 * U, protein: 0 }, { sugar: 0, protein: 0 }, summary);
+  const wrong = synth([tro('W1', 'W2', 0.3)], start, end, { sugar: 0.3 * U, protein: 0 }, { sugar: 0, protein: 0 }, summary);
+  ok(truth.r.physical_verified && wrong.r.physical_verified, 'K1 KNOWN LIMIT: a misrouted trophallaxis between crops the settlement then empties is NOT detectable from start/end states');
+  ok(wrong.r.evidence_limited_compartments.includes('crop:W2') && truth.r.evidence_limited_compartments.includes('crop:W3'), `K1: the result lists the crops whose evidence the settlement erased (${wrong.r.evidence_limited_compartments.join(', ')})`);
+  const clean = synth([], comp({ 'crop:W1': [0.5, 0], 'nest_unlocated:C1': [0, 0] }), comp({ 'crop:W1': [0.2, 0], 'nest_unlocated:C1': [0, 0] }), { sugar: 0.5 * U, protein: 0 }, { sugar: 0.2 * U, protein: 0 }, summary);
+  ok(clean.r.evidence_limited_compartments.length === 0, 'K1: a crop the settlement did not empty is not listed');
+}
+{ // K4: a dead worker's crop kept in the ledger is an engine rule, not an individual act
+  const { r } = synth([{ type: 'worker_death', id: 'W2' }], comp({ 'crop:W2': [0.4, 0], 'nest_unlocated:C1': [0, 0] }), comp({ 'nest_unlocated:C1': [0.4, 0] }), { sugar: 0.4 * U, protein: 0 }, { sugar: 0.4 * U, protein: 0 });
+  const d = r.resolved.find((x) => x.cause === 'death');
+  ok(r.physical_verified && d?.attribution === 'engine_rule', `K4: the death transfer is labelled engine_rule (${d?.attribution})`);
+}
+const k3: Any = {};
+{ // K3: nutrition.egg_laying_settles_crops = false (pre-v13 rule, kept for isolation): egg sugar comes off the ledger only.
+  // Under that rule crops can exceed the ledger (the v13 bug), which the compartment model refuses to represent; such
+  // days are counted, not replayed.
+  const bOff: Any = structuredClone(loadBundle()); bOff.species['pheidole-megacephala'].nutrition.egg_laying_settles_crops = false;
+  let s: Any = buildDay0('A1' as Any, 1, '2027-03-21', bOff).state, offOk = 0, onFalse = 0, eggDays = 0, unrepresentable = 0;
+  for (let d = 0; d < 40; d++) {
+    const before = structuredClone(s.colonies[0]), o: Any = simulateWorldDay(s, bOff), after = o.state.colonies[0], r = o.result.colonies[0];
+    s = o.state;
+    let off, on;
+    try { off = replayColonyDay(before, after, r.events, r.summary, o.day, false); on = replayColonyDay(before, after, r.events, r.summary, o.day, true); } catch (e) { if (/exceed the sugar ledger/.test(String(e))) { unrepresentable++; continue; } throw e; }
+    assert.ok(off.physical_verified && off.ledger_only_closed, `K3 day ${o.day}: flag off replays with the flag off (${off.errors.slice(0, 2).join(' | ')})`); checks++;
+    if (off.transfers.some((x) => x.cause === 'lay_egg')) eggDays++;
+    offOk++; if (!on.physical_verified) onFalse++;
+  }
+  ok(offOk > 0 && eggDays > 0, `K3: ${offOk} days with the flag off replay when the replay follows the flag (${eggDays} with eggs; ${unrepresentable} days not representable: crops exceeded the ledger under the old rule)`);
+  Object.assign(k3, { days_replayed_flag_off: offOk, days_with_eggs: eggDays, days_unrepresentable_crops_exceed_ledger: unrepresentable, days_rejected_if_replayed_as_flag_on: onFalse });
+  ok(onFalse > 0, `K3: replaying them as if the flag were on is rejected on ${onFalse} days (the flag matters, so it is passed in)`);
+}
+
 // ---------------------------------------------------------------- E: the current engine, every colony-day replayed
 const b = loadBundle();
-let days = 0, troph = 0, deaths = 0;
+let days = 0, troph = 0, deaths = 0, limitedDays = 0, limitedCrops = 0;
 const unattributed = { sugar: 0, protein: 0 };
 const allIds = new Set<string>();
 const runDays = (sc: string, seed: number, season: string, n: number, collect = true) => {
   let s: Any = buildDay0(sc as Any, seed, season, b).state; const out: Any[] = [];
   for (let d = 0; d < n; d++) {
     const before = structuredClone(s.colonies[0]), o: Any = simulateWorldDay(s, b), after = o.state.colonies[0], r = o.result.colonies[0];
-    const rep = replayColonyDay(before, after, r.events, r.summary, o.day);
+    const rep = replayColonyDay(before, after, r.events, r.summary, o.day, (b.species as Any)['pheidole-megacephala'].nutrition.egg_laying_settles_crops !== false);
     out.push(rep.transfers);
     if (collect) {
       days++;
       assert.ok(rep.physical_verified && rep.ledger_only_closed, `E ${sc}/${seed}/${season} day ${o.day}: ${rep.errors.slice(0, 3).join(' | ')}`); checks++;
       for (const x of rep.transfers) { assert.ok(!allIds.has(x.transfer_id), `T8: transfer id ${x.transfer_id} reused`); allIds.add(x.transfer_id); if (x.cause === 'trophallaxis') troph++; if (x.attribution === 'unknown') unattributed[x.food_type] += x.amount_microportions; }
       deaths += rep.dead_worker_crops_to_ledger.length;
+      if (rep.evidence_limited_compartments.length) { limitedDays++; limitedCrops += rep.evidence_limited_compartments.length; }
       assert.equal(rep.sources_checked, false, 'real engine days: sources are not balance-checked (stated in the result)'); checks++;
     }
     s = o.state;
@@ -147,4 +190,4 @@ ok(days > 600 && troph > 500, `E (${ENGINE_VERSION}): ${days} colony-days, every
 // T8 replay determinism
 const a = JSON.stringify(runDays('A1', 7, '2027-09-23', 20, false)), z = JSON.stringify(runDays('A1', 7, '2027-09-23', 20, false));
 ok(a === z && a.length > 100, 'T8: the same input gives a byte-identical food_transfer sequence');
-console.log(JSON.stringify({ checks, engine_version: ENGINE_VERSION, colony_days: days, trophallaxis_transfers: troph, known_defect_F01_A08: { note: 'nest-settlement use (metabolism, eggs, overflow) with attribution unknown: the engine takes it from the aggregate ledger; C2–C5 must give every use an individual source', unattributed_microportions: unattributed } }, null, 2));
+console.log(JSON.stringify({ checks, engine_version: ENGINE_VERSION, colony_days: days, trophallaxis_transfers: troph, known_limit_settlement_erases_evidence: { colony_days: limitedDays, crops: limitedCrops, note: 'crops touched while foraging and then emptied by the settlement: a misrouted or missing trophallaxis there is not detectable from start/end states (needs C2 engine-side events)' }, egg_flag_off_K3: k3, known_defect_F01_A08: { note: 'nest-settlement use (metabolism, eggs, overflow) with attribution unknown: the engine takes it from the aggregate ledger; C2–C5 must give every use an individual source', unattributed_microportions: unattributed } }, null, 2));
