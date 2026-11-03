@@ -40,6 +40,17 @@ const run = (s: Any, p: Any, q: Any, learnDay = 1) => { const c = s.colonies[0],
 const segsOf = (ev: Any[], id: string) => ev.filter((e) => e.type === 'worker_activity' && e.worker === id).sort((x, y) => x.start - y.start || x.end - y.end);
 const timeOf = (e: Any) => (typeof e.minute === 'number' ? e.minute : typeof e.start === 'number' ? e.start : null);
 const legMinutes = (q: Any, p: Any, colony: Any, route: string[]) => round(route.slice(1).reduce((m, n, i) => m + edgeMinutes(p, q, colony, route[i], n).minutes, 0));
+/** Expected walking minutes along `route` from minute t0 when each edge's speed depends on the trail laid on THAT edge
+ *  up to the minute the walker enters it (rebuilt from the timed trail_deposited events). */
+const edgeByEdge = (ev: Any[], q: Any, p: Any, route: string[], t0: number) => {
+  let t = t0;
+  for (let i = 1; i < route.length; i++) {
+    const trail: Record<string, number> = {};
+    for (const d of ev.filter((e) => e.type === 'trail_deposited' && typeof e.minute === 'number' && e.minute <= t + 1e-9)) trail[d.edge] = d.intensity;
+    t = round(t + edgeMinutes(p, q, { trail_by_edge: trail } as Any, route[i - 1], route[i]).minutes);
+  }
+  return round(t - t0);
+};
 const RETURN_KINDS = new Set(['foraging_return', 'joint_prey_transport', 'explore_return', 'recruit_return']);
 
 // ---------------------------------------------------------------- H: hunting — own return routes
@@ -65,10 +76,8 @@ const checkReturn = (label: string, w: { s: Any; p: Any; q: Any }, ev: Any[], sm
   const r = back[0], steps = ev.filter((e) => e.type === 'route_step' && e.worker === id && e.minute > r.start + 1e-9 && e.minute <= r.end + 1e-9);
   ok(r.place === expected.join('>'), `${label}: ${id} walks home along ${expected.join('>')} (walked ${r.place})`);
   ok(steps.map((e) => `${e.from}>${e.to}`).join(',') === expected.slice(1).map((n, i) => `${expected[i]}>${n}`).join(','), `${label}: ${id} route steps on the way home = its own route (${steps.map((e) => `${e.from}>${e.to}`).join(',')})`);
-  // walking speed depends on the trail present when the walk began: rebuild it from the timed deposits before r.start
-  const trailThen: Record<string, number> = {};
-  for (const d of ev.filter((e) => e.type === 'trail_deposited' && typeof e.minute === 'number' && e.minute <= r.start + 1e-9)) trailThen[d.edge] = d.intensity;
-  const minutes = legMinutes(w.q, w.p, { trail_by_edge: trailThen }, expected);
+  // v2-review.20 (independent review): each edge's minutes come from the trail on that edge when the worker ENTERS it
+  const minutes = edgeByEdge(ev, w.q, w.p, expected, r.start);
   ok(Math.abs(r.duration - minutes) < 1e-6, `${label}: ${id} walking home takes the ${minutes} min of its own route (took ${r.duration})`);
   const st = sm.activity.workers[id], last = segs.at(-1);
   ok(Math.abs(st.outside_minutes - (r.end - segs[0].start)) < 1e-6 || last.action === 'rest', `${label}: ${id} outside minutes ${st.outside_minutes} = departure..home ${round(r.end - segs[0].start)}`);
@@ -207,6 +216,73 @@ if (want('T')) {
   const A = first(mk(false, window)), B = first(mk(true, window));
   ok(2 * onFar + base <= window && window < 2 * offLeg + base, `T fixture: window ${window} min lies between ${round(2 * onFar + base)} and ${round(2 * offLeg + base)}`);
   same(B, A, 'T: the decision at the nest (depart or cancel) is the same whether or not a remote edge carries pheromone');
+}
+
+// ---------------------------------------------------------------- W: nobody is outside after the activity window
+/** Every recorded activity of every worker ends inside the window (the reviewer's reproductions plus a sweep). */
+const insideWindow = (ev: Any[], W: number) => ev.filter((e) => e.type === 'worker_activity' && e.end > W + 1e-6);
+if (want('W')) {
+  // independent review finding 1: a late joiner of a held prey walking home its own (longer) way after an escape
+  let cases = 0;
+  for (const [len, window, minTeam] of [[550, 54, 3], [500, 50, 3], [450, 48, 3], [550, 60, 3], [400, 44, 2], [600, 58, 3]] as const) {
+    const s = fresh(), c = s.colonies[0], p = structuredClone(SP), q = structuredClone(WP);
+    s.ecology.insects_by_site.F07.living = 3; s.sources.F07.batches = []; s.sources.F07.protein = 0;
+    Object.assign(p.predation, { live_prey_encounter_probability: 1, live_prey_capture_probability: 1, large_prey_escape_while_recruiting_probability: 0, large_prey_min_team: minTeam });
+    p.recruitment.recruitment_probability = 0; p.activity.continue_after_failure_probability = 0; p.foraging_activity.daily_window_minutes = window; q.prey.large_prey_fraction = 1;
+    c.population.workers = c.population.workers.slice(0, 2);
+    q.routes.edges = [['N00', 'F07'], ['N00', 'X'], ['X', 'F07']]; q.routes.edge_length_cm = { 'F07:N00': 600, 'N00:X': len, 'F07:X': len };
+    forager(c.population.workers[0], ['F07'], ['N00', 'F07']); forager(c.population.workers[1], ['F07'], ['N00', 'X', 'F07']);
+    const { events: ev } = run(s, p, q), late = insideWindow(ev, window); cases++;
+    ok(late.length === 0, `W hold (X edges ${len} cm, window ${window}, team ${minTeam}): nobody outside after the window (${JSON.stringify(late[0] ?? null)})`);
+  }
+  // independent review finding 2: following a chain of trail-marked junctions with unknown edge lengths
+  for (const window of [80, 140, 280]) {
+    const s = fresh(), c = s.colonies[0], p = structuredClone(SP), q = structuredClone(WP);
+    c.population.workers = c.population.workers.slice(0, 1); forager(c.population.workers[0], [], null);
+    p.scouting.scout_discovery_probability = 0; p.recruitment.follow_intermediate_source_probability = 1; p.foraging_activity.daily_window_minutes = window;
+    const chain = ['N00', 'J1', 'J2', 'J3', 'J4', 'J5', 'J6'];
+    q.routes.edges = chain.slice(1).map((n, i) => [chain[i], n]) as Any; q.routes.edge_length_cm = {};
+    c.trail_by_edge = Object.fromEntries(chain.slice(1).map((n, i) => [[chain[i], n].sort().join(':'), 1]));
+    const { events: ev } = run(s, p, q), late = insideWindow(ev, window); cases++;
+    ok(ev.some((e) => e.type === 'local_trail_choice') && late.length === 0, `W trail chain (window ${window}): the follower is home inside the window (${JSON.stringify(late[0] ?? null)})`);
+  }
+  // and over real days
+  let segs = 0;
+  for (const seed of [1, 2, 3, 4, 5, 6]) {
+    let st = buildDay0('A1', seed, '2027-09-23', b).state;
+    for (let d = 0; d < 20; d++) { const o = simulateWorldDay(st, b), ev: Any[] = o.result.colonies[0].events; segs += ev.filter((e) => e.type === 'worker_activity').length; assert.equal(insideWindow(ev, SP.foraging_activity.daily_window_minutes).length, 0, `W seed ${seed} day ${o.day}: activity after the window`); checks++; st = o.state; }
+  }
+  ok(cases === 9 && segs > 0, `W: ${cases} fixtures and ${segs} activity records over 120 colony-days end inside the window`);
+}
+
+// ---------------------------------------------------------------- S: walking speed is read on the edge the worker is on
+if (want('S')) {
+  // independent review finding 3: the finder marks F07–X on its way home; W002 (long way via Y) enters X–F07 after the
+  // mark and must walk it at trail speed; W003 (short way via Y) enters it before the mark and walks it off-trail.
+  const s = fresh(), c = s.colonies[0], p = structuredClone(SP), q = structuredClone(WP);
+  s.ecology.insects_by_site.F07.living = 3; s.sources.F07.batches = []; s.sources.F07.protein = 0; c.trail_by_edge = {};
+  Object.assign(p.predation, { live_prey_encounter_probability: 1, live_prey_capture_probability: 1, large_prey_escape_while_recruiting_probability: 0, large_prey_min_team: 9, large_prey_max_team: 1 });
+  p.recruitment.recruitment_probability = 0; p.activity.continue_after_failure_probability = 0; q.prey.large_prey_fraction = 1;
+  c.population.workers = c.population.workers.slice(0, 3);
+  q.routes.edges = [['N00', 'X'], ['X', 'F07'], ['N00', 'Y'], ['Y', 'X'], ['N00', 'Z'], ['Z', 'X']];
+  q.routes.edge_length_cm = { 'N00:X': 300, 'F07:X': 300, 'N00:Y': 600, 'X:Y': 600, 'N00:Z': 300, 'X:Z': 300 };
+  forager(c.population.workers[0], ['F07'], ['N00', 'X', 'F07']); forager(c.population.workers[1], ['F07'], ['N00', 'Y', 'X', 'F07']); forager(c.population.workers[2], ['F07'], ['N00', 'Z', 'X', 'F07']);
+  const { events: ev } = run(s, p, q);
+  const mark = ev.find((e) => e.type === 'trail_deposited' && e.edge === 'F07:X' && e.worker === 'W001');
+  const stepOn = (id: string) => { const i = ev.findIndex((e) => e.type === 'route_step' && e.worker === id && e.from === 'X' && e.to === 'F07'), x = ev[i]; const prev = ev.filter((e) => e.type === 'route_step' && e.worker === id && e.to === 'X' && e.minute <= x.minute).at(-1); return { enter: prev.minute, dur: round(x.minute - prev.minute) }; };
+  const on = round(3000 / p.activity.trail_walking_speed_mm_s / 60), off = round(3000 / (p.activity.trail_walking_speed_mm_s * p.activity.off_trail_speed_factor) / 60);
+  const a2 = stepOn('W002'), a3 = stepOn('W003');
+  ok(mark && a2.enter > mark.minute && Math.abs(a2.dur - on) < 1e-6, `S: W002 enters X–F07 at ${a2.enter}, after the mark at ${mark?.minute}, and walks it at trail speed (${a2.dur} min; on-trail ${on})`);
+  ok(mark && a3.enter < mark.minute && Math.abs(a3.dur - off) < 1e-6, `S: W003 enters X–F07 at ${a3.enter}, before the mark, and walks it off-trail (${a3.dur} min; off-trail ${off})`);
+}
+
+// ---------------------------------------------------------------- J: joint carriers learn the edges they carry along
+if (want('J')) {
+  const w = huntWorld({ living: 3, minTeam: 2, capture: 1, escape: 0, lens: [325, 325] }), { events: ev } = run(w.s, w.p, w.q);
+  const joint = ev.find((e) => e.type === 'joint_prey_transport');
+  const mem = (id: string) => Object.keys((w.s.colonies[0].population.workers.find((x: Any) => x.id === id) as Any).route_memory.edges);
+  ok(joint && joint.carriers.some((x: Any) => x.worker === 'W002'), 'J fixture: W002 (came via X) carries the prey jointly with the finder along N00–F07');
+  ok(mem('W002').includes('F07:N00'), `J: W002 has learned the edge F07–N00 it carried the prey along (${mem('W002').join(', ')})`);
 }
 
 // ---------------------------------------------------------------- G: generic invariant over real days

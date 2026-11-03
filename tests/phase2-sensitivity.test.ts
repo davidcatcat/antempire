@@ -15,6 +15,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { readJson } from '../cli/lib/load.ts';
+import { ENGINE_VERSION } from '../engine/index.ts';
 import {
   OUT, dataDirs, runnableBundleFor, ROW_COLUMNS, ROWS_PER_JOB, assertShardsOk, jobs, mergeShards, seedRow, spawnShards, toObject, validate, validateCommitted, variantBundle, writeShard, type Job,
 } from '../cli/reports/phase2-sensitivity.ts';
@@ -63,7 +64,14 @@ const bad = (mutate: (d: Any) => void, expect: RegExp, why: string) => {
 bad((d) => d.jobs[3].rows.pop(), /rows ≠ 80|distinct season\/seed/, 'dropped row');
 bad((d) => { d.jobs[5].rows[1] = [...d.jobs[5].rows[0]]; }, /duplicate season\/seed/, 'duplicated row');
 bad((d) => { d.summaries[d.jobs[0].id].all.queen_alive_365 += 1; }, /summaries differ/, 'edited summary');
-bad((d) => { d.rules_fingerprint.engine = '0'.repeat(64); }, /fingerprint/, 'other engine fingerprint');
+// other engine fingerprint: checked on EVERY data directory with the exact message of its mode (current data must match
+// the repository; archived data must match the registry entry of the version that produced them)
+for (const dir of dirs) {
+  const t = fs.readFileSync(path.join(dir, 'sensitivity.json'), 'utf8'), d = JSON.parse(t), archived = d.engine_version !== ENGINE_VERSION;
+  d.rules_fingerprint.engine = '0'.repeat(64);
+  const r = validate(d, { day0Eval: readJson(`reports/day0-${d.rules_tag}/evaluation.json`) }), expect = archived ? /archived data: fingerprints differ from the registry entry/ : /^engine fingerprint ≠ current engine/;
+  ok(!r.ok && r.errors.some((e) => expect.test(e)), `${path.basename(dir)}: other engine fingerprint rejected (${archived ? 'archived' : 'current'}): ${r.errors.slice(0, 2).join(' | ') || 'NOT DETECTED'}`);
+}
 bad((d) => { d.jobs[7].variant_params_sha = 'x'; }, /parameter hash/, 'other parameter values');
 bad((d) => { const j = d.jobs.find((x: Any) => x.id === 'caf0.5_rmin0.5_A3'); j.rows[0][ROW_COLUMNS.indexOf('trips')] += 1; }, /baseline .* differs from the Day0 evaluation/, 'baseline drift');
 bad((d) => { d.jobs.pop(); }, /jobs 43|missing job/, 'missing job');

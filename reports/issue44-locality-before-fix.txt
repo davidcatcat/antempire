@@ -1,4 +1,4 @@
-# PR #44 補充審查：tests/issue44-locality.test.ts 在修正前（commit c87896f）的結果
+# PR #44：tests/issue44-locality.test.ts 在修正前的結果（H、E、P、T 在 c87896f；W、S、J 在 4c409eb）
 # 指令：ISSUE44_SOFT=1 ISSUE44_ONLY=<H|E|P|T> node tests/issue44-locality.test.ts（在 c87896f 的工作樹執行，測試檔為本次版本）
 # G（泛用不變量）需要修正後才有的 trail_deposited.minute，無法在修正前評估。
 
@@ -35,4 +35,22 @@ issue44-locality: 4 checks passed
 ## section T on c87896f (before the fix)
 issue44-locality: 1 FAILED checks:
 - T: the decision at the nest (depart or cancel) is the same whether or not a remote edge carries pheromone
+issue44-locality: 1 checks passed
+
+# 獨立審查（session_01FN3JKKsVhsNw872572dMYi）指出的缺陷：新增的 W、S、J 節在 4c409eb 上的結果
+## section W on 4c409eb (before the independent-review fixes)
+issue44-locality: 5 FAILED checks:
+- W hold (X edges 550 cm, window 54, team 3): nobody outside after the window ({"type":"worker_activity","worker":"W002","start":37.294118,"end":58.862746,"duration":21.568628,"place":"F07>X>N00","action":"foraging_return","assumption":true})
+- W hold (X edges 600 cm, window 58, team 3): nobody outside after the window ({"type":"worker_activity","worker":"W002","start":37.294118,"end":60.82353,"duration":23.529412,"place":"F07>X>N00","action":"foraging_return","assumption":true})
+- W trail chain (window 80): the follower is home inside the window ({"type":"worker_activity","worker":"W001","start":50,"end":100,"duration":50,"place":"J2>J1>N00","action":"foraging_return","assumption":true})
+- W trail chain (window 140): the follower is home inside the window ({"type":"worker_activity","worker":"W001","start":75,"end":150,"duration":75,"place":"J3>J2>J1>N00","action":"foraging_return","assumption":true})
+- W trail chain (window 280): the follower is home inside the window ({"type":"worker_activity","worker":"W001","start":150,"end":300,"duration":150,"place":"J6>J5>J4>J3>J2>J1>N00","action":"foraging_return","assumption":true})
+issue44-locality: 125 checks passed
+## section S on 4c409eb (before the independent-review fixes)
+issue44-locality: 1 FAILED checks:
+- S: W002 enters X–F07 at 23.529412, after the mark at 19.647059, and walks it at trail speed (5.882353 min; on-trail 2.941176)
+issue44-locality: 1 checks passed
+## section J on 4c409eb (before the independent-review fixes)
+issue44-locality: 1 FAILED checks:
+- J: W002 has learned the edge F07–N00 it carried the prey along (N00:X, F07:X)
 issue44-locality: 1 checks passed
