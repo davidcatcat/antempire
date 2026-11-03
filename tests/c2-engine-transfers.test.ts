@@ -139,7 +139,7 @@ if (!ONLY || ONLY.includes('F')) {
   const world: Any = { sources: { S1: { id: 'S1', sugar: 2, protein: 0 }, S2: { id: 'S2', sugar: 3, protein: 0 } }, colonies: [{ id: 'C', population: { workers: [{ id: 'W1' }] } }] };
   const start = sourceSnapshot(world);
   world.sources.S1.sugar = 1.5;
-  const coll = (site: string) => [{ type: 'food_transfer', transfer_id: 'FT-1-C-1', colony: 'C', phase: 'foraging', cause: 'collect', attribution: 'individual', minute: 1, source: { kind: 'source', id: site }, recipient: { kind: 'in_transit', id: 'W1' }, food_type: 'sugar', portions: 0.5 }] as Any;
+  const coll = (site: string) => [{ type: 'food_transfer', schema: 'antempire.food-transfer.v1', day: 1, transfer_id: 'FT-1-C-1', colony: 'C', phase: 'foraging', cause: 'collect', attribution: 'individual', minute: 1, source: { kind: 'source', id: site }, recipient: { kind: 'in_transit', id: 'W1' }, food_type: 'sugar', portions: 0.5 }] as Any;
   let threw = ''; try { checkSources(start, world, [coll('S1')]); } catch (e) { threw = String(e); }
   ok(threw === '', 'F: a correctly sourced collection passes the engine source check');
   threw = ''; try { checkSources(start, world, [coll('S2')]); } catch (e) { threw = String(e); }
@@ -201,7 +201,7 @@ if (!ONLY || ONLY.includes('R')) {
     Object.assign(second, { id: 'B', nest_node: 'U00', rng_namespace: 'B|', worker_id_prefix: 'B-W', egg_id_prefix: 'B-E' }); second.population.workers = second.population.workers.slice(0, 3).map((w: Any, i: number) => ({ ...w, id: `B-W9${i}` }));
     const w: Any = { ...structuredClone(base), colonies: [structuredClone(base.colonies[0]), second] }, site = Object.keys(w.sources)[0]; w.sources[site].sugar = 1; const st = sourceSnapshot(w);
     w.sources[site].sugar = Math.round((w.sources[site].sugar - 0.5) * 1e6) / 1e6;
-    const ev: Any[] = [{ type: 'food_transfer', transfer_id: 'FT-1-' + w.colonies[0].id + '-1', colony: w.colonies[0].id, phase: 'foraging', attribution: 'individual', minute: 1, cause: 'collect', source: { kind: 'source', id: site }, recipient: { kind: 'in_transit', id: 'B-W90' }, food_type: 'sugar', portions: 0.5 }];
+    const ev: Any[] = [{ type: 'food_transfer', schema: 'antempire.food-transfer.v1', day: 1, transfer_id: 'FT-1-' + w.colonies[0].id + '-1', colony: w.colonies[0].id, phase: 'foraging', attribution: 'individual', minute: 1, cause: 'collect', source: { kind: 'source', id: site }, recipient: { kind: 'in_transit', id: 'B-W90' }, food_type: 'sugar', portions: 0.5 }];
     const t = engineThrows(() => checkSources(st, w, [ev, []]));
     ok(/B-W90/.test(t), `R two colonies: a collection by a worker of the other colony is rejected (${t.slice(0, 100)})`);
   }
@@ -256,7 +256,7 @@ if (!ONLY || ONLY.includes('R')) {
     const born = day.after.population.workers.map((w: Any) => w.id).find((id: string) => !day.before.population.workers.some((w: Any) => w.id === id));
     const events = structuredClone(day.events), all = events.filter((e: Any) => e.type === 'food_transfer');
     const T = all.find((x: Any) => x.cause === 'trophallaxis' && all.some((m: Any) => m.cause === 'metabolism' && m.source.kind === 'crop' && m.source.id === x.recipient.id && m.portions >= x.portions));
-    const R = T.recipient.id, a = T.portions; T.recipient = { kind: 'crop', id: born }; T.phase = 'nest_settlement';
+    const R = T.recipient.id, a = T.portions; T.recipient = { kind: 'crop', id: born }; T.phase = 'nest_settlement'; T.minute = null; // untimed, so only the phase rule can reject it
     const draw = events.find((e: Any) => e.type === 'food_transfer' && e.cause === 'metabolism' && e.source.kind === 'crop' && e.source.id === R);
     draw.portions = Math.round((draw.portions - a) * 1e6) / 1e6;
     events.splice(events.indexOf(draw), 0, { ...structuredClone(draw), source: { kind: 'crop', id: born }, portions: a });
@@ -331,7 +331,7 @@ if (!ONLY || ONLY.includes('S')) {
   probe(d5, 'phase of the wrong type (number)', (ev) => { first(ev).phase = 1; }, /phase/, /phase/);
   probe(d5, 'phase of the wrong type (object)', (ev) => { first(ev).phase = { phase: 'foraging' }; }, /phase/, /phase/);
   // cause/phase mismatch and illegal order across phases
-  probe(d5, 'a collect declared nest_settlement', (ev) => { const c = ev.find((e: Any) => e.type === 'food_transfer' && e.cause === 'collect'); c.phase = 'nest_settlement'; }, /belongs to foraging/, /belongs to phase foraging/);
+  probe(d5, 'a collect declared nest_settlement', (ev) => { const c = ev.find((e: Any) => e.type === 'food_transfer' && e.cause === 'collect'); c.phase = 'nest_settlement'; c.minute = null; }, /belongs to foraging/, /belongs to phase foraging/);
   probe(d5, 'a settlement record declared foraging', (ev) => { const m = ev.find((e: Any) => e.type === 'food_transfer' && e.phase === 'nest_settlement'); m.phase = 'foraging'; }, /belongs to nest_settlement|recorded in phase foraging/, /belongs to phase nest_settlement/);
   probe(d5, 'a foraging record placed after the settlement began', (ev) => {
     const xs = ev.filter((e: Any) => e.type === 'food_transfer'), lastF = forage(ev).at(-1), lastS = xs.at(-1);
@@ -368,6 +368,32 @@ if (!ONLY || ONLY.includes('S')) {
   probe(d5, 'unknown food type', (ev) => { first(ev).food_type = 'fat'; }, /food_type|fat/, /food_type|fat|cannot hold/);
   probe(d5, 'amount given as a string', (ev) => { first(ev).portions = '0.5'; }, /portions|amount/, /portions|amount/);
   probe(d5, 'colony field missing', (ev) => { delete first(ev).colony; }, /colony/, /colony/);
+  // independent review of 9888217 (all accepted by at least one checker there, or crashed)
+  probe(d5, 'negative foraging minute', (ev) => { first(ev).minute = -5; }, /minute/, /minute/);
+  probe(d5, 'foraging minute beyond the day', (ev) => { first(ev).minute = 1e9; }, /minute/, /minute/);
+  probe(d5, 'a settlement record with a minute', (ev) => { const m = ev.find((e: Any) => e.type === 'food_transfer' && e.phase === 'nest_settlement'); m.minute = 7; }, /minute/, /minute/);
+  probe(d5, 'undefined attribution', (ev) => { first(ev).attribution = 'someone'; }, /attribution/, /attribution/);
+  probe(d5, 'wrong schema', (ev) => { first(ev).schema = 'v0'; }, /schema/, /schema/);
+  probe(d5, 'day given as a string', (ev) => { first(ev).day = '5'; }, /day/, /day/);
+  probe(d5, 'a transfer_id used twice', (ev) => { const xs = ev.filter((e: Any) => e.type === 'food_transfer'); xs[1].transfer_id = xs[0].transfer_id; }, /used twice/, /expected FT-/);
+  probe(d5, 'a record that is an array', (ev) => { const i = ev.indexOf(first(ev)); ev[i] = Object.assign([], first(ev)); }, /array/, /not an object/);
+  probe(d5, 'a source given as an array', (ev) => { const f = first(ev); f.source = Object.assign([], f.source); }, /source missing or not an object/, /source missing or not an object/);
+  probe(d5, 'portions with seven decimals', (ev) => { first(ev).portions = Math.round(first(ev).portions * 1e6) / 1e6 + 1e-7; }, /six decimals/, /six-decimal/);
+  probe(d5, 'a null element in the event list', (ev) => { ev.splice(1, 0, null); }, /not an event object/, /not an event object/);
+  probe(d5, "cause 'toString' (prototype name)", (ev) => { first(ev).cause = 'toString'; }, /unknown cause "toString"/, /unknown cause "toString"/);
+  // the world source check alone (it runs alone when the colony check is not defined): cause, phase and path are its own
+  {
+    const world: Any = { sources: { S1: { id: 'S1', sugar: 2, protein: 0 } }, colonies: [{ id: 'C', population: { workers: [{ id: 'W1' }] } }] }, st = sourceSnapshot(world);
+    world.sources.S1.sugar = 1.5;
+    const rec = (extra: Any) => [{ type: 'food_transfer', schema: 'antempire.food-transfer.v1', day: 1, transfer_id: 'FT-1-C-1', colony: 'C', phase: 'foraging', cause: 'collect', attribution: 'individual', minute: 1, source: { kind: 'source', id: 'S1' }, recipient: { kind: 'in_transit', id: 'W1' }, food_type: 'sugar', portions: 0.5, ...extra }] as Any;
+    const t0 = engineThrows(() => checkSources(st, world, [rec({})]));
+    ok(t0 === '', `S world check: a correct collection passes (${t0.slice(0, 100)})`);
+    for (const [name, extra] of [['collect relabelled nest_settlement', { phase: 'nest_settlement', minute: null }], ['collect relabelled metabolism', { cause: 'metabolism', attribution: 'unknown' }], ['collect relabelled trophallaxis', { cause: 'trophallaxis' }]] as [string, Any][]) {
+      const t = engineThrows(() => checkSources(st, world, [rec(extra)]));
+      if (process.env.C2_R2_PROBE) { console.log(JSON.stringify({ probe: 'S world check: ' + name, engine_world_check: t ? (/FOOD_TRANSFER/.test(t) ? 'rejects' : 'CRASHES') : 'ACCEPTS' })); continue; }
+      ok(/FOOD_TRANSFER/.test(t), `S world check: ${name} is rejected (${t.slice(0, 120)})`);
+    }
+  }
 }
 
 // ---------------------------------------------------------------- T: determinism
