@@ -33,6 +33,7 @@ import { DAY0_SEEDS, runDay0 } from './day0-evaluation.ts';
 import { SEASONS, SUPPORTED_FOUNDINGS, type FoundingId } from '../lib/day0.ts';
 import { RULES_TAG } from './winter-multiseed.ts';
 import { SUSTAINED_REPRODUCTION } from './reproduction-measures.ts';
+import { MANIFEST_SCHEMA, buildInputManifest, dataEntry, type InputManifest } from '../lib/input-manifest.ts';
 import { ENGINE_VERSION, type ParamBundle } from '../../engine/index.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -100,20 +101,18 @@ export function runJob(j: Job): Any {
   return { ...j, variant_params_sha: variantParamsSha(b), rows };
 }
 
-/** Every input of the evaluation besides the engine and parameter files (Issue #43 R12): Day0 scenarios (founding,
- *  garden, seasons), the Day0 initializer CLI, the evaluation and measure code, and this script. */
-export const INPUT_FILES = (): string[] => [
-  ...fs.readdirSync(path.join(REPO_ROOT, 'scenarios/day0')).filter((f) => f.endsWith('.json')).sort().map((f) => `scenarios/day0/${f}`),
-  'cli/lib/day0.ts', 'cli/lib/load.ts', 'cli/reports/day0-evaluation.ts', 'cli/reports/reproduction-measures.ts', 'cli/reports/phase2-sensitivity.ts',
-];
-export function inputManifest(): Record<string, string> {
-  return Object.fromEntries(INPUT_FILES().map((f) => [f, sha(fs.readFileSync(path.join(REPO_ROOT, f), 'utf8'))]));
-}
+/** Every input of the evaluation besides the engine and parameter files (Issue #51 / #49 N3, #43 R12): built from
+ *  what is actually used — the import closure of this script within cli/ and every data file read while the Day0
+ *  worlds are initialised (scenarios, climatology, …), each with sha256, schema and source (cli/lib/input-manifest.ts). */
+export const MANIFEST_ENTRY: string = 'cli/reports/phase2-sensitivity.ts';
+export function inputManifest(root = REPO_ROOT): InputManifest { return buildInputManifest(MANIFEST_ENTRY, root); }
+/** Data written before Issue #51 kept a flat {path: sha256} list of hand-picked files (no climate data). */
+export const isLegacyManifest = (m: Any) => !!m && m.schema !== MANIFEST_SCHEMA;
 
 /** Everything a batch depends on; a shard made under a different configuration is refused at merge. */
-export function configHash(list = jobs()): string {
-  const fp = rulesFingerprint();
-  return sha(JSON.stringify({ schema: SCHEMA, engine: fp.engine, params: fp.params, engine_version: ENGINE_VERSION, jobs: list, seeds: DAY0_SEEDS, seasons: SEASONS, columns: ROW_COLUMNS, inputs: inputManifest(), measures: SUSTAINED_REPRODUCTION.id }));
+export function configHash(list = jobs(), root = REPO_ROOT): string {
+  const fp = rulesFingerprint(root);
+  return sha(JSON.stringify({ schema: SCHEMA, engine: fp.engine, params: fp.params, engine_version: ENGINE_VERSION, jobs: list, seeds: DAY0_SEEDS, seasons: SEASONS, columns: ROW_COLUMNS, inputs: inputManifest(root), measures: SUSTAINED_REPRODUCTION.id }));
 }
 
 // ---------------------------------------------------------------------------------------------- batches
@@ -223,7 +222,7 @@ export interface Validation { ok: boolean; errors: string[]; checks: Record<stri
  * parameter fingerprints equal to the current repository; every job's parameter hash = official parameters with
  * only its two values replaced; tables regenerated from the data equal the committed tables.
  */
-export function validate(doc: Any, opts: { day0Eval?: Any; tables?: string; current?: { engine: string; params: string } } = {}): Validation {
+export function validate(doc: Any, opts: { day0Eval?: Any; tables?: string; current?: { engine: string; params: string }; root?: string; attestation?: Any } = {}): Validation {
   const archived = doc.engine_version !== ENGINE_VERSION; // data of an earlier rules version, kept as produced
   const errors: string[] = [], checks: Record<string, Any> = {}, err = (m: string) => errors.push(m);
   const expect = jobs();
@@ -263,7 +262,8 @@ export function validate(doc: Any, opts: { day0Eval?: Any; tables?: string; curr
   if (diff.length || Object.keys(doc.summaries ?? {}).length !== Object.keys(re).length) err(`stored summaries differ from recomputation: ${diff.join(',') || 'job set'}`);
   checks.summaries_recomputed = Object.keys(re).length - diff.length;
   // fingerprints
-  const cur = opts.current ?? (() => { const f = rulesFingerprint(); return { engine: f.engine, params: f.params }; })();
+  const root = opts.root ?? REPO_ROOT;
+  const cur = opts.current ?? (() => { const f = rulesFingerprint(root); return { engine: f.engine, params: f.params }; })();
   if (!archived) {
     if (doc.rules_fingerprint?.engine !== cur.engine) err('engine fingerprint ≠ current engine (results are stale: rerun or archive them)');
     if (doc.rules_fingerprint?.params !== cur.params) err('parameter fingerprint ≠ current parameter files (results are stale: rerun or archive them)');
@@ -276,15 +276,38 @@ export function validate(doc: Any, opts: { day0Eval?: Any; tables?: string; curr
     else if (reg.fingerprint.engine !== doc.rules_fingerprint?.engine || reg.fingerprint.params !== doc.rules_fingerprint?.params) err(`archived data: fingerprints differ from the registry entry of ${doc.engine_version}`);
     checks.archived_rules_version = doc.engine_version;
   }
-  // R12: every evaluation input (scenarios, initializer, measures, scripts) must equal what produced or re-derived the data.
-  // For archived data only THIS script may differ (its output location and validation changed; results do not depend on
-  // it — the fixed-seed reruns in tests/phase2-sensitivity.test.ts check that); every other input must be unchanged.
-  const man = inputManifest(), stale = Object.keys({ ...man, ...(doc.input_manifest ?? {}) }).filter((f) => man[f] !== doc.input_manifest?.[f]);
-  const allowed: string[] = archived ? stale.filter((f) => f === 'cli/reports/phase2-sensitivity.ts') : [];
-  const blocking = stale.filter((f) => !allowed.includes(f));
-  if (blocking.length) err(`input files changed since the data were produced or re-derived (rerun or archive): ${blocking.join(', ')}`);
-  if (allowed.length) checks.archived_tool_changed = allowed;
-  checks.input_manifest_files = Object.keys(man).length - stale.length;
+  // R12 / Issue #51: every evaluation input must equal what produced (or re-verified) the data.
+  const man = inputManifest(root);
+  if (!isLegacyManifest(doc.input_manifest)) {
+    // manifest v2: code (import closure) and data (files actually read, with content hashes) recorded at generation
+    const m = doc.input_manifest as InputManifest;
+    const code = Object.keys({ ...man.code, ...m.code }).filter((f) => man.code[f] !== m.code[f]);
+    const allowed = archived ? code.filter((f) => f === MANIFEST_ENTRY) : [];
+    const data = Object.keys({ ...man.data, ...m.data }).filter((f) => man.data[f]?.sha256 !== m.data[f]?.sha256);
+    if (code.length > allowed.length) err(`input code changed since the data were produced (rerun or archive): ${code.filter((f) => !allowed.includes(f)).join(', ')}`);
+    if (data.length) err(`input data changed since the data were produced (stale: rerun or archive): ${data.join(', ')}`);
+    if (allowed.length) checks.archived_tool_changed = allowed;
+    checks.input_manifest = { schema: MANIFEST_SCHEMA, code_files: Object.keys(man.code).length, data_files: Object.keys(man.data).length };
+  } else {
+    // Data written before Issue #51 recorded a hand-picked list without the climate data. It is NOT rewritten (Owner
+    // 2026-11-03). Its listed files must still match (only this script may differ); every data file the evaluation
+    // reads that the old list lacks must be covered by a LATER re-verification (provenance-attestation.json: the
+    // stored baseline rows were re-run with those exact files and reproduced). Without it: provenance gap → invalid.
+    const old = doc.input_manifest ?? {}, listed = Object.keys(old);
+    const flat: Record<string, string> = { ...man.code, ...Object.fromEntries(Object.entries(man.data).map(([f, e]) => [f, e.sha256])) };
+    // files of the old list that the evaluation no longer reads (e.g. founding files of unsupported foundings) cannot
+    // affect the results: they are reported, not compared (an unrelated change must not invalidate data)
+    const used = listed.filter((f) => f in flat), unused = listed.filter((f) => !(f in flat));
+    const changed = used.filter((f) => flat[f] !== old[f]), allowed = changed.filter((f) => f === MANIFEST_ENTRY);
+    if (changed.length > allowed.length) err(`input files changed since the data were produced or re-derived (rerun or archive): ${changed.filter((f) => !allowed.includes(f)).join(', ')}`);
+    if (allowed.length) checks.archived_tool_changed = allowed;
+    const gap = Object.keys(man.data).filter((f) => !(f in old)), att = opts.attestation;
+    const unattested = gap.filter((f) => !att?.data?.[f]);
+    if (unattested.length) err(`provenance gap: ${unattested.join(', ')} not recorded when the data were produced and not re-verified (rerun, or attest with --attest)`);
+    const drifted = gap.filter((f) => att?.data?.[f] && att.data[f].sha256 !== man.data[f].sha256);
+    if (drifted.length) err(`input data changed since the later re-verification (stale): ${drifted.join(', ')}`);
+    checks.input_manifest = { schema: 'legacy (pre-Issue #51 hand-picked list)', listed_files_used_and_equal: used.length - changed.length + allowed.length, listed_files_not_read: unused, provenance_gap_files: gap, gap_covered_by_later_attestation: att ? { attested_on: att.attested_on, rows_reproduced: att.verified_by?.rows_equal } : null, code_files_not_recorded_at_generation: Object.keys(man.code).filter((f) => !(f in old)) };
+  }
   let shaOk = 0;
   const base = archived ? () => bundleAtVersion(doc.engine_version, { forHash: true }) : loadBundle;
   for (const j of doc.jobs) { if (j.variant_params_sha === variantParamsSha(variantBundle(j, base))) shaOk++; else err(`job ${j.id}: parameter hash differs from the ${archived ? doc.engine_version : 'current'} parameters + its two values`); }
@@ -345,15 +368,49 @@ export function tables(doc: Any): string {
 
 // ---------------------------------------------------------------------------------------------- CLI
 const arg = (k: string) => { const i = process.argv.indexOf(k); return i >= 0 ? process.argv[i + 1] : undefined; };
-export function validateCommitted(dir: string = OUT): Validation {
+export const ATTESTATION = 'provenance-attestation.json';
+export function validateCommitted(dir: string = OUT, root = REPO_ROOT): Validation {
+  const doc = JSON.parse(fs.readFileSync(path.join(dir, 'sensitivity.json'), 'utf8')), att = path.join(dir, ATTESTATION);
+  return validate(doc, { root, day0Eval: readJson(`reports/day0-${doc.rules_tag}/evaluation.json`, root), tables: fs.readFileSync(path.join(dir, 'sensitivity-tables.md'), 'utf8'), attestation: fs.existsSync(att) ? JSON.parse(fs.readFileSync(att, 'utf8')) : undefined });
+}
+
+/**
+ * Issue #51: a LATER re-verification of data written before the input manifest covered every data file. Re-runs every
+ * stored baseline row (5 foundings × 4 seasons × 20 seeds) with the rules version that produced the data and the data
+ * files as they are now; only if every row is reproduced exactly is an attestation written, beside (never into) the
+ * original data. It records today's data-file hashes and says plainly that it is not a record made at generation time.
+ */
+export function attest(dir: string): { ok: boolean; rows: number; equal: number; file?: string } {
   const doc = JSON.parse(fs.readFileSync(path.join(dir, 'sensitivity.json'), 'utf8'));
-  return validate(doc, { day0Eval: readJson(`reports/day0-${doc.rules_tag}/evaluation.json`), tables: fs.readFileSync(path.join(dir, 'sensitivity-tables.md'), 'utf8') });
+  if (!isLegacyManifest(doc.input_manifest)) throw Error('attest: these data already record a v2 input manifest; nothing to attest');
+  const base = runnableBundleFor(doc), man = inputManifest();
+  let rows = 0, equal = 0;
+  for (const j of doc.jobs.filter((x: Any) => x.caf === BASELINE.continue_after_failure_probability && x.rmin === BASELINE.recruit_min_crop_fill_fraction)) {
+    const b = variantBundle(j, base);
+    for (const a of j.rows) { const r = toObject(a), fresh = seedRow(j, r.season, r.seed, b); rows++; if (JSON.stringify(toArray(JSON.parse(JSON.stringify(fresh)))) === JSON.stringify(a)) equal++; }
+  }
+  if (equal !== rows) return { ok: false, rows, equal };
+  const gap = Object.keys(man.data).filter((f) => !(f in doc.input_manifest));
+  const out = {
+    schema: 'antempire.provenance-attestation.v1', attested_on: new Date().toISOString().slice(0, 10), issue: 'Issue #51 (#49 N3)',
+    statement: 'LATER RE-VERIFICATION, not a record made when these data were produced. The data files below were not recorded at generation time. With exactly these files and the rules version that produced the data, every stored baseline row was re-run and reproduced byte for byte. This shows the stored rows are consistent with these inputs; it cannot prove which files were present at generation time.',
+    data_rules_version: doc.engine_version, run_with_engine: ENGINE_VERSION, data_batch: doc.batch_id,
+    verified_by: { method: 'rerun of every baseline row (caf 0.5, rmin 0.5) and byte comparison with the stored row', rows_rerun: rows, rows_equal: equal },
+    data: Object.fromEntries(gap.map((f) => [f, dataEntry(f)])),
+  };
+  const file = path.join(dir, ATTESTATION);
+  fs.writeFileSync(file, JSON.stringify(out, null, 2) + '\n');
+  return { ok: true, rows, equal, file };
 }
 /** Parameters that reproduce the rules version that produced `doc` (runnable: switches set to their old values). */
 export const runnableBundleFor = (doc: Any) => (doc.engine_version === ENGINE_VERSION ? loadBundle : () => bundleAtVersion(doc.engine_version));
 
 if (import.meta.main) {
-  if (process.argv.includes('--validate')) {
+  if (arg('--attest')) {
+    const r = attest(path.resolve(arg('--attest') as string));
+    console.log(JSON.stringify(r, null, 2));
+    if (!r.ok) process.exit(1);
+  } else if (process.argv.includes('--validate')) {
     const all = Object.fromEntries(dataDirs().map((d) => [path.relative(REPO_ROOT, d), validateCommitted(d)]));
     console.log(JSON.stringify(all, null, 2));
     if (Object.values(all).some((v) => !v.ok)) process.exit(1);

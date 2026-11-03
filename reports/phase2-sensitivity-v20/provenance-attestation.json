@@ -1,0 +1,54 @@
+{
+  "schema": "antempire.provenance-attestation.v1",
+  "attested_on": "2026-11-03",
+  "issue": "Issue #51 (#49 N3)",
+  "statement": "LATER RE-VERIFICATION, not a record made when these data were produced. The data files below were not recorded at generation time. With exactly these files and the rules version that produced the data, every stored baseline row was re-run and reproduced byte for byte. This shows the stored rows are consistent with these inputs; it cannot prove which files were present at generation time.",
+  "data_rules_version": "antempire.v2-review.20-local-causality",
+  "run_with_engine": "antempire.v2-review.20-local-causality",
+  "data_batch": "20261103T054607643Z-a67a383a",
+  "verified_by": {
+    "method": "rerun of every baseline row (caf 0.5, rmin 0.5) and byte comparison with the stored row",
+    "rows_rerun": 400,
+    "rows_equal": 400
+  },
+  "data": {
+    "data/taichung-climatology-1991-2020.json": {
+      "sha256": "3687af64e9a94fb7e836f4cda2fc4f85c37ce6af8e228a14d0996de146c261b5",
+      "bytes": 8625,
+      "schema": "antempire.taichung.climate_normals.v1",
+      "source": {
+        "monthly_values": {
+          "provider": "臺中市政府都市計畫報告第6-1表：臺中地區歷年氣象資料統計表(歷年月平均)，依中央氣象局1991-2020年統計",
+          "url": "https://www.ud.taichung.gov.tw/media/1114487/%E8%AE%8A%E6%9B%B4%E8%87%BA%E4%B8%AD%E5%B8%82%E7%83%8F%E6%97%A5%E5%A4%A7%E8%82%9A%E5%9C%B0%E5%8D%80%E9%83%BD%E5%B8%82%E8%A8%88%E7%95%AB%E4%B8%BB%E8%A6%81%E8%A8%88%E7%95%AB-%E9%85%8D%E5%90%88%E5%90%8C%E5%AE%89%E5%8E%9D%E6%8E%92%E6%B0%B4%E7%B3%BB%E7%B5%B1-%E5%90%8C%E5%AE%89%E5%8E%9D%E6%8E%92%E6%B0%B4%E6%B2%BB%E7%90%86%E8%A8%88%E7%95%AB-%E7%AC%AC%E4%B8%80%E6%AC%A1%E4%BF%AE%E6%AD%A3-%E6%A1%88-%E4%B8%8A%E7%B6%B2%E7%89%88.pdf",
+          "pdf_table": "表 6-1",
+          "scope": "臺中地區1991–2020歷年月平均，不是西屯巢穴測量",
+          "quality": "public_government_document_secondary_compilation_from_CWA"
+        },
+        "cwa_station_normals": {
+          "provider": "中央氣象署臺中氣象站",
+          "url": "https://etour.cwa.gov.tw/station_inpage.php?stn_id=8",
+          "quality": "primary_official_1991_2020_station_summary"
+        },
+        "cwa_historical_data": {
+          "provider": "中央氣象署地面觀測CODiS",
+          "url": "https://climate.cwa.gov.tw/GroundObservation",
+          "quality": "official_data_portal_daily_or_monthly_retrievable"
+        },
+        "cwa_longterm_stats": {
+          "provider": "中央氣象署氣候資料統計",
+          "url": "https://climate.cwa.gov.tw/MeasuringObservation",
+          "quality": "official_30_year_normals"
+        },
+        "monthly_high_low_temperature": {
+          "provider": "臺中市政府消防局《臺中市地區災害防救計畫》(112年)表1-2-2，轉載1991–2020中央氣象署臺中測站平年值",
+          "source_url": "https://www.fire.taichung.gov.tw/df_ufiles/h/%E8%87%BA%E4%B8%AD%E5%B8%82%E5%9C%B0%E5%8D%80%E7%81%BD%E5%AE%B3%E9%98%B2%E6%95%91%E8%A8%88%E7%95%AB%28112%E5%B9%B4%E5%BA%A6%29.pdf",
+          "cwa_observation_portal": "https://climate.cwa.gov.tw/GroundObservation",
+          "cwa_normals_portal": "https://climate.cwa.gov.tw/MeasuringObservation",
+          "crosscheck": "https://www.isp.tw/taichung-average-temperature-by-month/",
+          "quality": "government_1991_2020_CWA_based_secondary_compilation; city PDF currently web-search indexed but direct live URL redirects to error; month values independently crosschecked",
+          "meaning": "30-year mean of daily air max/min, not simulated 2026–2027 actual weather nor garden ground surface measurements"
+        }
+      }
+    }
+  }
+}
