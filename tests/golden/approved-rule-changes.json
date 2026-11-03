@@ -345,6 +345,17 @@
       "to": true,
       "description": "Issue #43 F02–F05 and R11 on the individual timeline: trail followed one edge at a time with remote nodes perceived only on arrival (F02); a search interrupted by short-range prey recruitment is closed at the interruption (F03); a late arrival joins a held prey without needing another unreserved prey (F04); every outside interval is charged exactly once, including the finder returning to recruit (F05); routes learned on arrival and recruitment done at the end of unloading with nestmates actually in the nest then (R11). false = v2-review.19 behaviour (isolation proof only).",
       "introduced": true
+    },
+    {
+      "rules_version": "antempire.v2-review.21-brood-care-snapshot",
+      "approved_in": "Owner instruction 2026-11-03 (Issue #50 / #49 N1; merge authorised after CI and independent review)",
+      "kind": "param_switch",
+      "file": "species:pheidole-megacephala",
+      "path": "brood_care.daily_care_snapshot_v21",
+      "from": false,
+      "to": true,
+      "introduced": true,
+      "description": "Issue #49 N1: brood care exposure for the day comes from the workers present at the start of the step; all brood is developed / killed before the day's eclosions are committed (new worker ids in source-pupa id order); a nurse's random larva contact maps to larvae in id order. An individual's fate no longer depends on its position in the brood array. false = v2-review.20 behaviour (isolation proof only)."
     }
   ]
 }
