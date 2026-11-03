@@ -262,6 +262,24 @@
       "save_schema": "antempire.engine-v2",
       "state_migration": null,
       "note": "Issue #43 F02-F05 and R11 local-causality fixes on the individual timeline, plus the PR #44 review fixes (own return routes, remembered exits, timed trail marks, pheromone-free planning) (switch activity.local_causality_v20)"
+    },
+    {
+      "rules_version": "antempire.v2-review.21-brood-care-snapshot",
+      "tag": "v21",
+      "fingerprint": {
+        "engine": "34106260a75be35bcc4c58c5c68f880e5dc4dc69803bc45e497e0f30cf826efd",
+        "params": "bb40b5d47da830f4b7e4daf6484b9d36898936bc4474eb8a43a9bf572cca9181"
+      },
+      "approved_in": "Owner instruction 2026-11-03 (Issue #50 / #49 N1; merge authorised after CI and independent review)",
+      "golden": {
+        "traces": "tests/golden/v21-trace-sha256.json",
+        "reports": "reports/day15-134-v21-*",
+        "day0_traces": "tests/golden/day0-v21-trace-sha256.json"
+      },
+      "previous": "antempire.v2-review.20-local-causality",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null,
+      "note": "Issue #49 N1: brood care exposure from the workers at the start of the step; eclosions committed after all brood; worker ids and nurse larva draws in id order (switch brood_care.daily_care_snapshot_v21)"
     }
   ]
 }
