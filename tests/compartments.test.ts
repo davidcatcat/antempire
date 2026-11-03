@@ -8,7 +8,7 @@
  *      carrier dies in transit, unloading missing, the same event input twice, transport across a day boundary,
  *      a source holding too little.
  *  R/K reproductions from the independent reviews; K1 shows the KNOWN LIMIT (a misrouted trophallaxis between crops the
- *      settlement then empties is not detectable from start/end states; such crops are listed), K3 the
+ *      settlement or a death then empties is not detectable from start/end states; such days are marked), K3 the
  *      egg_laying_settles_crops flag, K4 the engine_rule label of a dead worker's crop.
  *  E   the current engine on main (ENGINE_VERSION printed): 5 foundings × 4 seasons × 45 days; every colony-day
  *      replayed — physical transfers verified, nest ledger exact, the unattributed (F01/A08) use and the
@@ -133,6 +133,15 @@ rejected('trophallaxis to a worker carrying a load outside (repro D)', [col('W2'
   const wrong = synth([tro('W1', 'W2', 0.3)], start, end, { sugar: 0.3 * U, protein: 0 }, { sugar: 0, protein: 0 }, summary);
   ok(truth.r.physical_verified && wrong.r.physical_verified, 'K1 KNOWN LIMIT: a misrouted trophallaxis between crops the settlement then empties is NOT detectable from start/end states');
   ok(wrong.r.evidence_limited_compartments.includes('crop:W2') && truth.r.evidence_limited_compartments.includes('crop:W3'), `K1: the result lists the crops whose evidence the settlement erased (${wrong.r.evidence_limited_compartments.join(', ')})`);
+  // K1b (review of cce69a1): the trophallaxis record is MISSING altogether; the day is still marked (W1 emptied by the replay)
+  const none = synth([], start, end, { sugar: 0.3 * U, protein: 0 }, { sugar: 0, protein: 0 }, summary);
+  ok(none.r.physical_verified && none.r.evidence_limited_compartments.includes('crop:W1'), `K1b KNOWN LIMIT: a missing trophallaxis is not detectable either, but the day is marked (${none.r.evidence_limited_compartments.join(', ')})`);
+  const dead = synth([tro('W1', 'W2', 0.3), { type: 'worker_death', id: 'W2' }], comp({ 'crop:W1': [0.3, 0], 'crop:W2': [0, 0], 'nest_unlocated:C1': [0, 0] }), comp({ 'crop:W1': [0, 0], 'nest_unlocated:C1': [0.3, 0] }), { sugar: 0.3 * U, protein: 0 }, { sugar: 0.3 * U, protein: 0 });
+  ok(dead.r.evidence_limited_compartments.includes('crop:W2'), `K1c: a dead worker's crop is marked too (${dead.r.evidence_limited_compartments.join(', ')})`);
+  // K1d: a crop that was already empty in the replay but held the misrouted sugar in truth (passed over first, ends at 0)
+  const s4 = comp({ 'crop:W0': [0, 0], 'crop:W1': [0.5, 0], 'nest_unlocated:C1': [0, 0] }), e4 = comp({ 'crop:W0': [0, 0], 'crop:W1': [0.2, 0], 'nest_unlocated:C1': [0, 0] });
+  const k1d = synth([], s4, e4, { sugar: 0.5 * U, protein: 0 }, { sugar: 0.2 * U, protein: 0 }, summary); // truth: W1 -> W0 0.3, settlement took W0
+  ok(k1d.r.physical_verified && k1d.r.evidence_limited_compartments.includes('crop:W0'), `K1d KNOWN LIMIT: a crop the settlement passed over at 0 is marked (${k1d.r.evidence_limited_compartments.join(', ')})`);
   const clean = synth([], comp({ 'crop:W1': [0.5, 0], 'nest_unlocated:C1': [0, 0] }), comp({ 'crop:W1': [0.2, 0], 'nest_unlocated:C1': [0, 0] }), { sugar: 0.5 * U, protein: 0 }, { sugar: 0.2 * U, protein: 0 }, summary);
   ok(clean.r.evidence_limited_compartments.length === 0, 'K1: a crop the settlement did not empty is not listed');
 }
@@ -190,4 +199,4 @@ ok(days > 600 && troph > 500, `E (${ENGINE_VERSION}): ${days} colony-days, every
 // T8 replay determinism
 const a = JSON.stringify(runDays('A1', 7, '2027-09-23', 20, false)), z = JSON.stringify(runDays('A1', 7, '2027-09-23', 20, false));
 ok(a === z && a.length > 100, 'T8: the same input gives a byte-identical food_transfer sequence');
-console.log(JSON.stringify({ checks, engine_version: ENGINE_VERSION, colony_days: days, trophallaxis_transfers: troph, known_limit_settlement_erases_evidence: { colony_days: limitedDays, crops: limitedCrops, note: 'crops touched while foraging and then emptied by the settlement: a misrouted or missing trophallaxis there is not detectable from start/end states (needs C2 engine-side events)' }, egg_flag_off_K3: k3, known_defect_F01_A08: { note: 'nest-settlement use (metabolism, eggs, overflow) with attribution unknown: the engine takes it from the aggregate ledger; C2–C5 must give every use an individual source', unattributed_microportions: unattributed } }, null, 2));
+console.log(JSON.stringify({ checks, engine_version: ENGINE_VERSION, colony_days: days, trophallaxis_transfers: troph, known_limit_settlement_erases_evidence: { colony_days: limitedDays, crops: limitedCrops, note: 'colony-days with crops the settlement passed over ending at 0, or dead workers: a misrouted or missing trophallaxis confined to those crops is not detectable from start/end states (needs C2 engine-side events)' }, egg_flag_off_K3: k3, known_defect_F01_A08: { note: 'nest-settlement use (metabolism, eggs, overflow) with attribution unknown: the engine takes it from the aggregate ledger; C2–C5 must give every use an individual source', unattributed_microportions: unattributed } }, null, 2));
