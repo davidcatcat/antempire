@@ -1,0 +1,143 @@
+{
+  "schema": "antempire.world-geometry.v1",
+  "physics_schema": "antempire.physics-geometry.v1",
+  "world_id": "synthetic-narrow-corridor",
+  "geometry_version": "0.1.0",
+  "synthetic": true,
+  "synthetic_note": "狹窄通道：兩端是開闊地，中間 60 mm 長、寬 1.0 mm 的通道（兩側是牆）。",
+  "frame": {
+    "units": "mm",
+    "axes": {
+      "x": "east",
+      "y": "north",
+      "z": "up"
+    },
+    "origin": "合成場景的任意原點（不是 E-N00-1）"
+  },
+  "surfaces": [
+    {
+      "id": "S-ground",
+      "material": "bare_soil",
+      "polygon_mm": [
+        [
+          -50,
+          -50
+        ],
+        [
+          150,
+          -50
+        ],
+        [
+          150,
+          50
+        ],
+        [
+          -50,
+          50
+        ]
+      ],
+      "elevation": {
+        "kind": "flat",
+        "z_mm": 0
+      },
+      "provenance": {
+        "source": "synthetic_scenario",
+        "assumption": true,
+        "basis": "遊戲假設",
+        "note": "合成測試場景的數值；不是臺中西屯花園的量測"
+      }
+    }
+  ],
+  "obstacles": [
+    {
+      "id": "O-wall-north",
+      "kind": "wall",
+      "shape": {
+        "type": "polygon",
+        "points_mm": [
+          [
+            20,
+            0.5
+          ],
+          [
+            80,
+            0.5
+          ],
+          [
+            80,
+            10
+          ],
+          [
+            20,
+            10
+          ]
+        ]
+      },
+      "height_mm": 10,
+      "provenance": {
+        "source": "synthetic_scenario",
+        "assumption": true,
+        "basis": "遊戲假設",
+        "note": "合成測試場景的數值；不是臺中西屯花園的量測"
+      }
+    },
+    {
+      "id": "O-wall-south",
+      "kind": "wall",
+      "shape": {
+        "type": "polygon",
+        "points_mm": [
+          [
+            20,
+            -10
+          ],
+          [
+            80,
+            -10
+          ],
+          [
+            80,
+            -0.5
+          ],
+          [
+            20,
+            -0.5
+          ]
+        ]
+      },
+      "height_mm": 10,
+      "provenance": {
+        "source": "synthetic_scenario",
+        "assumption": true,
+        "basis": "遊戲假設",
+        "note": "合成測試場景的數值；不是臺中西屯花園的量測"
+      }
+    }
+  ],
+  "passages": [
+    {
+      "id": "P-corridor",
+      "centerline_mm": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          100,
+          0,
+          0
+        ]
+      ],
+      "width_mm": 1.0,
+      "route_edge_ref": null,
+      "provenance": {
+        "source": "synthetic_scenario",
+        "assumption": true,
+        "basis": "遊戲假設",
+        "note": "合成測試場景的數值；不是臺中西屯花園的量測"
+      }
+    }
+  ],
+  "entrances": []
+}

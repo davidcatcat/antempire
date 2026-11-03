@@ -1,0 +1,63 @@
+{
+  "schema": "antempire.physics-body-candidates.v1",
+  "species_id": "pheidole-megacephala",
+  "status": "實驗用候選值；不是物種參數檔（species/*.json），不進正式模擬。物理層併入每日循環時，這些值要經規則更新 PR 移入物種參數並重新評估。",
+  "castes": {
+    "minor": {
+      "body_length_mm": {
+        "value": 2.5,
+        "assumption": false,
+        "basis": "文獻支持",
+        "source": "Yuan et al. 2026 (R94) §3.2: 'Minor worker … Body length ca. 2.5 mm'",
+        "limits": "約值；未報告樣本數與變異；體長不是碰撞寬度"
+      },
+      "head_width_mm": {
+        "value": null,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "unknown_reason": "Yuan 2026 沒有報告小工蟻頭寬"
+      },
+      "effective_collision_width_mm": {
+        "value": null,
+        "candidate_range": [
+          0.5,
+          0.8
+        ],
+        "assumption": true,
+        "basis": "遊戲假設",
+        "unknown_reason": "本種沒有『行走時身體（含腳）所占寬度』的量測；範圍是工程候選，用來做敏感度，不是量測"
+      }
+    },
+    "major": {
+      "body_length_mm": {
+        "value": 3.5,
+        "assumption": false,
+        "basis": "文獻支持",
+        "source": "Yuan et al. 2026 (R94) §3.2: 'Soldier (major worker) … Body length ca. 3.5 mm'",
+        "limits": "約值"
+      },
+      "head_width_mm": {
+        "value": 1.3,
+        "assumption": false,
+        "basis": "文獻支持",
+        "source": "Yuan et al. 2026 (R94) §3.2: 'Head massive, about 1.3 mm wide'",
+        "limits": "約值；頭寬是碰撞寬度的下限，不等於行走時所占寬度"
+      },
+      "effective_collision_width_mm": {
+        "value": null,
+        "candidate_range": [
+          1.3,
+          1.8
+        ],
+        "assumption": true,
+        "basis": "遊戲假設",
+        "unknown_reason": "下限取頭寬（文獻）；上限是工程候選（腳張開）"
+      }
+    }
+  },
+  "do_not": [
+    "不得把體長當成碰撞直徑或寬度",
+    "不得把候選範圍寫成量測值",
+    "不得用於其他物種（CLAUDE.md §4）"
+  ]
+}

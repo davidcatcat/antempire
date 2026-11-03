@@ -1,0 +1,141 @@
+{
+  "schema": "antempire.world-geometry.v1",
+  "physics_schema": "antempire.physics-geometry.v1",
+  "world_id": "synthetic-stone-road",
+  "geometry_version": "0.1.0",
+  "synthetic": true,
+  "synthetic_note": "一顆石頭擋在直線通路正中央；另有一條繞過石頭的通路。",
+  "frame": {
+    "units": "mm",
+    "axes": {
+      "x": "east",
+      "y": "north",
+      "z": "up"
+    },
+    "origin": "合成場景的任意原點（不是 E-N00-1）"
+  },
+  "surfaces": [
+    {
+      "id": "S-ground",
+      "material": "bare_soil",
+      "polygon_mm": [
+        [
+          -100,
+          -100
+        ],
+        [
+          600,
+          -100
+        ],
+        [
+          600,
+          150
+        ],
+        [
+          -100,
+          150
+        ]
+      ],
+      "elevation": {
+        "kind": "flat",
+        "z_mm": 0
+      },
+      "provenance": {
+        "source": "synthetic_scenario",
+        "assumption": true,
+        "basis": "遊戲假設",
+        "note": "合成測試場景的數值；不是臺中西屯花園的量測"
+      }
+    }
+  ],
+  "obstacles": [
+    {
+      "id": "O-stone",
+      "kind": "stone",
+      "shape": {
+        "type": "circle",
+        "center_mm": [
+          250,
+          0
+        ],
+        "radius_mm": 15
+      },
+      "height_mm": 20,
+      "provenance": {
+        "source": "synthetic_scenario",
+        "assumption": true,
+        "basis": "遊戲假設",
+        "note": "合成測試場景的數值；不是臺中西屯花園的量測"
+      }
+    }
+  ],
+  "passages": [
+    {
+      "id": "P-straight",
+      "centerline_mm": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          500,
+          0,
+          0
+        ]
+      ],
+      "width_mm": 50,
+      "route_edge_ref": null,
+      "provenance": {
+        "source": "synthetic_scenario",
+        "assumption": true,
+        "basis": "遊戲假設",
+        "note": "合成測試場景的數值；不是臺中西屯花園的量測"
+      }
+    },
+    {
+      "id": "P-detour",
+      "centerline_mm": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          200,
+          0,
+          0
+        ],
+        [
+          230,
+          40,
+          0
+        ],
+        [
+          270,
+          40,
+          0
+        ],
+        [
+          300,
+          0,
+          0
+        ],
+        [
+          500,
+          0,
+          0
+        ]
+      ],
+      "width_mm": 20,
+      "route_edge_ref": null,
+      "provenance": {
+        "source": "synthetic_scenario",
+        "assumption": true,
+        "basis": "遊戲假設",
+        "note": "合成測試場景的數值；不是臺中西屯花園的量測"
+      }
+    }
+  ],
+  "entrances": []
+}
