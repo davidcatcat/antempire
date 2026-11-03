@@ -95,6 +95,7 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
     curPhase = x.phase;
     if (x.cause === 'unload' && x.recipient.kind === 'crop' && x.recipient.id !== x.source.id) err(`${x.transfer_id}: the transit load of ${x.source.id} is unloaded into the crop of ${x.recipient.id}`);
     if (x.cause === 'prey_kill') {
+      if (x.food_type !== 'protein') err(`${x.transfer_id}: a kill yields protein, recorded as ${x.food_type}`);
       if (credited.has(x.source.id)) err(`${x.transfer_id}: kill ${x.source.id} credited twice`);
       credited.add(x.source.id);
       if (killSite.has(x.source.id) && killSite.get(x.source.id) !== x.recipient.id) err(`${x.transfer_id}: kill ${x.source.id} happened at ${killSite.get(x.source.id)}, credited to ${x.recipient.id}`);

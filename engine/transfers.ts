@@ -113,15 +113,30 @@ const PATHS: Record<FoodCause, [string[], string[]]> = {
   lay_egg: [['crop', 'nest_unlocated', 'cache'], ['egg']], death_crop_to_nest_ledger: [['crop'], ['nest_unlocated']],
 };
 /**
- * Path, holder and one-shot rules of one transfer (Issue #61 R3-08, independent review of 7ae0967):
+ * Path, holder and one-shot rules of one transfer (Issue #61 R3-08, independent reviews of 7ae0967 and 4a78ee4):
+ *   - the declared phase is the cause's phase, in the engine's day order (foraging, then overflow, metabolism, deaths, eggs);
  *   - the cause allows this source and recipient kind;
  *   - an unload moves a transit load into the crop of the SAME worker (or a nest cache), never into another's crop;
  *   - a trophallaxis is between two different crops;
  *   - a kill is a one-shot compartment: one prey_kill per insect_predation, to that event's site, of exactly the protein
  *     of the carcass the engine created for it (new_food_source with the same id).
  */
+const PHASE_OF: Record<FoodCause, FoodPhase> = { collect: 'foraging', prey_kill: 'foraging', unload: 'foraging', trophallaxis: 'foraging', storage_overflow: 'nest_settlement', metabolism: 'nest_settlement', death_crop_to_nest_ledger: 'nest_settlement', lay_egg: 'nest_settlement' };
+/** The engine's settlement order (engine/day.ts): overflow, metabolism, deaths, eggs. */
+const SETTLE_STEP: Partial<Record<FoodCause, number>> = { storage_overflow: 0, metabolism: 1, death_crop_to_nest_ledger: 2, lay_egg: 3 };
 function checkPathAndKills(colonyId: string, events: SimEvent[]): void {
   const fail = (m: string) => { throw Error(`FOOD_TRANSFER ${colonyId}: ${m}`); };
+  // the phase a record declares must be the phase of its cause, and phases follow the engine's day order (the roster's
+  // time rule depends on it; independent review of 4a78ee4)
+  let step = -1;
+  for (const e of events.filter(isTransfer)) {
+    const x = e as unknown as FoodTransferInput & { transfer_id: string };
+    if (PHASE_OF[x.cause] !== x.phase) fail(`${x.transfer_id}: ${x.cause} is recorded in phase ${x.phase}, it belongs to ${PHASE_OF[x.cause]}`);
+    const k = x.phase === 'foraging' ? -1 : (SETTLE_STEP[x.cause] as number);
+    if (k < step) fail(`${x.transfer_id}: ${x.cause} (${x.phase}) out of the engine's day order`);
+    step = k;
+    if (x.cause === 'prey_kill' && x.food_type !== 'protein') fail(`${x.transfer_id}: a kill yields protein, recorded as ${x.food_type}`);
+  }
   const kills = new Map(events.filter((e) => e.type === 'insect_predation').map((e) => [String(e.event_id), String(e.site)]));
   const carcass = new Map(events.filter((e) => e.type === 'new_food_source' && e.caused_by_event_id === e.id).map((e) => [String(e.id), micro(Number(e.protein_portions))]));
   const used = new Set<string>();

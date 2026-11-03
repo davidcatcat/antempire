@@ -1,0 +1,9 @@
+# Same counterexamples after the fix (C2_R2_PROBE=1, Node v22.23.4)
+{"probe":"1b (W012 ecloses in the settlement, credited at minute 3.61933)","engine_colony_check":"rejects","reader":"rejects","reader_errors":["FT-43-C1-3: crop:W012 is not a compartment of C1 on day 43 (R3-08)"]}
+{"probe":"1b with the forged record labelled nest_settlement (W012)","engine_colony_check":"rejects","reader":"rejects","reader_errors":["FT-43-C1-3: trophallaxis is not a settlement cause","FT-43-C1-4: foraging transfer after the nest settlement began"]}
+{"probe":"the same kill credited twice","engine_colony_check":"rejects","reader":"rejects","reader_errors":["FT-21-C1-17: kill HUNT-D21-F11-10 credited twice"]}
+{"probe":"a kill credited to another site (F01)","engine_colony_check":"rejects","reader":"rejects","reader_errors":["FT-21-C1-16: kill HUNT-D21-F11-10 happened at F11, credited to F01"]}
+{"probe":"a kill credited with more protein than its carcass","engine_colony_check":"rejects","reader":"rejects","reader_errors":["FT-21-C1-16: kill HUNT-D21-F11-10 credited 3000000 µp, its carcass is 1500000 µp"]}
+{"probe":"a kill recorded as sugar","engine_colony_check":"rejects","reader":"rejects","reader_errors":["FT-21-C1-16: a kill yields protein, recorded as sugar"]}
+{"probe":"a kill with no prey_kill transfer","engine_colony_check":"rejects","reader":"rejects","reader_errors":["kill HUNT-D21-F11-10 has no prey_kill transfer"]}
+{"probe":"part of W004's transit load unloaded into the crop of W002","engine_colony_check":"rejects","reader":"rejects","reader_errors":["FT-8-C1-13: the transit load of W004 is unloaded into the crop of W002"]}

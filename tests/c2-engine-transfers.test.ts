@@ -250,6 +250,20 @@ if (!ONLY || ONLY.includes('R')) {
     renumber(events, (day as Day).day, (day as Day).before.id);
     both(day as Day, events, `1b (${p.born} ecloses in the settlement, credited at minute ${T.minute})`, new RegExp(`${p.born}.*R3-08`), new RegExp(`crop:${p.born} is not a compartment`));
   }
+  { // 4a78ee4 review: 1b again, but the forged trophallaxis declares itself a settlement record (left in its place)
+    const xs = (d: Day) => engineTransfers(d.events) as Any[];
+    const day = findDay((d) => d.after.population.workers.some((w: Any) => !d.before.population.workers.some((v: Any) => v.id === w.id)) && xs(d).some((x) => x.cause === 'trophallaxis' && xs(d).some((m) => m.cause === 'metabolism' && m.source.kind === 'crop' && m.source.id === x.recipient.id && m.portions >= x.portions))) as Day;
+    const born = day.after.population.workers.map((w: Any) => w.id).find((id: string) => !day.before.population.workers.some((w: Any) => w.id === id));
+    const events = structuredClone(day.events), all = events.filter((e: Any) => e.type === 'food_transfer');
+    const T = all.find((x: Any) => x.cause === 'trophallaxis' && all.some((m: Any) => m.cause === 'metabolism' && m.source.kind === 'crop' && m.source.id === x.recipient.id && m.portions >= x.portions));
+    const R = T.recipient.id, a = T.portions; T.recipient = { kind: 'crop', id: born }; T.phase = 'nest_settlement';
+    const draw = events.find((e: Any) => e.type === 'food_transfer' && e.cause === 'metabolism' && e.source.kind === 'crop' && e.source.id === R);
+    draw.portions = Math.round((draw.portions - a) * 1e6) / 1e6;
+    events.splice(events.indexOf(draw), 0, { ...structuredClone(draw), source: { kind: 'crop', id: born }, portions: a });
+    if (!(draw.portions > 0)) events.splice(events.indexOf(draw), 1);
+    renumber(events, day.day, day.before.id);
+    both(day, events, `1b with the forged record labelled nest_settlement (${born})`, /belongs to foraging/, /not a settlement cause|is not a compartment/);
+  }
   { // kills: one-shot, at the kill's site, with exactly its carcass's protein
     const day = findDay((d) => engineTransfers(d.events).some((x) => x.cause === 'prey_kill') && Object.keys(d.before).length > 0);
     assert.ok(day, 'R2 kills: a day with a prey kill'); checks++;
@@ -260,6 +274,8 @@ if (!ONLY || ONLY.includes('R')) {
       both(day as Day, events, `a kill credited to another site (${other})`, /the kill was at/, /happened at/); }
     { const events = structuredClone((day as Day).events), k = kill(events); k.portions = Math.round(k.portions * 2 * 1e6) / 1e6;
       both(day as Day, events, 'a kill credited with more protein than its carcass', /carcass holds/, /its carcass is/); }
+    { const events = structuredClone((day as Day).events), k = kill(events); k.food_type = 'sugar';
+      both(day as Day, events, 'a kill recorded as sugar', /yields protein/, /yields protein/); }
     { const events = structuredClone((day as Day).events), k = kill(events); events.splice(events.indexOf(k), 1); renumber(events, (day as Day).day, (day as Day).before.id);
       both(day as Day, events, 'a kill with no prey_kill transfer', /no prey_kill/, /no prey_kill/); }
   }
