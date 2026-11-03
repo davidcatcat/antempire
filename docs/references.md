@@ -538,3 +538,12 @@
   - 第 84 日的小工蟻存活數；
   - 繁殖季節寫成「3～5 月」與「晚春到秋季」兩種。
 - GISD 的「壽命 78／38 日」不採用，理由見 `docs/research-design-phase3-lifecycle.md` §0。
+
+## 2026-11-03 C3 蟻后營養路線（R346–R349；`docs/design-c3-queen-feeding.md` 修訂 2）
+> 編號從 R346 起，避開 PR #59（R330～R343）與費洛蒙研究 PR（R344～R345）。閱讀程度如實標記。
+| ID | 文獻 | 閱讀程度 | 用途 | 限制 |
+|---|---|---|---|---|
+| R346 | Sanders, Chang, Ota & Nomura (1992) *Food acceptability and distribution in the colony of the bigheaded ant, Pheidole megacephala (Fabr.)*. *Proc. Hawaiian Entomol. Soc.* 31:65–72（UH ScholarSpace）；**本種** | 全文 | 工蟻把固體蛋白切塊、放在幼蟲頭部附近；「The feeding of protein to queens by workers was not observed」；標記蛋黃「fed to queens only after the larvae were fed」（48 h 幼蟲 87.5%；蟻后約 1.9～2.2% 的全巢回收放射量）；6 h 時所有蟻后中腸有染料；糖類 3 h 到達 66% 的蟻后 | 實驗室、先斷食 4 日、20 后；放射量是百分比不是 mg；結果與討論內部矛盾；acetate 標記不是蛋白專一 |
+| R347 | Tschinkel (1988) *Physiol. Entomol.* 13:327–350；**非本種**：*Solenopsis invicta* | 頁影像（pp. 327–328、345–346、348） | 幼蟲 → 工蟻嗉囊 → 蟻后 → 卵；產卵率與末齡幼蟲數成正比；只有末齡幼蟲能消化固體 | 他屬；只作候選機制 |
+| R348 | Cassill, Butler, Vinson & Wheeler (2005) *Insectes Soc.* 52:339；**非本種**：*Pheidole spadonia* | 只讀摘要 | 工蟻切屍 → 幼蟲體外溶解 → 工蟻吸入嗉囊反哺 | 實驗組沒有蟻后；不得引用全文內容 |
+| R349 | Meurville & LeBoeuf (2021) *Myrmecol. News* 31:1–30（綜述） | 相關段落 | 被認為幼蟲是「消化階級」的屬（含 *Pheidole*）；不同的食物轉移類別要分開 | 綜述 |
