@@ -21,13 +21,15 @@
  *    worker-array order, then the unlocated nest sugar), never given an invented individual source;
  *  - a dead worker's crop sugar stays in the engine ledger (no corpse compartment until C5): attribution 'engine_rule'.
  * The replay then requires EVERY compartment of the end snapshot to equal the replay exactly.
- * KNOWN LIMIT (independent reviews of a80b92e and cce69a1): the engine gives only start-of-day and end-of-day states.
- * The settlement takes sugar from crops in array order; every crop it passes over ends at 0, and a dead worker's crop
- * leaves the snapshot, so for those crops the end state cannot show what they held after foraging. A misrouted or
- * MISSING trophallaxis that only changes such crops goes undetected from cli/ alone; any other change shows up as a
- * mismatch (a crop the settlement stopped at or never reached keeps a content fixed by the end state).
- * `evidence_limited_compartments` lists those crops (passed over and ending at 0, or dead). Non-empty = the day's
- * trophallaxis records cannot be fully checked. Full checking needs engine-side transfer events (C2).
+ * KNOWN LIMIT (independent reviews of a80b92e, cce69a1, b9e52b4): the engine gives only start-of-day and end-of-day
+ * states. The settlement takes sugar from crops in array order and every crop it empties ends at 0; a dead worker's crop
+ * leaves the snapshot. A misrouted or MISSING trophallaxis can then end in the same state as the record, so it goes
+ * undetected from cli/ alone. This is possible ONLY on a day where the replay's settlement passes over a crop that ends
+ * at 0, or a worker dies: otherwise every settlement draw stopped at the first crop in the order, whose content the end
+ * state then fixes, and every other crop was untouched. `evidence_limited_compartments` lists those crops as a DAY
+ * MARKER (non-empty = the day's trophallaxis records cannot be fully checked). It is NOT the list of crops that may
+ * differ: the crop where the settlement stopped, or one it never reached in the replay, can differ too. Consumers must
+ * only test it for non-empty. Full checking needs engine-side transfer events (C2).
  * Units: game portions (NOT mg); exact integer micro-portions (10⁻⁶ portion), the engine's six-decimal resolution.
  */
 import type { ColonyState, SimEvent } from '../../engine/index.ts';
@@ -159,8 +161,9 @@ export interface ReplayResult {
   engine_abstractions_used: string[];
   /** Crops of workers that died; their sugar stayed in the nest ledger (no corpse compartment until C5). */
   dead_worker_crops_to_ledger: string[];
-  /** Crops the replay's settlement passed over that end at 0, and dead workers' crops: changes confined to these are not
-   *  visible in start/end states (KNOWN LIMIT). Non-empty = the day's trophallaxis cannot be fully checked. */
+  /** DAY MARKER: crops the replay's settlement passed over that end at 0, and dead workers' crops. Non-empty = the day's
+   *  trophallaxis records cannot be fully checked from start/end states (KNOWN LIMIT). Not the set of crops that may
+   *  differ (the settlement's stop crop can differ too): test it for non-empty only. */
   evidence_limited_compartments: string[];
   /** Whether source compartments were balance-checked (false for real engine days: ecology production is not evented). */
   sources_checked: boolean;
