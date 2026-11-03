@@ -18,7 +18,7 @@ import path from 'node:path';
 import { REPO_ROOT, loadBundle } from '../cli/lib/load.ts';
 import { buildDay0 } from '../cli/lib/day0.ts';
 import { day0DataInputs } from '../cli/lib/input-manifest.ts';
-import { ATTESTATION, configHash, dataDirs, inputManifest, validate, validateCommitted } from '../cli/reports/phase2-sensitivity.ts';
+import { ATTESTATION, configHash, dataDirs, inputManifest, undoChainSha, validate, validateCommitted } from '../cli/reports/phase2-sensitivity.ts';
 import { readJson } from '../cli/lib/load.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -102,6 +102,13 @@ try {
   }
   { const v = withAtt(d19, att20); ok(!v.ok && v.errors.some((e) => /belongs to other data/.test(e)), `7: v20's attestation copied into the v19 directory is rejected (${v.errors.find((e) => /attestation/.test(e))})`); }
   { const v = withAtt(d19, JSON.stringify({ data: { [CLIMATE]: { sha256: inputManifest(tmp).data[CLIMATE].sha256 } } })); ok(!v.ok && v.errors.some((e) => /attestation/.test(e)), `7: a minimal hand-made attestation is rejected (${v.errors.find((e) => /attestation/.test(e))})`); }
+  { // forged engine name: an unknown run_with_engine must not give a computable empty chain (independent review of 6f23eb7)
+    const u = edit(CLIMATE, (j) => { j.monthly_climatology[0].mean_air_temperature_c = 27; });
+    const a = JSON.parse(att19); a.data[CLIMATE].sha256 = inputManifest(tmp).data[CLIMATE].sha256; a.run_with_engine = 'bogus';
+    let thrown = false; try { undoChainSha(a.data_rules_version, 'bogus', tmp); } catch { thrown = true; }
+    const v = withAtt(d19, JSON.stringify(a)); u();
+    ok(thrown && !v.ok && v.errors.some((e) => /not a registry version/.test(e)), `7: an attestation naming an unknown engine is rejected (${v.errors.find((e) => /registry version/.test(e))})`);
+  }
   withAtt(d19, att19);
   ok(allValid().every((v) => v.ok), '7: the real attestations still validate');
   { // the approved rule changes that rebuild the old parameters for the re-run must not change after the attestation

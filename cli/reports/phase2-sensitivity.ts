@@ -311,7 +311,9 @@ export function validate(doc: Any, opts: { day0Eval?: Any; tables?: string; curr
       if (att.schema !== ATTESTATION_SCHEMA) err(`attestation: schema ${att.schema} ≠ ${ATTESTATION_SCHEMA}`);
       if (att.data_batch !== doc.batch_id || att.data_rules_version !== doc.engine_version) err(`attestation belongs to other data (batch ${att.data_batch}, ${att.data_rules_version})`);
       if (!(att.verified_by?.rows_rerun === nBase && att.verified_by?.rows_equal === nBase)) err(`attestation does not show every baseline row re-run and equal (${att.verified_by?.rows_equal}/${att.verified_by?.rows_rerun} of ${nBase})`);
-      if (att.undo_chain_sha !== undoChainSha(doc.engine_version, att.run_with_engine, root)) err('attestation: the approved rule changes used to rebuild the old parameters have changed since the re-verification (stale: re-attest)');
+      let chain: string | null = null;
+      try { chain = undoChainSha(doc.engine_version, att.run_with_engine, root); } catch (e) { err(`attestation: ${(e as Error).message}`); }
+      if (chain !== null && att.undo_chain_sha !== chain) err('attestation: the approved rule changes used to rebuild the old parameters have changed since the re-verification (stale: re-attest)');
     }
     const unattested = gap.filter((f) => !att?.data?.[f]);
     if (unattested.length) err(`provenance gap: ${unattested.join(', ')} not recorded when the data were produced and not re-verified (rerun, or attest with --attest)`);
@@ -385,6 +387,8 @@ export const ATTESTATION_SCHEMA = 'antempire.provenance-attestation.v1';
 export function undoChainSha(from: string, upTo: string, root = REPO_ROOT): string {
   // the registry order decides which approved changes are undone, so both files are bound
   const versions = (readJson('rules/registry.json', root).versions as Any[]).map((v) => v.rules_version), lo = versions.indexOf(from), hi = versions.indexOf(upTo);
+  // an unknown version would give an empty chain whose hash anyone can compute (independent review of 6f23eb7)
+  if (lo < 0 || hi < 0 || hi < lo) throw Error(`run_with_engine ${upTo} is not a registry version at or after ${from}`);
   const changes = (readJson('tests/golden/approved-rule-changes.json', root).changes as Any[]).filter((c) => { const i = versions.indexOf(c.rules_version); return i > lo && i <= hi; });
   return sha(JSON.stringify({ versions: versions.slice(Math.max(lo, 0), hi + 1), changes }));
 }
