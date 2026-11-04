@@ -538,3 +538,29 @@
   - 第 84 日的小工蟻存活數；
   - 繁殖季節寫成「3～5 月」與「晚春到秋季」兩種。
 - GISD 的「壽命 78／38 日」不採用，理由見 `docs/research-design-phase3-lifecycle.md` §0。
+
+## 2026-11-04 Physics & Motion：窄道交通、迎面相遇與讓路（R380–R387；實驗世界的候選機制，未改正式規則）
+
+> - **編號說明**：從 R380 起，避開其他尚未合併 PR 已使用的編號（最高到 R372）。
+> - **本種狀況**：大頭家蟻屬沒有任何窄道交通、迎面相遇、讓路或迴轉研究（2026-11-04 查核，含 *Pheidole* 屬層級）。下列研究**全部非本種**，只能提出候選機制（CLAUDE.md §3、§4）。
+> - **用途**：用於 `scenarios/physics/pheidole-megacephala.interaction-candidates.json` 的 `encounter`。
+> - **查核方式**：引文是經擷取工具核對的原文片段；關鍵數字（99/105、103/106、294/300、0.43 s、0.80 s）由 Claude 另行逐字核對。
+
+| 編號 | 文獻 | 閱讀程度 | 內容與用途 | 限制 |
+|---|---|---|---|---|
+| R380 | Dussutour A, Deneubourg J-L, Fourcassié V (2005) Temporal organization of bi-directional traffic in the ant *Lasius niger*. *J Exp Biol* 208:2903–2912. DOI 10.1242/jeb.01711 | 全文（期刊 HTML，約前 87%） | 3 mm 寬、15 mm 長的窄口（橋全長 210 mm），25±1 °C：<br>- 「the majority of ants travelling towards the centre stopped and gave way to those coming from the opposite direction」，有接觸的相遇中 99/105（巢側）與 103/106（食源側）；<br>- 「loaded ants coming from the food source do not behave differently from emptied ants coming from the nest」；<br>- 每次接觸損失 0.430±0.017 s（mean ± s.e.m.）；<br>- 窄橋上同方向成群通過，平均 3.3 隻。<br>**用途**：入口讓路規則（`entry_yield_probability` = 202/211）與接觸時間候選 0.43 s | 非本種；單一窄口長度。讓路的方式是「移到旁邊等待，再進入窄道」，沒有描述迴轉 |
+| R381 | Dussutour A, Beshers S, Deneubourg J-L, Fourcassié V (2009) Priority rules govern the organization of traffic on foraging trails under crowding conditions in the leaf-cutting ant *Atta colombica*. *J Exp Biol* 212:499–505. DOI 10.1242/jeb.022988 | 全文（期刊 HTML，約前 96%） | 窄橋 5 mm、30±1 °C、單一蟻群約 20,000 隻：<br>- 「the majority of outbound ants stopped and gave way to the laden ants (in 294 out of 300 head-on encounters)」；<br>- 「The time lost per contact was on average 0.80 s」；<br>- 跟在帶葉片螞蟻後面的空手螞蟻 110 隻中只有 8 隻超越。<br>**用途**：選用的帶食優先規則（`laden_yield_probability` = 0.98）、接觸時間候選 0.80 s、不超越 | 非本種，負載是葉片。「301/400」那句誰讓誰，擷取工具前後回答不一致，**未採用** |
+| R382 | Dussutour A, Fourcassié V, Helbing D, Deneubourg J-L (2004) Optimal traffic organization in ants under crowded conditions. *Nature* 428:70–73. DOI 10.1038/nature02345（預印本 arXiv cond-mat/0403142） | 預印本全文 | *L. niger*，雙分枝菱形橋，寬 10／6／3／1.5 mm：<br>- 剛進入分枝的螞蟻正面相撞後，常被推到另一分枝；<br>- 被推並改道的機率 0.571 ± 0.057（CI95%）；<br>- 10 mm 橋上幾乎沒有推擠 | 非本種；是分岔點的改道，不是窄道內的推擠。**本版未使用**（單一通道沒有分岔） |
+| R383 | Fourcassié V, Dussutour A, Deneubourg J-L (2010) Ant traffic rules. *J Exp Biol* 213:2357–2363. DOI 10.1242/jeb.031237 | 全文（綜述） | 「Ants arriving at a bottleneck give way to the ants coming from the narrow part of the trail」（*L. niger*）；帶食優先也見於 *A. cephalotes*、*Formica rufa*（轉引）。<br>**用途**：交叉確認 R380 的規則 | 綜述；轉引的 *Formica* 與 *A. cephalotes* 未核對原文 |
+| R384 | Burd M, Archer D, Aranwela N, Stradling DJ (2002) Traffic dynamics of the leaf-cutting ant, *Atta cephalotes*. *Am Nat* 159:283–293. DOI 10.1086/338541 | 摘要 | 速度隨密度下降；最大流量出現在密度相當高、速度遠低於自由速度時；「Collisions (including encounters for antennation) are common」 | 非本種；只讀摘要。**本版未使用數值** |
+| R385 | Burd M, Aranwela N (2003) Head-on encounter rates and walking speed of foragers in leaf-cutting ant traffic. *Insectes Soc* 50:3–8. DOI 10.1007/s000400300001 | 搜尋摘要片段（未核對原文） | 速度隨相遇率下降，但效果比體型與負重小 | 非本種；**未核對**，不採用數值 |
+| R386 | John A, Schadschneider A, Chowdhury D, Nishinari K (2009) Trafficlike collective movement of ants on trails: absence of a jammed phase. arXiv 0903.1434 | 預印本全文 | *Leptogenys processionalis* 野外單線路徑：迎面相遇時減速；迴轉約 4–7 %，與流量無關 | 非本種；迴轉比例不是「相遇後回頭」的機率，**不得**直接當作 `inside_turn_back_probability` |
+| R387 | Aguilar J et al. (2018) Collective clog control: optimizing traffic flow in confined biological and robophysical excavation. *Science* 361:672–677. DOI 10.1126/science.aan3891 | 摘要 | 火蟻在狹窄隧道挖掘時，以個體閒置與退回（retreating）減少堵塞 | 非本種、挖掘情境、只讀摘要。只作「兩隻都在窄段內時，其中一隻退回」這條候選規則的方向參考，沒有數值 |
+
+**既有編號的附註**（不改寫原有行）：
+- R108（Poissonnier et al. 2019，*Linepithema humile*）在本次核對了全文：
+  - 接觸持續 0.18 ± 0.14 s，每次接觸使通過時間增加 0.24 s；
+  - 流量到約 10 ants·cm⁻¹·s⁻¹ 後持平，沒有堵塞；
+  - 過橋時的迴轉很少。
+  - 用作接觸時間候選值 0.24 s。
+- R133（Vázquez 2020）第 266 行寫「圖中數值未讀」。分方向速度 18.5 ± 0.53、15.5 ± 0.54 mm/s 出自 Results §3 的內文，已在 PR #72 核對。

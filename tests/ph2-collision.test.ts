@@ -12,7 +12,7 @@ import path from 'node:path';
 import { REPO_ROOT } from '../cli/lib/load.ts';
 import type { PhysicsGeometry } from '../engine/physics/geometry.ts';
 import { checkTrajectory, passageOf, positionAt, laneLength } from '../engine/physics/kinematics.ts';
-import { type SimAgentSpec, type SimConfig, type SimResult, type PhysObject, type ReachDisc, simulate, checkExclusion, gridPairs, bruteForcePairs, pickUp, drop, narrowSections, usableWidth } from '../engine/physics/collision.ts';
+import { type EncounterRules, type SimAgentSpec, type SimConfig, type SimResult, type PhysObject, type ReachDisc, simulate, checkExclusion, gridPairs, bruteForcePairs, pickUp, drop, narrowSections, usableWidth } from '../engine/physics/collision.ts';
 import { rng } from '../engine/rng.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -27,9 +27,13 @@ const L = bodyC.castes.minor.body_length_mm.value as number;
 const [wLo, wHi] = bodyC.castes.minor.effective_collision_width_mm.candidate_range as [number, number];
 const reach = (inter.contact_reach_mm.candidate_range as number[])[0] + 0.5;  // 1.0 mm: inside the candidate range
 const vOut = motion.trail_speed_mm_s.outbound.value as number, vRet = motion.trail_speed_mm_s.returning.value as number;
+// encounter rules from the candidates file; inside_turn_back_probability and contact_time_loss_s are null in the file
+// (no study): tests that need a value take one of the file's candidate values explicitly
+const E = inter.encounter;
+const ENC: EncounterRules = { priority: E.priority.value, entry_yield_probability: E.entry_yield_probability.value, laden_yield_probability: E.laden_yield_probability.value, contact_time_loss_s: E.contact_time_loss_s.value, inside_turn_back_probability: E.inside_turn_back_probability.candidate_values[1] };
 const body = (w = wHi) => ({ length_mm: L, width_mm: w, contact_reach_mm: reach });
 const ant = (id: string, passage: string, s: number, d: 1 | -1, goal: number, v: number, extra: Partial<SimAgentSpec> = {}): SimAgentSpec => ({ id, passage, s_mm: s, dir: d, start_t_s: 0, free_speed_mm_s: v, goal_s_mm: goal, body: body(), load: null, ...extra });
-const run = (g: PhysicsGeometry, agents: SimAgentSpec[], extra: Partial<SimConfig> = {}) => { const cfg: SimConfig = { geometry: g, agents, horizon_s: 60, seed: 1, ...extra }; return { cfg, res: simulate(cfg) }; };
+const run = (g: PhysicsGeometry, agents: SimAgentSpec[], extra: Partial<SimConfig> = {}) => { const cfg: SimConfig = { encounter: ENC, geometry: g, agents, horizon_s: 60, seed: 1, ...extra }; return { cfg, res: simulate(cfg) }; };
 const kinds = (r: SimResult, k: string) => r.events.filter((e) => e.kind === k);
 const arrival = (r: SimResult, id: string) => r.events.find((e) => e.kind === 'arrive' && e.agent === id)?.t_s ?? null;
 const consistent = (cfg: SimConfig, r: SimResult, why: string) => {
@@ -53,29 +57,67 @@ ok(near(usableWidth(cor, Pc, 50), 1.0) && near(usableWidth(cor, Pc, 5), 20), 'us
 { const s = narrowSections(cor, Pc, 2 * wHi); ok(s.length === 1 && near(s[0][0], 20 - Math.sqrt(wHi * wHi - 0.25), 1e-9) && near(s[0][1], 80 + Math.sqrt(wHi * wHi - 0.25), 1e-9), `single-file section for two ${wHi} mm ants: [${s[0]}] (exact boundary from the wall corners)`); }
 ok(narrowSections(cor, Pc, 2 * wLo).length === 0, `two ${wLo} mm ants fit abreast everywhere (sensitivity)`);
 
-// ---- 1. single-file head-on: contact, obstruction, one backs out, waits, both arrive later than alone; replay
+// ---- 1. single-file head-on with both ants wholly inside the walls: no studied rule → each turns back with a per-contact
+// probability (candidate 0.5); both lose the contact time (candidate 0.43 s, L. niger); one gives way; replay
 const solo = (id: string, s: number, d: 1 | -1, goal: number, v: number) => arrival(run(cor, [ant(id, 'P-corridor', s, d, goal, v)]).res, id)!;
 {
+  const tau = E.contact_time_loss_s.candidate_values[1] as number;
   const agents = [ant('W1', 'P-corridor', 2, 1, 98, vOut), ant('W2', 'P-corridor', 98, -1, 2, vRet)];
-  const { cfg, res } = run(cor, agents);
+  const { cfg, res } = run(cor, agents, { encounter: { ...ENC, contact_time_loss_s: tau } });
   consistent(cfg, res, 'head-on');
   const c = kinds(res, 'contact_start')[0], o = kinds(res, 'obstruction')[0], y = kinds(res, 'yield_start')[0];
   ok(c && o && y && c.t_s < o.t_s + 1e-12 && c.certain === true, 'contact (certain in single file) comes no later than the obstruction');
-  ok(y.agent === 'W2' && /shorter way back/.test(y.detail!), `W2 backs out (shorter way back): ${y.detail}`);
-  ok(kinds(res, 'follow_start').some((e) => e.agent === 'W1' && e.other === 'W2'), 'the faster W1 cannot pass the backing-out W2 in single file: it follows');
-  ok(kinds(res, 'yield_hold').length === 1 && kinds(res, 'yield_resume').length === 1, 'W2 waits outside the narrow section, then resumes');
-  const a1 = arrival(res, 'W1')!, a2 = arrival(res, 'W2')!, f1 = solo('W1', 2, 1, 98, vOut), f2 = solo('W2', 98, -1, 2, vRet);
-  ok(near(f1, 96 / vOut) && near(f2, 96 / vRet), 'alone: arrival = distance / speed');
-  ok(a1 > f1 + 1e-6 && a2 > f2 + 1 && a2 - f2 > a1 - f1, `meeting delays both, the yielder more: W1 +${(a1 - f1).toFixed(3)} s, W2 +${(a2 - f2).toFixed(3)} s`);
-  const w1 = res.intervals.W1.filter((r) => r.kind === 'move' && r.cause === 'follow');
-  ok(w1.length > 0 && w1.every((r) => near(r.speed_mm_s, vRet)), 'while following, W1 walks exactly at the backing-out W2’s speed (mm/s; physical, not a factor)');
-  const w2wait = res.intervals.W2.filter((r) => r.kind === 'wait' && r.cause === 'yield').reduce((x, r) => x + r.t_end_s - r.t_start_s, 0);
-  ok(w2wait > 0, `W2 waited ${w2wait.toFixed(3)} s`);
+  ok(/both wholly inside/.test(y.detail!) && /game assumption/.test(y.detail!) && !/shorter way back/.test(y.detail!), `inside rule, labelled; the non-local 'shorter way back' rule is gone: ${y.detail}`);
+  const rounds = Number(/decided at contact (\d+)/.exec(y.detail!)![1]);
+  ok(new RegExp(`stand ${(tau * rounds).toFixed(3)} s`).test(y.detail!), `both stand ${rounds} × ${tau} s for the contact(s)`);
+  const yid = y.agent, oid = y.other!;
+  for (const id of ['W1', 'W2']) {
+    const held = res.intervals[id].filter((r) => r.cause === 'contact').reduce((x, r) => x + r.t_end_s - r.t_start_s, 0);
+    ok(near(held, tau * rounds, 1e-9), `${id} stood still ${held.toFixed(3)} s = contact time loss`);
+  }
+  ok(kinds(res, 'yield_hold').length === 1 && kinds(res, 'yield_resume').length === 1, `${yid} waits beside the narrow part, then resumes`);
+  const f = { W1: solo('W1', 2, 1, 98, vOut), W2: solo('W2', 98, -1, 2, vRet) } as Record<string, number>;
+  ok(near(f.W1, 96 / vOut) && near(f.W2, 96 / vRet), 'alone: arrival = distance / speed');
+  const dY = arrival(res, yid)! - f[yid], dO = arrival(res, oid)! - f[oid];
+  ok(dO >= tau * rounds - 1e-9 && dY > dO, `meeting delays both (at least the contact time), the one that gave way more: ${yid} +${dY.toFixed(3)} s, ${oid} +${dO.toFixed(3)} s`);
   ok(JSON.stringify(simulate(cfg)) === JSON.stringify(res), 'replay: identical result');
   ok(JSON.stringify(simulate({ ...cfg, agents: [...agents].reverse() })) === JSON.stringify(res), 'array-order invariance: reversed input, identical result');
-  // the broadphase window only changes where floating-point steps fall: same events, same order, times equal to 1e-9 s
   const sig = (r: SimResult) => r.events.map((e) => `${e.kind}|${e.agent}|${e.other}`).join(',');
   for (const H of [0.001, 0.05, 0.5, 7, 60]) { const r = simulate({ ...cfg, window_s: H }); ok(sig(r) === sig(res) && r.events.every((e, i) => Math.abs(e.t_s - res.events[i].t_s) < 1e-9 && Math.abs(e.s_mm - res.events[i].s_mm) < 1e-8), `broadphase window ${H} s: same events (times within 1e-9 s)`); }
+  // no studied rule and no candidate value given → reported, not invented
+  const nul = run(cor, agents, { encounter: { ...ENC, inside_turn_back_probability: null } });
+  ok(kinds(nul.res, 'unresolved').length === 1 && /no studied rule/.test(kinds(nul.res, 'unresolved')[0].detail!) && checkExclusion(nul.cfg, nul.res, 0.01).length === 0, 'inside_turn_back_probability null: reported unresolved, no overlap');
+  // the per-contact probability changes how many contacts it takes (more contacts → more time) — never who is 'closer'
+  const avgRounds = (p: number) => { let tot = 0; for (let sd = 1; sd <= 200; sd++) { const r = simulate({ ...cfg, seed: sd, encounter: { ...ENC, contact_time_loss_s: tau, inside_turn_back_probability: p } }); tot += Number(/decided at contact (\d+)/.exec(kinds(r, 'yield_start')[0].detail!)![1]); } return tot / 200; };
+  const r1 = avgRounds(0.1), r5 = avgRounds(0.5);
+  ok(Math.abs(r5 - 2) < 0.4 && Math.abs(r1 - 1 / (2 * 0.1 * 0.9)) < 1.5, `mean contacts until exactly one turns back: p=0.5 → ${r5.toFixed(2)} (expected 2), p=0.1 → ${r1.toFixed(2)} (expected ${(1 / 0.18).toFixed(2)})`);
+}
+// ---- 1b. entry yield (Lasius niger, R380): W1 is wholly inside, W2 arrives at the entry → W2 gives way with p≈0.957
+{
+  const t2 = (98 - 80.5) / vRet, start2 = 76 / vOut - t2;   // touch with W1 at s=78 (inside), W2 at s=80.5 (not yet inside)
+  const mk = (seed: number, enc: EncounterRules, loadW1 = false, loadW2 = false) => {
+    const objs: PhysObject[] = [...(loadW1 ? [{ id: 'p1', width_mm: 0.5, holder: 'W1' }] : []), ...(loadW2 ? [{ id: 'p2', width_mm: 0.5, holder: 'W2' }] : [])];
+    return run(cor, [ant('W1', 'P-corridor', 2, 1, 98, vOut, { load: loadW1 ? 'p1' : null }), ant('W2', 'P-corridor', 98, -1, 2, vRet, { start_t_s: start2, load: loadW2 ? 'p2' : null })], { seed, encounter: enc, objects: objs });
+  };
+  const first = mk(1, ENC);
+  consistent(first.cfg, first.res, 'entry yield');
+  const y = kinds(first.res, 'yield_start')[0];
+  ok(/entry yield \(Lasius niger R380/.test(y.detail!), `entry rule applied: ${y.detail}`);
+  let w2 = 0, n = 400, bad = 0;
+  for (let sd = 1; sd <= n; sd++) { const r = mk(sd, ENC); const yy = kinds(r.res, 'yield_start')[0]; if (yy.agent === 'W2') w2++; if (!/entry yield/.test(yy.detail!)) bad++; }
+  const pHat = w2 / n, pLit = ENC.entry_yield_probability, se = Math.sqrt(pLit * (1 - pLit) / n);
+  ok(bad === 0 && Math.abs(pHat - pLit) < 3 * se, `400 seeds: the entering ant gave way in ${w2}/${n} = ${pHat.toFixed(3)} (literature 202/211 = ${pLit.toFixed(3)} ± 3 SE ${(3 * se).toFixed(3)})`);
+  // laden priority (Atta, R381) as the alternative candidate: an unladen ant gives way to a laden one even when inside
+  const lad: EncounterRules = { ...ENC, priority: 'laden_priority' };
+  let w1y = 0;
+  let ladenRule = 0;
+  for (let sd = 1; sd <= n; sd++) { const r = mk(sd, lad, false, true); const yy = kinds(r.res, 'yield_start')[0]; if (yy.agent === 'W1') w1y++; if (/laden priority/.test(yy.detail!)) ladenRule++; }
+  ok(ladenRule === n, 'laden rule applied in every seed');
+  const qHat = w1y / n, q = lad.laden_yield_probability, se2 = Math.sqrt(q * (1 - q) / n);
+  ok(Math.abs(qHat - q) < 3 * se2 + 1e-9, `laden_priority: the unladen W1 (already inside) gave way to the laden W2 in ${w1y}/${n} = ${qHat.toFixed(3)} (literature 294/300 = ${q})`);
+  const both = mk(1, lad, true, true);
+  ok(/entry yield/.test(kinds(both.res, 'yield_start')[0].detail!), 'both laden: falls back to the entry rule');
+  ok(/entry yield/.test(kinds(mk(1, ENC, false, true).res, 'yield_start')[0].detail!), 'entry_yield (default): load makes no difference (as in L. niger)');
 }
 // ---- 2. control: same ants, no walls (obstacle removed) → no obstruction, contact only possible, arrivals as alone
 {
@@ -132,8 +174,8 @@ const solo = (id: string, s: number, d: 1 | -1, goal: number, v: number) => arri
   assert.throws(() => pickUp(held, 'nope', 'B'), /never created/); checks++;
   ok(drop(held, 'o1', 'A')[0].holder === null, 'drop releases');
   assert.throws(() => drop(held, 'o1', 'B'), /does not hold/); checks++;
-  assert.throws(() => simulate({ geometry: cor, horizon_s: 1, seed: 1, objects: [{ id: 'o1', width_mm: 0.5, holder: 'A' }], agents: [ant('A', 'P-corridor', 2, 1, 10, 10, { load: 'o1' }), ant('B', 'P-corridor', 12, 1, 20, 10, { load: 'o1' })] }), /double carrying/); checks++;
-  assert.throws(() => simulate({ geometry: cor, horizon_s: 1, seed: 1, objects: [], agents: [ant('A', 'P-corridor', 2, 1, 10, 10, { load: 'ghost' })] }), /unknown object/); checks++;
+  assert.throws(() => simulate({ encounter: ENC, geometry: cor, horizon_s: 1, seed: 1, objects: [{ id: 'o1', width_mm: 0.5, holder: 'A' }], agents: [ant('A', 'P-corridor', 2, 1, 10, 10, { load: 'o1' }), ant('B', 'P-corridor', 12, 1, 20, 10, { load: 'o1' })] }), /double carrying/); checks++;
+  assert.throws(() => simulate({ encounter: ENC, geometry: cor, horizon_s: 1, seed: 1, objects: [], agents: [ant('A', 'P-corridor', 2, 1, 10, 10, { load: 'ghost' })] }), /unknown object/); checks++;
 }
 // ---- 8. same node ≠ contact: two ants both pass the crossing point, 5 s apart → no contact; at the same time → contact
 {
@@ -145,13 +187,13 @@ const solo = (id: string, s: number, d: 1 | -1, goal: number, v: number) => arri
   ok(kinds(apart.res, 'contact_start').length === 0 && near(arrival(apart.res, 'E')!, 50) && near(arrival(apart.res, 'N')!, 55), 'same crossing node 5 s apart: no contact, no delay');
   const same = run(cr, [ant('E', 'P-east-west', 0, 1, 500, 10), ant('N', 'P-north-south', 0, 1, 500, 10)]);
   consistent(same.cfg, same.res, 'crossing');
-  ok(kinds(same.res, 'contact_start').length === 1 && kinds(same.res, 'yield_start').length === 1, 'same time: contact, then one gives way');
-  const wy = kinds(same.res, 'yield_start')[0];
-  ok(/tie broken by named stream/.test(wy.detail!) && /clear of the other ant’s path/.test(wy.detail!), `exactly symmetric approach: the tie is broken by the named stream; the yielder backs out of the other's path (${wy.detail})`);
+  ok(kinds(same.res, 'contact_start').length >= 1 && kinds(same.res, 'cross_wait').length >= 1 && kinds(same.res, 'yield_start').length === 1, 'same time: contact, then one stops and gives way');
+  const cw = kinds(same.res, 'cross_wait')[0], wy = kinds(same.res, 'yield_start')[0];
+  ok(/both have the other ahead: even chance/.test(cw.detail!) && wy.agent === cw.agent && /pressed by the ant it waits for/.test(wy.detail!) && !/path/.test(wy.detail!), `symmetric approach: an even draw picks who stops; pressed, it backs off out of antennal reach (no use of the other's path): ${cw.detail} / ${wy.detail}`);
   const other = wy.agent === 'E' ? 'N' : 'E', dy = arrival(same.res, wy.agent)! - 50, dO = arrival(same.res, other)! - 50;
   ok(dO > 0 && dy > dO, `both are delayed, the one that gave way more (${wy.agent} +${dy.toFixed(3)} s, ${other} +${dO.toFixed(3)} s)`);
   ok(JSON.stringify(simulate({ ...same.cfg, agents: [...same.cfg.agents].reverse() })) === JSON.stringify(same.res), 'crossing: array-order invariance');
-  const yielders = new Set([1, 2, 3, 4, 5, 6, 7, 8].map((seed) => kinds(simulate({ ...same.cfg, seed }), 'yield_start')[0].agent));
+  const yielders = new Set([1, 2, 3, 4, 5, 6, 7, 8].map((seed) => kinds(simulate({ ...same.cfg, seed }), 'cross_wait')[0].agent));
   ok(yielders.size === 2, `the tie-break depends on the seed, not on position in the list (${[...yielders]})`);
   ok(cross === 250, 'crossing point');
 }
@@ -168,7 +210,7 @@ const solo = (id: string, s: number, d: 1 | -1, goal: number, v: number) => arri
   for (let seed = 1; seed <= 12; seed++) {
     const g = rng(seed), agents: SimAgentSpec[] = [];
     for (let k = 0; k < 8; k++) { const d = (k % 2 ? -1 : 1) as 1 | -1; agents.push(ant(`A${k}`, 'P-corridor', d > 0 ? 2 + Math.floor(k / 2) * 3 : 98 - Math.floor(k / 2) * 3, d, d > 0 ? 98 : 2, 15 + g() * 4, { start_t_s: g() * 8 })); }
-    const cfg: SimConfig = { geometry: cor, agents, horizon_s: 120, seed }, res = simulate(cfg);
+    const cfg: SimConfig = { encounter: ENC, geometry: cor, agents, horizon_s: 120, seed }, res = simulate(cfg);
     ok(checkExclusion(cfg, res, 0.005).length === 0, `traffic seed ${seed}: no mutually exclusive positions`);
     for (const a of agents) ok(checkTrajectory(Pc, res.intervals[a.id], 19).length === 0, `traffic seed ${seed}: ${a.id} trajectory consistent`);
     for (const f of Object.values(res.final)) tally[f.mode] = (tally[f.mode] ?? 0) + 1;
@@ -227,7 +269,7 @@ const solo = (id: string, s: number, d: 1 | -1, goal: number, v: number) => arri
       const s = d > 0 ? 5 + r() * 30 + Math.floor(k / nl) * 6 : Lp - 5 - r() * 30 - Math.floor(k / nl) * 6, Lb = 1.5 + r() * 2.5;
       agents.push(ant(`a${k}`, lane.id, s, d, d > 0 ? Lp - 1 : 1, 5 + r() * 20, { start_t_s: r() * 3, body: { length_mm: Lb, width_mm: 0.5 + r() * 0.4, contact_reach_mm: r() } }));
     }
-    return { geometry: g, agents, horizon_s: 20, seed, window_s: [0.05, 1, 7][seed % 3] };
+    return { encounter: ENC, geometry: g, agents, horizon_s: 20, seed, window_s: [0.05, 1, 7][seed % 3] };
   };
   const laneCase = (seed: number): SimConfig => {
     const r = rng(seed * 104729), g = structuredClone(cor) as Any; g.world_id = 'synthetic-fuzz2';
@@ -247,7 +289,7 @@ const solo = (id: string, s: number, d: 1 | -1, goal: number, v: number) => arri
       let load: string | null = null; if (r() < 0.2) { load = `o${k}`; objects.push({ id: load, width_mm: 0.5 + r() * 0.6, holder: `a${k}` }); }
       agents.push(ant(`a${k}`, P.id, s, d, Math.max(0, Math.min(Lp, goal)), 5 + r() * 20, { start_t_s: r() * 4, load, body: { length_mm: Lb, width_mm: 0.4 + r() * 0.5, contact_reach_mm: r() } }));
     }
-    return { geometry: g, agents, objects, horizon_s: 25, seed, window_s: [0.05, 1, 7][seed % 3] };
+    return { encounter: ENC, geometry: g, agents, objects, horizon_s: 25, seed, window_s: [0.05, 1, 7][seed % 3] };
   };
   const fuzzRun = (cfg: SimConfig, label: string) => {
     let res: SimResult;
@@ -273,9 +315,9 @@ const solo = (id: string, s: number, d: 1 | -1, goal: number, v: number) => arri
   ok(res.events.every((e) => e.model_ref.startsWith('PH-2')), 'every event carries its model reference');
 }
 // ---- 11. invalid input is refused
-assert.throws(() => simulate({ geometry: cor, horizon_s: 1, seed: 1, agents: [ant('A', 'P-corridor', 50, 1, 60, 10), ant('B', 'P-corridor', 51, 1, 60, 10)] }), /same space/); checks++;
-assert.throws(() => simulate({ geometry: cor, horizon_s: 1, seed: 1, agents: [ant('A', 'P-corridor', 50, 1, 60, 10, { body: { length_mm: 2.5, width_mm: 1.2, contact_reach_mm: 1 } })] }), /narrower than its width/); checks++;
-{ const u = structuredClone(cor) as Any; u.passages[0].width_mm = null; assert.throws(() => simulate({ geometry: u, horizon_s: 1, seed: 1, agents: [ant('A', 'P-corridor', 2, 1, 60, 10)] }), /unknown geometry/); checks++; }
+assert.throws(() => simulate({ encounter: ENC, geometry: cor, horizon_s: 1, seed: 1, agents: [ant('A', 'P-corridor', 50, 1, 60, 10), ant('B', 'P-corridor', 51, 1, 60, 10)] }), /same space/); checks++;
+assert.throws(() => simulate({ encounter: ENC, geometry: cor, horizon_s: 1, seed: 1, agents: [ant('A', 'P-corridor', 50, 1, 60, 10, { body: { length_mm: 2.5, width_mm: 1.2, contact_reach_mm: 1 } })] }), /narrower than its width/); checks++;
+{ const u = structuredClone(cor) as Any; u.passages[0].width_mm = null; assert.throws(() => simulate({ encounter: ENC, geometry: u, horizon_s: 1, seed: 1, agents: [ant('A', 'P-corridor', 2, 1, 60, 10)] }), /unknown geometry/); checks++; }
 
 // ---- 12. broadphase: uniform grid gives exactly the brute-force pairs; and it is faster at scale
 {
@@ -298,7 +340,7 @@ assert.throws(() => simulate({ geometry: cor, horizon_s: 1, seed: 1, agents: [an
     const lane = lanes[k % lanes.length], slot = Math.floor(k / lanes.length), s = 50 + Math.floor(slot / 2) * 50 + (slot % 2 ? 8 : -8) + g(), d = (slot % 2 ? -1 : 1) as 1 | -1;
     agents.push(ant(`X${String(k).padStart(4, '0')}`, lane.id, s, d, d > 0 ? span : 0, 15 + g() * 4));
   }
-  const t0 = performance.now(), res = simulate({ geometry: lat, agents, horizon_s: 3, seed: 3, window_s: 0.5 }), ms = performance.now() - t0;
+  const t0 = performance.now(), res = simulate({ encounter: ENC, geometry: lat, agents, horizon_s: 3, seed: 3, window_s: 0.5 }), ms = performance.now() - t0;
   const nC = kinds(res, 'contact_start').length, nW = kinds(res, 'cross_wait').length;
   console.error(`performance: 1000 ants × 3 s on a 40-lane lattice: ${ms.toFixed(0)} ms, ${res.stats.steps} steps, ${res.stats.pair_evaluations} pair evaluations, ${nC} contacts, ${nW} crossing waits`);
   ok(ms < 60000 && res.stats.pair_evaluations < 1000 * 999 / 2 * res.stats.steps, `1000 ants run in ${ms.toFixed(0)} ms with the grid (pair evaluations ${res.stats.pair_evaluations} ≪ brute force ${(1000 * 999 / 2 * res.stats.steps).toExponential(1)})`);
