@@ -16,8 +16,8 @@ let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); che
 const e = runExperiment(), en = e.entry, c = e.control, la = e.laden;
 const se = (p: number, n: number) => Math.sqrt(p * (1 - p) / n);
 ok(en.contact_certain === true && en.obstruction_t_s !== null && en.contact_t_s! <= en.obstruction_t_s, 'entry: contact (certain), then obstruction');
-ok(en.rule === 'entry yield' && en.yielder === 'W2' && Math.abs(en.hold_s - 0.43) < 1e-12, `entry: the ant not yet inside (W2) gives way after 0.43 s (L. niger) — seed 1 (${en.rule}, ${en.yielder}, ${en.hold_s})`);
-ok(en.ants.W1.added_s! >= 0.43 - 1e-9 && en.ants.W2.added_s! > en.ants.W1.added_s!, 'entry: both pay the contact time; the one that gives way loses more');
+ok(en.rule === 'entry yield' && en.yielder === 'W2' && Math.abs(en.hold_s - 0.18) < 1e-12, `entry: the ant not yet inside (W2) gives way after a 0.18 s contact pause (L. humile contact duration) — seed 1 (${en.rule}, ${en.yielder}, ${en.hold_s})`);
+ok(en.ants.W1.added_s! >= 0.18 - 1e-9 && en.ants.W2.added_s! > en.ants.W1.added_s!, 'entry: both pay the contact pause; the one that gives way loses more');
 ok(Math.abs(e.entry_seeds.W2_gave_way / e.entry_seeds.seeds - e.entry_seeds.literature) < 3 * se(e.entry_seeds.literature, e.entry_seeds.seeds), `entry: ${e.entry_seeds.W2_gave_way}/${e.entry_seeds.seeds} gave way, literature ${e.entry_seeds.literature.toFixed(3)} (within 3 SE)`);
 ok(la.rule === 'laden priority' && la.yielder === 'W1' && Math.abs(e.laden_seeds.unladen_gave_way / e.laden_seeds.seeds - e.laden_seeds.literature) < 3 * se(e.laden_seeds.literature, e.laden_seeds.seeds), `laden priority: the unladen ant gives way even though it is already inside (${e.laden_seeds.unladen_gave_way}/${e.laden_seeds.seeds}; Atta 294/300)`);
 ok(c.obstruction_t_s === null && c.yielder === null && c.contact_certain === false && Math.abs(c.ants.W1.added_s!) < 1e-9 && Math.abs(c.ants.W2.added_s!) < 1e-9, 'control (no walls): possible contact only, arrivals equal walking alone');
@@ -32,7 +32,7 @@ const t43 = e.inside.filter((r) => r.p === 0.5).map((r) => r.mean_added_W2_s);
 ok(t43[0] < t43[1] && t43[1] < t43[2], 'inside: a larger contact time loss gives a larger delay');
 {
   let w1 = 0; const n = 2000;
-  for (let sd = 1; sd <= n; sd++) if (runOne('sym', 'inside', { seed: sd, light: true, enc: { inside_turn_back_probability: 0.5, contact_time_loss_s: 0.43 } }).summary.yielder === 'W1') w1++;
+  for (let sd = 1; sd <= n; sd++) if (runOne('sym', 'inside', { seed: sd, light: true, enc: { inside_turn_back_probability: 0.5, contact_pause_s: 0.43 } }).summary.yielder === 'W1') w1++;
   ok(Math.abs(w1 / n - 0.5) < 3 * se(0.5, n), `inside: the rule is symmetric — W1 gives way in ${w1}/${n} (0.5 ± 3 SE)`);
 }
 const low = e.width_sensitivity[0], high = e.width_sensitivity.slice(1);

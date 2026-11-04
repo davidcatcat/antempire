@@ -30,6 +30,14 @@
  *        (game assumption; null → reported `unresolved`); both at the entry: even chance (game assumption);
  *      · an ant backed into by a nestmate that is giving way turns back too (chain back-out; game assumption).
  *    The outcome draws come from a named stream keyed by the pair, the encounter number and the seed, never array order.
+ *    NOT strictly local (disclosed engineering proxies/solvers, see interaction-candidates `rules`): 'wholly inside' is
+ *    measured against the section that is single-file for the PAIR of widths (a geometric proxy for 'already in the narrow
+ *    part'); when the drawn yielder has no wide place behind it the other gives way (pairwise step); several ants waiting
+ *    abreast at an entry are released in a drawn order, only an ant not blocked ahead going first (coordinating solver);
+ *    the back-out target is computed in advance (equivalent to walking back until the passage widens).
+ *    Extension beyond the source: in L. niger the yielder 'does not move until the ant in the entrance has completely
+ *    entered the bottleneck' (R380) — it waits in place; here a single-file passage leaves no room to wait beside, so the
+ *    yielder steps back out to the nearest wide place (possibly far: a long back-out is a model consequence).
  *  - across lanes (crossing): an ant that has the other in its forward half stops (local: the other is ahead of its
  *    antennae); if both do, an even draw decides; if the stopped ant is pressed by the other, it backs off until it is
  *    out of antennal reach of the other, and the other waits until it has done so; it walks on once the other is out of
@@ -72,8 +80,9 @@ export interface EncounterRules {
   entry_yield_probability: number;
   /** probability that an unladen ant gives way to a laden one (laden_priority only) */
   laden_yield_probability: number;
-  /** time both ants lose per head-on contact before one gives way (s); null = not modelled (0) */
-  contact_time_loss_s: number | null;
+  /** how long both ants stand in a head-on contact before one gives way (s): a contact DURATION, not the literature's
+   *  'time lost per contact' (a regression slope that already includes giving way; using it here would count twice); null = 0 */
+  contact_pause_s: number | null;
   /** both wholly inside: per-contact probability that an ant turns back; null = no rule → `unresolved` */
   inside_turn_back_probability: number | null;
 }
@@ -224,13 +233,12 @@ export function simulate(cfg: SimConfig): SimResult {
   const enc = cfg.encounter;
   if (!enc || !['entry_yield', 'laden_priority'].includes(enc.priority)) throw Error('PHYSICS: encounter rules required (see interaction-candidates)');
   for (const [k, v] of [['entry_yield_probability', enc.entry_yield_probability], ['laden_yield_probability', enc.laden_yield_probability]] as const) if (!(v >= 0 && v <= 1)) throw Error(`PHYSICS: encounter.${k} must be in [0, 1]`);
-  if (enc.inside_turn_back_probability !== null && !(enc.inside_turn_back_probability > 0 && enc.inside_turn_back_probability <= 1)) throw Error('PHYSICS: inside_turn_back_probability must be in (0, 1] or null');
-  if (enc.contact_time_loss_s !== null && !(enc.contact_time_loss_s >= 0 && Number.isFinite(enc.contact_time_loss_s))) throw Error('PHYSICS: contact_time_loss_s must be ≥ 0 or null');
+  if (enc.inside_turn_back_probability !== null && !(enc.inside_turn_back_probability > 0 && enc.inside_turn_back_probability < 1)) throw Error('PHYSICS: inside_turn_back_probability must be in (0, 1) or null (at 1 both always turn back and never decide)');
+  if (enc.contact_pause_s !== null && !(enc.contact_pause_s >= 0 && Number.isFinite(enc.contact_pause_s))) throw Error('PHYSICS: contact_pause_s must be ≥ 0 or null');
   // named outcome streams: keyed by the sorted pair, the n-th encounter of that pair, and a tag — never array order
   const encounterNo = new Map<string, number>();
   const nextEncounter = (a: string, b: string) => { const k = pairKey(a, b), n = (encounterNo.get(k) ?? 0) + 1; encounterNo.set(k, n); return n; };
   const draw = (tag: string, a: string, b: string, n: number, extra = '') => { const [x, y] = a < b ? [a, b] : [b, a]; return rng(hash32(`${cfg.seed}|physics.encounter.${tag}|${x}|${y}|${n}|${extra}`))(); };
-  const yielder = (_: unknown, a: string, b: string) => { const [x, y] = a < b ? [a, b] : [b, a]; return draw('even', x, y, nextEncounter(x, y)) < 0.5 ? x : y; };
 
   // narrow sections per (passage, threshold), cached
   const secCache = new Map<string, [number, number][]>();
@@ -338,16 +346,19 @@ export function simulate(cfg: SimConfig): SimResult {
   // ---- stuck detection: a standing waiter whose partner has stopped for good, or a ring of standing waiters, can never
   // move again in this version: report it as `unresolved` (never a silent wait)
   const WAIT_MODES = new Set<Mode>(['follow', 'yield_wait', 'cross_wait']);
+  /** whom a standing ant is waiting for: a waiting mode's partner, or the ant a standing backing-out ant is pressed behind */
+  const waitPartner = (a: RT): string | null => (a.v !== 0 ? null : WAIT_MODES.has(a.mode) && a.partner ? a.partner : a.mode === 'retreat' && a.pressOn && !(a.holdUntil !== null) ? a.pressOn : null);
   const detectStuck = (t: number) => {
     for (let changed = true; changed;) {
       changed = false;
       for (const a of rts) {
-        if (!WAIT_MODES.has(a.mode) || a.v !== 0 || !a.partner) continue;
-        const p = byId.get(a.partner)!;
+        const wp = waitPartner(a);
+        if (!wp) continue;
+        const p = byId.get(wp)!;
         if (terminal(p)) { unresolved(t, a, p, `waits for ${p.id}, which has stopped for good (${p.mode})`); changed = true; continue; }
         const ring: RT[] = [a];
         let q = p;
-        while (WAIT_MODES.has(q.mode) && q.v === 0 && q.partner && !ring.includes(q)) { ring.push(q); q = byId.get(q.partner)!; }
+        while (waitPartner(q) && !ring.includes(q)) { ring.push(q); q = byId.get(waitPartner(q)!)!; }
         if (q === a && ring.length > 1 && ring.every((r) => r.mode === 'follow' && sameLane(r, a))) {
           // a ring of ants all waiting abreast at the entry of a narrow part: one of them goes first (even chance, a
           // per-ant rank drawn for this instant; game assumption) and the others wait for it — a queue, not a deadlock
@@ -534,7 +545,7 @@ export function simulate(cfg: SimConfig): SimResult {
         // an ant that is giving way (backing out) backs into a nestmate facing the same way: that one turns back too
         // (chain back-out; local: it is pushed by the body in front of it; game assumption)
         for (const [r, o] of [[lo, hi], [hi, lo]] as const) if (r.mode === 'retreat' && !r.crossRetreat && sgn(r.v) === -r.travel && (o.s - r.s) * sgn(r.v) > 0) {
-          if (o.mode === 'retreat' && sgn(o.v) === sgn(r.v)) { r.pressOn = o.id; return; }   // both backing out the same way: r walks behind o
+          if (sgn(o.v) === sgn(r.v)) { if (r.pressOn !== o.id) { r.pressOn = o.id; ev(t, 'follow_start', r, o, `backing out behind ${o.mode === 'retreat' ? 'another backing-out ant' : 'an ant walking the same way'}: no faster than it (single file)`); } return; }
           if (o.travel !== r.travel || !['free', 'follow', 'yield_wait'].includes(o.mode)) { unresolved(t, r, o, `backing-out ant blocked by ${o.id} (${o.mode})`); return; }
           const passer = byId.get(r.partner!)!, plan = backOutPlan(o, o.w + Math.max(r.w, passer.w), o.s + o.travel * o.L / 2);
           if (!plan) { unresolved(t, r, o, 'chain back-out: no wide place behind'); return; }
@@ -578,18 +589,17 @@ export function simulate(cfg: SimConfig): SimResult {
             rule += `; ${y.id} has no wide place behind it, so ${other.id} gives way`;
             [y, other] = [other, y]; plan = alt;
           }
-          const hold = (enc.contact_time_loss_s ?? 0) * rounds;
+          const hold = (enc.contact_pause_s ?? 0) * rounds;
           y.mode = 'retreat'; y.partner = other.id; y.retreat_s = plan.target;
           if (other.mode === 'follow') { other.mode = 'free'; other.partner = null; }
           if (hold > 0) { y.holdUntil = t + hold; other.holdUntil = t + hold; }
           modeMotion(y, t); modeMotion(other, t);
-          ev(t, 'yield_start', y, other, `${rule}; gives way by stepping back ${plan.dist.toFixed(6)} mm out of the narrow part${hold > 0 ? `; both stand ${hold.toFixed(3)} s for the contact${rounds > 1 ? `s (${rounds} × ${enc.contact_time_loss_s} s)` : ` (${enc.contact_time_loss_s} s, non-species candidate)`}` : '; contact time loss not modelled'}`);
+          ev(t, 'yield_start', y, other, `${rule}; gives way by stepping back ${plan.dist.toFixed(6)} mm out of the narrow part${hold > 0 ? `; both stand ${hold.toFixed(3)} s for the contact${rounds > 1 ? `s (${rounds} × ${enc.contact_pause_s} s)` : ` (${enc.contact_pause_s} s, non-species candidate)`}` : '; contact time loss not modelled'}`);
           return;
         }
         // same direction, or one standing: the one closing in from behind follows
         const rear = lo.v > 0 ? lo : hi;
         const front = rear === lo ? hi : lo;
-        if (rear.mode === 'retreat' && sgn(front.v) === sgn(rear.v)) { rear.pressOn = front.id; return; }   // backing out behind an ant moving the same way
         if (rear.mode === 'retreat' || sgn(rear.v) !== rear.travel) { unresolved(t, rear, front, 'backing-out ant blocked from behind'); return; }
         if (rear.mode === 'follow' && rear.partner === front.id) return;
         rear.mode = 'follow'; rear.partner = front.id; ev(t, 'follow_start', rear, front, null);

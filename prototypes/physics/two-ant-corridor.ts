@@ -6,7 +6,7 @@
  *
  * Scenarios:
  *  - ENTRY: W1 is already wholly inside the walls when W2 arrives at the far entry → entry-yield rule (Lasius niger,
- *    R380; non-species candidate). Contact time loss 0.43 s (L. niger 3 mm bridge, R380).
+ *    R380; non-species candidate). Contact pause 0.18 s (contact duration measured in L. humile, R108).
  *  - INSIDE: both start together and meet wholly inside → no study describes this; per-contact turn-back probability and
  *    contact time loss are swept over their candidate values (game assumptions).
  *  - LADEN: ENTRY geometry with W2 carrying a small item and the laden-priority rule (Atta colombica, R381).
@@ -41,11 +41,11 @@ export function setup() {
     off_trail_factor: motion.off_trail_factor.value, individual_cv: motion.individual_cv.value,
   };
   const E = inter.encounter;
-  const enc: EncounterRules = { priority: E.priority.value, entry_yield_probability: E.entry_yield_probability.value, laden_yield_probability: E.laden_yield_probability.value, contact_time_loss_s: E.contact_time_loss_s.value, inside_turn_back_probability: E.inside_turn_back_probability.value };
+  const enc: EncounterRules = { priority: E.priority.value, entry_yield_probability: E.entry_yield_probability.value, laden_yield_probability: E.laden_yield_probability.value, contact_pause_s: E.contact_pause_s.value, inside_turn_back_probability: E.inside_turn_back_probability.value };
   return {
     geom, model, enc, L: body.castes.minor.body_length_mm.value as number, wHi: body.castes.minor.effective_collision_width_mm.candidate_range[1] as number,
     widths: body.castes.minor.effective_collision_width_mm.candidate_range as [number, number], reachMid: (inter.contact_reach_mm.candidate_range[0] + inter.contact_reach_mm.candidate_range[1]) / 2,
-    tauC: E.contact_time_loss_s.candidate_values as number[], pC: E.inside_turn_back_probability.candidate_values as number[],
+    tauC: E.contact_pause_s.candidate_values as number[], pC: E.inside_turn_back_probability.candidate_values as number[],
   };
 }
 
@@ -167,16 +167,16 @@ export interface Experiment {
 }
 
 export function runExperiment(): Experiment {
-  const S = setup(), tauLn = S.tauC[1];
-  const entry = runOne('ENTRY (L. niger rule, τ=0.43 s)', 'entry', { enc: { contact_time_loss_s: tauLn } }).summary;
-  const control = runOne('CONTROL (no walls)', 'entry', { walls: false, enc: { contact_time_loss_s: tauLn } }).summary;
-  const laden = runOne('LADEN (Atta rule, W2 carries an item)', 'entry', { loadW2: true, enc: { priority: 'laden_priority', contact_time_loss_s: tauLn } }).summary;
+  const S = setup(), tauLn = S.tauC[0];
+  const entry = runOne('ENTRY (L. niger rule, pause 0.18 s)', 'entry', { enc: { contact_pause_s: tauLn } }).summary;
+  const control = runOne('CONTROL (no walls)', 'entry', { walls: false, enc: { contact_pause_s: tauLn } }).summary;
+  const laden = runOne('LADEN (Atta rule, W2 carries an item)', 'entry', { loadW2: true, enc: { priority: 'laden_priority', contact_pause_s: tauLn } }).summary;
   const N = 400;
   let w2 = 0, unl = 0;
   for (let sd = 1; sd <= N; sd++) {
-    if (runOne('e', 'entry', { seed: sd, light: true, enc: { contact_time_loss_s: tauLn } }).summary.yielder === 'W2') w2++;
+    if (runOne('e', 'entry', { seed: sd, light: true, enc: { contact_pause_s: tauLn } }).summary.yielder === 'W2') w2++;
     // laden rule with W1 laden instead would mirror this; here the unladen ant is W1, already inside
-    if (runOne('l', 'entry', { seed: sd, light: true, loadW2: true, enc: { priority: 'laden_priority', contact_time_loss_s: tauLn } }).summary.yielder === 'W1') unl++;
+    if (runOne('l', 'entry', { seed: sd, light: true, loadW2: true, enc: { priority: 'laden_priority', contact_pause_s: tauLn } }).summary.yielder === 'W1') unl++;
   }
   const inside: Experiment['inside'] = [];
   let insideChecked = 0, insideMax = 0;
@@ -184,18 +184,18 @@ export function runExperiment(): Experiment {
     let y1 = 0, nc = 0, d1 = 0, d2 = 0, mx = 0, viol = 0;
     const n = 100;
     for (let sd = 1; sd <= n; sd++) {
-      const r = runOne('i', 'inside', { seed: sd, light: sd > 3, enc: { inside_turn_back_probability: p, contact_time_loss_s: tau } }).summary;
+      const r = runOne('i', 'inside', { seed: sd, light: sd > 3, enc: { inside_turn_back_probability: p, contact_pause_s: tau } }).summary;
       if (r.yielder === 'W1') y1++;
       nc += r.contacts; d1 += r.ants.W1.added_s!; d2 += r.ants.W2.added_s!; mx = Math.max(mx, r.ants.W1.added_s!, r.ants.W2.added_s!); if (r.exclusion_violations > 0) viol += r.exclusion_violations;
       if (sd <= 5) { const an = analytic('inside', S.wHi, r.yielder as 'W1' | 'W2', r.hold_s); insideMax = Math.max(insideMax, Math.abs(an.W1 - r.ants.W1.arrive_s!), Math.abs(an.W2 - r.ants.W2.arrive_s!)); insideChecked++; }
     }
     inside.push({ p, tau_s: tau, seeds: n, W1_gave_way: y1, mean_contacts: nc / n, mean_added_W1_s: d1 / n, mean_added_W2_s: d2 / n, max_added_s: mx, violations: viol });
   }
-  const width_sensitivity = [S.widths[0], (S.widths[0] + S.widths[1]) / 2, S.widths[1]].map((w) => runOne(`width ${w} mm`, 'entry', { width: w, enc: { contact_time_loss_s: tauLn } }).summary);
+  const width_sensitivity = [S.widths[0], (S.widths[0] + S.widths[1]) / 2, S.widths[1]].map((w) => runOne(`width ${w} mm`, 'entry', { width: w, enc: { contact_pause_s: tauLn } }).summary);
   const an = analytic('entry', S.wHi, entry.yielder as 'W1' | 'W2', entry.hold_s);
   // convergence of the independent fixed-step version, with off-grid speeds so event times do not sit on the Δt grid
   const off: [number, number] = [legSpeed(S.model, 'outbound', true)!, 15.37];
-  const offRun = runOne('offgrid', 'entry', { speeds: off, enc: { contact_time_loss_s: tauLn } }).summary;
+  const offRun = runOne('offgrid', 'entry', { speeds: off, enc: { contact_pause_s: tauLn } }).summary;
   const rows = [0.1, 0.01, 0.001, 0.0001, 0.00001].map((dt) => { const f = fixedStep('entry', S.wHi, offRun.yielder as 'W1' | 'W2', offRun.hold_s, dt, off); return { dt_s: dt, W1_err_s: f.W1 - offRun.ants.W1.arrive_s!, W2_err_s: f.W2 - offRun.ants.W2.arrive_s! }; });
   return {
     sources: SOURCES, entry, control, laden,
@@ -225,7 +225,9 @@ export function report(e: Experiment): string {
 - 讓路的方式（R380、R381 都這樣描述）：讓路的那隻退出窄段，在寬處等對方通過，再繼續。以自己的速度退後，轉身時間 0（遊戲假設）。
 
 ## 1. 入口讓路（ENTRY）：有文獻依據的情境
-W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察（R380：往窄口中央走的那隻在 202/211 次有接觸的相遇中讓路），尚未進入的 W2 讓路；兩隻先停 0.43 s（R380，3 mm 橋每次接觸的時間損失）。
+W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察（R380：往橋中央走、即將進入 3 mm 中央段的那隻，在 202/211 次有接觸的相遇中讓路），尚未進入的 W2 讓路；兩隻先停 0.18 s（接觸持續時間，L. humile 實測，R108）。
+- 與原文不同之處：原文的讓路者在瓶頸原地等待（R380 模型），這裡單行通道旁沒有空間，讓路者退到最近的寬處再等。
+- 「身體尚未完全進入單行段」是幾何代理（單行段由兩隻寬度和決定）。
 
 ${head}
 ${row(e.entry)}
@@ -268,7 +270,8 @@ ${e.convergence.rows.map((c) => `| ${c.dt_s} | ${c.W1_err_s.toExponential(2)} | 
 |---|---|---|---|
 | 誰讓路（入口） | 以 0.957 讓尚未進入者讓 | L. niger 202/211（R380） | 不可：非本種 |
 | 帶食優先 | 選用規則，0.98 | Atta colombica 294/300（R381）；L. niger 沒有（R380） | 不可：兩種研究矛盾，本種未知 |
-| 每次接觸時間損失 | 候選 0.24／0.43／0.80 s | L. humile 0.24（R108）、L. niger 0.43（R380）、Atta 0.80（R381） | 不可：本種未量測 |
+| 每次接觸損失的時間（模型算出，非輸入） | ENTRY：兩隻平均 ${f((e.entry.ants.W1.added_s! + e.entry.ants.W2.added_s!) / 2)} s／次（停頓 0.18 s＋讓路） | L. humile 0.24（R108）、L. niger 0.43（R380）、Atta 0.80（R381）：都是回歸斜率，已含讓路 | 只能比較量級：非本種，且情境不同 |
+| 接觸停頓 | 0.18 s（候選；0.43／0.80 只作上限，會重複計算） | L. humile 接觸持續 0.18 ± 0.14 s（R108） | 不可：本種未量測 |
 | 兩隻都在窄段內 | 每次接觸各自回頭的機率 p | 沒有研究 | 不可 |
 | 不超越 | 單行段不能超越（物理） | Atta：110 隻中只有 8 隻超越（R381） | 方向一致 |
 | 自發迴轉 | 不模擬 | L. humile ≈1 %/次過橋（R108） | — |

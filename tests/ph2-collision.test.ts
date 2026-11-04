@@ -27,10 +27,10 @@ const L = bodyC.castes.minor.body_length_mm.value as number;
 const [wLo, wHi] = bodyC.castes.minor.effective_collision_width_mm.candidate_range as [number, number];
 const reach = (inter.contact_reach_mm.candidate_range as number[])[0] + 0.5;  // 1.0 mm: inside the candidate range
 const vOut = motion.trail_speed_mm_s.outbound.value as number, vRet = motion.trail_speed_mm_s.returning.value as number;
-// encounter rules from the candidates file; inside_turn_back_probability and contact_time_loss_s are null in the file
+// encounter rules from the candidates file; inside_turn_back_probability and contact_pause_s are null in the file
 // (no study): tests that need a value take one of the file's candidate values explicitly
 const E = inter.encounter;
-const ENC: EncounterRules = { priority: E.priority.value, entry_yield_probability: E.entry_yield_probability.value, laden_yield_probability: E.laden_yield_probability.value, contact_time_loss_s: E.contact_time_loss_s.value, inside_turn_back_probability: E.inside_turn_back_probability.candidate_values[1] };
+const ENC: EncounterRules = { priority: E.priority.value, entry_yield_probability: E.entry_yield_probability.value, laden_yield_probability: E.laden_yield_probability.value, contact_pause_s: E.contact_pause_s.value, inside_turn_back_probability: E.inside_turn_back_probability.candidate_values[1] };
 const body = (w = wHi) => ({ length_mm: L, width_mm: w, contact_reach_mm: reach });
 const ant = (id: string, passage: string, s: number, d: 1 | -1, goal: number, v: number, extra: Partial<SimAgentSpec> = {}): SimAgentSpec => ({ id, passage, s_mm: s, dir: d, start_t_s: 0, free_speed_mm_s: v, goal_s_mm: goal, body: body(), load: null, ...extra });
 const run = (g: PhysicsGeometry, agents: SimAgentSpec[], extra: Partial<SimConfig> = {}) => { const cfg: SimConfig = { encounter: ENC, geometry: g, agents, horizon_s: 60, seed: 1, ...extra }; return { cfg, res: simulate(cfg) }; };
@@ -61,9 +61,9 @@ ok(narrowSections(cor, Pc, 2 * wLo).length === 0, `two ${wLo} mm ants fit abreas
 // probability (candidate 0.5); both lose the contact time (candidate 0.43 s, L. niger); one gives way; replay
 const solo = (id: string, s: number, d: 1 | -1, goal: number, v: number) => arrival(run(cor, [ant(id, 'P-corridor', s, d, goal, v)]).res, id)!;
 {
-  const tau = E.contact_time_loss_s.candidate_values[1] as number;
+  const tau = E.contact_pause_s.candidate_values[1] as number;
   const agents = [ant('W1', 'P-corridor', 2, 1, 98, vOut), ant('W2', 'P-corridor', 98, -1, 2, vRet)];
-  const { cfg, res } = run(cor, agents, { encounter: { ...ENC, contact_time_loss_s: tau } });
+  const { cfg, res } = run(cor, agents, { encounter: { ...ENC, contact_pause_s: tau } });
   consistent(cfg, res, 'head-on');
   const c = kinds(res, 'contact_start')[0], o = kinds(res, 'obstruction')[0], y = kinds(res, 'yield_start')[0];
   ok(c && o && y && c.t_s < o.t_s + 1e-12 && c.certain === true, 'contact (certain in single file) comes no later than the obstruction');
@@ -88,7 +88,7 @@ const solo = (id: string, s: number, d: 1 | -1, goal: number, v: number) => arri
   const nul = run(cor, agents, { encounter: { ...ENC, inside_turn_back_probability: null } });
   ok(kinds(nul.res, 'unresolved').length === 1 && /no studied rule/.test(kinds(nul.res, 'unresolved')[0].detail!) && checkExclusion(nul.cfg, nul.res, 0.01).length === 0, 'inside_turn_back_probability null: reported unresolved, no overlap');
   // the per-contact probability changes how many contacts it takes (more contacts → more time) — never who is 'closer'
-  const avgRounds = (p: number) => { let tot = 0; for (let sd = 1; sd <= 200; sd++) { const r = simulate({ ...cfg, seed: sd, encounter: { ...ENC, contact_time_loss_s: tau, inside_turn_back_probability: p } }); tot += Number(/decided at contact (\d+)/.exec(kinds(r, 'yield_start')[0].detail!)![1]); } return tot / 200; };
+  const avgRounds = (p: number) => { let tot = 0; for (let sd = 1; sd <= 200; sd++) { const r = simulate({ ...cfg, seed: sd, encounter: { ...ENC, contact_pause_s: tau, inside_turn_back_probability: p } }); tot += Number(/decided at contact (\d+)/.exec(kinds(r, 'yield_start')[0].detail!)![1]); } return tot / 200; };
   const r1 = avgRounds(0.1), r5 = avgRounds(0.5);
   ok(Math.abs(r5 - 2) < 0.4 && Math.abs(r1 - 1 / (2 * 0.1 * 0.9)) < 1.5, `mean contacts until exactly one turns back: p=0.5 → ${r5.toFixed(2)} (expected 2), p=0.1 → ${r1.toFixed(2)} (expected ${(1 / 0.18).toFixed(2)})`);
 }
@@ -207,6 +207,7 @@ const solo = (id: string, s: number, d: 1 | -1, goal: number, v: number) => arri
 // version cannot untangle (no chain back-out) are reported as `unresolved`, not hidden
 {
   const tally: Record<string, number> = {};
+  let queueRel = 0;
   for (let seed = 1; seed <= 12; seed++) {
     const g = rng(seed), agents: SimAgentSpec[] = [];
     for (let k = 0; k < 8; k++) { const d = (k % 2 ? -1 : 1) as 1 | -1; agents.push(ant(`A${k}`, 'P-corridor', d > 0 ? 2 + Math.floor(k / 2) * 3 : 98 - Math.floor(k / 2) * 3, d, d > 0 ? 98 : 2, 15 + g() * 4, { start_t_s: g() * 8 })); }
@@ -216,8 +217,10 @@ const solo = (id: string, s: number, d: 1 | -1, goal: number, v: number) => arri
     for (const f of Object.values(res.final)) tally[f.mode] = (tally[f.mode] ?? 0) + 1;
     ok(res.events.filter((e) => e.kind === 'unresolved').every((e) => typeof e.detail === 'string' && e.other !== null), `traffic seed ${seed}: every unresolved jam names the ants and the reason`);
     ok(noSilentWait(res), `traffic seed ${seed}: no ant ends waiting for an ant that has stopped for good (silent deadlock)`);
+    queueRel += res.events.filter((e) => /queue at the entry/.test(e.detail ?? '')).length;
   }
-  console.error(`two-way single-file traffic, 12 seeds × 8 ants, final states: ${JSON.stringify(tally)}`);
+  console.error(`two-way single-file traffic, 12 seeds × 8 ants, final states: ${JSON.stringify(tally)}, entry-queue releases ${queueRel}`);
+  ok(queueRel > 0, `traffic exercises the entry-queue release (${queueRel})`);
   ok((tally.arrived ?? 0) + (tally.unresolved ?? 0) + (tally.blocked ?? 0) === 96, `traffic: every ant either arrives or is reported (${JSON.stringify(tally)})`);
 }
 // ---- 9c. independent review of #73: regressions for every reproducer
@@ -305,6 +308,42 @@ const solo = (id: string, s: number, d: 1 | -1, goal: number, v: number) => arri
   const wc = run(cr, [ant('E', 'P-east-west', 0, 1, 500, 10), ant('N', 'P-north-south', 0, 1, 500, 10)]);
   const sigc = (r: SimResult) => r.events.map((e) => `${e.kind}|${e.agent}|${e.other}`).join(',');
   for (const H of [0.05, 7]) { const r = simulate({ ...wc.cfg, window_s: H }); ok(sigc(r) === sigc(wc.res) && r.events.every((e, i) => Math.abs(e.t_s - wc.res.events[i].t_s) < 1e-9), `crossing: window ${H} s gives the same events`); }
+}
+// ---- 9d. review of #75: dense two-way corridors (3–10 ants starting inside and outside, loads, both priority rules,
+// all pause and turn-back candidates): no overlap, no order dependence, no rule loop, and no silent wait — every ant
+// still standing at the horizon is reported. Seed 26 left a backing-out ant standing behind an ant that had stopped for
+// good, unreported (P1); several seeds looped when the entry queue released an ant blocked ahead.
+{
+  const dense = (seed: number): SimConfig => {
+    const r = rng(seed * 7717), na = 3 + Math.floor(r() * 8), agents: SimAgentSpec[] = [], objects: PhysObject[] = [], used: number[] = [];
+    for (let k = 0; k < na; k++) {
+      const d = (r() < 0.5 ? 1 : -1) as 1 | -1;
+      let s = 0; for (let tries = 0; tries < 50; tries++) { s = 2 + r() * 96; if (used.every((u) => Math.abs(u - s) > 2.6)) break; }
+      if (!used.every((u) => Math.abs(u - s) > 2.6)) continue; used.push(s);
+      let load: string | null = null; if (r() < 0.3) { load = `o${k}`; objects.push({ id: load, width_mm: 0.5 + r() * 0.3, holder: `a${k}` }); }
+      agents.push(ant(`a${k}`, 'P-corridor', s, d, d > 0 ? Math.max(s, 99) : Math.min(s, 1), 10 + r() * 10, { start_t_s: r() * 3, load, body: { length_mm: 2.5, width_mm: 0.55 + r() * 0.25, contact_reach_mm: r() } }));
+    }
+    return { encounter: { priority: seed % 2 ? 'entry_yield' : 'laden_priority', entry_yield_probability: [0.957, 0.5, 0.05][seed % 3], laden_yield_probability: 0.98, contact_pause_s: [null, 0.18, 0.43, 0.8][seed % 4], inside_turn_back_probability: [0.1, 0.5, 0.9, null][seed % 4 === 3 ? 3 : seed % 3] }, geometry: cor, agents, objects, horizon_s: 120, seed, window_s: [0.05, 1, 7][seed % 3] };
+  };
+  let pressEvents = 0, chainEvents = 0, queueReleases = 0;
+  const finals: Record<string, number> = {};
+  for (const seed of [26, ...Array.from({ length: 24 }, (_, i) => i + 1).filter((x) => x !== 26)]) {
+    const cfg = dense(seed);
+    let res: SimResult;
+    try { res = simulate(cfg); } catch (e) { if (/same space|narrower than its width/.test(String(e))) continue; throw e; }
+    ok(checkExclusion(cfg, res, 0.005).length === 0, `dense seed ${seed}: no mutually exclusive positions`);
+    ok(JSON.stringify(simulate({ ...cfg, agents: [...cfg.agents].reverse() })) === JSON.stringify(res), `dense seed ${seed}: input order invariant`);
+    const unresolvedIds = new Set(res.events.filter((e) => e.kind === 'unresolved').flatMap((e) => [e.agent, e.other]));
+    const silent = Object.entries(res.final).filter(([id, f]) => !['arrived', 'blocked', 'unresolved'].includes(f.mode) && !unresolvedIds.has(id) && res.intervals[id].at(-1)!.speed_mm_s === 0 && res.intervals[id].at(-1)!.t_end_s - res.intervals[id].at(-1)!.t_start_s > 60);
+    ok(silent.length === 0, `dense seed ${seed}: no ant stands for more than 60 s at the horizon without being reported (${silent.map(([id, f]) => `${id}:${f.mode}`)})`);
+    for (const f of Object.values(res.final)) finals[f.mode] = (finals[f.mode] ?? 0) + 1;
+    pressEvents += res.events.filter((e) => e.kind === 'follow_start' && /backing out behind/.test(e.detail ?? '')).length;
+    chainEvents += res.events.filter((e) => e.kind === 'yield_start' && /chain back-out/.test(e.detail ?? '')).length;
+    queueReleases += res.events.filter((e) => e.kind === 'follow_end' && /queue at the entry/.test(e.detail ?? '')).length;
+  }
+  ok(pressEvents > 0 && chainEvents > 0, `dense corridors exercise backing out behind a backing-out ant (${pressEvents}) and chain back-out (${chainEvents}); entry-queue releases here: ${queueReleases} (a release of an ant blocked ahead would loop and throw)`);
+  console.error(`dense two-way corridors, 25 seeds, final states: ${JSON.stringify(finals)}`);
+  assert.throws(() => simulate({ ...dense(1), encounter: { ...dense(1).encounter, inside_turn_back_probability: 1 } }), /\(0, 1\)/); checks++;
 }
 // ---- 10. no food, no organisms: the result holds only motion; the agent set is unchanged
 {
