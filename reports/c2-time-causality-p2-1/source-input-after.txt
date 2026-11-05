@@ -1,0 +1,20 @@
+V0 valid collect
+  ACCEPT ([])
+V1 events = null
+  REJECT: sources: colony C1 events is null, not an array
+V2 portions = -1
+  REJECT: sources: FT-1-C1-1: portions -1 is not a positive finite number
+V3 source.id = DOES_NOT_EXIST
+  REJECT: sources: FT-1-C1-1 (colony C1): source DOES_NOT_EXIST is not a food source of this world (not in the end-of-day source table)
+V4 recipient deleted
+  REJECT: sources: FT-1-C1-1: recipient missing or not an object
+V5 event null inside the list
+  REJECT: sources: colony C1 event 0 is null, not an event object
+V6 colonies = undefined
+  REJECT: sources: the colony list is "nope", not an array
+V7 end source with negative protein
+  REJECT: sources: source F01 protein is -3, not a non-negative number
+V8 collect into a crop (illegal path)
+  REJECT: sources: FT-1-C1-1 (colony C1): collect source -> crop is not a collection or a kill
+V9 record of another colony
+  REJECT: sources: FT-1-C1-1 (colony C1) is recorded for colony C9
