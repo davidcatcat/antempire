@@ -581,3 +581,12 @@
   - 都市誘餌落阱中 *Monomorium chinense* 佔 69.0%、本種 22.4%；另見 *Cardiocondyla* sp.1、*Paratrechina longicornis*、*Solenopsis* sp.1、*Tetramorium* sp.1／sp.2；誘餌移除中另有 *Pheidole parva*。
 - **R141**（Liu et al. 2022）重讀正文：臺灣 30 群（臺中 8 群，都市公園）；AMOVA 9% 區域間、43% 群間、48% 群內；島尺度未偵測到距離隔離（作者：最可能因樣本少；高雄區內邊際顯著）；作者推論人為介導的長距離跳躍擴散**可能**扮演重要角色。這是全島、數十年的歷史推論，**不得**換算成每日起飛或落點機率。
 - **R154**（Frazer & Holway 2025）**全文**（NSF 公開版）：Costa Mesa 14 ha（2024-05）、San Diego Talmadge 114 ha（2024-11），後者一年淨增 12 ha，但有些地點 2023 年有、2024 年沒有；擴張處都是 2023 年未見 *L. humile* 的地點；文中引 Pietrek et al. 2021（R153）：前緣分巢擴張每年 16～50 m（二手）；並提到本種在加州經常於商品中被檢出。
+
+## 2026-11-03 C3 蟻后營養路線（R346–R349；`docs/design-c3-queen-feeding.md` 修訂 2）
+> 編號從 R346 起，避開 PR #59（R330～R343）與費洛蒙研究 PR（R344～R345）。閱讀程度如實標記。
+| ID | 文獻 | 閱讀程度 | 用途 | 限制 |
+|---|---|---|---|---|
+| R346 | Sanders, Chang, Ota & Nomura (1992) *Food acceptability and distribution in the colony of the bigheaded ant, Pheidole megacephala (Fabr.)*. *Proc. Hawaiian Entomol. Soc.* 31:65–72（UH ScholarSpace）；**本種** | 全文 | 工蟻把固體蛋白切塊、放在幼蟲頭部附近；「The feeding of protein to queens by workers was not observed」；標記蛋黃「fed to queens only after the larvae were fed」（48 h 幼蟲 87.5%；蟻后約 1.9～2.2% 的全巢回收放射量）；6 h 時所有蟻后中腸有染料；糖類 3 h 到達 66% 的蟻后 | 實驗室、先斷食 4 日、20 后；放射量是百分比不是 mg；結果與討論內部矛盾；acetate 標記不是蛋白專一 |
+| R347 | Tschinkel (1988) *Physiol. Entomol.* 13:327–350；**非本種**：*Solenopsis invicta* | 頁影像（pp. 327–328、345–346、348） | 幼蟲 → 工蟻嗉囊 → 蟻后 → 卵；產卵率與末齡幼蟲數成正比；只有末齡幼蟲能消化固體 | 他屬；只作候選機制 |
+| R348 | Cassill, Butler, Vinson & Wheeler (2005) *Insectes Soc.* 52:339；**非本種**：*Pheidole spadonia* | 只讀摘要 | 工蟻切屍 → 幼蟲體外溶解 → 工蟻吸入嗉囊反哺 | 實驗組沒有蟻后；不得引用全文內容 |
+| R349 | Meurville & LeBoeuf (2021) *Myrmecol. News* 31:1–30（綜述） | 相關段落 | 被認為幼蟲是「消化階級」的屬（含 *Pheidole*）；不同的食物轉移類別要分開 | 綜述 |
