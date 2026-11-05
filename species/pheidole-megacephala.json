@@ -1702,7 +1702,8 @@
       "description": "一隻工蟻在一個巢內回合中，從固體蛋白吸取進嗉囊的最大液態蛋白份數（遊戲份量，不是 mg）；受嗉囊共同總容量限制。數值沿用 trophallaxis.transfer_max_portions，D 級假設",
       "legacy_path": null,
       "added_in": {
-        "rules_version": "antempire.v2-review.25-c3a-queen-body"
+        "rules_version": "antempire.v2-review.25-c3a-queen-body",
+        "approved_in": "Owner instruction 2026-11-05 (C3a, docs/design-c3-queen-feeding.md §9-§12; separate PR for Owner review, not merged by Claude)"
       }
     },
     "feed_max_portions_per_contact": {
@@ -1712,7 +1713,8 @@
       "description": "一次與蟻后的接觸中，每種食物最多交哺的份數（遊戲份量）；數值沿用 trophallaxis.transfer_max_portions，D 級假設",
       "legacy_path": null,
       "added_in": {
-        "rules_version": "antempire.v2-review.25-c3a-queen-body"
+        "rules_version": "antempire.v2-review.25-c3a-queen-body",
+        "approved_in": "Owner instruction 2026-11-05 (C3a, docs/design-c3-queen-feeding.md §9-§12; separate PR for Owner review, not merged by Claude)"
       }
     },
     "queen_satiation_days_of_need": {
@@ -1722,7 +1724,8 @@
       "description": "蟻后已知收支中某種食物達到自身每日需求的幾倍時，拒絕該種食物的交哺（食物留在工蟻嗉囊）。D 級假設，沒有本種資料",
       "legacy_path": null,
       "added_in": {
-        "rules_version": "antempire.v2-review.25-c3a-queen-body"
+        "rules_version": "antempire.v2-review.25-c3a-queen-body",
+        "approved_in": "Owner instruction 2026-11-05 (C3a, docs/design-c3-queen-feeding.md §9-§12; separate PR for Owner review, not merged by Claude)"
       }
     },
     "self_feed_max_portions": {
@@ -1732,7 +1735,8 @@
       "description": "開關 C：蟻后每個回合自行取食的最大蛋白份數；數值等於 nutrition.queen_protein_daily，D 級假設",
       "legacy_path": null,
       "added_in": {
-        "rules_version": "antempire.v2-review.25-c3a-queen-body"
+        "rules_version": "antempire.v2-review.25-c3a-queen-body",
+        "approved_in": "Owner instruction 2026-11-05 (C3a, docs/design-c3-queen-feeding.md §9-§12; separate PR for Owner review, not merged by Claude)"
       }
     },
     "day0_initial_reserve_days_of_need": {
@@ -1742,7 +1746,8 @@
       "description": "新版 Day0 實驗世界中蟻后已知儲備（以自身每日需求的倍數 k 表示）。設計 §6 要求 k ∈ {0, 3, 10, 30} 全部做敏感度；預設 0（不假設儲備），不是挑選結果。Day14 遷移的蟻后不用此值：其未知儲備為 null。",
       "legacy_path": null,
       "added_in": {
-        "rules_version": "antempire.v2-review.25-c3a-queen-body"
+        "rules_version": "antempire.v2-review.25-c3a-queen-body",
+        "approved_in": "Owner instruction 2026-11-05 (C3a, docs/design-c3-queen-feeding.md §9-§12; separate PR for Owner review, not merged by Claude)"
       }
     }
   }
