@@ -23,7 +23,7 @@ import assert from 'node:assert/strict';
 import { loadBundle } from '../cli/lib/load.ts';
 import { buildDay0 } from '../cli/lib/day0.ts';
 import { ENGINE_VERSION, simulateWorldDay, checkColonyFood, colonySnapshot, checkSources, sourceSnapshot, legacyToWorldState, legacyColonyMeta, type WorldState, type ParamBundle } from '../engine/index.ts';
-import { engineTransfers, replayEngineColonyDay, speciesFoodTiming } from '../cli/lib/engine-transfers.ts';
+import { engineTransfers, replayEngineColonyDay, replayEngineSourcesDay, speciesFoodTiming } from '../cli/lib/engine-transfers.ts';
 import { dayTransfers, replayColonyDay, toMicro } from '../cli/lib/compartments.ts';
 import { fixture, MAIN_SPECIES } from './lib/harness.ts';
 import { bindFoodTransfers, foodTransfer } from '../engine/transfers.ts';
@@ -34,7 +34,7 @@ const b = loadBundle();
 const ONLY = process.env.C2_ONLY;
 
 // ---------------------------------------------------------------- E: real engine, every colony-day replayed
-const stats = { timed_days: 0, colony_days: 0, transfers: 0, by_cause: {} as Record<string, number>, unattributed: { sugar: 0, protein: 0 }, c1_evidence_limited_days_fully_checked: 0, c1_agree_days: 0 };
+const stats = { source_days: 0, timed_days: 0, colony_days: 0, transfers: 0, by_cause: {} as Record<string, number>, unattributed: { sugar: 0, protein: 0 }, c1_evidence_limited_days_fully_checked: 0, c1_agree_days: 0 };
 const ids = new Set<string>();
 const sig = (x: Any, amount: number) => `${x.cause}|${x.source.kind}:${x.source.id}|${x.recipient.kind}:${x.recipient.id}|${x.food_type}|${amount}`;
 const samples: { before: Any; after: Any; events: Any[]; day: number; sources: Set<string> }[] = [];
@@ -44,6 +44,7 @@ function runWorld(s: WorldState, n: number, label: string, collect = true): stri
   ids.clear(); // transfer ids are unique within one world (FT-<day>-<colony>-<n>)
   for (let d = 0; d < n; d++) {
     const befores = s.colonies.map((c) => structuredClone(c)), o: Any = simulateWorldDay(s, b);
+    if (collect) { const se = replayEngineSourcesDay(o.state.sources, o.result.colonies.map((r: Any) => ({ id: r.colony_id, events: r.events, timing: speciesFoodTiming(b.species[MAIN_SPECIES]) }))); assert.deepEqual(se, [], `E ${label} day ${o.day}: the reader's source time replay rejects a real day: ${se.slice(0, 2).join(' | ')}`); checks++; stats.source_days++; }
     for (const [i, r] of o.result.colonies.entries()) {
       const before = befores[i], after = o.state.colonies.find((c: Any) => c.id === r.colony_id);
       const rep = replayEngineColonyDay(before, after, r.events, o.day, sourceIds(s));
@@ -89,6 +90,7 @@ if (!ONLY || ONLY.includes('M')) {
   let s: WorldState = { ...structuredClone(base), colonies: [structuredClone(base.colonies[0]), second] }, days = 0;
   for (let d = 0; d < 40; d++) {
     const befores = s.colonies.map((c) => structuredClone(c)), o: Any = simulateWorldDay(s, two);
+    { const se = replayEngineSourcesDay(o.state.sources, o.result.colonies.map((r: Any) => ({ id: r.colony_id, events: r.events, timing: 'timed' as const }))); assert.deepEqual(se, [], `M day ${o.day}: the reader's source time replay rejects a real two-colony day: ${se.slice(0, 2).join(' | ')}`); checks++; }
     for (const [i, r] of o.result.colonies.entries()) {
       const rep = replayEngineColonyDay(befores[i], o.state.colonies[i], r.events, o.day, sourceIds(s));
       assert.ok(rep.ok, `M day ${o.day} ${r.colony_id}: ${rep.errors.slice(0, 3).join(' | ')}`); checks++;
@@ -480,6 +482,30 @@ if (!ONLY || ONLY.includes('C')) {
   both(dK, 'only the prey_kill record moved (the kill event stays)', (ev) => { killOf(ev).minute = 1440; return ev; }, 'reject', /insect_predation|before its kill/, /^time:/);
   both(dK, 'a carcass collect stamped 1 minute before its kill', (ev) => { const k = killOf(ev), c = fx(ev).find((x) => x.cause === 'collect' && x.contact?.prey_event_id === k.source.id); c.minute = k.minute - 1; return ev; }, 'reject', /before its kill|go back in time|has not arrived/, /^time:/);
   both(dK, 'a collect naming a prey that was never killed', (ev) => { const c = fx(ev).find((x) => x.cause === 'collect' && x.contact?.prey_event_id); c.contact.prey_event_id = 'HUNT-NOPE'; return ev; }, 'reject', /no prey_kill record/, /^time:.*no kill/);
+  // independent review of af6779c: the same violation with the optional prey tag removed. The kill adds carcass protein
+  // to a shared source; untagged collects of it before the kill must be caught by the time-ordered SOURCE replay
+  // (engine checkSources; reader replayEngineSourcesDay), whatever the tags say.
+  {
+    let sw: Any = buildDay0('A1' as Any, 1, '2027-09-23', b).state, o: Any;
+    for (let d = 0; d < 60; d++) { o = simulateWorldDay(sw, b); if (fx(o.result.colonies[0].events).some((x) => x.cause === 'prey_kill')) break; sw = o.state; }
+    const ev0 = o.result.colonies[0].events, kill = fx(ev0).find((x) => x.cause === 'prey_kill');
+    // the source holdings at the start of foraging (input to the engine's check): end + collected − credited
+    const startSrc = sourceSnapshot(o.state);
+    for (const x of fx(ev0)) { const m = toMicro(x.portions); if (x.source.kind === 'source') startSrc.get(x.source.id)![x.food_type as 'sugar' | 'protein'] += m; if (x.recipient.kind === 'source') startSrc.get(x.recipient.id)![x.food_type as 'sugar' | 'protein'] -= m; }
+    const engineThrows = (f: () => void) => { try { f(); return ''; } catch (e) { return String(e); } };
+    const srcBoth = (name: string, ev: Any[], expect: 'reject' | 'accept') => {
+      const t = engineThrows(() => checkSources(startSrc, o.state, [ev], ['timed'])), se = replayEngineSourcesDay(o.state.sources, [{ id: o.result.colonies[0].colony_id, events: ev, timing: 'timed' }]);
+      if (expect === 'accept') { ok(t === '', `TC sources ${name}: the engine accepts (${t.slice(0, 140)})`); ok(se.length === 0, `TC sources ${name}: the reader accepts (${se[0]})`); }
+      else { ok(/FOOD_TRANSFER/.test(t), `TC sources ${name}: the engine's source check rejects (${t.slice(0, 160) || 'ACCEPTED'})`); ok(se.length > 0, `TC sources ${name}: the reader's source replay rejects (${se[0] ?? 'ACCEPTED'})`); }
+    };
+    srcBoth('unmodified hunting day', structuredClone(ev0), 'accept');
+    for (const strip of ['prey_event_id', 'contact'] as const) {
+      const ev = structuredClone(ev0);
+      for (const x of fx(ev)) if (x.contact?.prey_event_id) { if (strip === 'contact') delete x.contact; else delete x.contact.prey_event_id; }
+      fx(ev).find((x) => x.transfer_id === kill.transfer_id).minute = 1440; ev.find((e: Any) => e.type === 'insect_predation' && e.event_id === kill.source.id).minute = 1440;
+      srcBoth(`carcass collects untagged (${strip} removed), kill moved to minute 1440`, ev, 'reject');
+    }
+  }
   // different workers' records may interleave in any list order: a legal day with two foragers, the list regrouped
   // worker by worker (each worker's own records keep their order and minutes; ids renumbered) must still be accepted
   const two = findDay((ev) => { const ws = new Set(fx(ev).filter((x) => x.cause === 'collect').map((x) => x.recipient.id)); return ws.size >= 2 && !fx(ev).some((x) => x.cause === 'trophallaxis'); }, 'A1', 1, '2027-09-23', 60);

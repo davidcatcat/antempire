@@ -105,7 +105,7 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
   const sourcesBefore = sourceSnapshot(s);
 
   for (const w of work) forageDay(s, w.colony, w.sp, wp, weather, w.events, w.summary);
-  checkSources(sourcesBefore, s, work.map((w) => w.events));
+  checkSources(sourcesBefore, s, work.map((w) => w.events), work.map((w) => foodTimingFor(w.sp)));
   assertCausalFood([...worldEvents, ...work.flatMap((w) => w.events)], 'NO_GOD_MODE: food without tracked dead insect');
   for (const w of work) {
     const m = w.summary.foraging_workers_by_macro as { sugar: Set<string>; protein: Set<string> };

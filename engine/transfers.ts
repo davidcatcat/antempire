@@ -341,7 +341,7 @@ export function sourceSnapshot(world: WorldState): Map<string, { sugar: number; 
 /** World-wide source closure over all colonies' foraging: start + kills - collections = end, per site and food.
  *  `colonyEvents[i]` are the events of `world.colonies[i]`; every transfer touching a source must be recorded for that
  *  colony, and its colony side (the transit load it fills, the insect it kills) must belong to that colony (R3-08). */
-export function checkSources(start: Map<string, { sugar: number; protein: number }>, world: WorldState, colonyEvents: SimEvent[][]): void {
+export function checkSources(start: Map<string, { sugar: number; protein: number }>, world: WorldState, colonyEvents: SimEvent[][], timings: FoodTiming[] = []): void {
   const cur = new Map([...start].map(([k, v]) => [k, { ...v }]));
   colonyEvents.forEach((events, i) => {
     const colony = world.colonies?.[i];
@@ -362,11 +362,23 @@ export function checkSources(start: Map<string, { sugar: number; protein: number
       if (!(other.kind === 'in_transit' && workers.has(other.id)) && !(other.kind === 'insect' && kills.has(other.id))) throw Error(`FOOD_TRANSFER: ${x.transfer_id} links a source with ${other.kind}:${other.id}, which is not a worker or a recorded kill of ${colony.id} (Issue #61 R3-08)`);
     }
   });
-  for (const events of colonyEvents) for (const e of events.filter(isTransfer)) {
-    const x = e as unknown as FoodTransferInput & { transfer_id: string }, a = micro(x.portions);
+  // Colonies forage one after another (engine/day.ts), so a colony starts from the holdings its predecessors left. Within
+  // a timed colony-day the source records are taken in TIME order (ties: list order): a kill adds carcass protein to a
+  // source only at its minute, so nothing — tagged with the prey or not — can be taken from it earlier (independent
+  // review of af6779c). On the untimed legacy path the list order is used (time not validated).
+  colonyEvents.forEach((events, ci) => {
+    const xs = events.filter(isTransfer).map((e, i) => ({ x: e as unknown as FoodTransferInput & { transfer_id: string }, i })).filter(({ x }) => x.source.kind === 'source' || x.recipient.kind === 'source');
+    if ((timings[ci] ?? 'timed') === 'timed') {
+      const untimed = xs.find(({ x }) => typeof x.minute !== 'number');
+      if (untimed) throw Error(`FOOD_TRANSFER: ${untimed.x.transfer_id} moves source food without a minute on a timed day`);
+      xs.sort((p, q) => (p.x.minute as number) - (q.x.minute as number) || p.i - q.i);
+    }
+    for (const { x } of xs) {
+    const a = micro(x.portions);
     if (x.source.kind === 'source') { const s = cur.get(x.source.id); if (!s || s[x.food_type] < a) throw Error(`FOOD_TRANSFER: ${x.transfer_id} takes ${a} µp from source:${x.source.id}, which holds ${s?.[x.food_type]}`); s[x.food_type] -= a; }
     if (x.recipient.kind === 'source') { const s = cur.get(x.recipient.id); if (!s) throw Error(`FOOD_TRANSFER: ${x.transfer_id} adds to unknown source ${x.recipient.id}`); s[x.food_type] += a; }
-  }
+    }
+  });
   for (const s of Object.values(world.sources)) {
     const c = cur.get(s.id);
     if (!c || c.sugar !== micro(s.sugar || 0) || c.protein !== micro(s.protein || 0)) throw Error(`FOOD_TRANSFER: source:${s.id} is ${micro(s.sugar || 0)}/${micro(s.protein || 0)} µp after foraging, the transfers give ${c?.sugar}/${c?.protein}`);

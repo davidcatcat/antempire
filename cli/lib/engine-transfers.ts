@@ -263,3 +263,41 @@ function timeCausality(start: ColonyState, xs: EngineTransfer[], err: (m: string
   }
   return 'timed';
 }
+
+/**
+ * World-level time check of the shared food sources (independent review of af6779c), written independently of the
+ * engine's checkSources. Nothing changes a source after foraging, so the reader reconstructs each source's holding at the
+ * start of foraging from the end state: start = end + everything collected − everything credited by kills (all colonies).
+ * Colonies forage one after another in list order; within a timed colony-day the colony's source records are taken
+ * minute by minute (same minute: list order), within an untimed legacy day in list order. A source may never be taken
+ * below zero — e.g. carcass protein collected before the kill that put it there, whether or not the collect names the prey.
+ */
+export function replayEngineSourcesDay(endSources: Record<string, { sugar?: number; protein?: number }>, colonies: { id: string; events: SimEvent[]; timing: 'timed' | 'untimed_legacy' }[]): string[] {
+  const errors: string[] = [];
+  const touches = colonies.map((c) => (Array.isArray(c.events) ? (c.events as Any[]) : []).filter((e) => e && e.type === 'food_transfer' && (e.source?.kind === 'source' || e.recipient?.kind === 'source')) as EngineTransfer[]);
+  const held = new Map<string, number>(), slot = (id: string, f: string) => `${id}|${f}`;
+  for (const [id, s] of Object.entries(endSources ?? {})) { held.set(slot(id, 'sugar'), toMicro(s?.sugar || 0)); held.set(slot(id, 'protein'), toMicro(s?.protein || 0)); }
+  for (const x of touches.flat()) {
+    const a = toMicro(x.portions);
+    if (x.source.kind === 'source') held.set(slot(x.source.id, x.food_type), (held.get(slot(x.source.id, x.food_type)) ?? 0) + a);
+    if (x.recipient.kind === 'source') held.set(slot(x.recipient.id, x.food_type), (held.get(slot(x.recipient.id, x.food_type)) ?? 0) - a);
+  }
+  for (const [k, v] of held) if (v < 0) errors.push(`sources: ${k} would have held ${v} µp at the start of foraging`);
+  colonies.forEach((c, ci) => {
+    let order = touches[ci].map((x, i) => ({ x, i }));
+    if (c.timing === 'timed') {
+      for (const { x } of order) if (typeof x.minute !== 'number' || !Number.isFinite(x.minute)) errors.push(`sources: ${x.transfer_id} of ${c.id} has no minute on a timed day`);
+      order = order.filter(({ x }) => typeof x.minute === 'number').sort((p, q) => (p.x.minute as number) - (q.x.minute as number) || p.i - q.i);
+    }
+    for (const { x } of order) {
+      const a = toMicro(x.portions);
+      if (x.source.kind === 'source') {
+        const k = slot(x.source.id, x.food_type), h = held.get(k) ?? 0;
+        if (h < a) errors.push(`sources: ${x.transfer_id} of ${c.id} (minute ${x.minute}) takes ${a} µp from ${x.source.id}, which holds ${h} µp then — food taken before it was there`);
+        held.set(k, h - a);
+      }
+      if (x.recipient.kind === 'source') held.set(slot(x.recipient.id, x.food_type), (held.get(slot(x.recipient.id, x.food_type)) ?? 0) + a);
+    }
+  });
+  return errors;
+}
