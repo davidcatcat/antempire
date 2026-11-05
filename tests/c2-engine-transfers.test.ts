@@ -536,6 +536,24 @@ if (!ONLY || ONLY.includes('C')) {
     ];
     { const big = call({ length: 1, x: 'y'.repeat(5_000_000) }); ok(big.crash === '' && big.r.length > 0 && big.r.every((m) => m.length < 400), `TC source input: a huge invalid input gives a bounded message (${big.r[0]?.length} chars)`); }
     { const many = call(Array.from({ length: 1000 }, () => null)); ok(many.r.length <= 51 && /more input errors/.test(many.r.at(-1) ?? ''), `TC source input: errors are capped (${many.r.length} lines)`); }
+    // Codex follow-up 2026-11-05 N1 (P2): the six-decimal rule is applied to the RAW amount (0.6 µp is not 1 µp)
+    for (const um of [0.49, 0.5, 0.6, 0.99, 1.4]) { const v = call([{ ...rec(), portions: um / 1e6 }]); ok(v.crash === '' && v.r.some((m) => /six-decimal amount/.test(m)), `TC source input: ${um} µp is rejected, not rounded (${v.r[0] ?? 'ACCEPTED'})`); }
+    for (const um of [1, 1.0005, 2]) { const v = call([{ ...rec(), portions: um / 1e6 }]); ok(v.crash === '' && v.r.length === 0, `TC source input: ${um} µp is a legal amount (same tolerance as the colony reader) (${v.r[0] ?? ''})`); }
+    { const v = call([rec()], { F01: { sugar: 0.0000006, protein: 0 } }); ok(v.r.some((m) => /six-decimal/.test(m)), `TC source input: an end amount of 0.6 µp is rejected (${v.r[0] ?? 'ACCEPTED'})`); }
+    // N1 (P2): exact sums. Every amount is a legal safe value; only the totals pass 2^53. Collects 2^52, 2^52 and 3 µp, then
+    // a 1 µp kill, end 0: exactly, the 3 µp collect finds 2 µp (illegal); in floating point the start rounds up and passes.
+    {
+      const M = 2 ** 52, kill = { ...rec(), transfer_id: 'FT-1-C1-4', minute: 4, cause: 'prey_kill', source: { kind: 'insect', id: 'K1' }, recipient: { kind: 'source', id: 'F01' }, portions: 1e-6 };
+      const v = call([{ ...rec(), portions: M / 1e6 }, { ...rec(), transfer_id: 'FT-1-C1-2', minute: 2, portions: M / 1e6 }, { ...rec(), transfer_id: 'FT-1-C1-3', minute: 3, portions: 3e-6 }, kill], { F01: { sugar: 0, protein: 0 } });
+      ok(v.crash === '' && v.r.some((m) => /FT-1-C1-3.*takes 3 µp.*holds 2 µp/.test(m)), `TC source input: a day illegal by 1 µp beyond 2^53 is rejected by exact arithmetic (${v.r[0] ?? 'ACCEPTED'})`);
+      const legal = call([{ ...rec(), portions: 2 ** 52 / 1e6 }, { ...rec(), transfer_id: 'FT-1-C1-2', minute: 2, portions: 1e-6 }], { F01: { sugar: 2 ** 52 / 1e6, protein: 0 } });
+      ok(legal.crash === '' && legal.r.length === 0, `TC source input: Codex's 2^52 + 2^52 + 1 µp day is replayed exactly and accepted (${legal.r[0] ?? ''})`);
+    }
+    // N2 (P3): a getter that throws only on a later read — the input is read once into a snapshot
+    { let reads = 0; const c = { id: 'C1', timing: 'timed', get events(): Any { if (++reads > 5) throw Error('late getter'); return [rec()]; } }; const v = call(null, end, [c]); ok(v.crash === '', `TC source input: a late-throwing getter does not escape (${v.crash || v.r[0] || 'accepted'})`); }
+    { const v = call(null, end, [{ id: 'C1', timing: 'timed', events: [rec()], get bad(): Any { throw { toString() { throw Error('x'); } }; } }]); ok(v.crash === '', `TC source input: an unprintable thrown value does not escape (${v.crash || v.r[0] || 'accepted'})`); }
+    // N3 (P3): every returned line is bounded, ids included
+    { const v = call([{ ...rec(), transfer_id: 'X'.repeat(100000), portions: -1 }]); ok(v.r.length > 0 && v.r.every((m) => m.length <= 300), `TC source input: a 100,000-character id gives bounded lines (${Math.max(...v.r.map((m) => m.length))} chars)`); }
     for (const [name, events, endS, colonies, re] of bad) {
       const v = call(events, endS === undefined ? end : endS, colonies);
       ok(v.crash === '' && v.r.length > 0 && (!re || v.r.some((m) => re.test(m))), `TC source input: ${name} is reported, not accepted or crashed (${v.crash || v.r[0] || 'ACCEPTED'})`);
