@@ -16,6 +16,7 @@ export interface PopulationSnapshot {
   workers: Map<string, number>; // id -> age_days at the start of the day
   brood: Map<string, BroodStage>;
   queen_alive: boolean;
+  queen_id: string;
   next_worker_number: number;
   next_egg_number: number;
 }
@@ -23,7 +24,7 @@ export function populationSnapshot(c: ColonyState): PopulationSnapshot {
   return {
     workers: new Map(c.population.workers.map((w) => [w.id, w.age_days])),
     brood: new Map(c.population.brood.map((b) => [b.id, b.stage])),
-    queen_alive: c.population.queen_alive, next_worker_number: c.next_worker_number, next_egg_number: c.next_egg_number,
+    queen_alive: c.population.queen_alive, queen_id: c.queen_id, next_worker_number: c.next_worker_number, next_egg_number: c.next_egg_number,
   };
 }
 
@@ -49,6 +50,8 @@ export function checkPopulationDay(start: PopulationSnapshot, colony: ColonyStat
   const steps = new Map<string, string>();
   const step = (id: string, kind: string, from: string) => {
     if (steps.has(id)) fail(`brood ${id} changes stage twice in one day (${steps.get(id)}, ${kind})`);
+    // Codex review of 1224744 (F2): no stage event after the item's life ended
+    if (broodDeaths.has(id)) fail(`brood ${id}: ${kind} after it died`);
     const s0 = start.brood.get(id);
     if (s0 === undefined) fail(`brood ${id}: ${kind} of brood that did not exist at the start of the day`);
     else if (s0 !== from) fail(`brood ${id}: ${kind} from stage ${s0} (needs ${from})`);
@@ -65,8 +68,9 @@ export function checkPopulationDay(start: PopulationSnapshot, colony: ColonyStat
       if (broodDeaths.has(from)) fail(`brood ${from} ecloses after it died`);
       step(from, 'eclosion', 'pupa');
       eclosedFrom.add(from); eclosedTo.add(to);
-    } else if (e.type === 'egg_laid') { const id = String(e.id); if (laid.has(id)) fail(`egg ID ${id} is laid twice`); if (!start.queen_alive || queenDeaths > 0) fail(`egg ${id} is laid by a dead queen`); laid.add(id); }
-    else if (e.type === 'queen_death') queenDeaths++;
+    } else if (e.type === 'egg_laid') { const id = String(e.id); if (laid.has(id)) fail(`egg ID ${id} is laid twice`); if (!start.queen_alive || queenDeaths > 0) fail(`egg ${id} is laid by a dead queen`); if (e.queen !== undefined && e.queen !== start.queen_id) fail(`egg ${id} is attributed to queen ${e.queen}, the colony's queen is ${start.queen_id}`); laid.add(id); }
+    // Codex review of 1224744 (F1): a queen death is evidence only for the colony's own queen
+    else if (e.type === 'queen_death') { if (String(e.id) !== start.queen_id || colony.queen_id !== start.queen_id) fail(`queen_death of ${e.id}: the colony's queen is ${start.queen_id}`); queenDeaths++; }
   }
   // lifetimes: who can die, what can be created
   for (const id of deaths) if (!start.workers.has(id) && !eclosedTo.has(id)) fail(`worker ${id} dies but was not alive this day`);
@@ -129,6 +133,8 @@ export function checkColonyDomain(colony: ColonyState, cropCapacity: number): vo
   }
   for (const b of colony.population.brood) {
     if (!(b.stage in STAGE_ORDER)) fail(`brood ${b.id} stage ${b.stage}`);
+    // Codex review of 1224744 (F3): a known brood age is a non-negative integer; null (unknown, e.g. Day0/migrated) stays allowed
+    if (b.age_days !== null && b.age_days !== undefined && !(Number.isInteger(b.age_days) && b.age_days >= 0)) fail(`brood ${b.id} age_days ${b.age_days}`);
     if (!(finite(b.progress) && b.progress >= 0)) fail(`brood ${b.id} progress ${b.progress}`);
   }
   for (const [e, v] of Object.entries(colony.trail_by_edge)) if (!(v >= 0)) fail(`trail ${e} is ${v}`);

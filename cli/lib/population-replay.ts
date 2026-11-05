@@ -17,7 +17,17 @@ export interface PopulationReplay { ok: boolean; errors: string[]; flow: { worke
 /** ID-POP-FLOW, ID-LIFETIME (reader side). */
 export function replayPopulationDay(start: ColonyState, end: ColonyState, events: SimEvent[]): PopulationReplay {
   const errors: string[] = [], err = (m: string) => { if (errors.length < 50) errors.push(m); };
-  const ev: Any[] = Array.isArray(events) ? events.filter((e) => e && typeof e === 'object') : [];
+  // Codex review of 1224744 (C1): malformed input is a located error, never a silent default or an exception
+  const zero = { workers: { start: 0, deaths: 0, eclosions: 0, immigration: 0, emigration: 0, end: 0 }, brood: { start: 0, laid: 0, deaths: 0, eclosed: 0, end: 0 } };
+  const shapeOk = (c: Any, name: string) => { if (!c || typeof c !== 'object' || !c.population || !Array.isArray(c.population.workers) || !Array.isArray(c.population.brood) || typeof c.population.queen_alive !== 'boolean') { err(`${name}: not a colony state (population.workers/brood arrays and queen_alive required)`); return false; } return true; };
+  const okStart = shapeOk(start, 'start'), okEnd = shapeOk(end, 'end');
+  if (!Array.isArray(events)) err('events: not an array');
+  else events.forEach((e, i) => { if (!e || typeof e !== 'object' || Array.isArray(e)) err(`event ${i}: not an event object`); });
+  if (errors.length || !okStart || !okEnd) return { ok: false, errors, flow: zero };
+  try { return replayChecked(start, end, events, errors, err); } catch (x) { err(`reader could not replay the input: ${String(x).slice(0, 200)}`); return { ok: false, errors, flow: zero }; }
+}
+function replayChecked(start: ColonyState, end: ColonyState, events: SimEvent[], errors: string[], err: (m: string) => void): PopulationReplay {
+  const ev: Any[] = events as Any[];
   const touches = new Map<string, Record<string, number>>(), bump = (id: unknown, k: string) => { const key = String(id); const r = touches.get(key) ?? {}; r[k] = (r[k] ?? 0) + 1; touches.set(key, r); };
   let queenDeaths = 0;
   // causal order (ID-EVENT-TIME), checked here by position: an ID's first event must be the one that creates it, unless it
@@ -33,10 +43,10 @@ export function replayPopulationDay(start: ColonyState, end: ColonyState, events
     if (e.type === 'worker_death') { order(e.id, 'died'); bump(e.id, 'died'); }
     else if (e.type === 'brood_death') { order(e.id, 'brood_died'); bump(e.id, 'brood_died'); }
     else if (e.type === 'eclosion') { order(e.source_brood_id, 'eclosed_from'); order(e.new_worker_id, 'eclosed_to'); bump(e.source_brood_id, 'eclosed_from'); bump(e.new_worker_id, 'eclosed_to'); }
-    else if (e.type === 'egg_laid') { if (queenDeaths || !start.population.queen_alive) err(`egg ${e.id} laid by a dead queen`); order(e.id, 'laid'); bump(e.id, 'laid'); }
+    else if (e.type === 'egg_laid') { if (queenDeaths || !start.population.queen_alive) err(`egg ${e.id} laid by a dead queen`); if (e.queen !== undefined && e.queen !== start.queen_id) err(`egg ${e.id} attributed to ${e.queen}, not to queen ${start.queen_id}`); order(e.id, 'laid'); bump(e.id, 'laid'); }
     else if (e.type === 'hatch') { order(e.id, 'hatched'); bump(e.id, 'hatched'); }
     else if (e.type === 'pupation') { order(e.id, 'pupated'); bump(e.id, 'pupated'); }
-    else if (e.type === 'queen_death') queenDeaths++;
+    else if (e.type === 'queen_death') { if (String(e.id) !== start.queen_id || end.queen_id !== start.queen_id) err(`queen_death names ${e.id}; this colony's queen is ${start.queen_id}`); queenDeaths++; }
     else if (/migrat|immigr|emigr/.test(String(e.type)) && /worker|brood|ant|queen/.test(JSON.stringify(e))) err(`event ${e.type} moves ants across the colony boundary: not supported by the flow identity yet (D7-A)`);
   }
   const startW = new Map(start.population.workers.map((w) => [w.id, w])), endW = new Map(end.population.workers.map((w) => [w.id, w]));
@@ -95,6 +105,12 @@ export function replayPopulationDay(start: ColonyState, end: ColonyState, events
 
 /** ID-STATE-DOMAIN, ID-EVENT-DOMAIN, ID-EVENT-TIME (reader side): returns located errors. */
 export function domainErrors(colony: ColonyState, events: SimEvent[], cropCapacity: number): string[] {
+  const c = colony as Any;
+  if (!c || typeof c !== 'object' || !c.population || !Array.isArray(c.population.workers) || !Array.isArray(c.population.brood) || !c.stores || typeof c.stores !== 'object' || !c.trail_by_edge || typeof c.trail_by_edge !== 'object') return ['colony: not a colony state'];
+  if (!Array.isArray(events)) return ['events: not an array'];
+  try { return domainChecked(colony, events, cropCapacity); } catch (x) { return [`reader could not check the input: ${String(x).slice(0, 200)}`]; }
+}
+function domainChecked(colony: ColonyState, events: SimEvent[], cropCapacity: number): string[] {
   const out: string[] = [], add = (m: string) => { if (out.length < 50) out.push(m); };
   const stack: [unknown, string][] = [[colony.population, 'population'], [colony.stores, 'stores'], [colony.trail_by_edge, 'trail_by_edge']];
   while (stack.length) {
@@ -108,7 +124,7 @@ export function domainErrors(colony: ColonyState, events: SimEvent[], cropCapaci
     const c = w.crop_cargo_sugar ?? 0;
     if (!(c >= 0) || c - cropCapacity > 1e-9) add(`${w.id}: crop ${c} (capacity ${cropCapacity})`);
   }
-  for (const b of colony.population.brood) { if (!STAGES.includes(b.stage)) add(`${b.id}: stage ${b.stage}`); if (!(isNum(b.progress) && b.progress >= 0 && Number.isFinite(b.progress))) add(`${b.id}: progress ${b.progress}`); }
+  for (const b of colony.population.brood) { if (b.age_days !== null && b.age_days !== undefined && !(Number.isInteger(b.age_days) && (b.age_days as number) >= 0)) add(`${b.id}: brood age ${b.age_days}`); if (!STAGES.includes(b.stage)) add(`${b.id}: stage ${b.stage}`); if (!(isNum(b.progress) && b.progress >= 0 && Number.isFinite(b.progress))) add(`${b.id}: progress ${b.progress}`); }
   for (const [e, v] of Object.entries(colony.trail_by_edge)) if (!(v >= 0)) add(`trail ${e} = ${v}`);
   for (const [k, v] of Object.entries(colony.stores)) if (/_days$/.test(k) && !(Number.isInteger(v) && (v as number) >= 0)) add(`stores.${k} = ${v}`);
   (Array.isArray(events) ? events : []).forEach((e: Any, i) => {
