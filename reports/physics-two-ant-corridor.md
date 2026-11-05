@@ -18,7 +18,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
 | 情境 | 接觸 | 阻擋（s） | 讓路者 | 規則 | 接觸停頓 s | 退後 mm | W1 抵達 s（比單獨多） | W2 抵達 s（比單獨多） | 互斥違反 | 重播／換順序相同 |
 |---|---|---|---|---|---|---|---|---|---|---|
 | ENTRY (L. niger rule, pause 0.18 s) | 4.079 s（確定） | 4.108 | W2 | entry yield | 0.18 | 1.37 | 5.384（+0.194） | 9.800（+0.628） | 0 | 是 |
-| CONTROL (no walls) | 4.079 s（可能） | 無 | — | — | 0.00 | — | 5.189（+0.000） | 9.173（+0.000） | 0 | 是 |
+| CONTROL (no walls) | 4.079 s（可能） | 無 | — | — | 0.00 | — | 5.189（+-0.000） | 9.173（+0.000） | 0 | 是 |
 | LADEN (Atta rule, W2 carries an item) | 4.079 s（確定） | 4.108 | W1 | laden priority | 0.18 | 59.87 | 12.791（+7.602） | 9.353（+0.180） | 0 | 是 |
 
 - **400 個種子**（輕量模式：只記錄讓路者）：W2（尚未進入的那隻）讓路 387/400 = 0.968；文獻比例 202/211 = 0.957。模型只是重現了輸入的比例，這**不是**對本種的驗證。
@@ -48,7 +48,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
 ## 3. 碰撞寬度敏感度（ENTRY 情境）
 | 情境 | 接觸 | 阻擋（s） | 讓路者 | 規則 | 接觸停頓 s | 退後 mm | W1 抵達 s（比單獨多） | W2 抵達 s（比單獨多） | 互斥違反 | 重播／換順序相同 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| width 0.5 mm | 4.079 s（確定） | 無 | — | — | 0.00 | — | 5.189（+0.000） | 9.173（+0.000） | 0 | 是 |
+| width 0.5 mm | 4.079 s（確定） | 無 | — | — | 0.00 | — | 5.189（+-0.000） | 9.173（+0.000） | 0 | 是 |
 | width 0.65 mm | 4.079 s（確定） | 4.108 | W2 | entry yield | 0.18 | 1.17 | 5.381（+0.192） | 9.773（+0.601） | 0 | 是 |
 | width 0.8 mm | 4.079 s（確定） | 4.108 | W2 | entry yield | 0.18 | 1.37 | 5.384（+0.194） | 9.800（+0.628） | 0 | 是 |
 
@@ -126,7 +126,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    }
   },
   "exclusion_violations": 0,
-  "result_hash": "eec23048ba4deba8",
+  "result_hash": "9c0f7daa4ee788f7",
   "replay_identical": true,
   "order_identical": true
  },
@@ -145,14 +145,14 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
   "back_out_mm": null,
   "ants": {
    "W1": {
-    "arrive_s": 5.1891891891891895,
+    "arrive_s": 5.189189189189189,
     "alone_s": 5.1891891891891895,
-    "added_s": 0,
+    "added_s": -8.881784197001252e-16,
     "path_mm": 96,
     "displacement_mm": 96,
     "waiting_s": 0,
-    "mean_moving_speed": 18.5,
-    "trip_speed": 18.5
+    "mean_moving_speed": 18.500000000000004,
+    "trip_speed": 18.500000000000004
    },
    "W2": {
     "arrive_s": 9.172624237140367,
@@ -166,7 +166,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    }
   },
   "exclusion_violations": 0,
-  "result_hash": "9d64fc10ee953c5c",
+  "result_hash": "23b28087cd7cf991",
   "replay_identical": true,
   "order_identical": true
  },
@@ -206,7 +206,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    }
   },
   "exclusion_violations": 0,
-  "result_hash": "f2f5495aaeff05e5",
+  "result_hash": "eaeae8127fa78fbd",
   "replay_identical": true,
   "order_identical": true
  },
@@ -337,14 +337,14 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    "back_out_mm": null,
    "ants": {
     "W1": {
-     "arrive_s": 5.1891891891891895,
+     "arrive_s": 5.189189189189189,
      "alone_s": 5.1891891891891895,
-     "added_s": 0,
+     "added_s": -8.881784197001252e-16,
      "path_mm": 96,
      "displacement_mm": 96,
      "waiting_s": 0,
-     "mean_moving_speed": 18.5,
-     "trip_speed": 18.5
+     "mean_moving_speed": 18.500000000000004,
+     "trip_speed": 18.500000000000004
     },
     "W2": {
      "arrive_s": 9.172624237140367,
@@ -358,7 +358,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
     }
    },
    "exclusion_violations": 0,
-   "result_hash": "ab316044eabc70a5",
+   "result_hash": "3076d39c6cd8b5e6",
    "replay_identical": true,
    "order_identical": true
   },
@@ -398,7 +398,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
     }
    },
    "exclusion_violations": 0,
-   "result_hash": "90b61630d158963c",
+   "result_hash": "66fe48daab063335",
    "replay_identical": true,
    "order_identical": true
   },
@@ -438,7 +438,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
     }
    },
    "exclusion_violations": 0,
-   "result_hash": "eec23048ba4deba8",
+   "result_hash": "9c0f7daa4ee788f7",
    "replay_identical": true,
    "order_identical": true
   }
