@@ -613,3 +613,31 @@ R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-
 | R347 | Tschinkel (1988) *Physiol. Entomol.* 13:327–350；**非本種**：*Solenopsis invicta* | 頁影像（pp. 327–328、345–346、348） | 幼蟲 → 工蟻嗉囊 → 蟻后 → 卵；產卵率與末齡幼蟲數成正比；只有末齡幼蟲能消化固體 | 他屬；只作候選機制 |
 | R348 | Cassill, Butler, Vinson & Wheeler (2005) *Insectes Soc.* 52:339；**非本種**：*Pheidole spadonia* | 只讀摘要 | 工蟻切屍 → 幼蟲體外溶解 → 工蟻吸入嗉囊反哺 | 實驗組沒有蟻后；不得引用全文內容 |
 | R349 | Meurville & LeBoeuf (2021) *Myrmecol. News* 31:1–30（綜述） | 相關段落 | 被認為幼蟲是「消化階級」的屬（含 *Pheidole*）；不同的食物轉移類別要分開 | 綜述 |
+
+## 2026-11-03 數學生態方法與模型（R350–R372；ME-0，`reports/math-ecology-literature-review.md`）
+> 編號從 R350 起，避開進行中 PR 使用的 R330～R349。這些多為一般方法或他種研究，不提供本種參數；閱讀程度如實標記。
+| ID | 文獻 | 閱讀程度 | 等級 |
+|---|---|---|---|
+| R350 | Grimm et al. (2006) *Ecol. Model.* 198:115–126，DOI 10.1016/j.ecolmodel.2006.04.023（ODD） | 書目 | B（方法） |
+| R351 | Grimm et al. (2010) *Ecol. Model.* 221:2760–2768，DOI 10.1016/j.ecolmodel.2010.08.019（ODD 更新） | 全文 | B（方法） |
+| R352 | Grimm et al. (2020) *JASSS* 23(2):7，DOI 10.18564/jasss.4259（ODD 第二次更新） | 全文（摘要工具） | B（方法） |
+| R353 | Grimm et al. (2005) *Science* 310:987–991，DOI 10.1126/science.1116681（POM） | 全文 | B（方法） |
+| R354 | Lande, Engen & Sæther (2003) *Stochastic Population Dynamics in Ecology and Conservation*，DOI 10.1093/acprof:oso/9780198525257.001.0001 | 書目 | B |
+| R355 | Engen, Lande & Sæther (2005) *Genetics* 170:941–954，DOI 10.1534/genetics.104.028233 | 全文（摘要工具） | B |
+| R356 | Shoemaker et al. (2020) *Ecology* 101:e02922，DOI 10.1002/ecy.2922 | 全文 | B |
+| R357 | Holling (1959b) *Can. Entomol.* 91:385–398，DOI 10.4039/Ent91385-7；(1959a) 91:293–320，DOI 10.4039/Ent91293-5 | 摘要 | C |
+| R358 | Rogers (1972) *J. Anim. Ecol.* 41:369，DOI 10.2307/3474 | 書目 | C |
+| R359 | Gillespie (1977) *J. Phys. Chem.* 81:2340–2361，DOI 10.1021/j100540a008 | 書目 | B（數學方法） |
+| R360 | Gillespie (2001) *J. Chem. Phys.* 115:1716–1733，DOI 10.1063/1.1378322 | 全文 | B（數學方法） |
+| R361 | Hanski (1991) *Biol. J. Linn. Soc.* 42:17–38，DOI 10.1111/j.1095-8312.1991.tb00549.x；Hanski (1994) *J. Anim. Ecol.* 63:151，DOI 10.2307/5591 | 摘要 | C |
+| R362 | Hall (2009) *Annu. Rev. Ecol. Evol. Syst.* 40:503–528，DOI 10.1146/annurev.ecolsys.39.110707.173518（Claude 以 Crossref 核對；DOI 中的「39」不是卷號） | 摘要 | C |
+| R363 | Sterner & Elser (2002) *Ecological Stoichiometry*，DOI 10.1515/9781400885695 | 書目 | B（原理） |
+| R364 | Kay, Rostampour & Sterner (2006) *Funct. Ecol.* 20:1037–1044；**非本種**：*Tetramorium caespitum* | 摘要 | B |
+| R365 | Kay, Scott, Schade & Hobbie (2004) *Ecol. Lett.* 7:1024–1028；**非本種**：*Formica obscuripes* | 摘要 | B |
+| R366 | Csata & Dussutour (2019) *Myrmecol. News* 29:111–124，DOI 10.25849/myrmecol.news_029:111 | 全文 | B（綜述） |
+| R367 | Cornelius & Grace (1997) *J. Entomol. Sci.* 32:421–429，DOI 10.18474/0749-8004-32.4.421；**本種**與 *Ochetellus glaber* | 摘要（出版商頁面；全文 PDF 也在出版商網站，尚未讀） | A（待讀全文；摘要說覓食率不受幼體影響，與 R366 的引用相反） |
+| R368 | Tschinkel (1988) *Behav. Ecol. Sociobiol.* 22:103–115；**非本種**：*Solenopsis invicta* | 只有搜尋摘錄 | B |
+| R369 | Richardson (1981) *Water Resour. Res.* 17:182–190（雨量為指數分布）；Richardson & Wright (1984) USDA-ARS ARS-8（WGEN，gamma 雨量） | 摘要／搜尋摘錄 | B（方法） |
+| R370 | Wilks & Wilby (1999) *Prog. Phys. Geogr.* 23:329–357，DOI 10.1177/030913339902300302 | 摘要 | B（方法） |
+| R371 | Gillooly et al. (2001) *Science* 293:2248；(2002) *Nature* 417:70；Hou et al. (2010) *PNAS* 107:3634（141 種螞蟻） | 摘要／Hou 為全文（摘要工具） | B |
+| R372 | Zurell et al. (2010) *Oikos* 119:622–635（Virtual Ecologist） | 摘要 | B（方法） |
