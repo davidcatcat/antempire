@@ -33,7 +33,9 @@ export function replayPopulationDay(start: ColonyState, end: ColonyState, events
     if (e.type === 'worker_death') { order(e.id, 'died'); bump(e.id, 'died'); }
     else if (e.type === 'brood_death') { order(e.id, 'brood_died'); bump(e.id, 'brood_died'); }
     else if (e.type === 'eclosion') { order(e.source_brood_id, 'eclosed_from'); order(e.new_worker_id, 'eclosed_to'); bump(e.source_brood_id, 'eclosed_from'); bump(e.new_worker_id, 'eclosed_to'); }
-    else if (e.type === 'egg_laid') { if (queenDeaths) err(`egg ${e.id} laid after the queen died`); order(e.id, 'laid'); bump(e.id, 'laid'); }
+    else if (e.type === 'egg_laid') { if (queenDeaths || !start.population.queen_alive) err(`egg ${e.id} laid by a dead queen`); order(e.id, 'laid'); bump(e.id, 'laid'); }
+    else if (e.type === 'hatch') { order(e.id, 'hatched'); bump(e.id, 'hatched'); }
+    else if (e.type === 'pupation') { order(e.id, 'pupated'); bump(e.id, 'pupated'); }
     else if (e.type === 'queen_death') queenDeaths++;
     else if (/migrat|immigr|emigr/.test(String(e.type)) && /worker|brood|ant|queen/.test(JSON.stringify(e))) err(`event ${e.type} moves ants across the colony boundary: not supported by the flow identity yet (D7-A)`);
   }
@@ -68,6 +70,20 @@ export function replayPopulationDay(start: ColonyState, end: ColonyState, events
   if (queenDeaths > (start.population.queen_alive ? 1 : 0)) err(`${queenDeaths} queen deaths for a queen that was ${start.population.queen_alive ? 'alive' : 'dead'}`);
   if (end.population.queen_alive !== (start.population.queen_alive && queenDeaths === 0)) err('queen_alive does not follow from the queen_death events');
   for (const [id, b] of endB) { const b0 = startB.get(id); if (b0 && STAGES.indexOf(b.stage) < STAGES.indexOf(b0.stage)) err(`brood ${id}: ${b0.stage} -> ${b.stage}`); }
+  // brood lifecycle, by counting: a brood item takes at most one step a day; hatch needs an egg, pupation a larva and
+  // eclosion a pupa at the start; the end stage is the start stage moved by the steps it has events for (new eggs: egg)
+  for (const [id, t] of touches) {
+    const s0 = startB.get(id)?.stage, n = (t.hatched ?? 0) + (t.pupated ?? 0) + (t.eclosed_from ?? 0);
+    if (n > 1) err(`brood ${id}: ${n} stage steps in one day`);
+    if (t.hatched && s0 !== 'egg') err(`brood ${id}: hatch from ${s0 ?? 'nothing'}`);
+    if (t.pupated && s0 !== 'larva') err(`brood ${id}: pupation from ${s0 ?? 'nothing'}`);
+    if (t.eclosed_from && s0 !== 'pupa') err(`brood ${id}: eclosion from ${s0 ?? 'nothing'}`);
+  }
+  for (const [id, b] of endB) {
+    const t = touches.get(id) ?? {}, s0 = startB.get(id)?.stage;
+    const want = s0 === undefined ? 'egg' : STAGES[Math.min(2, STAGES.indexOf(s0) + (t.hatched ?? 0) + (t.pupated ?? 0))];
+    if (b.stage !== want) err(`brood ${id}: ${b.stage} at the end, ${want} from its events`);
+  }
   for (const [id, w] of endW) { const w0 = startW.get(id); if (w0 && w.age_days - w0.age_days !== 1) err(`worker ${id}: age ${w0.age_days} -> ${w.age_days}`); }
   // flow totals (reported; the identity is the per-ID check above)
   const cnt = (k: string) => [...touches.values()].reduce((a, t) => a + (t[k] ?? 0), 0);
@@ -96,15 +112,18 @@ export function domainErrors(colony: ColonyState, events: SimEvent[], cropCapaci
   for (const [e, v] of Object.entries(colony.trail_by_edge)) if (!(v >= 0)) add(`trail ${e} = ${v}`);
   for (const [k, v] of Object.entries(colony.stores)) if (/_days$/.test(k) && !(Number.isInteger(v) && (v as number) >= 0)) add(`stores.${k} = ${v}`);
   (Array.isArray(events) ? events : []).forEach((e: Any, i) => {
-    const st: [unknown, string, string][] = Object.entries(e ?? {}).map(([k, v]) => [v, k, k]);
+    const st: [unknown, string, string, string][] = Object.entries(e ?? {}).map(([k, v]) => [v, k, '', k]);
     while (st.length) {
-      const [v, k, p] = st.pop()!;
+      const [v, k, parent, p] = st.pop()!;
       if (isNum(v)) {
+        const base = k.replace(/_assumption$/, '');
+        const prob = ['probability', 'risk', 'p', 'fraction', 'fill'].some((w) => base === w || base.endsWith('_' + w)) || (parent === 'hazards' && !k.endsWith('_days'));
         if (!Number.isFinite(v)) add(`event ${i} ${p} = ${v}`);
-        else if ((k === 'probability' || k === 'risk' || k === 'p' || k.endsWith('_probability') || k.endsWith('_risk')) && (v < 0 || v > 1)) add(`event ${i} ${p} = ${v} not in [0,1]`);
+        else if (prob && (v < 0 || v > 1)) add(`event ${i} ${p} = ${v} not in [0,1]`);
         else if ((k === 'portions' || k.endsWith('_portions')) && v < 0) add(`event ${i} ${p} = ${v} negative portions`);
-        else if (k === 'minute' && (v < 0 || v > MINUTES_PER_DAY)) add(`event ${i} minute ${v} outside the day`);
-      } else if (v && typeof v === 'object') for (const [k2, x] of Object.entries(v)) st.push([x, k2, `${p}.${k2}`]);
+        else if (['minute', 'start', 'end', 'walked_from'].includes(k) && (v < 0 || v > MINUTES_PER_DAY)) add(`event ${i} ${p} = ${v} outside the day`);
+      } else if (Array.isArray(v)) v.forEach((x, j) => st.push([x, k, parent, `${p}[${j}]`]));
+      else if (v && typeof v === 'object') for (const [k2, x] of Object.entries(v)) st.push([x, k2, k, `${p}.${k2}`]);
     }
   });
   return out;

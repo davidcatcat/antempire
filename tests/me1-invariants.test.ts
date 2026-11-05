@@ -2,7 +2,8 @@
  * ME-1 (Issue #66; v2-review.24): population flow, lifetimes, event time, numeric and parameter domains, RNG inputs.
  * Engine checks (engine/invariants.ts) and the independent reader (cli/lib/population-replay.ts) must both
  *  - accept every real engine colony-day (Day0 scenarios A1–A5 × two seasons, the Day14 fixture with two seeds), and
- *  - reject every counterexample below (each invariant has at least one that breaks only it).
+ *  - reject every counterexample below (each invariant has at least one counterexample; a few also trip a second check —
+ *    e.g. a reused worker ID is also an 'appeared without eclosion' — which the test does not hide).
  * The old engine checked the population only by counts (engine/day.ts: workers + deaths = before + eclosions); an
  * ID swap keeps every count and passed it — shown below, then rejected by the new checks.
  * Engineering/mathematical correctness only; none of this is a scientific validation.
@@ -55,8 +56,12 @@ ok(paramDomainErrors('species', sp).length === 0 && paramDomainErrors('world', r
 
 // ---------------------------------------------------------------- counterexamples: population flow and lifetimes
 const pick = (pred: (d: Day) => boolean) => { const d = days.find(pred); assert.ok(d, 'no sample day for a counterexample'); return structuredClone(d!) as Day; };
+// the identities the engine had before ME-1 (engine/day.ts, from counts): which counterexamples would they have let through?
+const oldCountsAccept = (d: Day) => { const n = (t: string) => d.events.filter((e) => e.type === t).length; return d.after.population.workers.length + n('worker_death') === d.before.population.workers.length + n('eclosion') && d.after.population.brood.length + n('brood_death') + n('eclosion') === d.before.population.brood.length + n('egg_laid'); };
+const acceptedBefore: string[] = [];
 const both = (name: string, d: Day, mutate: (d: Day) => void) => {
   mutate(d);
+  if (oldCountsAccept(d)) acceptedBefore.push(name);
   const eng = throws(() => checkPopulationDay(populationSnapshot(d.before), d.after, d.events), /POPULATION/), rep = replayPopulationDay(d.before, d.after, d.events);
   ok(eng, `POP ${name}: the engine rejects`); ok(!rep.ok, `POP ${name}: the reader rejects (${rep.errors[0] ?? 'ACCEPTED'})`);
 };
@@ -77,6 +82,18 @@ both('a surviving worker ages two days', pick(withWorkers), (d) => { surviving(d
 // causal order within the day (ID-EVENT-TIME): every set and count is right, only the order is impossible
 both('a new worker dies before it ecloses', pick((d) => d.events.some((e) => e.type === 'eclosion')), (d) => { const i = d.events.findIndex((x) => x.type === 'eclosion'); d.events.splice(i, 0, { type: 'worker_death', id: d.events[i].new_worker_id }); d.after.population.workers = d.after.population.workers.filter((w: Any) => w.id !== d.events[i + 1].new_worker_id); });
 both('an egg is laid after the queen died', pick((d) => d.events.some((e) => e.type === 'egg_laid') && d.before.population.queen_alive), (d) => { d.events.splice(d.events.findIndex((x) => x.type === 'egg_laid'), 0, { type: 'queen_death', id: d.after.queen_id }); d.after.population.queen_alive = false; });
+// brood lifecycle and the queen (independent review of 0370224, P2-1/P2-2)
+const queenDeadAtStart = pick((d) => d.events.some((e) => e.type === 'egg_laid'));
+both('an egg laid by a queen already dead at the start', queenDeadAtStart, (d) => { d.before.population.queen_alive = false; d.after.population.queen_alive = false; });
+const eggAtStart = (d: Day) => d.before.population.brood.find((x: Any) => x.stage === 'egg' && d.after.population.brood.some((y: Any) => y.id === x.id && y.stage === 'egg'));
+both('an egg becomes a pupa with no hatch or pupation event', pick((d) => !!eggAtStart(d)), (d) => { const id = eggAtStart(d).id; d.after.population.brood.find((y: Any) => y.id === id).stage = 'pupa'; });
+both('an egg ecloses straight into a worker', pick((d) => !!eggAtStart(d)), (d) => {
+  const id = eggAtStart(d).id, n = d.after.next_worker_number, wid = `${d.after.worker_id_prefix}${String(n).padStart(d.after.id_number_width, '0')}`;
+  d.after.population.brood = d.after.population.brood.filter((y: Any) => y.id !== id); d.after.next_worker_number = n + 1;
+  d.after.population.workers.push({ ...structuredClone(d.after.population.workers[0] ?? {}), id: wid, age_days: 0 });
+  d.events.push({ type: 'eclosion', source_brood_id: id, new_worker_id: wid });
+});
+both('a larva pupates twice in one day', pick((d) => d.events.some((e) => e.type === 'pupation')), (d) => { d.events.push(structuredClone(d.events.find((e) => e.type === 'pupation'))); });
 both('brood vanishes without an event', pick((d) => d.after.population.brood.length > 0), (d) => { d.after.population.brood.pop(); });
 // the gap the old count identity left: an ID swap keeps every count
 {
@@ -86,6 +103,8 @@ both('brood vanishes without an event', pick((d) => d.after.population.brood.len
   ok(counts, 'POP ID swap: the old count identity (engine/day.ts) still holds — it could not see this');
   ok(throws(() => checkPopulationDay(populationSnapshot(d.before), d.after, d.events), /POPULATION/) && !replayPopulationDay(d.before, d.after, d.events).ok, 'POP ID swap: rejected by the new engine check and the reader');
 }
+
+ok(acceptedBefore.length >= 8, `POP before ME-1: the count identities accept ${acceptedBefore.length} of the counterexamples above: ${acceptedBefore.join('; ')}`);
 
 // ---------------------------------------------------------------- counterexamples: world-side source ledger (reader only)
 const ledger = (name: string, pick: (d: Any) => boolean, mutate: (d: Any) => void) => {
@@ -103,6 +122,7 @@ ledger('growth above capacity', (d) => !!sugarSite(d), (d) => { const x = sugarS
 ledger('carcass protein appears without remains or a kill', (d) => !!carcassSite(d), (d) => { const x = carcassSite(d); x.batches.find((y: Any) => y.protein > 0).protein += 0.5; x.protein += 0.5; });
 ledger('a collection recorded but the source keeps its food', (d) => d.result.colonies.some((c: Any) => c.events.some((e: Any) => e.type === 'food_transfer' && e.source?.kind === 'source')), (d) => { for (const c of d.result.colonies) { const e = c.events.find((x: Any) => x.type === 'food_transfer' && x.source?.kind === 'source'); if (e) { e.portions += 1; break; } } });
 ledger('a source that disappears', () => true, (d) => { delete d.end.sources[Object.keys(d.end.sources)[0]]; });
+ledger('honeydew production inflated in the record and the stock alike', (d) => Object.values(d.end.sources).some((x: Any) => x.type === 'honeydew' && x.ecological_record?.net_portions > 0 && x.ecological_record.stock_after < x.capacity - 2), (d) => { const x: Any = Object.values(d.end.sources).find((y: Any) => y.type === 'honeydew' && y.ecological_record?.net_portions > 0 && y.ecological_record.stock_after < y.capacity - 2); x.ecological_record.net_portions += 1; x.ecological_record.stock_after += 1; x.sugar += 1; });
 ledger('a negative rainfall', () => true, (d) => { d.result.weather.rain_mm = -1; });
 
 // ---------------------------------------------------------------- counterexamples: state and event domains
@@ -121,7 +141,19 @@ domain('half a gap day', (c) => { c.stores.sugar_gap_days = 0.5; });
 domain('an event probability of 1.5', (_c, ev) => { ev.push({ type: 'worker_death', id: 'x', probability: 1.5 }); }, true);
 domain('negative portions in an event', (_c, ev) => { ev.push({ type: 'food_collected', portions: -0.1 }); }, true);
 domain('an event at minute 1500', (_c, ev) => { ev.push({ type: 'trail_deposited', minute: 1500 }); }, true);
+domain('a worker death risk of 1.2 (the engine\'s own field name)', (_c, ev) => { ev.push({ type: 'worker_death', id: 'x', risk_assumption: 1.2 }); }, true);
+domain('a brood death probability_assumption of -0.1', (_c, ev) => { ev.push({ type: 'brood_death', id: 'x', probability_assumption: -0.1 }); }, true);
+domain('a queen hazard above 1', (_c, ev) => { ev.push({ type: 'queen_death', hazards: { applied: 1.3, no_worker_days: 20 } }); }, true);
+domain('an activity segment ending at minute 2000', (_c, ev) => { ev.push({ type: 'worker_activity', start: 10, end: 2000 }); }, true);
 domain('a NaN inside an event', (_c, ev) => { ev.push({ type: 'x', detail: { a: NaN } }); }, true);
+
+{
+  // the engine also checks the START state (Day0, legacy, migrated): a worker of age −1 is refused before the day runs
+  const s0: Any = buildDay0('A1' as Any, 1, '2027-09-23', b).state; s0.colonies[0].population.workers[0].age_days = -1;
+  ok(throws(() => simulateWorldDay(s0, b), /DOMAIN/), 'DOMAIN a negative age in the start state: the engine refuses the day (independent review P3-6)');
+}
+// real events carry probabilities under these names (independent review P2-3): at least one of them was checked above
+ok(days.some((d) => d.events.some((e) => e.type === 'worker_death' && typeof e.risk_assumption === 'number')), 'EVENT_DOMAIN the probability rule reaches a real field (worker_death.risk_assumption)');
 
 // ---------------------------------------------------------------- counterexamples: parameter domain (units by name)
 const param = (name: string, mutate: (p: Any) => void, expectReject = true) => {
@@ -153,4 +185,4 @@ param('a task weight of 1000 (legal: relative weight, misnamed "probability")', 
   ok(JSON.stringify(simulateWorldDay({ ...structuredClone(s0), seed: s0.seed + 1 }, b).result) !== JSON.stringify(simulateWorldDay(structuredClone(s0), b).result), 'RNG: another seed gives another day (the seed is used)');
 }
 
-console.log(JSON.stringify({ me1_invariants: 'pass', checks, colony_days: colonyDays, world_days: worldDays, flows, source_food_deleted_without_event: { overflow: +deleted.overflow.toFixed(6), expired: +deleted.expired.toFixed(6) }, note: 'engineering/mathematical checks only, not scientific validation; array-order invariance is Issue #56 (known violated, not asserted here)' }, null, 2));
+console.log(JSON.stringify({ me1_invariants: 'pass', checks, accepted_by_the_old_count_identities: acceptedBefore, colony_days: colonyDays, world_days: worldDays, flows, source_food_deleted_without_event: { overflow: +deleted.overflow.toFixed(6), expired: +deleted.expired.toFixed(6) }, note: 'engineering/mathematical checks only, not scientific validation; array-order invariance is Issue #56 (known violated, not asserted here)' }, null, 2));
