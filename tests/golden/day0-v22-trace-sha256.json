@@ -1,0 +1,212 @@
+{
+  "schema": "antempire.day0-golden-trace.v1",
+  "generated_from": {
+    "engine_version": "antempire.v2-review.22-engine-food-transfers",
+    "scenarios": "scenarios/day0/*.json",
+    "climatology": "data/taichung-climatology-1991-2020.json",
+    "params": "species/*.json + world/xitun-garden.json"
+  },
+  "method": "h_0 = sha256(JSON.stringify([day0 state, warm-up events])); h_d = sha256(h_{d-1} + JSON.stringify([result, state]))",
+  "cases": {
+    "A1-spring-20270001": {
+      "days": 90,
+      "day0_sha256": "4c5fb861d81d5823dd7c735bb5ba493ad49f42da2ebd2f3ebd7a6ba8c7b0ce64",
+      "sha256": "8a4c94cf86776abc420fdb86f2d81599cb12a99772afda6217a970dcc22f0e62"
+    },
+    "A1-spring-20270002": {
+      "days": 90,
+      "day0_sha256": "29468835d297b30ca86b811745b88009e7ed80a7a6feb11aebed6440be2403e9",
+      "sha256": "2b809f089b59e37a683359c8f08e6bd9811b96bdf7838e2e453d280e4bc5e593"
+    },
+    "A1-summer-20270001": {
+      "days": 90,
+      "day0_sha256": "1ac31051ed2c947409b952ae3b81fce21057a75761855f1b3e4545f1ffd3de3f",
+      "sha256": "a999d879ea6ddaaac450b5bee3c9593bbabbd0a35f710daa1936543f665e365c"
+    },
+    "A1-summer-20270002": {
+      "days": 90,
+      "day0_sha256": "59b4be80e09f008b77be987ad77e52d11969147d872706ac1fe3cc198b9ed5d2",
+      "sha256": "b0744ccf84388e2c5158815d2387427e3235536fed3f9851cf90dee667f31920"
+    },
+    "A1-autumn-20270001": {
+      "days": 90,
+      "day0_sha256": "3cd2c8546f55e3130f95091718d31313e35b28ed921d0e0561a6e8514d68579f",
+      "sha256": "d5ff7b2fb44b66aa85484107d67a1ff5eab10ae1a23cf9df247c20640b14af12"
+    },
+    "A1-autumn-20270002": {
+      "days": 90,
+      "day0_sha256": "630dc82e3b3d675617d2afefd3153feadf9ba3c3f549514c4499985890e49283",
+      "sha256": "5bac438974640df95629a788256146b00fe97c42febbd5d63ca42ecf9f1b538f"
+    },
+    "A1-winter-20270001": {
+      "days": 90,
+      "day0_sha256": "5fe4bb4a6738ae3791abdcd688b4e23e10f9263e918ce011e3025b70564fc772",
+      "sha256": "96021e3e567ecf0ee551ea713d26a58ee3e45101df4f7b22ba6a4bfad5806a2a"
+    },
+    "A1-winter-20270002": {
+      "days": 90,
+      "day0_sha256": "51445656a586460cc7d0442f8ef602368ff1575f238db1ee2983ee3c4c3f8fa9",
+      "sha256": "b3aa45eb5a19dafc5589b500722073d8f8b781fa785889cb310a079bc90a9d21"
+    },
+    "A2-spring-20270001": {
+      "days": 90,
+      "day0_sha256": "b8de8c0164aba14117081feafbea6c4cd8c8ae92a155d06dc595e456932501ee",
+      "sha256": "dea0a42c5244a531d86847891329498aab5a73676efb62f5c0bc5678aa76ceb0"
+    },
+    "A2-spring-20270002": {
+      "days": 90,
+      "day0_sha256": "43c0947c50d986c551fa797fd2b8cc617624ecae49a5784fc89850a27f7de2ed",
+      "sha256": "841e54445ffb053e20e27fdb211b56ab663ed44c703b810b6ea9e5c31fbfb3a9"
+    },
+    "A2-summer-20270001": {
+      "days": 90,
+      "day0_sha256": "3a838f0160c4431ec1fe9595c0908ac969d452499baa4308f53b543006abcdae",
+      "sha256": "351c69bce4588907cb3741c654600d6eb23a8f3f60d88c9480786933c5ca7da6"
+    },
+    "A2-summer-20270002": {
+      "days": 90,
+      "day0_sha256": "1237aacbcd796f554840ef3ec88b3dbf623075f910ec15b37c2787e47fb3ca19",
+      "sha256": "ab47cb014238be4f67e7f2b88fbe9f4fef581905c20c12b86488655b0913cd71"
+    },
+    "A2-autumn-20270001": {
+      "days": 90,
+      "day0_sha256": "51e8c5fdb687720e4f2b68a922bbc9fc99e78137c360f8636a20386e6a51ead8",
+      "sha256": "e9d61932dcbd1e9479c081ded5ee9c6dc3c7f17ef33ba1daf4977b518b569b97"
+    },
+    "A2-autumn-20270002": {
+      "days": 90,
+      "day0_sha256": "a511f158520d86dd5412d74d655f58e267d97456245f1318894f28a2896b56ca",
+      "sha256": "5ab9a58af8d4fd01ac5efc3c6696c3dc3283c040b30729e0c551930321bcd544"
+    },
+    "A2-winter-20270001": {
+      "days": 90,
+      "day0_sha256": "d4d5d11bf86e19368daa8e23e4086e5976fc574b7e72b3d2a5c5d98f1442f323",
+      "sha256": "7ebff6bf8ad17006f73cef73a6e6c2143311d778cf5b70b57ebcc9691586465e"
+    },
+    "A2-winter-20270002": {
+      "days": 90,
+      "day0_sha256": "952ad10ed9ad47cbc0811c9fbfc6d113a4ba291686a4dedf07530f962e122c00",
+      "sha256": "0a42469dc1f59629affeb4e482856753118617461a1e715a0e92dc4472d38025"
+    },
+    "A3-spring-20270001": {
+      "days": 90,
+      "day0_sha256": "b6973df9899053473e141a6dd9b29cf11c3bf6ad08e6f9de49c246144ce11cb3",
+      "sha256": "dcf5cbcc52c1b58b84f064199087be495e79ac658aef3a10ac396d11458a2908"
+    },
+    "A3-spring-20270002": {
+      "days": 90,
+      "day0_sha256": "e8f96f5aec2bd3bddcc5d8fdb8dd363d57562fe66e8b6e7a3cd65fbc133d0ec8",
+      "sha256": "3118f1a1c5aef4eb24b5ad594e0970b3cc982630af216541d6ba8317a632a833"
+    },
+    "A3-summer-20270001": {
+      "days": 90,
+      "day0_sha256": "d54a35979a47a9cdeed5aab35af6d0ddd88c8ba0db81ead13154efa034d5238b",
+      "sha256": "06daa7bce836382b34d3206f0ff639c142e796bdf3d7f1792a739af9d1dab1ca"
+    },
+    "A3-summer-20270002": {
+      "days": 90,
+      "day0_sha256": "ed818527ab7c25ea3840ae583fd68201ca67bf6c1ef65332865d08d93a7faf8e",
+      "sha256": "51df659e98ffb549ac7357246fe9a0044bc7c5a515cf8b576be6cb7f7879eee6"
+    },
+    "A3-autumn-20270001": {
+      "days": 90,
+      "day0_sha256": "53cbacdee7cf80d84fdc5f1876bf5e82e5ea5b4104ad0ad4d713737c612423c1",
+      "sha256": "7056a5ac92080aeadce548b53623c26d97a26b81b6633bf445509d810ddc1306"
+    },
+    "A3-autumn-20270002": {
+      "days": 90,
+      "day0_sha256": "0d0164ddecbc727e066091b5435a0125ac5f3c815cf34d7592558b1fe89a78e9",
+      "sha256": "a3383979c4bfca0e3a5d403be762bdd975ee46626822e4812448bb725efe68ad"
+    },
+    "A3-winter-20270001": {
+      "days": 90,
+      "day0_sha256": "d0c77e03c37ffe351dae3e622e98d2860c255d7785050b059a0800b58ced340e",
+      "sha256": "2babbe2e1ddf5c2375c03c39244005bf4949d16badc7d2de27d0574b83796a6a"
+    },
+    "A3-winter-20270002": {
+      "days": 90,
+      "day0_sha256": "92a7c58a098f4ea6c97b25c15306757b0ff476c19d95bd6b013900bb2f44de99",
+      "sha256": "46934c8a20b76aaf9c16c9deaf15599a94ecb52a93207b8e9cfc125df40568fa"
+    },
+    "A4-spring-20270001": {
+      "days": 90,
+      "day0_sha256": "26ff31f7e5ffea3567c7d2b5d401083cce69facf3ad64ac0476b186d0af747ae",
+      "sha256": "6db4945609e193254302e574e0ffcb73c26846015b460b44435566bfe1a99441"
+    },
+    "A4-spring-20270002": {
+      "days": 90,
+      "day0_sha256": "d5e975e7c0da7bc76144a97f9797082c430806f5b190b91030656e54f5cd5e0c",
+      "sha256": "6b5d7c33ce005ae278ea14fafd77da25f84b8fda9fbb596837c7af525b641306"
+    },
+    "A4-summer-20270001": {
+      "days": 90,
+      "day0_sha256": "b823ccdf2dd4f2dc12d59d97e36f301b57256ca126d0a9e1e4e49d727a5a2f30",
+      "sha256": "f5db37a3573a75f5aeade8894c7007d24b5ec6104828e0c77fa9894a350223e6"
+    },
+    "A4-summer-20270002": {
+      "days": 90,
+      "day0_sha256": "99d8774b58f23d91bf22391c771de7ceecf2a19c06cc4b9fcf47139c52cfae9c",
+      "sha256": "1c6c562b6dd8f13475087c8e2d6ec2d69ed8219dfbd60a07c19120df494491aa"
+    },
+    "A4-autumn-20270001": {
+      "days": 90,
+      "day0_sha256": "4bd5c6b4365ae1bbd08e76fd99b29c0779e024eddb35d576887d45e1f886800f",
+      "sha256": "71254bda684da57289747b739d15efa74b60e5a470f6a105de6dc5baaa598846"
+    },
+    "A4-autumn-20270002": {
+      "days": 90,
+      "day0_sha256": "e8599d38ae13345cd22f7a6c0724f0985320b75a57755119bb79221cc613a2f1",
+      "sha256": "4e3193357a328d843120adf3839201822f77645289093edd1a269dbeba4e659d"
+    },
+    "A4-winter-20270001": {
+      "days": 90,
+      "day0_sha256": "a8f1b61647885dc8f707e8b8402bc7850ee8ad110d131d6b28cabff5bf99b860",
+      "sha256": "669b65d976d1cd8a691dcc8a61faea7674c82d732fafb052e28fea058c3b2ce6"
+    },
+    "A4-winter-20270002": {
+      "days": 90,
+      "day0_sha256": "8d73fc7ca3935cda0dfbc1dda1e4cad321412a78a400fc0d4ab1f8f2d4974811",
+      "sha256": "0e082dff293e89a3306e44791c6af727adbaf0b93cf3d9bf4be069088d22e1d7"
+    },
+    "A5-spring-20270001": {
+      "days": 90,
+      "day0_sha256": "dc34214224004065923b4cbc5638927fa5e65ac49e82af446894314c8206f2d4",
+      "sha256": "d0d01ccf2050bc62f909dbb8672142cdc82c72b074487998d581cf51cd585e8d"
+    },
+    "A5-spring-20270002": {
+      "days": 90,
+      "day0_sha256": "98da1c7ceceb4c2b5401351388015277a3dc1c3978cf61ec3d3909c1364bed47",
+      "sha256": "0e02a04b91b0e78c8b7a1387c1432e61c6aad1e3c39daa5bc1c0f4a0dcf3f4f0"
+    },
+    "A5-summer-20270001": {
+      "days": 90,
+      "day0_sha256": "ab6c146cd8030480aef8dc159820c6543faa1a0cd250e42181f645cc7430f2e4",
+      "sha256": "d0ef0f3156fa20888ab1320ca48338ef1468067d5563f8a929244fb0dabd428b"
+    },
+    "A5-summer-20270002": {
+      "days": 90,
+      "day0_sha256": "d417c504403f4682ff40ffe177941d80e763189e904eb58107ba67590c3e43a1",
+      "sha256": "7c2af5b7bce88851866ee6129daa4e294b0afcb84f2bf0ecdca8a3a97cf55ffc"
+    },
+    "A5-autumn-20270001": {
+      "days": 90,
+      "day0_sha256": "0bc6379732f16086c8596ece0200b188430e0fe6b3a3c3a0de95b11beaedd644",
+      "sha256": "b8179c58efcadf72ebba8034af9026583cafe5ac431eef2386def0e85093d88e"
+    },
+    "A5-autumn-20270002": {
+      "days": 90,
+      "day0_sha256": "fb5ba329bcb1e51fe90e4ca302117e43278a016a93a2ccd8a6de8396a9b5dfad",
+      "sha256": "af1285bcf5a8d73ca3c3d4f2f1aaf00db92d0e6462abb29cee1d89cbbbbc91c5"
+    },
+    "A5-winter-20270001": {
+      "days": 90,
+      "day0_sha256": "e648dbddaa2a4bd94ad4991f1c1af619ba5357831055dbf1217fbec8a6571172",
+      "sha256": "8463b0cf9274a59181f1c3c8324e1f45e9b83795eee3263e4673d97fdd2feb36"
+    },
+    "A5-winter-20270002": {
+      "days": 90,
+      "day0_sha256": "a2d20e10512c59041400e3945ed55e50ef314ec34b11dd420601ad0aa54df200",
+      "sha256": "088262d019a02d15113733e58675c77f8360e6ea6e02a908bc68f21849a16889"
+    }
+  }
+}
