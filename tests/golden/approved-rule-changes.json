@@ -356,6 +356,25 @@
       "to": true,
       "introduced": true,
       "description": "Issue #49 N1: brood care exposure for the day comes from the workers present at the start of the step; all brood is developed / killed before the day's eclosions are committed (new worker ids in source-pupa id order); a nurse's random larva contact maps to larvae in id order. An individual's fate no longer depends on its position in the brood array. false = v2-review.20 behaviour (isolation proof only)."
+    },
+    {
+      "rules_version": "antempire.v2-review.22-engine-food-transfers",
+      "approved_in": "Owner instruction 2026-11-03 (D4-A/D7-A next phase, work package C2; PR for Owner review, not merged by Claude)",
+      "kind": "engine",
+      "diagnostics_only": true,
+      "normalise_output": "food_transfer_events_v22",
+      "description": "Work package C2: the engine records every movement of food between compartments as a food_transfer event (source, recipient, amount, minute, cause, attribution, contact) at the line that moves it, and checks per-compartment closure of every colony-day and world-wide source closure. No quantity, draw, decision or simulation state changes: removing the food_transfer events reproduces v2-review.21 byte for byte. The saved event lists (colony.last_events) and the daily journal grow by the recorded transfers."
+    },
+    {
+      "rules_version": "antempire.v2-review.23-local-trail-deposit",
+      "approved_in": "Owner instruction 2026-11-03 (Codex Issue #61 R3-05; separate rules-update PR for Owner review, not merged by Claude)",
+      "kind": "param_switch",
+      "file": "species:pheidole-megacephala",
+      "path": "activity.local_trail_deposit_v23",
+      "from": false,
+      "to": true,
+      "introduced": true,
+      "description": "Codex Issue #61 R3-05: a worker carrying food it collected marks each edge of its walk home at the minute it has walked that edge (event-clock trail event; worker, edge, minute, minute it entered the edge, amount added, cause); no edge is written after the worker reached the nest. The decision (carrying food) and the amount per mark are unchanged. false = v2-review.22 behaviour (whole return route marked at the minute of arrival at the nest; isolation proof only)."
     }
   ]
 }

@@ -1,0 +1,2 @@
+{"probe":"phantom-compartment","engine_colony_accepts":true,"engine_sources_accepts":true,"cli_accepts":true,"source_lost":0.5,"real_colony_gained":0,"unknown_cache_residual":0.5}
+{"probe":"remote-trail-after-arrival","day":16,"worker":"W002","edge":"F10:U01","edge_walked_at":99.442363,"trail_created_at":124.442363,"worker_activity_at_creation":{"type":"worker_activity","worker":"W002","start":124.442363,"end":126.442363,"duration":2,"place":"N00","action":"unload","outcome":"sugar 0.59378, 2 contacts","assumption":true}}

@@ -23,7 +23,8 @@ for (const size of [14, 100, 1000]) {
   if (pop.workers + out.summary.worker_deaths !== size + out.summary.eclosions) throw Error('Conservation not met at ' + size);
   const allTasked = Object.values(out.summary.tasks).reduce((a, b) => a + b, 0) === size;
   if (!allTasked) throw Error('Not every worker received a task at ' + size);
-  rows.push({ workers_before: size, workers_after: pop.workers, ms: Math.round(elapsed), all_workers_tasked: allTasked, events: out.events.length });
+  // v2-review.22 food_transfer events are diagnostics added on top (undone like every diagnostics-only change)
+  rows.push({ workers_before: size, workers_after: pop.workers, ms: Math.round(elapsed), all_workers_tasked: allTasked, events: out.events.filter((e: { type: string }) => e.type !== 'food_transfer').length, food_transfer_events: out.events.length - out.events.filter((e: { type: string }) => e.type !== 'food_transfer').length });
 }
 return rows;
 }

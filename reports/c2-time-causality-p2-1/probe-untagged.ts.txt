@@ -1,0 +1,44 @@
+const W = process.argv[2];
+const { loadBundle } = await import(`${W}/cli/lib/load.ts`);
+const { buildDay0 } = await import(`${W}/cli/lib/day0.ts`);
+const E: any = await import(`${W}/engine/index.ts`);
+const R: any = await import(`${W}/cli/lib/engine-transfers.ts`);
+const b = loadBundle(W);
+const t = R.speciesFoodTiming(b.species[Object.keys(b.species)[0]]);
+let s: any = buildDay0('A1', 1, '2027-09-23', b, W).state;
+function judge(label: string, before: any, o: any, src: any, ev: any[], startSrc: any) {
+  const rd = R.replayEngineColonyDay(before, o.state.colonies[0], ev, o.day, src, t);
+  let eng = 'ACCEPT'; try { E.checkColonyFood(E.colonySnapshot(before), o.state.colonies[0], ev, t); } catch (e: any) { eng = 'REJECT ' + e.message.slice(0, 160); }
+  let ws = 'ACCEPT'; try { E.checkSources(startSrc, o.state, [ev]); } catch (e: any) { ws = 'REJECT ' + e.message.slice(0, 120); }
+  const rs = R.replayEngineSourcesDay ? R.replayEngineSourcesDay(o.state.sources, [{ id: o.result.colonies[0].colony_id, events: ev, timing: t }]) : null;
+  console.log('  reader source replay:', rs === null ? '(not in this version)' : rs.length ? 'REJECT ' + rs[0] : 'ACCEPT');
+  console.log(label, '\n  reader:', rd.ok ? 'ACCEPT (' + rd.time_validation + ')' : 'REJECT ' + rd.errors[0], '\n  engine:', eng, '\n  sources:', ws);
+}
+for (let d = 0; d < 21; d++) {
+  const before = structuredClone(s.colonies[0]), src = new Set(Object.keys(s.sources));
+  const o = E.simulateWorldDay(s, b); const ev = o.result.colonies[0].events;
+  const fx = ev.filter((e: any) => e.type === 'food_transfer' && e.phase === 'foraging');
+  const k = fx.find((x: any) => x.cause === 'prey_kill');
+  if (k) {
+    // reconstruct pre-foraging source snapshot: end + collects - kills
+    const startSrc = E.sourceSnapshot(o.state);
+    for (const x of fx) { const m = Math.round(x.portions * 1e6); if (x.source.kind === 'source') startSrc.get(x.source.id)[x.food_type] += m; if (x.recipient.kind === 'source') startSrc.get(x.recipient.id)[x.food_type] -= m; }
+    judge('A0 unmodified', before, o, src, structuredClone(ev), startSrc);
+    // A1: strip prey ids, move kill + predation to minute 1440
+    { const e2 = structuredClone(ev); for (const x of e2) if (x.type === 'food_transfer' && x.contact?.prey_event_id) delete x.contact.prey_event_id;
+      e2.find((x: any) => x.transfer_id === k.transfer_id).minute = 1440; e2.find((x: any) => x.type === 'insect_predation').minute = 1440;
+      const site = k.recipient.id; let pre = startSrc.get(site).protein, neg = false;
+      for (const x of [...e2.filter((x: any) => x.type === 'food_transfer' && x.phase === 'foraging')].sort((p: any, q: any) => p.minute - q.minute)) { const m = Math.round(x.portions * 1e6); if (x.source.id === site && x.source.kind === 'source') pre -= m; if (x.recipient.id === site && x.recipient.kind === 'source') pre += m; if (pre < 0) neg = true; }
+      judge(`A1 prey ids stripped, kill+predation moved to 1440 (site ${site} goes negative in time order: ${neg})`, before, o, src, e2, startSrc); }
+    // A2: contact removed entirely
+    { const e2 = structuredClone(ev); for (const x of e2) if (x.type === 'food_transfer' && x.contact?.prey_event_id) delete x.contact;
+      e2.find((x: any) => x.transfer_id === k.transfer_id).minute = 1440; e2.find((x: any) => x.type === 'insect_predation').minute = 1440;
+      judge('A2 contact deleted, kill moved to 1440', before, o, src, e2, startSrc); }
+    // A3: prey id set to non-string forms
+    for (const v of [null, 0, '']) { const e2 = structuredClone(ev); for (const x of e2) if (x.type === 'food_transfer' && x.contact?.prey_event_id) x.contact.prey_event_id = v;
+      e2.find((x: any) => x.transfer_id === k.transfer_id).minute = 1440; e2.find((x: any) => x.type === 'insect_predation').minute = 1440;
+      judge(`A3 prey id = ${JSON.stringify(v)}, kill moved to 1440`, before, o, src, e2, startSrc); }
+    break;
+  }
+  s = o.state;
+}
