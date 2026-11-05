@@ -165,6 +165,7 @@
 | ID-STATE-DOMAIN、ID-EVENT-DOMAIN（ME-1） | `checkColonyDomain`、`checkEventDomain`；讀取器 `domainErrors` | 沒有 NaN／Infinity；存量 ≥ 0；嗉囊 ∈ [0, 容量]；日數計數與日齡是非負整數；名為機率／風險的值 ∈ [0,1]；份量 ≥ 0 | I | 世界端（食源容量等）的定義域仍由 `validateWorld` 負責，沒有逐欄的 NaN 檢查 |
 | ID-PARAM-DOMAIN（ME-1） | `checkParamDomain`；讀取器 `paramDomainErrors` | 依參數名稱的單位規則：機率、比例、上限、危險率 ∈ [0,1]；日數、分鐘、份量、成本 ≥ 0；分鐘 ≤ 1440；`_min` ≤ `_max`；Q10 > 0；降雨 Gamma 形狀 ≥ 1 | I | 名稱規則是約定，不是型別；**`task_allocation.*_baseline_probability` 是相對權重、命名錯誤**（`engine/workers.ts:47-51`），只要求 ≥ 0 |
 | ID-RNG-INPUT（ME-1） | `checkRngInputs` | 種子是安全整數；模擬日是非負安全整數；同一輸入逐位元組重播 | I | 串流共用問題（P2-R1、P1-O）不在此修正 |
+| ID-QUEEN-BODY（C3a，v2-review.25，開關預設關閉） | `engine/transfers.ts`（`queen_body` 區室）、`engine/queen-feeding.ts` `checkQueenRound`；讀取器 `cli/lib/engine-transfers.ts`（`c3a`）、`cli/lib/queen-round-replay.ts` | 每個蟻后每日：期末已知儲備 = 期初已知儲備 + 實際攝取（`feed_queen`、`queen_self_feed`）− 自身代謝（`queen_metabolism`）；未知期初儲備不變（`null` 不得當成數字）。單位：遊戲份量；時間尺度：日（攝取在巢內序數回合） | I | 路線 B1、C 是候選；巢內位置與序數時間是過渡模型（D）；產卵與存活仍用舊規則 |
 | ID-SOURCE-LEDGER（ME-1，只在讀取器） | `cli/lib/source-ledger.ts` | 每個食源每日：期末 = 期初 + 生產 + 新屍體 + 獵殺入帳 − 雨沖 − 分解 − 容量刪除 − 到期刪除 − 採集。單位：遊戲份量（不是 mg） | I | 讓 P1-E1、P1-E2 可見（量化），**沒有修正**；引擎仍不為它們產生事件 |
 
 ## 8. 問題清單（依嚴重度；**本 PR 不修正**，依 CLAUDE.md 記錄並交 Owner）

@@ -399,3 +399,15 @@ Day14 權威已知卵：E001／E002／E003／E004／E005 分別經過 **12／6�
     - 參數名稱規則漏掉部分成對上下限（例如 `min_temp_factor`／`max_temp_factor`）與部分 [0,1] 量；
     - `_min` 一律要求非負的規則，日後遇到負溫度下限時要改。
 - **引擎行為版本**：`antempire.v2-review.24-me1-invariants`。這是工程與數學正確性的檢查，不是科學驗證。
+
+## 2026-11-05 規則版本 v2-review.25：蟻后自己的營養區室（C3a；開關預設關閉）
+- **開關**：`queen_feeding.individual_queen_body_c3a`，預設 **false**；關閉時所有輸出與 v2-review.24 逐位元組相同（`tests/golden.test.ts`、`tests/rules-isolation.test.ts`）。正式世界不打開；打開與否另行決定（設計 §6：先在 Day0 實驗世界）。
+- **打開時**（`docs/design-c3-queen-feeding.md` §14）：
+  - 蟻后的營養只經局部、有來源、有序數時間與地點的事件增加：育幼工蟻在巢內回合取用（候選路線 B1）、走到蟻后處、接觸、交哺；或蟻后與食物同處時自行取食（候選路線 C）。
+  - 蟻后代謝由她自己吃到的量支付，從全巢代謝移出；不足只記錄。
+  - 產卵與存活的公式不變（C3b、C3c）；因為全巢代謝不再包含蟻后，舊產卵條件的輸入會改變。
+  - Day14 遷移的蟻后：未知儲備 `null`，永不支出、補值或當成 0；已知收支從 0 開始。這個保守界線會高估她的缺口（D），不得當成科學結論。
+- **候選路線不是已知的本種機制**：Sanders et al. 1992（本種）原文寫「The feeding of protein to queens by workers was not observed」。
+- **檢查**：C2 名冊加入 `queen_body`、`nest_round` 階段與新原因；引擎檢查 `checkQueenRound`；兩個獨立讀取器各自拒絕 N1～N16；單一回合的 #56 排列不變性（P1）。
+- **引擎行為版本**：`antempire.v2-review.25-c3a-queen-body`。工程測試通過不等於科學驗證。
+

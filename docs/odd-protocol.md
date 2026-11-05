@@ -1014,6 +1014,7 @@
     - `cli/lib/population-replay.ts`：以另一種寫法重驗人口與定義域，並報告流量各項；
     - `cli/lib/source-ledger.ts`：世界端食源收支，只在讀取器端。它讓**沒有事件就被刪除的食物**可見：超過容量的蜜露與花蜜、到期的屍體蛋白（登錄表 P1-E1、P1-E2；舊程式，本版不修正）。
   - 這些是工程與數學正確性的檢查，**不是科學驗證**。陣列順序不變性（#56）是已知違反，不在此宣稱。
+- **C3a（v2-review.25，開關 `queen_feeding.individual_queen_body_c3a`，預設關閉）**：打開時蟻后有自己的營養區室 `queen_body`，只經巢內序數回合的局部事件增加（`take_from_cache` → `nest_move` → `queen_contact` → `feed_queen`；或 `queen_self_feed`），自己的代謝由已知收支支付；C2 名冊、路徑表與閉合涵蓋新區室，引擎 `checkQueenRound` 與兩個獨立讀取器各自檢查（`docs/design-c3-queen-feeding.md` §14）。巢內位置與序數時間是過渡模型（D），不是巢室幾何或物理接觸。產卵與存活仍用舊規則（§4.7 G1、G6 仍是待修缺陷，C3b、C3c）。
 
 **測試**（`docs/engine-architecture.md` §5）：
 

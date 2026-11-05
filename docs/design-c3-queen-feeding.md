@@ -268,3 +268,34 @@ C3a 只換掉「蟻后怎麼得到食物、蟻后自己的代謝從哪裡付」�
 | X16 | #62 是文件審查，不記為可執行科學驗證通過（§9） | 已涵蓋 | 文件開頭「地位：設計，未實作」 |
 
 PR #59 相關文件：上表沒有任何一項指向 #59 文件中的直接錯誤，因此本次未改 #59 的文件。
+
+## 14. C3a 實作紀錄與物理接觸的介面契約（v2-review.25，2026-11-05）
+**實作狀態**：C3a 已實作在開關 `queen_feeding.individual_queen_body_c3a` 之後（預設關閉；關閉時與 v2-review.24 逐位元組相同）。實作：`engine/queen-feeding.ts`；C2 擴充：`engine/transfers.ts`；獨立讀取器：`cli/lib/engine-transfers.ts`（`c3a` 參數）、`cli/lib/queen-round-replay.ts`；測試：`tests/c3a-queen-feeding.test.ts`。
+
+**實作了什麼**（依 §9 第 1 點）：
+- 區室：`queen_body:<queen>`（`unknown_initial_reserve` 與 `known_balance` 分開，§12.4）；嗉囊分類為 `crop_cargo_sugar` 與 `crop_cargo_protein_liquid`，共用 `trophallaxis.crop_capacity`（§12.3，採集、交哺與 `take_from_cache` 都用總量計算剩餘空間）。
+- 巢內回合（序數時間）：在舊結算（`storageOverflow`、`consume`）之前。參與者是任務為 `nurse`、當時在巢節點的工蟻；每隻以自己 ID 命名的亂數串流抽抵達值（同值依 ID）。在 `store` 取用（路線 B1）→ `nest_move` → 在 `queen` 位置 `queen_contact` → 每次接觸、每種食物最多一筆 `feed_queen`；蟻后依自己的已知收支拒絕（飽足門檻 D）。
+- 路線 C（`queen_self_feed`）：只有蛋白倉與蟻后同一位置（`store_is_queen_location`，預設 false）時才可能發生。
+- 蟻后代謝：由 `known_balance` 支付（`queen_metabolism`，個體歸因），從全巢代謝移出；不足記為 `shortfall_today`，**只記錄**，產卵與存活仍用舊規則（C3b、C3c）。
+- 舊帳範圍（§12.1）：`stores.sugar` = Σ 嗉囊糖 ＋ `nest_unlocated`；`stores.protein` = `cache`。舊代謝、舊產卵、溢出的路徑表都不包含 `queen_body`，嗉囊中的液態蛋白也不在舊帳內（N15）。
+
+**與設計不同或尚未實作之處**（照實揭露）：
+- 路線 A（`carried`、`queen_offer`、`offer_solid`、`queen_ingest`、`remove_residue`）與 B2（`larva_pocket`，依賴 C4）**未實作**；路徑表與名冊沒有這些區室。N11 以「固體不經嗉囊直接交給蟻后」（`cache → queen_body` 標成 `feed_queen`）作為反例。
+- 搬運者死亡時嗉囊中的液態蛋白進入 `loss:worker_corpse`（§4 的 `corpse:<worker>` 簡化為一個匯；C5 才有屍體區室，D）。
+- 巢內回合放在 `storageOverflow` 之前（§12.1 只要求在 `consume` 之前）；順序是 D，要做敏感度。
+- 所有參與的育幼工蟻每天都到蟻后處，是 D 級行為假設；沒有本種資料。
+- Day0 情境儲備 k 預設 0（§6 要求 k ∈ {0, 3, 10, 30} 都做敏感度，尚未做）。
+- 蟻后紀錄只在模擬開始那一天（`sim_day = 0` 且為 Day0 初始化的世界）才用 `day0_scenario`；其他情況（包括 Day14 遷移、或 Day0 世界中途打開開關）一律 `unknown_at_migration`（null），不會在歷史中途憑空出現食物。
+
+**與未來物理接觸系統的介面契約（暫不接入）**：物理模組（#71～#75）五項已知缺陷（P1-A、P1-B、P2-A、P2-B、P2-C）修復並通過獨立驗證後，以另一個規則更新 PR 用物理接觸事件取代 C3a 的過渡接觸。C3a **不讀取**任何物理模組，也不依賴 PH-2b 的碰撞結果。取代時必須提供下列欄位，C2 與兩個讀取器的規則不變：
+
+| 欄位 | C3a 過渡值 | 物理接觸提供的值 |
+|---|---|---|
+| 工蟻 ID | `queen_contact.worker`、轉移的 `source.id`／`recipient.id` | 同一個工蟻 ID（不得另造身分） |
+| 蟻后 ID | `queen_contact.queen` = `colony.queen_id` | 同 |
+| 接觸位置 | 具名位置 `store`／`queen`／`brood` | 幾何座標所在的具名巢室（P1-B） |
+| 接觸事件 ID | `QC-<day>-<colony>-<n>` | 物理接觸事件的穩定 ID |
+| 接觸時間與時間尺度 | `ordinal`（`time_scale: 'ordinal_nest_round'`） | 分鐘（P0-A 時鐘）；`time_scale` 改為分鐘，序數不得與分鐘混用 |
+| 食物持有狀態 | 嗉囊糖、嗉囊液態蛋白（共用容量） | 同；若加入 `carried`，另開規則更新 |
+| 轉移事件 | C2 `food_transfer`（`take_from_cache`、`feed_queen`、`queen_self_feed`），`contact.contact_event_id` 指向接觸 | 同一組原因與欄位 |
+| 來源與因果驗證 | 交付時間 ≥ 接觸時間 ≥ 抵達時間；取用時間 ≤ 離開時間；同一處；工蟻當時存在且未死 | 同一組規則，以物理事件的時間與位置判斷 |
