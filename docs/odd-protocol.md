@@ -9,7 +9,7 @@
   | v2-review.21 | **已合併**（#52：幼體照護的同日快照與羽化提交） | §7.12 |
   | v2-review.22 | **已合併**（#60：引擎記錄每一筆 food_transfer，並逐區室、依時間檢查；診斷，不改行為） | §7.17 |
   | v2-review.23 | **已合併**（#63：Codex #61 R3-05 的時間與位置已修正——帶著食物回巢的工蟻在走完每一段的那一分鐘、在該段留下費洛蒙） | §3.2、§7.8 |
-  | 費洛蒙的沉積決策 | **未決**：是否沉積、沉積多少、單訊號或雙訊號（M1／M2）、衰退時間尺度。研究見 PR #64（**未合併**，只有設計） | §7.8 |
+  | 費洛蒙的沉積決策 | **未決**：是否沉積、沉積多少、單訊號或雙訊號（M1／M2）、衰退時間尺度。研究設計見 `docs/research-pheromone-models-2026-11.md`（#64，已合併；只有設計，P-1～P-6 尚未執行） | §7.8 |
   - **設計中、未實作**的子模型（不是現況）：24 小時時鐘（P0-A）、生命史與溫度（P0-B）、大工蟻（P1-A）、巢穴空間（P1-B）、個體營養 C3～C5、開放式生態（D7-A）、完整繁殖系統（D4-A）。見 §7.16 與各設計文件。
 - **依據**：`engine/*.ts`、`species/pheidole-megacephala.json`、`world/xitun-garden.json`、`scenarios/day0/*.json`、`cli/lib/day0.ts`，以及 `CLAUDE.md`、`docs/gm-rules.md`、`docs/engine-architecture.md`、`docs/species-pheidole-megacephala.md`、`docs/references.md` 等文件。
 - **性質**：本文件只描述現況，不改任何程式、參數或存檔，也不推進遊戲日。所有定量數值都是遊戲模型，不是野外實測（`CLAUDE.md` §0、§3）。
@@ -44,10 +44,10 @@
 | P2 | 小工蟻壽命：28°C、食物無限，中位 28 日、平均 26.25 日 | R94 | 個體 | **已檢核（解析），結果不符**：引擎無飢餓時中位約 64 日，且與溫度無關 | `docs/research-design-2026-11.md` §4；本文 §8 D2 |
 | P3 | 沒有工蟻的蟻后在 2～3 週內死亡 | R136 | 個體 | **依建構相容**：無工蟻第 14 日起每日 0.24，中位約第 16 日。兩個數值都是遊戲假設（v19 更正） | `species/...json` `starvation.queen_zero_worker_*`；`docs/gm-rules.md` v19 段 |
 | P4 | 創巢對照：蟻后＋10 蛹 6/6 成長；蟻后＋10 野外工蟻很弱（7 週內 2/6 蟻后死亡） | R136（實驗室 26～27°C、人工餵食） | 群體 | **已做定性比較**：A5（新羽化工蟻）＞A1（混齡工蟻），方向一致；A4（蟻后＋10 蛹）反而最差，條件不同（花園無人工餵食） | `reports/day0-final-report-2026-11.md` §5 |
-| P5 | 單后 31 日產卵 97～292 粒，成批產卵、批間暫停 | R136；R94（定性） | 個體 | **未檢核，結構上無法達成**：引擎每日最多 2 粒（31 日上限 62 粒）；25°C 無幼體時穩態約 0.4 粒／日 | `docs/research-design-2026-11.md` §2；未合併分支 phase3 E4 |
-| P6 | 招募流量約 20 分鐘達高峰；兩種費洛蒙半衰期約 10／17 分鐘 | R152＝R21／R96 Dussutour 2009（本種，大群） | 群體 | **未檢核**：費洛蒙是逐日衰減，沒有分鐘尺度。註：「兩種費洛蒙」是作者由行為推論，原研究未鑑定化學物質；半衰期是在作者選定的選擇函數下估計的模型相依值（研究 PR #64，未合併） | `docs/references.md` R152 |
+| P5 | 單后 31 日產卵 97～292 粒，成批產卵、批間暫停 | R136；R94（定性） | 個體 | **未檢核，結構上無法達成**：引擎每日最多 2 粒（31 日上限 62 粒）；25°C 無幼體時穩態約 0.4 粒／日 | `docs/research-design-2026-11.md` §2；`docs/research-design-phase3-lifecycle.md` E4（已在 main） |
+| P6 | 招募流量約 20 分鐘達高峰；兩種費洛蒙半衰期約 10／17 分鐘 | R152＝R21／R96 Dussutour 2009（本種，大群） | 群體 | **未檢核**：費洛蒙是逐日衰減，沒有分鐘尺度。註：「兩種費洛蒙」是作者由行為推論，原研究未鑑定化學物質；半衰期是在作者選定的選擇函數下估計的模型相依值（`docs/research-pheromone-models-2026-11.md`，#64，已合併；只有設計） | `docs/references.md` R152 |
 | P7 | 多數覓食者一天少趟、少數多趟；回巢者調節出巢率 | R150 Gordon 2011 等（非本種） | 群體 | **定性觀察相符**：A1 秋，平均 2.558 趟／出巢工蟻日，趟數分布右偏 | `reports/day0-final-report-2026-11.md` §4 |
-| P8 | 臺中都市樣點白天活動較高、夜間較低但仍有活動；森林日夜相近 | R145 Chen & Neoh 2023 | 群體 | **無法檢核**：引擎沒有一天中的時刻，只有固定 360 分鐘時窗 | 未合併分支 phase2 `reports/phase2-behaviour-review.md` §7 |
+| P8 | 臺中都市樣點白天活動較高、夜間較低但仍有活動；森林日夜相近 | R145 Chen & Neoh 2023 | 群體 | **無法檢核**：引擎沒有一天中的時刻，只有固定 360 分鐘時窗 | `reports/phase2-behaviour-review.md`（PR #34，已合併） §7 |
 | P9 | 冬季地表活動下降 | Harada et al. 2021（`docs/gm-rules.md` v2-review.5 段） | 群體 | **未定量檢核**：只有逐月出勤率報告，沒有和觀察資料比對 | `docs/gm-rules.md` v2-review.5 段 |
 | P10 | 兵蟻比例：野外 0.06～0.25；28°C 新羽化 11.86%；100 隻以下的巢只產小工蟻 | R97；R94；R167 | 群體 | **無法檢核**：沒有 major | `docs/research-design-2026-11.md` §5 |
 | P11 | 大型獵物由 2～10 隻工蟻共同壓制與搬運 | R98／R107 Dejean 2007 | 個體／小群 | **由參數強制**（`large_prey_min_team` 2、`large_prey_max_team` 10），不是湧現結果；`tests/hunting.test.ts` 檢的是規則 | `species/...json` predation |
@@ -140,7 +140,7 @@
 | `stores.stress_days` | 日 | 上述兩者的較大值 |
 | `stores.queen_laid_yesterday` | 布林 | 昨日是否產卵 |
 | `stores.no_worker_days` | 日 | 連續沒有工蟻的日數 |
-| `trail_by_edge` | 無因次，0.08～3 | 本蟻群在每條邊上的費洛蒙強度（目前實作為單一訊號；單訊號 M1 與雙訊號 M2 都只是候選模型，尚未選定，見研究 PR #64，未合併） |
+| `trail_by_edge` | 無因次，0.08～3 | 本蟻群在每條邊上的費洛蒙強度（目前實作為單一訊號；單訊號 M1 與雙訊號 M2 都只是候選模型，尚未選定，見 `docs/research-pheromone-models-2026-11.md`（#64，已合併；只有設計，P-1～P-6 尚未執行）） |
 | `source_knowledge[id]` | `{presence, known_by[]}` | **簿記用**：`potential`／`confirmed_game_scenario`／`scouted_empty`。v17 時間軸中，工蟻決策不讀它（只寫入） |
 | `population` | — | `{queen_alive, workers[], brood[]}` |
 
@@ -200,7 +200,7 @@
    - 之後檢查：每份新屍體都必須有對應的昆蟲死亡事件（`engine/day.ts:97`）。
 3. **各蟻群覓食**（`forageDay`，`engine/day.ts:99`；蟻群依陣列順序處理），內部依序為：
    1. `ensureRouteMemory`：補上沒有路線記憶的工蟻（`engine/foraging.ts:420`）；
-   2. `decayTrails`：費洛蒙每日衰減（`engine/foraging.ts:421`）。一天之內不衰退是遊戲假設，沒有文獻支持；要判斷資料是否反對它，須在相同觀察算子下與 λ=0（不衰退）基準比較（研究 PR #64 的計畫，未執行）；
+   2. `decayTrails`：費洛蒙每日衰減（`engine/foraging.ts:421`）。一天之內不衰退是遊戲假設，沒有文獻支持；要判斷資料是否反對它，須在相同觀察算子下與 λ=0（不衰退）基準比較（`docs/research-pheromone-models-2026-11.md`（#64，已合併；只有設計，P-1～P-6 尚未執行））；
    3. `nestContacts`：巢內接觸（`engine/foraging.ts:422`）；
    4. 依族群陣列順序，對每隻工蟻：`selectTask` → `age_days++` → 若任務是育幼則做 `nurseContact` → 若任務是覓食且在巢，就成為今天的覓食者（`engine/foraging.ts:424-429`）；
    5. `activityDay`：日內事件時鐘（`engine/foraging.ts:432-436`；§3.2）。
@@ -341,7 +341,7 @@
 - 卸貨只交給當時在巢內的同伴（`engine/nutrition.ts:16`）。
 - 招募只招募當時在巢內、沒在卸貨的同伴（`engine/activity.ts:386`）。
 
-**目前程式中由全巢帳或全巢指標決定的地方**。CLAUDE.md §2.1 的字面只限制「工蟻」，以下多數影響的是蟻后、幼蟲或生理風險，而不是工蟻的決策；但依同一精神，每一項都列為「**Owner 待決問題（open question for the Owner）**」。未合併的 phase3 分支把前兩項列為 E8。
+**目前程式中由全巢帳或全巢指標決定的地方**。CLAUDE.md §2.1 的字面只限制「工蟻」，以下多數影響的是蟻后、幼蟲或生理風險，而不是工蟻的決策；但依同一精神，每一項都列為「**Owner 待決問題（open question for the Owner）**」。`docs/research-design-phase3-lifecycle.md`（已在 main）把前兩項列為 E8。
 
 | # | 位置 | 讀取的全巢量 | 影響 |
 |---|---|---|---|
@@ -765,7 +765,7 @@
 ### 7.8 費洛蒙（`engine/trails.ts`）
 - **每日衰減**：每日開頭，強度 × 0.55；低於 0.08 就刪除（`:12-19`）。
 - **留跡**：帶著食物回巢的工蟻，在走過每一段的那一分鐘該段 +0.35，上限 3（`:23-31`；v23，Codex #61 R3-05 已修正，見 §3.2）。招募獵物的發現者同樣逐段沉積。
-- **未決（研究 PR #64，未合併，只有設計）**：是否沉積（目前只看是否帶著食物）、沉積量、單訊號 M1 或雙訊號 M2、衰退時間尺度。M1、M2 都是候選；「兩種費洛蒙」是行為推論，沒有化學證據；文獻中的半衰期是模型相依的估計值。
+- **未決（`docs/research-pheromone-models-2026-11.md`（#64，已合併；只有設計，P-1～P-6 尚未執行））**：是否沉積（目前只看是否帶著食物）、沉積量、單訊號 M1 或雙訊號 M2、衰退時間尺度。M1、M2 都是候選；「兩種費洛蒙」是行為推論，沒有化學證據；文獻中的半衰期是模型相依的估計值。
 - **影響**：沿跡選路（依強度加權）與步行速度。v20 起招募不讀費洛蒙；v19 的「整條路線都要可感知」條件已不適用。
 - **時間尺度**：沒有分鐘尺度的衰減（§1.2 P6）；一天之內不衰退是遊戲假設，沒有文獻支持。
 
@@ -987,9 +987,9 @@
 ### 8.1 已知結構缺陷（都沒有修正；修正一律是規則更新，需要另開 PR）
 | # | 缺陷 | 程式證據 | 分析文件 |
 |---|---|---|---|
-| D1 | **低溫時發育太快**：單一 Q10 1.55，下限 0.48 要到 8.3°C 以下才生效。21°C 給 38.1 日，觀察值為 66～78 日（R166、R167） | `engine/brood.ts:15,24` | `docs/research-design-2026-11.md` §3（建議線性度日 T0 ≈ 16.4°C、K ≈ 335）；`docs/status-audit-2026-11.md` #2；未合併分支 phase3 `docs/research-design-phase3-lifecycle.md` E1 |
+| D1 | **低溫時發育太快**：單一 Q10 1.55，下限 0.48 要到 8.3°C 以下才生效。21°C 給 38.1 日，觀察值為 66～78 日（R166、R167） | `engine/brood.ts:15,24` | `docs/research-design-2026-11.md` §3（建議線性度日 T0 ≈ 16.4°C、K ≈ 335）；`docs/status-audit-2026-11.md` #2；`docs/research-design-phase3-lifecycle.md`（已在 main） E1 |
 | D2 | **工蟻壽命約為 Yuan 的 2 倍，且與溫度無關**：引擎中位 64 日，R94 28°C 中位 28 日；沒有兵蟻的較長壽命 | `engine/queen.ts:18-20` | `docs/research-design-2026-11.md` §4；`docs/status-audit-2026-11.md` #4；phase3 E2 |
-| D3 | **固定 360 分鐘時窗**：不對應一天中的時刻，沒有逐時溫度、日夜、夜間活動；所有覓食者都在第 0 分鐘開始；天氣在時窗內不變 | `engine/activity.ts:69,412`；`engine/weather.ts`（只有日尺度） | `docs/status-audit-2026-11.md` #5；未合併分支 phase2（PR #34）`reports/phase2-behaviour-review.md` §7「設計 A」 |
+| D3 | **固定 360 分鐘時窗**：不對應一天中的時刻，沒有逐時溫度、日夜、夜間活動；所有覓食者都在第 0 分鐘開始；天氣在時窗內不變 | `engine/activity.ts:69,412`；`engine/weather.ts`（只有日尺度） | `docs/status-audit-2026-11.md` #5；`reports/phase2-behaviour-review.md`（PR #34，已合併） §7「設計 A」 |
 | D4 | **每日一次的任務抽籤**：任務一天固定；巢內工作沒有時間成本；修繕與守衛沒有物理作用；只有被招募時才會改成覓食 | `engine/workers.ts:42-60`；`engine/foraging.ts:424-429`；`engine/activity.ts:333,394` | phase2 `reports/phase2-behaviour-review.md` §7「設計 B」（局部門檻函數、每 30～60 分鐘重新評估）；`docs/worker-activity-memory-traffic.md` |
 | D5 | **沒有 major（兵蟻）**：開關鎖死，設為 true 就拋錯 | `engine/params.ts:116-118` | `docs/research-design-2026-11.md` §5（#25）；`docs/day0-initialization.md` §9 D6 |
 | D6 | **沒有巢的空間**：巢只是一個節點；沒有巢室容量、挖掘、排水、遷巢；修繕只是計數 | `engine/types.ts:140`（`nest_node: string`） | `docs/day0-initialization.md` §9 D8；`docs/nest-construction.md`（規格）；`docs/status-audit-2026-11.md` #10 |
