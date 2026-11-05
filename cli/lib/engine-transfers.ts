@@ -26,21 +26,21 @@ export interface EngineTransfer { type: 'food_transfer'; schema: string; transfe
 export const engineTransfers = (events: SimEvent[]): EngineTransfer[] => events.filter((e) => typeof e === 'object' && e !== null && (e as { type?: unknown }).type === 'food_transfer') as unknown as EngineTransfer[];
 
 const ATTRIBUTION: Record<string, string> = { collect: 'individual', prey_kill: 'individual', unload: 'individual', trophallaxis: 'individual', storage_overflow: 'unknown', metabolism: 'unknown', lay_egg: 'unknown', death_crop_to_nest_ledger: 'engine_rule',
-  take_from_cache: 'individual', feed_queen: 'individual', queen_self_feed: 'individual', queen_metabolism: 'individual', death_crop_to_corpse: 'engine_rule' };
+  take_from_cache: 'individual', feed_queen: 'individual', queen_self_feed: 'individual', queen_metabolism: 'individual', death_crop_to_corpse: 'engine_rule', return_to_cache: 'individual' };
 // settlement steps (C3a: the queen's own metabolism after the colony's; a dead carrier's crop with the other death records)
 const SETTLEMENT_ORDER = ['storage_overflow', 'metabolism', 'queen_metabolism', 'death_crop_to_nest_ledger', 'lay_egg'];
 const SETTLEMENT_STEP = (cause: string) => (cause === 'death_crop_to_corpse' ? SETTLEMENT_ORDER.indexOf('death_crop_to_nest_ledger') : SETTLEMENT_ORDER.indexOf(cause));
-const ROUND_CAUSES = new Set(['take_from_cache', 'feed_queen', 'queen_self_feed']);
+const ROUND_CAUSES = new Set(['take_from_cache', 'feed_queen', 'queen_self_feed', 'return_to_cache']);
 const HOLDS: Record<string, ('sugar' | 'protein')[]> = { crop: ['sugar'], nest_unlocated: ['sugar'], cache: ['protein'], in_transit: ['sugar', 'protein'], source: ['sugar', 'protein'] };
 const ENDPOINTS: Record<string, [string[], string[]]> = { // allowed [source kinds, recipient kinds] per cause
   collect: [['source'], ['in_transit']], prey_kill: [['insect'], ['source']], unload: [['in_transit'], ['crop', 'cache']], trophallaxis: [['crop'], ['crop']],
   storage_overflow: [['crop', 'nest_unlocated', 'cache'], ['loss']], metabolism: [['crop', 'nest_unlocated', 'cache'], ['metabolized']], lay_egg: [['crop', 'nest_unlocated', 'cache'], ['egg']], death_crop_to_nest_ledger: [['crop'], ['nest_unlocated']],
-  take_from_cache: [['cache'], ['crop']], feed_queen: [['crop'], ['queen_body']], queen_self_feed: [['cache'], ['queen_body']], queen_metabolism: [['queen_body'], ['metabolized']], death_crop_to_corpse: [['crop'], ['loss']],
+  take_from_cache: [['cache'], ['crop']], feed_queen: [['crop'], ['queen_body']], queen_self_feed: [['cache'], ['queen_body']], queen_metabolism: [['queen_body'], ['metabolized']], death_crop_to_corpse: [['crop'], ['loss']], return_to_cache: [['crop'], ['cache']],
 };
 
 /** The phase each cause belongs to (written here independently of the engine's table). */
 const PHASE_OF_CAUSE: Record<string, 'foraging' | 'nest_round' | 'nest_settlement'> = { collect: 'foraging', prey_kill: 'foraging', unload: 'foraging', trophallaxis: 'foraging', storage_overflow: 'nest_settlement', metabolism: 'nest_settlement', death_crop_to_nest_ledger: 'nest_settlement', lay_egg: 'nest_settlement',
-  take_from_cache: 'nest_round', feed_queen: 'nest_round', queen_self_feed: 'nest_round', queen_metabolism: 'nest_settlement', death_crop_to_corpse: 'nest_settlement' };
+  take_from_cache: 'nest_round', feed_queen: 'nest_round', queen_self_feed: 'nest_round', queen_metabolism: 'nest_settlement', death_crop_to_corpse: 'nest_settlement', return_to_cache: 'nest_round' };
 const KINDS = new Set(['source', 'insect', 'in_transit', 'crop', 'cache', 'nest_unlocated', 'metabolized', 'egg', 'loss', 'queen_body']);
 const ATTRIBUTIONS = new Set(['individual', 'unknown', 'engine_rule']);
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -187,7 +187,7 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
     if (!ends[0].includes(x.source.kind) || !ends[1].includes(x.recipient.kind)) err(`${x.transfer_id}: ${x.cause} from ${x.source.kind} to ${x.recipient.kind} is not a possible path`);
     if (ATTRIBUTION[x.cause] !== x.attribution) err(`${x.transfer_id}: ${x.cause} must have attribution ${ATTRIBUTION[x.cause]}, has ${x.attribution}`);
     for (const r of [x.source, x.recipient]) { const h = holds(r.kind); if (h && !h.includes(x.food_type)) err(`${x.transfer_id}: ${r.kind} cannot hold ${x.food_type}`); }
-    if ((x.cause === 'take_from_cache' || x.cause === 'queen_self_feed' || x.cause === 'death_crop_to_corpse') && x.food_type !== 'protein') err(`${x.transfer_id}: ${x.cause} must move protein`);
+    if ((x.cause === 'take_from_cache' || x.cause === 'queen_self_feed' || x.cause === 'death_crop_to_corpse' || x.cause === 'return_to_cache') && x.food_type !== 'protein') err(`${x.transfer_id}: ${x.cause} must move protein`);
     if (x.cause === 'death_crop_to_nest_ledger' && x.food_type !== 'sugar') err(`${x.transfer_id}: only sugar stays in the nest ledger at a death`);
     if (x.cause === 'death_crop_to_corpse' && x.recipient.id !== 'worker_corpse') err(`${x.transfer_id}: a dead carrier's liquid protein must go to loss:worker_corpse`);
     curPhase = x.phase;

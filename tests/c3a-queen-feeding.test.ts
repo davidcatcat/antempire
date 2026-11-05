@@ -119,4 +119,23 @@ both('N14 a crop above the shared capacity', has('take_from_cache'), (d) => { co
 both('N15 the old colony metabolism takes from the queen\'s body', (d) => !!d.events.find((e) => e.type === 'food_transfer' && e.cause === 'metabolism' && e.food_type === 'sugar'), (d) => { const m = d.events.find((e) => e.type === 'food_transfer' && e.cause === 'metabolism' && e.food_type === 'sugar'); m.source = { kind: 'queen_body', id: d.after.queen_id }; });
 both('N16 the queen spends more than she has eaten', has('queen_metabolism', 'sugar'), (d) => { const m = tx(d, 'queen_metabolism', 'sugar'); m.portions = +(m.portions + 1).toFixed(6); queen(d).body.known_balance.sugar = +(queen(d).body.known_balance.sugar - 1).toFixed(6); });
 
+// independent review of 888515c (P1, P2): put-back, creation, participants, strict take-before-departure
+const firstDay: Any[] = [];
+{ // the day a queen record is created (Day14 migration): forged initial values must be rejected
+  const lg: Any = fixture(); const s: Any = legacyToWorldState(lg, legacyColonyMeta(B.world.scenario_colonies as Any));
+  const before = structuredClone(s.colonies[0]), o: Any = simulateWorldDay(s, B);
+  firstDay.push({ before, after: o.state.colonies[0], events: o.result.colonies[0].events, day: o.day, sources: new Set(Object.keys(s.sources)), sp: SP, raw: B.species[MAIN_SPECIES] });
+}
+{
+  const d: Any = structuredClone(firstDay[0]); d.sources = firstDay[0].sources;
+  ok(readerErrors(d).length === 0, 'creation day: the readers accept the real record');
+  const init = d.events.find((e: Any) => e.type === 'queen_body_initialized'); init.known_balance.sugar = 5; queen(d).body.known_balance.sugar = +(queen(d).body.known_balance.sugar + 5).toFixed(6);
+  let eng: unknown = true; try { checkQueenRound(queenRoundStart(d.before), d.after, d.events, SP); } catch (e) { eng = String(e); }
+  ok(eng !== true && readerErrors(d).length > 0, `N9/N12 a migrated queen created with 5 sugar from nowhere: engine ${String(eng).slice(0, 90)}; readers ${readerErrors(d)[0]}`);
+}
+both('a resting worker away from the nest feeds the queen', has('feed_queen'), (d) => { const f = tx(d, 'feed_queen'), w = worker(d, f.source.id); assert.ok(w, 'feeder alive at the end'); w.task = 'rest'; });
+both('liquid protein kept in a crop past the round', has('return_to_cache'), (d) => { const r = tx(d, 'return_to_cache'); d.events.splice(d.events.indexOf(r), 1); worker(d, r.source.id).crop_cargo_protein_liquid = r.portions; d.after.stores.protein = +(d.after.stores.protein - r.portions).toFixed(6); renumber(d); });
+both('taken at the very moment the worker leaves the store', has('take_from_cache'), (d) => { const t = tx(d, 'take_from_cache'); t.ordinal = d.events.find((e) => e.type === 'nest_move' && e.worker === t.recipient.id).depart_ordinal; });
+ok(days.every((d) => d.after.population.workers.every((w: Any) => !(w.crop_cargo_protein_liquid > 0))), 'review P1: no worker carries liquid protein out of the nest round on any real day (it is fed or put back), so it never blocks sugar foraging');
+
 console.log(JSON.stringify({ c3a_queen_feeding: 'pass', checks, colony_days: colonyDays, contacts, feedings: feeds, takes_from_store: takes, self_feedings: selfFeeds, migrated_queen_days: migrated, note: 'engineering checks only; routes B1/C are candidates, not established mechanisms of P. megacephala; laying and survival unchanged (C3b/C3c)' }, null, 2));

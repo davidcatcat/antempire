@@ -115,7 +115,7 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
   for (const w of work) if (w.sp.queen_feeding.individual_queen_body_c3a) {
     ensureQueens(s, w.colony, w.sp, w.events);
     w.food = colonySnapshot(w.colony, true);
-    c3a.set(w.colony.id, { start: queenRoundStart(w.colony), round: { taken_from_cache: 0, fed: { sugar: 0, protein: 0 }, self_fed: 0, contacts: 0 } });
+    c3a.set(w.colony.id, { start: queenRoundStart(w.colony), round: { taken_from_cache: 0, returned_to_cache: 0, fed: { sugar: 0, protein: 0 }, self_fed: 0, contacts: 0 } });
   }
 
   growEcology(s, wp, weather, worldEvents);
@@ -152,8 +152,10 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
     summary.starvation = { sugar_gap_days: colony.stores.sugar_gap_days, protein_gap_days: colony.stores.protein_gap_days, stress_days: colony.stores.stress_days };
     const ledger = { unit: 'game_portions_NOT_mg', start: initial, foraged: summary.income, metabolized: summary.consumed, egg_laying: { sugar: round(summary.eggs_laid * n.egg_laying_sugar_cost), protein: round(summary.eggs_laid * n.egg_laying_protein_cost) }, storage_overflow_not_retained: w.overflow, note: 'Nest mass conservation exact within 1e-5 game portions; source decomposition/replenishment separate' };
     // C3a: food that left the old ledger scope in the nest round (into the queen, or as liquid protein into crops)
-    const toQueen = q3 ? { sugar: q3.round.fed.sugar, protein: round(q3.round.taken_from_cache + q3.round.self_fed) } : { sugar: 0, protein: 0 };
-    summary.mass_ledger = q3 ? { ...ledger, left_ledger_scope_c3a: toQueen } : ledger;
+    // C3a: food that left the old ledger scope in the nest round — into the queen (liquid protein taken and not put back was
+    // fed; crops hold none after the round). held_outside_legacy_stores: the queen's eaten balance (design §12.1)
+    const toQueen = q3 ? { sugar: q3.round.fed.sugar, protein: round(q3.round.taken_from_cache - q3.round.returned_to_cache + q3.round.self_fed) } : { sugar: 0, protein: 0 };
+    summary.mass_ledger = q3 ? { ...ledger, left_ledger_scope_c3a: { into_queen_body: toQueen, held_outside_legacy_stores: { queen_body_known: { ...(colony.population.queens?.[0]?.body.known_balance ?? { sugar: 0, protein: 0 }) }, crop_protein_liquid: 0 } } } : ledger;
     for (const x of ['sugar', 'protein'] as const) {
       const rhs = round(initial[x] + summary.income[x] - ledger.metabolized[x] - ledger.egg_laying[x] - ledger.storage_overflow_not_retained[x] - toQueen[x]);
       const stock = summary.stock[x];

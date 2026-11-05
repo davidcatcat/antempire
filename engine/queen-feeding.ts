@@ -7,6 +7,8 @@
  *   queen_contact    nurse and queen at the same place
  *   feed_queen       trophallaxis crop -> queen_body (sugar, or liquid protein), one per contact and food
  *   queen_self_feed  the queen eats protein that lies where she is (route C, candidate; only when store and queen share a place)
+ *   return_to_cache  liquid protein a nurse still holds after the queen goes back to the store at the end of the round
+ *                    (design §4 'put back'; D): crops hold liquid protein only within the round, never into the next day
  * and pays her own metabolism from what she has eaten (known_balance); a shortfall is HER deficit only (recorded, not
  * used: laying and survival keep the old rules until C3b/C3c).
  *
@@ -16,8 +18,9 @@
  * transfer) is the contract a later physics contact system must fill (docs/design-c3-queen-feeding.md §14); C3a does not
  * read any physics module.
  *
- * Nothing here reads colony-wide stores to decide: a nurse sees the store only when it stands at it; the queen refuses by
- * her own known balance. The candidate routes are NOT established natural mechanisms of P. megacephala (Sanders et al.
+ * Decisions: a nurse takes from the store it stands at (it perceives only that store's food — one store per nest), without
+ * any signal of the queen's need (D: every nurse at the nest visits the queen each day); the queen refuses by her own known
+ * balance. No colony total, count or ratio is read. The candidate routes are NOT established natural mechanisms of P. megacephala (Sanders et al.
  * 1992: "The feeding of protein to queens by workers was not observed").
  */
 import { round } from './math.ts';
@@ -53,11 +56,11 @@ export function ensureQueens(world: WorldState, colony: ColonyState, sp: Species
   events.push({ type: 'queen_body_initialized', queen: q.id, basis: q.body.basis, unknown_initial_reserve: q.body.unknown_initial_reserve, known_balance: { ...q.body.known_balance }, reserve_days_of_need_assumption: day0 ? k : null, assumption: true });
 }
 
-export interface RoundResult { taken_from_cache: number; fed: { sugar: number; protein: number }; self_fed: number; contacts: number }
+export interface RoundResult { taken_from_cache: number; returned_to_cache: number; fed: { sugar: number; protein: number }; self_fed: number; contacts: number }
 
 /** One nest round (ordinal time) before the old settlement (§12.1 D). Returns what left the old ledger scope. */
 export function nestRound(world: WorldState, colony: ColonyState, sp: SpeciesParams, events: SimEvent[]): RoundResult {
-  const out: RoundResult = { taken_from_cache: 0, fed: { sugar: 0, protein: 0 }, self_fed: 0, contacts: 0 };
+  const out: RoundResult = { taken_from_cache: 0, returned_to_cache: 0, fed: { sugar: 0, protein: 0 }, self_fed: 0, contacts: 0 };
   const q = colony.population.queens?.[0], qf = sp.queen_feeding, nest = colony.nest_node, cap = sp.trophallaxis.crop_capacity;
   if (!q || !colony.population.queen_alive) return out;
   const store = storePlace(sp), need = dailyNeed(sp), day = world.sim_day + 1;
@@ -76,7 +79,7 @@ export function nestRound(world: WorldState, colony: ColonyState, sp: SpeciesPar
         foodTransfer(events, { minute: null, ordinal: u, phase: 'nest_round', source: { kind: 'cache', id: nest }, recipient: { kind: 'crop', id: w.id }, food_type: 'protein', portions: a, cause: 'take_from_cache', attribution: 'individual', nest_ledger_delta: round(-a), contact: { worker: w.id, location: store }, basis: 'candidate route B1 (D: 1 portion of solid gives 1 portion of liquid)' });
       }
     }
-    events.push({ type: 'nest_move', worker: w.id, from: store, to: QUEEN_PLACE, depart_ordinal: u, arrive_ordinal: round(1 + u), time_scale: 'ordinal_nest_round', assumption: true });
+    events.push({ type: 'nest_move', worker: w.id, from: store, to: QUEEN_PLACE, depart_ordinal: round(u + 0.5), arrive_ordinal: round(1 + u), time_scale: 'ordinal_nest_round', assumption: true });
   }
   // at the queen (ordinal 1 + u): contact, then at most one feeding per contact and food
   for (const { w, u } of nurses) {
@@ -103,6 +106,15 @@ export function nestRound(world: WorldState, colony: ColonyState, sp: SpeciesPar
       foodTransfer(events, { minute: null, ordinal: 2, phase: 'nest_round', source: { kind: 'cache', id: nest }, recipient: { kind: 'queen_body', id: q.id }, food_type: 'protein', portions: a, cause: 'queen_self_feed', attribution: 'individual', nest_ledger_delta: round(-a), contact: { queen: q.id, location: q.location, food_location: store }, basis: 'candidate route C (Chang 1985: the queen can forage for herself)' });
     }
   }
+  // put back (ordinal 3 + u): liquid protein still held goes back to the store; the crop is empty of it after the round
+  if (store !== QUEEN_PLACE) for (const { w, u } of nurses) if ((w.crop_cargo_protein_liquid || 0) > 0) events.push({ type: 'nest_move', worker: w.id, from: QUEEN_PLACE, to: store, depart_ordinal: round(2.5 + u), arrive_ordinal: round(3 + u), time_scale: 'ordinal_nest_round', assumption: true });
+  for (const { w, u } of nurses) {
+    const a = round(w.crop_cargo_protein_liquid || 0);
+    if (a <= 0) continue;
+    w.crop_cargo_protein_liquid = 0; colony.stores.protein = round(colony.stores.protein + a); out.returned_to_cache = round(out.returned_to_cache + a);
+    foodTransfer(events, { minute: null, ordinal: round(3 + u), phase: 'nest_round', source: { kind: 'crop', id: w.id }, recipient: { kind: 'cache', id: nest }, food_type: 'protein', portions: a, cause: 'return_to_cache', attribution: 'individual', nest_ledger_delta: a, contact: { worker: w.id, location: store }, basis: 'unfed liquid protein put back at the store at the end of the round (design §4; D)' });
+  }
+  for (const { w } of nurses) if (w.crop_cargo_protein_liquid === 0) delete w.crop_cargo_protein_liquid;
   q.days_unfed = intake > 0 ? 0 : q.days_unfed + 1;
   q.days_without_worker_contact = out.contacts > 0 ? 0 : q.days_without_worker_contact + 1;
   return out;
@@ -150,13 +162,29 @@ export function checkQueenRound(start: QueenRoundStart, colony: ColonyState, eve
   const deathAt = new Map<string, number>();
   events.forEach((e, i) => { if (e.type === 'worker_death' && !deathAt.has(String(e.id))) deathAt.set(String(e.id), i); });
   const fed = new Set<string>(), took = new Set<string>();
-  // moves first (a worker's take at the store is written before its move): one move per worker
+  // the queen record's creation (review of 888515c, P2): a migrated queen starts with an unknown (null) reserve and a known
+  // balance of 0; a Day0 queen on day 0 with k × her daily need — nothing else may appear from nowhere
+  for (const e of events) if (e.type === 'queen_body_initialized') {
+    const kb = e.known_balance as { sugar: number; protein: number }, k = sp.queen_feeding.day0_initial_reserve_days_of_need, need = dailyNeed(sp);
+    const want = e.basis === 'unknown_at_migration' ? { sugar: 0, protein: 0, unknown: null } : e.basis === 'day0_scenario' ? { sugar: round(k * need.sugar), protein: round(k * need.protein), unknown: 'not_applicable' } : null;
+    if (!want || kb?.sugar !== want.sugar || kb?.protein !== want.protein || e.unknown_initial_reserve !== want.unknown) fail(`queen record created with ${JSON.stringify(e)}, the rules give ${JSON.stringify(want)}`);
+  }
+  // the participants are nurses at the nest (read from the state, not from the events' own fields; a worker that died later
+  // in the day is not in the end state and cannot be checked here — stated limit)
+  const nestOf = new Map(colony.population.workers.map((w) => [w.id, w]));
+  for (const w of colony.population.workers) if ((w.crop_cargo_protein_liquid || 0) > 0) fail(`worker ${w.id} still holds ${w.crop_cargo_protein_liquid} liquid protein after the nest round (it is put back)`);
+  // moves first (a take at the store is written before the move): out store -> queen, optionally back queen -> store
+  const back = new Map<string, number>();
   for (const e of events) if (e.type === 'nest_move') {
-    const w = String(e.worker);
+    const w = String(e.worker), ww = nestOf.get(w);
     if (!start.workers.has(w)) fail(`nest_move of ${w}, who was not in the nest round`);
-    if (depart.has(w)) fail(`worker ${w} moves twice in one round`);
-    if (e.from !== store || e.to !== QUEEN_PLACE || !(Number(e.arrive_ordinal) >= Number(e.depart_ordinal))) fail(`nest_move of ${w} is ${e.from}@${e.depart_ordinal} -> ${e.to}@${e.arrive_ordinal}`);
-    depart.set(w, Number(e.depart_ordinal)); arrive.set(w, Number(e.arrive_ordinal));
+    if (ww && (ww.task !== 'nurse' || ww.last_location !== colony.nest_node)) fail(`nest_move of ${w}, task ${ww.task} at ${ww.last_location}: only nurses at the nest take part`);
+    if (!(Number(e.arrive_ordinal) >= Number(e.depart_ordinal))) fail(`nest_move of ${w} arrives before it leaves`);
+    if (!depart.has(w)) {
+      if (e.from !== store || e.to !== QUEEN_PLACE) fail(`first nest_move of ${w} is ${e.from} -> ${e.to}`);
+      depart.set(w, Number(e.depart_ordinal)); arrive.set(w, Number(e.arrive_ordinal));
+    } else if (!back.has(w) && e.from === QUEEN_PLACE && e.to === store && Number(e.depart_ordinal) >= (arrive.get(w) as number)) back.set(w, Number(e.arrive_ordinal));
+    else fail(`worker ${w} moves ${e.from} -> ${e.to} a further time in one round`);
   }
   events.forEach((e, i) => {
     if (e.type === 'queen_contact') {
@@ -176,7 +204,7 @@ export function checkQueenRound(start: QueenRoundStart, colony: ColonyState, eve
       if (x.cause === 'take_from_cache') {
         if (took.has(x.recipient.id)) fail(`${x.transfer_id}: ${x.recipient.id} takes from the store twice`); took.add(x.recipient.id);
         if (x.contact?.location !== store) fail(`${x.transfer_id}: take_from_cache at ${x.contact?.location}, the store is at ${store}`);
-        if (!(depart.has(x.recipient.id) && x.ordinal <= (depart.get(x.recipient.id) as number))) fail(`${x.transfer_id}: taken at ${x.ordinal}, after ${x.recipient.id} left the store (${depart.get(x.recipient.id)})`);
+        if (!(depart.has(x.recipient.id) && x.ordinal < (depart.get(x.recipient.id) as number))) fail(`${x.transfer_id}: taken at ${x.ordinal}, after ${x.recipient.id} left the store (${depart.get(x.recipient.id)})`);
       } else if (x.cause === 'feed_queen') {
         const c = contacts.get(String(x.contact?.contact_event_id));
         if (!c) fail(`${x.transfer_id}: feed_queen without an earlier queen_contact (${x.contact?.contact_event_id})`);
@@ -184,6 +212,10 @@ export function checkQueenRound(start: QueenRoundStart, colony: ColonyState, eve
         if (cc.worker !== x.source.id || cc.queen !== x.recipient.id) fail(`${x.transfer_id}: feeds ${x.source.id} -> ${x.recipient.id}, its contact is ${cc.worker} with ${cc.queen}`);
         if (x.ordinal < cc.ordinal) fail(`${x.transfer_id}: delivered at ${x.ordinal}, before its contact at ${cc.ordinal}`);
         const k = `${x.contact?.contact_event_id}:${x.food_type}`; if (fed.has(k)) fail(`${x.transfer_id}: a second ${x.food_type} feeding in one contact`); fed.add(k);
+      } else if (x.cause === 'return_to_cache') {
+        const w = x.source.id, at = store === QUEEN_PLACE ? arrive.get(w) : back.get(w);
+        if (x.contact?.location !== store) fail(`${x.transfer_id}: put back at ${x.contact?.location}, the store is at ${store}`);
+        if (at === undefined || x.ordinal < at) fail(`${x.transfer_id}: put back at ${x.ordinal}, before ${w} is back at the store (${at})`);
       } else if (x.cause === 'queen_self_feed') {
         if (!sp.queen_feeding.route_c_self_feed) fail(`${x.transfer_id}: self-feeding while route C is off`);
         if (x.contact?.location !== queen.location || x.contact?.food_location !== x.contact?.location || store !== queen.location) fail(`${x.transfer_id}: the queen at ${x.contact?.location} eats food at ${x.contact?.food_location} (store at ${store})`);

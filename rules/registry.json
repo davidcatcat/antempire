@@ -339,7 +339,7 @@
       "rules_version": "antempire.v2-review.25-c3a-queen-body",
       "tag": "v25",
       "fingerprint": {
-        "engine": "a6ffce4337c3af2a4771921bcb90c2d4a6dc2059ca7343960977a676aafc3691",
+        "engine": "5bbba69ac748b980145d958782b6fa50e8f3e48d3921d30ea7933ef8df52e9b2",
         "params": "1b56aa690963fcc470c3ce46877adcbaf484209b25a364f96e7838f179500ef3"
       },
       "approved_in": "Owner instruction 2026-11-05 (C3a, docs/design-c3-queen-feeding.md §9-§12; separate PR for Owner review, not merged by Claude)",

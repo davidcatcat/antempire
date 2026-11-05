@@ -275,13 +275,26 @@ PR #59 相關文件：上表沒有任何一項指向 #59 文件中的直接錯�
 **實作了什麼**（依 §9 第 1 點）：
 - 區室：`queen_body:<queen>`（`unknown_initial_reserve` 與 `known_balance` 分開，§12.4）；嗉囊分類為 `crop_cargo_sugar` 與 `crop_cargo_protein_liquid`，共用 `trophallaxis.crop_capacity`（§12.3，採集、交哺與 `take_from_cache` 都用總量計算剩餘空間）。
 - 巢內回合（序數時間）：在舊結算（`storageOverflow`、`consume`）之前。參與者是任務為 `nurse`、當時在巢節點的工蟻；每隻以自己 ID 命名的亂數串流抽抵達值（同值依 ID）。在 `store` 取用（路線 B1）→ `nest_move` → 在 `queen` 位置 `queen_contact` → 每次接觸、每種食物最多一筆 `feed_queen`；蟻后依自己的已知收支拒絕（飽足門檻 D）。
+- 放回（§4「依規則放回」，D）：回合結束時，工蟻嗉囊中沒有餵出的液態蛋白走回 `store`，以 `return_to_cache`（`crop → cache`）放回。嗉囊中的液態蛋白只存在於回合內，不會帶到隔天，因此不會占用採糖的共同容量。
 - 路線 C（`queen_self_feed`）：只有蛋白倉與蟻后同一位置（`store_is_queen_location`，預設 false）時才可能發生。
 - 蟻后代謝：由 `known_balance` 支付（`queen_metabolism`，個體歸因），從全巢代謝移出；不足記為 `shortfall_today`，**只記錄**，產卵與存活仍用舊規則（C3b、C3c）。
 - 舊帳範圍（§12.1）：`stores.sugar` = Σ 嗉囊糖 ＋ `nest_unlocated`；`stores.protein` = `cache`。舊代謝、舊產卵、溢出的路徑表都不包含 `queen_body`，嗉囊中的液態蛋白也不在舊帳內（N15）。
 
+**獨立審查（另一個唯讀 Claude 工作階段，`888515c`）與處理**：
+- P1：液態蛋白沒有出路，嗉囊被填滿後擋住採糖（10 個 Day0 執行中有 8 個超過 90%）。**已修正**：加入回合結束時的放回規則。重跑審查者的腳本：60 日內任何一天都沒有工蟻帶著液態蛋白離開回合。
+- P2：讀取器接受憑空設定的蟻后初始儲備。**已修正**：引擎與讀取器都依規則檢查 `queen_body_initialized` 的值。
+- P2：沒有檢查參與者是否真的是在巢內的育幼工蟻（只看事件自己寫的位置）。**已修正**：改由期末狀態的任務與位置判斷。限制：當日稍後死亡的工蟻不在期末狀態，無法這樣檢查。
+- P2：帳與摘要的涵蓋範圍。**已修正**：`mass_ledger.left_ledger_scope_c3a` 分成 `into_queen_body` 與 `held_outside_legacy_stores`（蟻后已知收支；回合後嗉囊液態蛋白恆為 0）。
+- P3：取用必須「早於」離開。**已修正**：離開的序數 = 抵達值 + 0.5，兩邊都用嚴格的小於。
+- 未修（照實保留）：
+  - §5 的 `last_fed_ordinal`、`intake_event_ids` 沒有實作；
+  - 取用不受任何「蟻后需要」的局部訊號觸發（D：每隻在巢的育幼工蟻每天都去）；
+  - P1 測試只涵蓋單一巢內回合，不涵蓋上游的任務分配（#56 仍開）；
+  - N4、N5 只用不存在的 ID 當反例（已死蟻后、當日羽化的工蟻由程式處理，但沒有個別反例）。
+
 **與設計不同或尚未實作之處**（照實揭露）：
 - 路線 A（`carried`、`queen_offer`、`offer_solid`、`queen_ingest`、`remove_residue`）與 B2（`larva_pocket`，依賴 C4）**未實作**；路徑表與名冊沒有這些區室。N11 以「固體不經嗉囊直接交給蟻后」（`cache → queen_body` 標成 `feed_queen`）作為反例。
-- 搬運者死亡時嗉囊中的液態蛋白進入 `loss:worker_corpse`（§4 的 `corpse:<worker>` 簡化為一個匯；C5 才有屍體區室，D）。
+- 搬運者死亡時嗉囊中的液態蛋白進入 `loss:worker_corpse`（§4 的 `corpse:<worker>` 簡化為一個匯；C5 才有屍體區室，D）。加入放回規則後，死亡發生在回合之後，所以這條路徑實際上不會用到；保留作為防護。
 - 巢內回合放在 `storageOverflow` 之前（§12.1 只要求在 `consume` 之前）；順序是 D，要做敏感度。
 - 所有參與的育幼工蟻每天都到蟻后處，是 D 級行為假設；沒有本種資料。
 - Day0 情境儲備 k 預設 0（§6 要求 k ∈ {0, 3, 10, 30} 都做敏感度，尚未做）。

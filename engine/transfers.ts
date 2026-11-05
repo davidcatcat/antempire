@@ -13,7 +13,7 @@
  *   nest_unlocated:<colony> nest sugar that is in the ledger but not in any crop (no location modelled)
  *   cache:<nest node>      protein in the nest (no location within the nest modelled)
  *   metabolized:<colony>   eaten in the daily metabolism (consumer not individual: F01)
- *   egg:<egg id>           invested in an egg (the queen's own intake is not modelled: A08)
+ *   egg:<egg id>           invested in an egg (paid from the colony ledger, not from what the queen ate: A08; C3b changes it)
  *   loss:storage_overflow  storage overflow, not retained
  *   C3a (v2-review.25, switch queen_feeding.individual_queen_body_c3a): queen_body:<queen> (what the queen has EATEN, known
  *     balance only), crops may also hold liquid protein (shared capacity), loss:worker_corpse (a dead carrier's liquid
@@ -30,7 +30,7 @@ import type { SpeciesParams } from './params.ts';
 
 export type FoodKind = 'source' | 'insect' | 'in_transit' | 'crop' | 'cache' | 'nest_unlocated' | 'metabolized' | 'egg' | 'loss' | 'queen_body';
 export interface FoodRef { kind: FoodKind; id: string }
-export type FoodCause = 'collect' | 'prey_kill' | 'unload' | 'trophallaxis' | 'storage_overflow' | 'metabolism' | 'lay_egg' | 'death_crop_to_nest_ledger' | 'take_from_cache' | 'feed_queen' | 'queen_self_feed' | 'queen_metabolism' | 'death_crop_to_corpse';
+export type FoodCause = 'collect' | 'prey_kill' | 'unload' | 'trophallaxis' | 'storage_overflow' | 'metabolism' | 'lay_egg' | 'death_crop_to_nest_ledger' | 'take_from_cache' | 'feed_queen' | 'queen_self_feed' | 'queen_metabolism' | 'death_crop_to_corpse' | 'return_to_cache';
 export type FoodPhase = 'foraging' | 'nest_round' | 'nest_settlement';
 export interface FoodTransferInput {
   minute: number | null; ordinal?: number; phase: FoodPhase;
@@ -121,7 +121,7 @@ const PATHS: Record<FoodCause, [string[], string[]]> = {
   collect: [['source'], ['in_transit']], prey_kill: [['insect'], ['source']], unload: [['in_transit'], ['crop', 'cache']], trophallaxis: [['crop'], ['crop']],
   storage_overflow: [['crop', 'nest_unlocated', 'cache'], ['loss']], metabolism: [['crop', 'nest_unlocated', 'cache'], ['metabolized']],
   lay_egg: [['crop', 'nest_unlocated', 'cache'], ['egg']], death_crop_to_nest_ledger: [['crop'], ['nest_unlocated']],
-  take_from_cache: [['cache'], ['crop']], feed_queen: [['crop'], ['queen_body']], queen_self_feed: [['cache'], ['queen_body']], queen_metabolism: [['queen_body'], ['metabolized']], death_crop_to_corpse: [['crop'], ['loss']],
+  take_from_cache: [['cache'], ['crop']], feed_queen: [['crop'], ['queen_body']], queen_self_feed: [['cache'], ['queen_body']], queen_metabolism: [['queen_body'], ['metabolized']], death_crop_to_corpse: [['crop'], ['loss']], return_to_cache: [['crop'], ['cache']],
 };
 /**
  * Path, holder and one-shot rules of one transfer (Issue #61 R3-08, independent reviews of 7ae0967 and 4a78ee4):
@@ -132,16 +132,16 @@ const PATHS: Record<FoodCause, [string[], string[]]> = {
  *   - a kill is a one-shot compartment: one prey_kill per insect_predation, to that event's site, of exactly the protein
  *     of the carcass the engine created for it (new_food_source with the same id).
  */
-const PHASE_OF: Record<FoodCause, FoodPhase> = { collect: 'foraging', prey_kill: 'foraging', unload: 'foraging', trophallaxis: 'foraging', storage_overflow: 'nest_settlement', metabolism: 'nest_settlement', death_crop_to_nest_ledger: 'nest_settlement', lay_egg: 'nest_settlement', take_from_cache: 'nest_round', feed_queen: 'nest_round', queen_self_feed: 'nest_round', queen_metabolism: 'nest_settlement', death_crop_to_corpse: 'nest_settlement' };
+const PHASE_OF: Record<FoodCause, FoodPhase> = { collect: 'foraging', prey_kill: 'foraging', unload: 'foraging', trophallaxis: 'foraging', storage_overflow: 'nest_settlement', metabolism: 'nest_settlement', death_crop_to_nest_ledger: 'nest_settlement', lay_egg: 'nest_settlement', take_from_cache: 'nest_round', feed_queen: 'nest_round', queen_self_feed: 'nest_round', queen_metabolism: 'nest_settlement', death_crop_to_corpse: 'nest_settlement', return_to_cache: 'nest_round' };
 /** The engine's settlement order (engine/day.ts): overflow, metabolism, deaths, eggs. */
-const SETTLE_STEP: Partial<Record<FoodCause, number>> = { take_from_cache: -0.5, feed_queen: -0.5, queen_self_feed: -0.5, storage_overflow: 0, metabolism: 1, queen_metabolism: 1.5, death_crop_to_nest_ledger: 2, death_crop_to_corpse: 2, lay_egg: 3 };
+const SETTLE_STEP: Partial<Record<FoodCause, number>> = { return_to_cache: -0.5, take_from_cache: -0.5, feed_queen: -0.5, queen_self_feed: -0.5, storage_overflow: 0, metabolism: 1, queen_metabolism: 1.5, death_crop_to_nest_ledger: 2, death_crop_to_corpse: 2, lay_egg: 3 };
 const FOOD_KINDS: ReadonlySet<string> = new Set(['source', 'insect', 'in_transit', 'crop', 'cache', 'nest_unlocated', 'metabolized', 'egg', 'loss', 'queen_body']);
 /**
  * Runtime shape of every transfer record before any field is used (Codex review of 1bdba72, F1: records may come from
  * JSON, where the TypeScript types prove nothing). Throws a FOOD_TRANSFER error naming the record.
  */
 /** The attribution each cause carries (written here independently of the cli reader's table). */
-const ATTRIBUTION_OF: Record<FoodCause, 'individual' | 'unknown' | 'engine_rule'> = { collect: 'individual', prey_kill: 'individual', unload: 'individual', trophallaxis: 'individual', storage_overflow: 'unknown', metabolism: 'unknown', lay_egg: 'unknown', death_crop_to_nest_ledger: 'engine_rule', take_from_cache: 'individual', feed_queen: 'individual', queen_self_feed: 'individual', queen_metabolism: 'individual', death_crop_to_corpse: 'engine_rule' };
+const ATTRIBUTION_OF: Record<FoodCause, 'individual' | 'unknown' | 'engine_rule'> = { collect: 'individual', prey_kill: 'individual', unload: 'individual', trophallaxis: 'individual', storage_overflow: 'unknown', metabolism: 'unknown', lay_egg: 'unknown', death_crop_to_nest_ledger: 'engine_rule', take_from_cache: 'individual', feed_queen: 'individual', queen_self_feed: 'individual', queen_metabolism: 'individual', death_crop_to_corpse: 'engine_rule', return_to_cache: 'individual' };
 /** Minutes in a day: the latest a timed (foraging) record can be. */
 const DAY_MINUTES = 1440;
 export function assertTransferShape(colonyId: string, events: SimEvent[]): void {
@@ -202,7 +202,7 @@ function checkPathAndKills(colonyId: string, events: SimEvent[]): void {
     if (k < step) fail(`${x.transfer_id}: ${x.cause} (${x.phase}) out of the engine's day order`);
     step = k;
     if (x.cause === 'prey_kill' && x.food_type !== 'protein') fail(`${x.transfer_id}: a kill yields protein, recorded as ${x.food_type}`);
-    if ((x.cause === 'take_from_cache' || x.cause === 'queen_self_feed' || x.cause === 'death_crop_to_corpse') && x.food_type !== 'protein') fail(`${x.transfer_id}: ${x.cause} moves protein, recorded as ${x.food_type}`);
+    if ((x.cause === 'take_from_cache' || x.cause === 'queen_self_feed' || x.cause === 'death_crop_to_corpse' || x.cause === 'return_to_cache') && x.food_type !== 'protein') fail(`${x.transfer_id}: ${x.cause} moves protein, recorded as ${x.food_type}`);
     if (x.cause === 'death_crop_to_corpse' && x.recipient.id !== 'worker_corpse') fail(`${x.transfer_id}: a dead carrier's liquid protein goes to loss:worker_corpse, not ${x.recipient.id}`);
     if (x.cause === 'death_crop_to_nest_ledger' && x.food_type !== 'sugar') fail(`${x.transfer_id}: only crop sugar stays in the nest ledger at death`);
   }
