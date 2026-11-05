@@ -1,0 +1,147 @@
+{
+  "schema": "antempire.physics-interaction-candidates.v1",
+  "species_id": "pheidole-megacephala",
+  "status": "實驗用候選值與候選規則；不是物種參數檔，不進正式模擬。大頭家蟻屬（Pheidole）沒有任何窄道交通、迎面相遇或讓路研究（2026-11-04 文獻查核）；下列規則與數值都是**非本種**研究提出的候選機制（CLAUDE.md §3、§4），併入每日循環前要經規則更新 PR。",
+  "contact_reach_mm": {
+    "value": null,
+    "candidate_range": [
+      0.5,
+      1.5
+    ],
+    "assumption": true,
+    "basis": "遊戲假設",
+    "unknown_reason": "本種沒有找到觸角長度或『觸角能碰到另一隻工蟻的距離』的量測。",
+    "reasoning": "接觸定義為兩隻身體的間距小於觸角向前伸出的距離。範圍只是讓接觸早於身體相碰的工程候選，用於敏感度；不是量測。",
+    "related_measurement": "Sarnat et al. 2015（R99）：小工蟻柄節長 SL 0.61–0.72 mm（觸角第一節；整根觸角長度未報告）。可及距離候選不由此推得，只作參照。"
+  },
+  "body": "見 pheidole-megacephala.body-candidates.json（體長：文獻支持；碰撞寬度：候選範圍）",
+  "rules": {
+    "single_file_follow": {
+      "basis": "物理推論",
+      "statement": "單行通道中，後面的工蟻無法超越，所以速度不能超過前面那隻。這是不可重疊的結果，不是減速比例。",
+      "information_used": "局部：只受身體接觸限制",
+      "evidence": "Atta colombica：跟在帶葉片螞蟻後面的空手螞蟻 110 隻中只有 8 隻超越（R381）"
+    },
+    "crossing_stop": {
+      "assumption": true,
+      "basis": "遊戲假設",
+      "statement": "交叉處相碰：把對方放在自己前方半邊（觸角前方）的那隻停下；兩隻都是時各半。停下的那隻若被它在等的那隻推到，就沿自己的通道退到對方的觸角可及距離之外，對方等它退完；對方離開觸角可及距離且不再接近時，停下的那隻再走。",
+      "evidence": "沒有找到交叉處相遇的研究",
+      "information_used": "局部：前方是否碰到對方、是否被推、對方是否還在觸角範圍內。不使用對方的去向（v0 使用對方剩餘路線，已移除）",
+      "back_out_speed": "以自己的自由速度退後；轉身時間 0（遊戲假設）"
+    },
+    "wide_passing": {
+      "assumption": true,
+      "basis": "遊戲假設",
+      "statement": "通道可用寬度 ≥ 兩者寬度和時，兩隻可並排通過，不花額外時間；橫向位置不模擬，所以寬通道上的接觸標為『可能』（certain: false）。"
+    },
+    "contact_is_not_behaviour": {
+      "basis": "Issue #68 原則",
+      "statement": "接觸只是有時間與位置的事件，不代表任何行為（交哺、招募、攻擊等由 C3–C5 依局部訊號決定）。本模組不讀也不改任何食物。"
+    },
+    "unresolved": {
+      "basis": "工程規則",
+      "statement": "本版無法解開的情況一律回報 unresolved，涉及的螞蟻停下，不重疊、不默默等待：迎面但兩邊都沒有退路、退後被擋、等待一隻已永久停止的螞蟻、互相等待（等待環）、在等待自己的螞蟻旁擠進窄段。抵達終點的螞蟻留在原地成為障礙物，擋住的螞蟻也會回報 unresolved。"
+    },
+    "head_on_give_way": {
+      "assumption": true,
+      "basis": "機制：文獻支持（非本種）；數值見 encounter",
+      "statement": "單行段迎面相碰：兩隻先停 contact_pause_s（若有設定），再由一隻讓路——讓路的方式是退出窄段、在寬處旁邊等對方通過，再繼續。誰讓：(1) priority=laden_priority 且只有一隻帶負載時，空手的以 laden_yield_probability 讓；(2) 一隻尚未完全進入窄段、另一隻已在裡面時，尚未進入的以 entry_yield_probability 讓；(3) 兩隻都在入口：各半；(4) 兩隻都已完全在裡面：每次接觸各自以 inside_turn_back_probability 決定是否回頭，剛好一隻回頭時那隻讓，否則再接觸一次（每次都扣接觸時間）。",
+      "evidence": "讓路＝『moving aside and waiting before entering the narrow passageway』（R380）、『moved to the side of the bridge and allowed the passage of the oncoming ants』（R381）。沒有研究把迴轉或擠過去當作常態結果",
+      "information_used": "自己是否已在窄段內（幾何代理：以兩隻寬度和決定的單行區段為準）、自己是否帶負載、碰到的那隻是否帶負載（觸角接觸）。不比較兩隻的回頭路或去向",
+      "random_draws": "命名亂數流 physics.encounter.*，鍵＝排序後兩個 ID、這一對的第幾次相遇、種子；與陣列順序無關",
+      "back_out_speed": "以自己的自由速度退後；轉身時間 0（遊戲假設）",
+      "replaces": "v0 的『回頭路較短者讓』（非局部、沒有文獻支持）已移除",
+      "non_local_steps": [
+        "抽中的讓路者背後沒有寬處時改由另一隻讓——這需要知道對方背後的空間，是成對的工程步驟",
+        "退讓目標點預先算出（等同於一路退到通道變寬為止）"
+      ],
+      "extension": "原文模型：『The ant in the bottleneck gives way and does not move until the ant in the entrance has completely entered the bottleneck』——讓路者在原地等待。本模型的單行通道旁沒有可等的空間，所以讓路者退到最近的寬處；退很遠是模型的推論，不是觀察"
+    },
+    "chain_back_out": {
+      "assumption": true,
+      "basis": "遊戲假設",
+      "statement": "讓路的那隻退後時碰到背後同方向的同伴，那隻也一起退到寬處等待。",
+      "evidence": "L. niger 窄口會形成同方向的群組（平均 3.3 隻，R380），『緊跟在剛進入者後面的螞蟻保有優先』；但退後時後面同伴的反應沒有被描述",
+      "information_used": "局部：被前面倒退的身體推到",
+      "also": "倒退時前面還有一隻也在倒退：速度不超過它（物理，不可重疊）；前面那隻永久停止時回報 unresolved"
+    },
+    "entry_queue": {
+      "assumption": true,
+      "basis": "遊戲假設（工程協調）",
+      "statement": "多隻在入口並排等待而形成互相等待的環時，抽一個順序，只放行前方沒有被擋住的那隻，其他等它先走；全部都被擋住時回報 unresolved",
+      "information_used": "**非局部**：同時看整個環的成員與其他螞蟻的速度，是協調用的解法，不是螞蟻能感知的；L. niger 的『緊跟在剛進入者後面的螞蟻保有優先』（R380）只支持同向成群通過的方向"
+    }
+  },
+  "not_modelled": [
+    "橫向位置與側身（寬段並排不花時間）",
+    "攀爬越過障礙物或擠過另一隻",
+    "負重與速度的關係",
+    "推擠、拖拉與受傷",
+    "轉身時間",
+    "自發迴轉（文獻：很少，≈1 %/次過橋，R108）",
+    "嗉囊液體算不算 laden（未模擬）",
+    "同向追尾與寬段接觸的時間損失"
+  ],
+  "encounter": {
+    "priority": {
+      "value": "entry_yield",
+      "options": [
+        "entry_yield",
+        "laden_priority"
+      ],
+      "assumption": true,
+      "basis": "遊戲假設（選擇）",
+      "reasoning": "兩種規則都有非本種證據，而且互相矛盾：Lasius niger 帶食物與否不影響讓路（R380），Atta colombica 帶葉片的優先（R381）。本種沒有資料；預設用不依負重的 entry_yield，laden_priority 只做敏感度。本模型目前只有『搬運物件』算 laden，嗉囊裡的液體不算（未模擬）。"
+    },
+    "entry_yield_probability": {
+      "value": 0.957346,
+      "assumption": true,
+      "basis": "文獻支持（非本種：Lasius niger）",
+      "source": "R380 Dussutour, Deneubourg & Fourcassié 2005, J Exp Biol 208:2903：'the majority of ants travelling towards the centre stopped and gave way to those coming from the opposite direction … in 99 out of 105 and in 103 out of 106 encounters with contact'（巢側與食源側；合計 202/211）",
+      "conditions": "橋全長 210 mm：坡道 95 mm、兩端各一個入口（15 mm）與瓶頸（15 mm，寬度原文未寫）、中央段 60 mm 寬 3 mm；25±1 °C；每組 1000 隻、流量約 60–120 隻/分",
+      "mapping": "原文『travelling towards the centre』指往橋中央走的那隻（即將進入 3 mm 中央段）；模型以『身體尚未完全進入兩隻都只能單行的區段』表示。這是幾何代理：區段由兩隻的寬度和決定，螞蟻本身不一定碰到牆",
+      "extrapolation_limit": "非本種、單一窄口長度；本種工蟻較小，窄口長度與寬度的比例不同。不可當作本種行為",
+      "extension": "原文模型：『The ant in the bottleneck gives way and does not move until the ant in the entrance has completely entered the bottleneck』——讓路者在原地等待。本模型的單行通道旁沒有可等的空間，所以讓路者退到最近的寬處；退很遠是模型的推論，不是觀察"
+    },
+    "laden_yield_probability": {
+      "value": 0.98,
+      "assumption": true,
+      "basis": "文獻支持（非本種：Atta colombica）",
+      "source": "R381 Dussutour, Beshers, Deneubourg & Fourcassié 2009, J Exp Biol 212:499：'the majority of outbound ants stopped and gave way to the laden ants (in 294 out of 300 head-on encounters)'",
+      "conditions": "5 mm 寬窄橋、30±1 °C、單一蟻群約 20,000 隻；帶的是葉片",
+      "extrapolation_limit": "294/300 是『往外走的空手螞蟻』對『回巢的帶食螞蟻』，方向與負重同時不同（混淆）；只有一次 5 mm 窄橋重複；所帶的是食物（原文 loaded with food），與本種的獵物或液體不同。只在 priority=laden_priority 時使用"
+    },
+    "contact_pause_s": {
+      "value": null,
+      "candidate_values": [
+        0.18,
+        0.43,
+        0.8
+      ],
+      "assumption": true,
+      "basis": "遊戲假設（候選值來自非本種）",
+      "meaning": "迎面相碰時兩隻停下的時間（接觸持續時間），之後才由一隻讓路",
+      "sources": [
+        "R108 Poissonnier et al. 2019（Linepithema humile）：接觸持續 0.18 ± 0.14 s（mean ± SD）——唯一直接量到的接觸持續時間",
+        "R380（L. niger 3 mm）0.430 ± 0.017 s 與 R381（Atta colombica）0.80 s 是『每次接觸損失的時間』，是通過時間對接觸次數的回歸斜率，已包含讓路的時間"
+      ],
+      "double_count_warning": "把 0.43 或 0.80 當作停頓，再加上讓路者退出與等待的時間，會重複計算；這兩個值只作敏感度上限。文獻的『每次接觸損失時間』應拿來和模型算出的結果比較（見 reports/physics-two-ant-corridor.md），不是輸入",
+      "unknown_reason": "本種沒有接觸時間的量測；null＝不停頓"
+    },
+    "inside_turn_back_probability": {
+      "value": null,
+      "candidate_values": [
+        0.1,
+        0.5,
+        0.9
+      ],
+      "assumption": true,
+      "basis": "遊戲假設",
+      "unknown_reason": "沒有任何研究描述兩隻都已完全在單行段內迎面相遇時怎麼做（L. niger 與 Atta 的窄口很短）。null＝回報 unresolved，不捏造規則",
+      "related": "自發迴轉很少：L. humile 每次過橋約 1 %（R108）；Leptogenys processionalis 野外路徑 4–7 %（R386）。這些不是相遇後的迴轉機率，不能直接當作此值；火蟻在狹窄隧道以個體退回（retreating）減少堵塞（R387，摘要，非本種）只支持『由其中一隻退回』的方向，沒有數值",
+      "valid_range": "開區間 (0, 1)：等於 1 時兩隻每次都回頭、永遠決定不了",
+      "both_turn_back": "兩隻同時回頭時，模型視為再接觸一次（再抽一次），不是兩隻都離開；這是遊戲假設"
+    }
+  }
+}

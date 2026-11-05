@@ -1,0 +1,9 @@
+F1 validateGeometry: []
+F1 window 2: A {"s_mm":16.770507595180444,"mode":"unresolved","t_s":2}; exclusion violations 0; unresolved 1
+F1 window 0.1: A {"s_mm":16.770507595180444,"mode":"unresolved","t_s":0.8999999999999999}; exclusion violations 0; unresolved 1
+F1 window 0.01: A {"s_mm":16.770507595180447,"mode":"unresolved","t_s":0.8400000000000005}; exclusion violations 0; unresolved 1
+F2 validateGeometry: [] | traverse(0.6).passable: false | narrowSections(0.6): [[10.00139445219057,10.008605547809433]]
+F2 simulate: A {"s_mm":8.75139445219057,"mode":"blocked","t_s":1}; exclusion violations 0
+F3 dir 1 start 0: final {"s_mm":1,"mode":"arrived","t_s":0.5}; events start,arrive; moved false
+F3 dir -1 start 0: final {"s_mm":1,"mode":"arrived","t_s":0.5}; events start,arrive; moved false
+F3 dir 1 start 0.2: final {"s_mm":1,"mode":"arrived","t_s":0.5}; events start,arrive; moved false

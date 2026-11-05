@@ -1,0 +1,37 @@
+// Codex physics review f61db12: F1 (slope into the same height layer), F2 (short narrowing), F3 (start == goal).
+// argv[2] = worktree. Inputs exactly as in the report.
+const W = process.argv[2];
+const C: any = await import(`${W}/engine/physics/collision.ts`);
+const G: any = await import(`${W}/engine/physics/geometry.ts`);
+const prov = { source: 'synthetic_scenario', assumption: true, basis: '遊戲假設', note: 'probe' };
+const base = (extra: any) => ({ schema: 'antempire.physics-geometry.v1', layer_of: 'antempire.world-geometry.v1', world_geometry_ref: null, world_id: 'synthetic-probe', geometry_version: '0.1.0', synthetic: true, synthetic_note: 'probe', frame: { units: 'mm', axes: { x: 'east', y: 'north', z: 'up' }, origin: 'probe' }, obstacles: [], entrances: [], ...extra });
+const body = { length_mm: 2.5, width_mm: 0.6, contact_reach_mm: 0.5 };
+const ant = (o: any) => ({ dir: 1, start_t_s: 0, load: null, body, ...o });
+const show = (x: any) => JSON.stringify(x);
+// ---- F1
+const g1 = base({
+  surfaces: [
+    { id: 'S-ground', material: 'bare_soil', polygon_mm: [[-5, -15], [25, -15], [25, 15], [-5, 15]], elevation: { kind: 'flat', z_mm: 0 }, provenance: prov },
+    { id: 'S-ramp', material: 'stone', polygon_mm: [[0, -15], [20, -15], [20, 15], [0, 15]], elevation: { kind: 'ramp', anchor_mm: [0, 0], z0_mm: 10, direction: [1, 0], gradient: -0.5 }, provenance: prov }],
+  passages: [
+    { id: 'P1', centerline_mm: [[0, 0, 10], [20, 0, 0]], width_mm: 20, route_edge_ref: null, provenance: prov },
+    { id: 'P2', centerline_mm: [[0, 0, 0], [20, 0, 0]], width_mm: 20, route_edge_ref: null, provenance: prov }] });
+console.log('F1 validateGeometry:', show(G.validateGeometry(g1)));
+for (const w of [2, 0.1, 0.01]) {
+  const cfg = { geometry: g1, horizon_s: 2, seed: 1, window_s: w, agents: [ant({ id: 'A', passage: 'P1', s_mm: 0, free_speed_mm_s: 20, goal_s_mm: Math.sqrt(500) }), ant({ id: 'B', passage: 'P2', s_mm: 17, start_t_s: 10, free_speed_mm_s: 20, goal_s_mm: 19 })] };
+  try { const r = C.simulate(cfg); const ex = C.checkExclusion(cfg, r, 0.001); console.log(`F1 window ${w}: A ${show(r.final.A)}; exclusion violations ${ex.length}${ex.length ? ' first: ' + ex[0].slice(0, 110) : ''}; unresolved ${r.events.filter((e: any) => e.kind === 'unresolved').length}`); }
+  catch (e: any) { console.log(`F1 window ${w}: THROWS ${String(e).slice(0, 120)}`); }
+}
+// ---- F2
+const g2 = base({ surfaces: [{ id: 'S', material: 'bare_soil', polygon_mm: [[-5, -15], [25, -15], [25, 15], [-5, 15]], elevation: { kind: 'flat', z_mm: 0 }, provenance: prov }],
+  obstacles: [{ id: 'O', kind: 'stone', shape: { type: 'circle', center_mm: [10.005, 1.299995], radius_mm: 1 }, base_z_mm: 0, height_mm: 1, provenance: prov }],
+  passages: [{ id: 'P', centerline_mm: [[0, 0, 0], [20, 0, 0]], width_mm: 20, route_edge_ref: null, provenance: prov }] });
+console.log('F2 validateGeometry:', show(G.validateGeometry(g2)), '| traverse(0.6).passable:', show(G.traverse(g2, 'P', 0.6).passable), '| narrowSections(0.6):', show(C.narrowSections(g2, g2.passages[0], 0.6)));
+{ const cfg = { geometry: g2, horizon_s: 2, seed: 1, agents: [ant({ id: 'A', passage: 'P', s_mm: 1, free_speed_mm_s: 10, goal_s_mm: 19 })] };
+  const r = C.simulate(cfg), ex = C.checkExclusion(cfg, r, 0.0001); console.log(`F2 simulate: A ${show(r.final.A)}; exclusion violations ${ex.length}${ex.length ? ' first: ' + ex[0].slice(0, 100) : ''}`); }
+// ---- F3
+const g3 = base({ surfaces: [{ id: 'S', material: 'bare_soil', polygon_mm: [[-5, -15], [25, -15], [25, 15], [-5, 15]], elevation: { kind: 'flat', z_mm: 0 }, provenance: prov }], passages: [{ id: 'P', centerline_mm: [[0, 0, 0], [20, 0, 0]], width_mm: 20, route_edge_ref: null, provenance: prov }] });
+for (const [d, st] of [[1, 0], [-1, 0], [1, 0.2]] as const) {
+  const r = C.simulate({ geometry: g3, horizon_s: 0.5, seed: 1, agents: [ant({ id: 'A', passage: 'P', s_mm: 1, dir: d, start_t_s: st, free_speed_mm_s: 10, goal_s_mm: 1 })] });
+  console.log(`F3 dir ${d} start ${st}: final ${show(r.final.A)}; events ${r.events.map((e: any) => e.kind).join(',')}; moved ${r.intervals.A.some((i: any) => i.s_end_mm !== i.s_start_mm)}`);
+}
