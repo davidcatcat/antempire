@@ -1,0 +1,40 @@
+/**
+ * Codex P2-1 (#60) counterexamples, run against a worktree given as argv[2].
+ * Day 5 of buildDay0('A1', 1, '2027-09-23'); each probe changes ONLY the food_transfer records named, never amounts
+ * unless stated, and asks both validators: the engine's checkColonyFood and the independent reader replayEngineColonyDay.
+ */
+const W = process.argv[2];
+const { loadBundle } = await import(`${W}/cli/lib/load.ts`);
+const { buildDay0 } = await import(`${W}/cli/lib/day0.ts`);
+const E = await import(`${W}/engine/index.ts`);
+const { replayEngineColonyDay, engineTransfers } = await import(`${W}/cli/lib/engine-transfers.ts`);
+const b = loadBundle(W);
+let s: any = buildDay0('A1', 1, '2027-09-23', b, W).state, before: any, o: any;
+for (let d = 0; d < 5; d++) { before = structuredClone(s.colonies[0]); o = E.simulateWorldDay(s, b); if (d < 4) s = o.state; }
+const after = o.state.colonies[0], events = o.result.colonies[0].events, day = o.day, sources = new Set(Object.keys(s.sources));
+const fx = () => engineTransfers(events).filter((x: any) => x.phase === 'foraging');
+console.log(`day ${day}; foraging transfers: ${fx().map((x: any) => `${x.transfer_id} ${x.cause} ${x.source.kind}:${x.source.id}->${x.recipient.kind}:${x.recipient.id} m=${x.minute}`).join(' | ')}`);
+const judge = (label: string, mutate: (ev: any[]) => any[]) => {
+  const ev = mutate(structuredClone(events));
+  const rd = replayEngineColonyDay(before, after, ev, day, sources);
+  let eng = 'ACCEPT'; try { E.checkColonyFood(E.colonySnapshot(before), after, ev); } catch (e: any) { eng = 'REJECT: ' + String(e.message).slice(0, 160); }
+  console.log(`${label}\n  reader: ${rd.ok ? 'ACCEPT' : 'REJECT: ' + rd.errors.slice(0, 2).join(' | ').slice(0, 200)}\n  engine: ${eng}`);
+};
+const ft = (ev: any[]) => ev.filter((e) => e.type === 'food_transfer' && e.phase === 'foraging');
+judge('P0 unmodified day', (ev) => ev);
+// Codex original: collect -> 1000, unload -> 0 (ids, amounts, array order unchanged)
+judge('P1 Codex: collects at minute 1000, unloads at minute 0', (ev) => { for (const x of ft(ev)) { if (x.cause === 'collect') x.minute = 1000; if (x.cause === 'unload') x.minute = 0; } return ev; });
+// tamper only one pair: the first unload moved before its collect
+judge('P2 first unload moved 1 minute before its own collect', (ev) => { const xs = ft(ev); const u = xs.find((x) => x.cause === 'unload'); const c = xs.find((x) => x.cause === 'collect' && x.recipient.id === u.source.id); u.minute = c.minute - 1; return ev; });
+// same worker, same minute, contradictory order: unload listed before its collect at the same minute
+judge('P3 same worker, same minute: unload listed before its collect', (ev) => { const all = ev; const xs = ft(all); const c = xs.find((x) => x.cause === 'collect'); const u = xs.find((x) => x.cause === 'unload' && x.source.id === c.recipient.id); u.minute = c.minute; const ic = all.indexOf(c), iu = all.indexOf(u); [all[ic], all[iu]] = [all[iu], all[ic]]; return all; });
+// reorder only (minutes unchanged): end balance still closes
+judge('P4 array order swapped (collect after unload), minutes unchanged', (ev) => { const xs = ft(ev); const c = xs.find((x) => x.cause === 'collect'); const u = xs.find((x) => x.cause === 'unload' && x.source.id === c.recipient.id); const ic = ev.indexOf(c), iu = ev.indexOf(u); [ev[ic], ev[iu]] = [ev[iu], ev[ic]]; return ev; });
+// null minutes mixed with timed ones
+judge('P5 one collect made untimed (minute null) among timed records', (ev) => { ft(ev).find((x) => x.cause === 'collect').minute = null; return ev; });
+judge('P6 all foraging minutes null (legacy semantics)', (ev) => { for (const x of ft(ev)) x.minute = null; return ev; });
+// added for the full counterexample list (same day)
+judge('P7 unload with no prior source: its collect removed', (ev) => { const c = ft(ev).find((x) => x.cause === 'collect'); return ev.filter((e) => e !== c); });
+judge('P8 tampered timestamps: the minutes reversed across the list (order unchanged, end balance closes)', (ev) => { const xs = ft(ev); const ms = xs.map((x) => x.minute).reverse(); xs.forEach((x, i) => (x.minute = ms[i])); return ev; });
+judge('P9 one unload made untimed (null) among timed records', (ev) => { ft(ev).find((x) => x.cause === 'unload').minute = null; return ev; });
+judge('P10 legal: same worker, same minute, collect then unload (tie rule = list order)', (ev) => { const xs = ft(ev); xs[1].minute = xs[0].minute; return ev; });

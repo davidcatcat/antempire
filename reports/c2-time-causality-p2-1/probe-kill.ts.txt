@@ -1,0 +1,26 @@
+const W = process.argv[2];
+const { loadBundle } = await import(`${W}/cli/lib/load.ts`);
+const { buildDay0 } = await import(`${W}/cli/lib/day0.ts`);
+const E: any = await import(`${W}/engine/index.ts`);
+const R: any = await import(`${W}/cli/lib/engine-transfers.ts`);
+const b = loadBundle(W);
+let s: any = buildDay0('A1', 1, '2027-09-23', b, W).state;
+for (let d = 0; d < 21; d++) {
+  const before = structuredClone(s.colonies[0]), src = new Set(Object.keys(s.sources)); const o = E.simulateWorldDay(s, b); const ev = o.result.colonies[0].events;
+  const fx = ev.filter((e: any) => e.type === 'food_transfer' && e.phase === 'foraging');
+  const k = fx.find((x: any) => x.cause === 'prey_kill');
+  if (k) {
+    const site = k.recipient.id;
+    console.log('day', o.day, 'kill', k.source.id, 'site', site, 'm', k.minute, 'portions', k.portions);
+    console.log('start-of-day source', site, JSON.stringify(s.sources[site]));
+    for (const x of fx.filter((x: any) => x.source.id === site || x.recipient.id === site)) console.log(' ', x.transfer_id, x.cause, x.food_type, x.portions, 'm', x.minute, 'prey', x.contact?.prey_event_id);
+    const ev2 = structuredClone(ev); const kk = ev2.find((e: any) => e.transfer_id === k.transfer_id); kk.minute = 1440;
+    const pe = ev2.find((e: any) => e.type === 'insect_predation'); pe.minute = 1440;
+    const t = R.speciesFoodTiming(b.species[Object.keys(b.species)[0]]);
+    const rd = R.replayEngineColonyDay(before, o.state.colonies[0], ev2, o.day, src, t);
+    let eng = 'ACCEPT'; try { E.checkColonyFood(E.colonySnapshot(before), o.state.colonies[0], ev2, t); } catch (e: any) { eng = 'REJECT ' + e.message.slice(0, 120); }
+    console.log('kill+predation event moved to 1440: reader', rd.ok ? 'ACCEPT' : rd.errors[0], '/ engine', eng);
+    break;
+  }
+  s = o.state;
+}
