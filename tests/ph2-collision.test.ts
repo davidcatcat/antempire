@@ -304,4 +304,72 @@ assert.throws(() => simulate({ geometry: cor, horizon_s: 1, seed: 1, agents: [an
   ok(ms < 60000 && res.stats.pair_evaluations < 1000 * 999 / 2 * res.stats.steps, `1000 ants run in ${ms.toFixed(0)} ms with the grid (pair evaluations ${res.stats.pair_evaluations} ≪ brute force ${(1000 * 999 / 2 * res.stats.steps).toExponential(1)})`);
 }
 
+// ---------------------------------------------------------------- Codex physics review f61db12 (F1 P1, F2 P2, F3 P2)
+{
+  const prov = { source: 'synthetic_scenario', assumption: true, basis: '遊戲假設', note: 'Codex review counterexample' };
+  const scene = (extra: Any): PhysicsGeometry => ({ schema: 'antempire.physics-geometry.v1', layer_of: 'antempire.world-geometry.v1', world_geometry_ref: null, world_id: 'synthetic-codex-review', geometry_version: '0.1.0', synthetic: true, synthetic_note: 'review counterexample', frame: { units: 'mm', axes: { x: 'east', y: 'north', z: 'up' }, origin: 'synthetic' }, obstacles: [], entrances: [], ...extra } as PhysicsGeometry);
+  const ground = { id: 'S-ground', material: 'bare_soil', polygon_mm: [[-5, -15], [25, -15], [25, 15], [-5, 15]], elevation: { kind: 'flat', z_mm: 0 }, provenance: prov };
+  const rb = { length_mm: 2.5, width_mm: 0.6, contact_reach_mm: 0.5 };
+  const a2 = (o: Any): SimAgentSpec => ({ dir: 1, start_t_s: 0, load: null, body: rb, ...o });
+  // F1: an ant walking down a ramp reaches the height layer of an ant on the ground lane beneath it
+  const ramp = scene({ surfaces: [ground, { id: 'S-ramp', material: 'stone', polygon_mm: [[0, -15], [20, -15], [20, 15], [0, 15]], elevation: { kind: 'ramp', anchor_mm: [0, 0], z0_mm: 10, direction: [1, 0], gradient: -0.5 }, provenance: prov }],
+    passages: [{ id: 'P1', centerline_mm: [[0, 0, 10], [20, 0, 0]], width_mm: 20, route_edge_ref: null, provenance: prov }, { id: 'P2', centerline_mm: [[0, 0, 0], [20, 0, 0]], width_mm: 20, route_edge_ref: null, provenance: prov }] });
+  const stops: number[] = [];
+  for (const w of [2, 1, 0.5, 0.1, 0.01, 0.003]) {
+    const cfg: SimConfig = { geometry: ramp, horizon_s: 2, seed: 1, window_s: w, agents: [a2({ id: 'A', passage: 'P1', s_mm: 0, free_speed_mm_s: 20, goal_s_mm: Math.sqrt(500) }), a2({ id: 'B', passage: 'P2', s_mm: 17, start_t_s: 10, free_speed_mm_s: 20, goal_s_mm: 19 })] };
+    const r = simulate(cfg), ex = checkExclusion(cfg, r, 0.0005);
+    ok(ex.length === 0, `F1 window ${w}: the descending ant never overlaps the one below (${ex[0] ?? ''})`);
+    ok(r.final.A.mode === 'unresolved' && kinds(r, 'unresolved').some((e) => /height layer/.test(e.detail ?? '')), `F1 window ${w}: it is stopped and reported, not passed through (${r.final.A.mode})`);
+    stops.push(r.final.A.s_mm);
+  }
+  // A stops where |dz| reaches the layer limit: x = 15 (z = 2.5), i.e. s = 15·√1.25
+  ok(stops.every((x) => Math.abs(x - stops[0]) < 1e-9) && Math.abs(stops[0] / Math.sqrt(1.25) - 15) < 1e-5, `F1: the same stop for every window, at x = ${(stops[0] / Math.sqrt(1.25)).toFixed(6)} (expected 15)`);
+  // reaching the layer first, then touching: an ordinary crossing obstruction, still without overlap, window-independent
+  const far: number[] = [];
+  for (const w of [2, 0.1, 0.01]) {
+    const cfg: SimConfig = { geometry: ramp, horizon_s: 2, seed: 1, window_s: w, agents: [a2({ id: 'A', passage: 'P1', s_mm: 0, free_speed_mm_s: 20, goal_s_mm: Math.sqrt(500) }), a2({ id: 'B', passage: 'P2', s_mm: 19.5, start_t_s: 10, free_speed_mm_s: 20, goal_s_mm: 19.9 })] };
+    const r = simulate(cfg), ex = checkExclusion(cfg, r, 0.0005);
+    ok(ex.length === 0 && kinds(r, 'obstruction').length > 0 && !kinds(r, 'unresolved').some((e) => /height layer/.test(e.detail ?? '')), `F1 window ${w}: on one layer first, then an ordinary obstruction without overlap (${ex[0] ?? ''})`);
+    far.push(r.final.A.s_mm);
+  }
+  ok(far.every((x) => Math.abs(x - far[0]) < 1e-9), `F1: the ordinary case is window-independent too (${far.join(', ')})`);
+  // an ant on a different layer the whole time is never obstructed (ground lane, other ant on a high ramp segment)
+  { const cfg: SimConfig = { geometry: ramp, horizon_s: 2, seed: 1, agents: [a2({ id: 'A', passage: 'P1', s_mm: 0, free_speed_mm_s: 20, goal_s_mm: 5 }), a2({ id: 'B', passage: 'P2', s_mm: 1, free_speed_mm_s: 20, goal_s_mm: 6 })] };
+    const r = simulate(cfg); ok(r.final.A.mode === 'arrived' && r.final.B.mode === 'arrived' && kinds(r, 'obstruction').length === 0 && checkExclusion(cfg, r, 0.0005).length === 0, 'F1: ants that stay on different layers pass one above the other'); }
+
+  // F2: a narrowing shorter than any sampling step (Codex: 7.2 µm long, between the old 0.01 mm samples)
+  const flat = (obstacles: Any[], centerline: number[][] = [[0, 0, 0], [20, 0, 0]], surfaces: Any[] = [ground]) => scene({ surfaces, obstacles, passages: [{ id: 'P', centerline_mm: centerline, width_mm: 20, route_edge_ref: null, provenance: prov }] });
+  const g2 = flat([{ id: 'O', kind: 'stone', shape: { type: 'circle', center_mm: [10.005, 1.299995], radius_mm: 1 }, base_z_mm: 0, height_mm: 1, provenance: prov }]);
+  const ns = narrowSections(g2, g2.passages[0], 0.6), half = Math.sqrt(1.3 ** 2 - 1.299995 ** 2);
+  ok(ns.length === 1 && near(ns[0][0], 10.005 - half, 1e-9) && near(ns[0][1], 10.005 + half, 1e-9), `F2: the 7.2 µm narrowing is found exactly ([${ns[0]?.join(', ')}], expected ±${half.toFixed(9)} around 10.005)`);
+  { const cfg: SimConfig = { geometry: g2, horizon_s: 2, seed: 1, agents: [a2({ id: 'A', passage: 'P', s_mm: 1, free_speed_mm_s: 10, goal_s_mm: 19 })] };
+    const r = simulate(cfg); ok(r.final.A.mode === 'blocked' && checkExclusion(cfg, r, 0.0001).length === 0, `F2: the ant is stopped before it, as PH-1 traverse says (impassable), not let through (${r.final.A.mode})`); }
+  // oracle: random circles and polygons near random (also sloped) lanes vs. a dense brute-force scan
+  const R = rng(20261105);
+  let fuzz = 0;
+  for (let k = 0; k < 150; k++) {
+    const z1 = R() < 0.3 ? 2 * R() : 0, obs: Any[] = [];
+    for (let j = 0; j < 3; j++) {
+      const cx = 2 + 16 * R(), cy = (R() - 0.5) * 2.4, base = R() < 0.2 ? 1 + R() : 0;
+      if (R() < 0.5) obs.push({ id: `O${j}`, kind: 'stone', shape: { type: 'circle', center_mm: [cx, cy], radius_mm: 0.05 + R() }, base_z_mm: base, height_mm: 0.5 + R(), provenance: prov });
+      else { const n = 3 + Math.floor(R() * 3), rr = 0.1 + R(); obs.push({ id: `O${j}`, kind: 'stone', shape: { type: 'polygon', points_mm: Array.from({ length: n }, (_, i) => [cx + rr * Math.cos((2 * Math.PI * i) / n + 0.3), cy + rr * Math.sin((2 * Math.PI * i) / n + 0.3)]) }, base_z_mm: base, height_mm: 0.5 + R(), provenance: prov }); }
+    }
+    const surf = z1 === 0 ? [ground] : [{ ...ground, elevation: { kind: 'ramp', anchor_mm: [0, 0], z0_mm: 0, direction: [1, 0], gradient: z1 / 20 } }];
+    const g = flat(obs, [[0, 0, 0], [20, 0, z1]], surf), p = g.passages[0], T = 0.3 + R(), secs = narrowSections(g, p, T), Lp = laneLength(p);
+    const inside = (x: number) => secs.some(([a, b]) => x >= a - 1e-9 && x <= b + 1e-9);
+    for (let x = 0; x <= Lp; x += 0.0007) if ((usableWidth(g, p, x) < T) !== inside(x)) { assert.fail(`F2 oracle ${k}: at s=${x} the scan says narrow=${usableWidth(g, p, x) < T}, the sections say ${inside(x)} (${JSON.stringify(secs)})`); }
+    for (const [a, b] of secs) ok(b > a && usableWidth(g, p, (a + b) / 2) < T, `F2 oracle ${k}: every reported section is narrow`);
+    fuzz++;
+  }
+  ok(fuzz === 150, `F2: analytic sections agree with a 0.7 µm brute-force scan on ${fuzz} random scenes (circles, polygons, sloped lanes, raised obstacles)`);
+
+  // F3: an ant already at its goal arrives at its start time and does not move (both directions, delayed start)
+  const g3 = flat([]);
+  for (const [d, st] of [[1, 0], [-1, 0], [1, 0.2], [-1, 0.3]] as [1 | -1, number][]) {
+    const r = simulate({ geometry: g3, horizon_s: 0.5, seed: 1, agents: [a2({ id: 'A', passage: 'P', s_mm: 1, dir: d, start_t_s: st, free_speed_mm_s: 10, goal_s_mm: 1 })] });
+    const arr = kinds(r, 'arrive')[0];
+    ok(r.final.A.mode === 'arrived' && r.final.A.s_mm === 1 && arr && near(arr.t_s, st) && r.intervals.A.every((iv) => iv.s_start_mm === 1 && iv.s_end_mm === 1), `F3 dir ${d} start ${st}: arrives at once and never moves (final ${JSON.stringify(r.final.A)})`);
+  }
+}
+
 console.log(JSON.stringify({ ph2_collision: 'pass', checks }, null, 2));
