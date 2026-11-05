@@ -1,0 +1,18 @@
+# Codex review of 1bdba72, F1: runtime record schema probes (tests/c2-engine-transfers.test.ts section S, C2_R2_PROBE=1 C2_ONLY=S) run against engine/transfers.ts and cli/lib/engine-transfers.ts of 1bdba72. Fixture: buildDay0('A1', 1, '2027-09-23') day 5 (Codex's reproduction), plus the first eclosion day for the end-roster case. Node v22.23.4.
+{"probe":"S Codex F1: every foraging transfer relabelled 'invalid_phase'","engine_colony_check":"rejects","reader":"ACCEPTS","reader_errors":[]}
+{"probe":"S missing phase","engine_colony_check":"rejects","reader":"ACCEPTS","reader_errors":[]}
+{"probe":"S null phase","engine_colony_check":"rejects","reader":"ACCEPTS","reader_errors":[]}
+{"probe":"S empty-string phase","engine_colony_check":"rejects","reader":"ACCEPTS","reader_errors":[]}
+{"probe":"S phase of the wrong type (number)","engine_colony_check":"rejects","reader":"ACCEPTS","reader_errors":[]}
+{"probe":"S phase of the wrong type (object)","engine_colony_check":"rejects","reader":"ACCEPTS","reader_errors":[]}
+{"probe":"S a collect declared nest_settlement","engine_colony_check":"rejects","reader":"rejects","reader_errors":["FT-5-C1-1: collect is not a settlement cause","FT-5-C1-2: foraging transfer after the nest settlement began"]}
+{"probe":"S a settlement record declared foraging","engine_colony_check":"rejects","reader":"rejects","reader_errors":["FT-5-C1-5: metabolism recorded in the foraging phase"]}
+{"probe":"S a foraging record placed after the settlement began","engine_colony_check":"rejects","reader":"rejects","reader_errors":["FT-5-C1-5: foraging transfer after the nest settlement began"]}
+{"probe":"S an invalid phase used to credit W012, who exists only at the end of the day","engine_colony_check":"rejects","reader":"ACCEPTS","reader_errors":[]}
+{"probe":"S unknown cause","engine_colony_check":"rejects","reader":"rejects","reader_errors":["FT-5-C1-1: unknown cause teleport","FT-5-C1-2: in_transit:W007:protein holds 0 µp, cannot give 421130"]}
+{"probe":"S missing source","engine_colony_check":"CRASHES TypeError: Cannot read properties of undefined (reading 'kind')","reader":"CRASHES TypeError: Cannot read properties of undefined (reading 'kind')","reader_errors":[]}
+{"probe":"S recipient of an unknown kind","engine_colony_check":"rejects","reader":"rejects","reader_errors":["FT-5-C1-1: collect from source to pocket is not a possible path","FT-5-C1-1: pocket:W001 is not a compartment of C1 on day 5 (R3-08)"]}
+{"probe":"S worker id of the wrong type","engine_colony_check":"rejects","reader":"rejects","reader_errors":["FT-5-C1-1: in_transit:7 is not a compartment of C1 on day 5 (R3-08)","FT-5-C1-2: in_transit:W007:protein holds 0 µp, cannot give 421130"]}
+{"probe":"S unknown food type","engine_colony_check":"rejects","reader":"rejects","reader_errors":["FT-5-C1-1: source cannot hold fat","FT-5-C1-1: in_transit cannot hold fat"]}
+{"probe":"S amount given as a string","engine_colony_check":"rejects","reader":"rejects","reader_errors":["in_transit:W007:protein: 78870 µp still in transit"]}
+{"probe":"S colony field missing","engine_colony_check":"rejects","reader":"rejects","reader_errors":["FT-5-C1-1: schema/day/colony fields wrong"]}
