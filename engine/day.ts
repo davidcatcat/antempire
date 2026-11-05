@@ -2,7 +2,8 @@
  * One simulated day for a whole WORLD (all colonies). Fixed order (docs/gm-rules.md §3):
  *   1. weather (world)            2. independent ecology (world; never reads any colony)
  *   3. foraging of every colony   4. storage overflow, metabolism, brood, mortality, queen per colony
- *   5. conservation / causality / event-type checks — any failure throws and nothing is returned.
+ *   5. conservation / causality / event-type checks — any failure throws and nothing is returned. From v2-review.22 this
+ *      includes the per-compartment closure of every recorded food_transfer (engine/transfers.ts).
  * Colonies are processed in array order within each phase.
  */
 import { clone, nextDate, round } from './math.ts';
@@ -12,6 +13,7 @@ import { forageDay } from './foraging.ts';
 import { consume, storageOverflow } from './nutrition.ts';
 import { developBrood } from './brood.ts';
 import { oviposition, queenSurvival, workerSurvival } from './queen.ts';
+import { bindFoodTransfers, checkColonyFood, checkSources, colonySnapshot, foodTimingFor, sourceSnapshot } from './transfers.ts';
 import { resolveBundle, type ParamBundle, type ResolvedParams, type SpeciesParams } from './params.ts';
 import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from './types.ts';
 
@@ -37,8 +39,10 @@ import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from '
  *   v2-review.19 evaluation corrections: parameter-source labels corrected (lone-queen hazard is a game assumption); no simulation output changes
  *   v2-review.20 (Issue #43 F02–F05, R11): stepwise trail following with arrival-only perception; interrupted search closed at the interruption; joining a held prey needs no other unreserved prey; every outside interval charged once; routes learned on arrival; recruitment at the end of unloading. Switch activity.local_causality_v20.
  *   v2-review.21 (Issue #50 / #49 N1): brood care exposure from the workers present at the start of the step; eclosions committed after all brood is processed, ids in source-pupa order. Switch brood_care.daily_care_snapshot_v21.
+ *   v2-review.22 (work package C2): the engine records every movement of food between compartments as a food_transfer event (source, recipient, amount, minute, cause, attribution) and checks per-compartment closure every day; diagnostics only, no quantity, draw or decision changed.
+ *   v2-review.23 (Codex Issue #61 R3-05): a worker carrying food home marks each edge at the minute it has walked it (event-clock 'trail'), not the whole route at the nest. Switch activity.local_trail_deposit_v23.
  */
-export const ENGINE_VERSION = 'antempire.v2-review.21-brood-care-snapshot';
+export const ENGINE_VERSION = 'antempire.v2-review.23-local-trail-deposit';
 /** Implementation of that behaviour (bumped for refactors that keep results byte-identical). */
 export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
 /**
@@ -47,7 +51,7 @@ export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
  */
 const ENGINE_FIRST_STATE_DAY = 0;
 
-export const NATURAL_EVENT_TYPES: ReadonlySet<string> = new Set(['new_food_source', 'source_batch_consumed', 'food_delivered', 'insect_immigration', 'insect_natural_death', 'insect_population_birth', 'insect_background_death', 'physical_scout_visit', 'discovery', 'scouted_empty', 'nest_local_route_learning', 'local_contact_cue', 'local_brood_begging_contact', 'local_unloading_feedback', 'host_plant_death', 'hemipteran_colony_change', 'local_recruitment', 'route_step', 'route_timeout', 'trail_decay', 'trail_deposited', 'local_trail_choice', 'food_collected', 'trophallaxis', 'protein_cached_at_nest', 'live_prey_encounter', 'prey_escaped', 'local_alarm_signal', 'long_range_recruitment_trail', 'hunt_recruitment', 'joint_prey_transport', 'waiting_prey_joined', 'route_memory_initialized', 'worker_activity', 'forager_stopped', 'action_cancelled_no_time', 'no_route_cannot_depart', 'recruitment_no_nestmate', 'recruitment_failed', 'exploration_step', 'exploration_no_new_direction', 'exploration_found_nothing', 'trail_lost', 'insect_predation', 'hatch', 'pupation', 'eclosion', 'egg_laid', 'worker_death', 'brood_death', 'injury_recovery', 'queen_death']);
+export const NATURAL_EVENT_TYPES: ReadonlySet<string> = new Set(['new_food_source', 'source_batch_consumed', 'food_delivered', 'insect_immigration', 'insect_natural_death', 'insect_population_birth', 'insect_background_death', 'physical_scout_visit', 'discovery', 'scouted_empty', 'nest_local_route_learning', 'local_contact_cue', 'local_brood_begging_contact', 'local_unloading_feedback', 'host_plant_death', 'hemipteran_colony_change', 'local_recruitment', 'route_step', 'route_timeout', 'trail_decay', 'trail_deposited', 'local_trail_choice', 'food_collected', 'trophallaxis', 'protein_cached_at_nest', 'live_prey_encounter', 'prey_escaped', 'local_alarm_signal', 'long_range_recruitment_trail', 'hunt_recruitment', 'joint_prey_transport', 'waiting_prey_joined', 'route_memory_initialized', 'worker_activity', 'forager_stopped', 'action_cancelled_no_time', 'no_route_cannot_depart', 'recruitment_no_nestmate', 'recruitment_failed', 'exploration_step', 'exploration_no_new_direction', 'exploration_found_nothing', 'trail_lost', 'insect_predation', 'food_transfer', 'hatch', 'pupation', 'eclosion', 'egg_laid', 'worker_death', 'brood_death', 'injury_recovery', 'queen_death']);
 
 /** Structural validation of a world (legacy error messages preserved). */
 export function validateWorld(s: WorldState): void {
@@ -93,12 +97,16 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
     return sp;
   };
   const weather = calcWeather(s, wp, dayDate);
-  const work = s.colonies.map((colony) => ({ colony, sp: speciesOf(colony), events: [] as SimEvent[], initial: { sugar: colony.stores.sugar, protein: colony.stores.protein }, summary: newSummary(s, colony, dayDate, weather), overflow: { sugar: 0, protein: 0 } }));
+  const work = s.colonies.map((colony) => ({ colony, sp: speciesOf(colony), events: [] as SimEvent[], initial: { sugar: colony.stores.sugar, protein: colony.stores.protein }, summary: newSummary(s, colony, dayDate, weather), overflow: { sugar: 0, protein: 0 }, food: colonySnapshot(colony) }));
+  // v2-review.22 (C2): every food movement of a colony this day is recorded in its event list as a food_transfer
+  for (const w of work) bindFoodTransfers(w.events, s.sim_day + 1, w.colony.id);
 
   growEcology(s, wp, weather, worldEvents);
   assertCausalFood(worldEvents, 'NO_GOD_MODE: food has no physical source death');
+  const sourcesBefore = sourceSnapshot(s);
 
   for (const w of work) forageDay(s, w.colony, w.sp, wp, weather, w.events, w.summary);
+  checkSources(sourcesBefore, s, work.map((w) => w.events), work.map((w) => foodTimingFor(w.sp)));
   assertCausalFood([...worldEvents, ...work.flatMap((w) => w.events)], 'NO_GOD_MODE: food without tracked dead insect');
   for (const w of work) {
     const m = w.summary.foraging_workers_by_macro as { sugar: Set<string>; protein: Set<string> };
@@ -108,12 +116,14 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
   for (const w of work) {
     const { colony, sp, summary, events, initial } = w, n = sp.nutrition;
     // Other colonymates carrying liquid do not duplicate colony external income.
-    w.overflow = storageOverflow(colony, sp);
-    const ratios = consume(s, colony, sp, summary, weather);
+    w.overflow = storageOverflow(colony, sp, events);
+    const ratios = consume(s, colony, sp, summary, weather, events);
     developBrood(s, colony, sp, weather, ratios, events, summary);
     workerSurvival(s, colony, sp, events, summary);
     queenSurvival(s, colony, sp, events);
     oviposition(s, colony, sp, ratios, weather, events, summary);
+    // v2-review.22 (C2): replay this day's food transfers per compartment (defined while crops are a subset of the ledger)
+    if (sp.nutrition_rules.egg_laying_settles_crops) checkColonyFood(w.food, colony, events, foodTimingFor(sp));
     const pop = colony.population;
     summary.population = { queen: pop.queen_alive ? 1 : 0, workers: pop.workers.length, eggs: pop.brood.filter((b) => b.stage === 'egg').length, larvae: pop.brood.filter((b) => b.stage === 'larva').length, pupae: pop.brood.filter((b) => b.stage === 'pupa').length };
     summary.stock = { sugar: round(colony.stores.sugar), protein: round(colony.stores.protein) };

@@ -1,0 +1,20 @@
+V0 valid collect
+  ACCEPT ([])
+V1 events = null
+  ACCEPT ([])
+V2 portions = -1
+  ACCEPT ([])
+V3 source.id = DOES_NOT_EXIST
+  ACCEPT ([])
+V4 recipient deleted
+  CRASH: TypeError: Cannot read properties of undefined (reading 'kind')
+V5 event null inside the list
+  ACCEPT ([])
+V6 colonies = undefined
+  CRASH: TypeError: colonies.map is not a function
+V7 end source with negative protein
+  REJECT: sources: F01|protein would have held -3000000 µp at the start of foraging
+V8 collect into a crop (illegal path)
+  ACCEPT ([])
+V9 record of another colony
+  ACCEPT ([])
