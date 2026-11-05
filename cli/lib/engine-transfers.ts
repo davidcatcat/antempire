@@ -39,6 +39,10 @@ const KINDS = new Set(['source', 'insect', 'in_transit', 'crop', 'cache', 'nest_
 const ATTRIBUTIONS = new Set(['individual', 'unknown', 'engine_rule']);
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const nonEmpty = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
+/** A value for an error message that never throws (BigInt, cycles, getters, proxies) and never echoes huge inputs. */
+const show = (v: unknown): string => { let t: string; try { t = typeof v === 'bigint' ? `${v}n` : String(JSON.stringify(v)); } catch { t = `<${typeof v}>`; } return t.length > 80 ? `${t.slice(0, 77)}...` : t; };
+/** An amount the micro-portion arithmetic can hold exactly: at least 1 µp and a safe integer (no overflow to Infinity/NaN). */
+const exactMicro = (v: number): boolean => { const m = toMicro(v); return Number.isSafeInteger(m) && m >= 1; };
 /**
  * Codex review of 1bdba72, F1: runtime schema of one record, checked BEFORE any field is used (records come from JSON;
  * TypeScript types prove nothing at run time). Returns the problems found; a record with any problem is not replayed, so
@@ -49,24 +53,25 @@ export function recordSchemaErrors(x: unknown, where: string): string[] {
   if (!isObj(x)) return [`${where}: not an object`];
   const label = nonEmpty(x.transfer_id) ? x.transfer_id : where;
   if (!nonEmpty(x.transfer_id)) out.push(`${where}: transfer_id missing or not a string`);
-  if (x.schema !== 'antempire.food-transfer.v1') out.push(`${label}: schema ${JSON.stringify(x.schema)} is not antempire.food-transfer.v1`);
-  if (!Number.isInteger(x.day)) out.push(`${label}: day ${JSON.stringify(x.day)} is not an integer`);
+  if (x.schema !== 'antempire.food-transfer.v1') out.push(`${label}: schema ${show(x.schema)} is not antempire.food-transfer.v1`);
+  if (!Number.isInteger(x.day)) out.push(`${label}: day ${show(x.day)} is not an integer`);
   if (!nonEmpty(x.colony)) out.push(`${label}: colony missing or not a string`);
-  if (x.phase !== 'foraging' && x.phase !== 'nest_settlement') out.push(`${label}: phase ${JSON.stringify(x.phase)} is not a defined phase (foraging | nest_settlement)`);
-  if (typeof x.cause !== 'string' || !Object.hasOwn(PHASE_OF_CAUSE, x.cause)) out.push(`${label}: unknown cause ${JSON.stringify(x.cause)}`);
+  if (x.phase !== 'foraging' && x.phase !== 'nest_settlement') out.push(`${label}: phase ${show(x.phase)} is not a defined phase (foraging | nest_settlement)`);
+  if (typeof x.cause !== 'string' || !Object.hasOwn(PHASE_OF_CAUSE, x.cause)) out.push(`${label}: unknown cause ${show(x.cause)}`);
   else if ((x.phase === 'foraging' || x.phase === 'nest_settlement') && PHASE_OF_CAUSE[x.cause] !== x.phase) out.push(`${label}: ${x.cause} belongs to phase ${PHASE_OF_CAUSE[x.cause]}, recorded as ${x.phase}`);
   for (const side of ['source', 'recipient'] as const) {
     const r = x[side];
     if (!isObj(r)) { out.push(`${label}: ${side} missing or not an object`); continue; } // isObj excludes arrays
-    if (typeof r.kind !== 'string' || !KINDS.has(r.kind)) out.push(`${label}: ${side} kind ${JSON.stringify(r.kind)} is not a compartment kind`);
-    if (!nonEmpty(r.id)) out.push(`${label}: ${side} id ${JSON.stringify(r.id)} is not a non-empty string`);
+    if (typeof r.kind !== 'string' || !KINDS.has(r.kind)) out.push(`${label}: ${side} kind ${show(r.kind)} is not a compartment kind`);
+    if (!nonEmpty(r.id)) out.push(`${label}: ${side} id ${show(r.id)} is not a non-empty string`);
   }
-  if (x.food_type !== 'sugar' && x.food_type !== 'protein') out.push(`${label}: food_type ${JSON.stringify(x.food_type)} is not sugar or protein`);
-  if (typeof x.portions !== 'number' || !Number.isFinite(x.portions) || !(x.portions > 0)) out.push(`${label}: portions ${JSON.stringify(x.portions)} is not a positive finite number`);
-  if (!ATTRIBUTIONS.has(x.attribution as string)) out.push(`${label}: attribution ${JSON.stringify(x.attribution)} is not defined`);
+  if (x.food_type !== 'sugar' && x.food_type !== 'protein') out.push(`${label}: food_type ${show(x.food_type)} is not sugar or protein`);
+  if (typeof x.portions !== 'number' || !Number.isFinite(x.portions) || !(x.portions > 0)) out.push(`${label}: portions ${show(x.portions)} is not a positive finite number`);
+  else if (!Number.isSafeInteger(toMicro(x.portions))) out.push(`${label}: portions ${show(x.portions)} is too large for exact micro-portion arithmetic`); // sub-micro amounts: the six-decimal check of the replay
+  if (!ATTRIBUTIONS.has(x.attribution as string)) out.push(`${label}: attribution ${show(x.attribution)} is not defined`);
   if (Array.isArray(x)) out.push(`${label}: the record is an array, not an object`);
-  if (x.phase === 'foraging' && !(x.minute === null || (typeof x.minute === 'number' && Number.isFinite(x.minute) && x.minute >= 0 && x.minute <= 1440))) out.push(`${label}: minute ${JSON.stringify(x.minute)} is not null or a minute of the day (0..1440)`);
-  if (x.phase === 'nest_settlement' && x.minute !== null) out.push(`${label}: a nest-settlement record has minute ${JSON.stringify(x.minute)} (settlement is not timed yet)`);
+  if (x.phase === 'foraging' && !(x.minute === null || (typeof x.minute === 'number' && Number.isFinite(x.minute) && x.minute >= 0 && x.minute <= 1440))) out.push(`${label}: minute ${show(x.minute)} is not null or a minute of the day (0..1440)`);
+  if (x.phase === 'nest_settlement' && x.minute !== null) out.push(`${label}: a nest-settlement record has minute ${show(x.minute)} (settlement is not timed yet)`);
   return out;
 }
 
@@ -277,8 +282,9 @@ export function replayEngineSourcesDay(endSources: Record<string, { sugar?: numb
   // reported (colony, record, field) and nothing is replayed — never a TypeError, never "no events" by default. The
   // reconstruction of start holdings below cancels out by construction, so it is no evidence for records that are
   // themselves illegal (a negative amount, a source that does not exist).
-  const invalid = sourceDayInputErrors(endSources, colonies);
-  if (invalid.length) return invalid;
+  let invalid: string[];
+  try { invalid = sourceDayInputErrors(endSources, colonies); } catch (e) { invalid = [`sources: the input cannot be read (${show(String(e))})`]; } // throwing getters, proxies
+  if (invalid.length) return invalid.length > 50 ? [...invalid.slice(0, 50), `sources: ... and ${invalid.length - 50} more input errors`] : invalid;
   const errors: string[] = [];
   const touches = colonies.map((c) => (c.events as Any[]).filter((e) => e.type === 'food_transfer' && (e.source.kind === 'source' || e.recipient.kind === 'source')) as EngineTransfer[]);
   const held = new Map<string, number>(), slot = (id: string, f: string) => `${id}|${f}`;
@@ -311,26 +317,29 @@ export function replayEngineSourcesDay(endSources: Record<string, { sugar?: numb
 /** Input contract of replayEngineSourcesDay (N1): the end-of-day sources, the colony list, every event and every record. */
 function sourceDayInputErrors(endSources: unknown, colonies: unknown): string[] {
   const out: string[] = [];
-  if (!isObj(endSources)) return [`sources: the end-of-day source table is ${JSON.stringify(endSources)}, not an object`];
+  if (!isObj(endSources)) return [`sources: the end-of-day source table is ${show(endSources)}, not an object`];
   for (const [id, v] of Object.entries(endSources)) {
-    if (!isObj(v)) { out.push(`sources: source ${id} is ${JSON.stringify(v)}, not an object`); continue; }
-    for (const f of ['sugar', 'protein'] as const) if (v[f] !== undefined && !(typeof v[f] === 'number' && Number.isFinite(v[f]) && (v[f] as number) >= 0)) out.push(`sources: source ${id} ${f} is ${JSON.stringify(v[f])}, not a non-negative number`);
+    if (!isObj(v)) { out.push(`sources: source ${id} is ${show(v)}, not an object`); continue; }
+    for (const f of ['sugar', 'protein'] as const) if (v[f] !== undefined && !(typeof v[f] === 'number' && Number.isFinite(v[f]) && (v[f] as number) >= 0 && Number.isSafeInteger(toMicro(v[f] as number)))) out.push(`sources: source ${id} ${f} is ${show(v[f])}, not a non-negative number within exact micro-portion range`);
   }
-  if (!Array.isArray(colonies)) return [...out, `sources: the colony list is ${JSON.stringify(colonies)}, not an array`];
+  if (!Array.isArray(colonies)) return [...out, `sources: the colony list is ${show(colonies)}, not an array`];
   const ids = new Set<string>();
+  for (let i = 0; i < colonies.length; i++) if (!(i in colonies)) out.push(`sources: colony ${i} is a hole in the colony list`);
   colonies.forEach((c: unknown, ci) => {
-    if (!isObj(c)) { out.push(`sources: colony ${ci} is ${JSON.stringify(c)}, not an object`); return; }
+    if (!isObj(c)) { out.push(`sources: colony ${ci} is ${show(c)}, not an object`); return; }
     const cid = nonEmpty(c.id) ? c.id : `list ${ci}`;
     if (!nonEmpty(c.id)) out.push(`sources: colony ${ci} has no id`);
     else if (ids.has(c.id)) out.push(`sources: colony ${c.id} is listed twice`); else ids.add(c.id);
-    if (c.timing !== 'timed' && c.timing !== 'untimed_legacy') out.push(`sources: colony ${cid} timing ${JSON.stringify(c.timing)} is not timed | untimed_legacy`);
-    if (!Array.isArray(c.events)) { out.push(`sources: colony ${cid} events is ${JSON.stringify(c.events)}, not an array`); return; }
+    if (c.timing !== 'timed' && c.timing !== 'untimed_legacy') out.push(`sources: colony ${cid} timing ${show(c.timing)} is not timed | untimed_legacy`);
+    if (!Array.isArray(c.events)) { out.push(`sources: colony ${cid} events is ${show(c.events)}, not an array`); return; }
+    for (let i = 0; i < c.events.length; i++) if (!(i in c.events)) out.push(`sources: colony ${cid} event ${i} is a hole in the event list`);
     c.events.forEach((e: unknown, ei) => {
-      if (!isObj(e)) { out.push(`sources: colony ${cid} event ${ei} is ${JSON.stringify(e)}, not an event object`); return; }
+      if (!isObj(e)) { out.push(`sources: colony ${cid} event ${ei} is ${show(e)}, not an event object`); return; }
       if (e.type !== 'food_transfer') return;
       const errs = recordSchemaErrors(e, `colony ${cid} event ${ei}`);
       if (errs.length) { out.push(...errs.map((m) => `sources: ${m}`)); return; }
       const x = e as unknown as EngineTransfer, at = `sources: ${x.transfer_id} (colony ${cid})`;
+      if (!exactMicro(x.portions)) out.push(`${at}: portions ${show(x.portions)} is below one micro-portion`);
       if (x.colony !== cid) out.push(`${at} is recorded for colony ${x.colony}`);
       if (x.source.kind !== 'source' && x.recipient.kind !== 'source') return;
       // a source is only collected from or credited by a kill, during foraging (same paths as the colony reader)
