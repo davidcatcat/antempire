@@ -316,6 +316,24 @@
       "save_schema": "antempire.engine-v2",
       "state_migration": null,
       "note": "Codex Issue #61 R3-05: a worker carrying food home marks each edge at the minute it has walked it (event-clock trail event), not the whole route at the nest (switch activity.local_trail_deposit_v23)"
+    },
+    {
+      "rules_version": "antempire.v2-review.24-me1-invariants",
+      "tag": "v24",
+      "fingerprint": {
+        "engine": "3d5ff8aeca6d929084d1409a366d39ada12b1bd4c50c9f40ad41da8668d75b50",
+        "params": "a1fe85118344a18593e837e269d98bc5adf3c732736dca8646aed6264d0dec2a"
+      },
+      "approved_in": "Owner instruction 2026-11-05 (math-ecology integration ME-1, Issue #66; separate PR for Owner review, not merged by Claude)",
+      "golden": {
+        "traces": "tests/golden/v24-trace-sha256.json",
+        "reports": "reports/day15-134-v24-*",
+        "day0_traces": "tests/golden/day0-v24-trace-sha256.json"
+      },
+      "previous": "antempire.v2-review.23-local-trail-deposit",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null,
+      "note": "ME-1 (Issue #66): runtime invariants extending C2 — population ID flow (births, deaths, immigration/emigration terms 0, ends), ID lifetimes, event minutes, numeric/event/parameter domains, RNG inputs; engine/invariants.ts plus the independent reader cli/lib/population-replay.ts. Checks only: every simulation output is byte-identical to v2-review.23. Engineering/mathematical correctness, not scientific validation."
     }
   ]
 }
