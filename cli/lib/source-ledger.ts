@@ -7,7 +7,8 @@
  *
  * Per source and day, all in game portions (game_portions_NOT_mg; no mg or energy claim):
  *   end = start + production + new_remains + killed_in − washoff − decay − overflow_deleted − expired_deleted − collected
- * where production/washoff/decay are recomputed from the saved ecological record, the day's rain and the world parameters,
+ * where production, washoff and decay are recomputed from the source state (start, and the host/hemipteran state after the
+ * day's ecology), the day's rain and the world parameters — the engine-written ecological record is only compared with it,
  * new_remains from new_food_source events, killed_in / collected from the C2 food_transfer events, and the two deletions are
  * what is left of the ecology step's clamp and expiry. Every term is ≥ 0; the residual must be within rounding.
  * The post-forage half (post-growth → end) is the C2 engine check checkSources; this reader closes the ecology half from the
@@ -63,7 +64,17 @@ export function sourceLedgerDay(startWorld: Any, endWorld: Any, result: Any, wp:
       f.start = Number(s0.sugar);
       if (Math.abs(Number(rec.stock_before) - f.start) > TOL) err(`${s0.type} ${id}: ecological record starts at ${rec.stock_before}, the source held ${f.start}`);
       const wash = s0.type === 'honeydew' ? clamp(rain * wp.honeydew.honeydew_washoff_per_rain_mm, 0, wp.honeydew.honeydew_washoff_max_fraction) : clamp(rain * wp.nectar.nectar_washoff_per_rain_mm, 0, wp.nectar.nectar_washoff_max_fraction);
-      f.production = Number(s0.type === 'honeydew' ? rec.net_portions : rec.production_portions);
+      // production recomputed (engine/ecology.ts growHoneydew / growNectar), then compared with the engine's own record
+      let production: number;
+      if (s0.type === 'honeydew') {
+        const h = wp.hemipterans, rate = h.honeydew_per_colony_per_day[s1.hemipteran_kind ?? ''];
+        const rainFactor = clamp(1 - rain * h.rain_honeydew_secretion_suppression_per_mm, h.honeydew_rain_secretion_min_multiplier, 1);
+        const rival = (wp.background_rivals ?? []).find((r: Any) => r.site === id)?.honeydew_harvest_fraction ?? 0;
+        production = s1.host_alive ? Number(s1.hemipteran_colonies) * Number(rate) * h.honeydew_productivity_multiplier * rainFactor * (1 - rival) : 0;
+      } else production = Number(s0.bloom_days_left) > 0 && s1.host_alive !== false ? Number(s0.production_per_day) : 0;
+      const recorded = Number(s0.type === 'honeydew' ? rec.net_portions : rec.production_portions);
+      if (!(Math.abs(production - recorded) <= TOL)) err(`${s0.type} ${id}: recomputed production ${r6(production)} ≠ the record's ${rec.net_portions ?? rec.production_portions}`);
+      f.production = production;
       f.washoff = f.start * wash;
       afterGrowth = Number(rec.stock_after);
       const uncapped = f.start - f.washoff + f.production;

@@ -42,18 +42,30 @@ export function checkPopulationDay(start: PopulationSnapshot, colony: ColonyStat
   const fail = (m: string) => { throw Error(`POPULATION ${colony.id}: ${m}`); };
   const deaths = new Set<string>(), broodDeaths = new Set<string>(), eclosedFrom = new Set<string>(), eclosedTo = new Set<string>(), laid = new Set<string>();
   let queenDeaths = 0;
-  // causal order (ID-EVENT-TIME): the events of a colony-day are in the order the engine's phases ran (eclosion ->
-  // worker deaths -> queen death -> egg laying); an ID must be created before any later event about it, and nothing is
-  // laid after the queen died
+  // causal order (ID-EVENT-TIME): an ID must be created before any later event about it, and no egg is laid by a queen
+  // that was dead at the start or died earlier in the list. (The full phase order is not checked; only these.)
+  // Brood lifecycle: one stage step at most per brood item and day, each with its event — hatch from an egg, pupation
+  // from a larva, eclosion from a pupa (stages as at the start of the day; engine/brood.ts).
+  const steps = new Map<string, string>();
+  const step = (id: string, kind: string, from: string) => {
+    if (steps.has(id)) fail(`brood ${id} changes stage twice in one day (${steps.get(id)}, ${kind})`);
+    const s0 = start.brood.get(id);
+    if (s0 === undefined) fail(`brood ${id}: ${kind} of brood that did not exist at the start of the day`);
+    else if (s0 !== from) fail(`brood ${id}: ${kind} from stage ${s0} (needs ${from})`);
+    steps.set(id, kind);
+  };
   for (const e of events) {
+    if (e.type === 'hatch') step(String(e.id), 'hatch', 'egg');
+    else if (e.type === 'pupation') step(String(e.id), 'pupation', 'larva');
     if (e.type === 'worker_death') { const id = String(e.id); if (deaths.has(id)) fail(`worker ${id} dies twice`); if (!start.workers.has(id) && !eclosedTo.has(id)) fail(`worker ${id} dies before it exists (no earlier eclosion this day)`); deaths.add(id); }
     else if (e.type === 'brood_death') { const id = String(e.id); if (broodDeaths.has(id)) fail(`brood ${id} dies twice`); if (!start.brood.has(id) && !laid.has(id)) fail(`brood ${id} dies before it exists (no earlier egg_laid this day)`); broodDeaths.add(id); }
     else if (e.type === 'eclosion') {
       const from = String(e.source_brood_id), to = String(e.new_worker_id);
       if (eclosedFrom.has(from)) fail(`brood ${from} ecloses twice`); if (eclosedTo.has(to)) fail(`worker ID ${to} is created twice`);
       if (broodDeaths.has(from)) fail(`brood ${from} ecloses after it died`);
+      step(from, 'eclosion', 'pupa');
       eclosedFrom.add(from); eclosedTo.add(to);
-    } else if (e.type === 'egg_laid') { const id = String(e.id); if (laid.has(id)) fail(`egg ID ${id} is laid twice`); if (queenDeaths > 0) fail(`egg ${id} is laid after the queen died`); laid.add(id); }
+    } else if (e.type === 'egg_laid') { const id = String(e.id); if (laid.has(id)) fail(`egg ID ${id} is laid twice`); if (!start.queen_alive || queenDeaths > 0) fail(`egg ${id} is laid by a dead queen`); laid.add(id); }
     else if (e.type === 'queen_death') queenDeaths++;
   }
   // lifetimes: who can die, what can be created
@@ -88,7 +100,12 @@ export function checkPopulationDay(start: PopulationSnapshot, colony: ColonyStat
   for (const id of endW) if (endB.has(id)) fail(`ID ${id} is both a worker and brood`);
   if (colony.population.queen_alive !== (start.queen_alive && queenDeaths === 0)) fail(`queen_alive is ${colony.population.queen_alive}, the events give ${start.queen_alive && queenDeaths === 0}`);
   // stages never go backwards; survivors age exactly one day
-  for (const b of colony.population.brood) { const s0 = start.brood.get(b.id); if (s0 !== undefined && STAGE_ORDER[b.stage] < STAGE_ORDER[s0]) fail(`brood ${b.id} went back from ${s0} to ${b.stage}`); }
+  for (const b of colony.population.brood) {
+    const s0 = start.brood.get(b.id), k = steps.get(b.id);
+    const expected = s0 === undefined ? 'egg' : k === 'hatch' ? 'larva' : k === 'pupation' ? 'pupa' : s0;
+    if (s0 !== undefined && STAGE_ORDER[b.stage] < STAGE_ORDER[s0]) fail(`brood ${b.id} went back from ${s0} to ${b.stage}`);
+    if (b.stage !== expected) fail(`brood ${b.id} is ${b.stage} at the end of the day, its events give ${expected}`);
+  }
   for (const w of colony.population.workers) { const a0 = start.workers.get(w.id); if (a0 !== undefined && w.age_days !== a0 + 1) fail(`worker ${w.id} aged from ${a0} to ${w.age_days} in one day`); }
 }
 
@@ -121,22 +138,26 @@ export function checkColonyDomain(colony: ColonyState, cropCapacity: number): vo
  * ID-EVENT-DOMAIN and ID-EVENT-TIME: every number in an event is finite; probability-like fields are in [0, 1];
  * portions are ≥ 0; a minute is a time of the day, 0..DAY_MINUTES.
  */
+/** Event fields that are probabilities by their name (the engine's own names: risk_assumption, probability_assumption,
+ * hazards.*) or fractions in [0, 1]; event fields that are minutes of the day. */
+const isProbabilityKey = (key: string, parent: string) => /(^|_)(probability|risk|p|fraction|fill)(_assumption)?$/.test(key) || (parent === 'hazards' && !/_days$/.test(key));
+const MINUTE_KEYS: ReadonlySet<string> = new Set(['minute', 'start', 'end', 'walked_from']);
 export function checkEventDomain(owner: string, events: SimEvent[]): void {
   const fail = (m: string) => { throw Error(`EVENT_DOMAIN ${owner}: ${m}`); };
   events.forEach((e, i) => {
     const at = `event ${i} (${e.type})`;
-    const walk = (v: unknown, key: string, path: string): void => {
+    const walk = (v: unknown, key: string, parent: string, path: string): void => {
       if (typeof v === 'number') {
         if (!Number.isFinite(v)) fail(`${at} ${path} is ${v}`);
-        if (/(^|_)(probability|risk|p)$/.test(key) && !(v >= 0 && v <= 1)) fail(`${at} ${path} = ${v} is not a probability`);
+        if (isProbabilityKey(key, parent) && !(v >= 0 && v <= 1)) fail(`${at} ${path} = ${v} is not a probability`);
         if (/(^|_)portions$/.test(key) && !(v >= 0)) fail(`${at} ${path} = ${v} portions is negative`);
-        if (key === 'minute' && !(v >= 0 && v <= DAY_MINUTES)) fail(`${at} minute ${v} is outside the day (0..${DAY_MINUTES})`);
+        if (MINUTE_KEYS.has(key) && !(v >= 0 && v <= DAY_MINUTES)) fail(`${at} ${path} = ${v} is outside the day (0..${DAY_MINUTES} minutes)`);
         return;
       }
-      if (Array.isArray(v)) { v.forEach((x, j) => walk(x, key, `${path}[${j}]`)); return; }
-      if (v && typeof v === 'object') for (const [k, x] of Object.entries(v)) walk(x, k, `${path}.${k}`);
+      if (Array.isArray(v)) { v.forEach((x, j) => walk(x, key, parent, `${path}[${j}]`)); return; }
+      if (v && typeof v === 'object') for (const [k, x] of Object.entries(v)) walk(x, k, key, `${path}.${k}`);
     };
-    for (const [k, v] of Object.entries(e)) walk(v, k, k);
+    for (const [k, v] of Object.entries(e)) walk(v, k, '', k);
   });
 }
 

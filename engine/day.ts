@@ -103,6 +103,7 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
   checkRngInputs(s);
   checkParamDomain('world', wp);
   for (const id of new Set(s.colonies.map((c) => c.species_id))) checkParamDomain(`species ${id}`, speciesOf(s.colonies.find((c) => c.species_id === id) as ColonyState));
+  for (const c of s.colonies) checkColonyDomain(c, speciesOf(c).trophallaxis.crop_capacity); // the start state too (Day0, legacy, migrated)
   const popStart = new Map(s.colonies.map((c) => [c.id, populationSnapshot(c)]));
   const weather = calcWeather(s, wp, dayDate);
   const work = s.colonies.map((colony) => ({ colony, sp: speciesOf(colony), events: [] as SimEvent[], initial: { sugar: colony.stores.sugar, protein: colony.stores.protein }, summary: newSummary(s, colony, dayDate, weather), overflow: { sugar: 0, protein: 0 }, food: colonySnapshot(colony) }));
