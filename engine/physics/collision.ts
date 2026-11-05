@@ -93,7 +93,10 @@ export interface SimConfig {
   geometry: PhysicsGeometry; agents: SimAgentSpec[]; objects?: PhysObject[];
   horizon_s: number; seed: number;
   encounter: EncounterRules;
-  /** broadphase window (s); any positive value gives the same events (tested) */
+  /** broadphase window (s). Intended: any positive value gives the same events. Tested on the review fuzz (2 × 2000 2.5D
+   *  scenes, windows 0.003–100: identical); known exceptions remain (docs/physics-motion-engine.md §7: events within
+   *  T_EPS after a window end are handled early; position rounding accumulates per step; follower release waits for the
+   *  next event) — to be fixed before joining the official model. */
   window_s?: number;
   /** spacing (mm) of the numerical scan that remains: the back-out target. Narrow-section boundaries are analytic and
    *  do not use it (Codex physics review F2). */
