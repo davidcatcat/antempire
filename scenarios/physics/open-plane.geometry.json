@@ -1,0 +1,79 @@
+{
+  "schema": "antempire.physics-geometry.v1",
+  "layer_of": "antempire.world-geometry.v1",
+  "world_geometry_ref": null,
+  "world_id": "synthetic-open-plane",
+  "geometry_version": "0.1.0",
+  "synthetic": true,
+  "synthetic_note": "開放平面：一條 500 mm 直線通路，沒有障礙。",
+  "frame": {
+    "units": "mm",
+    "axes": {
+      "x": "east",
+      "y": "north",
+      "z": "up"
+    },
+    "origin": "合成場景的任意原點（不是 E-N00-1）"
+  },
+  "surfaces": [
+    {
+      "id": "S-ground",
+      "material": "bare_soil",
+      "polygon_mm": [
+        [
+          -100,
+          -100
+        ],
+        [
+          600,
+          -100
+        ],
+        [
+          600,
+          100
+        ],
+        [
+          -100,
+          100
+        ]
+      ],
+      "elevation": {
+        "kind": "flat",
+        "z_mm": 0
+      },
+      "provenance": {
+        "source": "synthetic_scenario",
+        "assumption": true,
+        "basis": "遊戲假設",
+        "note": "合成測試場景的數值；不是臺中西屯花園的量測"
+      }
+    }
+  ],
+  "obstacles": [],
+  "passages": [
+    {
+      "id": "P-open",
+      "centerline_mm": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          500,
+          0,
+          0
+        ]
+      ],
+      "width_mm": 50,
+      "route_edge_ref": null,
+      "provenance": {
+        "source": "synthetic_scenario",
+        "assumption": true,
+        "basis": "遊戲假設",
+        "note": "合成測試場景的數值；不是臺中西屯花園的量測"
+      }
+    }
+  ],
+  "entrances": []
+}

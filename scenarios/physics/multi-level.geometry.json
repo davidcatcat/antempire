@@ -1,0 +1,162 @@
+{
+  "schema": "antempire.physics-geometry.v1",
+  "layer_of": "antempire.world-geometry.v1",
+  "world_geometry_ref": null,
+  "world_id": "synthetic-multi-level",
+  "geometry_version": "0.1.0",
+  "synthetic": true,
+  "synthetic_note": "地面（z=0）、坡道（坡度 0.2）與高台（z=20 mm）。",
+  "frame": {
+    "units": "mm",
+    "axes": {
+      "x": "east",
+      "y": "north",
+      "z": "up"
+    },
+    "origin": "合成場景的任意原點（不是 E-N00-1）"
+  },
+  "surfaces": [
+    {
+      "id": "S-ground",
+      "material": "bare_soil",
+      "polygon_mm": [
+        [
+          0,
+          -20
+        ],
+        [
+          100,
+          -20
+        ],
+        [
+          100,
+          20
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "elevation": {
+        "kind": "flat",
+        "z_mm": 0
+      },
+      "provenance": {
+        "source": "synthetic_scenario",
+        "assumption": true,
+        "basis": "遊戲假設",
+        "note": "合成測試場景的數值；不是臺中西屯花園的量測"
+      }
+    },
+    {
+      "id": "S-ramp",
+      "material": "stone",
+      "polygon_mm": [
+        [
+          100,
+          -20
+        ],
+        [
+          200,
+          -20
+        ],
+        [
+          200,
+          20
+        ],
+        [
+          100,
+          20
+        ]
+      ],
+      "elevation": {
+        "kind": "ramp",
+        "anchor_mm": [
+          100,
+          0
+        ],
+        "z0_mm": 0,
+        "direction": [
+          1,
+          0
+        ],
+        "gradient": 0.2
+      },
+      "provenance": {
+        "source": "synthetic_scenario",
+        "assumption": true,
+        "basis": "遊戲假設",
+        "note": "合成測試場景的數值；不是臺中西屯花園的量測"
+      }
+    },
+    {
+      "id": "S-upper",
+      "material": "paver",
+      "polygon_mm": [
+        [
+          200,
+          -20
+        ],
+        [
+          300,
+          -20
+        ],
+        [
+          300,
+          20
+        ],
+        [
+          200,
+          20
+        ]
+      ],
+      "elevation": {
+        "kind": "flat",
+        "z_mm": 20
+      },
+      "provenance": {
+        "source": "synthetic_scenario",
+        "assumption": true,
+        "basis": "遊戲假設",
+        "note": "合成測試場景的數值；不是臺中西屯花園的量測"
+      }
+    }
+  ],
+  "obstacles": [],
+  "passages": [
+    {
+      "id": "P-ramp",
+      "centerline_mm": [
+        [
+          50,
+          0,
+          0
+        ],
+        [
+          100,
+          0,
+          0
+        ],
+        [
+          200,
+          0,
+          20
+        ],
+        [
+          250,
+          0,
+          20
+        ]
+      ],
+      "width_mm": 10,
+      "route_edge_ref": null,
+      "provenance": {
+        "source": "synthetic_scenario",
+        "assumption": true,
+        "basis": "遊戲假設",
+        "note": "合成測試場景的數值；不是臺中西屯花園的量測"
+      }
+    }
+  ],
+  "entrances": []
+}
