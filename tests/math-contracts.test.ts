@@ -111,7 +111,16 @@ for (let k = 0; k < 200; k++) {
 const q10 = (Rref: number, Q: number, T: number, Tref: number) => Rref * Q ** ((T - Tref) / 10);
 const Rref_per_day = 0.4; // e.g. a rate in 1/day
 ok(close(q10(Rref_per_day, 2, 35, 25) / Rref_per_day, 2) && close(q10(Rref_per_day, 2, 25, 25), Rref_per_day), 'Q10: R(T_ref) = R_ref (same units); R/R_ref = Q10 per +10 °C (dimensionless)');
-ok(close(q10(Rref_per_day * 24, 2, 31, 25) / 24, q10(Rref_per_day, 2, 31, 25)), 'Q10: changing the time unit of R_ref (per day → per hour·24) changes R the same way: R carries R_ref’s units');
+// Unit conversion (Codex review 2026-11-05 latest, P3: the old line multiplied by 24, which is the wrong direction).
+// 0.4 per day = 0.4/24 per hour (a rate per hour is 24 times smaller). R carries R_ref's unit, so converting R_ref first
+// and then applying Q10 must equal applying Q10 and then converting: R_per_hour × 24 = R_per_day.
+const Rref_per_hour = Rref_per_day / 24, perDayAt31 = q10(Rref_per_day, 2, 31, 25), perHourAt31 = q10(Rref_per_hour, 2, 31, 25);
+ok(close(Rref_per_hour, 0.4 / 24) && close(Rref_per_hour, 1 / 60), `Q10 units: 0.4 per day = 0.4/24 = ${Rref_per_hour.toFixed(6)} per hour (divide by 24, not multiply)`);
+ok(close(perHourAt31 * 24, perDayAt31) && close(perHourAt31, perDayAt31 / 24), `Q10 units: R in per hour × 24 = R in per day at 31 °C (${perHourAt31.toFixed(6)} × 24 = ${perDayAt31.toFixed(6)})`);
+ok(!close(q10(Rref_per_day * 24, 2, 31, 25), perDayAt31 / 24), 'Q10 units: the old conversion (× 24) does NOT give the per-hour rate');
+ok(close(perHourAt31 / Rref_per_hour, perDayAt31 / Rref_per_day), 'Q10 units: only R/R_ref is unit-free — the same ratio in per day and per hour');
+// Stated limit of this check: q10 is linear in R_ref, so these assertions test the documented conversion arithmetic,
+// not whether any engine code converts units (no engine code uses this contract yet).
 
 // 8. SSA density: ∫0^∞ Σ_j a_j·exp(−a0·τ) dτ = 1, so p(τ, j) has units 1/time; P(j) = a_j/a0; mean τ = 1/a0.
 const a = [0.3, 1.2, 0.5], a0 = a.reduce((x, y) => x + y, 0);
