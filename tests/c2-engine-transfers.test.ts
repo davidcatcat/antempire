@@ -526,7 +526,16 @@ if (!ONLY || ONLY.includes('C')) {
       ['collect into a crop (not a source path)', [{ ...rec(), recipient: { kind: 'crop', id: 'W1' } }], undefined, undefined, /not a collection or a kill/],
       ['record of another colony', [{ ...rec(), colony: 'C9' }], undefined, undefined, /recorded for colony C9/],
       ['undefined timing', null, end, [{ id: 'C1', events: [rec()], timing: 'sometimes' }], /timing/],
+      // independent review of c00d6a9 (P3): fail-open on overflow, sub-micro amounts, unreadable values, holes
+      ['portions too large for exact arithmetic (1e303)', [{ ...rec(), portions: 1e303 }], undefined, undefined, /too large|below one micro/],
+      ['end amount too large (1e303)', [rec()], { F01: { sugar: 1e303, protein: 0 } }, undefined, /exact micro-portion range/],
+      ['sub-micro portions (1e-9)', [{ ...rec(), portions: 1e-9 }], undefined, undefined, /below one micro-portion/],
+      ['BigInt portions', [{ ...rec(), portions: 10n }], undefined, undefined, /portions 10n/],
+      ['a hole in the colony list', null, end, [, ], /hole/],
+      ['a throwing getter', null, end, [{ id: 'C1', timing: 'timed', get events(): Any { throw Error('boom'); } }], /cannot be read/],
     ];
+    { const big = call({ length: 1, x: 'y'.repeat(5_000_000) }); ok(big.crash === '' && big.r.length > 0 && big.r.every((m) => m.length < 400), `TC source input: a huge invalid input gives a bounded message (${big.r[0]?.length} chars)`); }
+    { const many = call(Array.from({ length: 1000 }, () => null)); ok(many.r.length <= 51 && /more input errors/.test(many.r.at(-1) ?? ''), `TC source input: errors are capped (${many.r.length} lines)`); }
     for (const [name, events, endS, colonies, re] of bad) {
       const v = call(events, endS === undefined ? end : endS, colonies);
       ok(v.crash === '' && v.r.length > 0 && (!re || v.r.some((m) => re.test(m))), `TC source input: ${name} is reported, not accepted or crashed (${v.crash || v.r[0] || 'ACCEPTED'})`);
