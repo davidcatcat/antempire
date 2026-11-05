@@ -23,7 +23,7 @@ import assert from 'node:assert/strict';
 import { loadBundle } from '../cli/lib/load.ts';
 import { buildDay0 } from '../cli/lib/day0.ts';
 import { ENGINE_VERSION, simulateWorldDay, checkColonyFood, colonySnapshot, checkSources, sourceSnapshot, legacyToWorldState, legacyColonyMeta, type WorldState, type ParamBundle } from '../engine/index.ts';
-import { engineTransfers, replayEngineColonyDay } from '../cli/lib/engine-transfers.ts';
+import { engineTransfers, replayEngineColonyDay, replayEngineSourcesDay, speciesFoodTiming } from '../cli/lib/engine-transfers.ts';
 import { dayTransfers, replayColonyDay, toMicro } from '../cli/lib/compartments.ts';
 import { fixture, MAIN_SPECIES } from './lib/harness.ts';
 import { bindFoodTransfers, foodTransfer } from '../engine/transfers.ts';
@@ -34,7 +34,7 @@ const b = loadBundle();
 const ONLY = process.env.C2_ONLY;
 
 // ---------------------------------------------------------------- E: real engine, every colony-day replayed
-const stats = { colony_days: 0, transfers: 0, by_cause: {} as Record<string, number>, unattributed: { sugar: 0, protein: 0 }, c1_evidence_limited_days_fully_checked: 0, c1_agree_days: 0 };
+const stats = { source_days: 0, timed_days: 0, colony_days: 0, transfers: 0, by_cause: {} as Record<string, number>, unattributed: { sugar: 0, protein: 0 }, c1_evidence_limited_days_fully_checked: 0, c1_agree_days: 0 };
 const ids = new Set<string>();
 const sig = (x: Any, amount: number) => `${x.cause}|${x.source.kind}:${x.source.id}|${x.recipient.kind}:${x.recipient.id}|${x.food_type}|${amount}`;
 const samples: { before: Any; after: Any; events: Any[]; day: number; sources: Set<string> }[] = [];
@@ -44,12 +44,16 @@ function runWorld(s: WorldState, n: number, label: string, collect = true): stri
   ids.clear(); // transfer ids are unique within one world (FT-<day>-<colony>-<n>)
   for (let d = 0; d < n; d++) {
     const befores = s.colonies.map((c) => structuredClone(c)), o: Any = simulateWorldDay(s, b);
+    if (collect) { const se = replayEngineSourcesDay(o.state.sources, o.result.colonies.map((r: Any) => ({ id: r.colony_id, events: r.events, timing: speciesFoodTiming(b.species[MAIN_SPECIES]) }))); assert.deepEqual(se, [], `E ${label} day ${o.day}: the reader's source time replay rejects a real day: ${se.slice(0, 2).join(' | ')}`); checks++; stats.source_days++; }
     for (const [i, r] of o.result.colonies.entries()) {
       const before = befores[i], after = o.state.colonies.find((c: Any) => c.id === r.colony_id);
       const rep = replayEngineColonyDay(before, after, r.events, o.day, sourceIds(s));
       seqs.push(JSON.stringify(engineTransfers(r.events)));
       if (!collect) continue;
       assert.ok(rep.ok, `E ${label} day ${o.day} ${r.colony_id}: ${rep.errors.slice(0, 3).join(' | ')}`); checks++;
+      // Codex F1: every real colony-day with foraging is timed and passes the time-causality check (no legacy untimed day here)
+      assert.ok(rep.time_validation === 'timed' || rep.time_validation === 'no_foraging', `E ${label} day ${o.day}: time validation ${rep.time_validation}`);
+      if (rep.time_validation === 'timed') stats.timed_days++;
       stats.colony_days++; stats.transfers += rep.transfers;
       for (const [c, k] of Object.entries(rep.by_cause)) stats.by_cause[c] = (stats.by_cause[c] ?? 0) + k;
       for (const v of Object.values(rep.unattributed_by_cause)) { stats.unattributed.sugar += v.sugar; stats.unattributed.protein += v.protein; }
@@ -86,6 +90,7 @@ if (!ONLY || ONLY.includes('M')) {
   let s: WorldState = { ...structuredClone(base), colonies: [structuredClone(base.colonies[0]), second] }, days = 0;
   for (let d = 0; d < 40; d++) {
     const befores = s.colonies.map((c) => structuredClone(c)), o: Any = simulateWorldDay(s, two);
+    { const se = replayEngineSourcesDay(o.state.sources, o.result.colonies.map((r: Any) => ({ id: r.colony_id, events: r.events, timing: 'timed' as const }))); assert.deepEqual(se, [], `M day ${o.day}: the reader's source time replay rejects a real two-colony day: ${se.slice(0, 2).join(' | ')}`); checks++; }
     for (const [i, r] of o.result.colonies.entries()) {
       const rep = replayEngineColonyDay(befores[i], o.state.colonies[i], r.events, o.day, sourceIds(s));
       assert.ok(rep.ok, `M day ${o.day} ${r.colony_id}: ${rep.errors.slice(0, 3).join(' | ')}`); checks++;
@@ -398,6 +403,121 @@ if (!ONLY || ONLY.includes('S')) {
   }
 }
 
+// ---------------------------------------------------------------- TC: Codex reviews 2026-11-04/05, F1 (P2) — time causality
+// A closing end balance does not prove the transfers could happen in that order. Each case below was ACCEPTED by both
+// validators before this fix (evidence: Codex probe on 81c0e89; reproduced in reports/c2-time-causality-p2-1.md) and
+// must now be rejected by BOTH the engine (checkColonyFood → checkTimedCausality) and the independent reader.
+if (!ONLY || ONLY.includes('C')) {
+  type Day = { before: Any; after: Any; events: Any[]; day: number; sources: Set<string> };
+  const findDay = (pred: (ev: Any[]) => boolean, sc = 'A1', seed = 1, season = '2027-09-23', maxDays = 60): Day => {
+    let s: Any = buildDay0(sc as Any, seed, season, b).state;
+    for (let d = 0; d < maxDays; d++) { const before = structuredClone(s.colonies[0]), src = sourceIds(s), o: Any = simulateWorldDay(s, b); if (pred(o.result.colonies[0].events)) return { before, after: o.state.colonies[0], events: o.result.colonies[0].events, day: o.day, sources: src }; s = o.state; }
+    throw Error('no such day');
+  };
+  const fx = (ev: Any[]) => ev.filter((e) => e.type === 'food_transfer' && e.phase === 'foraging');
+  const engineMsg = (d: Day, ev: Any[]) => { try { checkColonyFood(colonySnapshot(d.before), d.after, ev, 'timed'); return ''; } catch (e) { return String(e); } };
+  const both = (d: Day, name: string, mutate: (ev: Any[]) => Any[], expect: 'reject' | 'accept', engineRe = /FOOD_TRANSFER/, readerRe = /./) => {
+    const ev = mutate(structuredClone(d.events)), t = engineMsg(d, ev), rep = replayEngineColonyDay(d.before, d.after, ev, d.day, d.sources, speciesFoodTiming(b.species[MAIN_SPECIES]));
+    if (process.env.C2_R2_PROBE) { console.log(JSON.stringify({ probe: 'TC ' + name, engine: t ? 'rejects' : 'ACCEPTS', reader: rep.ok ? 'ACCEPTS' : 'rejects', time_validation: rep.time_validation, engine_error: t.slice(0, 160), reader_errors: rep.errors.slice(0, 2) })); return; }
+    if (expect === 'reject') {
+      ok(engineRe.test(t), `TC ${name}: the engine rejects (${t.slice(0, 160) || 'ACCEPTED'})`);
+      ok(!rep.ok && rep.errors.some((e: string) => readerRe.test(e)), `TC ${name}: the reader rejects (${rep.errors[0] ?? 'ACCEPTED'})`);
+    } else {
+      ok(t === '', `TC ${name}: the engine accepts (${t.slice(0, 160)})`);
+      ok(rep.ok, `TC ${name}: the reader accepts (${rep.errors.slice(0, 2).join(' | ')})`);
+    }
+    return rep;
+  };
+  // Codex's own example day: A1, seed 1, autumn equinox, day 5 (two collects and two unloads of one worker)
+  const d5 = findDay((ev) => fx(ev).length === 4 && fx(ev).some((x) => x.cause === 'unload'), 'A1', 1, '2027-09-23', 5);
+  ok(d5.day === 5, `Codex example day is day ${d5.day}`);
+  both(d5, 'unmodified day', (ev) => ev, 'accept');
+  both(d5, 'Codex probe: collects at minute 1000, unloads at minute 0 (ids, amounts, order unchanged)', (ev) => { for (const x of fx(ev)) { if (x.cause === 'collect') x.minute = 1000; if (x.cause === 'unload') x.minute = 0; } return ev; }, 'reject', /go back in time|has not arrived/, /^time:/);
+  both(d5, 'an unload stamped 1 minute before its own collect', (ev) => { const xs = fx(ev), u = xs.find((x) => x.cause === 'unload'), c = xs.find((x) => x.cause === 'collect' && x.recipient.id === u.source.id); u.minute = c.minute - 1; return ev; }, 'reject', /go back in time|has not arrived/, /^time:/);
+  both(d5, 'valid sequence with every timestamp shifted so that unloads come first (tampered timestamps)', (ev) => { const xs = fx(ev); const ms = xs.map((x) => x.minute).reverse(); xs.forEach((x, i) => (x.minute = ms[i])); return ev; }, 'reject', /go back in time|has not arrived/, /^time:/);
+  both(d5, 'same worker, same minute: unload listed before its collect (ids renumbered)', (ev) => { const xs = fx(ev), c = xs[0], u = xs[1]; u.minute = c.minute; const ic = ev.indexOf(c), iu = ev.indexOf(u); [ev[ic], ev[iu]] = [ev[iu], ev[ic]]; let i = 0; for (const e of ev) if (e.type === 'food_transfer') e.transfer_id = `FT-${d5.day}-${d5.before.id}-${++i}`; return ev; }, 'reject', /holds 0|has not arrived/, /holds 0|^time:/);
+  both(d5, 'same worker, same minute, collect then unload in that order (legal: the tie rule is the order of the acts)', (ev) => { const xs = fx(ev); xs[1].minute = xs[0].minute; return ev; }, 'accept');
+  both(d5, 'an unload with no earlier collect (the collect removed, amounts otherwise unchanged)', (ev) => { const c = fx(ev).find((x) => x.cause === 'collect'); return ev.filter((e) => e !== c); }, 'reject', /holds 0|has not arrived|transit/, /holds 0|^time:|id/);
+  both(d5, 'array order changed, end balance still closes', (ev) => { const xs = fx(ev), ic = ev.indexOf(xs[0]), iu = ev.indexOf(xs[1]); [ev[ic], ev[iu]] = [ev[iu], ev[ic]]; return ev; }, 'reject', /holds 0/, /holds 0|expected/);
+  both(d5, 'one record made untimed (minute null) among timed ones', (ev) => { fx(ev).find((x) => x.cause === 'collect').minute = null; return ev; }, 'reject', /minute null on a timed day/, /^time:.*minute null/);
+  both(d5, 'one unload made untimed (minute null): null is not minute 0', (ev) => { fx(ev).find((x) => x.cause === 'unload').minute = null; return ev; }, 'reject', /minute null on a timed day/, /^time:.*minute null/);
+  // the timing mode comes from the rules, not the records: nulling EVERY minute of a timed day does not make it a legacy day
+  both(d5, 'every foraging minute set to null on a timed day (would otherwise pass as an untimed legacy day)', (ev) => { for (const x of fx(ev)) x.minute = null; return ev; }, 'reject', /minute null on a timed day/, /^time:.*minute null/);
+  ok(speciesFoodTiming(b.species[MAIN_SPECIES]) === 'timed', 'TC the main species runs the individual timeline: the reader derives "timed" from the species parameters');
+  // the legacy planned-trip path (individual timeline off): collects/unloads carry no minute, hunt windows do. Its time
+  // order is NOT validated (stated limit) — the array-order replay still applies — and the mode must be stated by the rules.
+  {
+    const lb: Any = structuredClone(b); lb.species[MAIN_SPECIES].activity.individual_timeline = false;
+    let s: Any = buildDay0('A1' as Any, 1, '2027-09-23', lb).state, legacyDays = 0, mixedDays = 0, rejectedAsTimed = 0;
+    for (let d = 0; d < 30; d++) {
+      const before = structuredClone(s.colonies[0]), src = sourceIds(s), o: Any = simulateWorldDay(s, lb), ev = o.result.colonies[0].events, xs = fx(ev);
+      const rep = replayEngineColonyDay(before, o.state.colonies[0], ev, o.day, src, speciesFoodTiming(lb.species[MAIN_SPECIES]));
+      if (xs.length) {
+        ok(rep.ok && rep.time_validation === 'untimed_legacy', `TC legacy day ${o.day}: the reader accepts and reports time NOT validated (${rep.time_validation}; ${rep.errors[0] ?? ''})`); legacyDays++;
+        if (xs.some((x: Any) => x.minute === null) && xs.some((x: Any) => x.minute !== null)) mixedDays++;
+        const asTimed = replayEngineColonyDay(before, o.state.colonies[0], ev, o.day, src, 'timed');
+        if (xs.some((x: Any) => x.minute === null)) { ok(!asTimed.ok && /^time:.*minute null/.test(asTimed.errors.join('\n')), `TC legacy day ${o.day} read as timed: rejected`); rejectedAsTimed++; }
+        const u = xs.find((x: Any) => x.cause === 'unload'), c = u && xs.find((x: Any) => x.cause === 'collect' && x.recipient.id === u.source.id);
+        if (u && c && ev.indexOf(c) < ev.indexOf(u) && legacyDays < 4) {
+          const sw = structuredClone(ev), a = ev.indexOf(c), z = ev.indexOf(u); [sw[a], sw[z]] = [sw[z], sw[a]];
+          const t = (() => { try { checkColonyFood(colonySnapshot(before), o.state.colonies[0], sw, 'untimed_legacy'); return ''; } catch (e) { return String(e); } })();
+          ok(/FOOD_TRANSFER/.test(t) && !replayEngineColonyDay(before, o.state.colonies[0], sw, o.day, src, 'untimed_legacy').ok, `TC legacy day ${o.day}: an unload listed before its collect is still rejected by the array-order replay (engine and reader)`);
+        }
+      }
+      s = o.state;
+    }
+    if (process.env.C2_TC_SHOW) console.log(`legacy=${legacyDays} mixed=${mixedDays} asTimedRejected=${rejectedAsTimed}`);
+    ok(legacyDays > 5, `TC ${legacyDays} legacy days with foraging records checked (${mixedDays} of them mix timed hunt records with untimed collects/unloads; ${rejectedAsTimed} rejected when read as timed)`);
+  }
+  // a day with a trophallaxis: the donor's crop gives sugar that its own unload brought; stamping the trophallaxis before
+  // that unload must be rejected
+  const dT = findDay((ev) => fx(ev).some((x) => x.cause === 'trophallaxis'));
+  both(dT, 'trophallaxis stamped before the unload that filled the donor’s crop', (ev) => { const t = fx(ev).find((x) => x.cause === 'trophallaxis'), u = fx(ev).filter((x) => x.cause === 'unload' && x.source.id === t.source.id && x.minute <= t.minute).at(-1); t.minute = u.minute - 0.5; return ev; }, 'reject', /go back in time|has not arrived/, /^time:/);
+  // independent review of ed32299, N1: a carcass collected before the kill that made it (sources are not time-replayed,
+  // so the kill → carcass link is checked directly). Day 21 of A1 seed 1: kill at F11, four collects name it.
+  const dK = findDay((ev) => fx(ev).some((x) => x.cause === 'prey_kill') && fx(ev).some((x) => x.cause === 'collect' && x.contact?.prey_event_id));
+  const killOf = (ev: Any[]) => fx(ev).find((x) => x.cause === 'prey_kill');
+  both(dK, 'unmodified hunting day', (ev) => ev, 'accept');
+  both(dK, 'the kill and its predation event moved after the carcass collects (minute 1440)', (ev) => { const k = killOf(ev); k.minute = 1440; ev.find((e) => e.type === 'insect_predation' && e.event_id === k.source.id).minute = 1440; return ev; }, 'reject', /before its kill/, /^time:.*before the kill/);
+  both(dK, 'only the prey_kill record moved (the kill event stays)', (ev) => { killOf(ev).minute = 1440; return ev; }, 'reject', /insect_predation|before its kill/, /^time:/);
+  both(dK, 'a carcass collect stamped 1 minute before its kill', (ev) => { const k = killOf(ev), c = fx(ev).find((x) => x.cause === 'collect' && x.contact?.prey_event_id === k.source.id); c.minute = k.minute - 1; return ev; }, 'reject', /before its kill|go back in time|has not arrived/, /^time:/);
+  both(dK, 'a collect naming a prey that was never killed', (ev) => { const c = fx(ev).find((x) => x.cause === 'collect' && x.contact?.prey_event_id); c.contact.prey_event_id = 'HUNT-NOPE'; return ev; }, 'reject', /no prey_kill record/, /^time:.*no kill/);
+  // independent review of af6779c: the same violation with the optional prey tag removed. The kill adds carcass protein
+  // to a shared source; untagged collects of it before the kill must be caught by the time-ordered SOURCE replay
+  // (engine checkSources; reader replayEngineSourcesDay), whatever the tags say.
+  {
+    let sw: Any = buildDay0('A1' as Any, 1, '2027-09-23', b).state, o: Any;
+    for (let d = 0; d < 60; d++) { o = simulateWorldDay(sw, b); if (fx(o.result.colonies[0].events).some((x) => x.cause === 'prey_kill')) break; sw = o.state; }
+    const ev0 = o.result.colonies[0].events, kill = fx(ev0).find((x) => x.cause === 'prey_kill');
+    // the source holdings at the start of foraging (input to the engine's check): end + collected − credited
+    const startSrc = sourceSnapshot(o.state);
+    for (const x of fx(ev0)) { const m = toMicro(x.portions); if (x.source.kind === 'source') startSrc.get(x.source.id)![x.food_type as 'sugar' | 'protein'] += m; if (x.recipient.kind === 'source') startSrc.get(x.recipient.id)![x.food_type as 'sugar' | 'protein'] -= m; }
+    const engineThrows = (f: () => void) => { try { f(); return ''; } catch (e) { return String(e); } };
+    const srcBoth = (name: string, ev: Any[], expect: 'reject' | 'accept') => {
+      const t = engineThrows(() => checkSources(startSrc, o.state, [ev], ['timed'])), se = replayEngineSourcesDay(o.state.sources, [{ id: o.result.colonies[0].colony_id, events: ev, timing: 'timed' }]);
+      if (expect === 'accept') { ok(t === '', `TC sources ${name}: the engine accepts (${t.slice(0, 140)})`); ok(se.length === 0, `TC sources ${name}: the reader accepts (${se[0]})`); }
+      else { ok(/FOOD_TRANSFER/.test(t), `TC sources ${name}: the engine's source check rejects (${t.slice(0, 160) || 'ACCEPTED'})`); ok(se.length > 0, `TC sources ${name}: the reader's source replay rejects (${se[0] ?? 'ACCEPTED'})`); }
+    };
+    srcBoth('unmodified hunting day', structuredClone(ev0), 'accept');
+    for (const strip of ['prey_event_id', 'contact'] as const) {
+      const ev = structuredClone(ev0);
+      for (const x of fx(ev)) if (x.contact?.prey_event_id) { if (strip === 'contact') delete x.contact; else delete x.contact.prey_event_id; }
+      fx(ev).find((x) => x.transfer_id === kill.transfer_id).minute = 1440; ev.find((e: Any) => e.type === 'insect_predation' && e.event_id === kill.source.id).minute = 1440;
+      srcBoth(`carcass collects untagged (${strip} removed), kill moved to minute 1440`, ev, 'reject');
+    }
+  }
+  // different workers' records may interleave in any list order: a legal day with two foragers, the list regrouped
+  // worker by worker (each worker's own records keep their order and minutes; ids renumbered) must still be accepted
+  const two = findDay((ev) => { const ws = new Set(fx(ev).filter((x) => x.cause === 'collect').map((x) => x.recipient.id)); return ws.size >= 2 && !fx(ev).some((x) => x.cause === 'trophallaxis'); }, 'A1', 1, '2027-09-23', 60);
+  both(two, 'two workers’ records regrouped by worker (list no longer in global time order; each worker in order)', (ev) => {
+    const xs = fx(ev), w = (x: Any) => (x.source.kind === 'in_transit' ? x.source.id : x.recipient.id), byW = [...new Set(xs.map(w))].sort().reverse();
+    const regrouped = byW.flatMap((id) => xs.filter((x) => w(x) === id)), firstIdx = ev.indexOf(xs[0]);
+    const rest = ev.filter((e) => !xs.includes(e)); rest.splice(firstIdx, 0, ...regrouped);
+    let i = 0; for (const e of rest) if (e.type === 'food_transfer') e.transfer_id = `FT-${two.day}-${two.before.id}-${++i}`;
+    ok(!process.env.C2_R2_PROBE && regrouped.some((x, k) => k > 0 && x.minute < regrouped[k - 1].minute) || !!process.env.C2_R2_PROBE, 'the regrouped list is not in global time order (so the test is not trivial)');
+    return rest;
+  }, 'accept');
+}
 // ---------------------------------------------------------------- T: determinism
 if (!ONLY || ONLY.includes('T')) {
   const a = runWorld(buildDay0('A1' as Any, 7, '2027-09-23', b).state, 20, 'T', false), z = runWorld(buildDay0('A1' as Any, 7, '2027-09-23', b).state, 20, 'T', false);

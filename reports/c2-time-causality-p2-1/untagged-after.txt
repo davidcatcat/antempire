@@ -1,0 +1,30 @@
+  reader source replay: ACCEPT
+A0 unmodified 
+  reader: ACCEPT (timed) 
+  engine: ACCEPT 
+  sources: ACCEPT
+  reader source replay: REJECT sources: FT-21-C1-17 of C1 (minute 70.460781) takes 375000 µp from F11, which holds 0 µp then — food taken before it was there
+A1 prey ids stripped, kill+predation moved to 1440 (site F11 goes negative in time order: true) 
+  reader: ACCEPT (timed) 
+  engine: ACCEPT 
+  sources: REJECT FOOD_TRANSFER: FT-21-C1-17 takes 375000 µp from source:F11, which holds 0
+  reader source replay: REJECT sources: FT-21-C1-17 of C1 (minute 70.460781) takes 375000 µp from F11, which holds 0 µp then — food taken before it was there
+A2 contact deleted, kill moved to 1440 
+  reader: ACCEPT (timed) 
+  engine: ACCEPT 
+  sources: REJECT FOOD_TRANSFER: FT-21-C1-17 takes 375000 µp from source:F11, which holds 0
+  reader source replay: REJECT sources: FT-21-C1-17 of C1 (minute 70.460781) takes 375000 µp from F11, which holds 0 µp then — food taken before it was there
+A3 prey id = null, kill moved to 1440 
+  reader: REJECT time: FT-21-C1-17 takes the carcass of null, but no kill of null is recorded 
+  engine: REJECT FOOD_TRANSFER C1: FT-21-C1-17 collects the carcass of null, which has no prey_kill record this day 
+  sources: REJECT FOOD_TRANSFER: FT-21-C1-17 takes 375000 µp from source:F11, which holds 0
+  reader source replay: REJECT sources: FT-21-C1-17 of C1 (minute 70.460781) takes 375000 µp from F11, which holds 0 µp then — food taken before it was there
+A3 prey id = 0, kill moved to 1440 
+  reader: REJECT time: FT-21-C1-17 takes the carcass of 0, but no kill of 0 is recorded 
+  engine: REJECT FOOD_TRANSFER C1: FT-21-C1-17 collects the carcass of 0, which has no prey_kill record this day 
+  sources: REJECT FOOD_TRANSFER: FT-21-C1-17 takes 375000 µp from source:F11, which holds 0
+  reader source replay: REJECT sources: FT-21-C1-17 of C1 (minute 70.460781) takes 375000 µp from F11, which holds 0 µp then — food taken before it was there
+A3 prey id = "", kill moved to 1440 
+  reader: REJECT time: FT-21-C1-17 takes the carcass of , but no kill of  is recorded 
+  engine: REJECT FOOD_TRANSFER C1: FT-21-C1-17 collects the carcass of , which has no prey_kill record this day 
+  sources: REJECT FOOD_TRANSFER: FT-21-C1-17 takes 375000 µp from source:F11, which holds 0

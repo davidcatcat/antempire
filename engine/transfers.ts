@@ -23,6 +23,7 @@
  */
 import { round } from './math.ts';
 import type { ColonyState, SimEvent, WorldState } from './types.ts';
+import type { SpeciesParams } from './params.ts';
 
 export type FoodKind = 'source' | 'insect' | 'in_transit' | 'crop' | 'cache' | 'nest_unlocated' | 'metabolized' | 'egg' | 'loss';
 export interface FoodRef { kind: FoodKind; id: string }
@@ -207,13 +208,92 @@ function checkPathAndKills(colonyId: string, events: SimEvent[]): void {
 }
 
 /**
+ * Codex reviews 2026-11-04/05, F1 (P2): TIME causality of the foraging transfers. A closing end balance does not show
+ * that the transfers could have happened in that order: an unload stamped before the collect that supplied it balances
+ * just as well. Semantics (the engine's event clock, engine/activity.ts): a foraging record's `minute` is the event-clock
+ * time of the act, and the engine writes the records of one colony-day in the order it processes them — so at the same
+ * minute, array order IS the order of the acts (the tie rule). This check never sorts records into a legal order and
+ * never changes them; it rejects:
+ *   (a) on a timed day (mode from the rules, foodTimingFor) a foraging record with minute null — null is never read as
+ *       minute 0, and an all-null day cannot pass as legacy. On the untimed legacy path (individual timeline off) the
+ *       time order is NOT validated (only the array-order replay applies); this is a stated limit;
+ *   (b) a worker's own acts out of time order: the records touching one worker's compartments (in_transit:W, crop:W)
+ *       must not go back in time along the array (different workers' records may interleave freely);
+ *   (d) a carcass collect (contact.prey_event_id) before the kill that made it, or a prey_kill record whose minute is
+ *       not the minute of its insect_predation event (independent review of ed32299, N1);
+ *   (c) a dependency in the wrong time order: replaying the timed records in time order (ties: array order) no
+ *       compartment of the colony may ever hold less than zero — e.g. an unload before the collect that filled the
+ *       transit load, or a trophallaxis before the unload that filled the donor's crop.
+ * Sources are shared between colonies; their time order is not checked here (stated limit; checkSources balances them).
+ * Returns 'timed' or 'untimed_legacy' (time not validated); throws on a violation.
+ */
+/** How a colony-day's foraging was produced: on the individual activity timeline (v2-review.17) every act has an
+ * event-clock minute; the earlier planned-trip path ('untimed_legacy') records collects and unloads without one. The mode
+ * comes from the rules (species switches), never from the records themselves, so nulling minutes cannot select it. */
+export type FoodTiming = 'timed' | 'untimed_legacy';
+export function foodTimingFor(sp: SpeciesParams): FoodTiming { return sp.activity.individual_timeline && sp.navigation.individual_route_memory ? 'timed' : 'untimed_legacy'; }
+export function checkTimedCausality(start: ColonyFoodSnapshot, colony: ColonyState, events: SimEvent[], timing: FoodTiming): 'timed' | 'untimed_legacy' | 'no_foraging' {
+  const fail = (m: string) => { throw Error(`FOOD_TRANSFER ${colony.id}: ${m}`); };
+  const fx = events.filter(isTransfer).map((e) => e as unknown as FoodTransferInput & { transfer_id: string }).filter((x) => x.phase === 'foraging');
+  if (!fx.length) return 'no_foraging';
+  // Untimed legacy path: minute values (hunt windows carry one, collects and unloads do not) are NOT validated; only the
+  // array-order replay of checkColonyFood applies. Stated limit, not a pass.
+  if (timing === 'untimed_legacy') return 'untimed_legacy';
+  const nulls = fx.filter((x) => x.minute === null).length;
+  if (nulls) fail(`${nulls} of ${fx.length} foraging records have minute null on a timed day (individual activity timeline): an act without a time cannot be placed in time, and null is never minute 0`);
+  // (d) a carcass exists only after its kill (independent review of ed32299, N1): sources are shared and not replayed
+  // here, so the kill -> carcass collect link is checked directly. The prey_kill record is the same act as the
+  // insect_predation event (same minute); a collect naming a prey must follow that prey's kill at the same site.
+  const pos = new Map(fx.map((x, i) => [x, i]));
+  const killRec = new Map(fx.filter((x) => x.cause === 'prey_kill').map((x) => [x.source.id, x]));
+  for (const e of events) if (e.type === 'insect_predation') {
+    const k = killRec.get(String(e.event_id));
+    if (k && e.minute !== k.minute) fail(`${k.transfer_id} (prey_kill of ${e.event_id}) is at minute ${k.minute}, the kill itself (insect_predation) at minute ${e.minute}`);
+  }
+  for (const x of fx) {
+    const prey = (x as { contact?: { prey_event_id?: unknown } }).contact?.prey_event_id;
+    if (x.cause !== 'collect' || prey === undefined) continue;
+    const k = killRec.get(String(prey));
+    if (!k) fail(`${x.transfer_id} collects the carcass of ${prey}, which has no prey_kill record this day`);
+    else if (k.recipient.id !== x.source.id) fail(`${x.transfer_id} collects the carcass of ${prey} at ${x.source.id}; the kill was at ${k.recipient.id}`);
+    else if ((x.minute as number) < (k.minute as number) || (x.minute === k.minute && (pos.get(x) as number) < (pos.get(k) as number))) fail(`${x.transfer_id} (collect, minute ${x.minute}) takes the carcass of ${prey} before its kill ${k.transfer_id} (minute ${k.minute})`);
+  }
+  // (b) per worker: its own acts never go back in time along the array
+  const lastMinute = new Map<string, { m: number; id: string }>();
+  for (const x of fx) {
+    const holders = [x.source, x.recipient].filter((r) => r.kind === 'in_transit' || r.kind === 'crop').map((r) => r.id);
+    for (const w of new Set(holders)) {
+      const prev = lastMinute.get(w);
+      if (prev && (x.minute as number) < prev.m) fail(`${x.transfer_id} (${x.cause}, minute ${x.minute}) is recorded after ${prev.id} (minute ${prev.m}) of the same worker ${w}: its acts go back in time`);
+      lastMinute.set(w, { m: x.minute as number, id: x.transfer_id });
+    }
+  }
+  // (c) time-ordered replay; ties at the same minute keep the engine's processing (array) order
+  const order = fx.map((x, i) => ({ x, i })).sort((p, q) => (p.x.minute as number) - (q.x.minute as number) || p.i - q.i);
+  const hold = new Map<string, number>();
+  let cropSum = 0;
+  for (const [id, v] of start.crops) { hold.set(`crop:${id}:sugar`, v); cropSum += v; }
+  hold.set(`nest_unlocated:${colony.id}:sugar`, start.sugar - cropSum); hold.set(`cache:${colony.nest_node}:protein`, start.protein);
+  for (const { x } of order) {
+    const a = micro(x.portions);
+    if (TRACKED_KINDS.has(x.source.kind) && x.source.kind !== 'source') {
+      const k = key(x.source, x.food_type), h = hold.get(k) ?? 0;
+      if (h < a) fail(`${x.transfer_id} (${x.cause} at minute ${x.minute}) takes ${a} µp ${x.food_type} from ${k}, which at that time holds ${h}: it uses food that has not arrived yet`);
+      hold.set(k, h - a);
+    }
+    if (TRACKED_KINDS.has(x.recipient.kind) && x.recipient.kind !== 'source') { const k = key(x.recipient, x.food_type); hold.set(k, (hold.get(k) ?? 0) + a); }
+  }
+  return 'timed';
+}
+
+/**
  * Per-compartment closure of one colony-day: replay this day's transfers in order from the start snapshot; no
  * compartment may go negative; at the end every living worker's crop, the unlocated nest sugar and the protein
  * cache must equal the state exactly, nothing may be left in transit, and a dead worker's crop must be empty.
  * Sugar and protein are followed separately; a crop or the unlocated nest sugar may hold only sugar, the cache only
  * protein. Throws (the day is not produced) on any difference. Requires crops to be a subset of the ledger (v2-review.13).
  */
-export function checkColonyFood(start: ColonyFoodSnapshot, colony: ColonyState, events: SimEvent[]): void {
+export function checkColonyFood(start: ColonyFoodSnapshot, colony: ColonyState, events: SimEvent[], timing: FoodTiming = 'timed'): void {
   const cur = new Map<string, number>(), add = (k: string, v: number) => cur.set(k, (cur.get(k) ?? 0) + v);
   let cropSum = 0;
   for (const [id, v] of start.crops) { cur.set(`crop:${id}:sugar`, v); cropSum += v; }
@@ -251,6 +331,7 @@ export function checkColonyFood(start: ColonyFoodSnapshot, colony: ColonyState, 
   }
   if ((cur.get(unl) as number) !== micro(colony.stores.sugar) - endCrops) fail(`${unl} is ${micro(colony.stores.sugar) - endCrops} µp, the transfers give ${cur.get(unl)}`);
   if ((cur.get(cache) as number) !== micro(colony.stores.protein)) fail(`${cache} is ${micro(colony.stores.protein)} µp, the transfers give ${cur.get(cache)}`);
+  checkTimedCausality(start, colony, events, timing);
 }
 
 /** Source holdings after the day's ecology step and before foraging (micro-portions). */
@@ -260,7 +341,7 @@ export function sourceSnapshot(world: WorldState): Map<string, { sugar: number; 
 /** World-wide source closure over all colonies' foraging: start + kills - collections = end, per site and food.
  *  `colonyEvents[i]` are the events of `world.colonies[i]`; every transfer touching a source must be recorded for that
  *  colony, and its colony side (the transit load it fills, the insect it kills) must belong to that colony (R3-08). */
-export function checkSources(start: Map<string, { sugar: number; protein: number }>, world: WorldState, colonyEvents: SimEvent[][]): void {
+export function checkSources(start: Map<string, { sugar: number; protein: number }>, world: WorldState, colonyEvents: SimEvent[][], timings: FoodTiming[] = []): void {
   const cur = new Map([...start].map(([k, v]) => [k, { ...v }]));
   colonyEvents.forEach((events, i) => {
     const colony = world.colonies?.[i];
@@ -281,11 +362,23 @@ export function checkSources(start: Map<string, { sugar: number; protein: number
       if (!(other.kind === 'in_transit' && workers.has(other.id)) && !(other.kind === 'insect' && kills.has(other.id))) throw Error(`FOOD_TRANSFER: ${x.transfer_id} links a source with ${other.kind}:${other.id}, which is not a worker or a recorded kill of ${colony.id} (Issue #61 R3-08)`);
     }
   });
-  for (const events of colonyEvents) for (const e of events.filter(isTransfer)) {
-    const x = e as unknown as FoodTransferInput & { transfer_id: string }, a = micro(x.portions);
+  // Colonies forage one after another (engine/day.ts), so a colony starts from the holdings its predecessors left. Within
+  // a timed colony-day the source records are taken in TIME order (ties: list order): a kill adds carcass protein to a
+  // source only at its minute, so nothing — tagged with the prey or not — can be taken from it earlier (independent
+  // review of af6779c). On the untimed legacy path the list order is used (time not validated).
+  colonyEvents.forEach((events, ci) => {
+    const xs = events.filter(isTransfer).map((e, i) => ({ x: e as unknown as FoodTransferInput & { transfer_id: string }, i })).filter(({ x }) => x.source.kind === 'source' || x.recipient.kind === 'source');
+    if ((timings[ci] ?? 'timed') === 'timed') {
+      const untimed = xs.find(({ x }) => typeof x.minute !== 'number');
+      if (untimed) throw Error(`FOOD_TRANSFER: ${untimed.x.transfer_id} moves source food without a minute on a timed day`);
+      xs.sort((p, q) => (p.x.minute as number) - (q.x.minute as number) || p.i - q.i);
+    }
+    for (const { x } of xs) {
+    const a = micro(x.portions);
     if (x.source.kind === 'source') { const s = cur.get(x.source.id); if (!s || s[x.food_type] < a) throw Error(`FOOD_TRANSFER: ${x.transfer_id} takes ${a} µp from source:${x.source.id}, which holds ${s?.[x.food_type]}`); s[x.food_type] -= a; }
     if (x.recipient.kind === 'source') { const s = cur.get(x.recipient.id); if (!s) throw Error(`FOOD_TRANSFER: ${x.transfer_id} adds to unknown source ${x.recipient.id}`); s[x.food_type] += a; }
-  }
+    }
+  });
   for (const s of Object.values(world.sources)) {
     const c = cur.get(s.id);
     if (!c || c.sugar !== micro(s.sugar || 0) || c.protein !== micro(s.protein || 0)) throw Error(`FOOD_TRANSFER: source:${s.id} is ${micro(s.sugar || 0)}/${micro(s.protein || 0)} µp after foraging, the transfers give ${c?.sugar}/${c?.protein}`);

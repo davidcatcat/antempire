@@ -13,7 +13,7 @@ import { forageDay } from './foraging.ts';
 import { consume, storageOverflow } from './nutrition.ts';
 import { developBrood } from './brood.ts';
 import { oviposition, queenSurvival, workerSurvival } from './queen.ts';
-import { bindFoodTransfers, checkColonyFood, checkSources, colonySnapshot, sourceSnapshot } from './transfers.ts';
+import { bindFoodTransfers, checkColonyFood, checkSources, colonySnapshot, foodTimingFor, sourceSnapshot } from './transfers.ts';
 import { resolveBundle, type ParamBundle, type ResolvedParams, type SpeciesParams } from './params.ts';
 import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from './types.ts';
 
@@ -106,7 +106,7 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
   const sourcesBefore = sourceSnapshot(s);
 
   for (const w of work) forageDay(s, w.colony, w.sp, wp, weather, w.events, w.summary);
-  checkSources(sourcesBefore, s, work.map((w) => w.events));
+  checkSources(sourcesBefore, s, work.map((w) => w.events), work.map((w) => foodTimingFor(w.sp)));
   assertCausalFood([...worldEvents, ...work.flatMap((w) => w.events)], 'NO_GOD_MODE: food without tracked dead insect');
   for (const w of work) {
     const m = w.summary.foraging_workers_by_macro as { sugar: Set<string>; protein: Set<string> };
@@ -123,7 +123,7 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
     queenSurvival(s, colony, sp, events);
     oviposition(s, colony, sp, ratios, weather, events, summary);
     // v2-review.22 (C2): replay this day's food transfers per compartment (defined while crops are a subset of the ledger)
-    if (sp.nutrition_rules.egg_laying_settles_crops) checkColonyFood(w.food, colony, events);
+    if (sp.nutrition_rules.egg_laying_settles_crops) checkColonyFood(w.food, colony, events, foodTimingFor(sp));
     const pop = colony.population;
     summary.population = { queen: pop.queen_alive ? 1 : 0, workers: pop.workers.length, eggs: pop.brood.filter((b) => b.stage === 'egg').length, larvae: pop.brood.filter((b) => b.stage === 'larva').length, pupae: pop.brood.filter((b) => b.stage === 'pupa').length };
     summary.stock = { sugar: round(colony.stores.sugar), protein: round(colony.stores.protein) };
