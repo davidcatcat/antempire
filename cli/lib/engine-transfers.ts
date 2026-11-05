@@ -72,6 +72,8 @@ export function recordSchemaErrors(x: unknown, where: string): string[] {
 
 export interface EngineReplay {
   ok: boolean; errors: string[]; transfers: number;
+  /** Codex F1 (P2): whether the foraging transfers' TIME order was checked ('untimed_legacy': minute null, not validated) */
+  time_validation: 'timed' | 'untimed_legacy' | 'no_foraging' | 'invalid';
   by_cause: Record<string, number>; by_attribution: Record<string, { sugar: number; protein: number }>;
   /** micro-portions taken from the colony ledger by aggregate rules (F01/A08), by cause */
   unattributed_by_cause: Record<string, { sugar: number; protein: number }>;
@@ -89,12 +91,21 @@ export interface EngineReplay {
  * KNOWN LIMITS (not reconciled; F01/A08, C3-C5): the split of the colony ledger between the metabolized / egg / loss
  * sinks is not compared with the engine's consumption and egg costs; a worker's task (role) is not checked.
  */
-export function replayEngineColonyDay(start: ColonyState, end: ColonyState, events: SimEvent[], day: number, sourceIds: ReadonlySet<string>): EngineReplay {
+/**
+ * Timing mode of a colony-day, read from the species parameters as given (independent of the engine's foodTimingFor):
+ * the individual activity timeline needs both switches; anything else is the untimed legacy path. Missing or non-boolean
+ * switches are treated as timed, the stricter mode.
+ */
+export function speciesFoodTiming(species: unknown): 'timed' | 'untimed_legacy' {
+  const sp = (species ?? {}) as { activity?: { individual_timeline?: unknown }; navigation?: { individual_route_memory?: unknown } };
+  return sp.activity?.individual_timeline === false || sp.navigation?.individual_route_memory === false ? 'untimed_legacy' : 'timed';
+}
+export function replayEngineColonyDay(start: ColonyState, end: ColonyState, events: SimEvent[], day: number, sourceIds: ReadonlySet<string>, timing: 'timed' | 'untimed_legacy' = 'timed'): EngineReplay {
   const errors: string[] = [], err = (m: string) => { if (errors.length < 50) errors.push(m); };
   // independent review of 9888217 (F-d): the event list itself is checked before anything reads it
-  if (!Array.isArray(events)) return { ok: false, errors: ['the event list is not an array'], transfers: 0, by_cause: {}, by_attribution: {}, unattributed_by_cause: {} };
+  if (!Array.isArray(events)) return { ok: false, errors: ['the event list is not an array'], transfers: 0, time_validation: 'invalid', by_cause: {}, by_attribution: {}, unattributed_by_cause: {} };
   const notObjects = events.map((e, i) => (typeof e === 'object' && e !== null ? -1 : i)).filter((i) => i >= 0);
-  if (notObjects.length) return { ok: false, errors: notObjects.slice(0, 50).map((i) => `event ${i} is ${JSON.stringify(events[i])}, not an event object`), transfers: 0, by_cause: {}, by_attribution: {}, unattributed_by_cause: {} };
+  if (notObjects.length) return { ok: false, errors: notObjects.slice(0, 50).map((i) => `event ${i} is ${JSON.stringify(events[i])}, not an event object`), transfers: 0, time_validation: 'invalid', by_cause: {}, by_attribution: {}, unattributed_by_cause: {} };
   const nestsOf = (c: ColonyState): string[] => [c.nest_node]; // one nest today; a list so several nests can be added
   // a worker is a compartment only while it exists: foraging-phase transfers may name only workers present at the start of
   // the day (eclosions and deaths happen later); settlement transfers may name workers present at the start or the end
@@ -172,6 +183,7 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
     if (x.recipient.kind !== 'source' && HOLDS[x.recipient.kind]) cur.set(k(x.recipient, x.food_type), (cur.get(k(x.recipient, x.food_type)) ?? 0) + a);
   });
   for (const kId of killIds) if (!credited.has(kId)) err(`kill ${kId} has no prey_kill transfer`);
+  const time_validation = timeCausality(start, xs, err, timing);
   let endCrops = 0;
   const alive = new Set(end.population.workers.map((w) => w.id));
   for (const w of end.population.workers) {
@@ -186,5 +198,51 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
   }
   if ((cur.get(unl) as number) !== toMicro(end.stores.sugar) - endCrops) err(`${unl}: state ${toMicro(end.stores.sugar) - endCrops} µp, replay ${cur.get(unl)}`);
   if ((cur.get(cache) as number) !== toMicro(end.stores.protein)) err(`${cache}: state ${toMicro(end.stores.protein)} µp, replay ${cur.get(cache)}`);
-  return { ok: errors.length === 0, errors, transfers: xs.length, by_cause, by_attribution, unattributed_by_cause };
+  return { ok: errors.length === 0, errors, transfers: xs.length, time_validation, by_cause, by_attribution, unattributed_by_cause };
+}
+
+/**
+ * Codex reviews 2026-11-04/05, F1 (P2), written here independently of engine/transfers.ts checkTimedCausality.
+ * A foraging record's minute is the event-clock time of the act; at the same minute the order of the records is the order
+ * of the acts. Nothing is sorted into a legal order or changed. Rejected:
+ *   - on a timed day (mode from the species parameters, speciesFoodTiming — never from the records) any foraging record
+ *     with minute null (null is "not timed", never minute 0; nulling every minute does not turn a day into a legacy day);
+ *   - a worker whose own records (its transit load or crop) go back in time along the list;
+ *   - any colony compartment below zero when the records are taken minute by minute (within a minute in list order):
+ *     food used before the act that supplied it.
+ * Legacy days (individual timeline off) return 'untimed_legacy': their time order is NOT validated.
+ */
+function timeCausality(start: ColonyState, xs: EngineTransfer[], err: (m: string) => void, timing: 'timed' | 'untimed_legacy'): EngineReplay['time_validation'] {
+  const forage = xs.filter((x) => recordSchemaErrors(x, 'x').length === 0 && x.phase === 'foraging');
+  if (forage.length === 0) return 'no_foraging';
+  if (timing === 'untimed_legacy') return 'untimed_legacy'; // time order not validated on the legacy path (stated limit)
+  const nulls = forage.filter((x) => x.minute === null).length;
+  if (nulls > 0) { err(`time: ${nulls} of ${forage.length} foraging records have minute null on a timed (individual timeline) day — an untimed act cannot be placed in time`); return 'invalid'; }
+  // each worker's own acts in time order along the list
+  const seen = new Map<string, EngineTransfer>();
+  for (const x of forage) {
+    for (const w of new Set([x.source, x.recipient].filter((r) => r.kind === 'crop' || r.kind === 'in_transit').map((r) => r.id))) {
+      const p = seen.get(w);
+      if (p && (x.minute as number) < (p.minute as number)) err(`time: ${x.transfer_id} at minute ${x.minute} follows ${p.transfer_id} at minute ${p.minute} for worker ${w}`);
+      seen.set(w, x);
+    }
+  }
+  // minute-by-minute holdings: buckets of records per minute, in list order inside a bucket
+  const buckets = new Map<number, EngineTransfer[]>();
+  for (const x of forage) { const l = buckets.get(x.minute as number); if (l) l.push(x); else buckets.set(x.minute as number, [x]); }
+  const held = new Map<string, number>(), slot = (r: { kind: string; id: string }, f: string) => `${r.kind}:${r.id}:${f}`;
+  let crops = 0;
+  for (const w of start.population.workers) { const v = toMicro(w.crop_cargo_sugar || 0); held.set(`crop:${w.id}:sugar`, v); crops += v; }
+  held.set(`nest_unlocated:${start.id}:sugar`, toMicro(start.stores.sugar) - crops); held.set(`cache:${start.nest_node}:protein`, toMicro(start.stores.protein));
+  const colonySide = (r: { kind: string }) => r.kind === 'crop' || r.kind === 'in_transit' || r.kind === 'cache' || r.kind === 'nest_unlocated';
+  for (const m of [...buckets.keys()].sort((p, q) => p - q)) for (const x of buckets.get(m)!) {
+    const a = toMicro(x.portions);
+    if (colonySide(x.source)) {
+      const s = slot(x.source, x.food_type), h = held.get(s) ?? 0;
+      if (h < a) err(`time: ${x.transfer_id} (${x.cause}, minute ${m}) takes ${a} µp from ${s}, which holds ${h} µp at that minute — food used before it arrived`);
+      held.set(s, h - a);
+    }
+    if (colonySide(x.recipient)) held.set(slot(x.recipient, x.food_type), (held.get(slot(x.recipient, x.food_type)) ?? 0) + a);
+  }
+  return 'timed';
 }
