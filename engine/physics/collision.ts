@@ -28,7 +28,7 @@
  *    ant could sense; they must be replaced or backed by evidence before joining the official model.
  *  - Cost: every event step re-evaluates all agents and all broadphase pairs, so wall time grows roughly with N² on dense
  *    lattices (measured 250/500/1000 ants: ≈0.75/1.8/7.9 s for 5 simulated s); an event queue with local invalidation is
- *    the next step for 10⁴ ants. Narrow-section boundaries are precomputed per distinct pair of widths (0.01 mm scan).
+ *    the next step for 10⁴ ants. Narrow-section boundaries are precomputed per distinct pair of widths, analytically (Codex physics review F2).
  *  - A configuration this version cannot resolve (e.g. a backing-out ant blocked from behind) is reported as an
  *    `unresolved` event and the ants involved stop: never an overlap, never a silent fix.
  *
@@ -37,7 +37,7 @@
  * behaviour → nutrition is a later chain; this is the contact end of it).
  */
 import type { Vec3 } from './vec.ts';
-import { type PhysicsGeometry, type Passage, obstacleDistance, obstacleReachesLevel, physicsReady, validateGeometry, arcPositionOf } from './geometry.ts';
+import { type PhysicsGeometry, type Passage, obstacleDistance, obstacleReachesLevel, physicsReady, validateGeometry, arcPositionOf, ON_TOLERANCE_MM } from './geometry.ts';
 import { type MotionInterval, positionAt, headingAt, vertexArcs, laneLength, passageOf, T_EPS, S_EPS } from './kinematics.ts';
 import { pointSegment2D } from './vec.ts';
 import { hash32, rng } from '../rng.ts';
@@ -47,6 +47,9 @@ export const COLLISION_MODEL_REF = 'PH-2 v0: lane bodies (interval along lane + 
 const CONTACT_EXIT_EPS = 1e-6;
 /** Distance kept outside a narrow-section boundary when backing out (mm): numerical, not a model parameter. */
 const EDGE_EPS = 1e-6;
+/** Cross-lane bodies count as on one height layer a little before the checker's |dz| ≤ L limit, so that an ant meeting
+ *  another by changing height is stopped while the two are still apart (mm; numerical, not a model parameter). */
+const LEVEL_EPS = 1e-6;
 
 export interface PhysBody { length_mm: number; width_mm: number; contact_reach_mm: number }
 export interface PhysObject { id: string; width_mm: number; holder: string | null }
@@ -59,7 +62,8 @@ export interface SimConfig {
   horizon_s: number; seed: number;
   /** broadphase window (s); any positive value gives the same events (tested) */
   window_s?: number;
-  /** spacing used to locate narrow-section boundaries before exact bisection (mm) */
+  /** spacing (mm) of the numerical scans that remain: the 'cleared' time and the back-out target. Narrow-section
+   *  boundaries are analytic and do not use it (Codex physics review F2). */
   boundary_step_mm?: number;
 }
 export type PhysEventKind = 'start' | 'arrive' | 'contact_start' | 'contact_end' | 'obstruction' | 'follow_start' | 'follow_end' | 'yield_start' | 'yield_hold' | 'yield_resume' | 'cross_wait' | 'cross_resume' | 'blocked' | 'unresolved';
@@ -86,20 +90,55 @@ export function usableWidth(g: PhysicsGeometry, p: Passage, s: number): number {
 }
 
 /**
- * Sections [a, b] of a passage where the usable width is < T. Boundaries are found by scanning at `step` and refined by
- * bisection to machine precision; a narrowing shorter than `step` along the lane can be missed (stated limit).
+ * Sections [a, b] of a passage where the usable width is < T (Codex physics review f61db12, F2: found analytically, not by
+ * sampling). Along each centre-line segment the lane point moves linearly, so every place where "usable width < T" can
+ * switch is a root of a known equation: the circle |q − c| = r + T/2, the polygon's vertex discs and edge strips at T/2,
+ * the polygon's edges (inside / outside), and the obstacle's height range on a sloped segment. Between consecutive
+ * candidate points the predicate is constant and is evaluated once with usableWidth itself (the same definition the
+ * exclusion checker uses), so a narrowing of any length is found. `_step` is kept for the API and is not used.
  */
-export function narrowSections(g: PhysicsGeometry, p: Passage, T: number, step = 0.01): [number, number][] {
-  const L = laneLength(p), f = (s: number) => usableWidth(g, p, s) < T, out: [number, number][] = [];
-  const bis = (a: number, b: number, fa: boolean) => { for (let k = 0; k < 80; k++) { const m = (a + b) / 2; if (f(m) === fa) a = m; else b = m; } return fa ? a : b; };
-  let prev = 0, inS = f(0), start = 0;
-  const n = Math.max(1, Math.ceil(L / step));
-  for (let i = 1; i <= n; i++) {
-    const s = Math.min(L, i * step), v = f(s);
-    if (v !== inS) { const b = bis(prev, s, inS); if (v) start = b; else out.push([start, b]); inS = v; }
-    prev = s;
+export function narrowSections(g: PhysicsGeometry, p: Passage, T: number, _step = 0.01): [number, number][] {
+  const L = laneLength(p), f = (s: number) => usableWidth(g, p, s) < T, d = T / 2, cuts: number[] = [0, L];
+  const pts = p.centerline_mm.map(([x, y, z]) => ({ x, y, z }));
+  let acc = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const A = pts[i - 1], B = pts[i], Ls = Math.hypot(B.x - A.x, B.y - A.y, B.z - A.z);
+    if (Ls === 0) continue;
+    const dx = B.x - A.x, dy = B.y - A.y, dz = B.z - A.z, add = (u: number) => { if (u > 0 && u < 1 && Number.isFinite(u)) cuts.push(acc + u * Ls); };
+    const lin = (c0: number, c1: number) => { if (c1 !== 0) add(-c0 / c1); };                       // c0 + c1·u = 0
+    const disc = (cx: number, cy: number, R: number) => {                                            // |A + u·D − c| = R
+      const ex = A.x - cx, ey = A.y - cy, a = dx * dx + dy * dy, b = 2 * (ex * dx + ey * dy), c = ex * ex + ey * ey - R * R;
+      if (a === 0) return; const D = b * b - 4 * a * c; if (D < 0) return; const r = Math.sqrt(D); add((-b - r) / (2 * a)); add((-b + r) / (2 * a));
+    };
+    for (const o of g.obstacles) {
+      if (o.base_z_mm !== null) {                                                                    // height range on a slope
+        const top = o.height_mm === null ? Infinity : o.base_z_mm + o.height_mm;
+        if (dz !== 0) { lin(A.z - (o.base_z_mm - ON_TOLERANCE_MM), dz); if (Number.isFinite(top)) lin(A.z - (top + ON_TOLERANCE_MM), dz); }
+      }
+      if (o.shape.type === 'circle') { disc(o.shape.center_mm[0], o.shape.center_mm[1], o.shape.radius_mm + d); continue; }
+      const poly = o.shape.points_mm;
+      for (let k = 0, j = poly.length - 1; k < poly.length; j = k++) {
+        const P = { x: poly[j][0], y: poly[j][1] }, Q = { x: poly[k][0], y: poly[k][1] }, ex = Q.x - P.x, ey = Q.y - P.y, el = Math.hypot(ex, ey);
+        disc(P.x, P.y, d);                                                                           // vertex discs
+        if (el === 0) continue;
+        const nx = -ey / el, ny = ex / el;
+        lin(nx * (A.x - P.x) + ny * (A.y - P.y) - d, nx * dx + ny * dy);                             // edge strip ±T/2
+        lin(nx * (A.x - P.x) + ny * (A.y - P.y) + d, nx * dx + ny * dy);
+        lin(((A.x - P.x) * ex + (A.y - P.y) * ey) / (el * el), (dx * ex + dy * ey) / (el * el));     // strip ends (projection 0, 1)
+        lin(((A.x - P.x) * ex + (A.y - P.y) * ey) / (el * el) - 1, (dx * ex + dy * ey) / (el * el));
+        lin(nx * (A.x - P.x) + ny * (A.y - P.y), nx * dx + ny * dy);                                 // crossing the edge's line (inside/outside)
+      }
+    }
+    acc += Ls;
+    cuts.push(acc);
   }
-  if (inS) out.push([start, L]);
+  const xs = [...new Set(cuts.filter((x) => x >= 0 && x <= L))].sort((a, b) => a - b), out: [number, number][] = [];
+  for (let i = 1; i < xs.length; i++) {
+    const a = xs[i - 1], b = xs[i];
+    if (!(b > a) || !f((a + b) / 2)) continue;
+    const last = out[out.length - 1];
+    if (last && Math.abs(last[1] - a) <= 1e-12) last[1] = b; else out.push([a, b]);
+  }
   return out;
 }
 
@@ -341,16 +380,31 @@ export function simulate(cfg: SimConfig): SimResult {
       }
     } else {
       const pa = pos(a), pb = pos(b);
-      if (Math.abs(pa.z - pb.z) > Math.max(a.L, b.L)) return;   // different levels (stated simplification)
       const ha = a.v ? headingAt(a.p, a.s, sgn(a.v) as 1 | -1) : { x: 0, y: 0, z: 0 }, hb = b.v ? headingAt(b.p, b.s, sgn(b.v) as 1 | -1) : { x: 0, y: 0, z: 0 };
+      // Codex physics review f61db12, F1: bodies on different lanes interact only while on one height layer
+      // (|dz| ≤ max(L) + LEVEL_EPS; stated simplification). dz changes linearly until the next event (vertices are events),
+      // so the layer window [lo, hi] is exact; planar events are kept only inside it.
+      const H = Math.max(a.L, b.L) + LEVEL_EPS, dz0 = pb.z - pa.z, dzr = hb.z * Math.abs(b.v) - ha.z * Math.abs(a.v);
+      let lo = 0, hi = Infinity;
+      if (dzr === 0) { if (Math.abs(dz0) > H) return; }
+      else { const t1 = (-H - dz0) / dzr, t2 = (H - dz0) / dzr; lo = Math.max(0, Math.min(t1, t2)); hi = Math.max(t1, t2); if (!(hi > lo + T_EPS) && !(Math.abs(dz0) <= H && hi >= 0)) return; if (hi < 0) return; }
       const dpx = pb.x - pa.x, dpy = pb.y - pa.y, dvx = hb.x * Math.abs(b.v) - ha.x * Math.abs(a.v), dvy = hb.y * Math.abs(b.v) - ha.y * Math.abs(a.v);
       const A = dvx * dvx + dvy * dvy, B = 2 * (dpx * dvx + dpy * dvy), d2 = dpx * dpx + dpy * dpy, dd = Math.sqrt(d2);
       const first = (R: number) => { const c0 = d2 - R * R, disc = B * B - 4 * A * c0; if (A === 0 || disc < 0 || B >= 0) return Infinity; const r = (-B - Math.sqrt(disc)) / (2 * A); return r >= 0 ? r : Infinity; };
       const later = (R: number) => { const c0 = d2 - R * R, disc = B * B - 4 * A * c0; if (A === 0 || disc < 0) return Infinity; const r = (-B + Math.sqrt(disc)) / (2 * A); return r >= 0 ? r : Infinity; };
       const c = C(a, b), mm = M(a, b);
-      if (!inContact.has(key) && dd > c + S_EPS) out.push({ t: t + first(c), kind: 'contact_start', a: a.id, b: b.id });
-      if (inContact.has(key) && dd < c + CONTACT_EXIT_EPS) out.push({ t: t + later(c + CONTACT_EXIT_EPS), kind: 'contact_end', a: a.id, b: b.id });
-      if (dd > mm + S_EPS) out.push({ t: t + first(mm), kind: 'disc_touch', a: a.id, b: b.id });
+      // the planar "within R" interval [enter, leave) of the current motion
+      const within = (R: number): [number, number] => (dd <= R ? [0, later(R)] : [first(R), later(R)]);
+      const [cIn, cOut] = within(c), cStart = Math.max(cIn, lo);
+      if (!inContact.has(key) && Number.isFinite(cStart) && cStart < Math.min(cOut, hi) - T_EPS) out.push({ t: t + cStart, kind: 'contact_start', a: a.id, b: b.id });
+      if (inContact.has(key)) { const end = Math.min(dd < c + CONTACT_EXIT_EPS ? later(c + CONTACT_EXIT_EPS) : 0, hi); if (Number.isFinite(end)) out.push({ t: t + end, kind: 'contact_end', a: a.id, b: b.id }); }
+      const [mIn, mOut] = within(mm);
+      if (lo > T_EPS) {
+        // the pair reaches one height layer later: if their footprints already overlap then, the ant cannot be put
+        // anywhere consistent (vertical approach is not modelled) — stopped and reported, never passed through
+        if (mIn <= lo + T_EPS && mOut > lo + T_EPS && lo < hi) out.push({ t: t + lo, kind: 'layer_overlap', a: a.id, b: b.id });
+        else if (mIn > lo && mIn < hi) out.push({ t: t + mIn, kind: 'disc_touch', a: a.id, b: b.id });
+      } else if (dd > mm + S_EPS) { if (mIn < hi) out.push({ t: t + mIn, kind: 'disc_touch', a: a.id, b: b.id }); }
       // already touching and still closing (e.g. starting at exactly one body length apart): handle now
       else if (dd <= mm + 1e-7 && B < -1e-12) out.push({ t, kind: 'disc_touch', a: a.id, b: b.id });
       for (const [y, p] of [[a, b], [b, a]] as const) if (y.mode === 'cross_wait' && y.partner === p.id && !y.waitRoom) {
@@ -403,7 +457,7 @@ export function simulate(cfg: SimConfig): SimResult {
     }
   };
   // ---- event handling
-  const KIND_ORDER = ['vertex', 'start', 'arrive', 'retreat_done', 'wall', 'aperture', 'passed', 'cleared', 'room', 'centre', 'contact_end', 'contact_start', 'boundary', 'touch', 'disc_touch'];
+  const KIND_ORDER = ['vertex', 'start', 'arrive', 'retreat_done', 'wall', 'aperture', 'passed', 'cleared', 'room', 'centre', 'contact_end', 'contact_start', 'boundary', 'touch', 'disc_touch', 'layer_overlap'];
   const unresolved = (t: number, x: RT, y: RT, why: string) => {
     for (const z of [x, y]) if (!terminal(z)) { z.mode = 'unresolved'; z.partner = z === x ? y.id : x.id; modeMotion(z, t); }
     ev(t, 'unresolved', x, y, why);
@@ -412,7 +466,11 @@ export function simulate(cfg: SimConfig): SimResult {
     const a = byId.get(c.a)!, b = c.b ? byId.get(c.b)! : null;
     switch (c.kind) {
       case 'vertex': if (a.v !== 0) split(a, t); return;
-      case 'start': if (a.mode === 'idle') { a.mode = 'free'; modeMotion(a, t); ev(t, 'start', a, null, null); } return;
+      case 'start': if (a.mode === 'idle') {
+        // Codex physics review F3: an ant already at its goal arrives at its start time and never moves
+        if (Math.abs(a.spec.goal_s_mm - a.s) <= S_EPS) { a.s = a.spec.goal_s_mm; a.mode = 'arrived'; modeMotion(a, t); ev(t, 'start', a, null, null); ev(t, 'arrive', a, null, 'already at its goal'); return; }
+        a.mode = 'free'; modeMotion(a, t); ev(t, 'start', a, null, null);
+      } return;
       case 'arrive': if (a.mode === 'free' || a.mode === 'follow') { a.s = a.spec.goal_s_mm; a.mode = 'arrived'; a.partner = null; modeMotion(a, t); ev(t, 'arrive', a, null, null); } return;
       case 'retreat_done': if (a.mode === 'retreat') {
         const p = byId.get(a.partner!)!;
@@ -501,6 +559,12 @@ export function simulate(cfg: SimConfig): SimResult {
         rear.mode = 'follow'; rear.partner = front.id; ev(t, 'follow_start', rear, front, null);
         return;
       }
+      case 'layer_overlap': {
+        if (!b || terminal(a) && terminal(b)) return;
+        ev(t, 'obstruction', a, b, 'reaches the same height layer while the footprints overlap');
+        unresolved(t, a, b, 'reaches the same height layer as the other ant while their footprints already overlap (vertical approach is not modelled)');
+        return;
+      }
       case 'disc_touch': {
         if (!b) return;
         ev(t, 'obstruction', a, b, 'bodies touch across lanes');
@@ -536,7 +600,7 @@ export function simulate(cfg: SimConfig): SimResult {
     const a = rts[i], b = rts[j];
     if (sameLane(a, b) ? (Math.abs(a.s - b.s) < M(a, b) - S_EPS && pinched(a, b)) : (a.p.id !== b.p.id && Math.hypot(pos(a).x - pos(b).x, pos(a).y - pos(b).y) < M(a, b) - S_EPS && Math.abs(pos(a).z - pos(b).z) <= Math.max(a.L, b.L))) throw Error(`PHYSICS: ${a.id} and ${b.id} start in the same space`);
     const gap = sameLane(a, b) ? Math.abs(a.s - b.s) : Math.hypot(pos(a).x - pos(b).x, pos(a).y - pos(b).y);
-    if (gap <= C(a, b)) inContact.add(pairKey(a.id, b.id));
+    if (gap <= C(a, b) && (sameLane(a, b) || Math.abs(pos(a).z - pos(b).z) <= Math.max(a.L, b.L) + LEVEL_EPS)) inContact.add(pairKey(a.id, b.id));
   }
 
   // ---- main loop
