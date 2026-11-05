@@ -8,6 +8,7 @@ import { clamp, round } from './math.ts';
 import { colonyDice } from './workers.ts';
 import type { Rng } from './rng.ts';
 import { foodTransfer, recordSettlement } from './transfers.ts';
+import { cropHeld } from './queen-feeding.ts';
 import type { SpeciesParams } from './params.ts';
 import type { ColonyState, ColonySummary, Macro, Ratios, SimEvent, Weather, Worker, WorldState } from './types.ts';
 
@@ -21,7 +22,7 @@ export function handoff(colony: ColonyState, sp: SpeciesParams, worker: Worker, 
   if (macro === 'sugar') {
     worker.crop_cargo_sugar = round((worker.crop_cargo_sugar || 0) + load);
     for (let i = 0; i < tr.max_trophallaxis_contacts && contacts.length; i++) {
-      const peer = contacts.splice(Math.floor(g() * contacts.length), 1)[0], room = Math.max(0, tr.crop_capacity - (peer.crop_cargo_sugar || 0)), amount = round(Math.min(worker.crop_cargo_sugar, room, tr.transfer_max_portions));
+      const peer = contacts.splice(Math.floor(g() * contacts.length), 1)[0], room = Math.max(0, tr.crop_capacity - cropHeld(peer)), amount = round(Math.min(worker.crop_cargo_sugar, room, tr.transfer_max_portions));
       if (amount <= 0) continue;
       worker.crop_cargo_sugar = round(worker.crop_cargo_sugar - amount); peer.crop_cargo_sugar = round((peer.crop_cargo_sugar || 0) + amount);
       transferred = round(transferred + amount); count++;
@@ -75,7 +76,8 @@ export function consume(world: WorldState, colony: ColonyState, sp: SpeciesParam
   const n = sp.nutrition, ls = sp.local_signals, st = colony.stores;
   const workers = colony.population.workers.length, larvae = colony.population.brood.filter((b) => b.stage === 'larva');
   const metabolicFactor = round(Math.pow(sp.metabolism.q10, (weather.nest_temp_model_c - sp.metabolism.reference_c) / 10));
-  const servedQueen = colony.population.queen_alive && workers > 0 ? 1 : 0, servedLarvae = workers > 0 ? larvae.length : 0;
+  // C3a: the queen pays her own metabolism from what she ate (engine/queen-feeding.ts queenMetabolism), not from this pool
+  const servedQueen = colony.population.queen_alive && workers > 0 && !sp.queen_feeding.individual_queen_body_c3a ? 1 : 0, servedLarvae = workers > 0 ? larvae.length : 0;
   const extraCost = summary.extra_sugar_cost;
   const demandS = round((workers * n.worker_sugar_daily + servedQueen * n.queen_sugar_daily + servedLarvae * n.larva_sugar_daily) * metabolicFactor + extraCost);
   const demandP = round((workers * n.worker_protein_daily + servedQueen * n.queen_protein_daily + servedLarvae * n.larva_protein_daily) * metabolicFactor);

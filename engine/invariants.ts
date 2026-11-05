@@ -107,7 +107,7 @@ export function checkColonyDomain(colony: ColonyState, cropCapacity: number): vo
   for (const k of ['sugar_gap_days', 'protein_gap_days', 'stress_days', 'no_worker_days'] as const) { const v = (colony.stores as unknown as Record<string, unknown>)[k]; if (v !== undefined && !(Number.isInteger(v) && (v as number) >= 0)) fail(`stores.${k} is ${v}, not a count of days`); }
   for (const w of colony.population.workers) {
     if (!(Number.isInteger(w.age_days) && w.age_days >= 0)) fail(`worker ${w.id} age_days ${w.age_days}`);
-    const crop = w.crop_cargo_sugar ?? 0;
+    const crop = (w.crop_cargo_sugar ?? 0) + (w.crop_cargo_protein_liquid ?? 0); // C3a: one shared crop
     if (!(finite(crop) && crop >= 0 && crop <= cropCapacity + 1e-9)) fail(`worker ${w.id} crop ${crop} outside [0, ${cropCapacity}]`);
   }
   for (const b of colony.population.brood) {

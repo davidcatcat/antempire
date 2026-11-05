@@ -1685,5 +1685,65 @@
       },
       "mechanism_basis": "機制方向：跨物種文獻支持（Mailleux et al. 2000 Anim Behav 59:1061；2006 JEB 209:4224，Lasius niger，非本種）：只有達到「想要的量」才留跡招募；本種 Dejean et al. 2005：偵察蟻先裝滿嗉囊再回巢招募。數值為遊戲假設"
     }
+  },
+  "queen_feeding": {
+    "individual_queen_body_c3a": false,
+    "individual_queen_body_c3a_note": "模型開關（C3a，docs/design-c3-queen-feeding.md §9、§10、§12；預設關閉）。true＝蟻后有自己的營養區室 queen_body（未知期初儲備 unknown_initial_reserve 與已知收支 known_balance 分開），只經局部、有來源、有序數時間與地點的事件增加：育幼工蟻在巢內回合抵達蟻后位置、與蟻后接觸（queen_contact）後以交哺餵食（feed_queen），或蟻后與食物同在一處時自行取食（queen_self_feed）。蟻后自己的代謝由 known_balance 支付，從全巢代謝中移出；不足只記為蟻后自己的缺口。產卵、存活與生命史的公式與參數不變（C3b、C3c 才改）；因為全巢代謝不再含蟻后，舊產卵條件的輸入會改變。巢內三個位置（store、queen、brood）與序數時間是明示的過渡模型（D），不是巢室幾何或物理接觸；P1-B 幾何與物理接觸驗收後，以規則更新取代。false＝v2-review.24 的行為。",
+    "route_b1": true,
+    "route_b1_note": "候選路線 B1（不是已知的本種自然機制）：工蟻在 store 從固體蛋白吸取液體部分進入嗉囊（take_from_cache，cache → crop 的 protein_liquid），再經交哺給蟻后。本種方向：Sanders et al. 1992（R346，本種，全文）推論工蟻只攝取固體的液體部分，但原文寫『The feeding of protein to queens by workers was not observed』；Tsuji & Win 2025（R116，本種）液態蛋白經交哺在巢間流動。固體 1 份轉為液體 1 份是 D 級假設。",
+    "route_c_self_feed": true,
+    "route_c_self_feed_note": "候選路線 C：蟻后與食物同在一處時自行取食（Chang 1985，R136，本種，全文：『The queen could forage for food and water for herself』）。只有在 store_is_queen_location 為 true（D）時才可能發生；預設 false，所以預設不會發生，兩種都要做敏感度。",
+    "store_is_queen_location": false,
+    "store_is_queen_location_note": "D 級假設：蛋白倉（store）與蟻后所在（queen）是否同一處。本種沒有巢室配置資料（P1-B 未完成）。",
+    "take_from_cache_max_portions": {
+      "value": 0.28,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "一隻工蟻在一個巢內回合中，從固體蛋白吸取進嗉囊的最大液態蛋白份數（遊戲份量，不是 mg）；受嗉囊共同總容量限制。數值沿用 trophallaxis.transfer_max_portions，D 級假設",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.25-c3a-queen-body"
+      }
+    },
+    "feed_max_portions_per_contact": {
+      "value": 0.28,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "一次與蟻后的接觸中，每種食物最多交哺的份數（遊戲份量）；數值沿用 trophallaxis.transfer_max_portions，D 級假設",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.25-c3a-queen-body"
+      }
+    },
+    "queen_satiation_days_of_need": {
+      "value": 3,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "蟻后已知收支中某種食物達到自身每日需求的幾倍時，拒絕該種食物的交哺（食物留在工蟻嗉囊）。D 級假設，沒有本種資料",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.25-c3a-queen-body"
+      }
+    },
+    "self_feed_max_portions": {
+      "value": 0.045,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "開關 C：蟻后每個回合自行取食的最大蛋白份數；數值等於 nutrition.queen_protein_daily，D 級假設",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.25-c3a-queen-body"
+      }
+    },
+    "day0_initial_reserve_days_of_need": {
+      "value": 0,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "新版 Day0 實驗世界中蟻后已知儲備（以自身每日需求的倍數 k 表示）。設計 §6 要求 k ∈ {0, 3, 10, 30} 全部做敏感度；預設 0（不假設儲備），不是挑選結果。Day14 遷移的蟻后不用此值：其未知儲備為 null。",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.25-c3a-queen-body"
+      }
+    }
   }
 }

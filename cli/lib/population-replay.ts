@@ -89,7 +89,7 @@ export function domainErrors(colony: ColonyState, events: SimEvent[], cropCapaci
   if (!(colony.stores.sugar >= 0) || !(colony.stores.protein >= 0)) add('a colony store is negative');
   for (const w of colony.population.workers) {
     if (!Number.isInteger(w.age_days) || w.age_days < 0) add(`${w.id}: age ${w.age_days}`);
-    const c = w.crop_cargo_sugar ?? 0;
+    const c = (w.crop_cargo_sugar ?? 0) + (Number(w.crop_cargo_protein_liquid) || 0);
     if (!(c >= 0) || c - cropCapacity > 1e-9) add(`${w.id}: crop ${c} (capacity ${cropCapacity})`);
   }
   for (const b of colony.population.brood) { if (!STAGES.includes(b.stage)) add(`${b.id}: stage ${b.stage}`); if (!(isNum(b.progress) && b.progress >= 0 && Number.isFinite(b.progress))) add(`${b.id}: progress ${b.progress}`); }

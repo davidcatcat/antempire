@@ -24,6 +24,7 @@
 import { clamp, round } from './math.ts';
 import type { Rng } from './rng.ts';
 import { foodTransfer } from './transfers.ts';
+import { cropHeld } from './queen-feeding.ts';
 import { adjacencyOf, edgeKey } from './routes.ts';
 import { depositTrail, fullTrail, followLocalTrail } from './trails.ts';
 import { knownEmpty, knownNodes, knownRoute, learnRoute, markEmpty, perceiveExits, rememberedUnknownExits, unknownExits } from './navigation.ts';
@@ -354,7 +355,7 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
     if (sourceSum(site) <= 1e-5) return false;
     if (g() > rainActivity(sp, weather) * (site.type === 'carcass' ? fh.carcass_access_probability : fh.liquid_collection_probability)) return false;
     const macro = macroOf(site), min = fh[`crop_load_${macro}_min`], max = fh[`crop_load_${macro}_max`];
-    const freeRoom = macro === 'sugar' ? Math.max(0, sp.trophallaxis.crop_capacity - (w.crop_cargo_sugar || 0)) : Infinity;
+    const freeRoom = macro === 'sugar' ? Math.max(0, sp.trophallaxis.crop_capacity - cropHeld(w)) : Infinity; // C3a: shared crop (§12.3)
     const load = round(Math.min(sourceSum(site), min + (max - min) * g(), freeRoom));
     if (load <= 0) return false;
     if (macro === 'sugar') site.sugar = round(site.sugar - load); else takeProtein(site, w, load, events);
