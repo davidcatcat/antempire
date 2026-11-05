@@ -52,8 +52,8 @@ type Kind = 'trail' | 'step' | 'home' | 'arrive' | 'resolve' | 'searched' | 'rec
  *  minute marks are applied first, then edges are entered (so a mark laid at that minute is felt), then the rest. */
 const KIND_ORDER: Record<Kind, number> = { trail: -2, step: -1, home: 0, arrive: 1, resolve: 2, searched: 3, recruit: 4, decide: 5 };
 /** v2-review.20 (PR #44 independent review): a walk proceeds one edge at a time on the event clock. */
-interface WalkPlan { route: string[]; i: number; t0: number; kind: string; learn: boolean; final: Omit<QEvent, 't'> | null; deposit?: boolean; announce?: SimEvent }
-interface QEvent { t: number; kind: Kind; id: string; token: number; trip?: Trip; cargo?: Cargo | null; hold?: PreyHold; afterFailure?: boolean; g?: Rng; edge?: [string, string]; walk?: WalkPlan; seq?: number }
+interface WalkPlan { route: string[]; i: number; t0: number; kind: string; learn: boolean; final: Omit<QEvent, 't'> | null; deposit?: boolean; cause?: string; announce?: SimEvent }
+interface QEvent { t: number; kind: Kind; id: string; token: number; trip?: Trip; cargo?: Cargo | null; hold?: PreyHold; afterFailure?: boolean; g?: Rng; edge?: [string, string]; walk?: WalkPlan; seq?: number; cause?: string; walkedFrom?: number }
 /** A large prey waiting at a site for long-range recruits (v9/v11 semantics on the continuous clock). */
 interface PreyHold { site: string; finder: string; large: boolean; g: Rng; minute: number; resolveAt: number; holders: string[]; recruits: string[]; joiners: string[]; finderComes: boolean; route: string[]; since: Record<string, number>; seq?: number }
 
@@ -83,6 +83,10 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
   const { world, colony, sp, wp, weather, events, summary, learnDay } = ctx, ac = sp.activity, nest = colony.nest_node, W = sp.foraging_activity.daily_window_minutes;
   /** v2-review.20 switch (Issue #43 F02–F05, R11); false reproduces v2-review.19 for the isolation proof only. */
   const V20 = ac.local_causality_v20;
+  /** v2-review.23 switch (Codex Issue #61 R3-05; requires V20): a worker carrying food home marks each edge of its walk home
+   *  at the minute it has walked that edge, while it is on it (queue event 'trail'); nothing is written for a remote edge
+   *  after it has reached the nest. false = v2-review.22: the whole return route marked at the minute of arrival at the nest. */
+  const V23 = V20 && ac.local_trail_deposit_v23;
   const agents = new Map<string, Agent>();
   for (const w of [...colony.population.workers].sort((a, b) => idOrder(a.id, b.id))) agents.set(w.id, { w, actions: 0, token: 0, stats: newStats(), state: 'nest' });
   const queue: QEvent[] = [];
@@ -152,7 +156,7 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
    * edge it is on), so pheromone laid by others after it set off counts once it is there, and nothing about an edge
    * ahead is read in advance. `final` is pushed at arrival. v2-review.19: the whole walk is computed at departure.
    */
-  const go = (a: Agent, route: string[], t0: number, kind: string, learn: boolean, final: Omit<QEvent, 't'> | null, opt: { deposit?: boolean; announce?: SimEvent } = {}) => {
+  const go = (a: Agent, route: string[], t0: number, kind: string, learn: boolean, final: Omit<QEvent, 't'> | null, opt: { deposit?: boolean; cause?: string; announce?: SimEvent } = {}) => {
     if (!V20) { const at = walk(a, route, t0, kind, learn); if (final) push({ t: at, ...final } as QEvent); return; }
     a.w.last_location = `transit:${route[0]}>${route.at(-1)}`;
     if (route.length < 2) { if (final) push({ t: t0, ...final } as QEvent); return; }
@@ -161,7 +165,7 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
   const step = (a: Agent, t: number, wk: WalkPlan) => {
     const from = wk.route[wk.i], to = wk.route[wk.i + 1], end = round(t + edgeMinutes(sp, wp, colony, from, to).minutes);
     events.push({ type: 'route_step', worker: a.w.id, from, to, minute: end, kind: wk.kind, assumption: true });
-    if (wk.deposit) push({ t: end, kind: 'trail', id: a.w.id, token: -1, edge: [from, to] });
+    if (wk.deposit) push({ t: end, kind: 'trail', id: a.w.id, token: -1, edge: [from, to], ...(V23 ? { cause: wk.cause ?? 'hunt_recruit', walkedFrom: t } : {}) });
     if (wk.i + 2 < wk.route.length) { push({ t: end, kind: 'step', id: a.w.id, token: -1, walk: { ...wk, i: wk.i + 1 } }); return; }
     if (wk.learn) (a.pendingLearn ??= []).push({ at: end, route: wk.route, kind: wk.kind });
     a.stats.travel_minutes = round(a.stats.travel_minutes + (end - wk.t0));
@@ -183,7 +187,9 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
     go(a, trip.route, t, walkKind, true, { kind: 'arrive', id: a.w.id, token: a.token, trip });
   };
   const goHome = (a: Agent, t: number, trip: Trip, cargo: Cargo | null, kind: string, learn = false) => {
-    go(a, [...trip.route].reverse(), t, kind, learn, { kind: 'home', id: a.w.id, token: a.token, trip, cargo });
+    // v2-review.23 (R3-05): whether to mark is the worker's own state when it sets off home — it carries food it collected
+    // (the same condition under which v2-review.22 marked at the nest); each mark is laid on the edge it is walking.
+    go(a, [...trip.route].reverse(), t, kind, learn, { kind: 'home', id: a.w.id, token: a.token, trip, cargo }, V23 && cargo ? { deposit: true, cause: 'laden_return' } : {});
   };
 
   // ---- decisions at the nest -------------------------------------------------------------------------
@@ -453,7 +459,7 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
       // v2-review.20 (PR #44 review): the finder lays the trail as it walks home; each edge carries the mark from the
       // minute the finder has walked it (v2-review.19 marked the whole route at the encounter, before it was walked).
       go(a, [...trip.route].reverse(), t, 'hunt_recruit_trail_home', false, { kind: 'home', id: a.w.id, token: a.token, trip: { ...trip, kind: 'hunt_recruit' }, cargo: null, hold },
-        { deposit: true, announce: { type: 'long_range_recruitment_trail', worker: a.w.id, site: site.id, physical_route: trip.route, assumption: true } });
+        { deposit: true, cause: 'hunt_recruit', announce: { type: 'long_range_recruitment_trail', worker: a.w.id, site: site.id, physical_route: trip.route, assumption: true } });
       push({ t: hold.resolveAt, kind: 'resolve', id: a.w.id, token: -1, hold, seq: 0 });
     } else {
       const home = walk(a, [...trip.route].reverse(), t, 'hunt_recruit_trail_home', false);
@@ -557,7 +563,8 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
     const done = round(t + ac.unload_minutes); a.busyUntil = done;
     a.stats.unload_minutes = round(a.stats.unload_minutes + ac.unload_minutes);
     seg(a, t, done, nest, 'unload', `${cargo.macro} ${cargo.load}, ${transfer.count} contacts`);
-    depositTrail(colony, sp, trip.route, w, events, V20 ? t : undefined);
+    // v2-review.23 (R3-05): the marks were laid edge by edge on the walk home (goHome); none is written here.
+    if (!V23) depositTrail(colony, sp, trip.route, w, events, V20 ? t : undefined);
     // v2-review.20 (Issue #43 R11): recruitment and the next decision happen when unloading ENDS (minute `done`),
     // with the nestmates actually in the nest at that minute; nothing is committed for the future at minute t.
     if (V20) push({ t: done, kind: 'recruit', id: w.id, token: a.token, trip, cargo, g });
@@ -601,7 +608,7 @@ export function activityDay(ctx: ActivityContext, foragers: Worker[]): void {
   for (const w of foragers) { const a = agents.get(w.id) as Agent; push({ t: 0, kind: 'decide', id: w.id, token: a.token }); }
   while (queue.length) {
     const e = queue.shift() as QEvent; clock = e.t;
-    if (e.kind === 'trail') { depositTrail(colony, sp, e.edge as [string, string], (agents.get(e.id) as Agent).w, events, e.t); continue; }
+    if (e.kind === 'trail') { depositTrail(colony, sp, e.edge as [string, string], (agents.get(e.id) as Agent).w, events, e.t, V23 ? { cause: e.cause as string, walked_from: e.walkedFrom as number } : undefined); continue; }
     if (e.kind === 'step') { step(agents.get(e.id) as Agent, e.t, e.walk as WalkPlan); continue; }
     if (e.kind === 'resolve' && e.seq !== undefined && e.seq !== (e.hold as PreyHold).seq) continue; // superseded by the finder's arrival
     if (e.kind === 'resolve') { for (const x of agents.values()) if (x.hold === e.hold) flushLearning(x, e.t); if (holds.includes(e.hold as PreyHold)) resolveHold(e.hold as PreyHold, e.t); continue; }

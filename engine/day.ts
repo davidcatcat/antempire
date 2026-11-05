@@ -40,8 +40,9 @@ import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from '
  *   v2-review.20 (Issue #43 F02–F05, R11): stepwise trail following with arrival-only perception; interrupted search closed at the interruption; joining a held prey needs no other unreserved prey; every outside interval charged once; routes learned on arrival; recruitment at the end of unloading. Switch activity.local_causality_v20.
  *   v2-review.21 (Issue #50 / #49 N1): brood care exposure from the workers present at the start of the step; eclosions committed after all brood is processed, ids in source-pupa order. Switch brood_care.daily_care_snapshot_v21.
  *   v2-review.22 (work package C2): the engine records every movement of food between compartments as a food_transfer event (source, recipient, amount, minute, cause, attribution) and checks per-compartment closure every day; diagnostics only, no quantity, draw or decision changed.
+ *   v2-review.23 (Codex Issue #61 R3-05): a worker carrying food home marks each edge at the minute it has walked it (event-clock 'trail'), not the whole route at the nest. Switch activity.local_trail_deposit_v23.
  */
-export const ENGINE_VERSION = 'antempire.v2-review.22-engine-food-transfers';
+export const ENGINE_VERSION = 'antempire.v2-review.23-local-trail-deposit';
 /** Implementation of that behaviour (bumped for refactors that keep results byte-identical). */
 export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
 /**
