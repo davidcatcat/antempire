@@ -273,8 +273,14 @@ function timeCausality(start: ColonyState, xs: EngineTransfer[], err: (m: string
  * below zero — e.g. carcass protein collected before the kill that put it there, whether or not the collect names the prey.
  */
 export function replayEngineSourcesDay(endSources: Record<string, { sugar?: number; protein?: number }>, colonies: { id: string; events: SimEvent[]; timing: 'timed' | 'untimed_legacy' }[]): string[] {
+  // Codex review 2026-11-05 (latest), N1 (P2): every input is validated BEFORE any field is read; an invalid input is
+  // reported (colony, record, field) and nothing is replayed — never a TypeError, never "no events" by default. The
+  // reconstruction of start holdings below cancels out by construction, so it is no evidence for records that are
+  // themselves illegal (a negative amount, a source that does not exist).
+  const invalid = sourceDayInputErrors(endSources, colonies);
+  if (invalid.length) return invalid;
   const errors: string[] = [];
-  const touches = colonies.map((c) => (Array.isArray(c.events) ? (c.events as Any[]) : []).filter((e) => e && e.type === 'food_transfer' && (e.source?.kind === 'source' || e.recipient?.kind === 'source')) as EngineTransfer[]);
+  const touches = colonies.map((c) => (c.events as Any[]).filter((e) => e.type === 'food_transfer' && (e.source.kind === 'source' || e.recipient.kind === 'source')) as EngineTransfer[]);
   const held = new Map<string, number>(), slot = (id: string, f: string) => `${id}|${f}`;
   for (const [id, s] of Object.entries(endSources ?? {})) { held.set(slot(id, 'sugar'), toMicro(s?.sugar || 0)); held.set(slot(id, 'protein'), toMicro(s?.protein || 0)); }
   for (const x of touches.flat()) {
@@ -300,4 +306,39 @@ export function replayEngineSourcesDay(endSources: Record<string, { sugar?: numb
     }
   });
   return errors;
+}
+
+/** Input contract of replayEngineSourcesDay (N1): the end-of-day sources, the colony list, every event and every record. */
+function sourceDayInputErrors(endSources: unknown, colonies: unknown): string[] {
+  const out: string[] = [];
+  if (!isObj(endSources)) return [`sources: the end-of-day source table is ${JSON.stringify(endSources)}, not an object`];
+  for (const [id, v] of Object.entries(endSources)) {
+    if (!isObj(v)) { out.push(`sources: source ${id} is ${JSON.stringify(v)}, not an object`); continue; }
+    for (const f of ['sugar', 'protein'] as const) if (v[f] !== undefined && !(typeof v[f] === 'number' && Number.isFinite(v[f]) && (v[f] as number) >= 0)) out.push(`sources: source ${id} ${f} is ${JSON.stringify(v[f])}, not a non-negative number`);
+  }
+  if (!Array.isArray(colonies)) return [...out, `sources: the colony list is ${JSON.stringify(colonies)}, not an array`];
+  const ids = new Set<string>();
+  colonies.forEach((c: unknown, ci) => {
+    if (!isObj(c)) { out.push(`sources: colony ${ci} is ${JSON.stringify(c)}, not an object`); return; }
+    const cid = nonEmpty(c.id) ? c.id : `list ${ci}`;
+    if (!nonEmpty(c.id)) out.push(`sources: colony ${ci} has no id`);
+    else if (ids.has(c.id)) out.push(`sources: colony ${c.id} is listed twice`); else ids.add(c.id);
+    if (c.timing !== 'timed' && c.timing !== 'untimed_legacy') out.push(`sources: colony ${cid} timing ${JSON.stringify(c.timing)} is not timed | untimed_legacy`);
+    if (!Array.isArray(c.events)) { out.push(`sources: colony ${cid} events is ${JSON.stringify(c.events)}, not an array`); return; }
+    c.events.forEach((e: unknown, ei) => {
+      if (!isObj(e)) { out.push(`sources: colony ${cid} event ${ei} is ${JSON.stringify(e)}, not an event object`); return; }
+      if (e.type !== 'food_transfer') return;
+      const errs = recordSchemaErrors(e, `colony ${cid} event ${ei}`);
+      if (errs.length) { out.push(...errs.map((m) => `sources: ${m}`)); return; }
+      const x = e as unknown as EngineTransfer, at = `sources: ${x.transfer_id} (colony ${cid})`;
+      if (x.colony !== cid) out.push(`${at} is recorded for colony ${x.colony}`);
+      if (x.source.kind !== 'source' && x.recipient.kind !== 'source') return;
+      // a source is only collected from or credited by a kill, during foraging (same paths as the colony reader)
+      const legal = (x.cause === 'collect' && x.source.kind === 'source' && x.recipient.kind === 'in_transit') || (x.cause === 'prey_kill' && x.source.kind === 'insect' && x.recipient.kind === 'source');
+      if (!legal) out.push(`${at}: ${x.cause} ${x.source.kind} -> ${x.recipient.kind} is not a collection or a kill`);
+      const sid = x.source.kind === 'source' ? x.source.id : x.recipient.id;
+      if (!Object.hasOwn(endSources, sid)) out.push(`${at}: source ${sid} is not a food source of this world (not in the end-of-day source table)`);
+    });
+  });
+  return out;
 }

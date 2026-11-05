@@ -506,6 +506,32 @@ if (!ONLY || ONLY.includes('C')) {
       srcBoth(`carcass collects untagged (${strip} removed), kill moved to minute 1440`, ev, 'reject');
     }
   }
+  // Codex review 2026-11-05 (latest) N1 (P2): replayEngineSourcesDay used directly must validate its own input — never
+  // [] for illegal input, never a TypeError (reports/c2-time-causality-p2-1/source-input-*.txt)
+  {
+    const rec = (): Any => ({ type: 'food_transfer', schema: 'antempire.food-transfer.v1', transfer_id: 'FT-1-C1-1', day: 1, colony: 'C1', minute: 1, phase: 'foraging', cause: 'collect', attribution: 'individual', source: { kind: 'source', id: 'F01' }, recipient: { kind: 'in_transit', id: 'W1' }, food_type: 'sugar', portions: 1 });
+    const end = { F01: { sugar: 10, protein: 0 } };
+    const call = (events: Any, endS: Any = end, colonies?: Any) => { try { return { r: replayEngineSourcesDay(endS, colonies ?? [{ id: 'C1', events, timing: 'timed' }]), crash: '' }; } catch (e) { return { r: [] as string[], crash: String(e) }; } };
+    const v0 = call([rec()]);
+    ok(v0.crash === '' && v0.r.length === 0, `TC source input: a valid collect is accepted (${v0.r[0] ?? v0.crash})`);
+    const bad: [string, Any, Any?, Any?, RegExp?][] = [
+      ['events = null', null, undefined, undefined, /events is null, not an array/],
+      ['portions = -1', [{ ...rec(), portions: -1 }], undefined, undefined, /portions -1 is not a positive/],
+      ['unknown source id', [{ ...rec(), source: { kind: 'source', id: 'DOES_NOT_EXIST' } }], undefined, undefined, /not a food source of this world/],
+      ['recipient deleted', [(() => { const x = rec(); delete x.recipient; return x; })()], undefined, undefined, /recipient missing/],
+      ['null event in the list', [null], undefined, undefined, /not an event object/],
+      ['colony list not an array', null, end, 'nope', /not an array/],
+      ['end source with a negative amount', [rec()], { F01: { sugar: 10, protein: -3 } }, undefined, /not a non-negative number/],
+      ['end source table not an object', [rec()], null, undefined, /not an object/],
+      ['collect into a crop (not a source path)', [{ ...rec(), recipient: { kind: 'crop', id: 'W1' } }], undefined, undefined, /not a collection or a kill/],
+      ['record of another colony', [{ ...rec(), colony: 'C9' }], undefined, undefined, /recorded for colony C9/],
+      ['undefined timing', null, end, [{ id: 'C1', events: [rec()], timing: 'sometimes' }], /timing/],
+    ];
+    for (const [name, events, endS, colonies, re] of bad) {
+      const v = call(events, endS === undefined ? end : endS, colonies);
+      ok(v.crash === '' && v.r.length > 0 && (!re || v.r.some((m) => re.test(m))), `TC source input: ${name} is reported, not accepted or crashed (${v.crash || v.r[0] || 'ACCEPTED'})`);
+    }
+  }
   // different workers' records may interleave in any list order: a legal day with two foragers, the list regrouped
   // worker by worker (each worker's own records keep their order and minutes; ids renumbered) must still be accepted
   const two = findDay((ev) => { const ws = new Set(fx(ev).filter((x) => x.cause === 'collect').map((x) => x.recipient.id)); return ws.size >= 2 && !fx(ev).some((x) => x.cause === 'trophallaxis'); }, 'A1', 1, '2027-09-23', 60);
