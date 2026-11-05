@@ -44,8 +44,9 @@ import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from '
  *   v2-review.22 (work package C2): the engine records every movement of food between compartments as a food_transfer event (source, recipient, amount, minute, cause, attribution) and checks per-compartment closure every day; diagnostics only, no quantity, draw or decision changed.
  *   v2-review.23 (Codex Issue #61 R3-05): a worker carrying food home marks each edge at the minute it has walked it (event-clock 'trail'), not the whole route at the nest. Switch activity.local_trail_deposit_v23.
  *   v2-review.24 (ME-1, Issue #66): runtime invariants (engine/invariants.ts) — population ID flow and lifetimes, numeric/event/parameter domains, RNG inputs; checks only, no quantity, draw, decision, event or state changed (outputs byte-identical to v23).
+ *   v2-review.25 (C3a, docs/design-c3-queen-feeding.md §9-§12): the queen's own nutrition compartment (queen_body), fed only by local ordinal-timed nest-round events (take_from_cache, queen_contact, feed_queen, queen_self_feed); her metabolism from what she ate. Switch queen_feeding.individual_queen_body_c3a (default off = v24 byte for byte).
  */
-export const ENGINE_VERSION = 'antempire.v2-review.24-me1-invariants';
+export const ENGINE_VERSION = 'antempire.v2-review.25-c3a-queen-body';
 /** Implementation of that behaviour (bumped for refactors that keep results byte-identical). */
 export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
 /**
