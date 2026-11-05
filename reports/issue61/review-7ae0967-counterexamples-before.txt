@@ -1,0 +1,7 @@
+# Independent review of 7ae0967 (PR #60): balanced counterexamples run against the checks of 7ae0967 (engine/transfers.ts, cli/lib/engine-transfers.ts at 7ae0967; tests/c2-engine-transfers.test.ts R2 with C2_R2_PROBE=1, Node v22.23.4)
+{"probe":"1b (W012 ecloses in the settlement, credited at minute 3.61933)","engine_colony_check":"ACCEPTS","reader":"ACCEPTS","reader_errors":[]}
+{"probe":"the same kill credited twice","engine_colony_check":"ACCEPTS","reader":"ACCEPTS","reader_errors":[]}
+{"probe":"a kill credited to another site (F01)","engine_colony_check":"ACCEPTS","reader":"ACCEPTS","reader_errors":[]}
+{"probe":"a kill credited with more protein than its carcass","engine_colony_check":"ACCEPTS","reader":"ACCEPTS","reader_errors":[]}
+{"probe":"a kill with no prey_kill transfer","engine_colony_check":"ACCEPTS","reader":"ACCEPTS","reader_errors":[]}
+{"probe":"part of W004's transit load unloaded into the crop of W002","engine_colony_check":"ACCEPTS","reader":"ACCEPTS","reader_errors":[]}
