@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { REPO_ROOT } from '../cli/lib/load.ts';
 
-export const BLOCKING = ['params-split', 'platform-purity', 'naturalism', 'foraging-physics', 'migration', 'local-ecology', 'scaling', 'multi-colony', 'golden', 'differential', 'advance', 'nest-temperature', 'save-transaction', 'history-integrity', 'save-counters', 'rules-isolation', 'hunting', 'injury', 'crop-ledger', 'navigation', 'rules-registry', 'multi-colony-timeline', 'day0', 'death-diagnostics', 'activity', 'eval-methods', 'web', 'web-serve', 'issue43-timeline', 'issue44-locality', 'phase2-sensitivity', 'reproduction-measures', 'p0a-rain-allocation', 'issue51-input-manifest', 'issue50-brood-order', 'ph1-geometry', 'physics-isolation', 'mv1-kinematics', 'ph2-collision', 'compartments'];
+export const BLOCKING = ['params-split', 'platform-purity', 'naturalism', 'foraging-physics', 'migration', 'local-ecology', 'scaling', 'multi-colony', 'golden', 'differential', 'advance', 'nest-temperature', 'save-transaction', 'history-integrity', 'save-counters', 'rules-isolation', 'hunting', 'injury', 'crop-ledger', 'navigation', 'rules-registry', 'multi-colony-timeline', 'day0', 'death-diagnostics', 'activity', 'eval-methods', 'web', 'web-serve', 'issue43-timeline', 'issue44-locality', 'phase2-sensitivity', 'reproduction-measures', 'p0a-rain-allocation', 'issue51-input-manifest', 'issue50-brood-order', 'compartments', 'c2-engine-transfers', 'issue56-worker-order', 'issue61-trail-deposit', 'math-contracts', 'ph1-geometry', 'physics-isolation', 'mv1-kinematics', 'ph2-collision'];
 
 const run = (name: string) => {
   const t = Date.now();

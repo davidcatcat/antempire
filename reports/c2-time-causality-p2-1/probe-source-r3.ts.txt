@@ -1,0 +1,18 @@
+// Codex follow-up 2026-11-05 (source input): N1 precision and sums, N2 late getter, N3 line length. argv[2] = worktree.
+const W = process.argv[2];
+const R: any = await import(`${W}/cli/lib/engine-transfers.ts`);
+const rec = (o: any = {}) => ({ type: 'food_transfer', schema: 'antempire.food-transfer.v1', transfer_id: 'FT-1-C1-1', day: 1, colony: 'C1', minute: 1, phase: 'foraging', cause: 'collect', attribution: 'individual', source: { kind: 'source', id: 'F01' }, recipient: { kind: 'in_transit', id: 'W1' }, food_type: 'sugar', portions: 1, ...o });
+const end = { F01: { sugar: 10, protein: 0 } };
+const run = (label: string, endS: any, colonies: any) => { let out: string; try { const r = R.replayEngineSourcesDay(endS, colonies); out = r.length ? `REJECT (${r.length} lines, longest ${Math.max(...r.map((m: string) => m.length))} chars): ${r[0].slice(0, 140)}` : 'ACCEPT ([])'; } catch (e: any) { out = 'ESCAPED: ' + String(e).slice(0, 100); } console.log(`${label}\n  ${out}`); };
+const one = (events: any[], endS: any = end) => [{ id: 'C1', events, timing: 'timed' }];
+for (const um of [0.6, 1.4, 1, 1.0005]) run(`N1a portions ${um} µp`, end, one([rec({ portions: um / 1e6 })]));
+const M = 2 ** 52;
+run('N1b Codex: end 2^52 µp, collects 2^52 µp then 1 µp (legal; exact start 2^53+1)', { F01: { sugar: M / 1e6, protein: 0 } }, one([rec({ portions: M / 1e6 }), rec({ transfer_id: 'FT-1-C1-2', minute: 2, portions: 1e-6 })]));
+run('N1c illegal by 1 µp only in exact arithmetic: collects 2^52, 2^52, 3 µp, then a 1 µp kill, end 0', { F01: { sugar: 0, protein: 0 } }, one([rec({ portions: M / 1e6 }), rec({ transfer_id: 'FT-1-C1-2', minute: 2, portions: M / 1e6 }), rec({ transfer_id: 'FT-1-C1-3', minute: 3, portions: 3e-6 }), rec({ transfer_id: 'FT-1-C1-4', minute: 4, cause: 'prey_kill', source: { kind: 'insect', id: 'K1' }, recipient: { kind: 'source', id: 'F01' }, portions: 1e-6 })]));
+let reads = 0;
+run('N2 getter throwing on the 6th read', end, [{ id: 'C1', timing: 'timed', get events() { if (++reads > 5) throw Error('late getter'); return [rec()]; } }]);
+run('N3 transfer_id of 100000 characters, portions -1', end, one([rec({ transfer_id: 'X'.repeat(100000), portions: -1 })]));
+// within the 10^6-portion cap: 9,008 collects of 10^6 portions, then 3 µp, then a 1 µp kill, end 0 (illegal by 1 µp)
+{ const N = 9008, many = Array.from({ length: N }, (_, k) => rec({ transfer_id: `FT-1-C1-${k + 1}`, portions: 1e6 }));
+  run('N1d within the cap: 9008 x 10^6 portions, 3 µp, then 1 µp kill, end 0 (illegal by 1 µp; total > 2^53 µp)', { F01: { sugar: 0, protein: 0 } }, one([...many, rec({ transfer_id: `FT-1-C1-${N + 1}`, minute: 2, portions: 3e-6 }), rec({ transfer_id: `FT-1-C1-${N + 2}`, minute: 3, cause: 'prey_kill', source: { kind: 'insect', id: 'K1' }, recipient: { kind: 'source', id: 'F01' }, portions: 1e-6 })])); }
+run('P3-a Map as a source value', { F01: new Map([['sugar', 10]]) }, one([rec()]));

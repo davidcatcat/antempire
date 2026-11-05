@@ -1,0 +1,7 @@
+file:///tmp/claude-0/-home-user-antempire/bdc1d7a9-ae5b-593b-9b88-c5b68f2c325c/scratchpad/wt-c2/engine/transfers.ts:121
+  const fail = (m        ) => { throw Error(`FOOD_TRANSFER ${colony.id}: ${m}`); };
+                                      ^
+
+Error: FOOD_TRANSFER C1: FT-1-C1-1 uses in_transit:NONEXISTENT_WORKER, which is not a compartment of this colony on this day (Issue #61 R3-08)
+
+Node.js v22.23.4

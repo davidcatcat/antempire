@@ -1,0 +1,34 @@
+day 5; foraging transfers: FT-5-C1-1 collect source:F07->in_transit:W007 m=2.607843 | FT-5-C1-2 unload in_transit:W007->cache:N00 m=6.215686 | FT-5-C1-3 collect source:F07->in_transit:W007 m=23.127452 | FT-5-C1-4 unload in_transit:W007->cache:N00 m=26.431374
+P0 unmodified day
+  reader: ACCEPT
+  engine: ACCEPT
+P1 Codex: collects at minute 1000, unloads at minute 0
+  reader: ACCEPT
+  engine: ACCEPT
+P2 first unload moved 1 minute before its own collect
+  reader: ACCEPT
+  engine: ACCEPT
+P3 same worker, same minute: unload listed before its collect
+  reader: REJECT: transfer 1: id FT-5-C1-2, expected FT-5-C1-1 | FT-5-C1-2: in_transit:W007:protein holds 0 µp, cannot give 421130
+  engine: REJECT: FOOD_TRANSFER C1: FT-5-C1-2 takes 421130 µp protein from in_transit:W007:protein, which holds 0
+P4 array order swapped (collect after unload), minutes unchanged
+  reader: REJECT: transfer 1: id FT-5-C1-2, expected FT-5-C1-1 | FT-5-C1-2: in_transit:W007:protein holds 0 µp, cannot give 421130
+  engine: REJECT: FOOD_TRANSFER C1: FT-5-C1-2 takes 421130 µp protein from in_transit:W007:protein, which holds 0
+P5 one collect made untimed (minute null) among timed records
+  reader: ACCEPT
+  engine: ACCEPT
+P6 all foraging minutes null (legacy semantics)
+  reader: ACCEPT
+  engine: ACCEPT
+P7 unload with no prior source: its collect removed
+  reader: REJECT: transfer 1: id FT-5-C1-2, expected FT-5-C1-1 | FT-5-C1-2: in_transit:W007:protein holds 0 µp, cannot give 421130
+  engine: REJECT: FOOD_TRANSFER C1: FT-5-C1-2 takes 421130 µp protein from in_transit:W007:protein, which holds 0
+P8 tampered timestamps: the minutes reversed across the list (order unchanged, end balance closes)
+  reader: ACCEPT
+  engine: ACCEPT
+P9 one unload made untimed (null) among timed records
+  reader: ACCEPT
+  engine: ACCEPT
+P10 legal: same worker, same minute, collect then unload (tie rule = list order)
+  reader: ACCEPT
+  engine: ACCEPT

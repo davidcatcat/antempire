@@ -78,6 +78,8 @@ const ACTIVITY_KEYS = ['trail_walking_speed_mm_s', 'off_trail_speed_factor', 'se
 
 export function resolveSpecies(file: ParamFile) {
   if (file.schema !== 'antempire.species-params.v1') throw Error('Unknown species params schema ' + String(file.schema));
+  // v2-review.23: per-edge trail marks are queue events of the v2-review.20 event clock; without it the switch would do nothing silently
+  if (at(file, 'activity.local_trail_deposit_v23') === true && at(file, 'activity.local_causality_v20') !== true) throw Error('activity.local_trail_deposit_v23 requires activity.local_causality_v20');
   const p = {
     species_id: str(file, 'species_id'),
     castes: {
@@ -103,7 +105,7 @@ export function resolveSpecies(file: ParamFile) {
     trophallaxis: section(file, 'trophallaxis', ['crop_capacity', 'max_trophallaxis_contacts', 'transfer_max_portions'] as const),
     navigation: { individual_route_memory: bool(file, 'navigation.individual_route_memory') },
     // v2-review.17: individual activity timeline (switch) and its durations / decision weights.
-    activity: { individual_timeline: bool(file, 'activity.individual_timeline'), local_causality_v20: bool(file, 'activity.local_causality_v20'), ...(bool(file, 'activity.individual_timeline') ? section(file, 'activity', ACTIVITY_KEYS) : ({} as Record<(typeof ACTIVITY_KEYS)[number], number>)) },
+    activity: { individual_timeline: bool(file, 'activity.individual_timeline'), local_causality_v20: bool(file, 'activity.local_causality_v20'), local_trail_deposit_v23: bool(file, 'activity.local_trail_deposit_v23'), ...(bool(file, 'activity.individual_timeline') ? section(file, 'activity', ACTIVITY_KEYS) : ({} as Record<(typeof ACTIVITY_KEYS)[number], number>)) },
     predation: {
       ...section(file, 'predation', ['live_prey_encounter_probability', 'large_prey_min_team', 'live_prey_capture_probability', 'large_prey_escape_while_recruiting_probability', 'large_prey_max_team'] as const),
       simultaneous_site_group_hunting: bool(file, 'predation.simultaneous_site_group_hunting'),
