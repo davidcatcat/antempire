@@ -89,10 +89,13 @@ export const totalOf = (c: Compartments, f: FoodType, kinds?: CompartmentKind[])
  */
 export function dayTransfers(events: SimEvent[], summary: Any, colony: { id: string; nest_node: string }, day: number): { transfers: FoodTransfer[]; ledger: LedgerEntry[] } {
   const transfers: FoodTransfer[] = [], ledger: LedgerEntry[] = [], nest = colony.nest_node;
-  const eid = (i: number) => `E-${day}-${colony.id}-${i}`;
+  // v2-review.22: the engine's own food_transfer records are not reconstructed here (cli/lib/engine-transfers.ts reads
+  // them); they are skipped, and event ids keep the index of the event in the engine's full list
+  const kept = (events as Any[]).map((e, i) => [e, i] as const).filter(([e]) => e.type !== 'food_transfer');
+  const eid = (i: number) => `E-${day}-${colony.id}-${kept[i][1]}`;
   const t = (x: Omit<FoodTransfer, 'type' | 'transfer_id' | 'day' | 'colony'>) => { if (x.amount_microportions > 0) transfers.push({ type: 'food_transfer', transfer_id: `FT-${day}-${colony.id}-${transfers.length + 1}`, day, colony: colony.id, ...x }); };
   const l = (x: Omit<LedgerEntry, 'type' | 'entry_id' | 'day' | 'colony'>) => { if (x.amount_microportions > 0) ledger.push({ type: 'ledger_entry', entry_id: `LE-${day}-${colony.id}-${ledger.length + 1}`, day, colony: colony.id, ...x }); };
-  const ev = events as Any[];
+  const ev = kept.map(([e]) => e);
   // place each sugar unload before the trophallaxis events of the same handoff (logged immediately before it)
   const order: number[] = [];
   const unloadFirst = new Map<number, number>(); // index of first trophallaxis of the run -> index of its food_delivered
