@@ -42,7 +42,14 @@ const nonEmpty = (v: unknown): v is string => typeof v === 'string' && v.length 
 /** A value for an error message that never throws (BigInt, cycles, getters, proxies) and never echoes huge inputs. */
 const show = (v: unknown): string => { let t: string; try { t = typeof v === 'bigint' ? `${v}n` : String(JSON.stringify(v)); } catch { t = `<${typeof v}>`; } return t.length > 80 ? `${t.slice(0, 77)}...` : t; };
 /** An amount the micro-portion arithmetic can hold exactly: at least 1 µp and a safe integer (no overflow to Infinity/NaN). */
-const exactMicro = (v: number): boolean => { const m = toMicro(v); return Number.isSafeInteger(m) && m >= 1; };
+const exactMicro = (v: number, min = 1): boolean => sixDecimal(v) && toMicro(v) >= min;
+/** The colony reader's six-decimal policy (replay: |v·10⁶ − round(v·10⁶)| ≤ 1e-3 µp), checked on the RAW value: 0.6 µp
+ * or 1.4 µp is not a legal amount even though it rounds to 1 µp (Codex follow-up 2026-11-05, N1). Safe integer result. */
+const sixDecimal = (v: number): boolean => { if (typeof v !== 'number' || !Number.isFinite(v)) return false; const m = toMicro(v); return Number.isSafeInteger(m) && Math.abs(v * 1e6 - m) <= 1e-3; };
+/** Any message line is bounded (ids and labels are not otherwise truncated); any thrown value is printable. */
+const MAX_LINE = 300, MAX_LINES = 50;
+const boundLines = (xs: string[], what = 'errors'): string[] => { const out = xs.slice(0, MAX_LINES).map((m) => (m.length > MAX_LINE ? `${m.slice(0, MAX_LINE - 3)}...` : m)); if (xs.length > MAX_LINES) out.push(`sources: ... and ${xs.length - MAX_LINES} more ${what}`); return out; };
+const printable = (e: unknown): string => { try { return show(String(e)); } catch { return '<unprintable error>'; } };
 /**
  * Codex review of 1bdba72, F1: runtime schema of one record, checked BEFORE any field is used (records come from JSON;
  * TypeScript types prove nothing at run time). Returns the problems found; a record with any problem is not replayed, so
@@ -278,39 +285,50 @@ function timeCausality(start: ColonyState, xs: EngineTransfer[], err: (m: string
  * below zero — e.g. carcass protein collected before the kill that put it there, whether or not the collect names the prey.
  */
 export function replayEngineSourcesDay(endSources: Record<string, { sugar?: number; protein?: number }>, colonies: { id: string; events: SimEvent[]; timing: 'timed' | 'untimed_legacy' }[]): string[] {
-  // Codex review 2026-11-05 (latest), N1 (P2): every input is validated BEFORE any field is read; an invalid input is
-  // reported (colony, record, field) and nothing is replayed — never a TypeError, never "no events" by default. The
-  // reconstruction of start holdings below cancels out by construction, so it is no evidence for records that are
-  // themselves illegal (a negative amount, a source that does not exist).
-  let invalid: string[];
-  try { invalid = sourceDayInputErrors(endSources, colonies); } catch (e) { invalid = [`sources: the input cannot be read (${show(String(e))})`]; } // throwing getters, proxies
-  if (invalid.length) return invalid.length > 50 ? [...invalid.slice(0, 50), `sources: ... and ${invalid.length - 50} more input errors`] : invalid;
-  const errors: string[] = [];
+  // Codex reviews 2026-11-05 (latest N1; follow-up N1–N3): the caller's objects are read exactly once, into a plain-data
+  // snapshot (structuredClone: getters run once, proxies and functions are refused); everything after that reads only the
+  // snapshot. Every input is validated before it is used; nothing thrown can escape; every returned line is bounded.
+  try {
+    let snap: { endSources: unknown; colonies: unknown };
+    try { snap = structuredClone({ endSources, colonies }); } catch (e) { return boundLines([`sources: the input cannot be read as plain data (${printable(e)})`]); }
+    const invalid = sourceDayInputErrors(snap.endSources, snap.colonies);
+    if (invalid.length) return boundLines(invalid, 'input errors');
+    return boundLines(replaySources(snap.endSources as Record<string, { sugar?: number; protein?: number }>, snap.colonies as { id: string; events: SimEvent[]; timing: 'timed' | 'untimed_legacy' }[]));
+  } catch (e) { return boundLines([`sources: the input cannot be read (${printable(e)})`]); }
+}
+
+/** The replay itself, on a validated snapshot. Exact integer micro-portions in BigInt: sums of safe amounts never lose
+ * precision (Codex follow-up N1: 2^52 + 2^52 + 1 µp). Start = end + collected − credited; then replayed in time order. */
+function replaySources(endSources: Record<string, { sugar?: number; protein?: number }>, colonies: { id: string; events: SimEvent[]; timing: 'timed' | 'untimed_legacy' }[]): string[] {
+  const errors: string[] = [], mu = (v: number) => BigInt(toMicro(v));
   const touches = colonies.map((c) => (c.events as Any[]).filter((e) => e.type === 'food_transfer' && (e.source.kind === 'source' || e.recipient.kind === 'source')) as EngineTransfer[]);
-  const held = new Map<string, number>(), slot = (id: string, f: string) => `${id}|${f}`;
-  for (const [id, s] of Object.entries(endSources ?? {})) { held.set(slot(id, 'sugar'), toMicro(s?.sugar || 0)); held.set(slot(id, 'protein'), toMicro(s?.protein || 0)); }
+  const held = new Map<string, bigint>(), slot = (id: string, f: string) => `${id}|${f}`, get = (k: string) => held.get(k) ?? 0n;
+  for (const [id, s] of Object.entries(endSources)) { held.set(slot(id, 'sugar'), mu(s.sugar || 0)); held.set(slot(id, 'protein'), mu(s.protein || 0)); }
+  const end = new Map(held);
   for (const x of touches.flat()) {
-    const a = toMicro(x.portions);
-    if (x.source.kind === 'source') held.set(slot(x.source.id, x.food_type), (held.get(slot(x.source.id, x.food_type)) ?? 0) + a);
-    if (x.recipient.kind === 'source') held.set(slot(x.recipient.id, x.food_type), (held.get(slot(x.recipient.id, x.food_type)) ?? 0) - a);
+    const a = mu(x.portions);
+    if (x.source.kind === 'source') held.set(slot(x.source.id, x.food_type), get(slot(x.source.id, x.food_type)) + a);
+    if (x.recipient.kind === 'source') held.set(slot(x.recipient.id, x.food_type), get(slot(x.recipient.id, x.food_type)) - a);
   }
-  for (const [k, v] of held) if (v < 0) errors.push(`sources: ${k} would have held ${v} µp at the start of foraging`);
+  for (const [k, v] of held) if (v < 0n) errors.push(`sources: ${show(k)} would have held ${v} µp at the start of foraging`);
   colonies.forEach((c, ci) => {
     let order = touches[ci].map((x, i) => ({ x, i }));
     if (c.timing === 'timed') {
-      for (const { x } of order) if (typeof x.minute !== 'number' || !Number.isFinite(x.minute)) errors.push(`sources: ${x.transfer_id} of ${c.id} has no minute on a timed day`);
+      for (const { x } of order) if (typeof x.minute !== 'number' || !Number.isFinite(x.minute)) errors.push(`sources: ${show(x.transfer_id)} of ${show(c.id)} has no minute on a timed day`);
       order = order.filter(({ x }) => typeof x.minute === 'number').sort((p, q) => (p.x.minute as number) - (q.x.minute as number) || p.i - q.i);
     }
     for (const { x } of order) {
-      const a = toMicro(x.portions);
+      const a = mu(x.portions);
       if (x.source.kind === 'source') {
-        const k = slot(x.source.id, x.food_type), h = held.get(k) ?? 0;
-        if (h < a) errors.push(`sources: ${x.transfer_id} of ${c.id} (minute ${x.minute}) takes ${a} µp from ${x.source.id}, which holds ${h} µp then — food taken before it was there`);
+        const k = slot(x.source.id, x.food_type), h = get(k);
+        if (h < a) errors.push(`sources: ${show(x.transfer_id)} of ${show(c.id)} (minute ${x.minute}) takes ${a} µp from ${show(x.source.id)}, which holds ${h} µp then — food taken before it was there`);
         held.set(k, h - a);
       }
-      if (x.recipient.kind === 'source') held.set(slot(x.recipient.id, x.food_type), (held.get(slot(x.recipient.id, x.food_type)) ?? 0) + a);
+      if (x.recipient.kind === 'source') held.set(slot(x.recipient.id, x.food_type), get(slot(x.recipient.id, x.food_type)) + a);
     }
   });
+  // exact arithmetic closes by construction; checked anyway so that any future change to the replay cannot drift silently
+  for (const [k, v] of end) if (get(k) !== v) errors.push(`sources: ${show(k)} replays to ${get(k)} µp, the end state says ${v} µp`);
   return errors;
 }
 
@@ -320,7 +338,7 @@ function sourceDayInputErrors(endSources: unknown, colonies: unknown): string[] 
   if (!isObj(endSources)) return [`sources: the end-of-day source table is ${show(endSources)}, not an object`];
   for (const [id, v] of Object.entries(endSources)) {
     if (!isObj(v)) { out.push(`sources: source ${id} is ${show(v)}, not an object`); continue; }
-    for (const f of ['sugar', 'protein'] as const) if (v[f] !== undefined && !(typeof v[f] === 'number' && Number.isFinite(v[f]) && (v[f] as number) >= 0 && Number.isSafeInteger(toMicro(v[f] as number)))) out.push(`sources: source ${id} ${f} is ${show(v[f])}, not a non-negative number within exact micro-portion range`);
+    for (const f of ['sugar', 'protein'] as const) if (v[f] !== undefined && !(typeof v[f] === 'number' && Number.isFinite(v[f]) && (v[f] as number) >= 0 && sixDecimal(v[f] as number))) out.push(`sources: source ${show(id)} ${f} is ${show(v[f])}, not a non-negative number (six-decimal, within exact micro-portion range)`);
   }
   if (!Array.isArray(colonies)) return [...out, `sources: the colony list is ${show(colonies)}, not an array`];
   const ids = new Set<string>();
@@ -339,7 +357,7 @@ function sourceDayInputErrors(endSources: unknown, colonies: unknown): string[] 
       const errs = recordSchemaErrors(e, `colony ${cid} event ${ei}`);
       if (errs.length) { out.push(...errs.map((m) => `sources: ${m}`)); return; }
       const x = e as unknown as EngineTransfer, at = `sources: ${x.transfer_id} (colony ${cid})`;
-      if (!exactMicro(x.portions)) out.push(`${at}: portions ${show(x.portions)} is below one micro-portion`);
+      if (!exactMicro(x.portions)) out.push(`${at}: portions ${show(x.portions)} is below one micro-portion or not a six-decimal amount`);
       if (x.colony !== cid) out.push(`${at} is recorded for colony ${x.colony}`);
       if (x.source.kind !== 'source' && x.recipient.kind !== 'source') return;
       // a source is only collected from or credited by a kill, during foraging (same paths as the colony reader)

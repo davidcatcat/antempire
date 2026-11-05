@@ -1,0 +1,16 @@
+N1a portions 0.6 µp
+  REJECT (1 lines, longest 100 chars): sources: FT-1-C1-1 (colony C1): portions 6e-7 is below one micro-portion or not a six-decimal amount
+N1a portions 1.4 µp
+  REJECT (1 lines, longest 105 chars): sources: FT-1-C1-1 (colony C1): portions 0.0000014 is below one micro-portion or not a six-decimal amount
+N1a portions 1 µp
+  ACCEPT ([])
+N1a portions 1.0005 µp
+  ACCEPT ([])
+N1b Codex: end 2^52 µp, collects 2^52 µp then 1 µp (legal; exact start 2^53+1)
+  ACCEPT ([])
+N1c illegal by 1 µp only in exact arithmetic: collects 2^52, 2^52, 3 µp, then a 1 µp kill, end 0
+  REJECT (1 lines, longest 117 chars): sources: "FT-1-C1-3" of "C1" (minute 3) takes 3 µp from "F01", which holds 2 µp then — food taken before it was there
+N2 getter throwing on the 6th read
+  ACCEPT ([])
+N3 transfer_id of 100000 characters, portions -1
+  REJECT (1 lines, longest 300 chars): sources: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
