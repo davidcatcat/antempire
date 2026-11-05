@@ -106,6 +106,42 @@ both('brood vanishes without an event', pick((d) => d.after.population.brood.len
 
 ok(acceptedBefore.length >= 8, `POP before ME-1: the count identities accept ${acceptedBefore.length} of the counterexamples above: ${acceptedBefore.join('; ')}`);
 
+// ---------------------------------------------------------------- Codex review of 1224744 (F1, F2, F3, C1)
+{
+  const accepts = (st: Any, en: Any, ev: Any[]) => { let eng = true; try { checkPopulationDay(populationSnapshot(st), en, ev); } catch { eng = false; } return { eng, rd: replayPopulationDay(st, en, ev).ok }; };
+  // F1: a queen death is evidence only for the colony's own queen (and an egg only for her)
+  const d = pick((x) => x.before.population.queen_alive && x.after.population.queen_alive), dead = structuredClone(d.after); dead.population.queen_alive = false;
+  const own = accepts(d.before, dead, [...d.events, { type: 'queen_death', id: d.before.queen_id }]);
+  ok(own.eng && own.rd, 'F1 control: the colony\'s own queen dies (queen_death with her ID): both accept');
+  const other = accepts(d.before, dead, [...d.events, { type: 'queen_death', id: 'OTHER_COLONY_QUEEN' }]);
+  ok(!other.eng && !other.rd, 'F1: a queen_death naming another queen cannot account for this colony\'s queen: both reject');
+  const e0 = pick((x) => x.events.some((e) => e.type === 'egg_laid')), eggOther = structuredClone(e0); eggOther.events.find((e) => e.type === 'egg_laid').queen = 'OTHER_COLONY_QUEEN';
+  const eo = accepts(eggOther.before, eggOther.after, eggOther.events);
+  ok(!eo.eng && !eo.rd, 'F1: an egg attributed to another queen: both reject');
+  // F2: no stage event after the brood item died (the legal order hatch -> death is accepted)
+  const base: Any = structuredClone(d.before); base.population.brood = [{ id: 'REVIEW_EGG', stage: 'egg', progress: 0, age_days: 0 }];
+  const larva: Any = structuredClone(base); larva.population.brood = [{ id: 'REVIEW_LARVA', stage: 'larva', progress: 0, age_days: 0 }];
+  const endOf = (st: Any) => { const en: Any = structuredClone(st); en.population.brood = []; for (const w of en.population.workers) w.age_days++; return en; };
+  const legal = accepts(base, endOf(base), [{ type: 'hatch', id: 'REVIEW_EGG' }, { type: 'brood_death', id: 'REVIEW_EGG' }]);
+  ok(legal.eng && legal.rd, 'F2 control: hatch, then death the same day: both accept');
+  const deadHatch = accepts(base, endOf(base), [{ type: 'brood_death', id: 'REVIEW_EGG' }, { type: 'hatch', id: 'REVIEW_EGG' }]);
+  ok(!deadHatch.eng && !deadHatch.rd, 'F2: an egg hatches after it died: both reject (the engine accepted it before the fix)');
+  const deadPupa = accepts(larva, endOf(larva), [{ type: 'brood_death', id: 'REVIEW_LARVA' }, { type: 'pupation', id: 'REVIEW_LARVA' }]);
+  ok(!deadPupa.eng && !deadPupa.rd, 'F2: a larva pupates after it died: both reject');
+  // F3: a known brood age is a non-negative integer — in a full engine day and in the reader; null (unknown) stays legal
+  for (const [label, age] of [['negative', -3], ['fractional', 1.5]] as const) {
+    const s0: Any = buildDay0('A4' as Any, 1, '2027-09-23', b).state; s0.colonies[0].population.brood[0].age_days = age;
+    ok(throws(() => simulateWorldDay(s0, b), /DOMAIN/), `F3: a ${label} brood age (${age}) in the start state: the engine refuses the day`);
+    const c = structuredClone(d.after); c.population.brood.push({ id: 'REVIEW_B', stage: 'pupa', progress: 0, age_days: age });
+    ok(domainErrors(c, d.events, cap).length > 0 && throws(() => checkColonyDomain(c, cap), /DOMAIN/), `F3: a ${label} brood age at the end of a day: both reject`);
+  }
+  { const s0: Any = buildDay0('A4' as Any, 1, '2027-09-23', b).state; const nulls = s0.colonies[0].population.brood.filter((x: Any) => x.age_days === null).length; let ran = true; try { simulateWorldDay(s0, b); } catch { ran = false; } ok(ran && nulls > 0, `F3 control: unknown brood ages (null, ${nulls} items on Day0 A4) stay legal and are not read as 0`); }
+  // C1: malformed input is a located error, never ok and never an exception
+  const r1 = replayPopulationDay(d.before, d.after, null as Any), r2 = (() => { try { return replayPopulationDay(null as Any, d.after, []); } catch { return null; } })(), r3 = replayPopulationDay(d.before, d.after, [...d.events, 7 as Any]);
+  ok(!r1.ok && r2 !== null && !r2.ok && !r3.ok, `C1: events=null, start=null and a non-object event give located errors, no exception (${r1.errors[0]} | ${r2?.errors[0]} | ${r3.errors[0]})`);
+  ok(domainErrors(null as Any, [], cap).length > 0 && domainErrors(d.after, null as Any, cap).length > 0, 'C1: the domain reader reports malformed input instead of throwing');
+}
+
 // ---------------------------------------------------------------- counterexamples: world-side source ledger (reader only)
 const ledger = (name: string, pick: (d: Any) => boolean, mutate: (d: Any) => void) => {
   const d0 = ledgerDays.find(pick); assert.ok(d0, `no sample day for ${name}`);

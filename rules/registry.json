@@ -321,7 +321,7 @@
       "rules_version": "antempire.v2-review.24-me1-invariants",
       "tag": "v24",
       "fingerprint": {
-        "engine": "ff20ff26c0e9a04f6d6f9d477a736dcfdb4c0a5959f889ccf5a288241de9f756",
+        "engine": "34ce1ac6d84b121c561494e6b66220eb58bc0a2015c54eaa9f82372f2cc86395",
         "params": "a1fe85118344a18593e837e269d98bc5adf3c732736dca8646aed6264d0dec2a"
       },
       "approved_in": "Owner instruction 2026-11-05 (math-ecology integration ME-1, Issue #66; separate PR for Owner review, not merged by Claude)",
