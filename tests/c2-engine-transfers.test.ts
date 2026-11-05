@@ -471,6 +471,15 @@ if (!ONLY || ONLY.includes('C')) {
   // that unload must be rejected
   const dT = findDay((ev) => fx(ev).some((x) => x.cause === 'trophallaxis'));
   both(dT, 'trophallaxis stamped before the unload that filled the donor’s crop', (ev) => { const t = fx(ev).find((x) => x.cause === 'trophallaxis'), u = fx(ev).filter((x) => x.cause === 'unload' && x.source.id === t.source.id && x.minute <= t.minute).at(-1); t.minute = u.minute - 0.5; return ev; }, 'reject', /go back in time|has not arrived/, /^time:/);
+  // independent review of ed32299, N1: a carcass collected before the kill that made it (sources are not time-replayed,
+  // so the kill → carcass link is checked directly). Day 21 of A1 seed 1: kill at F11, four collects name it.
+  const dK = findDay((ev) => fx(ev).some((x) => x.cause === 'prey_kill') && fx(ev).some((x) => x.cause === 'collect' && x.contact?.prey_event_id));
+  const killOf = (ev: Any[]) => fx(ev).find((x) => x.cause === 'prey_kill');
+  both(dK, 'unmodified hunting day', (ev) => ev, 'accept');
+  both(dK, 'the kill and its predation event moved after the carcass collects (minute 1440)', (ev) => { const k = killOf(ev); k.minute = 1440; ev.find((e) => e.type === 'insect_predation' && e.event_id === k.source.id).minute = 1440; return ev; }, 'reject', /before its kill/, /^time:.*before the kill/);
+  both(dK, 'only the prey_kill record moved (the kill event stays)', (ev) => { killOf(ev).minute = 1440; return ev; }, 'reject', /insect_predation|before its kill/, /^time:/);
+  both(dK, 'a carcass collect stamped 1 minute before its kill', (ev) => { const k = killOf(ev), c = fx(ev).find((x) => x.cause === 'collect' && x.contact?.prey_event_id === k.source.id); c.minute = k.minute - 1; return ev; }, 'reject', /before its kill|go back in time|has not arrived/, /^time:/);
+  both(dK, 'a collect naming a prey that was never killed', (ev) => { const c = fx(ev).find((x) => x.cause === 'collect' && x.contact?.prey_event_id); c.contact.prey_event_id = 'HUNT-NOPE'; return ev; }, 'reject', /no prey_kill record/, /^time:.*no kill/);
   // different workers' records may interleave in any list order: a legal day with two foragers, the list regrouped
   // worker by worker (each worker's own records keep their order and minutes; ids renumbered) must still be accepted
   const two = findDay((ev) => { const ws = new Set(fx(ev).filter((x) => x.cause === 'collect').map((x) => x.recipient.id)); return ws.size >= 2 && !fx(ev).some((x) => x.cause === 'trophallaxis'); }, 'A1', 1, '2027-09-23', 60);

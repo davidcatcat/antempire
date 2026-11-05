@@ -219,6 +219,8 @@ function checkPathAndKills(colonyId: string, events: SimEvent[]): void {
  *       time order is NOT validated (only the array-order replay applies); this is a stated limit;
  *   (b) a worker's own acts out of time order: the records touching one worker's compartments (in_transit:W, crop:W)
  *       must not go back in time along the array (different workers' records may interleave freely);
+ *   (d) a carcass collect (contact.prey_event_id) before the kill that made it, or a prey_kill record whose minute is
+ *       not the minute of its insect_predation event (independent review of ed32299, N1);
  *   (c) a dependency in the wrong time order: replaying the timed records in time order (ties: array order) no
  *       compartment of the colony may ever hold less than zero — e.g. an unload before the collect that filled the
  *       transit load, or a trophallaxis before the unload that filled the donor's crop.
@@ -239,6 +241,23 @@ export function checkTimedCausality(start: ColonyFoodSnapshot, colony: ColonySta
   if (timing === 'untimed_legacy') return 'untimed_legacy';
   const nulls = fx.filter((x) => x.minute === null).length;
   if (nulls) fail(`${nulls} of ${fx.length} foraging records have minute null on a timed day (individual activity timeline): an act without a time cannot be placed in time, and null is never minute 0`);
+  // (d) a carcass exists only after its kill (independent review of ed32299, N1): sources are shared and not replayed
+  // here, so the kill -> carcass collect link is checked directly. The prey_kill record is the same act as the
+  // insect_predation event (same minute); a collect naming a prey must follow that prey's kill at the same site.
+  const pos = new Map(fx.map((x, i) => [x, i]));
+  const killRec = new Map(fx.filter((x) => x.cause === 'prey_kill').map((x) => [x.source.id, x]));
+  for (const e of events) if (e.type === 'insect_predation') {
+    const k = killRec.get(String(e.event_id));
+    if (k && e.minute !== k.minute) fail(`${k.transfer_id} (prey_kill of ${e.event_id}) is at minute ${k.minute}, the kill itself (insect_predation) at minute ${e.minute}`);
+  }
+  for (const x of fx) {
+    const prey = (x as { contact?: { prey_event_id?: unknown } }).contact?.prey_event_id;
+    if (x.cause !== 'collect' || prey === undefined) continue;
+    const k = killRec.get(String(prey));
+    if (!k) fail(`${x.transfer_id} collects the carcass of ${prey}, which has no prey_kill record this day`);
+    else if (k.recipient.id !== x.source.id) fail(`${x.transfer_id} collects the carcass of ${prey} at ${x.source.id}; the kill was at ${k.recipient.id}`);
+    else if ((x.minute as number) < (k.minute as number) || (x.minute === k.minute && (pos.get(x) as number) < (pos.get(k) as number))) fail(`${x.transfer_id} (collect, minute ${x.minute}) takes the carcass of ${prey} before its kill ${k.transfer_id} (minute ${k.minute})`);
+  }
   // (b) per worker: its own acts never go back in time along the array
   const lastMinute = new Map<string, { m: number; id: string }>();
   for (const x of fx) {

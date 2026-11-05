@@ -183,7 +183,7 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
     if (x.recipient.kind !== 'source' && HOLDS[x.recipient.kind]) cur.set(k(x.recipient, x.food_type), (cur.get(k(x.recipient, x.food_type)) ?? 0) + a);
   });
   for (const kId of killIds) if (!credited.has(kId)) err(`kill ${kId} has no prey_kill transfer`);
-  const time_validation = timeCausality(start, xs, err, timing);
+  const time_validation = timeCausality(start, xs, err, timing, events as Any[]);
   let endCrops = 0;
   const alive = new Set(end.population.workers.map((w) => w.id));
   for (const w of end.population.workers) {
@@ -208,16 +208,33 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
  *   - on a timed day (mode from the species parameters, speciesFoodTiming — never from the records) any foraging record
  *     with minute null (null is "not timed", never minute 0; nulling every minute does not turn a day into a legacy day);
  *   - a worker whose own records (its transit load or crop) go back in time along the list;
+ *   - a carcass collect (contact.prey_event_id) before its kill, or a kill record off the minute of its predation event;
  *   - any colony compartment below zero when the records are taken minute by minute (within a minute in list order):
  *     food used before the act that supplied it.
  * Legacy days (individual timeline off) return 'untimed_legacy': their time order is NOT validated.
  */
-function timeCausality(start: ColonyState, xs: EngineTransfer[], err: (m: string) => void, timing: 'timed' | 'untimed_legacy'): EngineReplay['time_validation'] {
+function timeCausality(start: ColonyState, xs: EngineTransfer[], err: (m: string) => void, timing: 'timed' | 'untimed_legacy', events: Any[]): EngineReplay['time_validation'] {
   const forage = xs.filter((x) => recordSchemaErrors(x, 'x').length === 0 && x.phase === 'foraging');
   if (forage.length === 0) return 'no_foraging';
   if (timing === 'untimed_legacy') return 'untimed_legacy'; // time order not validated on the legacy path (stated limit)
   const nulls = forage.filter((x) => x.minute === null).length;
   if (nulls > 0) { err(`time: ${nulls} of ${forage.length} foraging records have minute null on a timed (individual timeline) day — an untimed act cannot be placed in time`); return 'invalid'; }
+  // a carcass is food only after its kill: the kill record carries the minute of the predation event, and every collect
+  // that names the prey comes later (same minute: later in the list) at the kill's site (review of ed32299, N1)
+  const kills = new Map<string, { x: EngineTransfer; i: number }>();
+  forage.forEach((x, i) => { if (x.cause === 'prey_kill') kills.set(x.source.id, { x, i }); });
+  for (const e of events.filter((ev) => ev && ev.type === 'insect_predation')) {
+    const k = kills.get(String(e.event_id));
+    if (k && k.x.minute !== e.minute) err(`time: kill ${e.event_id} happened at minute ${e.minute} but ${k.x.transfer_id} credits its carcass at minute ${k.x.minute}`);
+  }
+  forage.forEach((x, i) => {
+    const prey = (x as Any).contact?.prey_event_id;
+    if (x.cause !== 'collect' || prey === undefined) return;
+    const k = kills.get(String(prey));
+    if (!k) { err(`time: ${x.transfer_id} takes the carcass of ${prey}, but no kill of ${prey} is recorded`); return; }
+    if (k.x.recipient.id !== x.source.id) err(`time: ${x.transfer_id} takes the carcass of ${prey} at ${x.source.id}, the kill was at ${k.x.recipient.id}`);
+    if ((x.minute as number) < (k.x.minute as number) || (x.minute === k.x.minute && i < k.i)) err(`time: ${x.transfer_id} at minute ${x.minute} takes the carcass of ${prey} before the kill (${k.x.transfer_id}, minute ${k.x.minute})`);
+  });
   // each worker's own acts in time order along the list
   const seen = new Map<string, EngineTransfer>();
   for (const x of forage) {
