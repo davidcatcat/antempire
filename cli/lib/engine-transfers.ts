@@ -45,7 +45,13 @@ const show = (v: unknown): string => { let t: string; try { t = typeof v === 'bi
 const exactMicro = (v: number, min = 1): boolean => sixDecimal(v) && toMicro(v) >= min;
 /** The colony reader's six-decimal policy (replay: |v·10⁶ − round(v·10⁶)| ≤ 1e-3 µp), checked on the RAW value: 0.6 µp
  * or 1.4 µp is not a legal amount even though it rounds to 1 µp (Codex follow-up 2026-11-05, N1). Safe integer result. */
-const sixDecimal = (v: number): boolean => { if (typeof v !== 'number' || !Number.isFinite(v)) return false; const m = toMicro(v); return Number.isSafeInteger(m) && Math.abs(v * 1e6 - m) <= 1e-3; };
+const sixDecimal = (v: number): boolean => { if (typeof v !== 'number' || !Number.isFinite(v) || Math.abs(v) > MAX_EXACT_PORTIONS) return false; const m = toMicro(v); return Number.isSafeInteger(m) && Math.abs(v * 1e6 - m) <= 1e-3; };
+/** Largest amount (portions) for which a double still resolves the 1e-3 µp tolerance (spacing near 4.5e6 portions is
+ * about 1e-9 portions); real daily totals are about 1e3 portions. Larger amounts are refused, not checked approximately
+ * (independent review of 5fb1235, P3-b). */
+const MAX_EXACT_PORTIONS = 1e6;
+/** Only plain data objects: a Map, Date, Error or class instance would otherwise read as an empty record (P3-a). */
+const plain = (v: unknown): v is Record<string, unknown> => isObj(v) && (Object.getPrototypeOf(v) === Object.prototype || Object.getPrototypeOf(v) === null);
 /** Any message line is bounded (ids and labels are not otherwise truncated); any thrown value is printable. */
 const MAX_LINE = 300, MAX_LINES = 50;
 const boundLines = (xs: string[], what = 'errors'): string[] => { const out = xs.slice(0, MAX_LINES).map((m) => (m.length > MAX_LINE ? `${m.slice(0, MAX_LINE - 3)}...` : m)); if (xs.length > MAX_LINES) out.push(`sources: ... and ${xs.length - MAX_LINES} more ${what}`); return out; };
@@ -335,16 +341,16 @@ function replaySources(endSources: Record<string, { sugar?: number; protein?: nu
 /** Input contract of replayEngineSourcesDay (N1): the end-of-day sources, the colony list, every event and every record. */
 function sourceDayInputErrors(endSources: unknown, colonies: unknown): string[] {
   const out: string[] = [];
-  if (!isObj(endSources)) return [`sources: the end-of-day source table is ${show(endSources)}, not an object`];
+  if (!plain(endSources)) return [`sources: the end-of-day source table is ${show(endSources)}, not an object (plain data object required)`];
   for (const [id, v] of Object.entries(endSources)) {
-    if (!isObj(v)) { out.push(`sources: source ${id} is ${show(v)}, not an object`); continue; }
+    if (!plain(v)) { out.push(`sources: source ${show(id)} is ${show(v)}, not an object (plain data object required)`); continue; }
     for (const f of ['sugar', 'protein'] as const) if (v[f] !== undefined && !(typeof v[f] === 'number' && Number.isFinite(v[f]) && (v[f] as number) >= 0 && sixDecimal(v[f] as number))) out.push(`sources: source ${show(id)} ${f} is ${show(v[f])}, not a non-negative number (six-decimal, within exact micro-portion range)`);
   }
   if (!Array.isArray(colonies)) return [...out, `sources: the colony list is ${show(colonies)}, not an array`];
   const ids = new Set<string>();
   for (let i = 0; i < colonies.length; i++) if (!(i in colonies)) out.push(`sources: colony ${i} is a hole in the colony list`);
   colonies.forEach((c: unknown, ci) => {
-    if (!isObj(c)) { out.push(`sources: colony ${ci} is ${show(c)}, not an object`); return; }
+    if (!plain(c)) { out.push(`sources: colony ${ci} is ${show(c)}, not an object (plain data object required)`); return; }
     const cid = nonEmpty(c.id) ? c.id : `list ${ci}`;
     if (!nonEmpty(c.id)) out.push(`sources: colony ${ci} has no id`);
     else if (ids.has(c.id)) out.push(`sources: colony ${c.id} is listed twice`); else ids.add(c.id);
@@ -352,11 +358,12 @@ function sourceDayInputErrors(endSources: unknown, colonies: unknown): string[] 
     if (!Array.isArray(c.events)) { out.push(`sources: colony ${cid} events is ${show(c.events)}, not an array`); return; }
     for (let i = 0; i < c.events.length; i++) if (!(i in c.events)) out.push(`sources: colony ${cid} event ${i} is a hole in the event list`);
     c.events.forEach((e: unknown, ei) => {
-      if (!isObj(e)) { out.push(`sources: colony ${cid} event ${ei} is ${show(e)}, not an event object`); return; }
+      if (!plain(e)) { out.push(`sources: colony ${cid} event ${ei} is ${show(e)}, not an event object (plain data object required)`); return; }
       if (e.type !== 'food_transfer') return;
       const errs = recordSchemaErrors(e, `colony ${cid} event ${ei}`);
       if (errs.length) { out.push(...errs.map((m) => `sources: ${m}`)); return; }
       const x = e as unknown as EngineTransfer, at = `sources: ${x.transfer_id} (colony ${cid})`;
+      for (const side of ['source', 'recipient'] as const) if (!plain(x[side])) out.push(`${at}: ${side} is not a plain data object`);
       if (!exactMicro(x.portions)) out.push(`${at}: portions ${show(x.portions)} is below one micro-portion or not a six-decimal amount`);
       if (x.colony !== cid) out.push(`${at} is recorded for colony ${x.colony}`);
       if (x.source.kind !== 'source' && x.recipient.kind !== 'source') return;

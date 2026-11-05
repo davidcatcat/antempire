@@ -7,10 +7,14 @@ N1a portions 1 µp
 N1a portions 1.0005 µp
   ACCEPT ([])
 N1b Codex: end 2^52 µp, collects 2^52 µp then 1 µp (legal; exact start 2^53+1)
-  ACCEPT ([])
+  REJECT (2 lines, longest 123 chars): sources: source "F01" sugar is 4503599627.370496, not a non-negative number (six-decimal, within exact micro-portion range)
 N1c illegal by 1 µp only in exact arithmetic: collects 2^52, 2^52, 3 µp, then a 1 µp kill, end 0
-  REJECT (1 lines, longest 117 chars): sources: "FT-1-C1-3" of "C1" (minute 3) takes 3 µp from "F01", which holds 2 µp then — food taken before it was there
+  REJECT (2 lines, longest 113 chars): sources: FT-1-C1-1 (colony C1): portions 4503599627.370496 is below one micro-portion or not a six-decimal amount
 N2 getter throwing on the 6th read
   ACCEPT ([])
 N3 transfer_id of 100000 characters, portions -1
   REJECT (1 lines, longest 300 chars): sources: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+N1d within the cap: 9008 x 10^6 portions, 3 µp, then 1 µp kill, end 0 (illegal by 1 µp; total > 2^53 µp)
+  REJECT (1 lines, longest 120 chars): sources: "FT-1-C1-9009" of "C1" (minute 2) takes 3 µp from "F01", which holds 2 µp then — food taken before it was there
+P3-a Map as a source value
+  REJECT (1 lines, longest 71 chars): sources: source "F01" is {}, not an object (plain data object required)
