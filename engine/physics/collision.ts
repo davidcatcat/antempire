@@ -362,15 +362,18 @@ export function simulate(cfg: SimConfig): SimResult {
     stats.pair_evaluations++;
     const key = pairKey(a.id, b.id);
     if (sameLane(a, b)) {
-      const d0 = b.s - a.s, rate = b.v - a.v, gap = Math.abs(d0), grate = sgn(d0) * rate || (d0 === 0 ? Math.abs(rate) : 0);
+      const d0 = b.s - a.s, rate = b.v - a.v, gap = Math.abs(d0), grate = gap <= S_EPS ? Math.abs(rate) : sgn(d0) * rate;   // at a centre crossing (|d0| ≤ S_EPS, sign is rounding) the pair is separating: never a stall
       const c = C(a, b), mm = M(a, b);
       if (!inContact.has(key) && gap > c + S_EPS && grate < 0) out.push({ t: t + linRoot(gap, grate, c), kind: 'contact_start', a: a.id, b: b.id });
       if (inContact.has(key) && grate > 0 && gap < c + CONTACT_EXIT_EPS) out.push({ t: t + linRoot(gap, grate, c + CONTACT_EXIT_EPS), kind: 'contact_end', a: a.id, b: b.id });
+      // a contact whose end was not scheduled (independent review of cdd0258, P2-a): end it now, never keep a stale one
+      else if (inContact.has(key) && gap >= c + CONTACT_EXIT_EPS) out.push({ t, kind: 'contact_end', a: a.id, b: b.id });
       if (gap > mm + S_EPS && grate < 0) out.push({ t: t + linRoot(gap, grate, mm), kind: 'touch', a: a.id, b: b.id });
       // already touching and still closing in a single-file stretch (e.g. a faster ant behind one that just started to back out)
       else if (Math.abs(gap - mm) <= 1e-7 && grate < 0 && pinched(a, b)) out.push({ t, kind: 'touch', a: a.id, b: b.id });
       // overlapping bodies sliding past each other: an event when their centres cross (re-evaluation point)
-      if (gap < mm - S_EPS && gap > S_EPS && grate < 0) out.push({ t: t + linRoot(gap, grate, 0), kind: 'centre', a: a.id, b: b.id });
+      // (also from exactly touching: in a wide lane two bodies may then overlap and pass — review of cdd0258, P2-a)
+      if (gap <= mm + S_EPS && gap > S_EPS && grate < 0) out.push({ t: t + linRoot(gap, grate, 0), kind: 'centre', a: a.id, b: b.id });
       // a follower waiting for room (overlapping) gets an event when the room opens
       for (const [f, l] of [[a, b], [b, a]] as const) if (f.mode === 'follow' && f.partner === l.id && gap < mm - S_EPS && grate > 0) out.push({ t: t + linRoot(gap, grate, mm), kind: 'room', a: f.id, b: l.id });
       // a backed-out ant resumes when the other has passed it (other's centre M beyond it, on its back side)
@@ -385,9 +388,31 @@ export function simulate(cfg: SimConfig): SimResult {
       // (|dz| ≤ max(L) + LEVEL_EPS; stated simplification). dz changes linearly until the next event (vertices are events),
       // so the layer window [lo, hi] is exact; planar events are kept only inside it.
       const H = Math.max(a.L, b.L) + LEVEL_EPS, dz0 = pb.z - pa.z, dzr = hb.z * Math.abs(b.v) - ha.z * Math.abs(a.v);
-      let lo = 0, hi = Infinity;
-      if (dzr === 0) { if (Math.abs(dz0) > H) return; }
-      else { const t1 = (-H - dz0) / dzr, t2 = (H - dz0) / dzr; lo = Math.max(0, Math.min(t1, t2)); hi = Math.max(t1, t2); if (!(hi > lo + T_EPS) && !(Math.abs(dz0) <= H && hi >= 0)) return; if (hi < 0) return; }
+      let lo = 0, hi = Infinity, off = false;
+      if (dzr === 0) { if (Math.abs(dz0) > H - 1e-9) off = true; }   // a pair resting exactly on the layer edge is off it (as for the checker's |dz| ≤ L): no window-dependent flip on rounding
+      else { const t1 = (-H - dz0) / dzr, t2 = (H - dz0) / dzr; lo = Math.max(0, Math.min(t1, t2)); hi = Math.max(t1, t2); if (!(hi > lo + T_EPS)) off = true; }   // a layer stay shorter than T_EPS counts as off (no zero-time touch/release loop at the layer edge)
+      // independent review of cdd0258, P2-b: a crossing waiter is released when the other is off its height layer — but only
+      // if it stays off when the waiter walks on (a stopped waiter can let the other leave the layer for an instant and
+      // walking would bring them back: that is no release). Otherwise the planar 'cleared' rule below still applies.
+      const offNow = off || lo > T_EPS;
+      const offIfWalking = (y: RT, p: RT) => {
+        const hy = headingAt(y.p, y.s, y.travel), hp = p === b ? hb : ha, d0 = pos(p).z - pos(y).z, r = hp.z * Math.abs(p.v) - hy.z * y.free;
+        if (r === 0) return Math.abs(d0) > H;
+        const t1 = (-H - d0) / r, t2 = (H - d0) / r, l = Math.max(0, Math.min(t1, t2)), h = Math.max(t1, t2);
+        return !(h > l + T_EPS) || l > T_EPS;
+      };
+      for (const [y, p] of [[a, b], [b, a]] as const) if (y.mode === 'cross_wait' && y.partner === p.id && !y.waitRoom && offNow) {
+        if (offIfWalking(y, p)) { out.push({ t, kind: 'cleared', a: y.id, b: p.id }); continue; }
+        // not yet: while y stands, only p's height changes (linearly); re-evaluate when |dz| has grown past the layer limit
+        // with the margin a walking y would need — so the release never waits for a window boundary
+        const hy = headingAt(y.p, y.s, y.travel), hp = p === b ? hb : ha, d0 = pos(p).z - pos(y).z, pr = hp.z * Math.abs(p.v), r = pr - hy.z * y.free;
+        const sg = d0 !== 0 ? Math.sign(d0) : Math.sign(pr), grow = sg * pr;
+        if (grow > 0) { const need = H + Math.max(0, -sg * r) * 2 * T_EPS + 1e-12, tau = (need - Math.abs(d0)) / grow; if (tau > 0 && Number.isFinite(tau)) out.push({ t: t + tau, kind: 'relevel', a: a.id, b: b.id }); }
+      }
+      // leaving the layer later is a re-evaluation point (no state change by itself)
+      if (!off && Number.isFinite(hi) && hi > T_EPS) out.push({ t: t + hi, kind: 'relevel', a: a.id, b: b.id });
+      if (off && inContact.has(key)) out.push({ t, kind: 'contact_end', a: a.id, b: b.id });
+      if (!off) {
       const dpx = pb.x - pa.x, dpy = pb.y - pa.y, dvx = hb.x * Math.abs(b.v) - ha.x * Math.abs(a.v), dvy = hb.y * Math.abs(b.v) - ha.y * Math.abs(a.v);
       const A = dvx * dvx + dvy * dvy, B = 2 * (dpx * dvx + dpy * dvy), d2 = dpx * dpx + dpy * dpy, dd = Math.sqrt(d2);
       const first = (R: number) => { const c0 = d2 - R * R, disc = B * B - 4 * A * c0; if (A === 0 || disc < 0 || B >= 0) return Infinity; const r = (-B - Math.sqrt(disc)) / (2 * A); return r >= 0 ? r : Infinity; };
@@ -406,13 +431,15 @@ export function simulate(cfg: SimConfig): SimResult {
         else if (mIn > lo && mIn < hi) out.push({ t: t + mIn, kind: 'disc_touch', a: a.id, b: b.id });
       } else if (dd > mm + S_EPS) { if (mIn < hi) out.push({ t: t + mIn, kind: 'disc_touch', a: a.id, b: b.id }); }
       // already touching and still closing (e.g. starting at exactly one body length apart): handle now
-      else if (dd <= mm + 1e-7 && B < -1e-12) out.push({ t, kind: 'disc_touch', a: a.id, b: b.id });
+      else if (dd <= mm + 1e-7 && B < -1e-12 && hi > T_EPS) out.push({ t, kind: 'disc_touch', a: a.id, b: b.id });
+      }
       for (const [y, p] of [[a, b], [b, a]] as const) if (y.mode === 'cross_wait' && y.partner === p.id && !y.waitRoom) {
         // resume once the other has passed: its remaining path stays ≥ M from y, and it is ≥ M from y's own remaining path
         // memoised while neither ant's motion changes (the answer is the same absolute time)
-        const key = `${p.id}|${p.open.t}|${p.open.s}|${p.open.v}|${y.s}|${wEndNow}`;
+        // searched to the end of the run, not of the broadphase window: the answer must not depend on window_s (review of cdd0258)
+        const key = `${p.id}|${p.open.t}|${p.open.s}|${p.open.v}|${y.s}`;
         let abs = clearMemo.get(y.id);
-        if (!abs || abs.key !== key) { const tc = clearedAt(y, p, wEndNow - t); abs = { key, t: tc === null ? null : t + tc }; clearMemo.set(y.id, abs); }
+        if (!abs || abs.key !== key) { const tc = clearedAt(y, p, cfg.horizon_s - t); abs = { key, t: tc === null ? null : t + tc }; clearMemo.set(y.id, abs); }
         if (abs.t !== null) out.push({ t: Math.max(t, abs.t), kind: 'cleared', a: y.id, b: p.id });
       }
     }
@@ -457,7 +484,7 @@ export function simulate(cfg: SimConfig): SimResult {
     }
   };
   // ---- event handling
-  const KIND_ORDER = ['vertex', 'start', 'arrive', 'retreat_done', 'wall', 'aperture', 'passed', 'cleared', 'room', 'centre', 'contact_end', 'contact_start', 'boundary', 'touch', 'disc_touch', 'layer_overlap'];
+  const KIND_ORDER = ['vertex', 'start', 'arrive', 'retreat_done', 'wall', 'aperture', 'passed', 'cleared', 'room', 'centre', 'contact_end', 'contact_start', 'boundary', 'touch', 'disc_touch', 'layer_overlap', 'relevel'];
   const unresolved = (t: number, x: RT, y: RT, why: string) => {
     for (const z of [x, y]) if (!terminal(z)) { z.mode = 'unresolved'; z.partner = z === x ? y.id : x.id; modeMotion(z, t); }
     ev(t, 'unresolved', x, y, why);
@@ -559,6 +586,7 @@ export function simulate(cfg: SimConfig): SimResult {
         rear.mode = 'follow'; rear.partner = front.id; ev(t, 'follow_start', rear, front, null);
         return;
       }
+      case 'relevel': return; // a pair leaves a height layer: re-evaluation point only
       case 'layer_overlap': {
         if (!b || terminal(a) && terminal(b)) return;
         ev(t, 'obstruction', a, b, 'reaches the same height layer while the footprints overlap');
@@ -613,11 +641,19 @@ export function simulate(cfg: SimConfig): SimResult {
     // broadphase for this window: any pair that can come within contact range before wEnd (conservative reach discs)
     const discs: ReachDisc[] = rts.map((a) => { const q = pos(a); return { id: a.id, x: q.x, y: q.y, r: vmax * (wEnd - t) + a.L / 2 + a.reach }; });
     const pairs = gridPairs(discs, Math.max(1e-6, 2 * Math.max(...discs.map((d) => d.r)))).map(([x, y]) => [byId.get(x)!, byId.get(y)!] as const);
+    // a waiting ant is always evaluated with the ant it waits for, however far apart: its release must not depend on the
+    // broadphase window (independent review of cdd0258: with small windows the pair dropped out and the waiter was stuck)
+    const pairKeys = new Set(pairs.map(([x, y]) => pairKey(x.id, y.id)));
+    const withPartners = () => { const out = [...pairs]; const seen = new Set(pairKeys); const add = (x: RT, y: RT) => { const k = pairKey(x.id, y.id); if (!seen.has(k)) { seen.add(k); out.push(x.id < y.id ? [x, y] as const : [y, x] as const); } };
+      for (const x of rts) if (x.partner && !terminal(x)) add(x, byId.get(x.partner)!);
+      // pairs in contact too: their contact_end must come at its own time, not when the broadphase next picks them up
+      for (const k of inContact) { const [i, j] = k.split('|'); const x = byId.get(i), y = byId.get(j); if (x && y) add(x, y); }
+      return out; };
     while (t < wEnd - T_EPS) {
       stats.steps++;
       const cands: Cand[] = [];
       for (const a of rts) intrinsic(a, t, cands);
-      for (const [a, b] of pairs) pairCands(a, b, t, cands);
+      for (const [a, b] of withPartners()) pairCands(a, b, t, cands);
       let tn = wEnd;
       for (const c of cands) if (c.t < tn) tn = c.t;
       if (!(tn >= t)) tn = t;
@@ -628,6 +664,8 @@ export function simulate(cfg: SimConfig): SimResult {
       resolveFollow(t);
       detectStuck(t);
       if (stats.steps > 1e7) throw Error('PHYSICS: event budget exceeded (Zeno or runaway)');
+      // the run ends at the event that stopped the last ant, not at the end of the window (review of cdd0258, P3-1)
+      if (rts.every((x) => terminal(x))) break;
     }
   }
   stats.t_end_s = t;

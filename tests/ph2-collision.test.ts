@@ -372,4 +372,41 @@ assert.throws(() => simulate({ geometry: cor, horizon_s: 1, seed: 1, agents: [an
   }
 }
 
+// ---------------------------------------------------------------- independent review of cdd0258: window invariance
+{
+  const prov = { source: 'synthetic_scenario', assumption: true, basis: '遊戲假設', note: 'review counterexample' };
+  const scene = (extra: Any): PhysicsGeometry => ({ schema: 'antempire.physics-geometry.v1', layer_of: 'antempire.world-geometry.v1', world_geometry_ref: null, world_id: 'synthetic-window-review', geometry_version: '0.1.0', synthetic: true, synthetic_note: 'review counterexample', frame: { units: 'mm', axes: { x: 'east', y: 'north', z: 'up' }, origin: 'synthetic' }, obstacles: [], entrances: [], ...extra } as PhysicsGeometry);
+  const ground = { id: 'S-g0', material: 'bare_soil', polygon_mm: [[-5, -15], [25, -15], [25, 15], [-5, 15]], elevation: { kind: 'flat', z_mm: 0 }, provenance: prov };
+  const lane = (id: string, pts: number[][]) => ({ id, centerline_mm: pts, width_mm: 20, route_edge_ref: null, provenance: prov });
+  const a3 = (o: Any): SimAgentSpec => ({ dir: 1, start_t_s: 0, load: null, body: { length_mm: 2.5, width_mm: 0.6, contact_reach_mm: 0.5 }, ...o });
+  const WS = [100, 7, 1, 0.37, 0.05, 0.003];
+  const sig = (r: SimResult) => JSON.stringify({ ev: r.events.map((e) => `${e.kind}|${e.agent}|${e.other}|${e.t_s.toFixed(9)}`), fin: Object.fromEntries(Object.entries(r.final).map(([k, v]) => [k, `${v.mode}|${v.s_mm.toFixed(9)}|${v.t_s.toFixed(9)}`])) });
+  const sweep = (name: string, mk: (w: number) => SimConfig) => {
+    const runs = WS.map((w) => { const cfg = mk(w); const r = simulate(cfg); ok(checkExclusion(cfg, r, 0.0005).length === 0, `${name} window ${w}: no overlap`); return r; });
+    ok(runs.every((r) => sig(r) === sig(runs[0])), `${name}: identical events and final states for windows ${WS.join(', ')}`);
+    return runs[0];
+  };
+  // P2-a: a fast ant overtakes a slow one in a wide lane — the contact must end once they are apart, for every window
+  const flat = scene({ surfaces: [ground], passages: [lane('P', [[0, 0, 0], [20, 0, 0]])] });
+  const ov = sweep('P2-a overtaking', (w) => ({ geometry: flat, horizon_s: 2, seed: 1, window_s: w, agents: [a3({ id: 'F', passage: 'P', s_mm: 0, free_speed_mm_s: 20, goal_s_mm: 19 }), a3({ id: 'S', passage: 'P', s_mm: 5, free_speed_mm_s: 5, goal_s_mm: 15 })] }));
+  ok(kinds(ov, 'contact_start').length === 1 && kinds(ov, 'contact_end').length === 1 && Math.abs(kinds(ov, 'contact_end')[0].t_s - (0.4 + 0.4 / 3)) < 1e-6, `P2-a: contact starts at 0.1333 s and ends at 0.5333 s (gap back at C = 3 mm) (${kinds(ov, 'contact_end').map((e) => e.t_s)})`);
+  // two ants passing head-on in a wide lane: at the centre crossing the sign of the separation is rounding; the contact
+  // must still end where the gap is back at C (≈ 0.895 s here), not at the next window boundary or the next arrival
+  const hd = sweep('head-on pass in a wide lane', (w) => ({ geometry: flat, horizon_s: 2, seed: 1, window_s: w, agents: [a3({ id: 'A', passage: 'P', s_mm: 15.45, dir: -1, free_speed_mm_s: 22, goal_s_mm: 5.66 }), a3({ id: 'B', passage: 'P', s_mm: 6.61, free_speed_mm_s: 5, goal_s_mm: 16.86 })] }));
+  { const ce = kinds(hd, 'contact_end')[0]; const want = (15.45 - 6.61 + 3) / 27; ok(ce && Math.abs(ce.t_s - want) < 1e-6, `head-on pass: contact ends when the gap is back at C (${ce?.t_s} vs ${want})`); }
+  // P2-b: a crossing waiter whose partner climbs away off its height layer is released, for every window
+  for (const grade of [10, 3]) {
+    const g = scene({ surfaces: [ground, { id: 'R', material: 'stone', polygon_mm: [[11, -0.5], [20, -0.5], [20, 0.5], [11, 0.5]], elevation: { kind: 'ramp', anchor_mm: [11, 0], z0_mm: 0, direction: [1, 0], gradient: grade }, provenance: prov }],
+      passages: [lane('P', [[0, 0, 0], [11, 0, 0], [20, 0, grade * 9]]), lane('Q', [[10, -8, 0], [10, 8, 0]])] });
+    const r = sweep(`P2-b climbing away (grade ${grade})`, (w) => ({ geometry: g, horizon_s: 4, seed: 1, window_s: w, agents: [a3({ id: 'A', passage: 'P', s_mm: 5, free_speed_mm_s: 10, goal_s_mm: laneLength(g.passages[0]) }), a3({ id: 'B', passage: 'Q', s_mm: 0, free_speed_mm_s: 10, goal_s_mm: 16 })] }));
+    ok(kinds(r, 'cross_wait').some((e) => e.agent === 'B') && kinds(r, 'cross_resume').some((e) => e.agent === 'B') && r.final.B.mode === 'arrived', `P2-b grade ${grade}: B waits, is released, arrives (${r.final.B.mode})`);
+  }
+  // a waiter released at a layer edge must not flip between waiting and walking at one instant (found while fixing P2-b:
+  // stopping lets the other leave the layer, walking brings them back) — recorded random scene, must finish identically
+  const edge: Any = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'tests/fixtures/physics/window-layer-edge-case.json'), 'utf8'));
+  sweep('layer-edge scene', (w) => ({ ...edge, window_s: w }));
+  // P3-1: the run ends at the event that stopped the last ant, not at a window end
+  for (const w of [1, 0.3, 7]) { const r = simulate({ geometry: flat, horizon_s: 5, seed: 1, window_s: w, agents: [a3({ id: 'A', passage: 'P', s_mm: 1, free_speed_mm_s: 10, goal_s_mm: 5 })] }); ok(near(r.stats.t_end_s, 0.4) && near(r.final.A.t_s, 0.4), `P3-1 window ${w}: the run ends at the arrival (t_end ${r.stats.t_end_s})`); }
+}
+
 console.log(JSON.stringify({ ph2_collision: 'pass', checks }, null, 2));
