@@ -47,9 +47,10 @@
  *    a press or a release without either ant having moved or turned (no near-zero-time yield loop).
  *  - Contact geometry (PH-P1-B): across lanes every contact, touch and release is decided by `discEncounter` from
  *    |r + v·τ|² = R² — one geometry for scheduling and handling; an exact tangent (graze) is no contact.
- *  - Time (PH-P2-B/C): event times and positions come from the start of each motion record, its velocity and the elapsed
- *    time, never from per-step accumulation; an event after a window end is never handled in that window; events at one
- *    instant (within SAME_INSTANT) are handled in a fixed total order (KIND_ORDER, ids, data).
+ *  - Time (PH-P2-B/C, PH-P2D): event times and positions come from the start of each motion record, its velocity and the
+ *    elapsed time, never from per-step accumulation; the clock stops only at event instants (a broadphase window end is
+ *    not an evaluation instant); events at one instant (within SAME_INSTANT) are handled in a fixed total order
+ *    (KIND_ORDER, ids, data). A pressed back-out ant's speed-up is the boundary event of its front (PH-P2D).
  *  - Turning around takes no time; backing out is at the ant's own free speed; passing abreast in a wide section costs no
  *    time; spontaneous U-turns (rare: ≈1 % per bridge crossing in L. humile, R108) are not modelled; no slow-down from
  *    load, slope or temperature (no species data; stated limits).
@@ -182,10 +183,10 @@ export interface SimConfig {
   geometry: PhysicsGeometry; agents: SimAgentSpec[]; objects?: PhysObject[];
   horizon_s: number; seed: number;
   encounter: EncounterRules;
-  /** broadphase window (s). Intended: any positive value gives the same events. Since the PH-P2-B/C fixes, event times and
-   *  positions are computed from motion-record starts (never per step) and no event after a window end is handled in that
-   *  window; tested by window-split tests (tests/physics-event-fixes.test.ts) and the review fuzz. This is an engineering
-   *  test, not a proof for every geometry (docs/physics-motion-engine.md §6–§7). */
+  /** broadphase window (s): only how far ahead the pair set reaches. Any positive value gives the same events: event times
+   *  and positions come from motion-record starts (PH-P2-C), and a window end is never an evaluation instant (PH-P2-B,
+   *  PH-P2D) — the clock stops only at event instants. Tested by window-split tests incl. boundary-aligned windows
+   *  (tests/physics-event-fixes.test.ts, tests/physics-p2d.test.ts); an engineering test, not a proof for every geometry. */
   window_s?: number;
   /** spacing (mm) of the numerical scan that remains: the back-out target. Narrow-section boundaries are analytic and
    *  do not use it (Codex physics review F2). */
@@ -465,7 +466,12 @@ export function simulate(cfg: SimConfig): SimResult {
       // backing out behind another ant moving the same way: no faster than it while they touch in single file
       for (const r of rts) {
         if (r.mode !== 'retreat' || !r.pressOn || (r.holdUntil !== null && r.holdUntil > t + T_EPS)) continue;
-        const f = byId.get(r.pressOn)!, m = -r.travel, touching = Math.abs(f.s - r.s) <= M(r, f) + 1e-9 && (f.s - r.s) * m > 0 && pinched(r, f);
+        // PH-P2D (#100): 'still pressed' is decided by the stretch the pair is about to share — just ahead of the contact
+        // point (r's front in its walking direction m) — the same directional test as the follow release above. The old
+        // closed test (pinched, ±1e-9 mm) still called the pair pinched AT the section boundary, so the scheduled boundary
+        // event of r's front released nothing and the speed-up waited for the next unrelated event or a window end.
+        const f = byId.get(r.pressOn)!, m = -r.travel, cpt = r.s + m * r.L / 2, ahead = m > 0 ? [cpt, cpt + 1e-6] : [cpt - 1e-6, cpt];
+        const touching = Math.abs(f.s - r.s) <= M(r, f) + 1e-9 && (f.s - r.s) * m > 0 && narrowOver(r.p, r.w + f.w, ahead[0], ahead[1]);
         if (!touching || f.v * m >= r.free) { r.pressOn = null; if (r.v !== m * r.free) { modeMotion(r, t); changed = true; } continue; }
         const nv = m * Math.max(0, Math.min(r.free, f.v * m));
         if (r.v !== nv) { setMotion(r, t, nv, 'yield_back_out', r.partner); changed = true; }
@@ -896,45 +902,61 @@ export function simulate(cfg: SimConfig): SimResult {
   // ---- main loop
   let t = 0, lastT = -1, sameT = 0;
   const vmax = Math.max(...rts.map((a) => a.free));
-  while (t < cfg.horizon_s && rts.some((a) => !terminal(a))) {
-    const wEnd = Math.min(t + H, cfg.horizon_s);
+  // PH-P2D (#100) / PH-P2-B: the clock stops ONLY at event instants. A broadphase window end is not an evaluation step:
+  // when no candidate lies at or before it, the window is extended (pairs re-collected from the positions at the current
+  // event instant, with a larger reach) and the SAME instant is evaluated again — nothing is moved and nothing is
+  // handled at a window end. So every tolerance-based 'now' test (touching within 1e-7 mm, a boundary under the front,
+  // an event 'already passed') is only ever evaluated at an event instant, whatever window_s is.
+  let wEnd = Math.min(H, cfg.horizon_s), wStart = 0, pairs: (readonly [RT, RT])[] = [], pairKeys = new Set<string>(), pairsAt = -1;
+  const collectPairs = () => {
     stats.windows++;
-    // broadphase for this window: any pair that can come within contact range before wEnd (conservative reach discs)
-    const discs: ReachDisc[] = rts.map((a) => { const q = pos(a); return { id: a.id, x: q.x, y: q.y, r: vmax * (wEnd - t) + a.L / 2 + a.reach }; });
-    const pairs = gridPairs(discs, Math.max(1e-6, 2 * Math.max(...discs.map((d) => d.r)))).map(([x, y]) => [byId.get(x)!, byId.get(y)!] as const);
-    // a waiting ant is always evaluated with the ant it waits for, however far apart: its release must not depend on the
-    // broadphase window (independent review of cdd0258: with small windows the pair dropped out and the waiter was stuck)
-    const pairKeys = new Set(pairs.map(([x, y]) => pairKey(x.id, y.id)));
-    const withPartners = () => { const out = [...pairs]; const seen = new Set(pairKeys); const add = (x: RT, y: RT) => { const k = pairKey(x.id, y.id); if (!seen.has(k)) { seen.add(k); out.push(x.id < y.id ? [x, y] as const : [y, x] as const); } };
-      for (const x of rts) if (x.partner && !terminal(x)) add(x, byId.get(x.partner)!);
-      // pairs in contact too: their contact_end must come at its own time, not when the broadphase next picks them up
-      for (const k of inContact) { const [i, j] = k.split('|'); const x = byId.get(i), y = byId.get(j); if (x && y) add(x, y); }
-      return out; };
-    while (t < wEnd) {
-      stats.steps++;
-      const cands: Cand[] = [];
-      for (const a of rts) intrinsic(a, t, cands);
-      for (const [a, b] of withPartners()) pairCands(a, b, t, cands);
-      // PH-P2-B: explicit event time boundary. The next step is the earliest candidate if it is at or before the window
-      // end; otherwise the clock only moves to the window end and NOTHING is handled there (an event even 1e-12 s after
-      // the window end belongs to the next window). Events at one instant are those within SAME_INSTANT(t) of the earliest
-      // (a few ulps: different formulas for one mathematical instant), never beyond the window end.
-      let tmin = Infinity;
-      for (const c of cands) if (c.t < tmin) tmin = c.t;
-      const tn = tmin <= wEnd ? Math.max(t, tmin) : wEnd;
-      // PH-P2-C: positions are computed from the start of the current motion record (anchor), its velocity and the
-      // elapsed time — never accumulated step by step, so the number of steps (windows) does not change them
-      for (const a of rts) if (a.open.v !== 0) a.s = a.open.s + a.open.v * (tn - a.open.t);
-      t = tn;
-      const due = tmin <= wEnd ? cands.filter((c) => c.t <= Math.min(wEnd, tn + SAME_INSTANT(tn))).sort(candOrder) : [];
-      for (const c of due) handle(c, t);
-      resolveFollow(t);
-      detectStuck(t);
-      if (stats.steps > 1e7) throw Error('PHYSICS: event budget exceeded (Zeno or runaway)');
-      if (t === lastT) { if (++sameT > 10000) throw Error(`PHYSICS: more than 10000 steps at t=${t} s (a rule loop without progress)`); } else { lastT = t; sameT = 0; }
-      // the run ends at the event that stopped the last ant, not at the end of the window (review of cdd0258, P3-1)
-      if (rts.every((x) => terminal(x))) break;
+    // broadphase: any pair that can come within contact range in [from, wEnd + SAME_INSTANT] (conservative reach discs;
+    // the SAME_INSTANT margin covers every candidate that can join a same-instant group). `from` is the later of now and
+    // the previous window end: no event lies between them, so every motion is unchanged there and the disc centres are
+    // the analytic positions at `from` (sAt; nothing is moved).
+    const from = Math.max(t, wStart), span = wEnd + SAME_INSTANT(wEnd) - from;
+    const discs: ReachDisc[] = rts.map((a) => { const q = positionAt(a.p, sAt(a, from)); return { id: a.id, x: q.x, y: q.y, r: vmax * span + a.L / 2 + a.reach }; });
+    pairs = gridPairs(discs, Math.max(1e-6, 2 * Math.max(...discs.map((d) => d.r)))).map(([x, y]) => [byId.get(x)!, byId.get(y)!] as const);
+    pairKeys = new Set(pairs.map(([x, y]) => pairKey(x.id, y.id))); pairsAt = wEnd;
+  };
+  // a waiting ant is always evaluated with the ant it waits for, however far apart: its release must not depend on the
+  // broadphase window (independent review of cdd0258: with small windows the pair dropped out and the waiter was stuck)
+  const withPartners = () => { const out = [...pairs]; const seen = new Set(pairKeys); const add = (x: RT, y: RT) => { const k = pairKey(x.id, y.id); if (!seen.has(k)) { seen.add(k); out.push(x.id < y.id ? [x, y] as const : [y, x] as const); } };
+    for (const x of rts) if (x.partner && !terminal(x)) add(x, byId.get(x.partner)!);
+    // pairs in contact too: their contact_end must come at its own time, not when the broadphase next picks them up
+    for (const k of inContact) { const [i, j] = k.split('|'); const x = byId.get(i), y = byId.get(j); if (x && y) add(x, y); }
+    return out; };
+  while (t < cfg.horizon_s && rts.some((a) => !terminal(a))) {
+    if (pairsAt !== wEnd) collectPairs();
+    const cands: Cand[] = [];
+    for (const a of rts) intrinsic(a, t, cands);
+    for (const [a, b] of withPartners()) pairCands(a, b, t, cands);
+    let tmin = Infinity;
+    for (const c of cands) if (c.t < tmin) tmin = c.t;
+    if (!(tmin <= wEnd)) {
+      if (wEnd >= cfg.horizon_s) {
+        // nothing more before the horizon: move to it without handling anything (an event after it is not handled)
+        for (const a of rts) if (a.open.v !== 0) a.s = a.open.s + a.open.v * (cfg.horizon_s - a.open.t);
+        t = cfg.horizon_s; break;
+      }
+      wStart = wEnd; wEnd = Math.min(wEnd + H, cfg.horizon_s);   // extend the broadphase window; the clock does not move
+      continue;
     }
+    stats.steps++;
+    const tn = Math.max(t, tmin);
+    // PH-P2-C: positions are computed from the start of the current motion record (anchor), its velocity and the
+    // elapsed time — never accumulated step by step
+    for (const a of rts) if (a.open.v !== 0) a.s = a.open.s + a.open.v * (tn - a.open.t);
+    t = tn;
+    // events at one instant: within SAME_INSTANT(t) of the earliest (a few ulps: different formulas for one instant)
+    const due = cands.filter((c) => c.t <= tn + SAME_INSTANT(tn)).sort(candOrder);
+    for (const c of due) handle(c, t);
+    resolveFollow(t);
+    detectStuck(t);
+    if (stats.steps > 1e7) throw Error('PHYSICS: event budget exceeded (Zeno or runaway)');
+    if (t === lastT) { if (++sameT > 10000) throw Error(`PHYSICS: more than 10000 steps at t=${t} s (a rule loop without progress)`); } else { lastT = t; sameT = 0; }
+    // the run ends at the event that stopped the last ant, not at the end of the window (review of cdd0258, P3-1)
+    if (rts.every((x) => terminal(x))) break;
   }
   stats.t_end_s = t;
   for (const a of rts) close(a, t);
