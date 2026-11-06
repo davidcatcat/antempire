@@ -144,12 +144,12 @@ export interface LarvaRoundStart {
   workers: Set<string>; had: Set<string>; day0: boolean;
   /** crops at the start of the day (sugar, liquid protein); the check replays every transfer from here (review of the C4a draft) */
   crops: Map<string, Food>;
-  brood: Map<string, { stage: string; location?: string; begging: number; body?: LarvaBody; egg_investment?: Food | null; reserve_basis?: LarvaReserveBasis; origin?: string }>;
+  brood: Map<string, { stage: string; location?: string; begging: number; beggingRaw?: number; body?: LarvaBody; egg_investment?: Food | null; reserve_basis?: LarvaReserveBasis; origin?: string }>;
 }
 export const larvaRoundStart = (colony: ColonyState, sp: SpeciesParams, had: Set<string>, day0: boolean): LarvaRoundStart => ({
   workers: new Set(colony.population.workers.map((w) => w.id)), had, day0,
   crops: new Map(colony.population.workers.map((w) => [w.id, { sugar: w.crop_cargo_sugar || 0, protein: w.crop_cargo_protein_liquid || 0 }])),
-  brood: new Map(colony.population.brood.map((b) => [b.id, { stage: b.stage, location: b.location, begging: beggingNow(b, sp), body: b.body ? structuredClone(b.body) : undefined, egg_investment: b.egg_investment === undefined ? undefined : b.egg_investment === null ? null : { ...b.egg_investment }, reserve_basis: b.reserve_basis, origin: b.origin }])),
+  brood: new Map(colony.population.brood.map((b) => [b.id, { stage: b.stage, location: b.location, begging: beggingNow(b, sp), beggingRaw: b.begging_signal, body: b.body ? structuredClone(b.body) : undefined, egg_investment: b.egg_investment === undefined ? undefined : b.egg_investment === null ? null : { ...b.egg_investment }, reserve_basis: b.reserve_basis, origin: b.origin }])),
 });
 
 /**
@@ -288,6 +288,19 @@ export function checkLarvaRound(start: LarvaRoundStart, colony: ColonyState, eve
   // egg records: an egg laid today records exactly its lay_egg transfers; a start egg's record never changes
   const laid = new Map<string, Food>();
   for (const e of events) if (e.type === 'food_transfer' && e.cause === 'lay_egg') { const x = e as unknown as { recipient: { id: string }; food_type: 'sugar' | 'protein'; portions: number }; const g = laid.get(x.recipient.id) ?? { sugar: 0, protein: 0 }; g[x.food_type] = round(g[x.food_type] + x.portions); laid.set(x.recipient.id, g); }
+  // Codex review of d9cd0cd (P2): every field C4a owns is carried unchanged unless a recorded event changes it — the place
+  // (it decides tomorrow's contacts), the account's record fields and the begging signal. Allowed changes: a hatch (the
+  // hatch rule gives the place 'brood' when the egg had none and moves the egg record into the account), the larva's own
+  // begging and balance update (checked above). Nothing else may move a larva or rewrite where its record came from.
+  const hatchedToday = new Set(hatched);
+  for (const b of colony.population.brood) {
+    const s0 = start.brood.get(b.id);
+    if (!s0) { if (b.location !== undefined || b.body || b.begging_signal !== undefined) fail(`egg ${b.id} laid today carries a place, an account or a begging signal`); continue; }
+    const wantPlace = s0.location ?? (hatchedToday.has(b.id) ? BROOD_PLACE : undefined);
+    if (b.location !== wantPlace) fail(`${b.id}: place ${JSON.stringify(s0.location)} -> ${JSON.stringify(b.location)} without any event that moves brood`);
+    if (s0.body) { const rec = (x: LarvaBody) => JSON.stringify([x.egg_investment, x.reserve_at_hatch, x.reserve_basis]); if (!b.body || rec(b.body) !== rec(s0.body)) fail(`${b.id}: account record ${rec(s0.body)} -> ${b.body ? rec(b.body) : 'removed'} without an event`); }
+    if (!(s0.stage === 'larva' && s0.body) && b.begging_signal !== s0.beggingRaw) fail(`${b.id} (${s0.stage}): begging ${JSON.stringify(s0.beggingRaw)} -> ${JSON.stringify(b.begging_signal)}; only a larva with an account updates its own`);
+  }
   for (const b of colony.population.brood) {
     if (b.body && b.body.reserve_at_hatch !== null) fail(`${b.id}: reserve_at_hatch ${JSON.stringify(b.body.reserve_at_hatch)} (it is unknown: always null)`);
     if (b.body) for (const f of FOODS) if (!(b.body.fed_balance[f] >= 0)) fail(`${b.id}: fed_balance ${f} ${b.body.fed_balance[f]}`);

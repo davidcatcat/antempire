@@ -162,6 +162,19 @@ export function replayLarvaRound(start: Any, end: Any, events: Any[], species: A
     if (!b0) { if (!same(b.egg_investment, laid.get(id) ?? null) || b.reserve_basis !== 'egg_laid_with_record') err(`${id}: laid today with record ${JSON.stringify(b.egg_investment)} / ${b.reserve_basis}; lay_egg moved ${JSON.stringify(laid.get(id))}`); }
     else { const ie = init.get(id), inv0 = b0.reserve_basis !== undefined ? b0.egg_investment : ie ? null : undefined, bas0 = b0.reserve_basis ?? ie?.reserve_basis; if (!same(b.egg_investment, inv0) || b.reserve_basis !== bas0) err(`${id}: egg record changed during the day`); }
   }
+  // Codex review of d9cd0cd (P2): what C4a owns is carried unchanged unless a recorded event changes it. The start value of
+  // each field is the start state or, for a record first made today, its initialization record; a hatch gives the place
+  // 'brood' when the egg had none (the hatch record states the place); only a larva with an account updates its begging.
+  for (const [id, b] of brood1) {
+    const b0 = brood0.get(id), ie = init.get(id), hr = hrec.get(id);
+    if (!b0) { if (b.location !== undefined || b.body || b.begging_signal !== undefined) err(`${id}: an egg laid today carries a place, an account or a begging signal`); continue; }
+    const place0 = b0.location ?? ie?.location ?? (hatchedIds.has(id) ? 'brood' : undefined);
+    if (b.location !== place0) err(`${id}: moved ${JSON.stringify(place0)} -> ${JSON.stringify(b.location)}; no event moves brood`);
+    if (hr && hr.location !== b.location) err(`${id}: the hatch record says ${hr.location}, the state ${b.location}`);
+    const rec0 = b0.body ? [b0.body.egg_investment, b0.body.reserve_at_hatch, b0.body.reserve_basis] : b0.stage === 'larva' && ie ? [null, null, ie.reserve_basis] : null;
+    if (rec0 && (!b.body || !same([b.body.egg_investment, b.body.reserve_at_hatch, b.body.reserve_basis], rec0))) err(`${id}: account record ${JSON.stringify(rec0)} -> ${b.body ? JSON.stringify([b.body.egg_investment, b.body.reserve_at_hatch, b.body.reserve_basis]) : 'removed'} with no event`);
+    if (!larva.has(id) && b.begging_signal !== b0.begging_signal) err(`${id} (${b0.stage}): begging ${b0.begging_signal} -> ${b.begging_signal}; only a larva with an account updates its own`);
+  }
   for (const e of ev) if (e.type === 'food_transfer' && (e.source?.kind === 'larva_yolk' || e.recipient?.kind === 'larva_yolk')) err(`${e.transfer_id}: a larva_yolk transfer (D2a records the hatch only)`);
   out.ok = errors.length === 0;
   return out;

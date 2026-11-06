@@ -253,6 +253,20 @@ forge('N19 a smaller bolus than the fixed size (sugar 0.025 -> 0.01)', (ev, afte
 forge('N20 a due bolus dropped (the larva begs, the nurse holds food, nothing is given)', (ev, after) => { const f = feeds(ev).find((x) => x.food_type === 'sugar') ?? feeds(ev)[0]; ev.splice(ev.indexOf(f), 1); shift(ev, after, f, f.portions); });
 forge('N21 two larva_nutrition records for one larva (the wrong one first)', (ev) => { const e = ev.find((x) => x.type === 'larva_nutrition'); ev.splice(ev.indexOf(e), 0, { ...structuredClone(e), begging_signal: 0 }); });
 forge('N22 a larva_nutrition record for an individual that was not a larva', (ev) => { const e = ev.find((x) => x.type === 'larva_nutrition'); ev.push({ ...structuredClone(e), larva: target.before.population.workers[0].id }); });
+// Codex review of d9cd0cd (P2): the place and the record source of a larva cannot be rewritten without an event (the place
+// decides tomorrow's contacts: a larva silently moved away is not met, so its bolus goes to another larva the next day)
+const anyLarva = (after: Any) => after.population.brood.find((x: Any) => x.stage === 'larva' && x.body);
+forge('N23 a larva moved to another place with no event', (_ev, after) => { anyLarva(after).location = 'brood_far'; });
+forge('N24 a larva\'s egg_investment rewritten', (_ev, after) => { const l = anyLarva(after); l.body.egg_investment = { sugar: 0.5, protein: 0.5 }; });
+forge('N25 a larva\'s reserve_basis rewritten', (_ev, after) => { const l = anyLarva(after); l.body.reserve_basis = l.body.reserve_basis === 'unknown_at_migration' ? 'day0_scenario' : 'unknown_at_migration'; });
+forge('N26 an egg laid or kept today given a place or a begging signal', (_ev, after) => { const e = after.population.brood.find((x: Any) => x.stage === 'egg'); if (e) e.begging_signal = 0.9; else anyLarva(after).location = 'queen'; });
+const pupaDay = days.find((d) => d.day >= 3 && d.after.population.brood.some((b: Any) => b.stage === 'pupa' && b.body) && d.before.population.brood.some((b: Any) => b.stage === 'pupa' && b.body && d.after.population.brood.some((x: Any) => x.id === b.id)));
+if (pupaDay) {
+  const ev: Any[] = structuredClone(pupaDay.events), after: Any = structuredClone(pupaDay.after), p0 = pupaDay.before.population.brood.find((b: Any) => b.stage === 'pupa' && b.body && after.population.brood.some((x: Any) => x.id === b.id));
+  after.population.brood.find((x: Any) => x.id === p0.id).location = 'brood_far';
+  ok(engineErr(pupaDay, ev, after) !== '', 'N27 a pupa with an account moved with no event: rejected by the engine');
+  ok(readerErrors({ ...pupaDay, events: ev, after }).length > 0, 'N27: rejected by the readers');
+} else ok(true, 'N27: no day with a carried pupa among the real days (not exercised; stated)');
 forge('N11 reserve_at_hatch filled in', (_ev, after) => { const l = after.population.brood.find((b: Any) => b.body); l.body.reserve_at_hatch = 0.05; });
 const hatchDay = days.find((d) => d.day >= 3 && d.events.some((e) => e.type === 'larva_hatch_nutrition' && e.inherited));
 if (hatchDay) {
