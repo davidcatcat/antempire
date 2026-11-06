@@ -504,7 +504,7 @@
       "from": false,
       "to": false,
       "introduced": true,
-      "description": "Issue #80: how honeydew above capacity is named (false = produced, not retained: capacity_runoff); read only when the switch is on; changes events only, never a stock"
+      "description": "Issue #80: how honeydew above capacity is named (false = not retained: capacity_runoff; true = alternative assumption, at most today's net production not secreted); read only when the switch is on; changes events only, never a stock"
     },
     {
       "rules_version": "antempire.v2-review.26-source-flows",
@@ -512,10 +512,10 @@
       "kind": "param_switch",
       "file": "world",
       "path": "source_flows.nectar_capacity_limits_secretion",
-      "from": true,
-      "to": true,
+      "from": false,
+      "to": false,
       "introduced": true,
-      "description": "Issue #80: how nectar above capacity is named (true = not secreted: capacity_withheld); read only when the switch is on; changes events only, never a stock"
+      "description": "Issue #80: how nectar above capacity is named (false = resorbed by the plant: capacity_resorbed; true = alternative assumption, at most today's production not secreted); read only when the switch is on; changes events only, never a stock"
     },
     {
       "rules_version": "antempire.v2-review.26-source-flows",

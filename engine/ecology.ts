@@ -12,8 +12,11 @@
  *   secretion        producer:<hemipterans|flowers>:<site> -> source:<site>  (what enters the standing crop)
  *   rival_harvest    source -> consumer:background_rival:<id>               (existing background rivals, Issue #85)
  *   rain_washoff     source -> loss:rain_washoff
- *   capacity_runoff  source -> loss:capacity_runoff     (produced, not retained at the capacity; honeydew default)
- *   capacity_withheld   no origin, no destination, never_existed: true  (not secreted at the capacity; nectar default)
+ *   capacity_runoff  source -> loss:capacity_runoff     (honeydew above the capacity: not retained; default)
+ *   capacity_resorbed source -> plant:flowers:<site>    (nectar above the capacity: taken back by the plant; default)
+ *   capacity_withheld   no origin, no destination, never_existed: true  (alternative assumption, off by default: at most
+ *                    today's production is not secreted; stock already above the capacity still leaves by runoff/resorption)
+ * Carcass batches are checked one by one (amount, id, birth day), not only by the source total (Codex review of 290c440).
  *   decomposition    carcass batch -> loss:decomposition  (daily loss of edible protein; decomposers are NOT simulated)
  *   expired_remains  carcass batch -> loss:decomposition  (what was left when the batch passed its edible lifetime)
  * New remains keep their existing new_food_source event; ant collection and kills stay C2 food_transfer events.
@@ -25,14 +28,15 @@ import type { SimEvent, Source, Weather, WorldEcology } from './types.ts';
 
 interface EcologyInput { seed: number; sim_day: number; sources: Record<string, Source>; ecology: WorldEcology }
 
-export const SOURCE_FLOW_CAUSES = ['secretion', 'rival_harvest', 'rain_washoff', 'capacity_runoff', 'capacity_withheld', 'decomposition', 'expired_remains'] as const;
+export const SOURCE_FLOW_CAUSES = ['secretion', 'rival_harvest', 'rain_washoff', 'capacity_runoff', 'capacity_resorbed', 'capacity_withheld', 'decomposition', 'expired_remains'] as const;
 export type SourceFlowCause = typeof SOURCE_FLOW_CAUSES[number];
 const FLOW_BASIS: Record<SourceFlowCause, string> = {
   secretion: 'production by the site\'s existing hemipterans or flowers; mechanism and value are model assumptions',
   rival_harvest: 'taken by the background rival colony registered for this site (world parameter, Issue #85); not a simulated colony',
   rain_washoff: 'rain removes standing honeydew or nectar (mechanism: R183/R186, not this garden); value game assumption',
-  capacity_runoff: 'produced but not retained above the standing-crop capacity (honeydew left unharvested accumulates and drips/falls, Way 1963, non-species); its consumers are not simulated',
-  capacity_withheld: 'not secreted at the standing-crop capacity (nectar secretion/resorption regulate standing crop, Nepi & Stpiczyńska 2008, non-species); this quantity never existed',
+  capacity_runoff: 'honeydew above the standing-crop capacity is not retained (unharvested honeydew accumulates on leaves and supports sooty mould, Way 1963, non-species; mechanism direction only); its consumers are not simulated',
+  capacity_resorbed: 'nectar above the standing-crop capacity is taken back by the plant (nectar resorption, Nepi & Stpiczyńska 2008, non-species; mechanism direction only, amount a game assumption)',
+  capacity_withheld: 'ALTERNATIVE MODEL ASSUMPTION without direct evidence: secretion stops at the capacity, so at most today\'s production was never secreted',
   decomposition: 'edible protein lost to decomposition; the decomposer community is not simulated (game assumption)',
   expired_remains: 'remains past their edible lifetime leave the food pool by decomposition; the decomposer community is not simulated (game assumption)',
 };
@@ -49,7 +53,7 @@ function flow(log: FlowLog, site: string, food: 'sugar' | 'protein', cause: Sour
 
 const CAUSES_BY_TYPE: Record<string, readonly SourceFlowCause[]> = {
   honeydew: ['secretion', 'rival_harvest', 'rain_washoff', 'capacity_runoff', 'capacity_withheld'],
-  nectar: ['secretion', 'rain_washoff', 'capacity_runoff', 'capacity_withheld'],
+  nectar: ['secretion', 'rain_washoff', 'capacity_resorbed', 'capacity_withheld'],
   carcass: ['decomposition', 'expired_remains'],
 };
 /** The origin and destination a cause must have at a site (null = none); rival_harvest's consumer is checked by prefix. */
@@ -60,6 +64,7 @@ export function sourceFlowEnds(cause: SourceFlowCause, type: string, site: strin
     case 'rival_harvest': return { from: src, to: 'consumer:background_rival:' };
     case 'rain_washoff': return { from: src, to: 'loss:rain_washoff' };
     case 'capacity_runoff': return { from: src, to: 'loss:capacity_runoff' };
+    case 'capacity_resorbed': return { from: src, to: `plant:flowers:${site}` };
     case 'capacity_withheld': return { from: null, to: null };
     default: return { from: src, to: 'loss:decomposition' };
   }
@@ -72,9 +77,10 @@ export function sourceFlowEnds(cause: SourceFlowCause, type: string, site: strin
  * destination fixed by its cause, the capacity interpretation the parameter chose. The values themselves are recomputed
  * from the parameters by the independent reader (cli/lib/source-flow-replay.ts), not here.
  */
-export function checkSourceFlows(start: Record<string, { type: string; food: number; batches: string[] }>, after: Record<string, Source>, flows: SimEvent[], mode: { honeydew_withheld: boolean; nectar_withheld: boolean }, day: number): void {
+export interface FlowStart { type: string; food: number; batches: { id: string; protein: number; original_day: number }[] }
+export function checkSourceFlows(start: Record<string, FlowStart>, after: Record<string, Source>, flows: SimEvent[], mode: { honeydew_withheld: boolean; nectar_withheld: boolean }, day: number): void {
   const fail = (m: string) => { throw Error('SOURCE_FLOW ' + m); };
-  const net = new Map<string, number>(), seen = new Set<string>(), ids = new Set<string>();
+  const net = new Map<string, number>(), seen = new Set<string>(), ids = new Set<string>(), batchOut = new Map<string, number>(), lostWhileWithheld = new Set<string>(), produced = new Map<string, number>();
   for (const f of flows as (SimEvent & Record<string, unknown>)[]) {
     const site = String(f.site), s0 = start[site], cause = f.cause as SourceFlowCause, p = f.portions as number;
     if (!s0) fail(`flow ${f.id}: no source ${site} before the day`);
@@ -88,14 +94,33 @@ export function checkSourceFlows(start: Record<string, { type: string; food: num
     if (f.from !== ends.from || !toOk) fail(`flow ${f.id}: ${f.from} -> ${f.to} is not the path of ${cause}`);
     if ((f.never_existed === true) !== (cause === 'capacity_withheld')) fail(`flow ${f.id}: never_existed must mark exactly capacity_withheld`);
     const withheld = s0.type === 'honeydew' ? mode.honeydew_withheld : mode.nectar_withheld;
-    if (cause === 'capacity_withheld' && !withheld || cause === 'capacity_runoff' && withheld) fail(`flow ${f.id}: ${cause} contradicts the ${s0.type} capacity parameter`);
+    if (cause === 'capacity_withheld' && !withheld) fail(`flow ${f.id}: ${cause} contradicts the ${s0.type} capacity parameter`);
+    if ((cause === 'capacity_runoff' || cause === 'capacity_resorbed') && withheld) lostWhileWithheld.add(site);
     const batch = f.batch_event_id === undefined ? '' : String(f.batch_event_id);
-    if (s0.type === 'carcass' && !s0.batches.includes(batch)) fail(`flow ${f.id}: batch ${batch} did not exist at ${site} before the day`);
+    if (s0.type === 'carcass' && !s0.batches.some((b) => b.id === batch)) fail(`flow ${f.id}: batch ${batch} did not exist at ${site} before the day`);
+    if (s0.type === 'carcass') batchOut.set(`${site}|${batch}`, (batchOut.get(`${site}|${batch}`) ?? 0) + p);
     const key = `${site}|${cause}|${batch}`;
     if (seen.has(key) || s0.type === 'carcass' && seen.has(`${site}|${cause === 'decomposition' ? 'expired_remains' : 'decomposition'}|${batch}`)) fail(`flow ${f.id}: ${key} counted twice`);
     seen.add(key);
     if (cause === 'capacity_withheld') continue;
     net.set(site, (net.get(site) ?? 0) + (f.to === 'source:' + site ? p : -p));
+    if (cause === 'secretion' || cause === 'rival_harvest') produced.set(site, (produced.get(site) ?? 0) + (cause === 'secretion' ? p : -p));
+  }
+  // with secretion withheld, food can still leave by runoff/resorption only once ALL of today's production was withheld
+  for (const site of lostWhileWithheld) if ((produced.get(site) ?? 0) > TOL_FLOW) fail(`${site}: food above the capacity left the source while today's production was only partly withheld`);
+  // carcass batches one by one: same ids and birth days, each batch's amount = before − its own flows (no protein moved between batches)
+  for (const [site, s0] of Object.entries(start)) {
+    if (s0.type !== 'carcass') continue;
+    const b1 = after[site].batches;
+    if (b1.length !== s0.batches.length || new Set(b1.map((b) => b.event_id)).size !== b1.length) fail(`${site}: carcass batches added, removed or duplicated in the ecology step`);
+    for (const b0 of s0.batches) {
+      const b = b1.find((x) => x.event_id === b0.id);
+      if (!b) fail(`${site}: batch ${b0.id} disappeared without a flow`);
+      else {
+        if (b.original_day !== b0.original_day) fail(`${site}: batch ${b0.id} birth day changed ${b0.original_day} -> ${b.original_day}`);
+        if (!(Math.abs(b0.protein - (batchOut.get(`${site}|${b0.id}`) ?? 0) - b.protein) <= TOL_FLOW)) fail(`${site}: batch ${b0.id} ${b0.protein} − its flows ≠ ${b.protein}`);
+      }
+    }
   }
   for (const [site, s0] of Object.entries(start)) {
     const end = sourceSum(after[site]);
@@ -167,12 +192,14 @@ function growHoneydew(id: string, src: Source, wp: WorldParams, weather: Weather
   const before = src.sugar, uncapped = src.sugar * (1 - wash) + net; src.sugar = round(clamp(uncapped, 0, src.capacity as number));
   if (log) {
     const excess = Math.max(0, uncapped - (src.capacity as number)), withheld = wp.source_flows.honeydew_capacity_limits_secretion;
+    // withheld: at most today's net production was never secreted; stock already above the capacity still runs off
+    const notSecreted = withheld ? Math.min(excess, net) : 0, lost = excess - notSecreted;
     const rival = wp.background_rivals.find((r) => r.site === id);
-    flow(log, id, 'sugar', 'secretion', gross - (withheld ? excess : 0), `producer:hemipterans:${id}`, 'source:' + id, { hemipteran_colonies: src.hemipteran_colonies, potential_portions: round(gross) });
+    flow(log, id, 'sugar', 'secretion', gross - notSecreted, `producer:hemipterans:${id}`, 'source:' + id, { hemipteran_colonies: src.hemipteran_colonies, potential_portions: round(gross) });
     if (rival) flow(log, id, 'sugar', 'rival_harvest', gross * rivals, 'source:' + id, `consumer:background_rival:${rival.id}`, { harvest_fraction: rivals });
     flow(log, id, 'sugar', 'rain_washoff', before * wash, 'source:' + id, 'loss:rain_washoff', { rain_mm: weather.rain_mm });
-    if (withheld) flow(log, id, 'sugar', 'capacity_withheld', excess, null, null, { never_existed: true, capacity: src.capacity });
-    else flow(log, id, 'sugar', 'capacity_runoff', excess, 'source:' + id, 'loss:capacity_runoff', { capacity: src.capacity });
+    flow(log, id, 'sugar', 'capacity_withheld', notSecreted, null, null, { never_existed: true, capacity: src.capacity });
+    flow(log, id, 'sugar', 'capacity_runoff', lost, 'source:' + id, 'loss:capacity_runoff', { capacity: src.capacity });
   }
   src.production_last_day = round(net); src.production_per_day = round(net);
   src.ecological_record = { host_plants: src.host_plants, hemipteran_kind: src.hemipteran_kind, hemipteran_colonies: src.hemipteran_colonies, gross_portions: round(gross), rival_share_portions: round(gross * rivals), rain_mm: weather.rain_mm, net_portions: round(net), stock_before: before, stock_after: src.sugar };
@@ -187,10 +214,11 @@ function growNectar(id: string, src: Source, wp: WorldParams, weather: Weather, 
   src.sugar = round(clamp(uncapped, 0, src.capacity as number));
   if (log) {
     const excess = Math.max(0, uncapped - (src.capacity as number)), withheld = wp.source_flows.nectar_capacity_limits_secretion;
-    flow(log, id, 'sugar', 'secretion', production - (withheld ? excess : 0), `producer:flowers:${id}`, 'source:' + id, { potential_portions: round(production) });
+    const notSecreted = withheld ? Math.min(excess, production) : 0, lost = excess - notSecreted;
+    flow(log, id, 'sugar', 'secretion', production - notSecreted, `producer:flowers:${id}`, 'source:' + id, { potential_portions: round(production) });
     flow(log, id, 'sugar', 'rain_washoff', before * wash, 'source:' + id, 'loss:rain_washoff', { rain_mm: weather.rain_mm });
-    if (withheld) flow(log, id, 'sugar', 'capacity_withheld', excess, null, null, { never_existed: true, capacity: src.capacity });
-    else flow(log, id, 'sugar', 'capacity_runoff', excess, 'source:' + id, 'loss:capacity_runoff', { capacity: src.capacity });
+    flow(log, id, 'sugar', 'capacity_withheld', notSecreted, null, null, { never_existed: true, capacity: src.capacity });
+    flow(log, id, 'sugar', 'capacity_resorbed', lost, 'source:' + id, `plant:flowers:${id}`, { capacity: src.capacity });
   }
   src.bloom_days_left = Math.max(0, (src.bloom_days_left as number) - 1);
   src.production_last_day = round(production); src.ecological_record = { bloom_days_left: src.bloom_days_left, rain_mm: weather.rain_mm, production_portions: production, stock_before: before, stock_after: src.sugar }; syncSource(src);
@@ -231,7 +259,7 @@ function insectDemography(w: EcologyInput, wp: WorldParams, weather: Weather, ev
 export function growEcology(w: EcologyInput, wp: WorldParams, weather: Weather, events: SimEvent[]): void {
   const g = dice(w, 'ecology');
   const sf = wp.source_flows, log: FlowLog | null = sf.record_source_flows_v26 ? { day: w.sim_day + 1, events: [], n: new Map() } : null;
-  const start = log ? Object.fromEntries(Object.entries(w.sources).map(([id, s]) => [id, { type: s.type, food: sourceSum(s), batches: s.type === 'carcass' ? s.batches.map((b) => b.event_id) : [] }])) : null;
+  const start = log ? Object.fromEntries(Object.entries(w.sources).map(([id, s]) => [id, { type: s.type, food: sourceSum(s), batches: s.type === 'carcass' ? s.batches.map((b) => ({ id: b.event_id, protein: b.protein, original_day: b.original_day })) : [] }])) : null;
   for (const [id, src] of Object.entries(w.sources)) {
     if (src.type === 'carcass') { decayCarcasses(w, id, src, wp, weather, log); continue; }
     if (src.type === 'honeydew') { growHoneydew(id, src, wp, weather, events, g, log); continue; }

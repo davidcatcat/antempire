@@ -429,9 +429,9 @@ Day14 權威已知卵：E001／E002／E003／E004／E005 分別經過 **12／6�
 - **開關**：`source_flows.record_source_flows_v26`，預設 **false**；關閉時所有輸出與 v2-review.25 逐位元組相同（`tests/golden.test.ts`、`tests/rules-isolation.test.ts`）。正式世界不打開。
 - **打開時**（`docs/design-source-flows-v26.md`）：
   - 生態步驟中每個食源的每一筆數量變化都是 `source_flow` 世界事件，有原因、來處、去處與份量。
-  - 原因：生產（`secretion`）、背景競爭者採走（`rival_harvest`）、雨沖（`rain_washoff`）、超過容量（`capacity_runoff` 或 `capacity_withheld`）、分解（`decomposition`）、屍體到期（`expired_remains`）。
+  - 原因：生產（`secretion`）、背景競爭者採走（`rival_harvest`）、雨沖（`rain_washoff`）、超過容量（蜜露 `capacity_runoff`、花蜜 `capacity_resorbed`；替代假設 `capacity_withheld` 預設關閉）、分解（`decomposition`）、屍體到期（`expired_remains`）。
   - 新屍體仍是 `new_food_source`；採集與獵殺入帳仍是 C2 `food_transfer`。兩者都不重複記錄。
-  - 引擎 `checkSourceFlows` 檢查每個食源的生態步驟閉合；獨立讀取器 `cli/lib/source-flow-replay.ts` 從參數重算每一筆，並只用事件重建期末存量。
+  - 引擎 `checkSourceFlows` 檢查每個食源的生態步驟閉合，屍體逐批次檢查；獨立讀取器 `cli/lib/source-flow-replay.ts` 從參數重算每一筆，並只用事件重建期末存量。
 - **保守候選**：存量算式不變，可用食物與舊模型完全相同；打開時蟻群結果也完全相同，只多了事件。改變供應量的方案（屍體不設保留上限、腐食者、容量重新推導）沒有實作。
 - **不捏造生物**：`loss:decomposition`、`loss:capacity_runoff` 只表示離開模型的食物池；分解者與滴落蜜露的消費者沒有模擬。
 - **未解決**：`carcass_max_lifetime_days` 的說明寫「只刪除已腐化且無可食量來源」，但同一模型在第 9 日仍有約 26% 可食量。v26 只記錄，不改，交 Owner 裁示。

@@ -27,10 +27,11 @@ ME-1 的讀取器 `cli/lib/source-ledger.ts` 已經能把這些量算出來，�
 | Owner 分類 | `cause` | 來處 → 去處 | 適用食源 |
 |---|---|---|---|
 | 食物實際生產 | `secretion` | `producer:hemipterans:<site>` 或 `producer:flowers:<site>` → `source:<site>` | 蜜露、花蜜 |
-| 因承載量限制而沒有生產 | `capacity_withheld` | 無 → 無（`never_existed: true`，不計入存量） | 蜜露、花蜜（依參數） |
+| 因承載量限制而沒有生產 | `capacity_withheld` | 無 → 無（`never_existed: true`，不計入存量） | 蜜露、花蜜；**替代假設，預設關閉，沒有直接證據**；最多只有當日的生產 |
 | 食物腐敗或分解 | `decomposition`、`expired_remains` | `source:<site>` → `loss:decomposition` | 屍體 |
 | 食物被其他生物攝取 | `rival_harvest` | `source:<site>` → `consumer:background_rival:<id>` | 有背景競爭者的蜜露點 |
-| 食物因自然原因流失 | `rain_washoff`、`capacity_runoff` | `source:<site>` → `loss:rain_washoff`、`loss:capacity_runoff` | 蜜露、花蜜 |
+| 食物因自然原因流失 | `rain_washoff`、`capacity_runoff` | `source:<site>` → `loss:rain_washoff`、`loss:capacity_runoff` | 蜜露、花蜜（容量流失只有蜜露） |
+| 回到生產者（植物再吸收） | `capacity_resorbed` | `source:<site>` → `plant:flowers:<site>` | 花蜜（預設） |
 
 另外兩種改變沿用既有事件，不重複記錄：
 - 新屍體：`new_food_source`（由已記錄的昆蟲死亡產生）；
@@ -52,23 +53,32 @@ ME-1 的讀取器 `cli/lib/source-ledger.ts` 已經能把這些量算出來，�
 - U = S − W + G − R
 - 超量 X = max(0, U − 容量)
 - S′ = round(min(U, 容量))
-- 事件：`secretion` = G − (withheld ? X : 0)；`rival_harvest` = R；`rain_washoff` = W；`capacity_withheld` 或 `capacity_runoff` = X。
+- 預設：`secretion` = G；`rival_harvest` = R；`rain_washoff` = W；`capacity_runoff` = X。
+- 替代假設（withheld）：不分泌的量 N = min(X, G − R)，也就是**最多只有當日的淨生產**。
+  - `secretion` = G − N；`capacity_withheld` = N；`capacity_runoff` = X − N。
+  - 開始時存量就已超過容量時（X > 當日淨生產），多出的部分是已存在的食物，仍記為流失，不能說它從未存在。
+  - 這修正了 Codex 對 `290c440` 的 P2：舊寫法把整個 X 記成不分泌，使分泌量變負、當日中止。
 
-**花蜜**（`growNectar`）：同上，但沒有 R；開花期且寄主活著時 G = `production_per_day`。
+**花蜜**（`growNectar`）：同上，但沒有 R；開花期且寄主活著時 G = `production_per_day`。超量的已存在部分記為 `capacity_resorbed`（回到植物），不是 `capacity_runoff`。
 
 **屍體**（`decayCarcasses`）：每個批次各自記錄。
 - 未到期：`decomposition` = p − round(p·(1−frac))；
 - 到期：`expired_remains` = p，也就是剩下的全部。
+- **逐批次檢查**（Codex 對 `290c440` 的 P2）：只比總量時，把蛋白從一個批次挪到另一個、或改批次的出生日，總量不變卻會改變之後的到期日與供應。現在：
+  - 引擎檢查生態步驟後每個批次的 ID、出生日不變，份量 = 原份量 − 這個批次自己的流量，批次不得增減；
+  - 讀取器逐批次重建整天：生態流量、新屍體（`new_food_source`，世界事件與獵殺）、螞蟻從該批次取走的量（`source_batch_consumed`），期末每個批次都要相符。
 
 **閉合**（引擎 `checkSourceFlows`）：生態步驟後的存量 = 生態步驟前的存量 + Σ 流入 − Σ 流出。`capacity_withheld` 不計，因為它從未存在。容差 1e-5：存量四捨五入到 1e-6，與 C2 相同。
 
-**容量超量的兩種解釋**：只改事件的解釋，不改存量。開關 `source_flows.*_capacity_limits_secretion`，assumption: true。
-- **蜜露預設 `capacity_runoff`（已分泌、沒有留住）**：沒有被採的蜜露會累積在葉面、滴落並養煤煙病菌。
-  - 機制方向：Way 1963，*Annu. Rev. Entomol.* 8:307–344（非本種，經引用文獻與摘要核對，未讀全文）。
-  - 半翅目分泌蜜露不因葉面已有蜜露而停止，所以「已分泌但流失」較合理。
-- **花蜜預設 `capacity_withheld`（不分泌）**：花蜜的存量由分泌與再吸收共同調節。
-  - 機制方向：Nepi & Stpiczyńska 2008，*Naturwissenschaften* 95:177–184，DOI 10.1007/s00114-007-0307-2（非本種、非本花園，經摘要核對，未讀全文）。
-  - 本花園植物沒有資料。
+**容量超量的解釋**：只改事件的解釋，不改存量。開關 `source_flows.*_capacity_limits_secretion`，預設都是 false，assumption: true。
+- **蜜露預設 `capacity_runoff`（已存在、沒有留在食源）**：沒有被採的蜜露會在葉面累積並養煤煙病菌。
+  - 機制方向：Way 1963，*Annu. Rev. Entomol.* 8:307–344（R388，非本種，經引用文獻與摘要核對，未讀全文）。
+  - 文獻只支持「沒有被採的蜜露會累積」。它離開食源的方式（滴落、被其他昆蟲取食、乾掉）與份量都是**模型假設**，沒有文獻支持。
+- **花蜜預設 `capacity_resorbed`（被植物再吸收）**：花蜜的存量由分泌與再吸收共同調節（R389 Nepi & Stpiczyńska 2008，*Naturwissenschaften* 95:177–184，DOI 10.1007/s00114-007-0307-2，非本種、非本花園，經摘要核對，未讀全文）。
+  - 再吸收表示這份花蜜**曾經存在**、之後回到植物，所以記為一筆流向 `plant:flowers:<site>` 的流量。
+  - 這份文獻**不能**支持「超量部分從未存在」（Codex 對 `290c440` 的 P3；`290c440` 的寫法推論過度，已改正）。
+  - 再吸收的量與速率是遊戲假設。
+- **替代假設 `capacity_withheld`（在容量時停止分泌）**：開關設為 true 才使用，沒有直接證據，只供敏感度比較。最多只有當日的生產記為從未存在。
 - 兩個容量值（`honeydew_max` 5.2、`nectar_max` 2.4）本身都是遊戲假設。
 
 ## 4. 證據分類
@@ -77,7 +87,8 @@ ME-1 的讀取器 `cli/lib/source-ledger.ts` 已經能把這些量算出來，�
 |---|---|
 | 恆等式（閉合、一筆一事件、不重複） | 數學必然（I 級） |
 | 雨會沖走蜜露、稀釋花蜜 | 文獻支持的機制方向（R183、R186，非本花園）；數值遊戲假設 |
-| 蜜露超量為流失、花蜜超量為不分泌 | 一般生態文獻的機制方向（Way 1963、Nepi & Stpiczyńska 2008，非本種）；數值與容量遊戲假設 |
+| 蜜露超量沒有留在食源、花蜜超量被再吸收 | 機制方向：一般生態文獻（Way 1963 只支持蜜露累積；Nepi & Stpiczyńska 2008 只支持花蜜再吸收；都非本種）；離開的方式、份量與容量：遊戲假設 |
+| 在容量時停止分泌（`capacity_withheld`） | 替代模型假設，沒有直接證據；預設關閉 |
 | 屍體每日分解比例 0.14、雨加成 0.004、上限 0.95、保留 9 日 | 遊戲假設 |
 | 背景競爭者 22% | 遊戲假設（#85） |
 | 分解者、滴落蜜露的消費者 | **沒有模擬**；只記為離開食物池 |
@@ -103,14 +114,15 @@ ME-1 的讀取器 `cli/lib/source-ledger.ts` 已經能把這些量算出來，�
 ## 6. 驗證
 
 `tests/source-flows-v26.test.ts`（BLOCKING）：
-- **真實日 1,870 個，引擎檢查與獨立讀取器都接受**：
+- **真實日 1,880 個，引擎檢查與獨立讀取器都接受**：
   - Day0 A1～A5 × 四季 × 3 種子；
   - Day14 fixture × 2 種子；
   - 連續降雨；
   - 所有糖源從容量開始，並加入過期與最後一日的屍體批次；
-  - 兩種容量解釋都測。
-- **保守性**：開關打開與關閉的同一天比較 1,870/1,870 相同。相同的範圍是每個存量、亂數抽取、蟻群結果，以及 `source_flow` 以外的所有事件。
-- **七種原因都在真實日出現**。
+  - 兩種容量解釋都測；
+  - 存量在一天開始時就已是容量的 1.5 倍（兩種解釋都測；Codex P2 的回歸）。
+- **保守性**：開關打開與關閉的同一天比較 1,880/1,880 相同。相同的範圍是每個存量、亂數抽取、蟻群結果，以及 `source_flow` 以外的所有事件。
+- **八種原因都在真實日出現**。
 - **固定種子重播**：同一輸入得到相同事件與狀態。
 - **順序不變**：把食源的物件順序反轉，依（食源、原因、批次）比較的流量與存量都相同。
 - **反例**（各自被引擎檢查與讀取器拒絕）：
@@ -124,13 +136,17 @@ ME-1 的讀取器 `cli/lib/source-ledger.ts` 已經能把這些量算出來，�
   - N8 蜜露點出現蛋白；
   - N9 日期不符；
   - N10 存量改變卻沒有事件；
-  - N11 不存在的批次。
+  - N11 不存在的批次；
+  - N14 蛋白從一個屍體批次挪到另一個（總量不變）；
+  - N15 屍體批次的出生日改早三日（總量不變）；
+  - N16 開始時已超過容量的食物被記成「從未分泌」；
+  - N17 不分泌模式下，當日生產只部分不分泌，卻又記錄已存在的食物流失。
 - **只有讀取器能抓的反例**：
   - N12 分泌灌水，再以假流失抵銷；存量仍閉合，引擎檢查不重算數值；
   - N13 雨沖量與參數不符。
 - **讀取器**（`cli/lib/source-flow-replay.ts`）不匯入引擎，做四件事：
   1. 從期初狀態、當日雨量、期末寄主狀態與參數重算每一筆流量，與事件一對一比對；
-  2. 只用事件重建每個食源的期末存量；
+  2. 只用事件重建每個食源的期末存量，屍體逐批次重建；
   3. 檢查 ME-1 帳本算出的每一筆刪除都有事件涵蓋；
   4. 開關關閉時照樣報告沒有事件的改變，作為缺陷的證據。
 

@@ -27,7 +27,7 @@ type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
 const throws = (f: () => void, re: RegExp) => { try { f(); return false; } catch (e) { return re.test(String(e)); } };
 const OFF: Any = loadBundle();
-const withFlows = (honeydewWithheld = false, nectarWithheld = true, edit?: (b: Any) => void) => { const b: Any = structuredClone(OFF); Object.assign(b.world.source_flows, { record_source_flows_v26: true, honeydew_capacity_limits_secretion: honeydewWithheld, nectar_capacity_limits_secretion: nectarWithheld }); edit?.(b); return b; };
+const withFlows = (honeydewWithheld = false, nectarWithheld = false, edit?: (b: Any) => void) => { const b: Any = structuredClone(OFF); Object.assign(b.world.source_flows, { record_source_flows_v26: true, honeydew_capacity_limits_secretion: honeydewWithheld, nectar_capacity_limits_secretion: nectarWithheld }); edit?.(b); return b; };
 const ON = withFlows();
 const alwaysWet = (b: Any) => { const c = b.world.climate; c.annual_rain_days.value = 365; c.rain_probability_daily_cap.value = 1; c.wet_persistence.value = 0; };
 const strip = (s: Any) => { const c = structuredClone(s); delete c.last_world_events; for (const m of c.migration_log ?? []) delete m.warmup_event_count; return JSON.stringify(c); };
@@ -52,7 +52,7 @@ const run = (s0on: Any, s0off: Any | null, bon: Any, boff: Any | null, n: number
     const o: Any = simulateWorldDay(a, bon), r = replaySourceFlows(a, o.state, o.result, wp);
     ok(r.ok, `${label} day ${o.day}: the reader rejects a real day (${r.errors.slice(0, 2).join(' | ')})`);
     realDays++; for (const [k, v] of Object.entries(r.by_cause)) causes[k] = (causes[k] ?? 0) + v;
-    if (samples.length < 60 && r.flows > 0 && (d % 7 === 3 || Object.keys(r.by_cause).some((k) => k.startsWith('capacity') || k === 'expired_remains'))) samples.push({ start: structuredClone(a), end: o.state, result: o.result, wp });
+    if ((samples.length < 60 || label.startsWith('stock 1.5') && d === 0) && r.flows > 0 && (d % 7 === 3 || Object.keys(r.by_cause).some((k) => k.startsWith('capacity') || k === 'expired_remains'))) samples.push({ start: structuredClone(a), end: o.state, result: o.result, wp });
     if (b && boff) {
       const ob: Any = simulateWorldDay(b, boff); compared++;
       const same = strip(o.state) === strip(ob.state) && JSON.stringify(o.result.colonies) === JSON.stringify(ob.result.colonies) && JSON.stringify(o.result.world_events.filter((e: Any) => e.type !== 'source_flow')) === JSON.stringify(ob.result.world_events);
@@ -69,16 +69,24 @@ for (const sc of ['A1', 'A2', 'A3', 'A4', 'A5']) for (const season of ['2027-03-
 const meta = legacyColonyMeta(OFF.world.scenario_colonies as Any);
 for (const seed of [15032026, 15032027]) { const lg: Any = fixture(); lg.seed = seed; run(legacyToWorldState(structuredClone(lg), meta), legacyToWorldState(structuredClone(lg), meta), ON, OFF, 60, `Day14 seed ${seed}`); }
 // extremes
-const wetOn = withFlows(false, true, alwaysWet), wetOff: Any = structuredClone(OFF); alwaysWet(wetOff);
+const wetOn = withFlows(false, false, alwaysWet), wetOff: Any = structuredClone(OFF); alwaysWet(wetOff);
 run(buildDay0('A1' as Any, 1, '2027-09-23', wetOn).state, buildDay0('A1' as Any, 1, '2027-09-23', wetOff).state, wetOn, wetOff, 30, 'continuous rain');
 const atCapacity = (s: Any) => { for (const src of Object.values(s.sources) as Any[]) if (src.type !== 'carcass') { src.sugar = src.capacity; if (src.type === 'nectar') src.bloom_days_left = Math.max(5, src.bloom_days_left); } return s; };
 const oldBatches = (s: Any) => { for (const src of Object.values(s.sources) as Any[]) if (src.type === 'carcass') { const c = OFF.world.carcasses.carcass_max_lifetime_days.value; src.batches.push({ event_id: 'TEST-OLD-' + src.id, original_day: s.sim_day + 1 - c - 1, protein: 0.7, age_days: c + 1, origin: 'test: a batch past its edible lifetime' }, { event_id: 'TEST-LAST-' + src.id, original_day: s.sim_day + 1 - c, protein: 0.4, age_days: c, origin: 'test: a batch on its last edible day' }); src.protein = sourceSum(src); } return s; };
 const stress = (b: Any) => oldBatches(atCapacity(legacyToWorldState(fixture() as Any, legacyColonyMeta(b.world.scenario_colonies as Any))));
 run(stress(ON), stress(OFF), ON, OFF, 20, 'sources at capacity, old carcass batches (honeydew runoff, nectar withheld)');
-const flip = withFlows(true, false), flipOff: Any = structuredClone(OFF);
-run(stress(flip), stress(flipOff), flip, flipOff, 20, 'sources at capacity (honeydew withheld, nectar runoff)');
+const flip = withFlows(true, true), flipOff: Any = structuredClone(OFF);
+run(stress(flip), stress(flipOff), flip, flipOff, 20, 'sources at capacity (alternative assumption: both withheld)');
+// Codex review of 290c440 P2-2: a stock ALREADY above the capacity (e.g. a state written under another capacity) must not
+// stop the day when the switch is on; the switch-off run of the same input runs. No washoff, so the excess exceeds the production.
+const above = (s: Any) => { for (const src of Object.values(s.sources) as Any[]) if (src.type !== 'carcass') { src.sugar = +(src.capacity * 1.5).toFixed(6); if (src.type === 'nectar') src.bloom_days_left = Math.max(5, src.bloom_days_left); } return s; };
+const dry = (b: Any) => { b.world.nectar.nectar_washoff_per_rain_mm.value = 0; b.world.honeydew.honeydew_washoff_per_rain_mm.value = 0; };
+for (const [hw, nw] of [[false, false], [true, true]] as const) {
+  const bon = withFlows(hw, nw, dry), boff: Any = structuredClone(OFF); dry(boff);
+  run(above(buildDay0('A1' as Any, 1, '2027-03-21', bon).state), above(buildDay0('A1' as Any, 1, '2027-03-21', boff).state), bon, boff, 5, `stock 1.5× above capacity, ${hw ? 'withheld' : 'default'} interpretation`);
+}
 ok(realDays > 1500 && compared === realDays && identical === compared, `AFTER: ${realDays} real world-days — engine check and reader accept every one; with the switch on every stock, draw and colony result equals the switch-off run (${identical}/${compared})`);
-ok(['secretion', 'rival_harvest', 'rain_washoff', 'capacity_runoff', 'capacity_withheld', 'decomposition', 'expired_remains'].every((k) => (causes[k] ?? 0) > 0), `every cause occurs on real days: ${JSON.stringify(Object.fromEntries(Object.entries(causes).map(([k, v]) => [k, +v.toFixed(3)])))}`);
+ok(['secretion', 'rival_harvest', 'rain_washoff', 'capacity_runoff', 'capacity_resorbed', 'capacity_withheld', 'decomposition', 'expired_remains'].every((k) => (causes[k] ?? 0) > 0), `every cause occurs on real days: ${JSON.stringify(Object.fromEntries(Object.entries(causes).map(([k, v]) => [k, +v.toFixed(3)])))}`);
 
 // ---------------------------------------------------------------- fixed-seed replay and order independence
 {
@@ -95,7 +103,7 @@ ok(['secretion', 'rival_harvest', 'rain_washoff', 'capacity_runoff', 'capacity_w
 // The engine check sees the ecology step alone: rerun it on a sample day's start state.
 const ecologyStep = (sm: Sample) => {
   const w: Any = structuredClone(sm.start), events: Any[] = [], weather = calcWeather(w, sm.wp, sm.result.date);
-  const start = Object.fromEntries(Object.entries(w.sources).map(([id, s]: [string, Any]) => [id, { type: s.type, food: sourceSum(s), batches: s.type === 'carcass' ? s.batches.map((x: Any) => x.event_id) : [] }]));
+  const start = Object.fromEntries(Object.entries(w.sources).map(([id, s]: [string, Any]) => [id, { type: s.type, food: sourceSum(s), batches: s.type === 'carcass' ? s.batches.map((x: Any) => ({ id: x.event_id, protein: x.protein, original_day: x.original_day })) : [] }]));
   growEcology(w, sm.wp, weather, events);
   const flows = events.filter((e) => e.type === 'source_flow');
   // stocks right after the source loop (before insect deaths add new remains)
@@ -126,6 +134,27 @@ both('N9 a flow dated another day', pick(isCause('secretion')), (f) => { const i
 both('N10 a stock changed with no flow at all', pick(isCause('secretion')), (f) => f, { afterEdit: (a) => { const k = Object.keys(a).find((id) => a[id].type !== 'carcass')!; a[k].sugar = +(a[k].sugar + 0.1).toFixed(6); }, endEdit: (s) => { const k = Object.keys(s.sources).find((id) => s.sources[id].type !== 'carcass')!; s.sources[k].sugar = +(s.sources[k].sugar + 0.1).toFixed(6); } });
 both('N11 a flow at a batch that did not exist', pick(isCause('decomposition')), (f) => { const i = idx(f, isCause('decomposition')); f[i].batch_event_id = 'NAT-NOWHERE'; return f; });
 both('N12 secretion inflated and the excess hidden as extra runoff (stock still closes)', pick(isCause('secretion')), (f) => { const i = idx(f, isCause('secretion')); f[i].portions = +(f[i].portions + 0.2).toFixed(6); return [...f, { ...f[i], id: f[i].id + 'r', cause: 'capacity_runoff', from: f[i].to, to: 'loss:capacity_runoff', portions: 0.2 }]; }, { engineToo: false });
+// Codex review of 290c440 P2-1: carcass totals stay the same, but the next days' supply changes
+const carcassSite = (s: Any) => Object.keys(s).find((k) => s[k].type === 'carcass' && s[k].batches.filter((b: Any) => b.protein > 0.05).length >= 2);
+const twoBatches = samples.find((x) => carcassSite(x.end.sources) && carcassSite(x.start.sources) === carcassSite(x.end.sources));
+assert.ok(twoBatches, 'no sample with two carcass batches');
+const moveProtein = (src: Any) => { const bs = src.batches.filter((b: Any) => b.protein > 0.05); bs[0].protein = +(bs[0].protein - 0.05).toFixed(6); bs[1].protein = +(bs[1].protein + 0.05).toFixed(6); };
+const redate = (src: Any) => { src.batches.find((b: Any) => b.protein > 0.05).original_day -= 3; };
+{
+  const k = carcassSite(twoBatches!.end.sources)!;
+  for (const [name, edit] of [['N14 protein moved from one carcass batch to another (total unchanged)', moveProtein], ['N15 a carcass batch re-dated three days older (total unchanged)', redate]] as const) {
+    const e = engineAccepts(twoBatches!, (f) => f, (a) => { if (a[k].batches.filter((b: Any) => b.protein > 0.05).length >= 2) edit(a[k]); else edit(a[carcassSite(a)!]); }), r = readerAccepts(twoBatches!, (f) => f, (s) => edit(s.sources[k]));
+    ok(e !== true, `${name}: the engine check rejects it (${e})`); ok(r !== true, `${name}: the reader rejects it (${r})`);
+  }
+}
+{
+  const sm = samples.find((x) => x.wp.source_flows.honeydew_capacity_limits_secretion && x.result.world_events.some((e: Any) => e.cause === 'capacity_withheld') && x.result.world_events.some((e: Any) => e.cause === 'capacity_runoff' || e.cause === 'capacity_resorbed'));
+  assert.ok(sm, 'no withheld-mode sample with food above the capacity');
+  const lostCause = (e: Any) => e.cause === 'capacity_runoff' || e.cause === 'capacity_resorbed';
+  const site = sm!.result.world_events.find((e: Any) => lostCause(e) && sm!.result.world_events.some((x: Any) => x.cause === 'capacity_withheld' && x.site === e.site)).site;
+  both('N16 food already above the capacity relabelled as never secreted (Codex P2-2)', sm!, (f) => { const i = idx(f, (e) => lostCause(e) && e.site === site); Object.assign(f[i], { cause: 'capacity_withheld', from: null, to: null, never_existed: true }); return f; });
+  both('N17 withheld mode: part of the production kept as secretion while existing food is said to run off', sm!, (f) => { const w0 = f.find((e) => e.cause === 'capacity_withheld' && e.site === site); if (!f.some((e) => e.cause === 'secretion' && e.site === site)) f.push({ ...w0, id: w0.id + 's', cause: 'secretion', from: site.startsWith('F08') || f.some((e) => e.site === site && e.cause === 'capacity_resorbed') ? `producer:flowers:${site}` : `producer:hemipterans:${site}`, to: 'source:' + site, never_existed: undefined, portions: 0 }); const s = idx(f, (e) => e.cause === 'secretion' && e.site === site), w = idx(f, (e) => e.cause === 'capacity_withheld' && e.site === site), l = idx(f, (e) => lostCause(e) && e.site === site); const x = Math.min(0.05, f[w].portions / 2); f[s].portions = +(f[s].portions + x).toFixed(6); f[w].portions = +(f[w].portions - x).toFixed(6); f[l].portions = +(f[l].portions + x).toFixed(6); return f; });
+}
 {
   const sm = pick(isCause('rain_washoff'));
   ok(readerAccepts(sm, (f) => f.map((e) => e.cause === 'rain_washoff' ? { ...e, portions: +(e.portions * 1.5).toFixed(6) } : e)) !== true, 'N13 a washoff amount that the parameters do not give: the reader rejects it');

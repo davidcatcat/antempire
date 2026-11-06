@@ -705,5 +705,5 @@ R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-
 
 | ID | 來源 | 讀到的程度 | 可支持 | 不可外推 |
 |---|---|---|---|---|
-| R388 | Way MJ (1963) Mutualism between ants and honeydew-producing Homoptera. *Annual Review of Entomology* 8:307–344 | 經引用文獻與摘要 | 沒有被螞蟻採走的蜜露會在葉面累積並養煤煙病菌；螞蟻採走蜜露可減少累積。用於蜜露超過容量時記為「已分泌、沒有留在食源」（`capacity_runoff`） | 不提供本花園蜜露的留存量、滴落速率或容量；不是本種研究 |
-| R389 | Nepi M, Stpiczyńska M (2008) The complexity of nectar: secretion and resorption dynamically regulate nectar features. *Naturwissenschaften* 95:177–184. DOI 10.1007/s00114-007-0307-2 | 摘要 | 花蜜的存量是分泌與再吸收共同的結果，不是單向累積。用於花蜜超過容量時記為「不分泌」（`capacity_withheld`） | 不提供本花園植物的分泌上限或再吸收速率；不同植物差異大 |
+| R388 | Way MJ (1963) Mutualism between ants and honeydew-producing Homoptera. *Annual Review of Entomology* 8:307–344 | 經引用文獻與摘要 | 沒有被螞蟻採走的蜜露會在葉面累積並養煤煙病菌；螞蟻採走蜜露可減少累積。用於蜜露超過容量時記為「已存在、沒有留在食源」（`capacity_runoff`） | 只支持「會累積」；離開食源的方式（滴落、被其他昆蟲取食、乾掉）與份量沒有依據；不提供本花園蜜露的留存量或容量；不是本種研究 |
+| R389 | Nepi M, Stpiczyńska M (2008) The complexity of nectar: secretion and resorption dynamically regulate nectar features. *Naturwissenschaften* 95:177–184. DOI 10.1007/s00114-007-0307-2 | 摘要 | 花蜜的存量是分泌與再吸收共同的結果，不是單向累積。用於花蜜超過容量時記為「被植物再吸收」（`capacity_resorbed`，這份花蜜曾經存在） | **不能**支持「超量部分從未存在」（Codex 對 #88 `290c440` 的 P3）；不提供本花園植物的分泌上限或再吸收速率；不同植物差異大 |
