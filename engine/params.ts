@@ -78,6 +78,8 @@ const ACTIVITY_KEYS = ['trail_walking_speed_mm_s', 'off_trail_speed_factor', 'se
 
 export function resolveSpecies(file: ParamFile) {
   if (file.schema !== 'antempire.species-params.v1') throw Error('Unknown species params schema ' + String(file.schema));
+  // v2-review.23: per-edge trail marks are queue events of the v2-review.20 event clock; without it the switch would do nothing silently
+  if (at(file, 'activity.local_trail_deposit_v23') === true && at(file, 'activity.local_causality_v20') !== true) throw Error('activity.local_trail_deposit_v23 requires activity.local_causality_v20');
   const p = {
     species_id: str(file, 'species_id'),
     castes: {
@@ -89,7 +91,7 @@ export function resolveSpecies(file: ParamFile) {
     nutrition_rules: { egg_laying_settles_crops: bool(file, 'nutrition.egg_laying_settles_crops') },
     nutrition: section(file, 'nutrition', ['worker_sugar_daily', 'worker_protein_daily', 'queen_sugar_daily', 'queen_protein_daily', 'larva_sugar_daily', 'larva_protein_daily', 'egg_laying_protein_cost', 'egg_laying_sugar_cost', 'max_sugar_store', 'max_protein_store', 'store_capacity_baseline_workers', 'sugar_store_per_extra_worker', 'protein_store_per_extra_worker', 'ration_gap_threshold'] as const),
     starvation: section(file, 'starvation', ['queen_egg_pause_days', 'worker_mortality_starts_days', 'larva_mortality_starts_days', 'worker_daily_hazard_base', 'worker_daily_hazard_slope', 'larva_daily_hazard_base', 'larva_daily_hazard_slope', 'queen_hazard_after_days', 'queen_daily_hazard', 'queen_zero_worker_hazard_after_days', 'queen_zero_worker_starved_daily_hazard', 'larva_daily_hazard_cap', 'worker_starvation_hazard_cap'] as const),
-    brood_care: section(file, 'brood_care', ['unattended_larva_max_days', 'unattended_egg_max_days', 'unattended_pupa_max_days'] as const),
+    brood_care: { ...section(file, 'brood_care', ['unattended_larva_max_days', 'unattended_egg_max_days', 'unattended_pupa_max_days'] as const), daily_care_snapshot_v21: bool(file, 'brood_care.daily_care_snapshot_v21') },
     worker_lifespan: section(file, 'worker_lifespan', ['natural_daily_base_hazard', 'age_risk_from_days', 'age_hazard_slope', 'injury_mortality_multiplier', 'newborn_initial_age_days', 'injury_repair_probability', 'adult_total_daily_hazard_cap', 'injury_repair_multiplier_abrasion', 'injury_repair_multiplier_appendage_damage', 'injury_repair_multiplier_unknown'] as const),
     queen_laying: section(file, 'queen_laying', ['base_laying_probability', 'max_eggs_per_day', 'existing_brood_pressure', 'previous_laying_penalty', 'adequate_nutrition_threshold', 'laying_reference_c', 'laying_temperature_q10', 'second_egg_given_laying_probability', 'laying_probability_cap'] as const),
     task_allocation: section(file, 'task_allocation', ['rest_baseline_probability', 'nurse_baseline_probability', 'maintenance_baseline_probability', 'forage_baseline_probability', 'defence_baseline_probability', 'newborn_nurse_days', 'injured_task_forage_multiplier', 'newborn_forage_multiplier', 'hunger_own_crop_weight', 'hunger_peer_weight', 'hunger_forage_boost', 'brood_begging_nurse_boost', 'newborn_nurse_multiplier', 'injured_rest_multiplier', 'soil_wetness_repair_boost'] as const),
@@ -103,7 +105,7 @@ export function resolveSpecies(file: ParamFile) {
     trophallaxis: section(file, 'trophallaxis', ['crop_capacity', 'max_trophallaxis_contacts', 'transfer_max_portions'] as const),
     navigation: { individual_route_memory: bool(file, 'navigation.individual_route_memory') },
     // v2-review.17: individual activity timeline (switch) and its durations / decision weights.
-    activity: { individual_timeline: bool(file, 'activity.individual_timeline'), local_causality_v20: bool(file, 'activity.local_causality_v20'), ...(bool(file, 'activity.individual_timeline') ? section(file, 'activity', ACTIVITY_KEYS) : ({} as Record<(typeof ACTIVITY_KEYS)[number], number>)) },
+    activity: { individual_timeline: bool(file, 'activity.individual_timeline'), local_causality_v20: bool(file, 'activity.local_causality_v20'), local_trail_deposit_v23: bool(file, 'activity.local_trail_deposit_v23'), ...(bool(file, 'activity.individual_timeline') ? section(file, 'activity', ACTIVITY_KEYS) : ({} as Record<(typeof ACTIVITY_KEYS)[number], number>)) },
     predation: {
       ...section(file, 'predation', ['live_prey_encounter_probability', 'large_prey_min_team', 'live_prey_capture_probability', 'large_prey_escape_while_recruiting_probability', 'large_prey_max_team'] as const),
       simultaneous_site_group_hunting: bool(file, 'predation.simultaneous_site_group_hunting'),

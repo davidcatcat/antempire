@@ -77,6 +77,9 @@ export function nestContacts(world: WorldState, colony: ColonyState, sp: Species
 /** Nurses physically touch one larva and carry away only that larva's begging signal. */
 export function nurseContact(world: WorldState, colony: ColonyState, sp: SpeciesParams, worker: Worker, events: SimEvent[]): void {
   const larvae = colony.population.brood.filter((b) => b.stage === 'larva'), g = colonyDice(world, colony, 'nurse_contact:' + worker.id);
+  // v2-review.21 (Issue #50): the uniform draw picks among the larvae in id order, so WHICH larva a draw reaches does not
+  // depend on where the larvae sit in the stored brood array (v2-review.20 indexed the array as stored).
+  if (sp.brood_care.daily_care_snapshot_v21) larvae.sort((x, y) => (x.id < y.id ? -1 : x.id > y.id ? 1 : 0));
   if (larvae.length && g() < sp.local_signals.nurse_larva_contact_probability) {
     const brood = larvae[Math.floor(g() * larvae.length)];
     worker.local_sensory ??= {};

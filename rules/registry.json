@@ -262,6 +262,60 @@
       "save_schema": "antempire.engine-v2",
       "state_migration": null,
       "note": "Issue #43 F02-F05 and R11 local-causality fixes on the individual timeline, plus the PR #44 review fixes (own return routes, remembered exits, timed trail marks, pheromone-free planning) (switch activity.local_causality_v20)"
+    },
+    {
+      "rules_version": "antempire.v2-review.21-brood-care-snapshot",
+      "tag": "v21",
+      "fingerprint": {
+        "engine": "34106260a75be35bcc4c58c5c68f880e5dc4dc69803bc45e497e0f30cf826efd",
+        "params": "bb40b5d47da830f4b7e4daf6484b9d36898936bc4474eb8a43a9bf572cca9181"
+      },
+      "approved_in": "Owner instruction 2026-11-03 (Issue #50 / #49 N1; merge authorised after CI and independent review)",
+      "golden": {
+        "traces": "tests/golden/v21-trace-sha256.json",
+        "reports": "reports/day15-134-v21-*",
+        "day0_traces": "tests/golden/day0-v21-trace-sha256.json"
+      },
+      "previous": "antempire.v2-review.20-local-causality",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null,
+      "note": "Issue #49 N1: brood care exposure from the workers at the start of the step; eclosions committed after all brood; worker ids and nurse larva draws in id order (switch brood_care.daily_care_snapshot_v21)"
+    },
+    {
+      "rules_version": "antempire.v2-review.22-engine-food-transfers",
+      "tag": "v22",
+      "fingerprint": {
+        "engine": "a3b850d00801917191ee04cfab4577e641770f17c5a67e1861a4cc2cdfa0b195",
+        "params": "bb40b5d47da830f4b7e4daf6484b9d36898936bc4474eb8a43a9bf572cca9181"
+      },
+      "approved_in": "Owner instruction 2026-11-03 (D4-A/D7-A next phase, work package C2; PR for Owner review, not merged by Claude)",
+      "golden": {
+        "traces": "tests/golden/v22-trace-sha256.json",
+        "reports": "reports/day15-134-v22-*",
+        "day0_traces": "tests/golden/day0-v22-trace-sha256.json"
+      },
+      "previous": "antempire.v2-review.21-brood-care-snapshot",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null,
+      "note": "Work package C2: the engine records every food movement between compartments as a food_transfer event and checks per-compartment and source closure daily; diagnostics only (no quantity, draw, decision or simulation state changed; saved event lists and journals grow)"
+    },
+    {
+      "rules_version": "antempire.v2-review.23-local-trail-deposit",
+      "tag": "v23",
+      "fingerprint": {
+        "engine": "46bd5c45b8cb92f4ae35669c2b4460f5db66072e3578c601dbc7b4ed270b6eaa",
+        "params": "a1fe85118344a18593e837e269d98bc5adf3c732736dca8646aed6264d0dec2a"
+      },
+      "approved_in": "Owner instruction 2026-11-03 (Codex Issue #61 R3-05; separate rules-update PR for Owner review, not merged by Claude)",
+      "golden": {
+        "traces": "tests/golden/v23-trace-sha256.json",
+        "reports": "reports/day15-134-v23-*",
+        "day0_traces": "tests/golden/day0-v23-trace-sha256.json"
+      },
+      "previous": "antempire.v2-review.22-engine-food-transfers",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null,
+      "note": "Codex Issue #61 R3-05: a worker carrying food home marks each edge at the minute it has walked it (event-clock trail event), not the whole route at the nest (switch activity.local_trail_deposit_v23)"
     }
   ]
 }

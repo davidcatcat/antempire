@@ -303,6 +303,7 @@
 | ID | 研究 | 讀取程度 | 支持的內容 | 不可外推之處 |
 |---|---|---|---|---|
 | R133（補充） | Vázquez, Koehler & Pereira (2020), *Insects* 11:5 | 全文 | **本種**沿跡速度 17.0±0.39 mm/s；去程 18.5、回程 15.5 | 實驗室木橋、飢餓 24～72 h；試驗溫度沒寫（飼養 22～27°C）。野外可能較快（R143） |
+| R133（核讀範圍，2026-11-05 統一） | Vázquez, Koehler & Pereira (2020), *Insects* 11:5，DOI 10.3390/insects11010005 | 以 `scenarios/physics/pheidole-megacephala.motion-candidates.json` 的 `trail_speed_mm_s` 為準（2026-11-03 核對 PMC 全文 §3、方法、Fig. 2 圖說；Codex 2026-11-04 讀取 PMC 時回 403，未重新核讀） | 本種沿跡速度 17.0、去程 18.5、回程 15.5 mm/s；± 依 Fig. 2 圖說是**平均值的 95% 信賴區間**，不是個體速度分布；個體數 n 未報告；圖中其他數值未讀 | 實驗室人工路線、飢餓 24～72 h、試驗溫度未報告；方向差異不解釋為負重；不得當野外速度。上面兩列是較早的紀錄，數值與本列一致，以本列為準 |
 | R143 | Hurlbert, Ballantyne & Powell (2008), *Ecological Entomology* 33:144 | 全文 | 所有物種步行速度都隨溫度上升；同種在野外常比實驗室快（例：*S. invicta* 16.7 vs 9.6 mm/s） | 不含本種；係數不可套用 |
 | R144 | Popp & Dornhaus (2024), *PLoS ONE* e0299432 | 全文 | 探索中的工蟻比沿跡慢（*Temnothorax* 8.5～9.5 mm/s） | 非本種；本種離跡速度未知，`off_trail_speed_factor` 是遊戲假設 |
 | R145 | Chen & Neoh (2023), *Frontiers in Ecology and Evolution* 11:1044485. DOI 10.3389/fevo.2023.1044485 | 全文（含圖 2 目測） | **臺中太平**：誘餌陷阱 00:00 起**連續 72 小時、每 3 小時收集一次**，包含本種（都市 2019-03-26～28、森林 2019-05-11～13）；都市的本種多在白天、夜間較低但仍有捕獲，森林的本種日夜相近。實驗室升溫：本種小工蟻在 42°C（都市，1 群 31 隻）／44°C（森林，3 群 24 隻）完全熱昏迷（**CTmax**，不是停止覓食的溫度）。〔2026-11-02 更正：原寫「都市樣點主要在白天活動，森林日夜都有」而未寫明是 72 小時逐 3 小時取樣，第二階段文件因此誤稱「查無本種逐時研究」〕 | 「09:00～15:00 佔 87.9%」是所有蟻種合計，不是本種；都市與森林的取樣日期不同，差異不能全部歸因於棲地；量的是活動密度，不是每隻工蟻的活動時間；鮪魚誘餌可能有偏差 |
@@ -568,3 +569,132 @@
 | R327 | Vanderwoude C, Lobry de Bruyn LA, House APN (2000) Response of an open-forest ant community to invasion by the introduced ant, *Pheidole megacephala*. *Austral Ecology* 25:253–259. DOI 10.1046/j.1442-9993.2000.01021.x | 摘要（全文 403） | **本種**，澳洲昆士蘭 | 群落衝擊 | R95 引用的「只分巢、無婚飛」在摘要中查不到 |
 | R328 | Salata S, Fisher BL (2022) Taxonomic revision of the *Pheidole megacephala* species-group (Hymenoptera, Formicidae) from the Malagasy region. *PeerJ* 10:e13263. DOI 10.7717/peerj.13263 | 全文檢索 | **本種群**分類 | 物種群分類與原產地爭議 | 沒有繁殖資料 |
 | R329 | Hoffmann BD, Parr CL (2008) An invasion revisited: the African big-headed ant in northern Australia. *Biol. Invasions* 10:1171–1181. DOI 10.1007/s10530-007-9194-x | 摘要 | **本種**，澳洲 | 9 年間分布面積約倍增 | 只有擴散速率，沒有繁殖機制 |
+
+## 2026-11-03 開放生態層（R330–R343；研究與設計，未改規則）
+
+> 用於 `docs/spec-open-ecology.md` 與 `reports/open-ecology-research/evidence-matrix.md`。
+> - R312–R329 保留給未合併的 PR #55；本段從 R330 起，不重複編號。
+> - 每個 DOI 都在 2026-11-03 以 Crossref（`https://api.crossref.org/works/<DOI>`）核對過作者、題名、期刊、卷期頁。
+> - 分級：**a**＝本種；**b**＝其他物種或一般生物學（非本種）；**方法**＝建模方法文獻，不是螞蟻量測。
+> - 讀取：**全文**／**摘要**／**只核對書目**（只確認書目存在，沒有讀內容，**不得引用其內容**）。
+> - 本段沒有據此改任何參數。
+
+| ID | 文獻 | 讀取 | 分級 | 支持的內容 | 不可外推之處 |
+|---|---|---|---|---|---|
+| R330 | Grimm V, Railsback SF, Vincenot CE, Berger U, Gallagher C, DeAngelis DL, et al. (2020) The ODD protocol for describing agent-based and other simulation models: a second update to improve clarity, replication, and structural realism. *JASSS* 23(2):7. DOI 10.18564/jasss.4259 | 全文 | 方法 | ODD 第一節改為「目的與型態」，型態要寫明依據，並要報告模型重現不了的型態；子模型很長時寫「巢狀 ODD」；混合模型要在「子模型」加一小節，說明子模型之間的耦合框架、互動時機與交換變數 | 是寫作規範，不提供任何生態數值 |
+| R331 | Grimm V, Revilla E, Berger U, Jeltsch F, Mooij WM, Railsback SF, et al. (2005) Pattern-oriented modeling of agent-based complex systems: lessons from ecology. *Science* 310(5750):987–991. DOI 10.1126/science.1116681 | 摘要（另經 R330 全文的轉述） | 方法 | 以多個觀察型態設計、檢驗與參數化由下而上的模型 | 方法；型態必須另有生態來源 |
+| R332 | Grimm V, Berger U, Bastiansen F, Eliassen S, Ginot V, Giske J, et al. (2006) A standard protocol for describing individual-based and agent-based models. *Ecological Modelling* 198(1–2):115–126. DOI 10.1016/j.ecolmodel.2006.04.023 | 只核對書目 | 方法 | ODD 原始版本（`docs/odd-protocol.md` 標題已提及，補上書目） | 未讀內容 |
+| R333 | Pulliam HR (1988) Sources, sinks, and population regulation. *The American Naturalist* 132(5):652–661. DOI 10.1086/284880 | 摘要 | 方法 | 源棲地的繁殖剩餘可維持匯棲地族群；一地的物種組合可能受鄰近棲地的類型與距離影響，程度不亞於當地條件 | 理論；不提供任何本花園的源匯判定 |
+| R334 | Thomas CD, Kunin WE (1999) The spatial structure of populations. *Journal of Animal Ecology* 68(4):647–657. DOI 10.1046/j.1365-2656.1999.00330.x | 摘要 | 方法 | 以每個區域的出生（B）、死亡（D）、遷出（E）、遷入（I）定義「補償軸」（源／匯）與「移動軸」（區域過程 vs 局部過程）；棲地界線不清時建議用空間格網與加權鄰域 | 實例是蝴蝶 *Hesperia comma*；方法 |
+| R335 | Hanski I (1998) Metapopulation dynamics. *Nature* 396(6706):41–49. DOI 10.1038/23876 | 只核對書目 | 方法 | 列為斑塊網（metapopulation）模型的標準參考 | 未讀內容，不得引用 |
+| R336 | Levins R (1969) Some demographic and genetic consequences of environmental heterogeneity for biological control. *Bulletin of the ESA* 15(3):237–240. DOI 10.1093/besa/15.3.237 | 只核對書目 | 方法 | 斑塊占有模型的經典出處 | 未讀內容，不得引用 |
+| R337 | Kot M, Lewis MA, van den Driessche P (1996) Dispersal data and the spread of invading organisms. *Ecology* 77(7):2027–2042. DOI 10.2307/2265698 | 摘要 | 方法 | 實測擴散曲線多為高峰厚尾；擴張速度對擴散核形狀、尤其尾部極敏感；肥尾核可產生加速擴張；常態核可能大幅低估擴張速度 | 實例是果蠅；不提供本種擴散核 |
+| R338 | Nathan R, Klein EK, Robledo-Arnuncio JJ, Revilla E (2012) Dispersal kernels: review. In Clobert J et al. (eds) *Dispersal Ecology and Evolution*, Oxford University Press, pp. 186–210. DOI 10.1093/acprof:oso/9780199608898.003.0015 | 只核對書目 | 方法 | 擴散核的標準綜述（待讀） | 未讀內容，不得引用 |
+| R339 | Berec L (2002) Techniques of spatially explicit individual-based models: construction, simulation, and mean-field analysis. *Ecological Modelling* 150(1–2):55–81. DOI 10.1016/S0304-3800(01)00463-X | 只核對書目 | 方法 | 空間顯式 IBM 技術的候選讀物（待讀）；本次**沒有**讀到其中關於邊界條件的內容 | 未讀內容，不得引用 |
+| R340 | Scheffer M, Baveco JM, DeAngelis DL, Rose KA, van Nes EH (1995) Super-individuals a simple solution for modelling large populations on an individual basis. *Ecological Modelling* 80(2–3):161–170. DOI 10.1016/0304-3800(94)00055-M | 只核對書目 | 方法 | 「群組個體」（一個模擬單位代表多個個體）的標準出處（待讀） | 未讀內容，不得引用 |
+| R341 | DeAngelis DL, Grimm V (2014) Individual-based models in ecology after four decades. *F1000Prime Reports* 6:39. DOI 10.12703/P6-39 | 摘要 | 方法 | IBM 以追蹤個體與其屬性來模擬族群與群落 | 綜述；無數值 |
+| R342 | Bigger M, Campbell CAM (2025) Effect of rain and temperature on the nocturnal flight phenology of Afrotropical ants (Hymenoptera: Formicidae). *Bulletin of Entomological Research* 115(4):495–510. DOI 10.1017/S0007485325000318 | 摘要 | a（原生地迦納） | 迦納森林燈光誘集 42 個月，共 204,393 隻、135 種／形態種；**本種雌雄繁殖蟻都在雨天比乾天更常被捕獲**；多數物種的飛行與雨季開始同時 | 摘要沒有本種的數量、月份或時刻；原生地熱帶森林；燈光誘集只反映會趨光的夜間飛行；沒有交配、落點或創巢資料；不是臺灣 |
+| R343 | Cronin AL, Molet M, Doums C, Monnin T, Peeters C (2013) Recurrent evolution of dependent colony foundation across eusocial insects. *Annual Review of Entomology* 58:37–55. DOI 10.1146/annurev-ento-120811-153643 | 摘要 | b（綜述，一般生物學） | 依附式創巢（由同巢個體群體建立新巢）在蟻、蜂、胡蜂中多次獨立演化；綜述並討論其群體層級（投資由繁殖蟻轉向工蟻）與個體層級（蟻類出現無翅蟻后）的適應，以及對入侵性等生活史的影響 | 綜述；不提供本種分巢群的組成或頻率 |
+
+**既有編號的補讀附註**（2026-11-03 開放生態層；只新增說明，不改舊列）
+- **R116**（Tsuji & Win 2025，DOI 10.1242/bio.061976）**全文重讀**（Europe PMC PMC12147459）：
+  - 實驗：沖繩採集的 10 個母群（區組設計）；25±1°C、60–70% RH；每巢 1 蟻后＋200 隻 minor；兩巢以兩條 1 m 管子相連；35 日；沒有 major。
+  - 主要結果：缺蛋白與缺糖飼料分給兩巢時，相連的處理 C 育幼量與全營養對照相當；切斷（D1、D2）時育幼明顯下降（Friedman χ²(4)=22.741，P=0.0001）。
+  - 染色實驗（3 群）：在另一巢的標記工蟻中偵測到染料（例如第 3 群巢 1 的 22/85、巢 2 的 24/64），作者解讀為跨巢交哺，並觀察到工蟻在巢間移動。
+  - 工蟻存活與飼料蛋白濃度負相關（F(4,36)=12.070，P<0.001）。
+  - 作者個人觀察：飼養中 *P. noda* 常吃同巢屍體，**本種不吃**。
+  - 1 m 的巢距是依作者野外「常見在此距離內，有時更遠」的定性觀察設定。
+  - 箱形圖數值與補充圖 S1、S2 本次沒有讀。
+- **R145**（Chen & Neoh 2023）**全文與圖 2 重讀**：
+  - 都市樣點包括「鄰接住宅的草坪」（U2）；每樣點 2 個鮪魚誘餌落阱；都市 8 個、森林 6 個陷阱的同時段資料合併。
+  - 圖 2 的縱軸是「log-transformed activity density」，**原文未說明對數底數**。都市的本種在 00、03、21 時的值目測約 0.85、1.25、1.08，最高約 1.86（15 時）；森林日夜相近（約 1.7～2.5，00 時最高）。
+  - 地表溫度平均：都市白天 31.2°C、夜間 27.7°C；森林 26.6°C、22.7°C。
+  - 都市誘餌落阱中 *Monomorium chinense* 佔 69.0%、本種 22.4%；另見 *Cardiocondyla* sp.1、*Paratrechina longicornis*、*Solenopsis* sp.1、*Tetramorium* sp.1／sp.2；誘餌移除中另有 *Pheidole parva*。
+- **R141**（Liu et al. 2022）重讀正文：臺灣 30 群（臺中 8 群，都市公園）；AMOVA 9% 區域間、43% 群間、48% 群內；島尺度未偵測到距離隔離（作者：最可能因樣本少；高雄區內邊際顯著）；作者推論人為介導的長距離跳躍擴散**可能**扮演重要角色。這是全島、數十年的歷史推論，**不得**換算成每日起飛或落點機率。
+- **R154**（Frazer & Holway 2025）**全文**（NSF 公開版）：Costa Mesa 14 ha（2024-05）、San Diego Talmadge 114 ha（2024-11），後者一年淨增 12 ha，但有些地點 2023 年有、2024 年沒有；擴張處都是 2023 年未見 *L. humile* 的地點；文中引 Pietrek et al. 2021（R153）：前緣分巢擴張每年 16～50 m（二手）；並提到本種在加州經常於商品中被檢出。
+
+## 2026-11-03 費洛蒙候選模型研究（R344–R345；工作包 C，`docs/research-pheromone-models-2026-11.md`）
+> 編號從 R344 起，避開 PR #59 使用的 R330～R343。閱讀程度如實標記。
+| ID | 文獻 | 閱讀程度 | 用途 | 限制 |
+|---|---|---|---|---|
+| R344 | Dussutour, Beekman, Nicolis & Meyer (2009) *Noise improves collective decision-making by ants in dynamic environments*. *Proc R Soc B* 276(1677):4353–4361. [PMC2817102](https://pmc.ncbi.nlm.nih.gov/articles/PMC2817102/)；**本種** | 全文，經摘要工具；方程式是圖片，未讀到 | 21 巢；Y 橋短支 60 mm、長支 180 mm；靜態與動態（封住短支）實驗；每支以一個費洛蒙量建模 | 實驗室條件；擬合值的單位未確認；作者沒有自稱「單一費洛蒙模型」 |
+| R345 | Detrain, Pasteels & Deneubourg (1991) *Psyche* 98:21（MIT Psyche 線上版）；**非本種**：*Pheidole pallidula* | OCR 掃描，經摘要工具 | 探索者也拖腹留跡（同屬他種） | 他種；OCR 文字；不可作本種參數 |
+
+R21／R96／R152（Dussutour et al. 2009 *J Exp Biol*）補充：關鍵數字已用第二次擷取核對：
+- 半衰期取食 10.06 分、探索 17.46 分；
+- 60 mm 橋、25±1 °C、飢餓 5 日；
+- 實驗 1 在 85 分、實驗 2 在 30 分後不再偵測到偏好。
+
+2026-11-05 重新查核（Codex ME-0 F3；經摘要工具從期刊全文網頁讀取，未逐頁核對 PDF）：
+- 「不再偵測到偏好」是每個重複、每 5 分區間的二項檢定（16 個重複）首次不顯著，不是訊號消失時間，也不是半衰期；
+- 半衰期是把「直到比例到 0.5」的選擇比例（正文 F 60 分、E 90 分；圖 3 寫 F 45 分，原文不一致）代入作者的選擇函數（1＋E、1＋F²，作者自述依經驗選定）後以線性迴歸估出，屬模型相依的參數估計；
+- 實驗 3：每分平均流量 F 34.90、E 19.18、E+F 38.97（±2.47）；E 處理 40 分後下降；
+- 實驗 4：15 個重複；第一次切換延遲 20.8±5.9 分，長於第二次 12.2±7.7 分；正文 45／90 分與圖 9 的 60／120 分不一致；
+- 作者明言未鑑定化學物質，不能提供雙費洛蒙的決定性證據；並主張單一費洛蒙模型「因數個原因而失敗」，例子是 E+F 對 N 與 E+F 對 E 中選 E+F 的頻率起初相同、約 15 分後分歧（Fig. 2），以及相近流量下分岔型態不同（Fig. 5D–F）（對單訊號模型不利的論點，保留；2026-11-05 依 Discussion 原文核對）。
+
+用作驗收標準前仍需逐頁對 PDF 核對。
+
+R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-11-05 經 OpenAlex 與 Semantic Scholar 書目 API **讀到摘要**；ScienceDirect 全文頁回 403，**全文未讀到**（證據缺口）。摘要：單一費洛蒙模型可解釋 Dussutour 2009 JEB 主要報告的實驗觀察；兩種費洛蒙「合理但不必要」；原研究不足以作為雙費洛蒙的決定性證據。擬合方法、選擇函數、是否處理實驗 3 只來自作者公開的程式 `github.com/docxology/ant-pheromone`，程式可能和發表版不同，不得引用為論文結論。
+
+## 2026-11-03 C3 蟻后營養路線（R346–R349；`docs/design-c3-queen-feeding.md` 修訂 2）
+> 編號從 R346 起，避開 PR #59（R330～R343）與費洛蒙研究 PR（R344～R345）。閱讀程度如實標記。
+| ID | 文獻 | 閱讀程度 | 用途 | 限制 |
+|---|---|---|---|---|
+| R346 | Sanders, Chang, Ota & Nomura (1992) *Food acceptability and distribution in the colony of the bigheaded ant, Pheidole megacephala (Fabr.)*. *Proc. Hawaiian Entomol. Soc.* 31:65–72（UH ScholarSpace）；**本種** | 全文 | 工蟻把固體蛋白切塊、放在幼蟲頭部附近；「The feeding of protein to queens by workers was not observed」；標記蛋黃「fed to queens only after the larvae were fed」（48 h 幼蟲 87.5%；蟻后約 1.9～2.2% 的全巢回收放射量）；6 h 時所有蟻后中腸有染料；糖類 3 h 到達 66% 的蟻后 | 實驗室、先斷食 4 日、20 后；放射量是百分比不是 mg；結果與討論內部矛盾；acetate 標記不是蛋白專一 |
+| R347 | Tschinkel (1988) *Physiol. Entomol.* 13:327–350；**非本種**：*Solenopsis invicta* | 頁影像（pp. 327–328、345–346、348） | 幼蟲 → 工蟻嗉囊 → 蟻后 → 卵；產卵率與末齡幼蟲數成正比；只有末齡幼蟲能消化固體 | 他屬；只作候選機制 |
+| R348 | Cassill, Butler, Vinson & Wheeler (2005) *Insectes Soc.* 52:339；**非本種**：*Pheidole spadonia* | 只讀摘要 | 工蟻切屍 → 幼蟲體外溶解 → 工蟻吸入嗉囊反哺 | 實驗組沒有蟻后；不得引用全文內容 |
+| R349 | Meurville & LeBoeuf (2021) *Myrmecol. News* 31:1–30（綜述） | 相關段落 | 被認為幼蟲是「消化階級」的屬（含 *Pheidole*）；不同的食物轉移類別要分開 | 綜述 |
+
+## 2026-11-03 數學生態方法與模型（R350–R372；ME-0，`reports/math-ecology-literature-review.md`）
+> 編號從 R350 起，避開進行中 PR 使用的 R330～R349。這些多為一般方法或他種研究，不提供本種參數；閱讀程度如實標記。
+| ID | 文獻 | 閱讀程度 | 等級 |
+|---|---|---|---|
+| R350 | Grimm et al. (2006) *Ecol. Model.* 198:115–126，DOI 10.1016/j.ecolmodel.2006.04.023（ODD） | 書目 | B（方法） |
+| R351 | Grimm et al. (2010) *Ecol. Model.* 221:2760–2768，DOI 10.1016/j.ecolmodel.2010.08.019（ODD 更新） | 全文 | B（方法） |
+| R352 | Grimm et al. (2020) *JASSS* 23(2):7，DOI 10.18564/jasss.4259（ODD 第二次更新） | 全文（摘要工具） | B（方法） |
+| R353 | Grimm et al. (2005) *Science* 310:987–991，DOI 10.1126/science.1116681（POM） | 全文 | B（方法） |
+| R354 | Lande, Engen & Sæther (2003) *Stochastic Population Dynamics in Ecology and Conservation*，DOI 10.1093/acprof:oso/9780198525257.001.0001 | 書目 | B |
+| R355 | Engen, Lande & Sæther (2005) *Genetics* 170:941–954，DOI 10.1534/genetics.104.028233 | 全文（摘要工具） | B |
+| R356 | Shoemaker et al. (2020) *Ecology* 101:e02922，DOI 10.1002/ecy.2922 | 全文 | B |
+| R357 | Holling (1959b) *Can. Entomol.* 91:385–398，DOI 10.4039/Ent91385-7；(1959a) 91:293–320，DOI 10.4039/Ent91293-5 | 摘要 | C |
+| R358 | Rogers (1972) *J. Anim. Ecol.* 41:369，DOI 10.2307/3474 | 書目 | C |
+| R359 | Gillespie (1977) *J. Phys. Chem.* 81:2340–2361，DOI 10.1021/j100540a008 | 書目 | B（數學方法） |
+| R360 | Gillespie (2001) *J. Chem. Phys.* 115:1716–1733，DOI 10.1063/1.1378322 | 全文 | B（數學方法） |
+| R361 | Hanski (1991) *Biol. J. Linn. Soc.* 42:17–38，DOI 10.1111/j.1095-8312.1991.tb00549.x；Hanski (1994) *J. Anim. Ecol.* 63:151，DOI 10.2307/5591 | 摘要 | C |
+| R362 | Hall (2009) *Annu. Rev. Ecol. Evol. Syst.* 40:503–528，DOI 10.1146/annurev.ecolsys.39.110707.173518（Claude 以 Crossref 核對；DOI 中的「39」不是卷號） | 摘要 | C |
+| R363 | Sterner & Elser (2002) *Ecological Stoichiometry*，DOI 10.1515/9781400885695 | 書目 | B（原理） |
+| R364 | Kay, Rostampour & Sterner (2006) *Funct. Ecol.* 20:1037–1044；**非本種**：*Tetramorium caespitum* | 摘要 | B |
+| R365 | Kay, Scott, Schade & Hobbie (2004) *Ecol. Lett.* 7:1024–1028；**非本種**：*Formica obscuripes* | 摘要 | B |
+| R366 | Csata & Dussutour (2019) *Myrmecol. News* 29:111–124，DOI 10.25849/myrmecol.news_029:111 | 全文 | B（綜述） |
+| R367 | Cornelius & Grace (1997) *J. Entomol. Sci.* 32:421–429，DOI 10.18474/0749-8004-32.4.421；**本種**與 *Ochetellus glaber* | 摘要（出版商頁面；全文 PDF 也在出版商網站，尚未讀） | A（待讀全文；摘要說覓食率不受幼體影響，與 R366 的引用相反） |
+| R368 | Tschinkel (1988) *Behav. Ecol. Sociobiol.* 22:103–115；**非本種**：*Solenopsis invicta* | 只有搜尋摘錄 | B |
+| R369 | Richardson (1981) *Water Resour. Res.* 17:182–190（雨量為指數分布）；Richardson & Wright (1984) USDA-ARS ARS-8（WGEN，gamma 雨量） | 摘要／搜尋摘錄 | B（方法） |
+| R370 | Wilks & Wilby (1999) *Prog. Phys. Geogr.* 23:329–357，DOI 10.1177/030913339902300302 | 摘要 | B（方法） |
+| R371 | Gillooly et al. (2001) *Science* 293:2248；(2002) *Nature* 417:70；Hou et al. (2010) *PNAS* 107:3634（141 種螞蟻） | 摘要／Hou 為全文（摘要工具） | B |
+| R372 | Zurell et al. (2010) *Oikos* 119:622–635（Virtual Ecologist） | 摘要 | B（方法） |
+
+## 2026-11-04 Physics & Motion：窄道交通、迎面相遇與讓路（R380–R387；實驗世界的候選機制，未改正式規則）
+
+> - **編號說明**：從 R380 起，避開其他尚未合併 PR 已使用的編號（最高到 R372）。
+> - **本種狀況**：大頭家蟻屬沒有任何窄道交通、迎面相遇、讓路或迴轉研究（2026-11-04 查核，含 *Pheidole* 屬層級）。下列研究**全部非本種**，只能提出候選機制（CLAUDE.md §3、§4）。
+> - **用途**：用於 `scenarios/physics/pheidole-megacephala.interaction-candidates.json` 的 `encounter`。
+> - **查核方式**：引文是經擷取工具核對的原文片段；關鍵數字（99/105、103/106、294/300、0.43 s、0.80 s）由 Claude 另行逐字核對。
+
+| 編號 | 文獻 | 閱讀程度 | 內容與用途 | 限制 |
+|---|---|---|---|---|
+| R380 | Dussutour A, Deneubourg J-L, Fourcassié V (2005) Temporal organization of bi-directional traffic in the ant *Lasius niger*. *J Exp Biol* 208:2903–2912. DOI 10.1242/jeb.01711 | 全文（期刊 HTML，約前 87%） | 橋全長 210 mm：坡道 95 mm、兩端入口與瓶頸各 15 mm（瓶頸寬度未寫）、中央段 60 mm 寬 3 mm；25±1 °C：<br>- 「往橋中央走」的那隻讓路；原文模型：「The ant in the bottleneck gives way and does not move until the ant in the entrance has completely entered the bottleneck」（原地等待，不退出）；<br>- 「the majority of ants travelling towards the centre stopped and gave way to those coming from the opposite direction」，有接觸的相遇中 99/105（巢側）與 103/106（食源側）；<br>- 「loaded ants coming from the food source do not behave differently from emptied ants coming from the nest」；<br>- 每次接觸損失 0.430±0.017 s（mean ± s.e.m.）；<br>- 窄橋上同方向成群通過，平均 3.3 隻。<br>**用途**：入口讓路規則（`entry_yield_probability` = 202/211）；0.43 s 是『每次接觸損失時間』（回歸斜率，已含讓路），只作比較與敏感度上限 | 非本種；單一橋型。讓路者原地等待，沒有描述迴轉或退出 |
+| R381 | Dussutour A, Beshers S, Deneubourg J-L, Fourcassié V (2009) Priority rules govern the organization of traffic on foraging trails under crowding conditions in the leaf-cutting ant *Atta colombica*. *J Exp Biol* 212:499–505. DOI 10.1242/jeb.022988 | 全文（期刊 HTML，約前 96%） | 窄橋 5 mm、30±1 °C、單一蟻群約 20,000 隻：<br>- 「the majority of outbound ants stopped and gave way to the laden ants (in 294 out of 300 head-on encounters)」；<br>- 「The time lost per contact was on average 0.80 s」；<br>- 跟在帶葉片螞蟻後面的空手螞蟻 110 隻中只有 8 隻超越。<br>**用途**：選用的帶食優先規則（`laden_yield_probability` = 0.98）、不超越；0.80 s 是每次接觸損失時間（已含讓路），只作比較 | 非本種；294/300 中方向與負重同時不同（混淆），單一窄橋重複；原文寫 loaded with food。「301/400」那句誰讓誰，擷取工具前後回答不一致，**未採用** |
+| R382 | Dussutour A, Fourcassié V, Helbing D, Deneubourg J-L (2004) Optimal traffic organization in ants under crowded conditions. *Nature* 428:70–73. DOI 10.1038/nature02345（預印本 arXiv cond-mat/0403142） | 預印本全文 | *L. niger*，雙分枝菱形橋，寬 10／6／3／1.5 mm：<br>- 剛進入分枝的螞蟻正面相撞後，常被推到另一分枝；<br>- 被推並改道的機率 0.571 ± 0.057（CI95%）；<br>- 10 mm 橋上幾乎沒有推擠 | 非本種；是分岔點的改道，不是窄道內的推擠。**本版未使用**（單一通道沒有分岔） |
+| R383 | Fourcassié V, Dussutour A, Deneubourg J-L (2010) Ant traffic rules. *J Exp Biol* 213:2357–2363. DOI 10.1242/jeb.031237 | 全文（綜述） | 「Ants arriving at a bottleneck give way to the ants coming from the narrow part of the trail」（*L. niger*）；帶食優先也見於 *A. cephalotes*、*Formica rufa*（轉引）。<br>**用途**：交叉確認 R380 的規則 | 綜述；轉引的 *Formica* 與 *A. cephalotes* 未核對原文 |
+| R384 | Burd M, Archer D, Aranwela N, Stradling DJ (2002) Traffic dynamics of the leaf-cutting ant, *Atta cephalotes*. *Am Nat* 159:283–293. DOI 10.1086/338541 | 摘要 | 速度隨密度下降；最大流量出現在密度相當高、速度遠低於自由速度時；「Collisions (including encounters for antennation) are common」 | 非本種；只讀摘要。**本版未使用數值** |
+| R385 | Burd M, Aranwela N (2003) Head-on encounter rates and walking speed of foragers in leaf-cutting ant traffic. *Insectes Soc* 50:3–8. DOI 10.1007/s000400300001 | 搜尋摘要片段（未核對原文） | 速度隨相遇率下降，但效果比體型與負重小 | 非本種；**未核對**，不採用數值 |
+| R386 | John A, Schadschneider A, Chowdhury D, Nishinari K (2009) Trafficlike collective movement of ants on trails: absence of a jammed phase. arXiv 0903.1434 | 預印本全文 | *Leptogenys processionalis* 野外單線路徑：迎面相遇時減速；迴轉約 4–7 %，與流量無關 | 非本種；迴轉比例不是「相遇後回頭」的機率，**不得**直接當作 `inside_turn_back_probability` |
+| R387 | Aguilar J et al. (2018) Collective clog control: optimizing traffic flow in confined biological and robophysical excavation. *Science* 361:672–677. DOI 10.1126/science.aan3891 | 摘要 | 火蟻在狹窄隧道挖掘時，以個體閒置與退回（retreating）減少堵塞 | 非本種、挖掘情境、只讀摘要。只作「兩隻都在窄段內時，其中一隻退回」這條候選規則的方向參考，沒有數值 |
+
+**既有編號的附註**（不改寫原有行）：
+- R108（Poissonnier et al. 2019，*Linepithema humile*）在本次核對了全文：
+  - 接觸持續 0.18 ± 0.14 s，每次接觸使通過時間增加 0.24 s；
+  - 流量到約 10 ants·cm⁻¹·s⁻¹ 後持平，沒有堵塞；
+  - 過橋時的迴轉很少。
+  - 接觸持續 0.18 s 用作停頓候選值（唯一直接量到的接觸持續時間）；0.24 s 是每次接觸損失時間（已含讓路），只作比較。
+- R133（Vázquez 2020）第 266 行寫「圖中數值未讀」。分方向速度 18.5 ± 0.53、15.5 ± 0.54 mm/s 出自 Results §3 的內文，已在 PR #72 核對。

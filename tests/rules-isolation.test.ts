@@ -18,6 +18,9 @@
  *   v2-review.18 (lone-queen hazard from day 14; A4/A5 scenario files are not engine input) -> reproduces v17
  *   v2-review.19 (parameter source labels only) -> the current engine reproduces v18 unchanged
  *   v2-review.20 (Issue #43 local-causality fixes; switch activity.local_causality_v20 off) -> reproduces v19
+ *   v2-review.21 (Issue #50 brood care snapshot; switch brood_care.daily_care_snapshot_v21 off) -> reproduces v20
+ *   v2-review.22 (C2 engine food transfers; diagnostics_only) -> removing the food_transfer events reproduces v21
+ *   v2-review.23 (Issue #61 R3-05 local trail deposition; switch activity.local_trail_deposit_v23 off) -> reproduces v22
  * Every step also undoes the output normalisers of its own and later diagnostics-only versions.
  * Each step undoes its own changes AND every later step's, so step N is compared with the engine as it was.
  */
@@ -47,6 +50,9 @@ const STEPS = [
   { version: 'antempire.v2-review.18-founding-controls', previousGolden: 'tests/golden/v17-trace-sha256.json' },
   { version: 'antempire.v2-review.19-evaluation-corrections', previousGolden: 'tests/golden/v18-trace-sha256.json' },
   { version: 'antempire.v2-review.20-local-causality', previousGolden: 'tests/golden/v19-trace-sha256.json' },
+  { version: 'antempire.v2-review.21-brood-care-snapshot', previousGolden: 'tests/golden/v20-trace-sha256.json' },
+  { version: 'antempire.v2-review.22-engine-food-transfers', previousGolden: 'tests/golden/v21-trace-sha256.json' },
+  { version: 'antempire.v2-review.23-local-trail-deposit', previousGolden: 'tests/golden/v22-trace-sha256.json' },
 ];
 const ORDER = STEPS.map((s) => s.version);
 const results: Record<string, string> = {};

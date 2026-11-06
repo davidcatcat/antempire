@@ -1,0 +1,3 @@
+# Independent review of 3acfa0b: the two remaining engine-only P3 probes run against engine/transfers.ts of 3acfa0b (C2_R2_PROBE=1 C2_ONLY=S). Node v22.23.4.
+{"probe":"S a phantom transfer of less than one micro-portion","engine_colony_check":"ACCEPTS","reader":"rejects","reader_errors":["FT-5-C1-3: amount 5e-10 is not a positive six-decimal portion"]}
+{"probe":"S an attribution that does not belong to the cause","engine_colony_check":"ACCEPTS","reader":"rejects","reader_errors":["FT-5-C1-1: collect must have attribution individual, has engine_rule"]}
