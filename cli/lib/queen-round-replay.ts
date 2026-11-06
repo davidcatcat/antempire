@@ -9,7 +9,8 @@ type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 export interface QueenRoundReplay { ok: boolean; errors: string[]; contacts: number; feedings: { sugar: number; protein: number }; self_feedings: number }
 
-export function replayQueenRound(start: Any, end: Any, events: Any[], species: Any): QueenRoundReplay {
+/** `world`: the world before the day (sim_day, migration_log) — the trusted source of the initialization mode (Codex R7-01). */
+export function replayQueenRound(start: Any, end: Any, events: Any[], species: Any, world?: { sim_day: number; migration_log?: Any[] }): QueenRoundReplay {
   const errors: string[] = [], err = (m: string) => { if (errors.length < 50) errors.push(m); };
   const out: QueenRoundReplay = { ok: true, errors, contacts: 0, feedings: { sugar: 0, protein: 0 }, self_feedings: 0 };
   const qf = species?.queen_feeding ?? {};
@@ -32,6 +33,15 @@ export function replayQueenRound(start: Any, end: Any, events: Any[], species: A
   const initEv = ev.filter((x) => x.type === 'queen_body_initialized');
   if (!q0 && q1 && (initEv.length !== 1 || initEv[0].queen !== end.queen_id)) err(`queen record created with ${initEv.length} initialization event(s); exactly one for ${end.queen_id} is required`);
   if (q0 && initEv.length) err('an initialization event for a queen record that already existed');
+  // R7-01: which initialization a new record may have is decided by the world, not by the event or the record themselves
+  if (!q0 && q1) {
+    if (!world || typeof world.sim_day !== 'number') err('a queen record was created but no world context (sim_day, migration_log) was given to decide its initialization');
+    else {
+      const allowed = world.sim_day === 0 && (world.migration_log ?? []).some((m: Any) => m?.type === 'day0_initialization') ? 'day0_scenario' : 'unknown_at_migration';
+      for (const e of initEv) if (e.basis !== allowed) err(`initialization claims ${e.basis}; on world day ${world.sim_day} only ${allowed} is possible`);
+      if (q1.body.basis !== allowed) err(`queen record basis ${q1.body.basis}; this world-day allows only ${allowed}`);
+    }
+  }
   // R6-02: crops replayed transfer by transfer from the start of the day; every step within [0, capacity] for both foods
   { const hold = new Map<string, number[]>((start?.population?.workers ?? []).map((w: Any) => [w.id, [Number(w.crop_cargo_sugar) || 0, Number(w.crop_cargo_protein_liquid) || 0]]));
     for (const e of ev) if (e.type === 'food_transfer') for (const [r, sg] of [[e.source, -1], [e.recipient, 1]] as [Any, number][]) {

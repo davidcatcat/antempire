@@ -17,7 +17,7 @@ import { loadBundle } from '../cli/lib/load.ts';
 import { simulateWorldDay, legacyToWorldState, legacyColonyMeta, type WorldState } from '../engine/index.ts';
 import { resolveBundle } from '../engine/params.ts';
 import { colonySnapshot, checkColonyFood, bindFoodTransfers } from '../engine/transfers.ts';
-import { checkQueenRound, queenRoundStart, nestRound, ensureQueens } from '../engine/queen-feeding.ts';
+import { checkQueenRound, queenRoundStart, nestRound, ensureQueens, expectedInitBasis } from '../engine/queen-feeding.ts';
 import { replayEngineColonyDay } from '../cli/lib/engine-transfers.ts';
 import { replayQueenRound } from '../cli/lib/queen-round-replay.ts';
 import { fixture, MAIN_SPECIES } from './lib/harness.ts';
@@ -29,9 +29,9 @@ const B = bundleWith(), BC = bundleWith({ store_is_queen_location: true });
 const spOf = (b: Any) => resolveBundle(b).species[MAIN_SPECIES] as Any;
 const SP = spOf(B), SPC = spOf(BC);
 
-interface Day { before: Any; after: Any; events: Any[]; day: number; sources: Set<string>; sp: Any; raw: Any }
-const engineAccepts = (d: Day) => { try { checkColonyFood(colonySnapshot(d.before, true), d.after, d.events, 'timed'); checkQueenRound(queenRoundStart(d.before, !!d.before.population.queens), d.after, d.events, d.sp); return true; } catch (e) { return String(e); } };
-const readerErrors = (d: Day) => [...replayEngineColonyDay(d.before, d.after, d.events, d.day, d.sources, 'timed', true).errors, ...replayQueenRound(d.before, d.after, d.events, d.raw).errors];
+interface Day { before: Any; after: Any; events: Any[]; day: number; sources: Set<string>; sp: Any; raw: Any; world: { sim_day: number; migration_log: Any[] } }
+const engineAccepts = (d: Day) => { try { checkColonyFood(colonySnapshot(d.before, true), d.after, d.events, 'timed'); checkQueenRound(queenRoundStart(d.before, !!d.before.population.queens, expectedInitBasis(d.world)), d.after, d.events, d.sp); return true; } catch (e) { return String(e); } };
+const readerErrors = (d: Day) => [...replayEngineColonyDay(d.before, d.after, d.events, d.day, d.sources, 'timed', true).errors, ...replayQueenRound(d.before, d.after, d.events, d.raw, d.world).errors];
 
 // ---------------------------------------------------------------- real C3a days
 const days: Day[] = [];
@@ -39,7 +39,7 @@ let colonyDays = 0, contacts = 0, feeds = { sugar: 0, protein: 0 }, takes = 0, s
 const run = (s: WorldState, b: Any, sp: Any, n: number) => {
   for (let k = 0; k < n; k++) {
     const before = structuredClone(s.colonies[0]), o: Any = simulateWorldDay(s, b), after = o.state.colonies[0], ev = o.result.colonies[0].events;
-    const d: Day = { before, after, events: ev, day: o.day, sources: new Set(Object.keys(s.sources)), sp, raw: b.species[MAIN_SPECIES] };
+    const d: Day = { before, after, events: ev, day: o.day, sources: new Set(Object.keys(s.sources)), sp, raw: b.species[MAIN_SPECIES], world: { sim_day: s.sim_day, migration_log: structuredClone(s.migration_log ?? []) } };
     if (before.population.queens) {
       const r = readerErrors(d);
       assert.equal(r.length, 0, `real day ${o.day}: the readers reject (${r.slice(0, 2).join(' | ')})`);
@@ -124,13 +124,13 @@ const firstDay: Any[] = [];
 { // the day a queen record is created (Day14 migration): forged initial values must be rejected
   const lg: Any = fixture(); const s: Any = legacyToWorldState(lg, legacyColonyMeta(B.world.scenario_colonies as Any));
   const before = structuredClone(s.colonies[0]), o: Any = simulateWorldDay(s, B);
-  firstDay.push({ before, after: o.state.colonies[0], events: o.result.colonies[0].events, day: o.day, sources: new Set(Object.keys(s.sources)), sp: SP, raw: B.species[MAIN_SPECIES] });
+  firstDay.push({ before, after: o.state.colonies[0], events: o.result.colonies[0].events, day: o.day, sources: new Set(Object.keys(s.sources)), sp: SP, raw: B.species[MAIN_SPECIES], world: { sim_day: s.sim_day, migration_log: structuredClone(s.migration_log ?? []) } });
 }
 {
   const d: Any = structuredClone(firstDay[0]); d.sources = firstDay[0].sources;
   ok(readerErrors(d).length === 0, 'creation day: the readers accept the real record');
   const init = d.events.find((e: Any) => e.type === 'queen_body_initialized'); init.known_balance.sugar = 5; queen(d).body.known_balance.sugar = +(queen(d).body.known_balance.sugar + 5).toFixed(6);
-  let eng: unknown = true; try { checkQueenRound(queenRoundStart(d.before, !!d.before.population.queens), d.after, d.events, SP); } catch (e) { eng = String(e); }
+  let eng: unknown = true; try { checkQueenRound(queenRoundStart(d.before, !!d.before.population.queens, expectedInitBasis(d.world)), d.after, d.events, SP); } catch (e) { eng = String(e); }
   ok(eng !== true && readerErrors(d).length > 0, `N9/N12 a migrated queen created with 5 sugar from nowhere: engine ${String(eng).slice(0, 90)}; readers ${readerErrors(d)[0]}`);
 }
 both('a resting worker away from the nest feeds the queen', has('feed_queen'), (d) => { const f = tx(d, 'feed_queen'), w = worker(d, f.source.id); assert.ok(w, 'feeder alive at the end'); w.task = 'rest'; });
@@ -142,10 +142,10 @@ ok(days.every((d) => d.after.population.workers.every((w: Any) => !(w.crop_cargo
 { // R6-01: creation day without the initialization event, with a reserve from nowhere
   const d: Any = structuredClone(firstDay[0]); d.sources = firstDay[0].sources;
   d.events = d.events.filter((e: Any) => e.type !== 'queen_body_initialized'); queen(d).body.known_balance.sugar = 5; queen(d).body.known_balance.protein = 7;
-  let eng: unknown = true; try { checkQueenRound(queenRoundStart(d.before, false), d.after, d.events, SP); } catch (e) { eng = String(e); }
+  let eng: unknown = true; try { checkQueenRound(queenRoundStart(d.before, false, expectedInitBasis(d.world)), d.after, d.events, SP); } catch (e) { eng = String(e); }
   ok(eng !== true && readerErrors(d).length > 0, `R6-01: a queen record created with no initialization event and 5/7 portions: engine ${String(eng).slice(0, 80)}; readers ${readerErrors(d)[0]}`);
   const d2: Any = structuredClone(firstDay[0]); d2.sources = firstDay[0].sources;
-  let eng2: unknown = true; try { checkQueenRound(queenRoundStart(d2.before, false), d2.after, d2.events, SP); } catch (e) { eng2 = String(e); }
+  let eng2: unknown = true; try { checkQueenRound(queenRoundStart(d2.before, false, expectedInitBasis(d2.world)), d2.after, d2.events, SP); } catch (e) { eng2 = String(e); }
   ok(eng2 === true && readerErrors(d2).length === 0, 'R6-01 control: the real creation day (one initialization event) is accepted by the engine check and both readers');
 }
 both('R6-02 the crop exceeds the shared capacity in the middle of the round (taken and put back)', (d) => d.events.some((e) => e.type === 'food_transfer' && e.cause === 'take_from_cache' && d.events.some((r) => r.type === 'food_transfer' && r.cause === 'return_to_cache' && r.source.id === e.recipient.id)), (d) => {
@@ -157,5 +157,28 @@ both('R6-03 contact and feeding after the worker left the queen for the store', 
   const m = d.events.find((x) => x.type === 'nest_move' && x.worker === f.source.id && x.from === 'queen'), c = d.events.find((x) => x.type === 'queen_contact' && x.contact_event_id === f.contact.contact_event_id);
   c.ordinal = m.arrive_ordinal; f.ordinal = m.arrive_ordinal;
 });
+
+// Codex review of 1a4c6af (R7-01): the initialization mode comes from the world, not from the event (k = 3, a documented sweep value)
+{
+  const BK: Any = bundleWith({ day0_initial_reserve_days_of_need: { ...structuredClone(loadBundle() as Any).species[MAIN_SPECIES].queen_feeding.day0_initial_reserve_days_of_need, value: 3 } });
+  const SK = spOf(BK);
+  const creationDay = (st: Any): Day => { const before = structuredClone(st.colonies[0]), o: Any = simulateWorldDay(st, BK); return { before, after: o.state.colonies[0], events: o.result.colonies[0].events, day: o.day, sources: new Set(Object.keys(st.sources)), sp: SK, raw: BK.species[MAIN_SPECIES], world: { sim_day: st.sim_day, migration_log: structuredClone(st.migration_log ?? []) } }; };
+  const judge = (d: Day) => { let eng: unknown = true; try { checkQueenRound(queenRoundStart(d.before, false, expectedInitBasis(d.world)), d.after, d.events, SK); } catch (e) { eng = String(e); } return { eng, rd: [...replayEngineColonyDay(d.before, d.after, d.events, d.day, d.sources, 'timed', true).errors, ...replayQueenRound(d.before, d.after, d.events, d.raw, d.world).errors] }; };
+  const migrated = creationDay(legacyToWorldState(fixture() as Any, legacyColonyMeta(BK.world.scenario_colonies as Any)));
+  const day0 = creationDay(buildDay0('A1' as Any, 1, '2027-09-23', BK).state);
+  const lateDay0 = (() => { let st: Any = buildDay0('A1' as Any, 1, '2027-09-23', loadBundle()).state; st = simulateWorldDay(st, loadBundle()).state; return creationDay(st); })();
+  for (const [name, d, basis] of [['a migrated queen (Day14)', migrated, 'unknown_at_migration'], ['a true Day0 queen on day 0', day0, 'day0_scenario'], ['a Day0 world switched on on day 1', lateDay0, 'unknown_at_migration']] as const) {
+    const j = judge(d); ok(j.eng === true && j.rd.length === 0 && queen(d).body.basis === basis, `R7-01 control, k = 3: ${name} is created as ${basis} and accepted (${String(j.eng).slice(0, 80)} ${j.rd[0] ?? ''})`);
+  }
+  const forged: Any = structuredClone(migrated); forged.sources = migrated.sources;
+  const init = forged.events.find((e: Any) => e.type === 'queen_body_initialized'), need = { sugar: SK.nutrition.queen_sugar_daily, protein: SK.nutrition.queen_protein_daily };
+  init.basis = 'day0_scenario'; init.unknown_initial_reserve = 'not_applicable'; init.known_balance = { sugar: +(3 * need.sugar).toFixed(6), protein: +(3 * need.protein).toFixed(6) }; init.reserve_days_of_need_assumption = 3;
+  const qb = queen(forged).body.known_balance; qb.sugar = +(qb.sugar + init.known_balance.sugar).toFixed(6); qb.protein = +(qb.protein + init.known_balance.protein).toFixed(6);
+  const jf = judge(forged);
+  ok(jf.eng !== true && jf.rd.length > 0, `R7-01: a migrated queen whose initialization event claims Day0 (k = 3 reserve): engine ${String(jf.eng).slice(0, 90)}; readers ${jf.rd[0]}`);
+  const both2: Any = structuredClone(forged); both2.sources = migrated.sources; queen(both2).body.basis = 'day0_scenario'; queen(both2).body.unknown_initial_reserve = 'not_applicable';
+  const jb = judge(both2);
+  ok(jb.eng !== true && jb.rd.length > 0, 'R7-01: event AND record both forged as Day0 on a migrated world-day: the world context still rejects them');
+}
 
 console.log(JSON.stringify({ c3a_queen_feeding: 'pass', checks, colony_days: colonyDays, contacts, feedings: feeds, takes_from_store: takes, self_feedings: selfFeeds, migrated_queen_days: migrated, note: 'engineering checks only; routes B1/C are candidates, not established mechanisms of P. megacephala; laying and survival unchanged (C3b/C3c)' }, null, 2));

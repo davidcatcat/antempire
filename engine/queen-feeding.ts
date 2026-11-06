@@ -42,9 +42,13 @@ const dailyNeed = (sp: SpeciesParams) => ({ sugar: sp.nutrition.queen_sugar_dail
  * or a Day0 world switched on later): basis unknown_at_migration, unknown reserve null, known balance 0 — the null is
  * never spent, filled in or read as 0 (§12.4). Recorded as an event; no food appears from nowhere after day 0.
  */
+/** The initialization mode a queen record created on this world-day must have, from the world itself (never from an event):
+ *  day0_scenario only on day 0 of a world built by Day0 initialization; otherwise unknown_at_migration (Codex R7-01). */
+export const expectedInitBasis = (world: { sim_day: number; migration_log?: unknown[] }): 'day0_scenario' | 'unknown_at_migration' =>
+  world.sim_day === 0 && (world.migration_log ?? []).some((m) => (m as { type?: string }).type === 'day0_initialization') ? 'day0_scenario' : 'unknown_at_migration';
 export function ensureQueens(world: WorldState, colony: ColonyState, sp: SpeciesParams, events: SimEvent[]): void {
   if (colony.population.queens) return;
-  const day0 = world.sim_day === 0 && (world.migration_log ?? []).some((m) => (m as { type?: string }).type === 'day0_initialization');
+  const day0 = expectedInitBasis(world) === 'day0_scenario';
   const k = sp.queen_feeding.day0_initial_reserve_days_of_need, need = dailyNeed(sp);
   const q: QueenRecord = {
     id: colony.queen_id, location: QUEEN_PLACE,
@@ -135,9 +139,9 @@ export function queenMetabolism(colony: ColonyState, sp: SpeciesParams, metaboli
 }
 
 /** Start-of-day facts the round check needs (taken before the day). */
-export interface QueenRoundStart { workers: Set<string>; had_record: boolean; crops: Map<string, { sugar: number; protein: number }>; queen: { id: string; alive: boolean; unknown: QueenRecord['body']['unknown_initial_reserve'] | undefined; basis: string | undefined } }
+export interface QueenRoundStart { workers: Set<string>; had_record: boolean; expected_init_basis: 'day0_scenario' | 'unknown_at_migration'; crops: Map<string, { sugar: number; protein: number }>; queen: { id: string; alive: boolean; unknown: QueenRecord['body']['unknown_initial_reserve'] | undefined; basis: string | undefined } }
 /** Start-of-day facts; `hadRecord`: whether the queen record existed before this day's ensureQueens (Codex R6-01). */
-export const queenRoundStart = (colony: ColonyState, hadRecord: boolean): QueenRoundStart => ({ workers: new Set(colony.population.workers.map((w) => w.id)), had_record: hadRecord, crops: new Map(colony.population.workers.map((w) => [w.id, { sugar: w.crop_cargo_sugar || 0, protein: w.crop_cargo_protein_liquid || 0 }])), queen: { id: colony.queen_id, alive: colony.population.queen_alive, unknown: colony.population.queens?.[0]?.body.unknown_initial_reserve, basis: colony.population.queens?.[0]?.body.basis } });
+export const queenRoundStart = (colony: ColonyState, hadRecord: boolean, expectedBasis: 'day0_scenario' | 'unknown_at_migration'): QueenRoundStart => ({ workers: new Set(colony.population.workers.map((w) => w.id)), had_record: hadRecord, expected_init_basis: expectedBasis, crops: new Map(colony.population.workers.map((w) => [w.id, { sugar: w.crop_cargo_sugar || 0, protein: w.crop_cargo_protein_liquid || 0 }])), queen: { id: colony.queen_id, alive: colony.population.queen_alive, unknown: colony.population.queens?.[0]?.body.unknown_initial_reserve, basis: colony.population.queens?.[0]?.body.basis } });
 
 /**
  * Engine check of a C3a day (N4–N8, N12, N13, N14, N16; the amounts and paths are C2's checkColonyFood). Throws QUEEN_FEEDING.
@@ -184,6 +188,9 @@ export function checkQueenRound(start: QueenRoundStart, colony: ColonyState, eve
     const kb = e.known_balance as { sugar: number; protein: number }, k = sp.queen_feeding.day0_initial_reserve_days_of_need, need = dailyNeed(sp);
     const want = e.basis === 'unknown_at_migration' ? { sugar: 0, protein: 0, unknown: null } : e.basis === 'day0_scenario' ? { sugar: round(k * need.sugar), protein: round(k * need.protein), unknown: 'not_applicable' } : null;
     if (!want || kb?.sugar !== want.sugar || kb?.protein !== want.protein || e.unknown_initial_reserve !== want.unknown) fail(`queen record created with ${JSON.stringify(e)}, the rules give ${JSON.stringify(want)}`);
+    // Codex review of 1a4c6af (R7-01): the mode comes from the world, not from the event; event and record must agree with it
+    if (e.basis !== start.expected_init_basis) fail(`queen record initialized as ${e.basis}; this world-day allows only ${start.expected_init_basis}`);
+    if (queen.body.basis !== e.basis) fail(`queen record has basis ${queen.body.basis}, its initialization event says ${e.basis}`);
   }
   // the participants are nurses at the nest (read from the state, not from the events' own fields; a worker that died later
   // in the day is not in the end state and cannot be checked here — stated limit)

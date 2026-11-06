@@ -13,7 +13,7 @@ import { forageDay } from './foraging.ts';
 import { consume, storageOverflow } from './nutrition.ts';
 import { developBrood } from './brood.ts';
 import { oviposition, queenSurvival, workerSurvival } from './queen.ts';
-import { checkQueenRound, ensureQueens, nestRound, queenMetabolism, queenRoundStart, type QueenRoundStart, type RoundResult } from './queen-feeding.ts';
+import { checkQueenRound, ensureQueens, expectedInitBasis, nestRound, queenMetabolism, queenRoundStart, type QueenRoundStart, type RoundResult } from './queen-feeding.ts';
 import { bindFoodTransfers, checkColonyFood, checkSources, colonySnapshot, foodTimingFor, sourceSnapshot } from './transfers.ts';
 import { checkColonyDomain, checkEventDomain, checkParamDomain, checkPopulationDay, checkRngInputs, populationSnapshot } from './invariants.ts';
 import { resolveBundle, type ParamBundle, type ResolvedParams, type SpeciesParams } from './params.ts';
@@ -116,7 +116,7 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
     const hadRecord = !!w.colony.population.queens;
     ensureQueens(s, w.colony, w.sp, w.events);
     w.food = colonySnapshot(w.colony, true);
-    c3a.set(w.colony.id, { start: queenRoundStart(w.colony, hadRecord), round: { taken_from_cache: 0, returned_to_cache: 0, fed: { sugar: 0, protein: 0 }, self_fed: 0, contacts: 0 } });
+    c3a.set(w.colony.id, { start: queenRoundStart(w.colony, hadRecord, expectedInitBasis(s)), round: { taken_from_cache: 0, returned_to_cache: 0, fed: { sugar: 0, protein: 0 }, self_fed: 0, contacts: 0 } });
   }
 
   growEcology(s, wp, weather, worldEvents);
