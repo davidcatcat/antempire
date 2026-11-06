@@ -160,25 +160,28 @@ const redate = (src: Any) => { src.batches.find((b: Any) => b.protein > 0.05).or
 // Codex review of ece3bc2 P2: protein moved between batches hidden by forged take records (+0.1 on one batch, −0.1 on another)
 {
   assert.ok(takeSamples.length, 'no sample day with a carcass take');
-  const takeEngine = (sm: Sample, editEvents: (ev: Any[]) => void, editEnd: (src: Any) => void) => {
+  const takeEngine = (sm: Sample, editEvents: (ev: Any[][]) => void, editEnd: (src: Any) => void) => {
     const w: Any = structuredClone(sm.start); growEcology(w, sm.wp, calcWeather(w, sm.wp, sm.result.date), []);
-    const ev: Any[][] = sm.result.colonies.map((c: Any) => structuredClone(c.events)); editEvents(ev.flat());
+    const ev: Any[][] = sm.result.colonies.map((c: Any) => structuredClone(c.events)); editEvents(ev); // the per-colony arrays themselves (Codex P3 on 2d25ee8: a splice on a flattened copy was never checked)
     const end: Any = structuredClone(sm.end.sources); editEnd(end);
     try { checkCarcassTakes(carcassPiles(w.sources), ev, end, sm.start.sim_day + 1); return true; } catch (x) { return String(x); }
   };
-  const takeReader = (sm: Sample, editEvents: (ev: Any[]) => void, editEnd: (src: Any) => void) => {
-    const res: Any = structuredClone(sm.result), end: Any = structuredClone(sm.end); editEvents(res.colonies.flatMap((c: Any) => c.events)); editEnd(end.sources);
+  const takeReader = (sm: Sample, editEvents: (ev: Any[][]) => void, editEnd: (src: Any) => void) => {
+    const res: Any = structuredClone(sm.result), end: Any = structuredClone(sm.end); editEvents(res.colonies.map((c: Any) => c.events)); editEnd(end.sources);
     const r = replaySourceFlows(sm.start, end, res, sm.wp); return r.ok ? true : r.errors[0];
   };
   for (const sm of takeSamples.slice(0, 4)) ok(takeEngine(sm, () => {}, () => {}) === true && takeReader(sm, () => {}, () => {}) === true, `control: a real day with carcass takes (${sm.result.day}) is accepted by both`);
   const sm = takeSamples[0], take = sm.result.colonies.flatMap((c: Any) => c.events).find((e: Any) => e.type === 'source_batch_consumed' && sm.start.sources[e.location].batches.filter((b: Any) => b.protein > 0.2).length >= 2);
   const site = take.location, other = (src: Any) => src[site].batches.find((b: Any) => b.event_id !== take.source_event_id && b.protein > 0.1);
-  const forge = (ev: Any[]) => { const k = ev.findIndex((e) => e.type === 'source_batch_consumed' && e.source_event_id === take.source_event_id && e.worker === take.worker); ev[k].quantity_portions = +(ev[k].quantity_portions + 0.1).toFixed(6); ev.splice(k + 1, 0, { ...ev[k], source_event_id: other(sm.end.sources).event_id, quantity_portions: -0.1 }); };
+  // edit inside the colony's own event array, so an inserted record is really sent to the checks (Codex P3 on 2d25ee8)
+  const inColony = (evs: Any[][], pred: (e: Any) => boolean) => { for (const ev of evs) { const k = ev.findIndex(pred); if (k >= 0) return { ev, k }; } throw Error('record not found'); };
+  const isTake = (e: Any) => e.type === 'source_batch_consumed' && e.source_event_id === take.source_event_id && e.worker === take.worker;
+  const forge = (evs: Any[][]) => { const { ev, k } = inColony(evs, isTake); ev[k].quantity_portions = +(ev[k].quantity_portions + 0.1).toFixed(6); ev.splice(k + 1, 0, { ...ev[k], source_event_id: other(sm.end.sources).event_id, quantity_portions: -0.1 }); };
   const moveEnd = (src: Any) => { const a = src[site].batches.find((b: Any) => b.event_id === take.source_event_id), b = src[site].batches.find((x: Any) => x.event_id === other(sm.end.sources).event_id); a.protein = +(a.protein - 0.1).toFixed(6); b.protein = +(b.protein + 0.1).toFixed(6); };
   let e = takeEngine(sm, forge, moveEnd), r = takeReader(sm, forge, moveEnd);
   ok(e !== true, `N18 protein moved between batches, hidden by forged take records +0.1 / −0.1 (Codex ece3bc2): the engine check rejects it (${e})`);
   ok(r !== true, `N18 … the reader rejects it (${r})`);
-  const relabel = (ev: Any[]) => { const k = ev.findIndex((x) => x.type === 'source_batch_consumed' && x.source_event_id === take.source_event_id && x.worker === take.worker); ev[k].source_event_id = other(sm.end.sources).event_id; };
+  const relabel = (evs: Any[][]) => { const { ev, k } = inColony(evs, isTake); ev[k].source_event_id = other(sm.end.sources).event_id; };
   const relabelEnd = (src: Any) => { const a = src[site].batches.find((b: Any) => b.event_id === take.source_event_id), b = src[site].batches.find((x: Any) => x.event_id === other(sm.end.sources).event_id); a.protein = +(a.protein + take.quantity_portions).toFixed(6); b.protein = +(b.protein - take.quantity_portions).toFixed(6); };
   e = takeEngine(sm, relabel, relabelEnd); r = takeReader(sm, relabel, relabelEnd);
   ok(e !== true, `N19 a take recorded against another batch than the stored-order rule gives (no negative amount): the engine check rejects it (${e})`);
