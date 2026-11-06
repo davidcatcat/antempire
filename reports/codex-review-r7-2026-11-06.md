@@ -1,5 +1,7 @@
 # Codex 第七輪審查：R6 修正複驗與初始化來源（2026-11-06）
 
+> **最新狀態更正（2026-11-06，Asia/Taipei）：** #78 已更新為 `098372cf76bb476316fbc5f51c8f141346747fdc`。Codex 已在此完整 SHA 使用新版世界狀態介面複驗，R7-01 已修正，可結案；修正範圍判定為 **APPROVE WITH COMMENTS**。下方對 `1a4c6af` 的 REQUEST CHANGES 保留為舊版本歷史，不能套用到新 head。完整驗證、測試與讀取器分工見[新版報告](https://github.com/davidcatcat/antempire/blob/0a2cbd4ae8de0edb5dcd0de4203f4d41430de207/reports/codex-review-pr78-098372c-2026-11-06.md)。
+
 **結論：#77 的 R6-04 修正可有限範圍 APPROVE WITH COMMENTS；#78 仍為 REQUEST CHANGES，新增 1 項 P2（R7-01）。** 前次 R6-01～04 的原反例都已被修正擋下，不能繼續把它們列為未修。新的問題是初始化來源仍可由事件自行宣告，與遷移狀態矛盾卻被回合檢查及獨立讀取器接受。
 
 審查者：Codex，未使用子代理。日期按 Asia/Taipei。沒有合併、force push、修改產品分支的程式／參數、推進正式日數、啟動正式 Day0，或更改正式存檔／日誌。
