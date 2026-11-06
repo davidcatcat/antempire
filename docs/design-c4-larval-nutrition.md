@@ -68,19 +68,19 @@
 - 現在 `egg:<id>` 是匯，孵化時物質留在那裡。產下時投入的物質，不等於孵化時仍可利用的營養。
 - **建議 (a)**：不做轉移，孵化時只寫一筆 `larva_hatch_nutrition` 事件，記下繼承的投入量與 `reserve_at_hatch: null`。這只是帳務追蹤，**沒有模擬胚胎消耗**。
 - 替代 (b)：在孵化時加一筆轉移 `egg:<id>` → `larva_yolk:<id>`（原因 `hatch_inherit`），把已投入的物質原樣移過去，守恆不變。
-- `larva_yolk` **不是**可支出的儲備：它的營養可用比例是 `null`，代謝不從它支付，求食訊號也不讀它。
-- 沒有 `egg_investment` 紀錄的卵，例如開關打開前產下的，孵化時不產生這筆轉移，`reserve_basis` 寫明原因。
-- 不憑空增加營養：`larva_yolk` 的量只能來自同一顆卵的 `lay_egg`。
+- 不論 (a) 或 (b)，繼承的物質都**不是**可支出的儲備：營養可用比例是 `null`，代謝不從它支付，求食訊號也不讀它。
+- 沒有 `egg_investment` 紀錄的卵（例如開關打開前產下的），孵化時沒有繼承紀錄：(a) 的事件寫 `inherited: null`，(b) 不產生轉移。`reserve_basis` 寫明原因。
+- 不憑空增加營養：繼承量只能等於同一顆卵 `lay_egg` 的投入量。
 
 **對其他機制的影響**（保守界線，同 C3a 蟻后的 `null` 儲備）：
 - 求食訊號只用 (3)、(4) 與自己的需求。因為 (5) 未知，已知缺口會**高估**真正的缺口。這要在結果中標示，不得當成科學結論。
-- C4b、C4c 若要讓卵黃殘留影響發育或飢餓，需要另行決定一個可用比例（目前 `null`）。在決定之前，`larva_yolk` 只是守恆用的帳，不是生理輸入。
+- C4b、C4c 若要讓卵黃殘留影響發育或飢餓，需要另行決定一個可用比例（目前 `null`）。在決定之前，繼承紀錄只是帳務追蹤，不是生理輸入。
 
 **證據**：
 - 本種沒有卵黃殘留、孵化幼蟲儲備或胚胎消耗的資料。
 - 一般昆蟲生理學上，胚胎發育會消耗卵黃，孵化時可能有殘留；比例因物種而異，屬一般生理學的方向，數值未知。
 
-C2 名冊新增 `larva_body:<id>`（`docs/design-wpc-food-compartments.md` 已預留）與 `larva_yolk:<id>`（本修訂新增）兩個區室。
+C2 名冊新增 `larva_body:<id>`（`docs/design-wpc-food-compartments.md` 已預留）。只有 D2 選 (b) 時才另外新增 `larva_yolk:<id>`；建議的 (a) 不新增。
 - **新原因**：
   - `feed_larva`：`crop` → `larva_body`，糖或液態蛋白，交哺；
   - `place_solid_on_larva`：`carried` → `larva_pocket`，B2；
@@ -151,7 +151,8 @@ n_i = clamp(intake_today_i / need_today_i, larva_min_nutrition_growth_factor, 1)
 | A6 | 獨立讀取器 | `cli/lib/larva-round-replay.ts` 以每隻工蟻與幼蟲的時間軸重驗 A2、A4，並從自己的紀錄重算訊號與營養係數 |
 | A7 | 隔離 | 開關關閉時所有輸出與前一版逐位元組相同（golden、rules-isolation） |
 | A8 | 多種子、多季節、極端情境 | Day0 A1～A5 × 四季 × 20 種子 × 365 日，以及極端情境。差異全部報告，不作為目標，不挑種子 |
-| A10 | 新孵化幼蟲的儲備不是 0 | 新孵化時 `reserve_at_hatch === null`、`fed_balance` 從 0 起算；有 `egg_investment` 的卵孵化時有一筆 `hatch_inherit`，份量等於該卵 `lay_egg` 的投入；沒有紀錄的卵沒有這筆轉移，`reserve_basis` 正確。反例：憑空的 `larva_yolk`、份量與 `lay_egg` 不符、把 `null` 當 0 支出代謝，都要被引擎與讀取器拒絕 |
+| A10 | 新孵化幼蟲的儲備不是 0 | 共同：新孵化時 `reserve_at_hatch === null`、`fed_balance` 從 0 起算，`reserve_basis` 依來源正確。**(a)（建議）**：每隻新孵化幼蟲恰有一筆 `larva_hatch_nutrition`，`inherited` 等於該卵 `lay_egg` 的投入，沒有紀錄的卵寫 `null`；`egg:<id>` 的 C2 帳不變；沒有 `larva_yolk` 區室。**(b)**：改為一筆 `hatch_inherit` 轉移 `egg:<id>` → `larva_yolk:<id>`，份量同上。反例（兩種都要被引擎與讀取器拒絕）：繼承量與 `lay_egg` 不符；為沒有紀錄的卵寫出繼承量；同一隻幼蟲兩筆繼承紀錄；`reserve_at_hatch` 不是 `null`；代謝支出超過 `fed_balance`（等於把 `null` 當 0 或把繼承量當儲備）；(a) 下出現任何 `larva_yolk` 轉移 |
+| A11 | 不憑空增加營養 | `larva_body` 的每一筆增加都有來源轉移（有接觸的 `feed_larva`）；(b) 下 `larva_yolk` 的每一筆增加都是 `hatch_inherit`；C2 每區室閉合。繼承紀錄（a）不增加任何區室的量 |
 | A11 | 不憑空增加營養 | `larva_yolk`、`larva_body` 的每一筆增加都有來源轉移（`hatch_inherit` 或有接觸的 `feed_larva`）；C2 每區室閉合 |
 | A9 | 本種觀察算子（科學比對，不是工程驗收） | 模擬 Phillips 1933 的條件：25°C、停食 2 週、恢復餵食。比對幼蟲期延長的**分布**與恢復後到化蛹的日數。數值不吻合時如實記錄，不調參 |
 
@@ -241,5 +242,5 @@ graph LR
 3. §4.1 的同位置稀釋效應保留為候選機制，並在結果中報告；或另提替代機制。
 4. Day14 遷移幼蟲的已知收支從 0 開始，與 C3a 一致。
 5. **（2026-11-06 修訂）孵化時的營養**（§3.1）：
-   - 是否同意：投入卵的物質在孵化時原樣移入 `larva_yolk`（守恆），但它的可用比例保持 `null`，C4a 不讓它支付代謝，也不讓它進入求食訊號？
+   - 繼承物質採 D2 (a)（只記錄，建議）或 (b)（C2 轉移到 `larva_yolk`）？兩者都讓可用比例保持 `null`，C4a 不讓它支付代謝，也不讓它進入求食訊號；A10、A11 依所選方案檢驗（§5）。
    - 若要讓卵黃殘留有生理作用，需要另外決定可用比例的來源。本種沒有資料。
