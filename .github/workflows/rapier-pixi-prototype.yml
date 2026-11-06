@@ -27,6 +27,13 @@ jobs:
         run: npm run verify
       - name: Build PixiJS browser replay
         run: npm run build
+      - name: Browser smoke with mobile touch viewport and desktop screenshots
+        run: |
+          npm install --no-save playwright@1.63.0
+          npx playwright install --with-deps chromium
+          npm run preview -- --port 8784 --strictPort > /tmp/antempire-rapier-pixi-vite.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:8784/ > /dev/null && break; sleep 1; done
+          node scripts/browser-smoke.mjs http://localhost:8784/
       - name: Upload experimental result and web build (NOT official history)
         uses: actions/upload-artifact@v4
         with:
@@ -34,3 +41,4 @@ jobs:
           path: |
             prototypes/rapier-pixi/public/replays/compare.json
             prototypes/rapier-pixi/dist
+            prototypes/rapier-pixi/screenshots

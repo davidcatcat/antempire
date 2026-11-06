@@ -76,6 +76,8 @@ function witness(cfg, res) {
     return { id:o.id, collider:c };
   });
   let bodyOverlapFrames = 0, wallOverlapFrames = 0, antennaFrames = 0;
+  let narrowCoreOverlapFrames = 0;
+  const firstBodyOverlapSamples = [];
   let firstAntennaSampleS = null, maxPairBodyPenetrationMm = 0;
   let steps = 0;
   const started = performance.now();
@@ -89,7 +91,13 @@ function witness(cfg, res) {
     steps++;
     if (colliders.length === 2) {
       const a=colliders[0],b=colliders[1];
-      if (world.intersectionPair(a.body,b.body)) bodyOverlapFrames++;
+      if (world.intersectionPair(a.body,b.body)) {
+        bodyOverlapFrames++;
+        const xa=at(res.intervals[a.id],t),xb=at(res.intervals[b.id],t);
+        const inNarrowCore=cfg.geometry.obstacles.length>0 && [xa,xb].every(x=>x>21.25 && x<78.75);
+        if(inNarrowCore)narrowCoreOverlapFrames++;
+        if(firstBodyOverlapSamples.length<5)firstBodyOverlapSamples.push({t_s:+t.toFixed(5),x_a_mm:+xa.toFixed(5),x_b_mm:+xb.toFixed(5),narrow_core:inNarrowCore});
+      }
       if (world.intersectionPair(a.antenna,b.antenna)) {
         antennaFrames++;
         if(firstAntennaSampleS===null) firstAntennaSampleS=Number(t.toFixed(6));
@@ -103,7 +111,8 @@ function witness(cfg, res) {
   const wallMS=Number((performance.now()-started).toFixed(2));
   world.free();
   return { sample_dt_s:STEP_S, sampled_horizon_s:HORIZON_S, samples:steps,
-    body_overlap_frames:bodyOverlapFrames, wall_overlap_pairs:wallOverlapFrames,
+    body_overlap_frames:bodyOverlapFrames, narrow_core_body_overlap_frames:narrowCoreOverlapFrames,
+    first_body_overlap_samples:firstBodyOverlapSamples, wall_overlap_pairs:wallOverlapFrames,
     antenna_proximity_frames:antennaFrames,first_antenna_sample_s:firstAntennaSampleS,
     centreline_body_penetration_upper_mm:Number(maxPairBodyPenetrationMm.toFixed(8)),
     rapier_wall_ms:wallMS,
