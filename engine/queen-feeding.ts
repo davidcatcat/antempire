@@ -286,10 +286,14 @@ function checkFeedingRule(start: QueenRoundStart, colony: ColonyState, events: S
   const bal = { ...(start.queen.balance ?? init?.known_balance ?? { sugar: 0, protein: 0 }) };
   const held = new Map([...start.crops].map(([k, v]) => [k, { ...v }]));
   const due = new Map<string, { kind: 'none' | 'refuse' | 'feed'; amount?: number; worker: string }>(), seenFeed = new Map<string, number>(), seenRefuse = new Set<string>();
-  let last: { t: number; w: string } | null = null;
+  let last: { t: number; w: string } | null = null, open: string | null = null;
+  // Codex review (2026-11-07): a contact's feedings and refusals come right after it, before the next contact — otherwise the
+  // satiation judged at the contact would ignore an earlier contact's feeding recorded later (interleaving bypass)
+  const belongs = (cid: unknown, what: string) => { if (String(cid) !== open) fail(`${what} for contact ${cid} is recorded after a later contact (${open}): a contact's feedings must follow it directly`); };
   for (const e of events) {
     if (e.type === 'queen_contact') {
       const id = String(e.contact_event_id), w = String(e.worker), t = Number(e.ordinal);
+      open = id;
       if (last && (t < last.t || (t === last.t && w < last.w))) fail(`contact ${id} at ${t} (${w}) is recorded after ${last.w} at ${last.t}: contacts follow their ordinal times, ties by worker ID`);
       last = { t, w };
       const h = held.get(w) ?? { sugar: 0, protein: 0 };
@@ -300,12 +304,14 @@ function checkFeedingRule(start: QueenRoundStart, colony: ColonyState, events: S
         else due.set(k, { kind: 'feed', amount: round(Math.min(h[f], qf.feed_max_portions_per_contact)), worker: w });
       }
     } else if (e.type === 'queen_feeding_refused') {
+      belongs(e.contact_event_id, 'a refusal');
       const k = `${e.contact_event_id}:${e.food_type}`, d = due.get(k);
       if (seenRefuse.has(k)) fail(`two refusals for ${k}`); seenRefuse.add(k);
       if (!d || d.kind !== 'refuse' || d.worker !== e.worker) fail(`refusal ${k}: the queen was ${d?.kind === 'feed' ? 'not satiated (her own balance below the threshold)' : 'not offered this food'} at that contact`);
     } else if (e.type === 'food_transfer') {
       const x = e as unknown as { transfer_id: string; cause: string; source: { kind: string; id: string }; recipient: { kind: string; id: string }; food_type: 'sugar' | 'protein'; portions: number; contact?: Record<string, unknown> };
       if (x.cause === 'feed_queen') {
+        belongs(x.contact?.contact_event_id, `${x.transfer_id} (feed_queen)`);
         const k = `${x.contact?.contact_event_id}:${x.food_type}`, d = due.get(k);
         seenFeed.set(k, (seenFeed.get(k) ?? 0) + 1);
         if (!d || d.kind === 'none') fail(`${x.transfer_id}: feeds ${x.food_type} the nurse did not hold at the contact`);

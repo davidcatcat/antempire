@@ -393,7 +393,7 @@
       "rules_version": "antempire.v2-review.28-c4a-larva-body",
       "tag": "v28",
       "fingerprint": {
-        "engine": "eb2c3340dc81c798273cd5323df067506b400a71fa06b9e5c8bdfeb129e3d465",
+        "engine": "e4a336ecfa99ce435d01265797b36da50f9464816262261caf43d916e58bbf97",
         "params": "f2197fa90988ddbd5a71a84b4ea7defa8d0ed0f3f870c7b1da671f12081a3355"
       },
       "approved_in": "Owner 2026-11-06「照建議」(C4a D1–D8, docs/design-c4-larval-nutrition.md §7.0; separate rules-update PR for Owner review, not merged by Claude)",

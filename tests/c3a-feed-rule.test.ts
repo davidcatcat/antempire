@@ -91,6 +91,33 @@ for (const c4a of [false, true]) {
     renumber(satDay as Day, ev); shiftSugar(ev, after, rf.worker, -a);
   });
   forge('F7 two refusals in one contact', satDay, (ev) => { const rf = ev.find((e) => e.type === 'queen_feeding_refused'); ev.splice(ev.indexOf(rf) + 1, 0, structuredClone(rf)); });
+  // F8 (Codex review 2026-11-07): interleaving — a later contact recorded before an earlier contact's feeding, so that the
+  // satiation judged at the later contact ignores the earlier feeding; the later refusal is turned into a feeding
+  const nearSat: Day | undefined = (() => {
+    const need = sp.nutrition.queen_sugar_daily, thr = sp.queen_feeding.queen_satiation_days_of_need * need;
+    let s: Any = buildDay0('A1' as Any, 3, '2027-03-21', b).state;
+    for (let k = 0; k < 120; k++) {
+      if (!s.colonies[0].population.queens?.[0] || !s.colonies[0].population.queen_alive) { s = simulateWorldDay(s, b).state; continue; }
+      const t: Any = structuredClone(s); t.colonies[0].population.queens[0].body.known_balance = { sugar: Math.round((thr - 0.05) * 1e6) / 1e6, protein: 5 };
+      const o: Any = simulateWorldDay(t, b), ev = o.result.colonies[0].events;
+      const f1 = ev.find((e: Any) => e.cause === 'feed_queen' && e.food_type === 'sugar'), r2 = f1 && ev.find((e: Any, i: number) => i > ev.indexOf(f1) && e.type === 'queen_feeding_refused' && e.food_type === 'sugar' && !ev.some((x: Any, j: number) => j > i && x.type === 'food_transfer' && x.food_type === 'sugar' && (x.source.id === e.worker || x.recipient.id === e.worker)));
+      if (k >= 1 && f1 && r2) return { s0: t, o, c4a, raw, sp };
+      s = simulateWorldDay(s, b).state;
+    }
+    return undefined;
+  })();
+  forge('F8 interleaved records: a later contact before an earlier feeding, its refusal turned into a feeding', nearSat, (ev, after) => {
+    const f1 = ev.find((e) => e.cause === 'feed_queen' && e.food_type === 'sugar'), rf = ev.find((e, i) => i > ev.indexOf(f1) && e.type === 'queen_feeding_refused' && e.food_type === 'sugar' && !ev.some((x, j) => j > i && x.type === 'food_transfer' && x.food_type === 'sugar' && (x.source.id === e.worker || x.recipient.id === e.worker)));
+    const c2 = ev.find((e) => e.type === 'queen_contact' && e.contact_event_id === rf.contact_event_id);
+    const held = (nearSat as Day).o.state.colonies[0].population.workers.find((w: Any) => w.id === rf.worker).crop_cargo_sugar, a = r6(Math.min(held, 0.28));
+    ev.splice(ev.indexOf(rf), 1, { type: 'food_transfer', schema: 'antempire.food-transfer.v1', transfer_id: 'tmp', day: (nearSat as Day).o.day, colony: after.id, minute: null, ordinal: rf.ordinal, phase: 'nest_round', source: { kind: 'crop', id: rf.worker }, recipient: { kind: 'queen_body', id: rf.queen }, food_type: 'sugar', portions: a, cause: 'feed_queen', attribution: 'individual', nest_ledger_delta: -a, contact: { contact_event_id: rf.contact_event_id, worker: rf.worker, queen: rf.queen, location: 'queen' } });
+    // move the later contact (and its new feeding) to just before the earlier feeding: contact1, contact2, feed1, feed2
+    const fd2 = ev.find((e) => e.cause === 'feed_queen' && e.contact?.contact_event_id === rf.contact_event_id);
+    ev.splice(ev.indexOf(c2), 1); ev.splice(ev.indexOf(fd2), 1);
+    const at = ev.indexOf(f1); ev.splice(at, 0, c2); ev.splice(ev.indexOf(f1) + 1, 0, fd2);
+    fd2.ordinal = c2.ordinal; // every time stays as recorded; only the order of the records changes
+    renumber(nearSat as Day, ev); shiftSugar(ev, after, rf.worker, -a);
+  });
   const twoContacts = days.find((d) => d.o.day >= 2 && d.o.result.colonies[0].events.filter((e: Any) => e.type === 'queen_contact').length >= 2);
   forge('F6 two contacts recorded out of ordinal order', twoContacts, (ev) => { const cs = ev.filter((e) => e.type === 'queen_contact'), i = ev.indexOf(cs[0]), j = ev.indexOf(cs[1]); [ev[i], ev[j]] = [ev[j], ev[i]]; }, /QUEEN_FEEDING|FOOD_TRANSFER/);
 }
