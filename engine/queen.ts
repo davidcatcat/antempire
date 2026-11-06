@@ -6,6 +6,7 @@ import { clamp, round } from './math.ts';
 import { colonyDice } from './workers.ts';
 import { formatId } from './brood.ts';
 import { settleCrops } from './nutrition.ts';
+import { foodTransfer, recordSettlement } from './transfers.ts';
 import type { SpeciesParams } from './params.ts';
 import type { ColonyState, ColonySummary, Ratios, SimEvent, Weather, Worker, WorldState } from './types.ts';
 
@@ -26,6 +27,8 @@ export function workerSurvival(world: WorldState, colony: ColonyState, sp: Speci
       // v2-review.16 diagnostics: the two hazards compete in ONE draw, so the cause cannot be split; both
       // components and the sampling rule are recorded instead of naming a single physiological cause.
       events.push({ type: 'worker_death', id: w.id, reason: starvation > 0 ? 'starvation_or_natural_competing_hazards_scenario' : 'natural_or_injury_assumed', risk_assumption: round(risk), hazards: { natural_age_injury: round(natural), sugar_deficit_starvation: round(starvation), sugar_gap_days: stores.sugar_gap_days, age_days: w.age_days, injured: w.injured }, sampling: 'one uniform draw < 1-(1-natural)(1-starvation), capped at adult_total_daily_hazard_cap; competing risks, cause not separable' });
+      // v2-review.22 (C2): the engine keeps a dead worker's crop sugar in the nest ledger (no corpse compartment until C5)
+      foodTransfer(events, { minute: null, phase: 'nest_settlement', source: { kind: 'crop', id: w.id }, recipient: { kind: 'nest_unlocated', id: colony.id }, food_type: 'sugar', portions: w.crop_cargo_sugar || 0, cause: 'death_crop_to_nest_ledger', attribution: 'engine_rule', nest_ledger_delta: 0, basis: 'engine bookkeeping: a dead worker keeps no corpse compartment until C5; its crop sugar stays in the nest ledger' });
     }
     else {
       // v2-review.12: an abrasion can close, a lost or damaged appendage never regrows (adult insects do not
@@ -82,9 +85,13 @@ export function oviposition(world: WorldState, colony: ColonyState, sp: SpeciesP
   for (let i = 0; i < laid; i++) {
     stores.sugar = round(stores.sugar - n.egg_laying_sugar_cost);
     // v2-review.13: the sugar spent on an egg leaves the workers' crops too, so crops stay a subset of the ledger.
-    if (sp.nutrition_rules.egg_laying_settles_crops) settleCrops(colony, n.egg_laying_sugar_cost);
+    const draws = sp.nutrition_rules.egg_laying_settles_crops ? settleCrops(colony, n.egg_laying_sugar_cost) : [];
     stores.protein = round(stores.protein - n.egg_laying_protein_cost);
     const id = formatId(colony.egg_id_prefix, colony.next_egg_number++, colony.id_number_width);
+    // v2-review.22 (C2): the egg's cost comes from the colony ledger (A08: the queen's own intake is not modelled)
+    const egg = { kind: 'egg' as const, id }, basis = 'egg cost taken from the colony ledger (A08: not from what the queen ate); crops drawn in worker-array order (Issue #56)';
+    recordSettlement(events, colony, draws, n.egg_laying_sugar_cost, 'lay_egg', egg, basis);
+    foodTransfer(events, { minute: null, phase: 'nest_settlement', source: { kind: 'cache', id: colony.nest_node }, recipient: egg, food_type: 'protein', portions: n.egg_laying_protein_cost, cause: 'lay_egg', attribution: 'unknown', nest_ledger_delta: round(-n.egg_laying_protein_cost), basis });
     pop.brood.push({ id, stage: 'egg', laid_on_day: world.sim_day + 1, age_days: 0, progress: 0, origin: 'v2_scenario_laying' });
     events.push({ type: 'egg_laid', id, queen: colony.queen_id, sugar_cost_portions: n.egg_laying_sugar_cost, protein_cost_portions: n.egg_laying_protein_cost }); summary.eggs_laid++;
   }

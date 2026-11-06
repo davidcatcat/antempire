@@ -50,18 +50,25 @@ export function neutraliseState(state: Any): void {
 
 /**
  * Named output normalisers for approved DIAGNOSTICS-ONLY changes (kind 'engine', `normalise_output`): they add
- * fields to events without changing any probability, draw or state. Undoing them (deep, in place) must give
+ * fields or whole events without changing any probability, draw or state. Undoing them (deep, in place) must give
  * back the previous version's bytes; tests/rules-isolation.test.ts and tests/differential.test.ts rely on it.
+ * A normaliser returns 'drop' to remove an added event from the list that holds it.
  */
-const OUTPUT_NORMALISERS: Record<string, (e: Any) => void> = {
+const OUTPUT_NORMALISERS: Record<string, (e: Any) => void | 'drop'> = {
   death_diagnostics_v16: (e) => {
     if (e.type === 'worker_death') { delete e.hazards; delete e.sampling; }
     if (e.type === 'queen_death') { for (const k of ['active_triggers', 'hazards', 'sugar_gap_days', 'protein_gap_days', 'no_worker_days', 'sampling']) delete e[k]; e.reason = 'prolonged_energy_or_protein_deficit_scenario'; }
   },
+  // v2-review.22 (C2): the engine-recorded food transfers are new events; nothing else in the output changed
+  food_transfer_events_v22: (e) => (e.type === 'food_transfer' ? 'drop' : undefined),
 };
 export function normaliseOutput<T>(x: T, changes: ApprovedChange[] = approvedChanges()): T {
   const fns = changes.map((c) => (c as Any).normalise_output).filter(Boolean).map((n: string) => { const f = OUTPUT_NORMALISERS[n]; if (!f) throw Error('unknown output normaliser ' + n); return f; });
   if (!fns.length) return x;
-  const walk = (v: Any): void => { if (Array.isArray(v)) { for (const y of v) walk(y); return; } if (v && typeof v === 'object') { if (typeof v.type === 'string') for (const f of fns) f(v); for (const y of Object.values(v)) walk(y); } };
+  const drop = (y: Any) => !!y && typeof y === 'object' && typeof y.type === 'string' && fns.map((f) => f(y)).includes('drop');
+  const walk = (v: Any): void => {
+    if (Array.isArray(v)) { for (let i = v.length - 1; i >= 0; i--) { if (drop(v[i])) v.splice(i, 1); else walk(v[i]); } return; }
+    if (v && typeof v === 'object') { if (typeof v.type === 'string') for (const f of fns) f(v); for (const y of Object.values(v)) walk(y); }
+  };
   walk(x); return x;
 }

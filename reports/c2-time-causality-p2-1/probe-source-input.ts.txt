@@ -1,0 +1,19 @@
+// Codex review 2026-11-05 (latest) N1: direct calls of replayEngineSourcesDay with invalid input. argv[2] = worktree.
+const W = process.argv[2];
+const R: any = await import(`${W}/cli/lib/engine-transfers.ts`);
+const rec = () => ({ type: 'food_transfer', schema: 'antempire.food-transfer.v1', transfer_id: 'FT-1-C1-1', day: 1, colony: 'C1', minute: 1, phase: 'foraging', cause: 'collect', attribution: 'individual', source: { kind: 'source', id: 'F01' }, recipient: { kind: 'in_transit', id: 'W1' }, food_type: 'sugar', portions: 1 });
+const end = { F01: { sugar: 10, protein: 0 } };
+const run = (label: string, events: any, endS: any = end, colonies?: any) => {
+  let out: string; try { const r = R.replayEngineSourcesDay(endS, colonies ?? [{ id: 'C1', events, timing: 'timed' }]); out = r.length ? 'REJECT: ' + r[0] : 'ACCEPT ([])'; } catch (e: any) { out = 'CRASH: ' + String(e).slice(0, 120); }
+  console.log(`${label}\n  ${out}`);
+};
+run('V0 valid collect', [rec()]);
+run('V1 events = null', null);
+run('V2 portions = -1', [{ ...rec(), portions: -1 }]);
+run('V3 source.id = DOES_NOT_EXIST', [{ ...rec(), source: { kind: 'source', id: 'DOES_NOT_EXIST' } }]);
+run('V4 recipient deleted', [(() => { const x: any = rec(); delete x.recipient; return x; })()]);
+run('V5 event null inside the list', [null]);
+run('V6 colonies = undefined', null, end, 'nope');
+run('V7 end source with negative protein', [rec()], { F01: { sugar: 10, protein: -3 } });
+run('V8 collect into a crop (illegal path)', [{ ...rec(), recipient: { kind: 'crop', id: 'W1' } }]);
+run('V9 record of another colony', [{ ...rec(), colony: 'C9' }]);

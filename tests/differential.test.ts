@@ -55,6 +55,9 @@ if (ms !== ns) fail('migrationState ' + firstDiff(ms, ns));
 const fp = rulesFingerprint(), now = '2026-11-01T00:00:00.000Z';
 const o = oldRun.projectDaily(structuredClone(main), structuredClone(world), clim, oldParams, fp.engine, fp.params);
 const n = normaliseOutput(projectDaily(structuredClone(main), structuredClone(world), clim, bundle, fp, DEFAULT_REFS, now));
+// v2-review.22 (diagnostics only): the journal lists every engine event as one '- {json}' line; the normaliser above
+// drops the food_transfer events from arrays, and here the same events are dropped from the journal text.
+if (typeof n.journal === 'string') n.journal = n.journal.split('\n').filter((line: string) => !line.startsWith('- {"type":"food_transfer"')).join('\n');
 // Normalise ONLY the intentional save-mapping differences of the old output (see tests/lib/v6-normalise.ts).
 normaliseV6Projection(o, now);
 // #11 rules registry: the new save records its rules history (activation at Day15). This is the only addition to
