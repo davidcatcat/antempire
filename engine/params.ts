@@ -112,6 +112,11 @@ export function resolveSpecies(file: ParamFile) {
       route_c_self_feed: bool(file, 'queen_feeding.route_c_self_feed'), store_is_queen_location: bool(file, 'queen_feeding.store_is_queen_location'),
       ...section(file, 'queen_feeding', ['take_from_cache_max_portions', 'feed_max_portions_per_contact', 'queen_satiation_days_of_need', 'self_feed_max_portions', 'day0_initial_reserve_days_of_need'] as const),
     },
+    // C4a (docs/design-c4-larval-nutrition.md §7.0 D1–D8): each larva's own nutrition account, fed only in the C3a nest round
+    larval_feeding: {
+      individual_larva_body_c4a: bool(file, 'larval_feeding.individual_larva_body_c4a'),
+      ...section(file, 'larval_feeding', ['feed_begging_threshold', 'feed_bolus_sugar_portions', 'feed_bolus_protein_portions'] as const),
+    },
     predation: {
       ...section(file, 'predation', ['live_prey_encounter_probability', 'large_prey_min_team', 'live_prey_capture_probability', 'large_prey_escape_while_recruiting_probability', 'large_prey_max_team'] as const),
       simultaneous_site_group_hunting: bool(file, 'predation.simultaneous_site_group_hunting'),
@@ -120,6 +125,10 @@ export function resolveSpecies(file: ParamFile) {
   };
   if (!Number.isInteger(p.predation.large_prey_max_team) || p.predation.large_prey_max_team < p.predation.large_prey_min_team) {
     throw Error(`Species ${p.species_id}: predation.large_prey_max_team must be an integer >= large_prey_min_team`);
+  }
+  // D1 (Owner 2026-11-06): C4a shares the C3a nest round (one ordinal time and one set of nest places), so it cannot run alone
+  if (p.larval_feeding.individual_larva_body_c4a && !p.queen_feeding.individual_queen_body_c3a) {
+    throw Error(`Species ${p.species_id}: larval_feeding.individual_larva_body_c4a=true requires queen_feeding.individual_queen_body_c3a=true (C4a uses the C3a nest round, D1)`);
   }
   if (p.castes.major_worker_production_enabled) {
     throw Error(`Species ${p.species_id}: castes.major_worker_production_enabled=true is not implemented by this engine`);

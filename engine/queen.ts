@@ -7,6 +7,7 @@ import { colonyDice } from './workers.ts';
 import { formatId } from './brood.ts';
 import { settleCrops } from './nutrition.ts';
 import { foodTransfer, recordSettlement } from './transfers.ts';
+import { recordEggInvestment } from './larva-feeding.ts';
 import type { SpeciesParams } from './params.ts';
 import type { ColonyState, ColonySummary, Ratios, SimEvent, Weather, Worker, WorldState } from './types.ts';
 
@@ -95,6 +96,8 @@ export function oviposition(world: WorldState, colony: ColonyState, sp: SpeciesP
     recordSettlement(events, colony, draws, n.egg_laying_sugar_cost, 'lay_egg', egg, basis);
     foodTransfer(events, { minute: null, phase: 'nest_settlement', source: { kind: 'cache', id: colony.nest_node }, recipient: egg, food_type: 'protein', portions: n.egg_laying_protein_cost, cause: 'lay_egg', attribution: 'unknown', nest_ledger_delta: round(-n.egg_laying_protein_cost), basis });
     pop.brood.push({ id, stage: 'egg', laid_on_day: world.sim_day + 1, age_days: 0, progress: 0, origin: 'v2_scenario_laying' });
+    // C4a (D2a): the egg records exactly what lay_egg moved into egg:<id> (an accounting record, not a spendable reserve)
+    if (sp.larval_feeding.individual_larva_body_c4a) recordEggInvestment(pop.brood[pop.brood.length - 1], { sugar: n.egg_laying_sugar_cost, protein: n.egg_laying_protein_cost });
     events.push({ type: 'egg_laid', id, queen: colony.queen_id, sugar_cost_portions: n.egg_laying_sugar_cost, protein_cost_portions: n.egg_laying_protein_cost }); summary.eggs_laid++;
   }
   stores.queen_laid_yesterday = Boolean(laid);

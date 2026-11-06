@@ -73,11 +73,12 @@ export function storageOverflow(colony: ColonyState, sp: SpeciesParams, events: 
  * Each worker learns only what IT ate; the colony-wide fraction is never broadcast to behaviour.
  */
 export function consume(world: WorldState, colony: ColonyState, sp: SpeciesParams, summary: ColonySummary, weather: Weather, events: SimEvent[] = []): Ratios {
-  const n = sp.nutrition, ls = sp.local_signals, st = colony.stores;
+  const n = sp.nutrition, ls = sp.local_signals, st = colony.stores, c4a = sp.larval_feeding.individual_larva_body_c4a;
+  // C4a (D3): each larva pays its own metabolism from what it was fed (engine/larva-feeding.ts larvaMetabolism), not this pool
   const workers = colony.population.workers.length, larvae = colony.population.brood.filter((b) => b.stage === 'larva');
   const metabolicFactor = round(Math.pow(sp.metabolism.q10, (weather.nest_temp_model_c - sp.metabolism.reference_c) / 10));
   // C3a: the queen pays her own metabolism from what she ate (engine/queen-feeding.ts queenMetabolism), not from this pool
-  const servedQueen = colony.population.queen_alive && workers > 0 && !sp.queen_feeding.individual_queen_body_c3a ? 1 : 0, servedLarvae = workers > 0 ? larvae.length : 0;
+  const servedQueen = colony.population.queen_alive && workers > 0 && !sp.queen_feeding.individual_queen_body_c3a ? 1 : 0, servedLarvae = workers > 0 && !c4a ? larvae.length : 0;
   const extraCost = summary.extra_sugar_cost;
   const demandS = round((workers * n.worker_sugar_daily + servedQueen * n.queen_sugar_daily + servedLarvae * n.larva_sugar_daily) * metabolicFactor + extraCost);
   const demandP = round((workers * n.worker_protein_daily + servedQueen * n.queen_protein_daily + servedLarvae * n.larva_protein_daily) * metabolicFactor);
@@ -105,6 +106,7 @@ export function consume(world: WorldState, colony: ColonyState, sp: SpeciesParam
     mem.own_crop_sugar_fill = round(ls.crop_fill_previous_weight * (mem.own_crop_sugar_fill ?? ls.default_crop_fill_before_feeding) + ls.crop_fill_today_weight * full); mem.own_feeding_fraction = round(full);
   }
   // Larval begging changes the larva itself; it reaches a worker only through a real nurse contact.
-  for (const b of larvae) { b.begging_signal = round(clamp(ls.larva_begging_previous_weight * (b.begging_signal ?? ls.default_larva_begging_prior) + ls.larva_begging_shortfall_weight * (1 - pFraction), 0, 1)); }
+  // C4a (D6): a larva's begging comes from its own intake and need (larvaMetabolism), never from the colony fraction
+  if (!c4a) for (const b of larvae) { b.begging_signal = round(clamp(ls.larva_begging_previous_weight * (b.begging_signal ?? ls.default_larva_begging_prior) + ls.larva_begging_shortfall_weight * (1 - pFraction), 0, 1)); }
   return { sFraction, pFraction };
 }

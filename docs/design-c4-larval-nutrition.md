@@ -234,6 +234,38 @@ graph LR
 | 5 | 資料排列順序不改變同一個體的結果 | 驗收 A3：工蟻與幼體陣列反轉，依 ID 結果相同（只涵蓋 C4a 新路徑；#56 其他部分照實列為已知違反） |
 | 6 | 新機制預設關閉 | 開關預設 false；關閉時逐位元組相同（A7） |
 
+## 7.2 C4a 實作紀錄（v2-review.28，2026-11-06；Owner「照建議」核准 D1～D8）
+
+- **Owner 決策**：D1 (a)、D2 (a)、D3 (a)、D4 (a)、D5 (a)、D6 A、D7 保留並報告、D8 照 §7.0。§8 第 1～4 項因此已裁示。
+- **開關**：`larval_feeding.individual_larva_body_c4a`（預設 false；需 C3a 同時打開，否則讀參數時拒絕）。
+- **參數**（全部 `assumption: true`，遊戲假設；機制方向 R210，*S. invicta*，非本種）：
+  - `feed_begging_threshold` = 0.3（取 `default_larva_begging_prior` 同值）；
+  - `feed_bolus_sugar_portions` = 0.025、`feed_bolus_protein_portions` = 0.08（一口＝一隻幼蟲在參考溫度下一日的需求）。
+  - 數值未依結果挑選；敏感度見 `reports/c4a-v28-sensitivity/`。
+- **程式**：
+  - `engine/larva-feeding.ts`：紀錄初始化（D8）、巢內回合的 brood 段、幼蟲代謝與求食訊號、孵化紀錄、羽化與死亡時帳的去向、引擎檢查 `checkLarvaRound`。
+  - `engine/queen-feeding.ts`：巢內回合加入 brood 段；沒有活蟻后時回合仍為幼蟲進行（store → brood）；`checkQueenRound` 的移動序列一般化（store → queen → brood → store）。
+  - `engine/nutrition.ts`：開關打開時全巢需求移出幼蟲、不再用全巢比例更新求食訊號。
+  - `engine/brood.ts`、`engine/queen.ts`：孵化紀錄、羽化與死亡、卵的投入紀錄。
+  - `engine/transfers.ts`：C2 名冊與閉合加入 `larva_body`、`loss:brood_corpse` 與四個新原因（`feed_larva`、`larva_metabolism`、`brood_body_at_eclosion`、`death_body_to_corpse`）。
+  - 獨立讀取器：`cli/lib/larva-round-replay.ts`（新）；`cli/lib/engine-transfers.ts`、`cli/lib/queen-round-replay.ts` 擴充。
+- **測試**：`tests/c4a-larva-feeding.test.ts`（D1、A1～A6、A10、A11、D5、D8、N1～N18）；A0 保留在 `tests/c4a-a0-defect.test.ts`；A7 由 golden 與 rules-isolation 檢查；A8 見 Day0 診斷與敏感度；A9（Phillips 1933 觀察算子）**尚未執行**。
+- **實作中確定的細節**（都是遊戲假設或過渡模型）：
+  - 路線順序固定為「先蟻后、後幼蟲」，所以嗉囊的內容先供蟻后取用。這是過渡模型的選擇，沒有本種資料。
+  - 同一回合中，一隻幼蟲可被多隻工蟻接觸、各餵一口；回合內沒有幼蟲飽足上限，門檻只看回合開始時的訊號。
+  - 份量為 0 的轉移不寫入事件（C2 規則），所以收支為 0 的幼蟲死亡或羽化時沒有去向紀錄；讀取器與引擎仍檢查它的收支為 0。
+- **獨立審查（Claude 子代理，不是 Codex）後的修正**：
+  - 引擎檢查與讀取器原本只檢查「一口 ≤ 固定量」。現在從當日開始重播每隻工蟻的嗉囊，要求每口**等於** min(工蟻當時持有量, 固定量)；幼蟲訊號達門檻且工蟻持有某種食物時，該種食物的一口不可省略（N19、N20）。
+  - 同一幼蟲兩筆 `larva_nutrition`，或為非幼蟲寫的 `larva_nutrition`，都會被拒絕（N21、N22）。
+  - 當日摘要的 `mass_ledger` 新增 `out_of_larva_bodies`（幼蟲代謝、羽化、死亡），讓幼蟲帳也能只從摘要閉合。
+- **待 Owner 裁示**：
+  - **開關第一天的求食訊號**：既有幼蟲沿用舊欄位 `begging_signal`，它是舊規則用全巢蛋白比例算出的（Day14 遷移幼蟲是遷移預設 0.25，低於門檻 0.3）。所以開關打開的第一天，餵不餵仍間接受全巢量影響；之後以 0.3 的權重逐日衰減。替代做法：第一次看到時把訊號重設為 `default_larva_begging_prior`。本 PR 未改，請裁示。
+  - C3a 的 `feed_queen`：引擎實際給 min(持有量, `feed_max_portions_per_contact`)，但檢查只驗「不超過上限」。是否同樣收緊為等式，屬 C3a 的檢查範圍，本 PR 不改，請裁示是否另開 PR。
+- **已知的連帶影響（報告，不修）**：
+  - 全巢需求不再含幼蟲，全巢蛋白比例與 `protein_gap_days` 只反映工蟻（與 C3a 關閉時的蟻后）。所以舊的 L2 發育係數與 L3 飢餓死亡（仍讀全巢）在開關打開時幾乎不再因幼蟲而觸發。C4b、C4c 改為個體之前，**開關打開時的發育與死亡結果不得當成科學結論**。
+  - 舊的產卵條件也讀全巢比例，所以開關打開時產卵的輸入也改變。
+  - 新孵化與既有幼蟲的儲備未知（`null`），已知缺口會高估真正缺口。
+
 ## 8. 待 Owner 裁示
 
 1. C4a 是否要求 C3a 同時打開，還是讓 C4 有自己的巢內回合。建議前者：避免兩套巢內時間。

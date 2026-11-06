@@ -388,6 +388,24 @@
       "save_schema": "antempire.engine-v2",
       "state_migration": null,
       "note": "Issue #82: with weather_rules.rh_offsets_balanced_v27 on, the relative-humidity wet/dry offsets are (wet − dry) × (wet? − rain prior), the form the temperature offset already uses, so their long-run mean is 0 and the within-day wet−dry contrast is unchanged. Relative humidity is read by no ant mechanism. Introduced OFF: every output byte-identical to v2-review.26. Synthetic weather, not observations."
+    },
+    {
+      "rules_version": "antempire.v2-review.28-c4a-larva-body",
+      "tag": "v28",
+      "fingerprint": {
+        "engine": "e30f69ce3cf08b886d42f5d5221517dbf160a64c740fae0e575d4e782649a56a",
+        "params": "f2197fa90988ddbd5a71a84b4ea7defa8d0ed0f3f870c7b1da671f12081a3355"
+      },
+      "approved_in": "Owner 2026-11-06「照建議」(C4a D1–D8, docs/design-c4-larval-nutrition.md §7.0; separate rules-update PR for Owner review, not merged by Claude)",
+      "golden": {
+        "traces": "tests/golden/v28-trace-sha256.json",
+        "reports": "reports/day15-134-v28-*",
+        "day0_traces": "tests/golden/day0-v28-trace-sha256.json"
+      },
+      "previous": "antempire.v2-review.27-rh-offsets",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null,
+      "note": "C4a (Issue #81, D1–D8): with larval_feeding.individual_larva_body_c4a on (requires C3a) each larva has its own account (larva_body), fed only in the C3a nest round after a larva_contact at the same place (feed_larva: one fixed bolus per food when its own begging is at or above the threshold), pays its own metabolism and begs from its own protein intake; hatch is an accounting record only (reserve_at_hatch null). Development and starvation keep the old colony-wide rules (C4b/C4c). Introduced OFF: every output byte-identical to v2-review.27."
     }
   ]
 }
