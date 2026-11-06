@@ -1,7 +1,7 @@
 # 《螞蟻帝國》模擬引擎 ODD 描述（ODD protocol, Grimm et al. 2006／2010／2020）
 
-- **描述對象**：main 目前的引擎，行為版本 **`antempire.v2-review.24-me1-invariants`**（`engine/day.ts` 的 `ENGINE_VERSION`），實作版本 `antempire.engine-ts.1`。2026-11-03 依 Codex #61 R3-10 同步到 v21；2026-11-05 在 #60（v22）與 #63（v23）合併後同步到 v23；**#77（ME-1，v24）只增加執行期檢查，模擬輸出與 v23 逐位元組相同**，所以下文描述的行為仍是 v23 的行為。
-- **版本對照**（本文件以 main 的 v24 為準；v24 的模擬行為與 v23 相同）：
+- **描述對象**：main 目前的引擎，行為版本 **`antempire.v2-review.25-c3a-queen-body`**（`engine/day.ts` 的 `ENGINE_VERSION`），實作版本 `antempire.engine-ts.1`。2026-11-03 依 Codex #61 R3-10 同步到 v21；2026-11-05 在 #60（v22）與 #63（v23）合併後同步到 v23；**#77（ME-1，v24）只增加執行期檢查，模擬輸出與 v23 逐位元組相同；#78（C3a，v25）新增開關 `queen_feeding.individual_queen_body_c3a`，預設關閉，關閉時輸出與 v24 逐位元組相同**，所以下文描述的行為仍是 v23 的行為；開關打開時的行為只寫在 §8.2 的 C3a 條目，屬實驗用，正式存檔不打開。
+- **版本對照**（本文件以 main 的 v25 為準；v24 與開關關閉的 v25，模擬行為都與 v23 相同）：
   | 版本 | 狀態 | 本文件的位置 |
   |---|---|---|
   | v2-review.19 | 已合併（評估更正；輸出不變） | 全文基礎 |
@@ -10,6 +10,7 @@
   | v2-review.22 | **已合併**（#60：引擎記錄每一筆 food_transfer，並逐區室、依時間檢查；診斷，不改行為） | §7.17 |
   | v2-review.23 | **已合併**（#63：Codex #61 R3-05 的時間與位置已修正——帶著食物回巢的工蟻在走完每一段的那一分鐘、在該段留下費洛蒙） | §3.2、§7.8 |
   | v2-review.24 | **#77**（ME-1：人口 ID 流量、生命期、日內因果順序、定義域與隨機輸入的執行期檢查，以及獨立讀取器；只檢查，輸出與 v23 逐位元組相同） | §8.2 |
+  | v2-review.25 | **#78**（C3a：蟻后個體營養區室 `queen_body`、巢內序數回合、遷移蟻后的 `null` 儲備；開關預設關閉，關閉時輸出與 v24 逐位元組相同；打開時的路線是候選，不是已知的本種機制） | §8.2 |
   | 費洛蒙的沉積決策 | **未決**：是否沉積、沉積多少、單訊號或雙訊號（M1／M2）、衰退時間尺度。研究設計見 `docs/research-pheromone-models-2026-11.md`（#64，已合併；只有設計，P-1～P-6 尚未執行） | §7.8 |
   - **設計中、未實作**的子模型（不是現況）：24 小時時鐘（P0-A）、生命史與溫度（P0-B）、大工蟻（P1-A）、巢穴空間（P1-B）、個體營養 C3～C5、開放式生態（D7-A）、完整繁殖系統（D4-A）。見 §7.16 與各設計文件。
 - **依據**：`engine/*.ts`、`species/pheidole-megacephala.json`、`world/xitun-garden.json`、`scenarios/day0/*.json`、`cli/lib/day0.ts`，以及 `CLAUDE.md`、`docs/gm-rules.md`、`docs/engine-architecture.md`、`docs/species-pheidole-megacephala.md`、`docs/references.md` 等文件。
@@ -224,7 +225,7 @@
 - 新羽化的工蟻當日加入族群，從次日才開始選任務。
 
 ### 3.2 日內事件時鐘（`engine/activity.ts`）
-- **事件佇列**：依時間排序。同一時刻依事件種類排序，再依工蟻 ID。v20 引入、v23 起沿用至今的順序（`engine/activity.ts` `KIND_ORDER`；現行引擎版本是 v24，行為與 v23 相同）：`trail` < `step` < `home` < `arrive` < `resolve` < `searched` < `recruit` < `decide`；v19 舊順序是 `home` < `arrive` < `resolve` < `searched` < `decide`。
+- **事件佇列**：依時間排序。同一時刻依事件種類排序，再依工蟻 ID。v20 引入、v23 起沿用至今的順序（`engine/activity.ts` `KIND_ORDER`；現行引擎版本是 v25；開關關閉時行為與 v23 相同）：`trail` < `step` < `home` < `arrive` < `resolve` < `searched` < `recruit` < `decide`；v19 舊順序是 `home` < `arrive` < `resolve` < `searched` < `decide`。
 - **作廢機制**：每隻工蟻有一個 `token`。被招募或加入獵物等待時 token 會改變，舊事件就作廢（`engine/activity.ts:417`）。
 - **一趟的循環**（`engine/activity.ts:9-14`）：
   1. 在巢內決定；
@@ -236,7 +237,7 @@
   7. 若再出發，先休息 5 分鐘再決定。
 - **時間檢查**：任何行動若無法在時窗內完成，就取消並記錄（`fits`，`engine/activity.ts:116`）。
 - **日終**：每隻工蟻都必須在巢內（`engine/activity.ts:429-431`）。
-- **v2-review.20（#44，已合併；v20 引入的規則，v21～v24 仍沿用，現行引擎版本是 v24）**：上面的循環仍成立，以下是 v20 改變的部分。沿費洛蒙一次走一段、抵達時才感知（F02）；可中斷的搜尋（F03）；每段外出只結算一次能量（F05）；走完才學路線、卸貨結束時才招募（R11）。PR #44 補充審查另外改成：
+- **v2-review.20（#44，已合併；v20 引入的規則，v21～v25 仍沿用，現行引擎版本是 v25）**：上面的循環仍成立，以下是 v20 改變的部分。沿費洛蒙一次走一段、抵達時才感知（F02）；可中斷的搜尋（F03）；每段外出只結算一次能量（F05）；走完才學路線、卸貨結束時才招募（R11）。PR #44 補充審查另外改成：
   - 沒有搬運獵物的工蟻沿自己的路線回巢；共同搬運沿在場搬運者之一走過的路線（遊戲假設）；
   - 遠處節點的出口只讀工蟻自己站在該處時記下的觀察（`route_memory.perceived_exits`）；
   - 回巢招募的發現者走完每一段才在該段留下費洛蒙（事件 `trail` 在同一分鐘的其他事件之前處理）；
@@ -1068,7 +1069,8 @@
 - 其餘參數沒有系統性的敏感度分析。
 
 **評估結果**：Day0 A1～A5 × 四季 × 20 種子 × 365 日。
-- **現行 v24**（`reports/day0-v24`）：400 次的每一項紀錄結果都與 v23 相同，只差版本字串與規則指紋。
+- **現行 v25，開關關閉**（`reports/day0-v25`）：400 次的每一項紀錄結果都與 v24 相同，只差版本字串與規則指紋。開關打開的診斷（`reports/day0-v25-c3a-on-diagnostic`）不是目標，也不是蟻后營養的科學結論。
+- **v24**（`reports/day0-v24`）：400 次的每一項紀錄結果都與 v23 相同，只差版本字串與規則指紋。
 - **v23**（`reports/day0-v23`；`reports/rules-update-v23-review.md` §5）：Day365 蟻后存活 235/400、曾有自產工蟻羽化 271/400；400 次的每一項紀錄結果都與 v22 相同。
 - **v21（歷史數據，不是現行）**（`reports/day0-v21`；`reports/rules-update-v21-review.md` §3）：235/400、271/400，與 v20 相同；400 次中只有 3 次的檢查點數值改變。
 - 各版合計（`reports/rules-update-v20-review.md`）：蟻后存活 218（v18／v19）→ 237 → 235 → 236 → 235（v20 各修正階段）。
