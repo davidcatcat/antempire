@@ -48,8 +48,11 @@ import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from '
  *   v2-review.26 (Issue #80, docs/design-source-flows-v26.md): with source_flows.record_source_flows_v26 on, every change of a
  *     source's food in the ecology step is a source_flow world event (cause, origin, destination) that closes the source's
  *     stock; the stock arithmetic is unchanged. Introduced OFF: every output byte-identical to v2-review.25.
+ *   v2-review.27 (Issue #82): with weather_rules.rh_offsets_balanced_v27 on, the relative-humidity wet/dry offsets are centred
+ *     on the day's rain prior (as the temperature offset is), so their long-run mean is 0. Read by no ant mechanism.
+ *     Introduced OFF: every output byte-identical to v2-review.26.
  */
-export const ENGINE_VERSION = 'antempire.v2-review.26-source-flows';
+export const ENGINE_VERSION = 'antempire.v2-review.27-rh-offsets';
 /** Implementation of that behaviour (bumped for refactors that keep results byte-identical). */
 export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
 /**

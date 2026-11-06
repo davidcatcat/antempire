@@ -370,6 +370,24 @@
       "save_schema": "antempire.engine-v2",
       "state_migration": null,
       "note": "Issue #80: with source_flows.record_source_flows_v26 on, every change of a source's food in the ecology step (secretion, background-rival harvest, rain washoff, capacity runoff or withheld secretion, decomposition, expired remains) is a source_flow world event with a cause, an origin and a destination, and the engine checks each source closes; the stock arithmetic is unchanged (conservative candidate: food availability identical). Introduced OFF: every output byte-identical to v2-review.25. Independent reader cli/lib/source-flow-replay.ts."
+    },
+    {
+      "rules_version": "antempire.v2-review.27-rh-offsets",
+      "tag": "v27",
+      "fingerprint": {
+        "engine": "bb1369e8131cf076d7eee14583f0e9f71b33e8b5c2c00da97a048fdb67b30ce4",
+        "params": "cd59ec11674e3ae3385f1f94fb0f4807e792501fd0acc10f40f8599b9d65de81"
+      },
+      "approved_in": "Owner instruction 2026-11-06 (Issue #82, relative-humidity offsets; separate rules-update PR for Owner review, not merged by Claude)",
+      "golden": {
+        "traces": "tests/golden/v27-trace-sha256.json",
+        "reports": "reports/day15-134-v27-*",
+        "day0_traces": "tests/golden/day0-v27-trace-sha256.json"
+      },
+      "previous": "antempire.v2-review.26-source-flows",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null,
+      "note": "Issue #82: with weather_rules.rh_offsets_balanced_v27 on, the relative-humidity wet/dry offsets are (wet − dry) × (wet? − rain prior), the form the temperature offset already uses, so their long-run mean is 0 and the within-day wet−dry contrast is unchanged. Relative humidity is read by no ant mechanism. Introduced OFF: every output byte-identical to v2-review.26. Synthetic weather, not observations."
     }
   ]
 }
