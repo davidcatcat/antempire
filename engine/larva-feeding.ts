@@ -35,6 +35,7 @@ import { clamp, round } from './math.ts';
 import { colonyDice } from './workers.ts';
 import { foodTransfer } from './transfers.ts';
 import type { SpeciesParams } from './params.ts';
+import { ownPaidFraction } from './larva-development.ts';
 import type { Brood, ColonyState, LarvaBody, LarvaReserveBasis, SimEvent, Worker, WorldState } from './types.ts';
 
 export const BROOD_PLACE = 'brood';
@@ -128,8 +129,8 @@ export function broodLeg(world: WorldState, colony: ColonyState, sp: SpeciesPara
 }
 
 /** Each larva pays its own metabolism from fed_balance, then updates its begging from its own intake and need (D3, D6). */
-export function larvaMetabolism(colony: ColonyState, sp: SpeciesParams, factor: number, intake: Map<string, Food>, events: SimEvent[]): Food {
-  const ls = sp.local_signals, need = larvaNeed(sp, factor), paidAll = { sugar: 0, protein: 0 };
+export function larvaMetabolism(colony: ColonyState, sp: SpeciesParams, factor: number, intake: Map<string, Food>, events: SimEvent[]): { paid: Food; fraction: Map<string, number> } {
+  const ls = sp.local_signals, need = larvaNeed(sp, factor), paidAll = { sugar: 0, protein: 0 }, fraction = new Map<string, number>();
   for (const b of [...colony.population.brood].filter((x) => x.stage === 'larva' && x.body).sort(byId)) {
     const body = b.body as LarvaBody, paid = { sugar: 0, protein: 0 }, shortfall = { sugar: 0, protein: 0 }, got = intake.get(b.id) ?? { sugar: 0, protein: 0 };
     for (const f of FOODS) {
@@ -137,11 +138,12 @@ export function larvaMetabolism(colony: ColonyState, sp: SpeciesParams, factor: 
       body.fed_balance[f] = round(body.fed_balance[f] - a); paid[f] = a; shortfall[f] = round(need[f] - a); paidAll[f] = round(paidAll[f] + a);
       foodTransfer(events, { minute: null, phase: 'nest_settlement', source: { kind: 'larva_body', id: b.id }, recipient: { kind: 'metabolized', id: colony.id }, food_type: f, portions: a, cause: 'larva_metabolism', attribution: 'individual', contact: { larva: b.id }, basis: 'the larva\'s own metabolism from what it was fed (known balance only; the unknown reserve is never spent)' });
     }
+    fraction.set(b.id, ownPaidFraction(paid, need)); // C4b reads this (own record only)
     const proteinShortfall = need.protein > 0 ? clamp(1 - got.protein / need.protein, 0, 1) : 0, before = beggingNow(b, sp);
     b.begging_signal = round(clamp(ls.larva_begging_previous_weight * before + ls.larva_begging_shortfall_weight * proteinShortfall, 0, 1));
     events.push({ type: 'larva_nutrition', larva: b.id, need_portions: { ...need }, intake_portions: { ...got }, paid_portions: paid, shortfall_portions: shortfall, fed_balance: { ...body.fed_balance }, reserve_at_hatch: null, reserve_basis: body.reserve_basis, begging_before: round(before), own_protein_shortfall_fraction: round(proteinShortfall), begging_signal: b.begging_signal, note: 'begging from the larva\'s own protein intake today against its own need (D6); development and starvation still use the old colony-wide rules (C4b/C4c). The reserve is unknown, so the known shortfall overstates the true one.', assumption: true });
   }
-  return paidAll;
+  return { paid: paidAll, fraction };
 }
 
 /** Start-of-day facts the C4a check needs (taken after the day's records are ensured, before the round). */
@@ -149,12 +151,12 @@ export interface LarvaRoundStart {
   workers: Set<string>; had: Set<string>; day0: boolean;
   /** crops at the start of the day (sugar, liquid protein); the check replays every transfer from here (review of the C4a draft) */
   crops: Map<string, Food>;
-  brood: Map<string, { stage: string; location?: string; begging: number; beggingRaw?: number; body?: LarvaBody; egg_investment?: Food | null; reserve_basis?: LarvaReserveBasis; origin?: string }>;
+  brood: Map<string, { stage: string; progress?: number; location?: string; begging: number; beggingRaw?: number; body?: LarvaBody; egg_investment?: Food | null; reserve_basis?: LarvaReserveBasis; origin?: string }>;
 }
 export const larvaRoundStart = (colony: ColonyState, sp: SpeciesParams, had: Set<string>, day0: boolean): LarvaRoundStart => ({
   workers: new Set(colony.population.workers.map((w) => w.id)), had, day0,
   crops: new Map(colony.population.workers.map((w) => [w.id, { sugar: w.crop_cargo_sugar || 0, protein: w.crop_cargo_protein_liquid || 0 }])),
-  brood: new Map(colony.population.brood.map((b) => [b.id, { stage: b.stage, location: b.location, begging: beggingNow(b, sp), beggingRaw: b.begging_signal, body: b.body ? structuredClone(b.body) : undefined, egg_investment: b.egg_investment === undefined ? undefined : b.egg_investment === null ? null : { ...b.egg_investment }, reserve_basis: b.reserve_basis, origin: b.origin }])),
+  brood: new Map(colony.population.brood.map((b) => [b.id, { stage: b.stage, progress: b.progress, location: b.location, begging: beggingNow(b, sp), beggingRaw: b.begging_signal, body: b.body ? structuredClone(b.body) : undefined, egg_investment: b.egg_investment === undefined ? undefined : b.egg_investment === null ? null : { ...b.egg_investment }, reserve_basis: b.reserve_basis, origin: b.origin }])),
 });
 
 /**
