@@ -203,6 +203,7 @@ export function resolveWorld(file: ParamFile) {
     prey: section(file, 'prey', ['large_prey_fraction', 'small_prey_protein', 'large_prey_protein'] as const),
     routes: { edges: edges as [string, string][], route_edge_minutes: num(file, 'routes.route_edge_minutes'), ...edgeLengths(file, edges as [string, string][]) },
     background_rivals: rivals,
+    weather_rules: { rh_offsets_balanced_v27: bool(file, 'weather_rules.rh_offsets_balanced_v27') },
     source_flows: { record_source_flows_v26: bool(file, 'source_flows.record_source_flows_v26'), honeydew_capacity_limits_secretion: bool(file, 'source_flows.honeydew_capacity_limits_secretion'), nectar_capacity_limits_secretion: bool(file, 'source_flows.nectar_capacity_limits_secretion') },
     route_evidence: routeEvidence(file, edges as [string, string][]),
   };
