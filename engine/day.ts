@@ -8,7 +8,7 @@
  */
 import { clone, nextDate, round } from './math.ts';
 import { calcWeather, nextClimate } from './weather.ts';
-import { growEcology } from './ecology.ts';
+import { carcassPiles, checkCarcassTakes, growEcology } from './ecology.ts';
 import { forageDay } from './foraging.ts';
 import { consume, storageOverflow } from './nutrition.ts';
 import { developBrood } from './brood.ts';
@@ -124,10 +124,11 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
 
   growEcology(s, wp, weather, worldEvents);
   assertCausalFood(worldEvents, 'NO_GOD_MODE: food has no physical source death');
-  const sourcesBefore = sourceSnapshot(s);
+  const sourcesBefore = sourceSnapshot(s), piles = wp.source_flows.record_source_flows_v26 ? carcassPiles(s.sources) : null;
 
   for (const w of work) forageDay(s, w.colony, w.sp, wp, weather, w.events, w.summary);
   checkSources(sourcesBefore, s, work.map((w) => w.events), work.map((w) => foodTimingFor(w.sp)));
+  if (piles) checkCarcassTakes(piles, work.map((w) => w.events), s.sources, s.sim_day + 1); // v26: batch takes (Codex review of ece3bc2)
   assertCausalFood([...worldEvents, ...work.flatMap((w) => w.events)], 'NO_GOD_MODE: food without tracked dead insect');
   for (const w of work) {
     const m = w.summary.foraging_workers_by_macro as { sugar: Set<string>; protein: Set<string> };

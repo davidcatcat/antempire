@@ -113,41 +113,74 @@ export function replaySourceFlows(startWorld: Any, endWorld: Any, result: Any, w
     if (!(Math.abs(x - stock(s1)) <= TOL)) err(`${id}: rebuilt from events ${r6(x)} ≠ end stock ${r6(stock(s1))}`);
   }
 
-  // ---- 3b. carcass batches one by one (Codex review of 290c440): moving protein between batches or changing a birth day
-  //      keeps every total but changes the next days' supply. Each batch: start − its ecology flows (the events when the
-  //      switch is on, else the recomputed ones) + its new remains − what ants took from it (source_batch_consumed) = end.
-  const consumed = (result?.colonies ?? []).flatMap((c: Any) => c.events ?? []).filter((e: Any) => e?.type === 'source_batch_consumed');
-  const newRemains = [...(result?.world_events ?? []), ...(result?.colonies ?? []).flatMap((c: Any) => c.events ?? [])].filter((e: Any) => e?.type === 'new_food_source');
+  // ---- 3b. carcass batches one by one, replayed in event order (Codex reviews of 290c440 and ece3bc2). Moving protein
+  //      between batches, changing a birth day, or forging the per-batch take records (+0.1 on one batch, −0.1 on another)
+  //      keeps every total but changes the next days' supply. So each batch is rebuilt from:
+  //        start − its ecology flows (the events when the switch is on, else the recomputed ones),
+  //        + new remains (natural deaths after the ecology step, then kills, in event order),
+  //        − each ant's take, where a take is the run of source_batch_consumed records closed by the SAME worker's C2
+  //          `collect` transfer from that site: the records must add up to the transfer, every amount must be positive, and
+  //          the split over batches must follow the engine's rule (engine/foraging.ts takeProtein: batches emptied in their
+  //          stored order) — so a take record cannot be moved from one batch to another.
+  type Pile = { id: string; protein: number; day: number }[];
+  const piles = new Map<string, Pile>();
   for (const id of Object.keys(startWorld?.sources ?? {}).sort()) {
-    const s0 = startWorld.sources[id], s1 = endWorld?.sources?.[id];
-    if (s0.type !== 'carcass' || !s1) continue;
-    const want = new Map<string, { protein: number; day: number }>();
+    const s0 = startWorld.sources[id];
+    if (s0.type !== 'carcass') continue;
+    const pile: Pile = [];
     for (const b of s0.batches ?? []) {
-      const out = on ? flows.filter((f) => f.site === id && String(f.batch_event_id) === String(b.event_id)).reduce((t, f) => t + Number(f.portions), 0)
-        : expected.filter((x) => x.site === id && x.batch === String(b.event_id)).reduce((t, x) => t + x.portions, 0);
-      if (want.has(String(b.event_id))) err(`${id}: batch ${b.event_id} appears twice before the day`);
-      want.set(String(b.event_id), { protein: Number(b.protein) - out, day: Number(b.original_day) });
+      const bid = String(b.event_id);
+      const out = on ? flows.filter((f) => f.site === id && String(f.batch_event_id) === bid).reduce((t, f) => t + Number(f.portions), 0)
+        : expected.filter((x) => x.site === id && x.batch === bid).reduce((t, x) => t + x.portions, 0);
+      if (pile.some((x) => x.id === bid)) err(`${id}: batch ${bid} appears twice before the day`);
+      pile.push({ id: bid, protein: r6(Number(b.protein) - out), day: Number(b.original_day) });
     }
-    for (const e of newRemains) if (e.site === id) {
-      if (want.has(String(e.id))) err(`${id}: new remains ${e.id} reuse an existing batch id`);
-      want.set(String(e.id), { protein: Number(e.protein_portions), day });
+    piles.set(id, pile);
+  }
+  const append = (e: Any) => {
+    const pile = piles.get(e.site);
+    if (!pile) return; // new remains at a non-carcass site are checked elsewhere
+    if (pile.some((x) => x.id === String(e.id))) err(`${e.site}: new remains ${e.id} reuse an existing batch id`);
+    pile.push({ id: String(e.id), protein: Number(e.protein_portions), day });
+  };
+  for (const e of result?.world_events ?? []) if (e?.type === 'new_food_source') append(e);
+  for (const c of result?.colonies ?? []) {
+    let pending: { worker: string; site: string; takes: [string, number][] } | null = null;
+    for (const e of c.events ?? []) {
+      if (e?.type === 'new_food_source') append(e);
+      else if (e?.type === 'source_batch_consumed') {
+        const q = Number(e.quantity_portions);
+        if (!piles.has(e.location)) { err(`${c.colony_id}: batch take at ${e.location}, not a carcass source`); continue; }
+        if (!(Number.isFinite(q) && q > 0)) err(`${c.colony_id}: batch take ${e.source_event_id} of ${e.quantity_portions} portions (must be positive)`);
+        if (pending && (pending.worker !== e.worker || pending.site !== e.location)) { err(`${c.colony_id}: batch takes by ${pending.worker} at ${pending.site} not closed by a collect transfer`); pending = null; }
+        pending ??= { worker: String(e.worker), site: String(e.location), takes: [] };
+        pending.takes.push([String(e.source_event_id), q]);
+      } else if (e?.type === 'food_transfer' && e.cause === 'collect' && e.food_type === 'protein' && e.source?.kind === 'source' && piles.has(e.source.id)) {
+        const site = String(e.source.id), pile = piles.get(site) as Pile, load = Number(e.portions);
+        if (!pending || pending.worker !== e.recipient?.id || pending.site !== site) { err(`${c.colony_id}: ${e.recipient?.id} collected ${load} at ${site} with no matching batch take records`); pending = null; continue; }
+        // the engine's own split (stored order); recomputed here, then compared with the records
+        let needed = load; const want: [string, number][] = [];
+        for (const b of pile) {
+          const take = Math.min(b.protein, needed);
+          b.protein = r6(b.protein - take); needed = r6(needed - take);
+          if (take > 0) want.push([b.id, r6(take)]);
+          if (needed <= 1e-6) break;
+        }
+        if (needed > TOL) err(`${c.colony_id}: ${pending.worker} collected ${load} at ${site}, the batches held only ${r6(load - needed)}`);
+        const same = want.length === pending.takes.length && want.every(([b, q], k) => pending!.takes[k][0] === b && Math.abs(pending!.takes[k][1] - q) <= TOL);
+        if (!same) err(`${c.colony_id}: ${pending.worker}'s take at ${site} recorded as ${JSON.stringify(pending.takes)}, the stored-order rule gives ${JSON.stringify(want)}`);
+        pending = null;
+      }
     }
-    for (const e of consumed) if (e.location === id) {
-      const w = want.get(String(e.source_event_id));
-      if (!w) { err(`${id}: ants took from batch ${e.source_event_id}, which is not there`); continue; }
-      w.protein -= Number(e.quantity_portions);
-    }
-    const seen = new Set<string>();
-    for (const b of s1.batches ?? []) {
-      const k = String(b.event_id), w = want.get(k);
-      if (seen.has(k)) err(`${id}: batch ${k} appears twice after the day`);
-      seen.add(k);
-      if (!w) { err(`${id}: batch ${k} appeared with no new_food_source event`); continue; }
-      if (Number(b.original_day) !== w.day) err(`${id}: batch ${k} birth day ${b.original_day}, expected ${w.day}`);
-      if (!(Math.abs(Number(b.protein) - w.protein) <= TOL)) err(`${id}: batch ${k} holds ${b.protein}, rebuilt ${r6(w.protein)} (protein moved between batches or changed without an event)`);
-      if (Number(b.protein) < -TOL) err(`${id}: batch ${k} is negative`);
-    }
-    for (const [k, w] of want) if (!seen.has(k) && Math.abs(w.protein) > TOL) err(`${id}: batch ${k} (${r6(w.protein)}) disappeared without an event`);
+    if (pending) err(`${c.colony_id}: batch takes by ${pending.worker} at ${pending.site} with no collect transfer`);
+  }
+  for (const [id, pile] of piles) {
+    const end = endWorld?.sources?.[id]?.batches ?? [];
+    if (end.length !== pile.length || end.some((b: Any, k: number) => String(b.event_id) !== pile[k].id)) { err(`${id}: batches after the day ${JSON.stringify(end.map((b: Any) => b.event_id))} ≠ rebuilt ${JSON.stringify(pile.map((b) => b.id))}`); continue; }
+    end.forEach((b: Any, k: number) => {
+      if (Number(b.original_day) !== pile[k].day) err(`${id}: batch ${b.event_id} birth day ${b.original_day}, expected ${pile[k].day}`);
+      if (!(Math.abs(Number(b.protein) - pile[k].protein) <= TOL)) err(`${id}: batch ${b.event_id} holds ${b.protein}, rebuilt ${pile[k].protein} (protein moved between batches or changed without an event)`);
+    });
   }
 
   // ---- 4. the ME-1 ledger: what it finds removed must be named by a flow

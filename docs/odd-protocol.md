@@ -1045,7 +1045,7 @@
     - `secretion`、`rival_harvest`、`rain_washoff`；
     - 超過容量：蜜露 `capacity_runoff`、花蜜 `capacity_resorbed`（回到植物）；替代假設 `capacity_withheld`（預設關閉，最多只有當日的生產從未存在）；
     - `decomposition`、`expired_remains`（去處是 `loss:decomposition`，分解者沒有模擬）。
-  - 引擎 `checkSourceFlows` 檢查：每個食源閉合；屍體逐批次閉合（ID、出生日不變）；同一食源、原因、批次只有一筆；路徑由原因固定。
+  - 引擎 `checkSourceFlows` 檢查：每個食源閉合；屍體逐批次閉合（ID、出生日不變）；採集之後再逐批次核對：每次採集的批次紀錄要與 C2 `collect` 轉移相符，並依儲存順序分配（`checkCarcassTakes`）；同一食源、原因、批次只有一筆；路徑由原因固定。
   - 獨立讀取器 `cli/lib/source-flow-replay.ts` 從參數重算每一筆流量，並只用事件重建期末存量。
   - **存量算式不變**（保守候選）：打開時每個存量、亂數抽取與蟻群結果都與關閉時相同，只多了事件。
   - 屍體到期的參數說明與程式行為矛盾（P1-E1 的科學部分），未解決，交 Owner 裁示。

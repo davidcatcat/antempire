@@ -18,7 +18,7 @@ import assert from 'node:assert/strict';
 import { buildDay0 } from '../cli/lib/day0.ts';
 import { loadBundle } from '../cli/lib/load.ts';
 import { simulateWorldDay, legacyToWorldState, legacyColonyMeta, resolveBundle, type WorldState } from '../engine/index.ts';
-import { checkSourceFlows, growEcology, sourceSum } from '../engine/ecology.ts';
+import { carcassPiles, checkCarcassTakes, checkSourceFlows, growEcology, sourceSum } from '../engine/ecology.ts';
 import { calcWeather } from '../engine/weather.ts';
 import { replaySourceFlows } from '../cli/lib/source-flow-replay.ts';
 import { fixture } from './lib/harness.ts';
@@ -43,7 +43,7 @@ const strip = (s: Any) => { const c = structuredClone(s); delete c.last_world_ev
 
 // ---------------------------------------------------------------- AFTER: real days, many conditions
 interface Sample { start: Any; end: Any; result: Any; wp: Any }
-const samples: Sample[] = [], causes: Record<string, number> = {};
+const samples: Sample[] = [], takeSamples: Sample[] = [], causes: Record<string, number> = {};
 let realDays = 0, identical = 0, compared = 0;
 const run = (s0on: Any, s0off: Any | null, bon: Any, boff: Any | null, n: number, label: string) => {
   const wp = resolveBundle(bon).world;
@@ -52,6 +52,7 @@ const run = (s0on: Any, s0off: Any | null, bon: Any, boff: Any | null, n: number
     const o: Any = simulateWorldDay(a, bon), r = replaySourceFlows(a, o.state, o.result, wp);
     ok(r.ok, `${label} day ${o.day}: the reader rejects a real day (${r.errors.slice(0, 2).join(' | ')})`);
     realDays++; for (const [k, v] of Object.entries(r.by_cause)) causes[k] = (causes[k] ?? 0) + v;
+    if (takeSamples.length < 12 && o.result.colonies.some((c: Any) => c.events.some((e: Any) => e.type === 'source_batch_consumed' && a.sources[e.location]?.batches.filter((b: Any) => b.protein > 0.2).length >= 2))) takeSamples.push({ start: structuredClone(a), end: o.state, result: o.result, wp });
     if ((samples.length < 60 || label.startsWith('stock 1.5') && d === 0) && r.flows > 0 && (d % 7 === 3 || Object.keys(r.by_cause).some((k) => k.startsWith('capacity') || k === 'expired_remains'))) samples.push({ start: structuredClone(a), end: o.state, result: o.result, wp });
     if (b && boff) {
       const ob: Any = simulateWorldDay(b, boff); compared++;
@@ -154,6 +155,33 @@ const redate = (src: Any) => { src.batches.find((b: Any) => b.protein > 0.05).or
   const site = sm!.result.world_events.find((e: Any) => lostCause(e) && sm!.result.world_events.some((x: Any) => x.cause === 'capacity_withheld' && x.site === e.site)).site;
   both('N16 food already above the capacity relabelled as never secreted (Codex P2-2)', sm!, (f) => { const i = idx(f, (e) => lostCause(e) && e.site === site); Object.assign(f[i], { cause: 'capacity_withheld', from: null, to: null, never_existed: true }); return f; });
   both('N17 withheld mode: part of the production kept as secretion while existing food is said to run off', sm!, (f) => { const w0 = f.find((e) => e.cause === 'capacity_withheld' && e.site === site); if (!f.some((e) => e.cause === 'secretion' && e.site === site)) f.push({ ...w0, id: w0.id + 's', cause: 'secretion', from: site.startsWith('F08') || f.some((e) => e.site === site && e.cause === 'capacity_resorbed') ? `producer:flowers:${site}` : `producer:hemipterans:${site}`, to: 'source:' + site, never_existed: undefined, portions: 0 }); const s = idx(f, (e) => e.cause === 'secretion' && e.site === site), w = idx(f, (e) => e.cause === 'capacity_withheld' && e.site === site), l = idx(f, (e) => lostCause(e) && e.site === site); const x = Math.min(0.05, f[w].portions / 2); f[s].portions = +(f[s].portions + x).toFixed(6); f[w].portions = +(f[w].portions - x).toFixed(6); f[l].portions = +(f[l].portions + x).toFixed(6); return f; });
+}
+// Codex review of ece3bc2 P2: protein moved between batches hidden by forged take records (+0.1 on one batch, −0.1 on another)
+{
+  assert.ok(takeSamples.length, 'no sample day with a carcass take');
+  const takeEngine = (sm: Sample, editEvents: (ev: Any[]) => void, editEnd: (src: Any) => void) => {
+    const w: Any = structuredClone(sm.start); growEcology(w, sm.wp, calcWeather(w, sm.wp, sm.result.date), []);
+    const ev: Any[][] = sm.result.colonies.map((c: Any) => structuredClone(c.events)); editEvents(ev.flat());
+    const end: Any = structuredClone(sm.end.sources); editEnd(end);
+    try { checkCarcassTakes(carcassPiles(w.sources), ev, end, sm.start.sim_day + 1); return true; } catch (x) { return String(x); }
+  };
+  const takeReader = (sm: Sample, editEvents: (ev: Any[]) => void, editEnd: (src: Any) => void) => {
+    const res: Any = structuredClone(sm.result), end: Any = structuredClone(sm.end); editEvents(res.colonies.flatMap((c: Any) => c.events)); editEnd(end.sources);
+    const r = replaySourceFlows(sm.start, end, res, sm.wp); return r.ok ? true : r.errors[0];
+  };
+  for (const sm of takeSamples.slice(0, 4)) ok(takeEngine(sm, () => {}, () => {}) === true && takeReader(sm, () => {}, () => {}) === true, `control: a real day with carcass takes (${sm.result.day}) is accepted by both`);
+  const sm = takeSamples[0], take = sm.result.colonies.flatMap((c: Any) => c.events).find((e: Any) => e.type === 'source_batch_consumed' && sm.start.sources[e.location].batches.filter((b: Any) => b.protein > 0.2).length >= 2);
+  const site = take.location, other = (src: Any) => src[site].batches.find((b: Any) => b.event_id !== take.source_event_id && b.protein > 0.1);
+  const forge = (ev: Any[]) => { const k = ev.findIndex((e) => e.type === 'source_batch_consumed' && e.source_event_id === take.source_event_id && e.worker === take.worker); ev[k].quantity_portions = +(ev[k].quantity_portions + 0.1).toFixed(6); ev.splice(k + 1, 0, { ...ev[k], source_event_id: other(sm.end.sources).event_id, quantity_portions: -0.1 }); };
+  const moveEnd = (src: Any) => { const a = src[site].batches.find((b: Any) => b.event_id === take.source_event_id), b = src[site].batches.find((x: Any) => x.event_id === other(sm.end.sources).event_id); a.protein = +(a.protein - 0.1).toFixed(6); b.protein = +(b.protein + 0.1).toFixed(6); };
+  let e = takeEngine(sm, forge, moveEnd), r = takeReader(sm, forge, moveEnd);
+  ok(e !== true, `N18 protein moved between batches, hidden by forged take records +0.1 / −0.1 (Codex ece3bc2): the engine check rejects it (${e})`);
+  ok(r !== true, `N18 … the reader rejects it (${r})`);
+  const relabel = (ev: Any[]) => { const k = ev.findIndex((x) => x.type === 'source_batch_consumed' && x.source_event_id === take.source_event_id && x.worker === take.worker); ev[k].source_event_id = other(sm.end.sources).event_id; };
+  const relabelEnd = (src: Any) => { const a = src[site].batches.find((b: Any) => b.event_id === take.source_event_id), b = src[site].batches.find((x: Any) => x.event_id === other(sm.end.sources).event_id); a.protein = +(a.protein + take.quantity_portions).toFixed(6); b.protein = +(b.protein - take.quantity_portions).toFixed(6); };
+  e = takeEngine(sm, relabel, relabelEnd); r = takeReader(sm, relabel, relabelEnd);
+  ok(e !== true, `N19 a take recorded against another batch than the stored-order rule gives (no negative amount): the engine check rejects it (${e})`);
+  ok(r !== true, `N19 … the reader rejects it (${r})`);
 }
 {
   const sm = pick(isCause('rain_washoff'));

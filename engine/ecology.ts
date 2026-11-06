@@ -255,6 +255,49 @@ function insectDemography(w: EcologyInput, wp: WorldParams, weather: Weather, ev
   }
 }
 
+/** Carcass batches right after the ecology step (ids, amounts, birth days in stored order) — the start of checkCarcassTakes. */
+export const carcassPiles = (sources: Record<string, Source>): Record<string, { id: string; protein: number; original_day: number }[]> =>
+  Object.fromEntries(Object.entries(sources).filter(([, s]) => s.type === 'carcass').map(([id, s]) => [id, s.batches.map((b) => ({ id: b.event_id, protein: b.protein, original_day: b.original_day }))]));
+
+/**
+ * Engine check (v26, Codex review of ece3bc2): after foraging, every carcass batch = its amount after the ecology step + new
+ * remains − the takes recorded against it, where each take (a run of source_batch_consumed by one worker at one site) must
+ * be closed by that worker's C2 `collect` transfer of the same total, with positive amounts split over the batches in their
+ * stored order (takeProtein's rule). Forged take records that move protein between batches therefore fail here.
+ */
+export function checkCarcassTakes(piles: Record<string, { id: string; protein: number; original_day: number }[]>, colonyEvents: SimEvent[][], after: Record<string, Source>, day: number): void {
+  const fail = (m: string) => { throw Error('SOURCE_FLOW carcass takes: ' + m); };
+  const pile = Object.fromEntries(Object.entries(piles).map(([k, v]) => [k, v.map((b) => ({ ...b }))]));
+  for (const events of colonyEvents) {
+    let run: { worker: unknown; site: string; takes: { id: string; q: number }[] } | null = null;
+    for (const e of events as (SimEvent & Record<string, any>)[]) { // eslint-disable-line @typescript-eslint/no-explicit-any
+      if (e.type === 'new_food_source' && pile[e.site]) pile[e.site].push({ id: String(e.id), protein: Number(e.protein_portions), original_day: day });
+      else if (e.type === 'source_batch_consumed') {
+        if (!pile[e.location] || !(Number(e.quantity_portions) > 0)) fail(`take ${e.source_event_id} at ${e.location}: ${e.quantity_portions}`);
+        if (run && (run.worker !== e.worker || run.site !== e.location)) fail(`takes by ${String(run.worker)} at ${run.site} not closed by a collect transfer`);
+        run ??= { worker: e.worker, site: e.location, takes: [] };
+        run.takes.push({ id: String(e.source_event_id), q: Number(e.quantity_portions) });
+      } else if (e.type === 'food_transfer' && e.cause === 'collect' && e.food_type === 'protein' && e.source?.kind === 'source' && pile[e.source.id]) {
+        if (!run || run.worker !== e.recipient?.id || run.site !== e.source.id) fail(`${e.recipient?.id} collected at ${e.source.id} without batch take records`);
+        let needed = Number(e.portions), k = 0;
+        for (const b of pile[e.source.id]) {
+          const take = Math.min(b.protein, needed);
+          b.protein = round(b.protein - take); needed = round(needed - take);
+          if (take > 0) { const t = run!.takes[k++]; if (!t || t.id !== b.id || Math.abs(t.q - round(take)) > TOL_FLOW) fail(`take at ${e.source.id} by ${String(run!.worker)} does not follow the stored batch order`); }
+          if (needed <= 1e-6) break;
+        }
+        if (k !== run!.takes.length || needed > TOL_FLOW) fail(`take at ${e.source.id} by ${String(run!.worker)}: records ≠ the collected amount`);
+        run = null;
+      }
+    }
+    if (run) fail(`takes by ${String(run.worker)} at ${run.site} with no collect transfer`);
+  }
+  for (const [site, p] of Object.entries(pile)) {
+    const b1 = after[site].batches;
+    if (b1.length !== p.length || b1.some((b, k) => b.event_id !== p[k].id || b.original_day !== p[k].original_day || Math.abs(b.protein - p[k].protein) > TOL_FLOW)) fail(`${site}: batches after foraging do not match the recorded takes`);
+  }
+}
+
 /** One day of independent garden ecology. Mutates w.sources and w.ecology. */
 export function growEcology(w: EcologyInput, wp: WorldParams, weather: Weather, events: SimEvent[]): void {
   const g = dice(w, 'ecology');

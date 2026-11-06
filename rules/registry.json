@@ -357,7 +357,7 @@
       "rules_version": "antempire.v2-review.26-source-flows",
       "tag": "v26",
       "fingerprint": {
-        "engine": "66e529917a7cc8c9bf71a4529677f0b1afcba5662823c78836f6d4e354b20bfd",
+        "engine": "611219440fdfadf7870132568efb49ff9ce97efbe24043502382c12651d4b37f",
         "params": "9e9dec4cbe0337778e58f24a23aed32b7b8e5a674b538fa594621bcde7090444"
       },
       "approved_in": "Owner instruction 2026-11-06 (Issue #80, world food-source ledger; separate rules-update PR for Owner review, not merged by Claude)",
