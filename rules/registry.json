@@ -352,6 +352,24 @@
       "save_schema": "antempire.engine-v2",
       "state_migration": "none while the switch is off; with it on, colony.population.queens is created on the first C3a day (Day14 migration: unknown_initial_reserve null, known balance 0)",
       "note": "C3a: the queen's own nutrition compartment (queen_body), fed only by local ordinal-timed nest-round events; her metabolism from what she ate; laying and survival unchanged (C3b/C3c). Switch queen_feeding.individual_queen_body_c3a introduced OFF: every output byte-identical to v2-review.24. Routes B1 and C are candidates, not established mechanisms of P. megacephala."
+    },
+    {
+      "rules_version": "antempire.v2-review.26-source-flows",
+      "tag": "v26",
+      "fingerprint": {
+        "engine": "d40b023ee850639081fabd6ebc2f129195679bfe2e3b64ec41e99c782cd9eee6",
+        "params": "9e9dec4cbe0337778e58f24a23aed32b7b8e5a674b538fa594621bcde7090444"
+      },
+      "approved_in": "Owner instruction 2026-11-06 (Issue #80, world food-source ledger; separate rules-update PR for Owner review, not merged by Claude)",
+      "golden": {
+        "traces": "tests/golden/v26-trace-sha256.json",
+        "reports": "reports/day15-134-v26-*",
+        "day0_traces": "tests/golden/day0-v26-trace-sha256.json"
+      },
+      "previous": "antempire.v2-review.25-c3a-queen-body",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null,
+      "note": "Issue #80: with source_flows.record_source_flows_v26 on, every change of a source's food in the ecology step (secretion, background-rival harvest, rain washoff, capacity runoff or withheld secretion, decomposition, expired remains) is a source_flow world event with a cause, an origin and a destination, and the engine checks each source closes; the stock arithmetic is unchanged (conservative candidate: food availability identical). Introduced OFF: every output byte-identical to v2-review.25. Independent reader cli/lib/source-flow-replay.ts."
     }
   ]
 }

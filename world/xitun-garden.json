@@ -437,6 +437,14 @@
       "moved_from_code": "sim/day_engine.cjs growSources(): clamp(decay+rain*bonus,0,.95)（原寫死於程式，數值原樣搬移，未修改）"
     }
   },
+  "source_flows": {
+    "record_source_flows_v26": false,
+    "record_source_flows_v26_note": "模型開關（Issue #80，v2-review.26；預設關閉）。true＝生態步驟中每一筆食源數量變化都寫成 source_flow 世界事件（原因、來處、去處、份量），並由引擎檢查每個食源的收支閉合，屍體逐批次檢查。食源的存量算式不變（保守候選：保持既有食物可用量），只把舊模型的容量截斷、屍體到期、雨沖與分解寫出來。assumption: true（遊戲假設）；設計見 docs/design-source-flows-v26.md。",
+    "honeydew_capacity_limits_secretion": false,
+    "honeydew_capacity_limits_secretion_note": "蜜露超過容量時的解釋（只改事件，不改存量）。false（預設）＝已存在、沒有留在食源（capacity_runoff → loss:capacity_runoff）：沒有被採的蜜露會在葉面累積並養煤煙病菌（Way 1963，Annu. Rev. Entomol. 8:307–344，非本種，只支持機制方向）；其消費者沒有模擬。true＝替代的模型假設，沒有直接證據：在容量時停止分泌，最多只有當日的淨生產記為從未分泌（capacity_withheld）；開始時已超過容量的存量仍記為流失。容量（honeydew_max）是遊戲假設，assumption: true。",
+    "nectar_capacity_limits_secretion": false,
+    "nectar_capacity_limits_secretion_note": "花蜜超過容量時的解釋（只改事件，不改存量）。false（預設）＝已分泌的花蜜被植物再吸收（capacity_resorbed → plant:flowers:<site>）：花蜜的存量由分泌與再吸收共同調節（Nepi & Stpiczyńska 2008，Naturwissenschaften 95:177–184，DOI 10.1007/s00114-007-0307-2，非本種、非本花園，只支持機制方向；再吸收的量是遊戲假設）。true＝替代的模型假設，沒有直接證據：在容量時停止分泌，最多只有當日的生產記為從未分泌（capacity_withheld），其餘超量仍記為再吸收。容量（nectar_max）是遊戲假設，assumption: true。"
+  },
   "insects": {
     "insect_local_carrying_capacity": {
       "value": 18,
