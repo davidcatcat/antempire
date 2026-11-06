@@ -115,6 +115,7 @@ export function resolveSpecies(file: ParamFile) {
     // C4a (docs/design-c4-larval-nutrition.md §7.0 D1–D8): each larva's own nutrition account, fed only in the C3a nest round
     larval_feeding: {
       individual_larva_body_c4a: bool(file, 'larval_feeding.individual_larva_body_c4a'),
+      first_seen_begging_prior_v29: bool(file, 'larval_feeding.first_seen_begging_prior_v29'),
       ...section(file, 'larval_feeding', ['feed_begging_threshold', 'feed_bolus_sugar_portions', 'feed_bolus_protein_portions'] as const),
     },
     predation: {
@@ -129,6 +130,9 @@ export function resolveSpecies(file: ParamFile) {
   // D1 (Owner 2026-11-06): C4a shares the C3a nest round (one ordinal time and one set of nest places), so it cannot run alone
   if (p.larval_feeding.individual_larva_body_c4a && !p.queen_feeding.individual_queen_body_c3a) {
     throw Error(`Species ${p.species_id}: larval_feeding.individual_larva_body_c4a=true requires queen_feeding.individual_queen_body_c3a=true (C4a uses the C3a nest round, D1)`);
+  }
+  if (p.larval_feeding.first_seen_begging_prior_v29 && !p.larval_feeding.individual_larva_body_c4a) {
+    throw Error(`Species ${p.species_id}: larval_feeding.first_seen_begging_prior_v29=true requires larval_feeding.individual_larva_body_c4a=true`);
   }
   if (p.castes.major_worker_production_enabled) {
     throw Error(`Species ${p.species_id}: castes.major_worker_production_enabled=true is not implemented by this engine`);
