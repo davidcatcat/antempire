@@ -71,7 +71,7 @@ export function replaySourceFlows(startWorld: Any, endWorld: Any, result: Any, w
       wash = clamp(rain * wp.honeydew.honeydew_washoff_per_rain_mm, 0, wp.honeydew.honeydew_washoff_max_fraction);
       withheld = wp.source_flows.honeydew_capacity_limits_secretion === true;
     } else {
-      gross = Number(s0.bloom_days_left) > 0 && s1.host_alive !== false ? Number(s0.production_per_day) : 0;
+      gross = Number(s0.bloom_days_left) > 0 && s0.host_alive !== false ? Number(s0.production_per_day) : 0; // the START host state: no event changes a nectar host (§3c)
       wash = clamp(rain * wp.nectar.nectar_washoff_per_rain_mm, 0, wp.nectar.nectar_washoff_max_fraction);
       withheld = wp.source_flows.nectar_capacity_limits_secretion === true;
     }
@@ -205,6 +205,19 @@ export function replaySourceFlows(startWorld: Any, endWorld: Any, result: Any, w
   //      Limit (stated): records that are forged CONSISTENTLY with all of these, and with the C2 colony replay, still pass —
   //      no reader can recover an event the engine never wrote; the RNG draws themselves are not re-run here.
   const evAll = [...(result?.world_events ?? []), ...(result?.colonies ?? []).flatMap((c: Any) => c.events ?? [])];
+  // (a') every other source field is unchanged within the day (Codex review of 9fac940: a nectar host revived without an
+  //      event added 0.35 sugar). Whitelist of what the ecology step and foraging may change, per type; anything else must be
+  //      deep-equal, so a new field cannot carry its own justification either.
+  const MAY_CHANGE: Record<string, string[]> = {
+    honeydew: ['sugar', 'protein', 'host_plants', 'host_alive', 'hemipteran_colonies', 'production_last_day', 'production_per_day', 'ecological_record'],
+    nectar: ['sugar', 'protein', 'bloom_days_left', 'production_last_day', 'ecological_record'],
+    carcass: ['protein', 'batches'],
+  };
+  for (const id of Object.keys(startWorld?.sources ?? {}).sort()) {
+    const s0 = startWorld.sources[id], s1 = endWorld?.sources?.[id];
+    if (!s1) continue;
+    for (const k of new Set([...Object.keys(s0), ...Object.keys(s1)])) if (!(MAY_CHANGE[s0.type] ?? []).includes(k) && JSON.stringify(s0[k]) !== JSON.stringify(s1[k])) err(`${id}: field ${k} ${JSON.stringify(s0[k])} -> ${JSON.stringify(s1[k])} within the day (no event changes it)`);
+  }
   for (const id of Object.keys(startWorld?.sources ?? {}).sort()) {
     const s0 = startWorld.sources[id], s1 = endWorld?.sources?.[id];
     if (!s1 || s0.type === 'carcass') continue;

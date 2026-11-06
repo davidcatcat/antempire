@@ -211,6 +211,14 @@ const redate = (src: Any) => { src.batches.find((b: Any) => b.protein > 0.05).or
   const tk = takeSamples[0], other = Object.keys(tk.start.sources).find((k) => tk.start.sources[k].type === 'carcass' && !tk.result.colonies.some((c: Any) => c.events.some((x: Any) => x.cause === 'collect' && x.source?.id === k)))!;
   const mEdit = (res: Any) => { const t = res.colonies.flatMap((c: Any) => c.events).find((x: Any) => x.cause === 'collect' && x.food_type === 'protein'); t.source.id = other; };
   e = eng(tk, mEdit); ok(e !== true, `N25 a carcass collect moved to another carcass source (no food_collected there): the engine check rejects it (${e})`); ok(rd(tk, mEdit) !== true, 'N25 … the reader rejects it');
+  // Codex review of 9fac940: a nectar host revived without an event, with the extra production added — every reader accepted it
+  {
+    const nec = samples.find((x) => Object.values(x.start.sources).some((v: Any) => v.type === 'nectar' && v.bloom_days_left > 0))!;
+    const nid = Object.keys(nec.start.sources).find((k) => nec.start.sources[k].type === 'nectar' && nec.start.sources[k].bloom_days_left > 0)!;
+    const dead: Any = structuredClone(nec); dead.start.sources[nid].host_alive = false;
+    const prod = Number(dead.start.sources[nid].production_per_day);
+    ok(rd(dead, (res, end) => { end.sources[nid].host_alive = true; for (const e of res.world_events) if (e.type === 'source_flow' && e.site === nid && e.cause === 'secretion') e.portions = +(e.portions).toFixed(6); end.sources[nid].sugar = +(end.sources[nid].sugar).toFixed(6); void prod; }) !== true, 'N27 a nectar host dead at the start and alive at the end with no event (the day\'s production kept): the reader rejects it');
+  }
   const aEdit = (_res: Any, end: Any) => { const s: Any = Object.values(end.sources).find((v: Any) => v.type === 'carcass' && v.batches.length); s.batches[0].age_days = 0; };
   e = eng(tk, aEdit); ok(e !== true, `N26 a carcass batch's age_days rewritten: the engine check rejects it (${e})`); ok(rd(tk, aEdit) !== true, 'N26 … the reader rejects it');
 }
