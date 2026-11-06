@@ -46,7 +46,7 @@ function replayChecked(start: ColonyState, end: ColonyState, events: SimEvent[],
     else if (e.type === 'egg_laid') { if (queenDeaths || !start.population.queen_alive) err(`egg ${e.id} laid by a dead queen`); if (e.queen !== undefined && e.queen !== start.queen_id) err(`egg ${e.id} attributed to ${e.queen}, not to queen ${start.queen_id}`); order(e.id, 'laid'); bump(e.id, 'laid'); }
     else if (e.type === 'hatch') { order(e.id, 'hatched'); bump(e.id, 'hatched'); }
     else if (e.type === 'pupation') { order(e.id, 'pupated'); bump(e.id, 'pupated'); }
-    else if (e.type === 'queen_death') { if (String(e.id) !== start.queen_id || end.queen_id !== start.queen_id) err(`queen_death names ${e.id}; this colony's queen is ${start.queen_id}`); queenDeaths++; }
+    else if (e.type === 'queen_death') { if (String(e.id) !== start.queen_id) err(`queen_death names ${e.id}; this colony's queen is ${start.queen_id}`); queenDeaths++; }
     else if (/migrat|immigr|emigr/.test(String(e.type)) && /worker|brood|ant|queen/.test(JSON.stringify(e))) err(`event ${e.type} moves ants across the colony boundary: not supported by the flow identity yet (D7-A)`);
   }
   const startW = new Map(start.population.workers.map((w) => [w.id, w])), endW = new Map(end.population.workers.map((w) => [w.id, w]));
@@ -77,6 +77,7 @@ function replayChecked(start: ColonyState, end: ColonyState, events: SimEvent[],
     if (t.laid && !fresh(end.egg_id_prefix, id, start.next_egg_number, end.next_egg_number)) err(`new egg ${id} does not use a fresh number`);
   }
   if (end.next_worker_number < start.next_worker_number || end.next_egg_number < start.next_egg_number) err('an ID counter decreased');
+  if (end.queen_id !== start.queen_id) err(`the colony's queen changed identity (${start.queen_id} -> ${end.queen_id}) with no event`);
   if (queenDeaths > (start.population.queen_alive ? 1 : 0)) err(`${queenDeaths} queen deaths for a queen that was ${start.population.queen_alive ? 'alive' : 'dead'}`);
   if (end.population.queen_alive !== (start.population.queen_alive && queenDeaths === 0)) err('queen_alive does not follow from the queen_death events');
   for (const [id, b] of endB) { const b0 = startB.get(id); if (b0 && STAGES.indexOf(b.stage) < STAGES.indexOf(b0.stage)) err(`brood ${id}: ${b0.stage} -> ${b.stage}`); }
