@@ -429,7 +429,7 @@
       "rules_version": "antempire.v2-review.30-c4b-larva-development",
       "tag": "v30",
       "fingerprint": {
-        "engine": "01f277b5bc95ca53d5f8a0fd93596878768d2c3e7ad1b13b730642f26720a414",
+        "engine": "c888ff1324a62a0758389608edfafc45a750e4d0adfb76808e640ab284061481",
         "params": "a8268ef819dfd4e3bda5cacccd7cc2ab75222919c2f212ac6ba1aaee266bb046"
       },
       "approved_in": "Owner instruction 2026-11-07 (phase 4: C4b engineering; the nutrition-response form is an Owner decision, null until chosen; not merged by Claude)",

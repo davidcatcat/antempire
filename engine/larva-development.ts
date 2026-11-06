@@ -49,13 +49,17 @@ export function checkLarvaDevelopment(start: LarvaRoundStart, colony: ColonyStat
   for (const [id, b] of start.brood) {
     const rec = recs.get(id);
     if (b.stage !== 'larva' || !b.body) { if (rec) fail(`development record for ${id} (${b.stage}), not a larva with an account`); continue; }
-    if (workersAtStart === 0) { if (rec) fail(`${id} developed on a day with no worker care`); continue; }
+    // Codex review (2026-11-07): without care a larva does not develop — no record AND no change of progress or stage
+    if (workersAtStart === 0) { if (rec) fail(`${id} developed on a day with no worker care`); const e0 = end.get(id); if (e0 && (e0.stage !== 'larva' || e0.progress !== b.progress)) fail(`larva ${id}: no care today, but its stage/progress changed ${b.stage}/${b.progress} -> ${e0.stage}/${e0.progress}`); if (pupated.has(id)) fail(`larva ${id} pupated on a day without care`); continue; }
     if (!rec) { if (!died.has(id) || end.has(id)) fail(`larva ${id} has no development record`); continue; }
     const x = ownPaidFraction(paid.get(id) ?? { sugar: 0, protein: 0 }, need), n = nutritionFactor(x, sp), after = round((b.progress as number) + factor / sp.development.larva_days * n);
     if (rec.own_paid_fraction !== round(x) || rec.nutrition_factor !== round(n) || rec.progress_before !== b.progress || rec.progress_after !== after || rec.nutrition_response !== sp.larval_development.nutrition_response) fail(`larva ${id}: development ${JSON.stringify({ x: rec.own_paid_fraction, n: rec.nutrition_factor, before: rec.progress_before, after: rec.progress_after })}; its own records give ${JSON.stringify({ x: round(x), n: round(n), before: b.progress, after })}`);
     const e = end.get(id);
+    // Codex review (2026-11-07): pupation happens exactly when the progress reaches 1 — never below it, always at or above it
+    if (after >= 1 && !(e === undefined ? died.has(id) : e.stage === 'pupa' && pupated.has(id))) fail(`larva ${id} reached progress ${after} ≥ 1 but did not pupate`);
+    if (after < 1 && (pupated.has(id) || e?.stage === 'pupa')) fail(`larva ${id} pupated at progress ${after} < 1`);
     if (e && e.stage === 'larva' && e.progress !== after) fail(`larva ${id}: end progress ${e.progress}, the development record gives ${after}`);
-    if (e && e.stage === 'pupa' && (!pupated.has(id) || e.progress !== round(Math.max(0, after - 1)))) fail(`larva ${id} pupated with progress ${e.progress}; the record gives ${round(Math.max(0, after - 1))}`);
+    if (e && e.stage === 'pupa' && e.progress !== round(Math.max(0, after - 1))) fail(`larva ${id} pupated with progress ${e.progress}; the record gives ${round(Math.max(0, after - 1))}`);
   }
   for (const id of recs.keys()) if (!start.brood.has(id)) fail(`development record for ${id}, which was not brood at the start`);
 }

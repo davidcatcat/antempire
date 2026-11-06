@@ -100,9 +100,25 @@ for (const [form, extra] of FORMS) {
     forge('D3 a larva with no development record', (ev) => { const r = rec(ev); ev.splice(ev.indexOf(r), 1); });
     forge('D4 two development records for one larva', (ev) => { const r = rec(ev); ev.splice(ev.indexOf(r) + 1, 0, structuredClone(r)); });
     forge('D5 end progress that does not follow the record', (_ev, after) => { const r = rec(ev0); after.population.brood.find((x: Any) => x.id === r.larva).progress = 0.999; });
+    // Codex review (2026-11-07): pupation exactly at progress ≥ 1, and none on a day without care
+    forge('D6 a pupation although the progress is below 1', (ev, after) => { const r = rec(ev), l = after.population.brood.find((x: Any) => x.id === r.larva); l.stage = 'pupa'; l.progress = 0; l.age_days = 0; ev.push({ type: 'pupation', id: r.larva }); });
   } else ok(true, `B4 ${form}: no suitable day (not exercised; stated)`);
 }
 { const o: Any = simulateWorldDay(buildDay0('A1' as Any, 3, '2027-03-21', mk(false)).state, mk(false)); ok(!o.result.colonies[0].events.some((e: Any) => e.type === 'larva_development'), 'B5: with C4b off no larva_development record is written'); }
+// D7 (Codex review 2026-11-07): a day without any worker — no larva may gain progress, with or without a record
+for (const [form, extra] of FORMS) {
+  const b = mk(true, form, extra), raw = b.species[MAIN_SPECIES], sp = resolveBundle(b).species[MAIN_SPECIES] as Any;
+  let s: Any = buildDay0('A1' as Any, 3, '2027-03-21', b).state;
+  for (let k = 0; k < 200 && s.colonies[0].population.brood.filter((x: Any) => x.stage === 'larva' && x.body).length < 2; k++) s = simulateWorldDay(s, b).state;
+  const lone = structuredClone(s); lone.colonies[0].population.workers = [];
+  const o: Any = simulateWorldDay(lone, b), ev = o.result.colonies[0].events, a0 = o.state.colonies[0];
+  const target = a0.population.brood.find((x: Any) => x.stage === 'larva' && x.body);
+  const engine = (after: Any) => { const pre = structuredClone(lone.colonies[0]), had = ensureBroodRecords(pre, false, []); try { checkLarvaDevelopment(larvaRoundStart(pre, sp, had, false), after, ev, sp, o.result.weather.nest_temp_model_c, Number(after.last_report.metabolic_factor), 0); return ''; } catch (e) { return String(e); } };
+  const reader = (after: Any) => replayLarvaDevelopment(lone.colonies[0], after, ev, raw, o.result.weather.nest_temp_model_c).errors;
+  ok(!ev.some((e: Any) => e.type === 'larva_development') && engine(a0) === '' && reader(a0).length === 0, `D7 ${form}: a no-care day has no development record and is accepted`);
+  if (target) { const forged = structuredClone(a0); forged.population.brood.find((x: Any) => x.id === target.id).progress = Math.round((target.progress + 0.1) * 1e6) / 1e6; ok(engine(forged) !== '' && reader(forged).length > 0, `D7 ${form}: progress gained on a no-care day without any record is rejected by the engine and the reader`); }
+  else ok(true, `D7 ${form}: no larva survived the no-care day (not exercised; stated)`);
+}
 
 // ---------------------------------------------------------------- B7 Yuan 2026 observation operator (report only)
 {

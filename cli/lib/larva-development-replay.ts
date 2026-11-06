@@ -30,17 +30,20 @@ export function replayLarvaDevelopment(start: Any, end: Any, events: Any[], spec
   const init = new Set(ev.filter((e) => e.type === 'brood_nutrition_record_initialized' && e.stage === 'larva').map((e) => String(e.id)));
   const endB = new Map<string, Any>((end?.population?.brood ?? []).map((b: Any) => [b.id, b]));
   const dead = new Set(ev.filter((e) => e.type === 'brood_death').map((e) => String(e.id)));
+  const pupatedNow = new Set(ev.filter((e) => e.type === 'pupation').map((e) => String(e.id)));
   let n = 0;
   for (const b of start?.population?.brood ?? []) {
     const r = rec.get(b.id), accounted = b.stage === 'larva' && (b.body || init.has(b.id));
     if (!accounted) { if (r) err(`${b.id}: a development record for something that was not a larva with an account`); continue; }
-    if (!care) { if (r) err(`${b.id}: developed on a day without any worker`); continue; }
+    if (!care) { if (r) err(`${b.id}: developed on a day without any worker`); const e0 = endB.get(b.id); if (e0 && (e0.stage !== 'larva' || e0.progress !== b.progress)) err(`${b.id}: no worker today, yet ${b.stage}/${b.progress} -> ${e0.stage}/${e0.progress}`); if (pupatedNow.has(b.id)) err(`${b.id}: pupated without any worker`); continue; }
     if (!r) { if (!dead.has(b.id) || endB.has(b.id)) err(`${b.id}: no development record`); continue; }
     n++;
     const p = paid.get(b.id) ?? { sugar: 0, protein: 0 }, x = clip(Math.min(need.sugar > 0 ? p.sugar / need.sugar : 1, need.protein > 0 ? p.protein / need.protein : 1), 0, 1);
     const nn = N(x), after = r6(Number(b.progress) + tf / days * nn);
     if (r.own_paid_fraction !== r6(x) || r.nutrition_factor !== r6(nn) || r.progress_before !== b.progress || r.progress_after !== after || r.nutrition_response !== form) err(`${b.id}: record x ${r.own_paid_fraction} N ${r.nutrition_factor} ${r.progress_before}->${r.progress_after}; its own records give x ${r6(x)} N ${r6(nn)} ${b.progress}->${after}`);
     const e = endB.get(b.id);
+    if (after >= 1 && !(e === undefined ? dead.has(b.id) : e.stage === 'pupa' && pupatedNow.has(b.id))) err(`${b.id}: progress ${after} ≥ 1 without pupation`);
+    if (after < 1 && (pupatedNow.has(b.id) || e?.stage === 'pupa')) err(`${b.id}: pupated at progress ${after} < 1`);
     if (e?.stage === 'larva' && e.progress !== after) err(`${b.id}: end progress ${e.progress}, replay ${after}`);
     if (e?.stage === 'pupa' && e.progress !== r6(Math.max(0, after - 1))) err(`${b.id}: pupated with ${e.progress}, replay ${r6(Math.max(0, after - 1))}`);
   }
