@@ -106,6 +106,12 @@ export function resolveSpecies(file: ParamFile) {
     navigation: { individual_route_memory: bool(file, 'navigation.individual_route_memory') },
     // v2-review.17: individual activity timeline (switch) and its durations / decision weights.
     activity: { individual_timeline: bool(file, 'activity.individual_timeline'), local_causality_v20: bool(file, 'activity.local_causality_v20'), local_trail_deposit_v23: bool(file, 'activity.local_trail_deposit_v23'), ...(bool(file, 'activity.individual_timeline') ? section(file, 'activity', ACTIVITY_KEYS) : ({} as Record<(typeof ACTIVITY_KEYS)[number], number>)) },
+    // C3a (docs/design-c3-queen-feeding.md §10): the queen's own nutrition compartment, fed only by local, timed events
+    queen_feeding: {
+      individual_queen_body_c3a: bool(file, 'queen_feeding.individual_queen_body_c3a'), route_b1: bool(file, 'queen_feeding.route_b1'),
+      route_c_self_feed: bool(file, 'queen_feeding.route_c_self_feed'), store_is_queen_location: bool(file, 'queen_feeding.store_is_queen_location'),
+      ...section(file, 'queen_feeding', ['take_from_cache_max_portions', 'feed_max_portions_per_contact', 'queen_satiation_days_of_need', 'self_feed_max_portions', 'day0_initial_reserve_days_of_need'] as const),
+    },
     predation: {
       ...section(file, 'predation', ['live_prey_encounter_probability', 'large_prey_min_team', 'live_prey_capture_probability', 'large_prey_escape_while_recruiting_probability', 'large_prey_max_team'] as const),
       simultaneous_site_group_hunting: bool(file, 'predation.simultaneous_site_group_hunting'),

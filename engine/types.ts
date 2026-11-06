@@ -42,6 +42,8 @@ export interface Worker {
   local_sensory?: LocalSensory;
   site_memory?: Record<string, SiteMemory>;
   crop_cargo_sugar?: number;
+  /** C3a: liquid protein in the same crop (shared capacity with the sugar, docs/design-c3-queen-feeding.md §12.3). Absent when C3a is off. */
+  crop_cargo_protein_liquid?: number;
   recruited_today?: boolean;
   [k: string]: unknown;
 }
@@ -60,7 +62,11 @@ export interface Brood {
   [k: string]: unknown;
 }
 
-export interface Population { queen_alive: boolean; workers: Worker[]; brood: Brood[] }
+/** C3a: a queen's own nutrition (eaten, not stored). The unknown reserve of a migrated queen is null and is never spent,
+ *  filled in or read as 0; only known_balance is income and spending (docs/design-c3-queen-feeding.md §12.4). */
+export interface QueenBody { unknown_initial_reserve: null | 'not_applicable'; known_balance: { sugar: number; protein: number }; basis: 'day0_scenario' | 'unknown_at_migration' }
+export interface QueenRecord { id: string; location: string; body: QueenBody; days_unfed: number; days_without_worker_contact: number; shortfall_today: { sugar: number; protein: number } }
+export interface Population { queen_alive: boolean; workers: Worker[]; brood: Brood[]; queens?: QueenRecord[] }
 
 /** Nest food ledger and chronic-shortage counters of one colony (v2 field name: `colony`). */
 export interface ColonyStores {

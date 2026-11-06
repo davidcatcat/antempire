@@ -540,6 +540,36 @@
   - 繁殖季節寫成「3～5 月」與「晚春到秋季」兩種。
 - GISD 的「壽命 78／38 日」不採用，理由見 `docs/research-design-phase3-lifecycle.md` §0。
 
+## 2026-11-03 繁殖系統設計研究（R312～R329；`docs/research-design-reproduction.md`）
+
+> 本段只新增文獻，不改寫既有列。原文引述與頁碼見 `reports/reproduction-research/literature-notes.md`。**沒有據此改任何物種參數。**
+> 既有列的補充（新增附註，不改原列）：
+> - R94 的繁殖蟻發育時程，在前蛹以前是借用工蟻隊列的時程。37.60 日＝21.13＋4.16＋12.31 的組合值；雌雄合併。實驗室每群 2～7 隻蟻后。
+> - R136 全文另有「每批 2～82 粒、在隨機的日子產、間隔最長 8 日」；原文平均 6 粒／日。
+> - R101／R110 的「有效 1～4 隻蟻后」假設單次交配（引自 R113），交配次數沒有測量；全文沒有婚飛、分巢字樣。
+> - R95 引用 Vanderwoude 2000（R327）「澳洲只分巢、無婚飛」，該文摘要沒有此內容，未證實。
+
+| ID | 研究與連結 | 讀取程度 | 本種／非本種 | 支持的內容 | 不可外推之處 |
+|---|---|---|---|---|---|
+| R312 | Reimer NJ, Glancey BM, Beardsley JW (1991) Development of *Pheidole megacephala* colonies following ingestion of fenoxycarb and pyriproxyfen. *J. Econ. Entomol.* 84:56–60. DOI 10.1093/jee/84.1.56 | 全文（掃描檔 OCR） | **本種**，夏威夷 Kunia，25°C | fenoxycarb 後第 5 週 90% 幼蟲為雄蟲；作者推論蟻后改產未受精卵；**對照組沒有任何雄蟻、蟻后或間型幼蟲**（單后、200～400 工蟻標準化群） | 藥劑干預；不是自然產雄的機率 |
+| R313 | Cook JM, Crozier RH (1995) Sex determination and population biology in the Hymenoptera. *TREE* 10:281–286. DOI 10.1016/0169-5347(95)90011-X | 只查核書目 | 非本種（膜翅目綜述） | 單雙倍體與互補性別決定 | 本種 CSD 未知 |
+| R314 | van Wilgenburg E, Driessen G, Beukeboom LW (2006) Single locus complementary sex determination in Hymenoptera: an "unintelligent" design? *Front. Zool.* 3:1. DOI 10.1186/1742-9994-3-1 | 只查核書目 | 非本種 | 二倍體雄蟻的代價 | 同上 |
+| R315 | Passera L, Aron S, Vargo EL, Keller L (2001) Queen control of sex ratio in fire ants. *Science* 293:1308–1310. DOI 10.1126/science.1062076 | 只查核書目 | 非本種：*S. invicta* | 蟻后控制初級性比 | 不移植比例 |
+| R316 | de Menten L, Fournier D, Brent C, Passera L, Vargo EL, Aron S (2005) Dual mechanism of queen influence over sex ratio in the ant *Pheidole pallidula*. *Behav. Ecol. Sociobiol.* 58:527–533. DOI 10.1007/s00265-005-0964-0 | 只查核書目 | 非本種：同屬 *P. pallidula* | 蟻后對性比的影響 | 同上 |
+| R317 | Tschinkel WR, Porter SD (1988) Efficiency of sperm use in queens of the fire ant. *Ann. Entomol. Soc. Am.* 81:777–781. DOI 10.1093/aesa/81.5.777 | 只查核書目 | 非本種 | 每卵用精量 | 本種精子量 null |
+| R318 | Tschinkel WR (1987) Fire ant queen longevity and age: estimation by sperm depletion. *Ann. Entomol. Soc. Am.* 80:263–266. DOI 10.1093/aesa/80.2.263 | 只查核書目 | 非本種 | 蟻后壽命與精子耗盡 | 同上 |
+| R319 | Wheeler DE (1986) Developmental and physiological determinants of caste in social Hymenoptera. *Am. Nat.* 128:13–34. DOI 10.1086/284536 | 只查核書目 | 非本種（綜述） | 品級決定的發育框架 | — |
+| R320 | Wheeler DE, Nijhout HF (1984) Soldier determination in *Pheidole bicarinata*: inhibition by adult soldiers. *J. Insect Physiol.* 30:127–135. DOI 10.1016/0022-1910(84)90116-1 | 只查核書目 | 非本種：*P. bicarinata* | 成年兵蟻抑制兵蟻產生 | 與 R174 同系列 |
+| R321 | Cronin AL, Molet M, Doums C, Monnin T, Peeters C (2013) Recurrent evolution of dependent colony foundation across eusocial insects. *Annu. Rev. Entomol.* 58:37–55. DOI 10.1146/annurev-ento-120811-153643 | 只查核書目 | 非本種（綜述） | 依附性創巢 | 本種組成、頻率 null |
+| R322 | Hoffmann BD (1998) The big-headed ant *Pheidole megacephala*: a new threat to monsoonal northwestern Australia. *Pacific Conservation Biology* 4:250–255. DOI 10.1071/PC980250 | 摘要 | **本種**，澳洲 | Sarnat 2015（R99）分巢與單一殖群敘述的出處 | 全文未讀 |
+| R323 | Keller L (1995) Social life: the paradox of multiple-queen colonies. *TREE* 10:355–360. DOI 10.1016/S0169-5347(00)89133-8 | 只查核書目 | 非本種（綜述） | 多后、接納新蟻后 | — |
+| R324 | Heinze J, Tsuji K (1995) Ant reproductive strategies. *Res. Popul. Ecol.* 37:135–149. DOI 10.1007/BF02515814 | 只查核書目 | 非本種（綜述） | 巢內交配、分巢等替代策略 | — |
+| R325 | Heinze J (2017) Life-history evolution in ants: the case of *Cardiocondyla*. *Proc. R. Soc. B* 284:20161406. DOI 10.1098/rspb.2016.1406 | 只查核書目 | 非本種：*Cardiocondyla* | 巢內交配的機制例子 | 不移植 |
+| R326 | Helanterä H, Strassmann JE, Carrillo J, Queller DC (2009) Unicolonial ants: where do they come from, what are they and where are they going? *TREE* 24:341–349. DOI 10.1016/j.tree.2009.01.013 | 只查核書目 | 非本種（綜述） | 單一殖群（unicoloniality） | — |
+| R327 | Vanderwoude C, Lobry de Bruyn LA, House APN (2000) Response of an open-forest ant community to invasion by the introduced ant, *Pheidole megacephala*. *Austral Ecology* 25:253–259. DOI 10.1046/j.1442-9993.2000.01021.x | 摘要（全文 403） | **本種**，澳洲昆士蘭 | 群落衝擊 | R95 引用的「只分巢、無婚飛」在摘要中查不到 |
+| R328 | Salata S, Fisher BL (2022) Taxonomic revision of the *Pheidole megacephala* species-group (Hymenoptera, Formicidae) from the Malagasy region. *PeerJ* 10:e13263. DOI 10.7717/peerj.13263 | 全文檢索 | **本種群**分類 | 物種群分類與原產地爭議 | 沒有繁殖資料 |
+| R329 | Hoffmann BD, Parr CL (2008) An invasion revisited: the African big-headed ant in northern Australia. *Biol. Invasions* 10:1171–1181. DOI 10.1007/s10530-007-9194-x | 摘要 | **本種**，澳洲 | 9 年間分布面積約倍增 | 只有擴散速率，沒有繁殖機制 |
+
 ## 2026-11-03 開放生態層（R330–R343；研究與設計，未改規則）
 
 > 用於 `docs/spec-open-ecology.md` 與 `reports/open-ecology-research/evidence-matrix.md`。

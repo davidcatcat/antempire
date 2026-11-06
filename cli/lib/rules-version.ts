@@ -22,7 +22,8 @@ export const versionOrder = () => registryVersions().map((v) => v.rules_version)
 /**
  * `forHash`: a switch that did not exist in the target version (`introduced: true`) is REMOVED (with its `_note`),
  * so the bundle equals the target version's parameter files exactly (for parameter hashes). Without it the switch
- * is set to its old value, which the current engine needs in order to run the old behaviour.
+ * is set to its old value, which the current engine needs in order to run the old behaviour. A section emptied by
+ * these removals is removed as well (it did not exist in the target version).
  */
 export function bundleAtVersion(target: string, opts: { forHash?: boolean } = {}): ParamBundle {
   const order = versionOrder(), ti = order.indexOf(target);
@@ -40,8 +41,11 @@ export function bundleAtVersion(target: string, opts: { forHash?: boolean } = {}
     let node: Any = root; for (const k of keys) node = node[k];
     if (c.kind === 'param_switch') { if (opts.forHash && c.introduced) { delete node[last]; delete node[`${last}_note`]; } else node[last] = c.from; }
     else if (c.kind === 'param') node[last].value = c.from;
-    else if (c.kind === 'param_added') delete node[last];
+    // a param_added WITH `from` is read by the current engine (tests/lib/approved-changes.ts): kept for a runnable bundle
+    else if (c.kind === 'param_added') { if (opts.forHash || c.from === undefined) delete node[last]; else node[last].value = c.from; }
     else throw Error(`bundleAtVersion: cannot undo change kind ${c.kind} (${c.rules_version} ${c.path})`);
+    // a section that held only parameters added later did not exist in the target version (e.g. queen_feeding, v25)
+    if (opts.forHash && keys.length && Object.keys(node).length === 0) { let parent: Any = root; for (const k of keys.slice(0, -1)) parent = parent[k]; delete parent[keys[keys.length - 1]]; }
   }
   return b;
 }

@@ -1,6 +1,14 @@
 # 《螞蟻帝國》物理、碰撞、速度與空間互動：科學設計／實作 Roadmap（2026-11-04）
 
-> **狀態：研究與架構設計；不是引擎已實作。** Owner 已要求把物理及速度正式加入 AntEmpire。規格須拆獨立 PR，按前置依賴實作、保留可重播與歷史存檔。禁止在本設計 PR 變更 engine、species、world、正式 saves/journal；不自行合併、不推進 Day15、不啟動正式新版 Day0。
+> **2026-11-06 狀態（以 main `e93933f` 為準）**：
+> - PH-1、MV-1／MV-2、PH-2／PH-3（含 PH-2b 局部讓路規則）已有**獨立的實驗模組**（`engine/physics/`，#71～#75 已合併）。實作現況以 [`physics-motion-engine.md`](physics-motion-engine.md) §1 為準，見本文 §8。
+> - 物理模組**沒有接入正式每日模擬**：不在規則指紋內，`tests/physics-isolation.test.ts` 禁止正式管線匯入它。
+> - 五項已知缺陷（P1-A、P1-B、P2-A、P2-B、P2-C）**尚未修正，也還沒有正式整合驗收**。它們是接入的阻擋條件（`physics-motion-engine.md` §6）。
+> - 工程測試通過不代表科學驗證通過；沒有任何物理輸出已和本種野外分布比較過。
+>
+> 以下是 2026-11-04 的原始設計文字，保留作為設計紀錄；其中「尚未實作」等字句描述的是當時的狀態。
+>
+> **原始狀態（2026-11-04）：研究與架構設計；不是引擎已實作。** Owner 已要求把物理及速度正式加入 AntEmpire。規格須拆獨立 PR，按前置依賴實作、保留可重播與歷史存檔。禁止在本設計 PR 變更 engine、species、world、正式 saves/journal；不自行合併、不推進 Day15、不啟動正式新版 Day0。
 >
 > **任務**：[Issue #68](https://github.com/davidcatcat/antempire/issues/68) Physics & Spatial Interaction（PH）、[Issue #69](https://github.com/davidcatcat/antempire/issues/69) Individual Motion & Speed（MV）。前置／整合：P1-B [設計](research-design-p1b-nest-space.md)、P0-A 24h、生物學生命史 P0-B、#65 隨機性、#66/#67 數學生態、#9 全球蟻群共用時鐘、#56 worker 順序獨立、C2～C5 實際食物與攝食、D4-A/D7-A 自然繁殖／開放生態。
 
@@ -133,9 +141,33 @@
 - 模型可驗收 **工程數學正確**，不等於已完成 **本種生物學驗證**；運算收斂不等於生態準確。
 - 換物種（紅火蟻、行軍蟻）時按 species file 與 caste 配置，禁止在引擎寫 `if (species_id === 'Pheidole megacephala')` 之類分支。
 
-## 7. 交付要求與不做事項
+## 7. 交付要求與不做事項（2026-11-04 原文）
 
 1. **本 PR**：新增本設計文件與 Roadmap 連結。無 runtime 改動、無參數調整，故不改任何歷史黃金測試。
 2. 後續 Claude Code 依 #68 PH-0、#69 MV-0 產出分工規格並開各自 PR；建議優先接 P1-B 實體幾何、motion event，然後局部碰撞／接觸，最後搬運與土壤。
 3. 每個行為 PR 都要提交舊模型隔離、同 seed 決定性、worker/colony 排列不變性、時空/守恆反例、效能與敏感度、科學證據；Codex 獨立審查。
 4. **不為畫面先做假碰撞，不為提高蟻群存活率調校物理數值，不主動修改正式 Day14、不推進 Day15、不啟動正式新 Day0、不自行合併。**
+
+## 8. 2026-11-06 實作狀態對照（文件同步，不改設計）
+
+| 本文階段 | main 上的現況 | 尚未完成 |
+|---|---|---|
+| PH-0／MV-0 | 規格、單位與證據整理在 `physics-motion-engine.md` §3、§4 | — |
+| PH-1 | `engine/physics/geometry.ts`、`vec.ts`；6 個**合成**場景 `scenarios/physics/*.geometry.json`（#71） | 正式花園幾何（P1-B）大多未知，沒有建立 |
+| MV-1 | `engine/physics/kinematics.ts`：分段常速、解析事件時間、移動／停止／等待紀錄（#72） | 加速度與轉身時間未實作 |
+| MV-2 | 離巢／回巢候選速度；終身個體特質介面（#72） | 個體速度變異的值未知，預設不加（`null`）；坡度、溫度、負重、擁擠對速度的影響**刻意不實作**（本種沒有資料） |
+| PH-2／PH-3（含 PH-2b） | `engine/physics/collision.ts`：阻擋、接觸事件、單行跟隨、入口讓路（預設候選）、帶食優先（候選，預設關閉）、機械寬度限制（#73、#75）；雙工蟻窄道實驗（#74） | 五項已知缺陷未修；事件佇列＋局部失效、精確膠囊體距離未做；共用世界時鐘（#9）未做 |
+| MV-3 | 未做 | 需要先接入正式模擬 |
+| PH-4／MV-4、PH-5／MV-5 | 未實作 | 負載與共享獵物、巢穴與積水、科學分布比較 |
+
+§5 的驗收案例 T01～T10 中，只有在合成場景上做過的部分有工程測試（`tests/ph1-geometry.test.ts`、`tests/mv1-kinematics.test.ts`、`tests/ph2-collision.test.ts`、`tests/physics-two-ant.test.ts`；`tests/foraging-physics.test.ts` 是舊的路線可行性測試，不是碰撞引擎）；這些都是工程數學驗收，不是本種生物學驗證。
+
+**目前必須遵守的界線**：
+1. **物理沒有接入正式每日模擬**。正式引擎的移動仍是 `engine/activity.ts` 的路段時間模型。物理模組只在實驗與測試中執行，不產生正式歷史。
+2. **已知缺陷尚未完成正式整合驗收**。P1-A、P1-B、P2-A、P2-B、P2-C 修正、補上回歸測試並通過獨立審查之前，不得接入；接入時另開規則更新 PR，並做開關關閉時逐位元組相同的隔離證明（`physics-motion-engine.md` §6）。
+3. **合成幾何不是臺中花園實測**。`scenarios/physics/` 的開闊地、石頭、窄道、交叉、巢口、高低層都是合成測試場景；`world/xitun-garden.json` 的「約距離」是情境數值。兩者都不得當成野外量測。
+4. **C3a 的接觸不是物理接觸**。C3a（#78，v25，開關預設關閉）的巢內接觸是序數時間、以「同處、同時」判定的**過渡接觸**，不是物理層的 `contact_start`／`contact_end`。物理模組存在並不會讓它變成真實的物理接觸。日後要以物理接觸事件取代，必須依 `design-c3-queen-feeding.md` §14 的介面契約另開規則更新，而且前提是第 2 點的缺陷已修正。
+5. **Owner 決策（2026-11-06，`physics-motion-engine.md` §8）**：
+   - 入口讓路是預設候選；帶食優先是替代方案，預設關閉；兩者都沒有本種證據。
+   - 嗉囊液體不算負載；外部攜帶物件另外定義；不假設負載會影響速度或讓路。
+   - 兩隻都在窄段內時的回頭機率、接觸停頓這兩個未量測參數，列為觀察與校準需求，本種的值保持 `null`。

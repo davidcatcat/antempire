@@ -13,7 +13,9 @@ import { forageDay } from './foraging.ts';
 import { consume, storageOverflow } from './nutrition.ts';
 import { developBrood } from './brood.ts';
 import { oviposition, queenSurvival, workerSurvival } from './queen.ts';
+import { checkQueenRound, ensureQueens, expectedInitBasis, nestRound, queenMetabolism, queenRoundStart, type QueenRoundStart, type RoundResult } from './queen-feeding.ts';
 import { bindFoodTransfers, checkColonyFood, checkSources, colonySnapshot, foodTimingFor, sourceSnapshot } from './transfers.ts';
+import { checkColonyDomain, checkEventDomain, checkParamDomain, checkPopulationDay, checkRngInputs, populationSnapshot } from './invariants.ts';
 import { resolveBundle, type ParamBundle, type ResolvedParams, type SpeciesParams } from './params.ts';
 import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from './types.ts';
 
@@ -41,8 +43,10 @@ import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from '
  *   v2-review.21 (Issue #50 / #49 N1): brood care exposure from the workers present at the start of the step; eclosions committed after all brood is processed, ids in source-pupa order. Switch brood_care.daily_care_snapshot_v21.
  *   v2-review.22 (work package C2): the engine records every movement of food between compartments as a food_transfer event (source, recipient, amount, minute, cause, attribution) and checks per-compartment closure every day; diagnostics only, no quantity, draw or decision changed.
  *   v2-review.23 (Codex Issue #61 R3-05): a worker carrying food home marks each edge at the minute it has walked it (event-clock 'trail'), not the whole route at the nest. Switch activity.local_trail_deposit_v23.
+ *   v2-review.24 (ME-1, Issue #66): runtime invariants (engine/invariants.ts) — population ID flow and lifetimes, numeric/event/parameter domains, RNG inputs; checks only, no quantity, draw, decision, event or state changed (outputs byte-identical to v23).
+ *   v2-review.25 (C3a, docs/design-c3-queen-feeding.md §9-§12): the queen's own nutrition compartment (queen_body), fed only by local ordinal-timed nest-round events (take_from_cache, queen_contact, feed_queen, queen_self_feed); her metabolism from what she ate. Switch queen_feeding.individual_queen_body_c3a (default off = v24 byte for byte).
  */
-export const ENGINE_VERSION = 'antempire.v2-review.23-local-trail-deposit';
+export const ENGINE_VERSION = 'antempire.v2-review.25-c3a-queen-body';
 /** Implementation of that behaviour (bumped for refactors that keep results byte-identical). */
 export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
 /**
@@ -51,7 +55,7 @@ export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
  */
 const ENGINE_FIRST_STATE_DAY = 0;
 
-export const NATURAL_EVENT_TYPES: ReadonlySet<string> = new Set(['new_food_source', 'source_batch_consumed', 'food_delivered', 'insect_immigration', 'insect_natural_death', 'insect_population_birth', 'insect_background_death', 'physical_scout_visit', 'discovery', 'scouted_empty', 'nest_local_route_learning', 'local_contact_cue', 'local_brood_begging_contact', 'local_unloading_feedback', 'host_plant_death', 'hemipteran_colony_change', 'local_recruitment', 'route_step', 'route_timeout', 'trail_decay', 'trail_deposited', 'local_trail_choice', 'food_collected', 'trophallaxis', 'protein_cached_at_nest', 'live_prey_encounter', 'prey_escaped', 'local_alarm_signal', 'long_range_recruitment_trail', 'hunt_recruitment', 'joint_prey_transport', 'waiting_prey_joined', 'route_memory_initialized', 'worker_activity', 'forager_stopped', 'action_cancelled_no_time', 'no_route_cannot_depart', 'recruitment_no_nestmate', 'recruitment_failed', 'exploration_step', 'exploration_no_new_direction', 'exploration_found_nothing', 'trail_lost', 'insect_predation', 'food_transfer', 'hatch', 'pupation', 'eclosion', 'egg_laid', 'worker_death', 'brood_death', 'injury_recovery', 'queen_death']);
+export const NATURAL_EVENT_TYPES: ReadonlySet<string> = new Set(['new_food_source', 'source_batch_consumed', 'food_delivered', 'insect_immigration', 'insect_natural_death', 'insect_population_birth', 'insect_background_death', 'physical_scout_visit', 'discovery', 'scouted_empty', 'nest_local_route_learning', 'local_contact_cue', 'local_brood_begging_contact', 'local_unloading_feedback', 'host_plant_death', 'hemipteran_colony_change', 'local_recruitment', 'route_step', 'route_timeout', 'trail_decay', 'trail_deposited', 'local_trail_choice', 'food_collected', 'trophallaxis', 'protein_cached_at_nest', 'live_prey_encounter', 'prey_escaped', 'local_alarm_signal', 'long_range_recruitment_trail', 'hunt_recruitment', 'joint_prey_transport', 'waiting_prey_joined', 'route_memory_initialized', 'worker_activity', 'forager_stopped', 'action_cancelled_no_time', 'no_route_cannot_depart', 'recruitment_no_nestmate', 'recruitment_failed', 'exploration_step', 'exploration_no_new_direction', 'exploration_found_nothing', 'trail_lost', 'insect_predation', 'food_transfer', 'hatch', 'pupation', 'eclosion', 'egg_laid', 'worker_death', 'brood_death', 'injury_recovery', 'queen_death', 'queen_body_initialized', 'nest_move', 'queen_contact', 'queen_feeding_refused', 'queen_encounter_food', 'queen_nutrition']);
 
 /** Structural validation of a world (legacy error messages preserved). */
 export function validateWorld(s: WorldState): void {
@@ -96,10 +100,24 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
     if (!sp) throw Error(`No species parameter file loaded for ${c.species_id} (colony ${c.id})`);
     return sp;
   };
+  // ME-1 (v2-review.24): checks only — inputs that are not numbers of their declared kind stop the day before it runs
+  checkRngInputs(s);
+  checkParamDomain('world', wp);
+  for (const id of new Set(s.colonies.map((c) => c.species_id))) checkParamDomain(`species ${id}`, speciesOf(s.colonies.find((c) => c.species_id === id) as ColonyState));
+  for (const c of s.colonies) checkColonyDomain(c, speciesOf(c).trophallaxis.crop_capacity); // the start state too (Day0, legacy, migrated)
+  const popStart = new Map(s.colonies.map((c) => [c.id, populationSnapshot(c)]));
   const weather = calcWeather(s, wp, dayDate);
   const work = s.colonies.map((colony) => ({ colony, sp: speciesOf(colony), events: [] as SimEvent[], initial: { sugar: colony.stores.sugar, protein: colony.stores.protein }, summary: newSummary(s, colony, dayDate, weather), overflow: { sugar: 0, protein: 0 }, food: colonySnapshot(colony) }));
   // v2-review.22 (C2): every food movement of a colony this day is recorded in its event list as a food_transfer
   for (const w of work) bindFoodTransfers(w.events, s.sim_day + 1, w.colony.id);
+  // C3a (v2-review.25, switch queen_feeding.individual_queen_body_c3a): the queen's own record exists before the snapshot
+  const c3a = new Map<string, { start: QueenRoundStart; round: RoundResult }>();
+  for (const w of work) if (w.sp.queen_feeding.individual_queen_body_c3a) {
+    const hadRecord = !!w.colony.population.queens;
+    ensureQueens(s, w.colony, w.sp, w.events);
+    w.food = colonySnapshot(w.colony, true);
+    c3a.set(w.colony.id, { start: queenRoundStart(w.colony, hadRecord, expectedInitBasis(s)), round: { taken_from_cache: 0, returned_to_cache: 0, fed: { sugar: 0, protein: 0 }, self_fed: 0, contacts: 0 } });
+  }
 
   growEcology(s, wp, weather, worldEvents);
   assertCausalFood(worldEvents, 'NO_GOD_MODE: food has no physical source death');
@@ -115,23 +133,32 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
 
   for (const w of work) {
     const { colony, sp, summary, events, initial } = w, n = sp.nutrition;
+    const q3 = c3a.get(colony.id);
+    // C3a: the nest round (ordinal time) comes before the old settlement (design §12.1, order D)
+    if (q3) q3.round = nestRound(s, colony, sp, events);
     // Other colonymates carrying liquid do not duplicate colony external income.
     w.overflow = storageOverflow(colony, sp, events);
     const ratios = consume(s, colony, sp, summary, weather, events);
+    if (q3) queenMetabolism(colony, sp, summary.metabolic_factor as number, events);
     developBrood(s, colony, sp, weather, ratios, events, summary);
     workerSurvival(s, colony, sp, events, summary);
     queenSurvival(s, colony, sp, events);
     oviposition(s, colony, sp, ratios, weather, events, summary);
     // v2-review.22 (C2): replay this day's food transfers per compartment (defined while crops are a subset of the ledger)
     if (sp.nutrition_rules.egg_laying_settles_crops) checkColonyFood(w.food, colony, events, foodTimingFor(sp));
+    if (q3) checkQueenRound(q3.start, colony, events, sp);
     const pop = colony.population;
     summary.population = { queen: pop.queen_alive ? 1 : 0, workers: pop.workers.length, eggs: pop.brood.filter((b) => b.stage === 'egg').length, larvae: pop.brood.filter((b) => b.stage === 'larva').length, pupae: pop.brood.filter((b) => b.stage === 'pupa').length };
     summary.stock = { sugar: round(colony.stores.sugar), protein: round(colony.stores.protein) };
     summary.starvation = { sugar_gap_days: colony.stores.sugar_gap_days, protein_gap_days: colony.stores.protein_gap_days, stress_days: colony.stores.stress_days };
     const ledger = { unit: 'game_portions_NOT_mg', start: initial, foraged: summary.income, metabolized: summary.consumed, egg_laying: { sugar: round(summary.eggs_laid * n.egg_laying_sugar_cost), protein: round(summary.eggs_laid * n.egg_laying_protein_cost) }, storage_overflow_not_retained: w.overflow, note: 'Nest mass conservation exact within 1e-5 game portions; source decomposition/replenishment separate' };
-    summary.mass_ledger = ledger;
+    // C3a: food that left the old ledger scope in the nest round (into the queen, or as liquid protein into crops)
+    // C3a: food that left the old ledger scope in the nest round — into the queen (liquid protein taken and not put back was
+    // fed; crops hold none after the round). held_outside_legacy_stores: the queen's eaten balance (design §12.1)
+    const toQueen = q3 ? { sugar: q3.round.fed.sugar, protein: round(q3.round.taken_from_cache - q3.round.returned_to_cache + q3.round.self_fed) } : { sugar: 0, protein: 0 };
+    summary.mass_ledger = q3 ? { ...ledger, left_ledger_scope_c3a: { into_queen_body: toQueen, held_outside_legacy_stores: { queen_body_known: { ...(colony.population.queens?.[0]?.body.known_balance ?? { sugar: 0, protein: 0 }) }, crop_protein_liquid: 0 } } } : ledger;
     for (const x of ['sugar', 'protein'] as const) {
-      const rhs = round(initial[x] + summary.income[x] - ledger.metabolized[x] - ledger.egg_laying[x] - ledger.storage_overflow_not_retained[x]);
+      const rhs = round(initial[x] + summary.income[x] - ledger.metabolized[x] - ledger.egg_laying[x] - ledger.storage_overflow_not_retained[x] - toQueen[x]);
       const stock = summary.stock[x];
       if (Math.abs(rhs - stock) > 2e-5) throw Error('Nutrient balance not closed: ' + x + ' ' + rhs + ' vs ' + stock);
     }
@@ -146,6 +173,13 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
     if (pop.workers + summary.worker_deaths !== summary.workers_before + summary.eclosions) throw Error('worker conservation violated');
     // Exact brood count balance across stages and deaths, egg lays, eclosions.
     if (colony.population.brood.length + summary.brood_deaths + summary.eclosions !== summary.brood_before + summary.eggs_laid) throw Error('brood conservation violated');
+  }
+  // ME-1 (v2-review.24): population flow and lifetimes from the events (ID sets), and numeric domains of state and events
+  checkEventDomain('world', worldEvents);
+  for (const w of work) {
+    checkPopulationDay(popStart.get(w.colony.id) as ReturnType<typeof populationSnapshot>, w.colony, w.events);
+    checkColonyDomain(w.colony, w.sp.trophallaxis.crop_capacity);
+    checkEventDomain(w.colony.id, w.events);
   }
   return { day: s.sim_day, date: dayDate, weather, world_events: worldEvents, colonies: work.map((w) => ({ colony_id: w.colony.id, species_id: w.colony.species_id, summary: w.summary, events: w.events })) };
 }

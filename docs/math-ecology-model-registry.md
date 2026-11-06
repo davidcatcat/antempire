@@ -159,6 +159,14 @@
 | ID-CAUSAL-FOOD | :78-82 | 每個 `new_food_source` 都要有同 ID、同地點的死亡或獵殺事件 | I | **不涵蓋**蜜露與花蜜生產、容量刪除、腐敗 |
 | ID-WORLD | :53-72 | 屍體蛋白 = 批次總和；沒有負值；ID 唯一 | I | **沒有世界端的食源收支**（生產 − 雨沖 − 腐敗 − 對手 − 溢出 − 採集 = 存量變化）（§8 P3-1） |
 | （#60） | `engine/transfers.ts` | 逐區室閉合、依時間的名冊、執行期格式驗證、全世界食源閉合 | I | 見 #60 |
+| ID-POP-FLOW（ME-1） | `engine/invariants.ts` `checkPopulationDay`；讀取器 `cli/lib/population-replay.ts` | 以個體 ID 集合：工蟻期末 = 期初 − 死亡 + 羽化 + 遷入 − 遷出；幼體期末 = 期初 − 死亡 − 羽化 + 產卵；蟻后存活 = 期初存活 ∧ 無死亡事件。單位：隻；時間尺度：日 | I | 遷入、遷出恆為 0（引擎沒有跨邊界的螞蟻事件，D7-A）。補上 ID-WORKERS／ID-BROOD「只用計數」的缺口 |
+| ID-LIFETIME（ME-1） | 同上 | 每個 ID 最多死一次且活著才能死；新 ID 未用過、編號在 [期初計數器, 期末計數器)；計數器不倒退；幼體階段不倒退；存活工蟻每日 +1 日齡 | I | — |
+| ID-EVENT-TIME（ME-1） | 同上；食物轉移的時間因果在 #60 | 日內事件順序：ID 先建立後才有事件；死亡或羽化後不再有事件；蟻后死亡後不產卵；事件分鐘在 [0, 1440] | I | 人口事件沒有分鐘（以日內階段順序代替） |
+| ID-STATE-DOMAIN、ID-EVENT-DOMAIN（ME-1） | `checkColonyDomain`、`checkEventDomain`；讀取器 `domainErrors` | 沒有 NaN／Infinity；存量 ≥ 0；嗉囊 ∈ [0, 容量]；日數計數與日齡是非負整數；名為機率／風險的值 ∈ [0,1]；份量 ≥ 0 | I | 世界端（食源容量等）的定義域仍由 `validateWorld` 負責，沒有逐欄的 NaN 檢查 |
+| ID-PARAM-DOMAIN（ME-1） | `checkParamDomain`；讀取器 `paramDomainErrors` | 依參數名稱的單位規則：機率、比例、上限、危險率 ∈ [0,1]；日數、分鐘、份量、成本 ≥ 0；分鐘 ≤ 1440；`_min` ≤ `_max`；Q10 > 0；降雨 Gamma 形狀 ≥ 1 | I | 名稱規則是約定，不是型別；**`task_allocation.*_baseline_probability` 是相對權重、命名錯誤**（`engine/workers.ts:47-51`），只要求 ≥ 0 |
+| ID-RNG-INPUT（ME-1） | `checkRngInputs` | 種子是安全整數；模擬日是非負安全整數；同一輸入逐位元組重播 | I | 串流共用問題（P2-R1、P1-O）不在此修正 |
+| ID-QUEEN-BODY（C3a，v2-review.25，開關預設關閉） | `engine/transfers.ts`（`queen_body` 區室）、`engine/queen-feeding.ts` `checkQueenRound`；讀取器 `cli/lib/engine-transfers.ts`（`c3a`）、`cli/lib/queen-round-replay.ts` | 每個蟻后每日：期末已知儲備 = 期初已知儲備 + 實際攝取（`feed_queen`、`queen_self_feed`）− 自身代謝（`queen_metabolism`）；未知期初儲備不變（`null` 不得當成數字）。單位：遊戲份量；時間尺度：日（攝取在巢內序數回合） | I | 路線 B1、C 是候選；巢內位置與序數時間是過渡模型（D）；產卵與存活仍用舊規則 |
+| ID-SOURCE-LEDGER（ME-1，只在讀取器） | `cli/lib/source-ledger.ts` | 每個食源每日：期末 = 期初 + 生產 + 新屍體 + 獵殺入帳 − 雨沖 − 分解 − 容量刪除 − 到期刪除 − 採集。單位：遊戲份量（不是 mg） | I | 讓 P1-E1、P1-E2 可見（量化），**沒有修正**；引擎仍不為它們產生事件 |
 
 ## 8. 問題清單（依嚴重度；**本 PR 不修正**，依 CLAUDE.md 記錄並交 Owner）
 ### P1：因果或守恆違反
@@ -196,7 +204,7 @@
 - **P2-S1 參數凍結進狀態**：昆蟲 K、食源容量、花蜜生產量被寫入存檔狀態，參數更新不會影響既有世界。這與 CLAUDE.md §6「下一個遊戲日生效」衝突。
 
 ### P3：文件、驗證與防護
-- **P3-1** 沒有世界端的食源收支帳。
+- **P3-1** 沒有世界端的食源收支帳。→ ME-1 在讀取器端加上（ID-SOURCE-LEDGER），引擎端仍沒有。
 - **P3-2** 天氣輸出沒有 `synthetic: true`。
 - **P3-3** 宿主死亡、蜜露或花蜜生產沒有逐日事件。
 - **P3-4** 不再使用的欄位與參數：
@@ -205,7 +213,7 @@
   - 物種參數：`brood_protein_min_fraction`、`nest_contact_route_learning_probability`、`local_communication_retention_days`。
 - **P3-5** 靜態 D3 檢查沒有涵蓋 nutrition.ts、queen.ts、brood.ts（全部違反都在這三個檔案）。
 - **P3-6** 沒有防護的邊界情況：
-  - gamma 形狀參數 < 1；
+  - gamma 形狀參數 < 1；→ ME-1 的參數定義域檢查拒絕；
   - 缺少容量欄位時得到 NaN；
   - `clamp` 讓 NaN 穿透；
   - 未知食源類型會被當成花蜜。
