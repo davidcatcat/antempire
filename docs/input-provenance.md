@@ -28,6 +28,11 @@
   - 舊清單中已不再讀取的檔案只列出，不比較，因為無關的檔案改變不應讓資料失效。
   - 資料目錄缺少 `input_manifest` 時報錯，不會當掉；
   - 已知限制（Issue #57）：舊清單以外、現在 import closure 會讀到的 cli 程式，產生時沒有記錄，只列在 `code_files_not_recorded_at_generation`，無法比對。
+    - **處理方式（Owner 2026-11-06 選擇方案 2）**：維持現狀，並在驗證結果中明確標示為「無法驗證」：`checks.input_manifest.code_provenance.status = 'unverifiable_not_recorded_at_generation'`，附檔案數。
+    - 這些程式檔**不比較、不算作已驗證**，也不事後把 hash 填回舊資料（#49 N3）。
+    - 事後驗證檔用的是今天的程式重跑基準列，它只證明一致性，不證明產生當時用的是哪份程式。
+    - `tests/issue51-input-manifest.test.ts` 第 5 段檢查 v19、v20 兩個目錄都如實回報這個狀態。
+    - 沒有採用的方案：方案 1（從 git 歷史反查產生時的 commit）與方案 3（用 v2 manifest 重新產生，成為新的資料目錄）。
 - import closure 會辨識多行的 `import { … } from '…'`、副作用 import 與動態 `import()`。
 
 ## 測試
