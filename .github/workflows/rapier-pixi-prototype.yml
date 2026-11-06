@@ -1,0 +1,36 @@
+name: Rapier Pixi physics experiment
+on:
+  pull_request:
+    paths:
+      - 'prototypes/rapier-pixi/**'
+      - '.github/workflows/rapier-pixi-prototype.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  independent-physics-visualization:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: prototypes/rapier-pixi
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Install isolated experimental dependencies
+        run: npm install --no-audit --no-fund
+      - name: Compare native physical trajectories with Rapier witnesses
+        run: npm run verify
+      - name: Build PixiJS browser replay
+        run: npm run build
+      - name: Upload experimental result and web build (NOT official history)
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapier-pixi-experimental-viewer
+          path: |
+            prototypes/rapier-pixi/public/replays/compare.json
+            prototypes/rapier-pixi/dist

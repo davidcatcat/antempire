@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AntEmpire · Rapier / PixiJS 物理見證實驗</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,"Noto Sans TC",sans-serif;background:#101b1d;color:#e9eddf}
+*{box-sizing:border-box}body{margin:0}header{padding:18px 20px;background:#173033;border-bottom:1px solid #365056}
+h1{font-size:clamp(1.25rem,3vw,1.8rem);margin:0 0 8px}p{line-height:1.6;margin:6px 0}
+main{max-width:1100px;margin:auto;padding:15px}.small{color:#bed0cb;font-size:.9rem}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:15px 0}
+button,select,input{font:inherit}button,select{color:#f1f6ed;background:#294648;border:1px solid #627b7e;border-radius:7px;padding:9px}
+button{cursor:pointer}input[type=range]{flex:1;min-width:160px;accent-color:#bcd77c}
+#stage{width:100%;min-height:280px;overflow:hidden;border:1px solid #42565c;border-radius:12px;background:#243630}
+#stage canvas{display:block;width:100%;height:auto}#stats,#events{border:1px solid #40565b;border-radius:10px;padding:12px;margin-top:12px;background:#1b2b2e;white-space:pre-wrap;line-height:1.6;font-size:.93rem}
+#status{color:#e7d090}strong{color:#bcd77c}footer{padding:16px 0;color:#b5c5be}
+</style></head>
+<body><header><h1>🐜 螞蟻帝國｜物理對照實驗</h1>
+<p>同一份 AntEmpire 解析運動軌跡 → Rapier 2D 驗證碰撞 → PixiJS 動畫</p>
+<p class="small">非正式合成場景；不是 Day14、不是生物學實測，也尚未接入正式每日生態世界。</p></header>
+<main>
+<div class="controls"><label>實驗 <select id="scenario"></select></label><button id="play">暫停</button>
+<label>倍速 <select id="speed"><option value="0.25">0.25×</option><option value="1" selected>1×</option><option value="4">4×</option></select></label>
+<input id="time" type="range" min="0" max="11" step="0.01" value="0" aria-label="實驗時間">
+<output id="clock">0.00 秒</output></div>
+<div id="stage"></div><p id="status">讀取實驗資料…</p>
+<div id="stats"></div><div id="events"></div>
+<footer>畫面的位置由真實物理程式的分段軌跡內插。Rapier 只做獨立的 2D 接觸見證，並沒有重新決定螞蟻的讓路行為。螞蟻在畫面上的大小與位置是合成場景尺度，並非西屯花園實測。</footer>
+</main><script type="module" src="/src/viewer.js"></script></body></html>
