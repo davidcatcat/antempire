@@ -153,7 +153,6 @@ n_i = clamp(intake_today_i / need_today_i, larva_min_nutrition_growth_factor, 1)
 | A8 | 多種子、多季節、極端情境 | Day0 A1～A5 × 四季 × 20 種子 × 365 日，以及極端情境。差異全部報告，不作為目標，不挑種子 |
 | A10 | 新孵化幼蟲的儲備不是 0 | 共同：新孵化時 `reserve_at_hatch === null`、`fed_balance` 從 0 起算，`reserve_basis` 依來源正確。**(a)（建議）**：每隻新孵化幼蟲恰有一筆 `larva_hatch_nutrition`，`inherited` 等於該卵 `lay_egg` 的投入，沒有紀錄的卵寫 `null`；`egg:<id>` 的 C2 帳不變；沒有 `larva_yolk` 區室。**(b)**：改為一筆 `hatch_inherit` 轉移 `egg:<id>` → `larva_yolk:<id>`，份量同上。反例（兩種都要被引擎與讀取器拒絕）：繼承量與 `lay_egg` 不符；為沒有紀錄的卵寫出繼承量；同一隻幼蟲兩筆繼承紀錄；`reserve_at_hatch` 不是 `null`；代謝支出超過 `fed_balance`（等於把 `null` 當 0 或把繼承量當儲備）；(a) 下出現任何 `larva_yolk` 轉移 |
 | A11 | 不憑空增加營養 | `larva_body` 的每一筆增加都有來源轉移（有接觸的 `feed_larva`）；(b) 下 `larva_yolk` 的每一筆增加都是 `hatch_inherit`；C2 每區室閉合。繼承紀錄（a）不增加任何區室的量 |
-| A11 | 不憑空增加營養 | `larva_yolk`、`larva_body` 的每一筆增加都有來源轉移（`hatch_inherit` 或有接觸的 `feed_larva`）；C2 每區室閉合 |
 | A9 | 本種觀察算子（科學比對，不是工程驗收） | 模擬 Phillips 1933 的條件：25°C、停食 2 週、恢復餵食。比對幼蟲期延長的**分布**與恢復後到化蛹的日數。數值不吻合時如實記錄，不調參 |
 
 ## 6. 工作切分（每一步一個規則更新 PR）
