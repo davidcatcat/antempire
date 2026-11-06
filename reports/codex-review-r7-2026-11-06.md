@@ -170,3 +170,25 @@ import {buildDay0} from './cli/lib/day0.ts';
 const ds=buildDay0('A4',1,'2027-09-23',b).state,db=structuredClone(ds.colonies[0]),dout=simulateWorldDay(ds,b),da=dout.state.colonies[0],de=dout.result.colonies[0].events;
 checkQueenRound(queenRoundStart(db,false),da,de,sp);const dr=replayQueenRound(db,da,de,b.species[MAIN_SPECIES]),df=replayEngineColonyDay(db,da,de,dout.day,new Set(Object.keys(ds.sources)),'timed',true);assert.equal(dr.ok,true);assert.equal(df.ok,true);console.log(JSON.stringify({name:'TRUE_DAY0_K3_CONTROL',roundCheck:'ACCEPT',food:df.errors,round:dr.errors,body:da.population.queens?.[0]?.body}));
 ```
+
+## 7. #78 專項再複驗（2026-11-06，Asia/Taipei）
+
+使用者再次要求 review #78。本次重新 fetch 並讀取最新 PR 說明／留言：#78 仍是 **`1a4c6af834c9cfe253611289f0a357d31ea7069f`**，與本報告受測提交完全相同，尚未包含 R7-01 的修正。**判定維持 REQUEST CHANGES，不另列重複的新發現。**
+
+本次實際重新執行附錄的 R7-01 探針：
+
+| 案例 | 實際結果 |
+| --- | --- |
+| 正常 Day15 遷移，k=3 | 回合檢查及兩個讀取器接受；未知儲備仍 null |
+| 遷移日事件偽稱 Day0，額外糖 0.66、蛋白 0.135 | 回合檢查及兩個讀取器仍接受；R7-01 尚未解除 |
+| 正式初始化後的回合快照 | 對同一錯誤事件仍接受，不是漏傳 hadRecord 的探針錯誤 |
+| 正式初始化後的 C2 餘額快照 | 仍拒絕假餘額，保留這個重要影響界線 |
+| 真正 Day0，k=3 | 回合檢查及兩讀取器接受，合法情境沒有被一律禁止 |
+
+main 已前進至 `23357d5ff456358076d44082acac209de0f3cbef`，合併 #76／#79 的文件；#77 已更新至 `62c28d8779ffdad1f840ca8e4124b09ac8ada171`。核對它相對前次 #77 head `f9efab0` 的 engine／cli／tests／species／world／rules 差異為空，這些 base 更新沒有修正 #78 的初始化來源問題。
+
+另以 `git merge-tree --write-tree` 計算更新後 #77 與 #78 的合併樹，無文字衝突；這是只計算 Git 合併結果，不是實際合併 PR，也不是宣稱已在合併樹重跑測試。#78 與 main 的 saves／journal 沒有差異，原工作區仍乾淨。
+
+本輪沒有重新執行同一 SHA 已通過的完整套件；第 5 節的 #78 **47/47**、型別及存檔 **20/20** 是前輪實測結果。本次新增證據是遠端版本核對、初始化探針重跑與 base 整合核對。
+
+要解除此項 P2，應以可信世界／遷移來源驗證初始化模式，並讓事件與 queen record 的 basis／未知儲備標記一致；只要求唯一初始化事件或只驗證金額，仍不足以證明來源有效。
