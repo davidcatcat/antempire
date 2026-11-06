@@ -70,8 +70,11 @@ export function checkPopulationDay(start: PopulationSnapshot, colony: ColonyStat
       eclosedFrom.add(from); eclosedTo.add(to);
     } else if (e.type === 'egg_laid') { const id = String(e.id); if (laid.has(id)) fail(`egg ID ${id} is laid twice`); if (!start.queen_alive || queenDeaths > 0) fail(`egg ${id} is laid by a dead queen`); if (e.queen !== undefined && e.queen !== start.queen_id) fail(`egg ${id} is attributed to queen ${e.queen}, the colony's queen is ${start.queen_id}`); laid.add(id); }
     // Codex review of 1224744 (F1): a queen death is evidence only for the colony's own queen
-    else if (e.type === 'queen_death') { if (String(e.id) !== start.queen_id || colony.queen_id !== start.queen_id) fail(`queen_death of ${e.id}: the colony's queen is ${start.queen_id}`); queenDeaths++; }
+    else if (e.type === 'queen_death') { if (String(e.id) !== start.queen_id) fail(`queen_death of ${e.id}: the colony's queen is ${start.queen_id}`); queenDeaths++; }
   }
+  // Codex review of 852155d (R6-04): the colony's queen keeps her identity on every day (no queen immigration, emigration or
+  // replacement event exists yet, D7-A), whether or not she died
+  if (colony.queen_id !== start.queen_id) fail(`queen_id changed from ${start.queen_id} to ${colony.queen_id} without any event`);
   // lifetimes: who can die, what can be created
   for (const id of deaths) if (!start.workers.has(id) && !eclosedTo.has(id)) fail(`worker ${id} dies but was not alive this day`);
   for (const id of broodDeaths) if (!start.brood.has(id) && !laid.has(id)) fail(`brood ${id} dies but did not exist this day`);

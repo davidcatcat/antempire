@@ -115,6 +115,12 @@ ok(acceptedBefore.length >= 8, `POP before ME-1: the count identities accept ${a
   ok(own.eng && own.rd, 'F1 control: the colony\'s own queen dies (queen_death with her ID): both accept');
   const other = accepts(d.before, dead, [...d.events, { type: 'queen_death', id: 'OTHER_COLONY_QUEEN' }]);
   ok(!other.eng && !other.rd, 'F1: a queen_death naming another queen cannot account for this colony\'s queen: both reject');
+  // R6-04 (Codex review of 852155d): a living queen replaced by another ID with no event at all
+  const swapped = structuredClone(d.after); swapped.queen_id = 'OTHER_COLONY_QUEEN';
+  const sw = accepts(d.before, swapped, d.events);
+  ok(!sw.eng && !sw.rd, 'R6-04: the living queen\'s ID replaced without any event: both reject (accepted at 852155d)');
+  const same = accepts(d.before, d.after, d.events);
+  ok(same.eng && same.rd, 'R6-04 control: the same queen, alive, no event: both accept');
   const e0 = pick((x) => x.events.some((e) => e.type === 'egg_laid')), eggOther = structuredClone(e0); eggOther.events.find((e) => e.type === 'egg_laid').queen = 'OTHER_COLONY_QUEEN';
   const eo = accepts(eggOther.before, eggOther.after, eggOther.events);
   ok(!eo.eng && !eo.rd, 'F1: an egg attributed to another queen: both reject');
