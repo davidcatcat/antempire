@@ -164,7 +164,7 @@
 
 ## 6. 新增：PH／MV 物理碰撞與個體動態速度（Owner 2026-11-04）
 
-> **2026-11-06 狀態**：PH-1、MV-1／MV-2、PH-2／PH-3（含 PH-2b）的**實驗層**已實作並合併（#71～#75），不在正式每日循環中；五項已知問題（P1-A、P1-B、P2-A、P2-B、P2-C，`docs/physics-motion-engine.md` §6）是正式接入前的阻擋條件。Owner 2026-11-06 的讓路、負載與未知參數決策見 #79。
+> **2026-11-06 狀態**：PH-1、MV-1／MV-2、PH-2／PH-3（含 PH-2b）的**實驗層**已實作並合併（#71～#75），不在正式每日循環中；正式接入前的阻擋條件是 P1-A、P1-B、P2-B、P2-C（`docs/physics-motion-engine.md` §6）；P2-A 只適用舊版 #73 讓路規則，PH-2b 不受影響，列為歷史缺陷與回歸驗證項目。Owner 2026-11-06 的讓路、負載與未知參數決策見 #79。
 >
 > 原始建檔說明：**新需求已建檔，尚未實作引擎。** 詳細科學設計、資料契約、模型證據、數學驗收與路線圖見 [物理碰撞與個體運動設計](research-design-physics-motion-2026-11.md)。相關 Issue：[PH #68](https://github.com/davidcatcat/antempire/issues/68)、[MV #69](https://github.com/davidcatcat/antempire/issues/69)；整合 P1-B（巢穴與共用幾何）、P0-A（24h 時鐘）、#65（隨機性）、#66/#67（數學生態）、#9（多群統一時鐘）、#56（排列無關）、C2～C5（實際個體營養）。
 >
