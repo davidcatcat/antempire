@@ -253,6 +253,11 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
     }
     else if (key !== unl && key !== cache) err(`${key}: ${v} µp at the end of the day in a compartment that has no end state`);
   }
+  // Codex review of 9d2933f (R6-01): every queen_body that exists at the end is checked, also one no transfer touched
+  if (c3a) for (const q of end.population.queens ?? []) for (const f of ['sugar', 'protein'] as const) {
+    const key = `queen_body:${q.id}:${f}`, want = toMicro(q.body.known_balance[f]);
+    if (!cur.has(key) && want !== 0) err(`${key}: state ${want} µp with no start balance, initialization or transfer behind it`);
+  }
   if ((cur.get(unl) as number) !== toMicro(end.stores.sugar) - endCrops) err(`${unl}: state ${toMicro(end.stores.sugar) - endCrops} µp, replay ${cur.get(unl)}`);
   if ((cur.get(cache) as number) !== toMicro(end.stores.protein)) err(`${cache}: state ${toMicro(end.stores.protein)} µp, replay ${cur.get(cache)}`);
   return { ok: errors.length === 0, errors, transfers: xs.length, time_validation, by_cause, by_attribution, unattributed_by_cause };

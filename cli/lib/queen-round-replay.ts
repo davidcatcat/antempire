@@ -28,6 +28,17 @@ export function replayQueenRound(start: Any, end: Any, events: Any[], species: A
   }
   const cap = Number(species?.trophallaxis?.crop_capacity?.value ?? species?.trophallaxis?.crop_capacity);
   for (const w of end?.population?.workers ?? []) { const h = (Number(w.crop_cargo_sugar) || 0) + (Number(w.crop_cargo_protein_liquid) || 0); if (h - cap > 1e-9) err(`${w.id}: crop ${h} above the shared capacity ${cap}`); }
+  // R6-01: a record created today (none at the start) needs exactly one initialization event, for this colony's queen
+  const initEv = ev.filter((x) => x.type === 'queen_body_initialized');
+  if (!q0 && q1 && (initEv.length !== 1 || initEv[0].queen !== end.queen_id)) err(`queen record created with ${initEv.length} initialization event(s); exactly one for ${end.queen_id} is required`);
+  if (q0 && initEv.length) err('an initialization event for a queen record that already existed');
+  // R6-02: crops replayed transfer by transfer from the start of the day; every step within [0, capacity] for both foods
+  { const hold = new Map<string, number[]>((start?.population?.workers ?? []).map((w: Any) => [w.id, [Number(w.crop_cargo_sugar) || 0, Number(w.crop_cargo_protein_liquid) || 0]]));
+    for (const e of ev) if (e.type === 'food_transfer') for (const [r, sg] of [[e.source, -1], [e.recipient, 1]] as [Any, number][]) {
+      if (r?.kind !== 'crop') continue;
+      const h = hold.get(r.id) ?? [0, 0], i = e.food_type === 'protein' ? 1 : 0; h[i] = Math.round((h[i] + sg * Number(e.portions)) * 1e6) / 1e6; hold.set(r.id, h);
+      if (h[0] < -1e-9 || h[1] < -1e-9 || h[0] + h[1] - cap > 1e-9) err(`${e.transfer_id}: crop of ${r.id} at sugar ${h[0]} + liquid protein ${h[1]} (capacity ${cap})`);
+    } }
   // the record's creation: values fixed by the rules (migrated: null + 0; Day0: not_applicable + k × daily need)
   const val = (x: Any) => (typeof x === 'object' && x !== null ? Number(x.value) : Number(x));
   for (const e of ev.filter((x) => x.type === 'queen_body_initialized')) {
@@ -41,15 +52,15 @@ export function replayQueenRound(start: Any, end: Any, events: Any[], species: A
   const endW = new Map((end?.population?.workers ?? []).map((w: Any) => [w.id, w]));
   for (const w of endW.values() as Iterable<Any>) if (Number(w.crop_cargo_protein_liquid) > 0) err(`${w.id}: holds liquid protein after the round`);
   // timelines: out (store -> queen), optionally back (queen -> store)
-  const tl = new Map<string, { depart: number; arrive: number; back: number | null; diedAt: number }>();
+  const tl = new Map<string, { depart: number; arrive: number; back: number | null; leave: number; diedAt: number }>();
   ev.forEach((e) => {
     if (e.type !== 'nest_move') return;
     const t = tl.get(e.worker), w: Any = endW.get(e.worker);
     if (!present.has(e.worker)) err(`${e.worker}: moves but was not present at the start`);
     if (w && (w.task !== 'nurse' || w.last_location !== end.nest_node)) err(`${e.worker}: takes part as ${w.task} at ${w.last_location} (only nurses at the nest)`);
     if (!(Number(e.arrive_ordinal) >= Number(e.depart_ordinal))) err(`${e.worker}: arrives (${e.arrive_ordinal}) before leaving (${e.depart_ordinal})`);
-    if (!t) { if (e.from !== storeAt || e.to !== 'queen') err(`${e.worker}: first move ${e.from} -> ${e.to}`); tl.set(e.worker, { depart: Number(e.depart_ordinal), arrive: Number(e.arrive_ordinal), back: null, diedAt: Infinity }); }
-    else if (t.back === null && e.from === 'queen' && e.to === storeAt && Number(e.depart_ordinal) >= t.arrive) t.back = Number(e.arrive_ordinal);
+    if (!t) { if (e.from !== storeAt || e.to !== 'queen') err(`${e.worker}: first move ${e.from} -> ${e.to}`); tl.set(e.worker, { depart: Number(e.depart_ordinal), arrive: Number(e.arrive_ordinal), back: null, leave: Infinity, diedAt: Infinity }); }
+    else if (t.back === null && e.from === 'queen' && e.to === storeAt && Number(e.depart_ordinal) >= t.arrive) { t.back = Number(e.arrive_ordinal); t.leave = Number(e.depart_ordinal); }
     else err(`${e.worker}: an extra move ${e.from} -> ${e.to}`);
   });
   ev.forEach((e, i) => { if (e.type === 'worker_death') { const t = tl.get(String(e.id)); if (t && t.diedAt === Infinity) t.diedAt = i; } });
@@ -65,6 +76,8 @@ export function replayQueenRound(start: Any, end: Any, events: Any[], species: A
       if (!start?.population?.queen_alive || e.queen !== start.queen_id) err(`${e.contact_event_id}: ${e.queen} is not the living queen of ${start?.id}`);
       if (!(e.worker_location === 'queen' && e.queen_location === (q1?.location ?? 'queen') && e.location === 'queen')) err(`${e.contact_event_id}: worker at ${e.worker_location}, queen at ${e.queen_location}`);
       if (!t || Number(e.ordinal) < t.arrive) err(`${e.contact_event_id}: at ${e.ordinal}, before ${e.worker} arrived (${t?.arrive})`);
+      // R6-03: at the queen only on [arrival, departure back to the store)
+      if (t && !(Number(e.ordinal) < t.leave)) err(`${e.contact_event_id}: at ${e.ordinal}, ${e.worker} already left the queen (${t.leave})`);
       if (t && i > t.diedAt) err(`${e.contact_event_id}: after ${e.worker} died`);
     } else if (e.type === 'food_transfer' && e.phase === 'nest_round') {
       const actor = e.cause === 'take_from_cache' ? e.recipient?.id : e.cause === 'feed_queen' || e.cause === 'return_to_cache' ? e.source?.id : null;
@@ -77,6 +90,7 @@ export function replayQueenRound(start: Any, end: Any, events: Any[], species: A
         if (!t || !(Number(e.ordinal) < t.depart)) err(`${e.transfer_id}: taken at ${e.ordinal}, ${actor} left the store at ${t?.depart}`);
         if (qf.route_b1 !== true) err(`${e.transfer_id}: route B1 is off`);
       } else if (e.cause === 'feed_queen') {
+        if (t && !(Number(e.ordinal) < t.leave)) err(`${e.transfer_id}: fed at ${e.ordinal}, after ${actor} left the queen (${t.leave})`);
         const c = contactById.get(e.contact?.contact_event_id);
         if (!c) err(`${e.transfer_id}: no earlier contact ${e.contact?.contact_event_id}`);
         else {

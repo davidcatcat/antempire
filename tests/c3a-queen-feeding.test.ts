@@ -30,7 +30,7 @@ const spOf = (b: Any) => resolveBundle(b).species[MAIN_SPECIES] as Any;
 const SP = spOf(B), SPC = spOf(BC);
 
 interface Day { before: Any; after: Any; events: Any[]; day: number; sources: Set<string>; sp: Any; raw: Any }
-const engineAccepts = (d: Day) => { try { checkColonyFood(colonySnapshot(d.before, true), d.after, d.events, 'timed'); checkQueenRound(queenRoundStart(d.before), d.after, d.events, d.sp); return true; } catch (e) { return String(e); } };
+const engineAccepts = (d: Day) => { try { checkColonyFood(colonySnapshot(d.before, true), d.after, d.events, 'timed'); checkQueenRound(queenRoundStart(d.before, !!d.before.population.queens), d.after, d.events, d.sp); return true; } catch (e) { return String(e); } };
 const readerErrors = (d: Day) => [...replayEngineColonyDay(d.before, d.after, d.events, d.day, d.sources, 'timed', true).errors, ...replayQueenRound(d.before, d.after, d.events, d.raw).errors];
 
 // ---------------------------------------------------------------- real C3a days
@@ -130,12 +130,32 @@ const firstDay: Any[] = [];
   const d: Any = structuredClone(firstDay[0]); d.sources = firstDay[0].sources;
   ok(readerErrors(d).length === 0, 'creation day: the readers accept the real record');
   const init = d.events.find((e: Any) => e.type === 'queen_body_initialized'); init.known_balance.sugar = 5; queen(d).body.known_balance.sugar = +(queen(d).body.known_balance.sugar + 5).toFixed(6);
-  let eng: unknown = true; try { checkQueenRound(queenRoundStart(d.before), d.after, d.events, SP); } catch (e) { eng = String(e); }
+  let eng: unknown = true; try { checkQueenRound(queenRoundStart(d.before, !!d.before.population.queens), d.after, d.events, SP); } catch (e) { eng = String(e); }
   ok(eng !== true && readerErrors(d).length > 0, `N9/N12 a migrated queen created with 5 sugar from nowhere: engine ${String(eng).slice(0, 90)}; readers ${readerErrors(d)[0]}`);
 }
 both('a resting worker away from the nest feeds the queen', has('feed_queen'), (d) => { const f = tx(d, 'feed_queen'), w = worker(d, f.source.id); assert.ok(w, 'feeder alive at the end'); w.task = 'rest'; });
 both('liquid protein kept in a crop past the round', has('return_to_cache'), (d) => { const r = tx(d, 'return_to_cache'); d.events.splice(d.events.indexOf(r), 1); worker(d, r.source.id).crop_cargo_protein_liquid = r.portions; d.after.stores.protein = +(d.after.stores.protein - r.portions).toFixed(6); renumber(d); });
 both('taken at the very moment the worker leaves the store', has('take_from_cache'), (d) => { const t = tx(d, 'take_from_cache'); t.ordinal = d.events.find((e) => e.type === 'nest_move' && e.worker === t.recipient.id).depart_ordinal; });
 ok(days.every((d) => d.after.population.workers.every((w: Any) => !(w.crop_cargo_protein_liquid > 0))), 'review P1: no worker carries liquid protein out of the nest round on any real day (it is fed or put back), so it never blocks sugar foraging');
+
+// Codex review of 9d2933f (R6-01..R6-03)
+{ // R6-01: creation day without the initialization event, with a reserve from nowhere
+  const d: Any = structuredClone(firstDay[0]); d.sources = firstDay[0].sources;
+  d.events = d.events.filter((e: Any) => e.type !== 'queen_body_initialized'); queen(d).body.known_balance.sugar = 5; queen(d).body.known_balance.protein = 7;
+  let eng: unknown = true; try { checkQueenRound(queenRoundStart(d.before, false), d.after, d.events, SP); } catch (e) { eng = String(e); }
+  ok(eng !== true && readerErrors(d).length > 0, `R6-01: a queen record created with no initialization event and 5/7 portions: engine ${String(eng).slice(0, 80)}; readers ${readerErrors(d)[0]}`);
+  const d2: Any = structuredClone(firstDay[0]); d2.sources = firstDay[0].sources;
+  let eng2: unknown = true; try { checkQueenRound(queenRoundStart(d2.before, false), d2.after, d2.events, SP); } catch (e) { eng2 = String(e); }
+  ok(eng2 === true && readerErrors(d2).length === 0, 'R6-01 control: the real creation day (one initialization event) is accepted by the engine check and both readers');
+}
+both('R6-02 the crop exceeds the shared capacity in the middle of the round (taken and put back)', (d) => d.events.some((e) => e.type === 'food_transfer' && e.cause === 'take_from_cache' && d.events.some((r) => r.type === 'food_transfer' && r.cause === 'return_to_cache' && r.source.id === e.recipient.id)), (d) => {
+  const t = d.events.find((e) => e.type === 'food_transfer' && e.cause === 'take_from_cache' && d.events.some((r) => r.type === 'food_transfer' && r.cause === 'return_to_cache' && r.source.id === e.recipient.id)), r = d.events.find((x) => x.type === 'food_transfer' && x.cause === 'return_to_cache' && x.source.id === t.recipient.id);
+  t.portions = +(t.portions + 1).toFixed(6); r.portions = +(r.portions + 1).toFixed(6);
+});
+both('R6-03 contact and feeding after the worker left the queen for the store', (d) => d.events.some((e) => e.type === 'food_transfer' && e.cause === 'feed_queen' && d.events.some((m) => m.type === 'nest_move' && m.worker === e.source.id && m.from === 'queen')), (d) => {
+  const f = d.events.find((e) => e.type === 'food_transfer' && e.cause === 'feed_queen' && d.events.some((m) => m.type === 'nest_move' && m.worker === e.source.id && m.from === 'queen'));
+  const m = d.events.find((x) => x.type === 'nest_move' && x.worker === f.source.id && x.from === 'queen'), c = d.events.find((x) => x.type === 'queen_contact' && x.contact_event_id === f.contact.contact_event_id);
+  c.ordinal = m.arrive_ordinal; f.ordinal = m.arrive_ordinal;
+});
 
 console.log(JSON.stringify({ c3a_queen_feeding: 'pass', checks, colony_days: colonyDays, contacts, feedings: feeds, takes_from_store: takes, self_feedings: selfFeeds, migrated_queen_days: migrated, note: 'engineering checks only; routes B1/C are candidates, not established mechanisms of P. megacephala; laying and survival unchanged (C3b/C3c)' }, null, 2));

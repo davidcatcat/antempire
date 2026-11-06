@@ -135,8 +135,9 @@ export function queenMetabolism(colony: ColonyState, sp: SpeciesParams, metaboli
 }
 
 /** Start-of-day facts the round check needs (taken before the day). */
-export interface QueenRoundStart { workers: Set<string>; queen: { id: string; alive: boolean; unknown: QueenRecord['body']['unknown_initial_reserve'] | undefined; basis: string | undefined } }
-export const queenRoundStart = (colony: ColonyState): QueenRoundStart => ({ workers: new Set(colony.population.workers.map((w) => w.id)), queen: { id: colony.queen_id, alive: colony.population.queen_alive, unknown: colony.population.queens?.[0]?.body.unknown_initial_reserve, basis: colony.population.queens?.[0]?.body.basis } });
+export interface QueenRoundStart { workers: Set<string>; had_record: boolean; crops: Map<string, { sugar: number; protein: number }>; queen: { id: string; alive: boolean; unknown: QueenRecord['body']['unknown_initial_reserve'] | undefined; basis: string | undefined } }
+/** Start-of-day facts; `hadRecord`: whether the queen record existed before this day's ensureQueens (Codex R6-01). */
+export const queenRoundStart = (colony: ColonyState, hadRecord: boolean): QueenRoundStart => ({ workers: new Set(colony.population.workers.map((w) => w.id)), had_record: hadRecord, crops: new Map(colony.population.workers.map((w) => [w.id, { sugar: w.crop_cargo_sugar || 0, protein: w.crop_cargo_protein_liquid || 0 }])), queen: { id: colony.queen_id, alive: colony.population.queen_alive, unknown: colony.population.queens?.[0]?.body.unknown_initial_reserve, basis: colony.population.queens?.[0]?.body.basis } });
 
 /**
  * Engine check of a C3a day (N4–N8, N12, N13, N14, N16; the amounts and paths are C2's checkColonyFood). Throws QUEEN_FEEDING.
@@ -164,6 +165,21 @@ export function checkQueenRound(start: QueenRoundStart, colony: ColonyState, eve
   const fed = new Set<string>(), took = new Set<string>();
   // the queen record's creation (review of 888515c, P2): a migrated queen starts with an unknown (null) reserve and a known
   // balance of 0; a Day0 queen on day 0 with k × her daily need — nothing else may appear from nowhere
+  // Codex review of 9d2933f (R6-01): a record created today needs exactly one initialization event of this colony's queen;
+  // a record that already existed needs none
+  const inits = events.filter((e) => e.type === 'queen_body_initialized');
+  if (!start.had_record && (inits.length !== 1 || inits[0].queen !== colony.queen_id)) fail(`the queen record was created today with ${inits.length} initialization event(s) (needs exactly one, for ${colony.queen_id})`);
+  if (start.had_record && inits.length) fail(`an initialization event for a queen record that already existed`);
+  // Codex review of 9d2933f (R6-02): the shared crop capacity holds after EVERY transfer, not only at the end of the day
+  const cap = sp.trophallaxis.crop_capacity, held = new Map([...start.crops].map(([k, v]) => [k, { ...v }]));
+  for (const e of events) if (e.type === 'food_transfer') {
+    const x = e as unknown as { transfer_id: string; source: { kind: string; id: string }; recipient: { kind: string; id: string }; food_type: 'sugar' | 'protein'; portions: number };
+    for (const [r, sign] of [[x.source, -1], [x.recipient, 1]] as const) {
+      if (r.kind !== 'crop') continue;
+      const h = held.get(r.id) ?? { sugar: 0, protein: 0 }; h[x.food_type] = round(h[x.food_type] + sign * x.portions); held.set(r.id, h);
+      if (h.sugar < -1e-9 || h.protein < -1e-9 || h.sugar + h.protein > cap + 1e-9) fail(`${x.transfer_id}: crop of ${r.id} holds sugar ${h.sugar} + liquid protein ${h.protein} after it (shared capacity ${cap})`);
+    }
+  }
   for (const e of events) if (e.type === 'queen_body_initialized') {
     const kb = e.known_balance as { sugar: number; protein: number }, k = sp.queen_feeding.day0_initial_reserve_days_of_need, need = dailyNeed(sp);
     const want = e.basis === 'unknown_at_migration' ? { sugar: 0, protein: 0, unknown: null } : e.basis === 'day0_scenario' ? { sugar: round(k * need.sugar), protein: round(k * need.protein), unknown: 'not_applicable' } : null;
@@ -174,7 +190,7 @@ export function checkQueenRound(start: QueenRoundStart, colony: ColonyState, eve
   const nestOf = new Map(colony.population.workers.map((w) => [w.id, w]));
   for (const w of colony.population.workers) if ((w.crop_cargo_protein_liquid || 0) > 0) fail(`worker ${w.id} still holds ${w.crop_cargo_protein_liquid} liquid protein after the nest round (it is put back)`);
   // moves first (a take at the store is written before the move): out store -> queen, optionally back queen -> store
-  const back = new Map<string, number>();
+  const back = new Map<string, number>(), leaveQueen = new Map<string, number>();
   for (const e of events) if (e.type === 'nest_move') {
     const w = String(e.worker), ww = nestOf.get(w);
     if (!start.workers.has(w)) fail(`nest_move of ${w}, who was not in the nest round`);
@@ -183,7 +199,7 @@ export function checkQueenRound(start: QueenRoundStart, colony: ColonyState, eve
     if (!depart.has(w)) {
       if (e.from !== store || e.to !== QUEEN_PLACE) fail(`first nest_move of ${w} is ${e.from} -> ${e.to}`);
       depart.set(w, Number(e.depart_ordinal)); arrive.set(w, Number(e.arrive_ordinal));
-    } else if (!back.has(w) && e.from === QUEEN_PLACE && e.to === store && Number(e.depart_ordinal) >= (arrive.get(w) as number)) back.set(w, Number(e.arrive_ordinal));
+    } else if (!back.has(w) && e.from === QUEEN_PLACE && e.to === store && Number(e.depart_ordinal) >= (arrive.get(w) as number)) { back.set(w, Number(e.arrive_ordinal)); leaveQueen.set(w, Number(e.depart_ordinal)); }
     else fail(`worker ${w} moves ${e.from} -> ${e.to} a further time in one round`);
   }
   events.forEach((e, i) => {
@@ -195,6 +211,8 @@ export function checkQueenRound(start: QueenRoundStart, colony: ColonyState, eve
       if (e.queen !== colony.queen_id || !start.queen.alive) fail(`contact ${id}: queen ${e.queen} is not this colony's living queen`);
       if (e.location !== e.worker_location || e.location !== e.queen_location || e.queen_location !== queen.location) fail(`contact ${id}: worker at ${e.worker_location}, queen at ${e.queen_location}, contact at ${e.location} — not one place`);
       if (!(arrive.has(w) && Number(e.ordinal) >= (arrive.get(w) as number))) fail(`contact ${id} at ${e.ordinal}: worker ${w} has not arrived at the queen (arrival ${arrive.get(w)})`);
+      // Codex review of 9d2933f (R6-03): present at the queen only on [arrival, departure back to the store)
+      if (!(Number(e.ordinal) < (leaveQueen.get(w) ?? Infinity))) fail(`contact ${id} at ${e.ordinal}: worker ${w} left the queen at ${leaveQueen.get(w)}`);
       if ((deathAt.get(w) ?? Infinity) < i) fail(`contact ${id} after the death of ${w}`);
       contacts.set(id, { worker: w, queen: String(e.queen), ordinal: Number(e.ordinal) });
     } else if (e.type === 'food_transfer' && e.phase === 'nest_round') {
@@ -211,6 +229,7 @@ export function checkQueenRound(start: QueenRoundStart, colony: ColonyState, eve
         const cc = c as { worker: string; queen: string; ordinal: number };
         if (cc.worker !== x.source.id || cc.queen !== x.recipient.id) fail(`${x.transfer_id}: feeds ${x.source.id} -> ${x.recipient.id}, its contact is ${cc.worker} with ${cc.queen}`);
         if (x.ordinal < cc.ordinal) fail(`${x.transfer_id}: delivered at ${x.ordinal}, before its contact at ${cc.ordinal}`);
+        if (!(x.ordinal < (leaveQueen.get(x.source.id) ?? Infinity))) fail(`${x.transfer_id}: delivered at ${x.ordinal}, after ${x.source.id} left the queen (${leaveQueen.get(x.source.id)})`);
         const k = `${x.contact?.contact_event_id}:${x.food_type}`; if (fed.has(k)) fail(`${x.transfer_id}: a second ${x.food_type} feeding in one contact`); fed.add(k);
       } else if (x.cause === 'return_to_cache') {
         const w = x.source.id, at = store === QUEEN_PLACE ? arrive.get(w) : back.get(w);

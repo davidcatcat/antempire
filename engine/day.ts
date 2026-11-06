@@ -113,9 +113,10 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
   // C3a (v2-review.25, switch queen_feeding.individual_queen_body_c3a): the queen's own record exists before the snapshot
   const c3a = new Map<string, { start: QueenRoundStart; round: RoundResult }>();
   for (const w of work) if (w.sp.queen_feeding.individual_queen_body_c3a) {
+    const hadRecord = !!w.colony.population.queens;
     ensureQueens(s, w.colony, w.sp, w.events);
     w.food = colonySnapshot(w.colony, true);
-    c3a.set(w.colony.id, { start: queenRoundStart(w.colony), round: { taken_from_cache: 0, returned_to_cache: 0, fed: { sugar: 0, protein: 0 }, self_fed: 0, contacts: 0 } });
+    c3a.set(w.colony.id, { start: queenRoundStart(w.colony, hadRecord), round: { taken_from_cache: 0, returned_to_cache: 0, fed: { sugar: 0, protein: 0 }, self_fed: 0, contacts: 0 } });
   }
 
   growEcology(s, wp, weather, worldEvents);
