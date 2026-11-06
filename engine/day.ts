@@ -14,6 +14,7 @@ import { consume, storageOverflow } from './nutrition.ts';
 import { developBrood } from './brood.ts';
 import { oviposition, queenSurvival, workerSurvival } from './queen.ts';
 import { bindFoodTransfers, checkColonyFood, checkSources, colonySnapshot, foodTimingFor, sourceSnapshot } from './transfers.ts';
+import { checkColonyDomain, checkEventDomain, checkParamDomain, checkPopulationDay, checkRngInputs, populationSnapshot } from './invariants.ts';
 import { resolveBundle, type ParamBundle, type ResolvedParams, type SpeciesParams } from './params.ts';
 import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from './types.ts';
 
@@ -41,8 +42,9 @@ import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from '
  *   v2-review.21 (Issue #50 / #49 N1): brood care exposure from the workers present at the start of the step; eclosions committed after all brood is processed, ids in source-pupa order. Switch brood_care.daily_care_snapshot_v21.
  *   v2-review.22 (work package C2): the engine records every movement of food between compartments as a food_transfer event (source, recipient, amount, minute, cause, attribution) and checks per-compartment closure every day; diagnostics only, no quantity, draw or decision changed.
  *   v2-review.23 (Codex Issue #61 R3-05): a worker carrying food home marks each edge at the minute it has walked it (event-clock 'trail'), not the whole route at the nest. Switch activity.local_trail_deposit_v23.
+ *   v2-review.24 (ME-1, Issue #66): runtime invariants (engine/invariants.ts) — population ID flow and lifetimes, numeric/event/parameter domains, RNG inputs; checks only, no quantity, draw, decision, event or state changed (outputs byte-identical to v23).
  */
-export const ENGINE_VERSION = 'antempire.v2-review.23-local-trail-deposit';
+export const ENGINE_VERSION = 'antempire.v2-review.24-me1-invariants';
 /** Implementation of that behaviour (bumped for refactors that keep results byte-identical). */
 export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
 /**
@@ -96,6 +98,12 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
     if (!sp) throw Error(`No species parameter file loaded for ${c.species_id} (colony ${c.id})`);
     return sp;
   };
+  // ME-1 (v2-review.24): checks only — inputs that are not numbers of their declared kind stop the day before it runs
+  checkRngInputs(s);
+  checkParamDomain('world', wp);
+  for (const id of new Set(s.colonies.map((c) => c.species_id))) checkParamDomain(`species ${id}`, speciesOf(s.colonies.find((c) => c.species_id === id) as ColonyState));
+  for (const c of s.colonies) checkColonyDomain(c, speciesOf(c).trophallaxis.crop_capacity); // the start state too (Day0, legacy, migrated)
+  const popStart = new Map(s.colonies.map((c) => [c.id, populationSnapshot(c)]));
   const weather = calcWeather(s, wp, dayDate);
   const work = s.colonies.map((colony) => ({ colony, sp: speciesOf(colony), events: [] as SimEvent[], initial: { sugar: colony.stores.sugar, protein: colony.stores.protein }, summary: newSummary(s, colony, dayDate, weather), overflow: { sugar: 0, protein: 0 }, food: colonySnapshot(colony) }));
   // v2-review.22 (C2): every food movement of a colony this day is recorded in its event list as a food_transfer
@@ -146,6 +154,13 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
     if (pop.workers + summary.worker_deaths !== summary.workers_before + summary.eclosions) throw Error('worker conservation violated');
     // Exact brood count balance across stages and deaths, egg lays, eclosions.
     if (colony.population.brood.length + summary.brood_deaths + summary.eclosions !== summary.brood_before + summary.eggs_laid) throw Error('brood conservation violated');
+  }
+  // ME-1 (v2-review.24): population flow and lifetimes from the events (ID sets), and numeric domains of state and events
+  checkEventDomain('world', worldEvents);
+  for (const w of work) {
+    checkPopulationDay(popStart.get(w.colony.id) as ReturnType<typeof populationSnapshot>, w.colony, w.events);
+    checkColonyDomain(w.colony, w.sp.trophallaxis.crop_capacity);
+    checkEventDomain(w.colony.id, w.events);
   }
   return { day: s.sim_day, date: dayDate, weather, world_events: worldEvents, colonies: work.map((w) => ({ colony_id: w.colony.id, species_id: w.colony.species_id, summary: w.summary, events: w.events })) };
 }

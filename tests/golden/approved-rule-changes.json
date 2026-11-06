@@ -375,6 +375,13 @@
       "to": true,
       "introduced": true,
       "description": "Codex Issue #61 R3-05: a worker carrying food it collected marks each edge of its walk home at the minute it has walked that edge (event-clock trail event; worker, edge, minute, minute it entered the edge, amount added, cause); no edge is written after the worker reached the nest. The decision (carrying food) and the amount per mark are unchanged. false = v2-review.22 behaviour (whole return route marked at the minute of arrival at the nest; isolation proof only)."
+    },
+    {
+      "rules_version": "antempire.v2-review.24-me1-invariants",
+      "approved_in": "Owner instruction 2026-11-05 (math-ecology integration ME-1, Issue #66; PR for Owner review, not merged by Claude)",
+      "kind": "engine",
+      "day14_output_unchanged": true,
+      "description": "ME-1: the engine checks, after every simulated day, population ID flow and lifetimes, numeric and event domains, parameter domains and RNG inputs (engine/invariants.ts), and throws on a violation. No quantity, draw, decision, event or state changes; every output is byte-identical to v2-review.23 (tests/golden.test.ts, tests/rules-isolation.test.ts)."
     }
   ]
 }

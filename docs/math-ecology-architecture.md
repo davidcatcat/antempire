@@ -128,7 +128,7 @@ graph TD
 | **ME-5 科學校準與獨立驗證** | ODD 與 POM 全面整理；觀察算子對照保留資料；敏感度與不確定性分解；驗證報告供觀察器查詢 | ODD（#59）、Day0 評估、#65 S4、D4-A 的 RR-9 | ME-2～ME-4 | 報告可重現（SHA、種子、輸入、參數、公式版本） | 多型態同時檢核；不可辨識的機制如實報告；不以存活率挑模型 |
 
 **不重複開發**：
-- ME-1 是 C2 驗證器的延伸；
+- ME-1 是 C2 驗證器的延伸；實作見 v2-review.24（`engine/invariants.ts`、`cli/lib/population-replay.ts`、`cli/lib/source-ledger.ts`、`tests/me1-invariants.test.ts`），登錄表 §7 的 ME-1 列；
 - ME-2 的發育與壽命就是 P0-B；
 - ME-3 的捕食仍在現有個體事件中；
 - ME-4 的時間就是 P0-A 的時鐘，空間就是 P1-B 的幾何。
