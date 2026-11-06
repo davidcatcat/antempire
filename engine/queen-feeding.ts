@@ -146,9 +146,9 @@ export function queenMetabolism(colony: ColonyState, sp: SpeciesParams, metaboli
 }
 
 /** Start-of-day facts the round check needs (taken before the day). */
-export interface QueenRoundStart { workers: Set<string>; had_record: boolean; expected_init_basis: 'day0_scenario' | 'unknown_at_migration'; crops: Map<string, { sugar: number; protein: number }>; queen: { id: string; alive: boolean; unknown: QueenRecord['body']['unknown_initial_reserve'] | undefined; basis: string | undefined } }
+export interface QueenRoundStart { workers: Set<string>; had_record: boolean; expected_init_basis: 'day0_scenario' | 'unknown_at_migration'; crops: Map<string, { sugar: number; protein: number }>; queen: { id: string; alive: boolean; unknown: QueenRecord['body']['unknown_initial_reserve'] | undefined; basis: string | undefined; balance?: { sugar: number; protein: number } } }
 /** Start-of-day facts; `hadRecord`: whether the queen record existed before this day's ensureQueens (Codex R6-01). */
-export const queenRoundStart = (colony: ColonyState, hadRecord: boolean, expectedBasis: 'day0_scenario' | 'unknown_at_migration'): QueenRoundStart => ({ workers: new Set(colony.population.workers.map((w) => w.id)), had_record: hadRecord, expected_init_basis: expectedBasis, crops: new Map(colony.population.workers.map((w) => [w.id, { sugar: w.crop_cargo_sugar || 0, protein: w.crop_cargo_protein_liquid || 0 }])), queen: { id: colony.queen_id, alive: colony.population.queen_alive, unknown: colony.population.queens?.[0]?.body.unknown_initial_reserve, basis: colony.population.queens?.[0]?.body.basis } });
+export const queenRoundStart = (colony: ColonyState, hadRecord: boolean, expectedBasis: 'day0_scenario' | 'unknown_at_migration'): QueenRoundStart => ({ workers: new Set(colony.population.workers.map((w) => w.id)), had_record: hadRecord, expected_init_basis: expectedBasis, crops: new Map(colony.population.workers.map((w) => [w.id, { sugar: w.crop_cargo_sugar || 0, protein: w.crop_cargo_protein_liquid || 0 }])), queen: { id: colony.queen_id, alive: colony.population.queen_alive, unknown: colony.population.queens?.[0]?.body.unknown_initial_reserve, basis: colony.population.queens?.[0]?.body.basis, balance: colony.population.queens?.[0] ? { ...colony.population.queens[0].body.known_balance } : undefined } });
 
 /**
  * Engine check of a C3a day (N4–N8, N12, N13, N14, N16; the amounts and paths are C2's checkColonyFood). Throws QUEEN_FEEDING.
@@ -265,4 +265,61 @@ export function checkQueenRound(start: QueenRoundStart, colony: ColonyState, eve
       }
     }
   });
+  checkFeedingRule(start, colony, events, sp, fail);
+}
+
+/**
+ * Codex review (2026-11-07): closure shows that no food appeared or vanished, not that each feeding followed the rule. An
+ * engine-side replay of the round as the engine ran it (array order = processing order): the crops of the nurses and the
+ * queen's own known balance, transfer by transfer from the start of the day; at each queen_contact, for each food, the
+ * engine contract of C3a is
+ *   nurse holds none          -> no feeding, no refusal
+ *   queen satiated (her own known balance ≥ queen_satiation_days_of_need × her daily need) -> one refusal, no feeding
+ *   otherwise                 -> exactly one feed_queen of min(held, feed_max_portions_per_contact)
+ * and the contacts follow their ordinal times (ties by worker ID). This validates the existing rule; it is not a claim
+ * that P. megacephala workers feed queens by this formula (candidate route, D).
+ */
+function checkFeedingRule(start: QueenRoundStart, colony: ColonyState, events: SimEvent[], sp: SpeciesParams, fail: (m: string) => never | void): void {
+  const qf = sp.queen_feeding, need = dailyNeed(sp), q = colony.population.queens?.[0];
+  if (!q) return;
+  const init = events.find((e) => e.type === 'queen_body_initialized') as { known_balance?: { sugar: number; protein: number } } | undefined;
+  const bal = { ...(start.queen.balance ?? init?.known_balance ?? { sugar: 0, protein: 0 }) };
+  const held = new Map([...start.crops].map(([k, v]) => [k, { ...v }]));
+  const due = new Map<string, { kind: 'none' | 'refuse' | 'feed'; amount?: number; worker: string }>(), seenFeed = new Map<string, number>(), seenRefuse = new Set<string>();
+  let last: { t: number; w: string } | null = null;
+  for (const e of events) {
+    if (e.type === 'queen_contact') {
+      const id = String(e.contact_event_id), w = String(e.worker), t = Number(e.ordinal);
+      if (last && (t < last.t || (t === last.t && w < last.w))) fail(`contact ${id} at ${t} (${w}) is recorded after ${last.w} at ${last.t}: contacts follow their ordinal times, ties by worker ID`);
+      last = { t, w };
+      const h = held.get(w) ?? { sugar: 0, protein: 0 };
+      for (const f of ['sugar', 'protein'] as const) {
+        const k = `${id}:${f}`;
+        if (!(h[f] > 0)) due.set(k, { kind: 'none', worker: w });
+        else if (bal[f] >= qf.queen_satiation_days_of_need * need[f]) due.set(k, { kind: 'refuse', worker: w });
+        else due.set(k, { kind: 'feed', amount: round(Math.min(h[f], qf.feed_max_portions_per_contact)), worker: w });
+      }
+    } else if (e.type === 'queen_feeding_refused') {
+      const k = `${e.contact_event_id}:${e.food_type}`, d = due.get(k);
+      if (seenRefuse.has(k)) fail(`two refusals for ${k}`); seenRefuse.add(k);
+      if (!d || d.kind !== 'refuse' || d.worker !== e.worker) fail(`refusal ${k}: the queen was ${d?.kind === 'feed' ? 'not satiated (her own balance below the threshold)' : 'not offered this food'} at that contact`);
+    } else if (e.type === 'food_transfer') {
+      const x = e as unknown as { transfer_id: string; cause: string; source: { kind: string; id: string }; recipient: { kind: string; id: string }; food_type: 'sugar' | 'protein'; portions: number; contact?: Record<string, unknown> };
+      if (x.cause === 'feed_queen') {
+        const k = `${x.contact?.contact_event_id}:${x.food_type}`, d = due.get(k);
+        seenFeed.set(k, (seenFeed.get(k) ?? 0) + 1);
+        if (!d || d.kind === 'none') fail(`${x.transfer_id}: feeds ${x.food_type} the nurse did not hold at the contact`);
+        else if (d.kind === 'refuse') fail(`${x.transfer_id}: feeds ${x.food_type} although the queen was satiated by her own balance (${bal[x.food_type]} ≥ ${round(qf.queen_satiation_days_of_need * need[x.food_type])})`);
+        else if (x.portions !== d.amount) fail(`${x.transfer_id}: feeds ${x.portions} ${x.food_type}; the rule gives min(held, ${qf.feed_max_portions_per_contact}) = ${d.amount}`);
+      }
+      for (const [r, sign] of [[x.source, -1], [x.recipient, 1]] as const) {
+        if (r.kind === 'crop') { const h = held.get(r.id) ?? { sugar: 0, protein: 0 }; h[x.food_type] = round(h[x.food_type] + sign * x.portions); held.set(r.id, h); }
+        if (r.kind === 'queen_body' && r.id === q.id) bal[x.food_type] = round(bal[x.food_type] + sign * x.portions);
+      }
+    }
+  }
+  for (const [k, d] of due) {
+    if (d.kind === 'feed' && seenFeed.get(k) !== 1) fail(`contact ${k}: the queen is not satiated and the nurse holds food, but ${seenFeed.get(k) ?? 0} feedings were recorded (the rule gives exactly one of ${d.amount})`);
+    if (d.kind === 'refuse' && !seenRefuse.has(k)) fail(`contact ${k}: the queen was satiated but no refusal was recorded`);
+  }
 }
