@@ -382,6 +382,107 @@
       "kind": "engine",
       "day14_output_unchanged": true,
       "description": "ME-1: the engine checks, after every simulated day, population ID flow and lifetimes, numeric and event domains, parameter domains and RNG inputs (engine/invariants.ts), and throws on a violation. No quantity, draw, decision, event or state changes; every output is byte-identical to v2-review.23 (tests/golden.test.ts, tests/rules-isolation.test.ts)."
+    },
+    {
+      "rules_version": "antempire.v2-review.25-c3a-queen-body",
+      "approved_in": "Owner instruction 2026-11-05 (C3a, docs/design-c3-queen-feeding.md §9-§12; separate PR for Owner review, not merged by Claude)",
+      "kind": "param_switch",
+      "file": "species:pheidole-megacephala",
+      "path": "queen_feeding.individual_queen_body_c3a",
+      "from": false,
+      "to": false,
+      "introduced": true,
+      "description": "C3a switch, introduced OFF: the queen's own nutrition compartment fed only by local ordinal-timed nest-round events. Off = v2-review.24 byte for byte. Turning it on is a separate rules decision (Day0 experiment worlds first, design §6)."
+    },
+    {
+      "rules_version": "antempire.v2-review.25-c3a-queen-body",
+      "approved_in": "Owner instruction 2026-11-05 (C3a, docs/design-c3-queen-feeding.md §9-§12; separate PR for Owner review, not merged by Claude)",
+      "kind": "param_switch",
+      "file": "species:pheidole-megacephala",
+      "path": "queen_feeding.route_b1",
+      "from": true,
+      "to": true,
+      "introduced": true,
+      "description": "C3a route/place switch (D), introduced with the C3a switch; read only when queen_feeding.individual_queen_body_c3a is on"
+    },
+    {
+      "rules_version": "antempire.v2-review.25-c3a-queen-body",
+      "approved_in": "Owner instruction 2026-11-05 (C3a, docs/design-c3-queen-feeding.md §9-§12; separate PR for Owner review, not merged by Claude)",
+      "kind": "param_switch",
+      "file": "species:pheidole-megacephala",
+      "path": "queen_feeding.route_c_self_feed",
+      "from": true,
+      "to": true,
+      "introduced": true,
+      "description": "C3a route/place switch (D), introduced with the C3a switch; read only when queen_feeding.individual_queen_body_c3a is on"
+    },
+    {
+      "rules_version": "antempire.v2-review.25-c3a-queen-body",
+      "approved_in": "Owner instruction 2026-11-05 (C3a, docs/design-c3-queen-feeding.md §9-§12; separate PR for Owner review, not merged by Claude)",
+      "kind": "param_switch",
+      "file": "species:pheidole-megacephala",
+      "path": "queen_feeding.store_is_queen_location",
+      "from": false,
+      "to": false,
+      "introduced": true,
+      "description": "C3a route/place switch (D), introduced with the C3a switch; read only when queen_feeding.individual_queen_body_c3a is on"
+    },
+    {
+      "rules_version": "antempire.v2-review.25-c3a-queen-body",
+      "approved_in": "Owner instruction 2026-11-05 (C3a, docs/design-c3-queen-feeding.md §9-§12; separate PR for Owner review, not merged by Claude)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "queen_feeding.take_from_cache_max_portions",
+      "description": "C3a parameter (game assumption, D); read only when queen_feeding.individual_queen_body_c3a is on",
+      "to": 0.28,
+      "from": 0.28
+    },
+    {
+      "rules_version": "antempire.v2-review.25-c3a-queen-body",
+      "approved_in": "Owner instruction 2026-11-05 (C3a, docs/design-c3-queen-feeding.md §9-§12; separate PR for Owner review, not merged by Claude)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "queen_feeding.feed_max_portions_per_contact",
+      "description": "C3a parameter (game assumption, D); read only when queen_feeding.individual_queen_body_c3a is on",
+      "to": 0.28,
+      "from": 0.28
+    },
+    {
+      "rules_version": "antempire.v2-review.25-c3a-queen-body",
+      "approved_in": "Owner instruction 2026-11-05 (C3a, docs/design-c3-queen-feeding.md §9-§12; separate PR for Owner review, not merged by Claude)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "queen_feeding.queen_satiation_days_of_need",
+      "description": "C3a parameter (game assumption, D); read only when queen_feeding.individual_queen_body_c3a is on",
+      "to": 3,
+      "from": 3
+    },
+    {
+      "rules_version": "antempire.v2-review.25-c3a-queen-body",
+      "approved_in": "Owner instruction 2026-11-05 (C3a, docs/design-c3-queen-feeding.md §9-§12; separate PR for Owner review, not merged by Claude)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "queen_feeding.self_feed_max_portions",
+      "description": "C3a parameter (game assumption, D); read only when queen_feeding.individual_queen_body_c3a is on",
+      "to": 0.045,
+      "from": 0.045
+    },
+    {
+      "rules_version": "antempire.v2-review.25-c3a-queen-body",
+      "approved_in": "Owner instruction 2026-11-05 (C3a, docs/design-c3-queen-feeding.md §9-§12; separate PR for Owner review, not merged by Claude)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "queen_feeding.day0_initial_reserve_days_of_need",
+      "description": "C3a parameter (game assumption, D); read only when queen_feeding.individual_queen_body_c3a is on",
+      "to": 0,
+      "from": 0
+    },
+    {
+      "rules_version": "antempire.v2-review.25-c3a-queen-body",
+      "approved_in": "Owner instruction 2026-11-05 (C3a, docs/design-c3-queen-feeding.md §9-§12; separate PR for Owner review, not merged by Claude)",
+      "kind": "engine",
+      "day14_output_unchanged": true,
+      "description": "C3a engine paths (engine/queen-feeding.ts; C2 queen_body compartment, nest_round phase, shared crop capacity) run only with the switch on; with it off every output is byte-identical to v2-review.24 (tests/golden.test.ts, tests/rules-isolation.test.ts)."
     }
   ]
 }

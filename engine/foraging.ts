@@ -7,6 +7,7 @@
 import { clamp, round } from './math.ts';
 import type { Rng } from './rng.ts';
 import { foodTransfer } from './transfers.ts';
+import { cropHeld } from './queen-feeding.ts';
 import { goHome, routeTo, travel, type Trip } from './routes.ts';
 import { decayTrails, depositTrail, followLocalTrail, fullTrail } from './trails.ts';
 import { ensureRouteMemory, knownEmpty, knownNodes, knownRoute, learnRoute, markEmpty, unknownExits } from './navigation.ts';
@@ -87,7 +88,7 @@ function collect(world: WorldState, colony: ColonyState, sp: SpeciesParams, wp: 
   const presence = knowledge(colony, source.id)?.presence;
   if (presence === 'scouted_empty' || presence === 'potential' || sourceSum(source) <= 1e-5 || g() > rain * (source.type === 'carcass' ? fh.carcass_access_probability : fh.liquid_collection_probability)) return null;
   const macro = macroOf(source), min = fh[`crop_load_${macro}_min`], max = fh[`crop_load_${macro}_max`];
-  const freeRoom = macro === 'sugar' ? Math.max(0, sp.trophallaxis.crop_capacity - (worker.crop_cargo_sugar || 0)) : Infinity;
+  const freeRoom = macro === 'sugar' ? Math.max(0, sp.trophallaxis.crop_capacity - cropHeld(worker)) : Infinity; // C3a: shared crop (§12.3)
   const load = round(Math.min(sourceSum(source), min + (max - min) * g(), freeRoom));
   if (load <= 0) return null;
   if (macro === 'sugar') source.sugar = round(source.sugar - load);

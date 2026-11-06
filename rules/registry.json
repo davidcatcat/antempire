@@ -334,6 +334,24 @@
       "save_schema": "antempire.engine-v2",
       "state_migration": null,
       "note": "ME-1 (Issue #66): runtime invariants extending C2 — population ID flow (births, deaths, immigration/emigration terms 0, ends), ID lifetimes, event minutes, numeric/event/parameter domains, RNG inputs; engine/invariants.ts plus the independent reader cli/lib/population-replay.ts. Checks only: every simulation output is byte-identical to v2-review.23. Engineering/mathematical correctness, not scientific validation."
+    },
+    {
+      "rules_version": "antempire.v2-review.25-c3a-queen-body",
+      "tag": "v25",
+      "fingerprint": {
+        "engine": "0eb168bf8f58a489018b4e345e9382b0302c8a986d9ea0bee6ac67e9f38795e2",
+        "params": "23b761b3bd03766e89ccae0b4157da20aca7cc6374985833188a8ad77c6041a9"
+      },
+      "approved_in": "Owner instruction 2026-11-05 (C3a, docs/design-c3-queen-feeding.md §9-§12; separate PR for Owner review, not merged by Claude)",
+      "golden": {
+        "traces": "tests/golden/v25-trace-sha256.json",
+        "reports": "reports/day15-134-v25-*",
+        "day0_traces": "tests/golden/day0-v25-trace-sha256.json"
+      },
+      "previous": "antempire.v2-review.24-me1-invariants",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": "none while the switch is off; with it on, colony.population.queens is created on the first C3a day (Day14 migration: unknown_initial_reserve null, known balance 0)",
+      "note": "C3a: the queen's own nutrition compartment (queen_body), fed only by local ordinal-timed nest-round events; her metabolism from what she ate; laying and survival unchanged (C3b/C3c). Switch queen_feeding.individual_queen_body_c3a introduced OFF: every output byte-identical to v2-review.24. Routes B1 and C are candidates, not established mechanisms of P. megacephala."
     }
   ]
 }

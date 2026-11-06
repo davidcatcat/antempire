@@ -268,3 +268,63 @@ C3a 只換掉「蟻后怎麼得到食物、蟻后自己的代謝從哪裡付」�
 | X16 | #62 是文件審查，不記為可執行科學驗證通過（§9） | 已涵蓋 | 文件開頭「地位：設計，未實作」 |
 
 PR #59 相關文件：上表沒有任何一項指向 #59 文件中的直接錯誤，因此本次未改 #59 的文件。
+
+## 14. C3a 實作紀錄與物理接觸的介面契約（v2-review.25，2026-11-05）
+**實作狀態**：C3a 已實作在開關 `queen_feeding.individual_queen_body_c3a` 之後（預設關閉；關閉時與 v2-review.24 逐位元組相同）。實作：`engine/queen-feeding.ts`；C2 擴充：`engine/transfers.ts`；獨立讀取器：`cli/lib/engine-transfers.ts`（`c3a` 參數）、`cli/lib/queen-round-replay.ts`；測試：`tests/c3a-queen-feeding.test.ts`。
+
+**實作了什麼**（依 §9 第 1 點）：
+- 區室：`queen_body:<queen>`（`unknown_initial_reserve` 與 `known_balance` 分開，§12.4）；嗉囊分類為 `crop_cargo_sugar` 與 `crop_cargo_protein_liquid`，共用 `trophallaxis.crop_capacity`（§12.3，採集、交哺與 `take_from_cache` 都用總量計算剩餘空間）。
+- 巢內回合（序數時間）：在舊結算（`storageOverflow`、`consume`）之前。參與者是任務為 `nurse`、當時在巢節點的工蟻；每隻以自己 ID 命名的亂數串流抽抵達值（同值依 ID）。在 `store` 取用（路線 B1）→ `nest_move` → 在 `queen` 位置 `queen_contact` → 每次接觸、每種食物最多一筆 `feed_queen`；蟻后依自己的已知收支拒絕（飽足門檻 D）。
+- 放回（§4「依規則放回」，D）：回合結束時，工蟻嗉囊中沒有餵出的液態蛋白走回 `store`，以 `return_to_cache`（`crop → cache`）放回。嗉囊中的液態蛋白只存在於回合內，不會帶到隔天，因此不會占用採糖的共同容量。
+- 路線 C（`queen_self_feed`）：只有蛋白倉與蟻后同一位置（`store_is_queen_location`，預設 false）時才可能發生。
+- 蟻后代謝：由 `known_balance` 支付（`queen_metabolism`，個體歸因），從全巢代謝移出；不足記為 `shortfall_today`，**只記錄**，產卵與存活仍用舊規則（C3b、C3c）。
+- 舊帳範圍（§12.1）：`stores.sugar` = Σ 嗉囊糖 ＋ `nest_unlocated`；`stores.protein` = `cache`。舊代謝、舊產卵、溢出的路徑表都不包含 `queen_body`，嗉囊中的液態蛋白也不在舊帳內（N15）。
+
+**獨立審查（另一個唯讀 Claude 工作階段，`888515c`）與處理**：
+- P1：液態蛋白沒有出路，嗉囊被填滿後擋住採糖（10 個 Day0 執行中有 8 個超過 90%）。**已修正**：加入回合結束時的放回規則。重跑審查者的腳本：60 日內任何一天都沒有工蟻帶著液態蛋白離開回合。
+- P2：讀取器接受憑空設定的蟻后初始儲備。**已修正**：引擎與讀取器都依規則檢查 `queen_body_initialized` 的值。
+- P2：沒有檢查參與者是否真的是在巢內的育幼工蟻（只看事件自己寫的位置）。**已修正**：改由期末狀態的任務與位置判斷。限制：當日稍後死亡的工蟻不在期末狀態，無法這樣檢查。
+- P2：帳與摘要的涵蓋範圍。**已修正**：`mass_ledger.left_ledger_scope_c3a` 分成 `into_queen_body` 與 `held_outside_legacy_stores`（蟻后已知收支；回合後嗉囊液態蛋白恆為 0）。
+- P3：取用必須「早於」離開。**已修正**：離開的序數 = 抵達值 + 0.5，兩邊都用嚴格的小於。
+- 未修（照實保留）：
+  - §5 的 `last_fed_ordinal`、`intake_event_ids` 沒有實作；
+  - 取用不受任何「蟻后需要」的局部訊號觸發（D：每隻在巢的育幼工蟻每天都去）；
+  - P1 測試只涵蓋單一巢內回合，不涵蓋上游的任務分配（#56 仍開）；
+  - N4、N5 只用不存在的 ID 當反例（已死蟻后、當日羽化的工蟻由程式處理，但沒有個別反例）。
+
+**Codex 審查（`9d2933f`，REQUEST CHANGES）與處理**：
+- R6-01：建立當日的讀取器接受「沒有初始化事件、憑空的儲備」。**已修正**：
+  - 引擎與讀取器都要求：當日新建的蟻后紀錄有且只有一筆本后的初始化事件；已存在的紀錄不得再有初始化事件。
+  - C2 讀取器在期末核對每一個存在的 `queen_body`，包括沒有任何轉移觸及的。
+  - Codex 確認正式流程的 C2 快照本來就會拒絕這個假餘額；缺口在獨立稽核與回合檢查。
+- R6-02：嗉囊共用容量只在期末檢查，回合中的超量照樣通過。**已修正**：從當日期初的嗉囊開始，逐筆轉移重算；每一筆之後都要求糖 ≥ 0、液態蛋白 ≥ 0、兩者相加 ≤ 容量。引擎與讀取器各自實作。
+- R6-03：工蟻已離開蟻后、回到倉庫，仍可接觸並餵食。**已修正**：工蟻在蟻后處的區間是 [抵達, 離開回倉)；接觸與餵食都必須落在這個區間內。
+- 以上每一項都有反例與合法對照（`tests/c3a-queen-feeding.test.ts`）。
+- R6-04（蟻后身分無事件替換）在 #77 修正，C3a 繼承。
+- **Codex 第七輪（`1a4c6af`）R7-01**：遷移蟻后的初始化事件可以自稱 Day0，讓獨立稽核接受額外的起始儲備（k > 0 時才看得出數量）。**已修正**：
+  - 初始化模式由世界情境決定（只有 Day0 初始化世界的第 0 天才是 `day0_scenario`，其他一律 `unknown_at_migration`），不採信事件自填的 `basis`。
+  - 引擎（`expectedInitBasis`、`queenRoundStart` 的第三個參數）與讀取器（`replayQueenRound` 的 `world` 參數，缺少時視為錯誤）各自判斷；事件、蟻后紀錄與世界情境三者必須一致。
+  - 反例：事件偽稱 Day0，以及事件與紀錄一起偽稱，都被拒絕。
+  - 合法對照（k = 3）：真正的 Day0 第 0 天、正常遷移、Day0 世界第 1 天才打開開關，三者都接受。
+  - Codex 確認正式流程的 C2 快照本來就會擋下這個假餘額。
+
+**與設計不同或尚未實作之處**（照實揭露）：
+- 路線 A（`carried`、`queen_offer`、`offer_solid`、`queen_ingest`、`remove_residue`）與 B2（`larva_pocket`，依賴 C4）**未實作**；路徑表與名冊沒有這些區室。N11 以「固體不經嗉囊直接交給蟻后」（`cache → queen_body` 標成 `feed_queen`）作為反例。
+- 搬運者死亡時嗉囊中的液態蛋白進入 `loss:worker_corpse`（§4 的 `corpse:<worker>` 簡化為一個匯；C5 才有屍體區室，D）。加入放回規則後，死亡發生在回合之後，所以這條路徑實際上不會用到；保留作為防護。
+- 巢內回合放在 `storageOverflow` 之前（§12.1 只要求在 `consume` 之前）；順序是 D，要做敏感度。
+- 所有參與的育幼工蟻每天都到蟻后處，是 D 級行為假設；沒有本種資料。
+- Day0 情境儲備 k 預設 0（§6 要求 k ∈ {0, 3, 10, 30} 都做敏感度，尚未做）。
+- 蟻后紀錄只在模擬開始那一天（`sim_day = 0` 且為 Day0 初始化的世界）才用 `day0_scenario`；其他情況（包括 Day14 遷移、或 Day0 世界中途打開開關）一律 `unknown_at_migration`（null），不會在歷史中途憑空出現食物。
+
+**與未來物理接觸系統的介面契約（暫不接入）**：物理模組（#71～#75）五項已知缺陷（P1-A、P1-B、P2-A、P2-B、P2-C）修復並通過獨立驗證後，以另一個規則更新 PR 用物理接觸事件取代 C3a 的過渡接觸。C3a **不讀取**任何物理模組，也不依賴 PH-2b 的碰撞結果。取代時必須提供下列欄位，C2 與兩個讀取器的規則不變：
+
+| 欄位 | C3a 過渡值 | 物理接觸提供的值 |
+|---|---|---|
+| 工蟻 ID | `queen_contact.worker`、轉移的 `source.id`／`recipient.id` | 同一個工蟻 ID（不得另造身分） |
+| 蟻后 ID | `queen_contact.queen` = `colony.queen_id` | 同 |
+| 接觸位置 | 具名位置 `store`／`queen`／`brood` | 幾何座標所在的具名巢室（P1-B） |
+| 接觸事件 ID | `QC-<day>-<colony>-<n>` | 物理接觸事件的穩定 ID |
+| 接觸時間與時間尺度 | `ordinal`（`time_scale: 'ordinal_nest_round'`） | 分鐘（P0-A 時鐘）；`time_scale` 改為分鐘，序數不得與分鐘混用 |
+| 食物持有狀態 | 嗉囊糖、嗉囊液態蛋白（共用容量） | 同；若加入 `carried`，另開規則更新 |
+| 轉移事件 | C2 `food_transfer`（`take_from_cache`、`feed_queen`、`queen_self_feed`），`contact.contact_event_id` 指向接觸 | 同一組原因與欄位 |
+| 來源與因果驗證 | 交付時間 ≥ 接觸時間 ≥ 抵達時間；取用時間 ≤ 離開時間；同一處；工蟻當時存在且未死 | 同一組規則，以物理事件的時間與位置判斷 |

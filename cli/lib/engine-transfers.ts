@@ -22,20 +22,26 @@ import { toMicro } from './compartments.ts';
 import type { ColonyState, SimEvent } from '../../engine/index.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
-export interface EngineTransfer { type: 'food_transfer'; schema: string; transfer_id: string; day: number; colony: string; minute: number | null; phase: 'foraging' | 'nest_settlement'; source: { kind: string; id: string }; recipient: { kind: string; id: string }; food_type: 'sugar' | 'protein'; portions: number; cause: string; attribution: string; nest_ledger_delta?: number; contact?: Any; basis?: string }
+export interface EngineTransfer { type: 'food_transfer'; schema: string; transfer_id: string; day: number; colony: string; minute: number | null; phase: 'foraging' | 'nest_round' | 'nest_settlement'; ordinal?: number; source: { kind: string; id: string }; recipient: { kind: string; id: string }; food_type: 'sugar' | 'protein'; portions: number; cause: string; attribution: string; nest_ledger_delta?: number; contact?: Any; basis?: string }
 export const engineTransfers = (events: SimEvent[]): EngineTransfer[] => events.filter((e) => typeof e === 'object' && e !== null && (e as { type?: unknown }).type === 'food_transfer') as unknown as EngineTransfer[];
 
-const ATTRIBUTION: Record<string, string> = { collect: 'individual', prey_kill: 'individual', unload: 'individual', trophallaxis: 'individual', storage_overflow: 'unknown', metabolism: 'unknown', lay_egg: 'unknown', death_crop_to_nest_ledger: 'engine_rule' };
-const SETTLEMENT_ORDER = ['storage_overflow', 'metabolism', 'death_crop_to_nest_ledger', 'lay_egg'];
+const ATTRIBUTION: Record<string, string> = { collect: 'individual', prey_kill: 'individual', unload: 'individual', trophallaxis: 'individual', storage_overflow: 'unknown', metabolism: 'unknown', lay_egg: 'unknown', death_crop_to_nest_ledger: 'engine_rule',
+  take_from_cache: 'individual', feed_queen: 'individual', queen_self_feed: 'individual', queen_metabolism: 'individual', death_crop_to_corpse: 'engine_rule', return_to_cache: 'individual' };
+// settlement steps (C3a: the queen's own metabolism after the colony's; a dead carrier's crop with the other death records)
+const SETTLEMENT_ORDER = ['storage_overflow', 'metabolism', 'queen_metabolism', 'death_crop_to_nest_ledger', 'lay_egg'];
+const SETTLEMENT_STEP = (cause: string) => (cause === 'death_crop_to_corpse' ? SETTLEMENT_ORDER.indexOf('death_crop_to_nest_ledger') : SETTLEMENT_ORDER.indexOf(cause));
+const ROUND_CAUSES = new Set(['take_from_cache', 'feed_queen', 'queen_self_feed', 'return_to_cache']);
 const HOLDS: Record<string, ('sugar' | 'protein')[]> = { crop: ['sugar'], nest_unlocated: ['sugar'], cache: ['protein'], in_transit: ['sugar', 'protein'], source: ['sugar', 'protein'] };
 const ENDPOINTS: Record<string, [string[], string[]]> = { // allowed [source kinds, recipient kinds] per cause
   collect: [['source'], ['in_transit']], prey_kill: [['insect'], ['source']], unload: [['in_transit'], ['crop', 'cache']], trophallaxis: [['crop'], ['crop']],
   storage_overflow: [['crop', 'nest_unlocated', 'cache'], ['loss']], metabolism: [['crop', 'nest_unlocated', 'cache'], ['metabolized']], lay_egg: [['crop', 'nest_unlocated', 'cache'], ['egg']], death_crop_to_nest_ledger: [['crop'], ['nest_unlocated']],
+  take_from_cache: [['cache'], ['crop']], feed_queen: [['crop'], ['queen_body']], queen_self_feed: [['cache'], ['queen_body']], queen_metabolism: [['queen_body'], ['metabolized']], death_crop_to_corpse: [['crop'], ['loss']], return_to_cache: [['crop'], ['cache']],
 };
 
 /** The phase each cause belongs to (written here independently of the engine's table). */
-const PHASE_OF_CAUSE: Record<string, 'foraging' | 'nest_settlement'> = { collect: 'foraging', prey_kill: 'foraging', unload: 'foraging', trophallaxis: 'foraging', storage_overflow: 'nest_settlement', metabolism: 'nest_settlement', death_crop_to_nest_ledger: 'nest_settlement', lay_egg: 'nest_settlement' };
-const KINDS = new Set(['source', 'insect', 'in_transit', 'crop', 'cache', 'nest_unlocated', 'metabolized', 'egg', 'loss']);
+const PHASE_OF_CAUSE: Record<string, 'foraging' | 'nest_round' | 'nest_settlement'> = { collect: 'foraging', prey_kill: 'foraging', unload: 'foraging', trophallaxis: 'foraging', storage_overflow: 'nest_settlement', metabolism: 'nest_settlement', death_crop_to_nest_ledger: 'nest_settlement', lay_egg: 'nest_settlement',
+  take_from_cache: 'nest_round', feed_queen: 'nest_round', queen_self_feed: 'nest_round', queen_metabolism: 'nest_settlement', death_crop_to_corpse: 'nest_settlement', return_to_cache: 'nest_round' };
+const KINDS = new Set(['source', 'insect', 'in_transit', 'crop', 'cache', 'nest_unlocated', 'metabolized', 'egg', 'loss', 'queen_body']);
 const ATTRIBUTIONS = new Set(['individual', 'unknown', 'engine_rule']);
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const nonEmpty = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
@@ -69,9 +75,9 @@ export function recordSchemaErrors(x: unknown, where: string): string[] {
   if (x.schema !== 'antempire.food-transfer.v1') out.push(`${label}: schema ${show(x.schema)} is not antempire.food-transfer.v1`);
   if (!Number.isInteger(x.day)) out.push(`${label}: day ${show(x.day)} is not an integer`);
   if (!nonEmpty(x.colony)) out.push(`${label}: colony missing or not a string`);
-  if (x.phase !== 'foraging' && x.phase !== 'nest_settlement') out.push(`${label}: phase ${show(x.phase)} is not a defined phase (foraging | nest_settlement)`);
+  if (x.phase !== 'foraging' && x.phase !== 'nest_round' && x.phase !== 'nest_settlement') out.push(`${label}: phase ${show(x.phase)} is not a defined phase (foraging | nest_round | nest_settlement)`);
   if (typeof x.cause !== 'string' || !Object.hasOwn(PHASE_OF_CAUSE, x.cause)) out.push(`${label}: unknown cause ${show(x.cause)}`);
-  else if ((x.phase === 'foraging' || x.phase === 'nest_settlement') && PHASE_OF_CAUSE[x.cause] !== x.phase) out.push(`${label}: ${x.cause} belongs to phase ${PHASE_OF_CAUSE[x.cause]}, recorded as ${x.phase}`);
+  else if ((x.phase === 'foraging' || x.phase === 'nest_round' || x.phase === 'nest_settlement') && PHASE_OF_CAUSE[x.cause] !== x.phase) out.push(`${label}: ${x.cause} belongs to phase ${PHASE_OF_CAUSE[x.cause]}, recorded as ${x.phase}`);
   for (const side of ['source', 'recipient'] as const) {
     const r = x[side];
     if (!isObj(r)) { out.push(`${label}: ${side} missing or not an object`); continue; } // isObj excludes arrays
@@ -85,6 +91,9 @@ export function recordSchemaErrors(x: unknown, where: string): string[] {
   if (Array.isArray(x)) out.push(`${label}: the record is an array, not an object`);
   if (x.phase === 'foraging' && !(x.minute === null || (typeof x.minute === 'number' && Number.isFinite(x.minute) && x.minute >= 0 && x.minute <= 1440))) out.push(`${label}: minute ${show(x.minute)} is not null or a minute of the day (0..1440)`);
   if (x.phase === 'nest_settlement' && x.minute !== null) out.push(`${label}: a nest-settlement record has minute ${show(x.minute)} (settlement is not timed yet)`);
+  // C3a: the nest round is timed by an ordinal (not minutes); only it carries one
+  if (x.phase === 'nest_round' && (x.minute !== null || typeof x.ordinal !== 'number' || !Number.isFinite(x.ordinal) || x.ordinal < 0)) out.push(`${label}: a nest-round record needs minute null and a finite ordinal ≥ 0 (minute ${show(x.minute)}, ordinal ${show(x.ordinal)})`);
+  if (x.phase !== 'nest_round' && x.ordinal !== undefined) out.push(`${label}: ordinal ${show(x.ordinal)} outside the nest round`);
   return out;
 }
 
@@ -118,7 +127,9 @@ export function speciesFoodTiming(species: unknown): 'timed' | 'untimed_legacy' 
   const sp = (species ?? {}) as { activity?: { individual_timeline?: unknown }; navigation?: { individual_route_memory?: unknown } };
   return sp.activity?.individual_timeline === false || sp.navigation?.individual_route_memory === false ? 'untimed_legacy' : 'timed';
 }
-export function replayEngineColonyDay(start: ColonyState, end: ColonyState, events: SimEvent[], day: number, sourceIds: ReadonlySet<string>, timing: 'timed' | 'untimed_legacy' = 'timed'): EngineReplay {
+/** C3a switch as given in the species parameters (read here, not from the engine). */
+export const speciesC3a = (species: unknown): boolean => (species as { queen_feeding?: { individual_queen_body_c3a?: unknown } } | undefined)?.queen_feeding?.individual_queen_body_c3a === true;
+export function replayEngineColonyDay(start: ColonyState, end: ColonyState, events: SimEvent[], day: number, sourceIds: ReadonlySet<string>, timing: 'timed' | 'untimed_legacy' = 'timed', c3a = false): EngineReplay {
   const errors: string[] = [], err = (m: string) => { if (errors.length < 50) errors.push(m); };
   // independent review of 9888217 (F-d): the event list itself is checked before anything reads it
   if (!Array.isArray(events)) return { ok: false, errors: ['the event list is not an array'], transfers: 0, time_validation: 'invalid', by_cause: {}, by_attribution: {}, unattributed_by_cause: {} };
@@ -141,8 +152,11 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
   const exists = (r: { kind: string; id: string }): boolean => ({
     crop: () => (curPhase === 'foraging' ? startWorkers : workerIds).has(r.id), in_transit: () => (curPhase === 'foraging' ? startWorkers : workerIds).has(r.id), cache: () => nestIds.has(r.id),
     nest_unlocated: () => r.id === start.id, metabolized: () => r.id === start.id, egg: () => eggIds.has(r.id),
-    insect: () => killIds.has(r.id), loss: () => r.id === 'storage_overflow', source: () => sourceIds.has(r.id),
+    insect: () => killIds.has(r.id), loss: () => r.id === 'storage_overflow' || (c3a && r.id === 'worker_corpse'), source: () => sourceIds.has(r.id),
+    // C3a: only this colony's queen, alive when the day began, with a queen record (round and her metabolism precede deaths)
+    queen_body: () => c3a && start.population.queen_alive && r.id === start.queen_id && (end.population.queens ?? []).some((q) => q.id === r.id),
   } as Record<string, () => boolean>)[r.kind]?.() ?? false;
+  const holds = (kind: string): ('sugar' | 'protein')[] | undefined => (c3a && kind === 'crop' ? ['sugar', 'protein'] : c3a && kind === 'queen_body' ? ['sugar', 'protein'] : HOLDS[kind]);
   const xs = engineTransfers(events), by_cause: Record<string, number> = {}, by_attribution: Record<string, { sugar: number; protein: number }> = {}, unattributed_by_cause: Record<string, { sugar: number; protein: number }> = {};
   const cur = new Map<string, number>(), k = (r: { kind: string; id: string }, f: string) => `${r.kind}:${r.id}:${f}`;
   let crops = 0;
@@ -150,6 +164,15 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
   const unl = `nest_unlocated:${start.id}:sugar`, cache = `cache:${start.nest_node}:protein`;
   cur.set(unl, toMicro(start.stores.sugar) - crops); cur.set(cache, toMicro(start.stores.protein));
   if ((cur.get(unl) as number) < 0) err('start: crops exceed the sugar ledger');
+  const startQueen = start.population.queens?.[0] ?? end.population.queens?.[0];
+  if (c3a) {
+    for (const w of start.population.workers) if (w.crop_cargo_protein_liquid) cur.set(`crop:${w.id}:protein`, toMicro(w.crop_cargo_protein_liquid));
+    // a queen record created today starts from its recorded initial state (queen_body_initialized), not from nothing
+    const init = (events as Any[]).find((e) => e && e.type === 'queen_body_initialized');
+    const qs = start.population.queens?.[0] ? start.population.queens[0].body.known_balance : init ? init.known_balance : null;
+    if (startQueen && qs) { cur.set(`queen_body:${startQueen.id}:sugar`, toMicro(qs.sugar)); cur.set(`queen_body:${startQueen.id}:protein`, toMicro(qs.protein)); }
+  }
+  let lastOrdinal = -Infinity;
   let phase = 'foraging', settleStep = 0, lastUnload: { worker: string; minute: number | null } | null = null;
   xs.forEach((x, i) => {
     const id = `FT-${day}-${start.id}-${i + 1}`;
@@ -163,7 +186,10 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
     if (!ends) { err(`${x.transfer_id}: unknown cause ${x.cause}`); return; }
     if (!ends[0].includes(x.source.kind) || !ends[1].includes(x.recipient.kind)) err(`${x.transfer_id}: ${x.cause} from ${x.source.kind} to ${x.recipient.kind} is not a possible path`);
     if (ATTRIBUTION[x.cause] !== x.attribution) err(`${x.transfer_id}: ${x.cause} must have attribution ${ATTRIBUTION[x.cause]}, has ${x.attribution}`);
-    for (const r of [x.source, x.recipient]) if (HOLDS[r.kind] && !HOLDS[r.kind].includes(x.food_type)) err(`${x.transfer_id}: ${r.kind} cannot hold ${x.food_type}`);
+    for (const r of [x.source, x.recipient]) { const h = holds(r.kind); if (h && !h.includes(x.food_type)) err(`${x.transfer_id}: ${r.kind} cannot hold ${x.food_type}`); }
+    if ((x.cause === 'take_from_cache' || x.cause === 'queen_self_feed' || x.cause === 'death_crop_to_corpse' || x.cause === 'return_to_cache') && x.food_type !== 'protein') err(`${x.transfer_id}: ${x.cause} must move protein`);
+    if (x.cause === 'death_crop_to_nest_ledger' && x.food_type !== 'sugar') err(`${x.transfer_id}: only sugar stays in the nest ledger at a death`);
+    if (x.cause === 'death_crop_to_corpse' && x.recipient.id !== 'worker_corpse') err(`${x.transfer_id}: a dead carrier's liquid protein must go to loss:worker_corpse`);
     curPhase = x.phase;
     if (x.cause === 'unload' && x.recipient.kind === 'crop' && x.recipient.id !== x.source.id) err(`${x.transfer_id}: the transit load of ${x.source.id} is unloaded into the crop of ${x.recipient.id}`);
     if (x.cause === 'prey_kill') {
@@ -176,9 +202,16 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
     for (const r of [x.source, x.recipient]) if (!exists(r)) err(`${x.transfer_id}: ${r.kind}:${r.id} is not a compartment of ${start.id} on day ${day} (R3-08)`);
     // phase order
     if (x.phase === 'foraging' && phase !== 'foraging') err(`${x.transfer_id}: foraging transfer after the nest settlement began`);
+    if (x.phase === 'nest_round') {
+      if (phase === 'nest_settlement') err(`${x.transfer_id}: nest-round transfer after the settlement began`);
+      if (!c3a) err(`${x.transfer_id}: a nest-round transfer on a day without C3a`);
+      phase = 'nest_round';
+      if ((x.ordinal as number) < lastOrdinal) err(`${x.transfer_id}: the nest round goes back in ordinal time (${x.ordinal} < ${lastOrdinal})`);
+      lastOrdinal = x.ordinal as number;
+    } else if (ROUND_CAUSES.has(x.cause)) err(`${x.transfer_id}: ${x.cause} outside the nest round`);
     if (x.phase === 'nest_settlement') {
       phase = 'nest_settlement';
-      const step = SETTLEMENT_ORDER.indexOf(x.cause);
+      const step = SETTLEMENT_STEP(x.cause);
       if (step < 0) err(`${x.transfer_id}: ${x.cause} is not a settlement cause`); else if (step < settleStep) err(`${x.transfer_id}: ${x.cause} out of the engine's settlement order`); else settleStep = step;
     } else if (SETTLEMENT_ORDER.includes(x.cause)) err(`${x.transfer_id}: ${x.cause} recorded in the foraging phase`);
     // trophallaxis causality: at the nest, right after the donor's own unloading at the same minute
@@ -193,12 +226,12 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
     by_cause[x.cause] = (by_cause[x.cause] ?? 0) + 1;
     if (x.attribution === 'unknown') (unattributed_by_cause[x.cause] ??= { sugar: 0, protein: 0 })[x.food_type] += a;
     // colony compartments (sources are balanced world-wide only by the engine's checkSources)
-    if (x.source.kind !== 'source' && x.source.kind !== 'insect' && HOLDS[x.source.kind]) {
+    if (x.source.kind !== 'source' && x.source.kind !== 'insect' && holds(x.source.kind)) {
       const s = k(x.source, x.food_type), h = cur.get(s) ?? 0;
       if (h < a) err(`${x.transfer_id}: ${s} holds ${h} µp, cannot give ${a}`);
       cur.set(s, h - a);
     }
-    if (x.recipient.kind !== 'source' && HOLDS[x.recipient.kind]) cur.set(k(x.recipient, x.food_type), (cur.get(k(x.recipient, x.food_type)) ?? 0) + a);
+    if (x.recipient.kind !== 'source' && holds(x.recipient.kind)) cur.set(k(x.recipient, x.food_type), (cur.get(k(x.recipient, x.food_type)) ?? 0) + a);
   });
   for (const kId of killIds) if (!credited.has(kId)) err(`kill ${kId} has no prey_kill transfer`);
   const time_validation = timeCausality(start, xs, err, timing, events as Any[]);
@@ -211,8 +244,19 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
   // every compartment touched must have a legal end state, not only the expected nest and colony
   for (const [key, v] of cur) {
     if (key.startsWith('in_transit:')) { if (v !== 0) err(`${key}: ${v} µp still in transit`); }
-    else if (key.startsWith('crop:')) { if (!alive.has(key.split(':')[1]) && v !== 0) err(`${key}: a worker that is gone still holds ${v} µp`); }
+    else if (key.startsWith('crop:')) {
+      if (!alive.has(key.split(':')[1]) && v !== 0) err(`${key}: a worker that is gone still holds ${v} µp`);
+      else if (key.endsWith(':protein')) { const w = end.population.workers.find((x) => x.id === key.split(':')[1]); if (w && toMicro(w.crop_cargo_protein_liquid || 0) !== v) err(`${key}: state ${toMicro(w.crop_cargo_protein_liquid || 0)} µp, replay ${v}`); }
+    } else if (key.startsWith('queen_body:')) {
+      const [, qid, f] = key.split(':'), q = (end.population.queens ?? []).find((x) => x.id === qid);
+      if (!q || toMicro(q.body.known_balance[f as 'sugar' | 'protein']) !== v) err(`${key}: state ${q ? toMicro(q.body.known_balance[f as 'sugar' | 'protein']) : 'missing'} µp, replay ${v}`);
+    }
     else if (key !== unl && key !== cache) err(`${key}: ${v} µp at the end of the day in a compartment that has no end state`);
+  }
+  // Codex review of 9d2933f (R6-01): every queen_body that exists at the end is checked, also one no transfer touched
+  if (c3a) for (const q of end.population.queens ?? []) for (const f of ['sugar', 'protein'] as const) {
+    const key = `queen_body:${q.id}:${f}`, want = toMicro(q.body.known_balance[f]);
+    if (!cur.has(key) && want !== 0) err(`${key}: state ${want} µp with no start balance, initialization or transfer behind it`);
   }
   if ((cur.get(unl) as number) !== toMicro(end.stores.sugar) - endCrops) err(`${unl}: state ${toMicro(end.stores.sugar) - endCrops} µp, replay ${cur.get(unl)}`);
   if ((cur.get(cache) as number) !== toMicro(end.stores.protein)) err(`${cache}: state ${toMicro(end.stores.protein)} µp, replay ${cur.get(cache)}`);

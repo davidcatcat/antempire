@@ -22,6 +22,7 @@
  *   v2-review.22 (C2 engine food transfers; diagnostics_only) -> removing the food_transfer events reproduces v21
  *   v2-review.23 (Issue #61 R3-05 local trail deposition; switch activity.local_trail_deposit_v23 off) -> reproduces v22
  *   v2-review.24 (ME-1 runtime invariants; checks only, day14_output_unchanged) -> reproduces v23 unchanged
+ *   v2-review.25 (C3a queen body; switch queen_feeding.individual_queen_body_c3a off) -> reproduces v24
  * Every step also undoes the output normalisers of its own and later diagnostics-only versions.
  * Each step undoes its own changes AND every later step's, so step N is compared with the engine as it was.
  */
@@ -55,6 +56,7 @@ const STEPS = [
   { version: 'antempire.v2-review.22-engine-food-transfers', previousGolden: 'tests/golden/v21-trace-sha256.json' },
   { version: 'antempire.v2-review.23-local-trail-deposit', previousGolden: 'tests/golden/v22-trace-sha256.json' },
   { version: 'antempire.v2-review.24-me1-invariants', previousGolden: 'tests/golden/v23-trace-sha256.json' },
+  { version: 'antempire.v2-review.25-c3a-queen-body', previousGolden: 'tests/golden/v24-trace-sha256.json' },
 ];
 const ORDER = STEPS.map((s) => s.version);
 const results: Record<string, string> = {};
