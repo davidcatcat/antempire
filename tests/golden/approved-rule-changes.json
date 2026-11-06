@@ -523,6 +523,24 @@
       "kind": "engine",
       "day14_output_unchanged": true,
       "description": "Issue #80: engine/ecology.ts writes source_flow events and runs checkSourceFlows only when source_flows.record_source_flows_v26 is on; with it off every output is byte-identical to v2-review.25 (tests/golden.test.ts, tests/rules-isolation.test.ts). With it on, no stock, draw or colony result changes (tests/source-flows-v26.test.ts)."
+    },
+    {
+      "rules_version": "antempire.v2-review.27-rh-offsets",
+      "approved_in": "Owner instruction 2026-11-06 (Issue #82, relative-humidity offsets; separate rules-update PR for Owner review, not merged by Claude)",
+      "kind": "param_switch",
+      "file": "world",
+      "path": "weather_rules.rh_offsets_balanced_v27",
+      "from": false,
+      "to": false,
+      "introduced": true,
+      "description": "Issue #82 rule switch, introduced OFF (off = v2-review.26 byte-identical)"
+    },
+    {
+      "rules_version": "antempire.v2-review.27-rh-offsets",
+      "approved_in": "Owner instruction 2026-11-06 (Issue #82, relative-humidity offsets; separate rules-update PR for Owner review, not merged by Claude)",
+      "kind": "engine",
+      "day14_output_unchanged": true,
+      "description": "Issue #82: engine/weather.ts uses the balanced relative-humidity offset only when weather_rules.rh_offsets_balanced_v27 is on; with it off every output is byte-identical to v2-review.26 (tests/golden.test.ts, tests/rules-isolation.test.ts). With it on only relative_humidity_model_percent changes (tests/rh-offsets-v27.test.ts)."
     }
   ]
 }

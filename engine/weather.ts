@@ -54,7 +54,11 @@ export function calcWeather(world: { seed: number; sim_day: number; climate: Cli
   const highNormal = monthInterp(rows, y, m, day, 'mean_daily_maximum_air_temperature_c'), lowNormal = monthInterp(rows, y, m, day, 'mean_daily_minimum_air_temperature_c');
   const maxAirTemp = round(Math.max(airTemp, highNormal + anomaly - wetOffset * (Number(wet) - rainProb)));
   const minAirTemp = round(Math.min(airTemp, lowNormal + anomaly - wetOffset * (Number(wet) - rainProb)));
-  const rh = round(clamp(monthInterp(rows, y, m, day, 'mean_relative_humidity_percent') + (wet ? c.rh_wet_offset_percent : c.rh_dry_offset_percent) + c.rh_anomaly_coefficient * anomaly, 0, 100));
+  // v2-review.27 (Issue #82, switch weather_rules.rh_offsets_balanced_v27): the old fixed wet/dry offsets average 7p − 2, so
+  // the monthly mean drifts from the CWA normal unless p = 2/7. Balanced like the temperature offset above: the same wet−dry
+  // contrast Δ, centred on the day's rain prior, so its long-run mean is 0 (the wet chain's stationary rain fraction is rainProb).
+  const rhOffset = wp.weather_rules.rh_offsets_balanced_v27 ? (c.rh_wet_offset_percent - c.rh_dry_offset_percent) * (Number(wet) - rainProb) : (wet ? c.rh_wet_offset_percent : c.rh_dry_offset_percent);
+  const rh = round(clamp(monthInterp(rows, y, m, day, 'mean_relative_humidity_percent') + rhOffset + c.rh_anomaly_coefficient * anomaly, 0, 100));
   const rainMean = monthInterp(rows, y, m, day, 'mean_monthly_precipitation_mm') / monthDays(y, m) / Math.max(0.001, rainProb);
   const rain = wet ? round(gamma(c.rainfall_gamma_shape, rainMean / c.rainfall_gamma_shape, g)) : 0;
   const soil = round(clamp(s.soil_index * c.soil_persistence + rain * c.soil_rain_gain_per_mm - c.soil_daily_loss, 0, 1));

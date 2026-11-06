@@ -199,6 +199,10 @@
       "moved_from_code": "sim/day_engine.cjs rainPriors(): Math.min(.85,mid*w)（原寫死於程式，數值原樣搬移，未修改）"
     }
   },
+  "weather_rules": {
+    "rh_offsets_balanced_v27": false,
+    "rh_offsets_balanced_v27_note": "規則開關（Issue #82，v2-review.27；預設關閉）。false＝舊式：雨日 +rh_wet_offset、非雨日 +rh_dry_offset，平均偏移為 7p−2，只有雨日比例 p＝2/7 時月平均才等於 CWA 1991～2020 平年值。true＝與氣溫偏移相同的平衡式：偏移＝(rh_wet_offset − rh_dry_offset) ×（雨日 − 當日雨日機率），雨日與非雨日差距 7 個百分點不變，長期平均偏移為 0（有持續性的雨日鏈，其長期雨日比例等於這個機率）。兩個偏移與差距都是遊戲假設，assumption: true；這是合成天氣，不是實測。相對濕度目前只出現在天氣輸出與日誌，沒有任何螞蟻機制讀取它。"
+  },
   "nest_microclimate": {
     "nest_buffer_fraction": {
       "value": 0.55,
