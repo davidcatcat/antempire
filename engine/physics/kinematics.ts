@@ -164,15 +164,17 @@ export function walk(p: Passage, a: AgentKinematics, target_s: number, v: number
   const intervals: MotionInterval[] = [];
   let s = a.s_mm, t = a.t_s;
   for (const sNext of stops) {
-    const dt = Math.abs(sNext - s) / v;
     if (Math.abs(sNext - s) <= S_EPS) continue;
+    // PH-P2-C: every vertex time is computed from the start of this walk (a.t_s, a.s) and the speed, not accumulated
+    // piece by piece, so the number of vertices does not change any time
+    const tNext = sNext === s_end ? t_end : a.t_s + Math.abs(sNext - a.s_mm) / v;
     const h = headingAt(p, s, a.dir);
     intervals.push({
       agent: a.id, passage: p.id, kind: 'move', cause: opts.cause ?? null, cause_ref: opts.cause_ref ?? null,
-      t_start_s: t, t_end_s: sNext === s_end ? t_end : t + dt, s_start_mm: s, s_end_mm: sNext, distance_mm: Math.abs(sNext - s), speed_mm_s: v, dir: a.dir,
+      t_start_s: t, t_end_s: tNext, s_start_mm: s, s_end_mm: sNext, distance_mm: Math.abs(sNext - s), speed_mm_s: v, dir: a.dir,
       heading: tuple(h), start_mm: tuple(positionAt(p, s)), end_mm: tuple(positionAt(p, sNext)), model_ref: MODEL_REF, speed_basis: opts.speed_basis ?? null,
     });
-    t = sNext === s_end ? t_end : t + dt; s = sNext;
+    t = tNext; s = sNext;
   }
   return { agent: { ...a, s_mm: s_end, t_s: t_end, state: t_end === t_full ? 'stopped' : 'moving', speed_mm_s: t_end === t_full ? 0 : v }, intervals };
 }
