@@ -39,6 +39,21 @@ function capsule(r, spec, extra = 0) {
   return r.ColliderDesc.capsule(half, radius).setRotation(Math.PI / 2).setSensor(true)
     .setActiveCollisionTypes(RAPIER.ActiveCollisionTypes.ALL);
 }
+function checkSensorsEnabled() {
+  // Distinct kinematic bodies at exactly the same location MUST intersect.
+  // The earlier fixed/fixed default silently returned false for every sample.
+  const test = new RAPIER.World({x:0,y:0});
+  const probe = {body:{length_mm:2.5,width_mm:0.8}};
+  const c=[];
+  for(let i=0;i<2;i++){
+    const b=test.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(0,0));
+    c.push(test.createCollider(capsule(RAPIER,probe),b));
+  }
+  test.step();
+  assert.equal(test.intersectionPair(c[0],c[1]),true,'Rapier two-kinematic-body sensor positive control');
+  test.free();
+}
+checkSensorsEnabled();
 function witness(cfg, res) {
   // Native exact event timestamps; Rapier is a sampled, 2D, centreline-only
   // witness, NOT a substitute for native 2.5D geometric constraints.
@@ -46,9 +61,12 @@ function witness(cfg, res) {
   world.timestep = STEP_S;
   const ants = [...cfg.agents].sort((a,b)=>a.id.localeCompare(b.id));
   const colliders = ants.map(a => {
-    const body = world.createCollider(capsule(RAPIER,a));
-    const antenna = world.createCollider(capsule(RAPIER,a,a.body.contact_reach_mm/2));
-    return { id:a.id, body, antenna };
+    // Position-driven kinematic bodies represent prescribed NATIVE trajectories.
+    // Each ant's body and antenna belong to one rigid body; self-overlap is deliberately filtered.
+    const rigid = world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(a.s_mm,0));
+    const body = world.createCollider(capsule(RAPIER,a),rigid);
+    const antenna = world.createCollider(capsule(RAPIER,a,a.body.contact_reach_mm/2),rigid);
+    return { id:a.id, rigid, body, antenna };
   });
   const walls = cfg.geometry.obstacles.map(o => {
     const b = bounds(o);
@@ -65,14 +83,9 @@ function witness(cfg, res) {
     const t=n*STEP_S;
     for (const a of colliders) {
       const x=at(res.intervals[a.id],t);
-      a.body.setTranslation({x,y:0});
-      a.antenna.setTranslation({x,y:0});
+      a.rigid.setNextKinematicTranslation({x,y:0});
     }
     world.step();
-    // Positive control: a body's capsule and its own antenna region overlap at identical positions.
-    // A zero result means that Rapier fixed/fixed filtering disabled ALL comparisons.
-    if (n === 0) for (const a of colliders)
-      assert.equal(world.intersectionPair(a.body,a.antenna),true,'Rapier witness sensor positive control');
     steps++;
     if (colliders.length === 2) {
       const a=colliders[0],b=colliders[1];
