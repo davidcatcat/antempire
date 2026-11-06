@@ -36,7 +36,8 @@ function bounds(o) {
 function capsule(r, spec, extra = 0) {
   const radius = spec.body.width_mm / 2 + extra;
   const half = Math.max(0, (spec.body.length_mm - spec.body.width_mm) / 2);
-  return r.ColliderDesc.capsule(half, radius).setRotation(Math.PI / 2).setSensor(true);
+  return r.ColliderDesc.capsule(half, radius).setRotation(Math.PI / 2).setSensor(true)
+    .setActiveCollisionTypes(RAPIER.ActiveCollisionTypes.ALL);
 }
 function witness(cfg, res) {
   // Native exact event timestamps; Rapier is a sampled, 2D, centreline-only
@@ -52,7 +53,8 @@ function witness(cfg, res) {
   const walls = cfg.geometry.obstacles.map(o => {
     const b = bounds(o);
     const c = world.createCollider(RAPIER.ColliderDesc.cuboid((b.x1-b.x0)/2,(b.y1-b.y0)/2)
-      .setTranslation((b.x0+b.x1)/2,(b.y0+b.y1)/2));
+      .setTranslation((b.x0+b.x1)/2,(b.y0+b.y1)/2)
+      .setActiveCollisionTypes(RAPIER.ActiveCollisionTypes.ALL));
     return { id:o.id, collider:c };
   });
   let bodyOverlapFrames = 0, wallOverlapFrames = 0, antennaFrames = 0;
@@ -67,6 +69,10 @@ function witness(cfg, res) {
       a.antenna.setTranslation({x,y:0});
     }
     world.step();
+    // Positive control: a body's capsule and its own antenna region overlap at identical positions.
+    // A zero result means that Rapier fixed/fixed filtering disabled ALL comparisons.
+    if (n === 0) for (const a of colliders)
+      assert.equal(world.intersectionPair(a.body,a.antenna),true,'Rapier witness sensor positive control');
     steps++;
     if (colliders.length === 2) {
       const a=colliders[0],b=colliders[1];
