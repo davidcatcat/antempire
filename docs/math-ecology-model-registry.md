@@ -171,7 +171,9 @@
 ## 8. 問題清單（依嚴重度；**本 PR 不修正**，依 CLAUDE.md 記錄並交 Owner）
 ### P1：因果或守恆違反
 - **P1-E1 屍體到期刪除可食蛋白**（ecology.ts:48）：年齡 > 9 日時，剩餘蛋白直接歸零；乾燥日約剩初始量的 26%。沒有事件，與參數說明矛盾。Claude 已核對程式碼。
+  - **v2-review.26（Issue #80，開關預設關閉）**：開關打開時記為 `expired_remains` → `loss:decomposition`，存量不變。**事件部分已處理；與參數說明的矛盾未解決**，見 `docs/design-source-flows-v26.md` §5。
 - **P1-E2 容量上限刪除生產**（ecology.ts:73、83）：超過容量的蜜露與花蜜消失，沒有事件或紀錄。Claude 已核對程式碼。
+  - **v2-review.26**：開關打開時，蜜露記為 `capacity_runoff`（已分泌、沒有留在食源），花蜜記為 `capacity_withheld`（不分泌，該份量從未存在）；兩者都由參數選擇，assumption: true。存量不變。
 - **P1-C1 D3 違反**（§5 中 D3 欄為 ✗ 的列）。其中**工蟻飢餓死亡讀全巢 `sugar_gap_days`**（queen.ts:22）與**工蟻傷勢復原讀全巢 `stress_days`**（queen.ts:34）兩項，不在 CLAUDE.md 對 F01／A08 的說明中，應補入 C5 的範圍。Claude 已核對程式碼。
 - **P1-C2 隱藏的全巢廣播**：全巢 pF 經幼蟲求食訊號進入工蟻的接觸與決策。
 - **P1-C3 溢出的食物從世界消失**（nutrition.ts:47-56）：只有帳上紀錄，沒有物理去處。
@@ -218,7 +220,7 @@
   - `clamp` 讓 NaN 穿透；
   - 未知食源類型會被當成花蜜。
 - **P3-7**（已提升為 P1-O）共用的 `ecology` 串流：應改為每個地點、每個機制一個串流（#65 的階層鍵）。
-- **P3-10** 雨水沖刷沒有獨立的流失量，世界收支無法分辨沖刷與容量刪除（與 P1-E2 相關）。
+- **P3-10** 雨水沖刷沒有獨立的流失量，世界收支無法分辨沖刷與容量刪除（與 P1-E2 相關）。v2-review.26 開關打開時為 `rain_washoff` 事件。
 - **P3-8** 蟻群命名空間與標籤之間沒有分隔符；暖機與創巢年齡串流共用同一日期鍵。
 - **P3-9** 不再執行的舊覓食路徑（在目前的開關下）：
   - foraging.ts 的 `planTrip`、`discover`、`prey`、`collect`、`sequential`、`huntWindow`、`concludeHunt`、`timedCarcassTrips`、`planTripFromMemory`、`explore`、`depart`；

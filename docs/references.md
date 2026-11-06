@@ -698,3 +698,12 @@ R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-
   - 過橋時的迴轉很少。
   - 接觸持續 0.18 s 用作停頓候選值（唯一直接量到的接觸持續時間）；0.24 s 是每次接觸損失時間（已含讓路），只作比較。
 - R133（Vázquez 2020）第 266 行寫「圖中數值未讀」。分方向速度 18.5 ± 0.53、15.5 ± 0.54 mm/s 出自 Results §3 的內文，已在 PR #72 核對。
+
+## 2026-11-06 世界食源收支（R388–R389；Issue #80，v2-review.26，`docs/design-source-flows-v26.md`）
+
+> 兩篇都**非本種、非本花園**，只支持「容量超量要如何解釋」的機制方向。容量本身（`honeydew_max`、`nectar_max`）與所有比例仍是遊戲假設。本次只經摘要與引用文獻核對，**未讀全文**。
+
+| ID | 來源 | 讀到的程度 | 可支持 | 不可外推 |
+|---|---|---|---|---|
+| R388 | Way MJ (1963) Mutualism between ants and honeydew-producing Homoptera. *Annual Review of Entomology* 8:307–344 | 經引用文獻與摘要 | 沒有被螞蟻採走的蜜露會在葉面累積並養煤煙病菌；螞蟻採走蜜露可減少累積。用於蜜露超過容量時記為「已分泌、沒有留在食源」（`capacity_runoff`） | 不提供本花園蜜露的留存量、滴落速率或容量；不是本種研究 |
+| R389 | Nepi M, Stpiczyńska M (2008) The complexity of nectar: secretion and resorption dynamically regulate nectar features. *Naturwissenschaften* 95:177–184. DOI 10.1007/s00114-007-0307-2 | 摘要 | 花蜜的存量是分泌與再吸收共同的結果，不是單向累積。用於花蜜超過容量時記為「不分泌」（`capacity_withheld`） | 不提供本花園植物的分泌上限或再吸收速率；不同植物差異大 |
