@@ -43,7 +43,7 @@ const strip = (s: Any) => { const c = structuredClone(s); delete c.last_world_ev
 
 // ---------------------------------------------------------------- AFTER: real days, many conditions
 interface Sample { start: Any; end: Any; result: Any; wp: Any }
-const samples: Sample[] = [], takeSamples: Sample[] = [], causes: Record<string, number> = {};
+const samples: Sample[] = [], killSamples: Sample[] = [], takeSamples: Sample[] = [], causes: Record<string, number> = {};
 let realDays = 0, identical = 0, compared = 0;
 const run = (s0on: Any, s0off: Any | null, bon: Any, boff: Any | null, n: number, label: string) => {
   const wp = resolveBundle(bon).world;
@@ -52,6 +52,7 @@ const run = (s0on: Any, s0off: Any | null, bon: Any, boff: Any | null, n: number
     const o: Any = simulateWorldDay(a, bon), r = replaySourceFlows(a, o.state, o.result, wp);
     ok(r.ok, `${label} day ${o.day}: the reader rejects a real day (${r.errors.slice(0, 2).join(' | ')})`);
     realDays++; for (const [k, v] of Object.entries(r.by_cause)) causes[k] = (causes[k] ?? 0) + v;
+    if (killSamples.length < 3 && o.result.colonies.some((c: Any) => c.events.some((e: Any) => e.type === 'food_transfer' && e.cause === 'prey_kill'))) killSamples.push({ start: structuredClone(a), end: o.state, result: o.result, wp });
     if (takeSamples.length < 12 && o.result.colonies.some((c: Any) => c.events.some((e: Any) => e.type === 'source_batch_consumed' && a.sources[e.location]?.batches.filter((b: Any) => b.protein > 0.2).length >= 2))) takeSamples.push({ start: structuredClone(a), end: o.state, result: o.result, wp });
     if ((samples.length < 60 || label.startsWith('stock 1.5') && d === 0) && r.flows > 0 && (d % 7 === 3 || Object.keys(r.by_cause).some((k) => k.startsWith('capacity') || k === 'expired_remains'))) samples.push({ start: structuredClone(a), end: o.state, result: o.result, wp });
     if (b && boff) {
@@ -182,6 +183,33 @@ const redate = (src: Any) => { src.batches.find((b: Any) => b.protein > 0.05).or
   e = takeEngine(sm, relabel, relabelEnd); r = takeReader(sm, relabel, relabelEnd);
   ok(e !== true, `N19 a take recorded against another batch than the stored-order rule gives (no negative amount): the engine check rejects it (${e})`);
   ok(r !== true, `N19 … the reader rejects it (${r})`);
+}
+// independent review of 2d25ee8 (a read-only Claude reviewer, not Codex): records the recomputation depends on
+{
+  const rd = (sm: Sample, edit: (res: Any, end: Any) => void) => { const res: Any = structuredClone(sm.result), end: Any = structuredClone(sm.end); edit(res, end); const r = replaySourceFlows(sm.start, end, res, sm.wp); return r.ok ? true : r.errors[0]; };
+  const eng = (sm: Sample, edit: (res: Any, end: Any) => void) => {
+    const w: Any = structuredClone(sm.start); growEcology(w, sm.wp, calcWeather(w, sm.wp, sm.result.date), []);
+    const res: Any = structuredClone(sm.result), end: Any = structuredClone(sm.end); edit(res, end);
+    try { checkCarcassTakes(carcassPiles(w.sources), res.colonies.map((c: Any) => c.events), end.sources, sm.start.sim_day + 1, sm.wp.prey); return true; } catch (x) { return String(x); }
+  };
+  const runoff = pick(isCause('capacity_runoff')), rf = runoff.result.world_events.find((e: Any) => e.cause === 'capacity_runoff');
+  ok(rd(runoff, (res, end) => { res.world_events = res.world_events.filter((e: Any) => e !== res.world_events.find((x: Any) => x.cause === 'capacity_runoff')); const s = end.sources[rf.site]; s.capacity = +(s.capacity + rf.portions).toFixed(6); s.sugar = +(s.sugar + rf.portions).toFixed(6); s.ecological_record.stock_after = +(s.ecological_record.stock_after + rf.portions).toFixed(6); }) !== true, 'N20 capacity raised in the end state to hide a runoff (the reader must not trust state fields as parameters): the reader rejects it');
+  const hd = samples.find((x) => Object.values(x.end.sources).some((s: Any) => s.type === 'honeydew' && s.host_alive && s.hemipteran_colonies > 0))!;
+  ok(rd(hd, (_res, end) => { const s: Any = Object.values(end.sources).find((v: Any) => v.type === 'honeydew' && v.host_alive && v.hemipteran_colonies > 0); s.hemipteran_colonies += 1; }) !== true, 'N21 an extra hemipteran colony with no hemipteran_colony_change event: the reader rejects it');
+  const nat = samples.find((x) => x.result.world_events.some((e: Any) => e.type === 'new_food_source'))!;
+  ok(rd(nat, (res, end) => { const e = res.world_events.find((x: Any) => x.type === 'new_food_source'); e.protein_portions = +(e.protein_portions + 0.5).toFixed(6); const b = end.sources[e.site].batches.find((x: Any) => x.event_id === e.id); b.protein = +(b.protein + 0.5).toFixed(6); end.sources[e.site].protein = +(end.sources[e.site].protein + 0.5).toFixed(6); }) !== true, 'N22 natural remains raised by 0.5 inside the parameter range, with their batch: the reader re-draws the day\'s stream and rejects it');
+  assert.ok(killSamples.length, 'no sample day with a kill');
+  const kill = killSamples[0], kEdit = (res: Any, end: Any) => { const ev = res.colonies.flatMap((c: Any) => c.events), k = ev.find((e: Any) => e.cause === 'prey_kill'), n = ev.find((e: Any) => e.type === 'new_food_source' && e.id === k.source.id); k.portions = +(k.portions + 0.5).toFixed(6); n.protein_portions = +(n.protein_portions + 0.5).toFixed(6); const b = end.sources[n.site].batches.find((x: Any) => x.event_id === n.id); if (b) b.protein = +(b.protein + 0.5).toFixed(6); };
+  let e = eng(kill, kEdit); ok(e !== true, `N23 kill remains, prey_kill transfer and batch all raised by 0.5: the engine check rejects it (${e})`); ok(rd(kill, kEdit) !== true, 'N23 … the reader rejects it');
+  const sug = samples.find((x) => x.result.colonies.some((c: Any) => c.events.some((t: Any) => t.cause === 'collect' && t.food_type === 'sugar')) && Object.values(x.start.sources).some((s: Any) => s.type === 'carcass'))!;
+  const carc = Object.keys(sug.start.sources).find((k) => sug.start.sources[k].type === 'carcass')!;
+  const sEdit = (res: Any) => { const t = res.colonies.flatMap((c: Any) => c.events).find((x: Any) => x.cause === 'collect' && x.food_type === 'sugar'); t.source.id = carc; };
+  e = eng(sug, sEdit); ok(e !== true, `N24 a sugar collect relabelled to a carcass source: the engine check rejects it (${e})`); ok(rd(sug, sEdit) !== true, 'N24 … the reader rejects it');
+  const tk = takeSamples[0], other = Object.keys(tk.start.sources).find((k) => tk.start.sources[k].type === 'carcass' && !tk.result.colonies.some((c: Any) => c.events.some((x: Any) => x.cause === 'collect' && x.source?.id === k)))!;
+  const mEdit = (res: Any) => { const t = res.colonies.flatMap((c: Any) => c.events).find((x: Any) => x.cause === 'collect' && x.food_type === 'protein'); t.source.id = other; };
+  e = eng(tk, mEdit); ok(e !== true, `N25 a carcass collect moved to another carcass source (no food_collected there): the engine check rejects it (${e})`); ok(rd(tk, mEdit) !== true, 'N25 … the reader rejects it');
+  const aEdit = (_res: Any, end: Any) => { const s: Any = Object.values(end.sources).find((v: Any) => v.type === 'carcass' && v.batches.length); s.batches[0].age_days = 0; };
+  e = eng(tk, aEdit); ok(e !== true, `N26 a carcass batch's age_days rewritten: the engine check rejects it (${e})`); ok(rd(tk, aEdit) !== true, 'N26 … the reader rejects it');
 }
 {
   const sm = pick(isCause('rain_washoff'));

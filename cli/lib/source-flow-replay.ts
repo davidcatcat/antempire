@@ -1,7 +1,8 @@
 /**
  * v2-review.26 (Issue #80): independent READER of the world food-source flows. It does not import the engine: every flow
  * the ecology step should have written is recomputed here from the source state before the day, the day's rain, the
- * host/hemipteran state after the day and the world parameters (a second implementation of engine/ecology.ts), then
+ * host/hemipteran state after the day and the world parameters (a second implementation of engine/ecology.ts) — the state
+ * fields it reads must be unchanged within the day or changed exactly as the ecology events say (§3c) — then
  *   1. matched one-to-one with the day's `source_flow` events (a missing event = a change without an event; an extra or
  *      repeated event = food counted twice; a different value = a wrong amount),
  *   2. each source is rebuilt from the events ALONE:
@@ -12,7 +13,15 @@
  *      as deleted without an event (the defect of Issue #80).
  * All amounts are game portions (no mg or energy claim). Engineering/mathematical correctness only, not scientific validation.
  */
+import { createHash } from 'node:crypto';
 import { sourceLedgerDay } from './source-ledger.ts';
+
+/** The named random stream of a day, re-implemented here with Node's sha256 (not the engine's code): the first 4 bytes
+ *  of sha256(`${seed}|${day}|${tag}`) as little-endian uint32 seed a mulberry32 generator (engine/rng.ts documents it). */
+const stream = (seed: number, day: number, tag: string) => {
+  let x = createHash('sha256').update(`${seed}|${day}|${tag}`, 'utf8').digest().readUInt32LE(0) >>> 0;
+  return () => { x = (x + 0x6d2b79f5) | 0; let t = Math.imul(x ^ (x >>> 15), 1 | x); t ^= t + Math.imul(t ^ (t >>> 7), 61 | t); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+};
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 export interface SourceFlowReplay { ok: boolean; errors: string[]; flows: number; by_cause: Record<string, number>; unevented: { overflow: number; expired: number; washoff: number; decay: number } }
@@ -181,6 +190,88 @@ export function replaySourceFlows(startWorld: Any, endWorld: Any, result: Any, w
       if (Number(b.original_day) !== pile[k].day) err(`${id}: batch ${b.event_id} birth day ${b.original_day}, expected ${pile[k].day}`);
       if (!(Math.abs(Number(b.protein) - pile[k].protein) <= TOL)) err(`${id}: batch ${b.event_id} holds ${b.protein}, rebuilt ${pile[k].protein} (protein moved between batches or changed without an event)`);
     });
+  }
+
+  // ---- 3c. records the recomputation depends on (independent review of 2d25ee8, P1/P2): the flows above are recomputed from
+  //      SOURCE STATE FIELDS (capacity, production, bloom days, hosts, hemipteran colonies) and from the EVENTS of new remains
+  //      and collects. A forged end state or event could otherwise carry its own justification. So:
+  //      (a) a source's parameters do not change within a day except as the ecology events say;
+  //      (b) every transfer touching a source carries that source's food type (sugar at honeydew/nectar, protein at carcasses);
+  //      (c) every collect from a source is matched one-to-one by a food_collected of the same worker, site, food and amount;
+  //      (d) new remains: a natural death's remains lie in [carcass_new_protein_min, max] and pair with one insect_natural_death;
+  //          a kill's remains equal the prey size's protein and pair with one insect_predation and one prey_kill transfer;
+  //      (e) each site's living insects = start − natural deaths − kills + births + immigrants (the remains have a body count);
+  //      (f) a carcass batch's age_days is its day minus its birth day.
+  //      Limit (stated): records that are forged CONSISTENTLY with all of these, and with the C2 colony replay, still pass —
+  //      no reader can recover an event the engine never wrote; the RNG draws themselves are not re-run here.
+  const evAll = [...(result?.world_events ?? []), ...(result?.colonies ?? []).flatMap((c: Any) => c.events ?? [])];
+  for (const id of Object.keys(startWorld?.sources ?? {}).sort()) {
+    const s0 = startWorld.sources[id], s1 = endWorld?.sources?.[id];
+    if (!s1 || s0.type === 'carcass') continue;
+    if (Number(s1.capacity) !== Number(s0.capacity)) err(`${id}: capacity ${s0.capacity} -> ${s1.capacity} within the day (a parameter, no event changes it)`);
+    if (Number(s1.production_per_day) !== Number(s0.production_per_day) && s0.type === 'nectar') err(`${id}: production_per_day ${s0.production_per_day} -> ${s1.production_per_day} within the day`);
+    if (s0.type === 'nectar') { const want = Math.max(0, Number(s0.bloom_days_left) - 1); if (Number(s1.bloom_days_left) !== want) err(`${id}: bloom_days_left ${s0.bloom_days_left} -> ${s1.bloom_days_left}, expected ${want}`); }
+    if (s0.type === 'honeydew') {
+      if ((s1.hemipteran_kind ?? '') !== (s0.hemipteran_kind ?? '')) err(`${id}: hemipteran_kind changed within the day`);
+      const hostDeaths = evAll.filter((e: Any) => e?.type === 'host_plant_death' && e.site === id).length;
+      const hosts = Number(s0.host_plants ?? 0) - hostDeaths;
+      if (Number(s1.host_plants ?? 0) !== hosts) err(`${id}: host_plants ${s0.host_plants} -> ${s1.host_plants} with ${hostDeaths} host_plant_death event(s)`);
+      const alive = hosts > 0 && s0.host_alive !== false;
+      if ((s1.host_alive !== false) !== alive) err(`${id}: host_alive ${s1.host_alive}, the host events give ${alive}`);
+      const delta = evAll.filter((e: Any) => e?.type === 'hemipteran_colony_change' && e.site === id).reduce((t: number, e: Any) => t + Number(e.delta), 0);
+      const colonies = alive ? Number(s0.hemipteran_colonies ?? 0) + delta : 0;
+      if (Number(s1.hemipteran_colonies ?? 0) !== colonies) err(`${id}: hemipteran_colonies ${s0.hemipteran_colonies} -> ${s1.hemipteran_colonies}, the colony-change events give ${colonies}`);
+    }
+  }
+  const foodOf = (id: string) => (startWorld?.sources?.[id]?.type === 'carcass' ? 'protein' : 'sugar');
+  for (const c of result?.colonies ?? []) {
+    const collected: Any[] = (c.events ?? []).filter((e: Any) => e?.type === 'food_collected');
+    const used = new Set<number>();
+    for (const t of (c.events ?? []).filter((e: Any) => e?.type === 'food_transfer')) {
+      for (const side of [t.source, t.recipient]) if (side?.kind === 'source' && startWorld?.sources?.[side.id] && t.food_type !== foodOf(side.id)) err(`${c.colony_id}: ${t.transfer_id ?? t.cause} moves ${t.food_type} at ${side.id}, a ${startWorld.sources[side.id].type} source`);
+      if (t.cause !== 'collect' || t.source?.kind !== 'source') continue;
+      const k = collected.findIndex((f: Any, i: number) => !used.has(i) && f.worker === t.recipient?.id && f.site === t.source.id && f.macro === t.food_type && Math.abs(Number(f.portions) - Number(t.portions)) <= TOL);
+      if (k < 0) err(`${c.colony_id}: collect of ${t.portions} ${t.food_type} by ${t.recipient?.id} at ${t.source.id} has no matching food_collected`); else used.add(k);
+    }
+    collected.forEach((f: Any, i: number) => { if (!used.has(i)) err(`${c.colony_id}: food_collected by ${f.worker} at ${f.site} (${f.portions}) has no collect transfer`); });
+  }
+  const c = wp.carcasses, pr = wp.prey;
+  const deaths = (result?.world_events ?? []).filter((e: Any) => e?.type === 'insect_natural_death');
+  const preds = (result?.colonies ?? []).flatMap((x: Any) => x.events ?? []).filter((e: Any) => e?.type === 'insect_predation');
+  // natural deaths re-drawn from the day's named stream (death draw, then the remains' size): the event's site, id and amount
+  // must be exactly what the start state, the seed and the parameters give — an in-range forged amount is caught too
+  const ins = wp.insects;
+  for (const site of Object.keys(startWorld?.ecology?.insects_by_site ?? {}).sort()) {
+    const pop = startWorld.ecology.insects_by_site[site], g = stream(Number(startWorld.seed), day, 'insect_demography:' + site);
+    const mortality = 1 - Math.pow(1 - ins.insect_local_daily_mortality_probability, Number(pop.living) / Math.max(1, ins.insect_local_death_reference_population));
+    const died = Number(pop.living) > 0 && g() < mortality;
+    const got = (result?.world_events ?? []).filter((x: Any) => x?.type === 'new_food_source' && x.site === site);
+    if (!died) { if (got.length) err(`${site}: natural remains ${got[0].id} although the day's draw gives no death`); continue; }
+    const q = r6(c.carcass_new_protein_min + g() * (c.carcass_new_protein_max - c.carcass_new_protein_min)), id = `NAT-D${day}-${site}-${Number(pop.cumulative_deaths) + 1}`;
+    if (got.length !== 1 || got[0].id !== id || Math.abs(Number(got[0].protein_portions) - q) > TOL) err(`${site}: natural remains ${JSON.stringify(got.map((x: Any) => [x.id, x.protein_portions]))}, the day's draws give [${id}, ${q}]`);
+  }
+  for (const e of (result?.world_events ?? []).filter((x: Any) => x?.type === 'new_food_source')) {
+    const d = deaths.filter((x: Any) => x.event_id === e.id && x.site === e.site);
+    if (d.length !== 1) err(`${e.site}: natural remains ${e.id} pair with ${d.length} insect_natural_death event(s)`);
+    const q = Number(e.protein_portions);
+    if (!(q >= c.carcass_new_protein_min - TOL && q <= c.carcass_new_protein_max + TOL)) err(`${e.site}: natural remains ${e.id} of ${q} portions, outside [${c.carcass_new_protein_min}, ${c.carcass_new_protein_max}]`);
+  }
+  for (const x of result?.colonies ?? []) for (const e of (x.events ?? []).filter((y: Any) => y?.type === 'new_food_source')) {
+    const k = preds.filter((y: Any) => y.event_id === e.id && y.site === e.site);
+    if (k.length !== 1) { err(`${e.site}: kill remains ${e.id} pair with ${k.length} insect_predation event(s)`); continue; }
+    const want = k[0].size === 'large' ? pr.large_prey_protein : pr.small_prey_protein;
+    if (Math.abs(Number(e.protein_portions) - want) > TOL) err(`${e.site}: kill remains ${e.id} of ${e.protein_portions} portions, a ${k[0].size} prey gives ${want}`);
+    const kt = (x.events ?? []).filter((y: Any) => y?.type === 'food_transfer' && y.cause === 'prey_kill' && y.source?.id === e.id);
+    if (kt.length !== 1 || Math.abs(Number(kt[0].portions) - want) > TOL) err(`${e.site}: kill ${e.id} has ${kt.length} prey_kill transfer(s) of ${kt[0]?.portions}, expected one of ${want}`);
+  }
+  const pops0 = startWorld?.ecology?.insects_by_site ?? {}, pops1 = endWorld?.ecology?.insects_by_site ?? {};
+  for (const site of Object.keys(pops0).sort()) {
+    const n = (t: string, f: (e: Any) => number) => evAll.filter((e: Any) => e?.type === t && e.site === site).reduce((a: number, e: Any) => a + f(e), 0);
+    const want = Number(pops0[site].living) - n('insect_natural_death', () => 1) - n('insect_predation', () => 1) + n('insect_population_birth', (e) => Number(e.individuals)) + n('insect_immigration', (e) => Number(e.individuals));
+    if (Number(pops1[site]?.living) !== want) err(`${site}: ${pops1[site]?.living} living insects after the day, the events give ${want} (remains need a body)`);
+  }
+  for (const [id, s1] of Object.entries(endWorld?.sources ?? {}) as [string, Any][]) if (s1.type === 'carcass') for (const b of s1.batches ?? []) {
+    if (b.age_days !== undefined && b.age_days !== null && Number(b.age_days) !== day - Number(b.original_day)) err(`${id}: batch ${b.event_id} age_days ${b.age_days}, its birth day gives ${day - Number(b.original_day)}`);
   }
 
   // ---- 4. the ME-1 ledger: what it finds removed must be named by a flow

@@ -265,8 +265,26 @@ export const carcassPiles = (sources: Record<string, Source>): Record<string, { 
  * be closed by that worker's C2 `collect` transfer of the same total, with positive amounts split over the batches in their
  * stored order (takeProtein's rule). Forged take records that move protein between batches therefore fail here.
  */
-export function checkCarcassTakes(piles: Record<string, { id: string; protein: number; original_day: number }[]>, colonyEvents: SimEvent[][], after: Record<string, Source>, day: number): void {
+export function checkCarcassTakes(piles: Record<string, { id: string; protein: number; original_day: number }[]>, colonyEvents: SimEvent[][], after: Record<string, Source>, day: number, prey?: { small_prey_protein: number; large_prey_protein: number }): void {
   const fail = (m: string) => { throw Error('SOURCE_FLOW carcass takes: ' + m); };
+  // independent review of 2d25ee8: food type at a source, collect <-> food_collected, kill remains = the prey size's protein
+  for (const events of colonyEvents) {
+    const collected = (events as (SimEvent & Record<string, any>)[]).filter((e) => e.type === 'food_collected'), used = new Set<number>(); // eslint-disable-line @typescript-eslint/no-explicit-any
+    for (const e of events as (SimEvent & Record<string, any>)[]) { // eslint-disable-line @typescript-eslint/no-explicit-any
+      if (e.type === 'food_transfer') {
+        for (const side of [e.source, e.recipient]) if (side?.kind === 'source' && after[side.id] && e.food_type !== (after[side.id].type === 'carcass' ? 'protein' : 'sugar')) fail(`${e.transfer_id ?? e.cause}: ${e.food_type} at ${side.id}, a ${after[side.id].type} source`);
+        if (e.cause === 'collect' && e.source?.kind === 'source') {
+          const k = collected.findIndex((f, i) => !used.has(i) && f.worker === e.recipient?.id && f.site === e.source.id && f.macro === e.food_type && Math.abs(Number(f.portions) - Number(e.portions)) <= TOL_FLOW);
+          if (k < 0) fail(`collect by ${e.recipient?.id} at ${e.source.id} without a matching food_collected`); used.add(k);
+        }
+      } else if (e.type === 'new_food_source' && prey) {
+        const p = (events as (SimEvent & Record<string, any>)[]).find((x) => x.type === 'insect_predation' && x.event_id === e.id); // eslint-disable-line @typescript-eslint/no-explicit-any
+        const want = p?.size === 'large' ? prey.large_prey_protein : prey.small_prey_protein;
+        if (!p || Math.abs(Number(e.protein_portions) - want) > TOL_FLOW) fail(`kill remains ${e.id} of ${e.protein_portions}: its predation gives ${p ? want : 'none'}`);
+      }
+    }
+    if (used.size !== collected.length) fail('a food_collected without a collect transfer');
+  }
   const pile = Object.fromEntries(Object.entries(piles).map(([k, v]) => [k, v.map((b) => ({ ...b }))]));
   for (const events of colonyEvents) {
     let run: { worker: unknown; site: string; takes: { id: string; q: number }[] } | null = null;
@@ -294,7 +312,7 @@ export function checkCarcassTakes(piles: Record<string, { id: string; protein: n
   }
   for (const [site, p] of Object.entries(pile)) {
     const b1 = after[site].batches;
-    if (b1.length !== p.length || b1.some((b, k) => b.event_id !== p[k].id || b.original_day !== p[k].original_day || Math.abs(b.protein - p[k].protein) > TOL_FLOW)) fail(`${site}: batches after foraging do not match the recorded takes`);
+    if (b1.length !== p.length || b1.some((b, k) => b.event_id !== p[k].id || b.original_day !== p[k].original_day || Math.abs(b.protein - p[k].protein) > TOL_FLOW || (b.age_days !== undefined && b.age_days !== null && b.age_days !== day - b.original_day))) fail(`${site}: batches after foraging do not match the recorded takes (amount, id, birth day or age)`);
   }
 }
 
