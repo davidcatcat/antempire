@@ -73,6 +73,10 @@ try {
   for (const d of dirsTmp()) {
     const att = path.join(d, ATTESTATION), saved = fs.readFileSync(att, 'utf8'), a = JSON.parse(saved);
     ok(/LATER RE-VERIFICATION/.test(a.statement) && a.verified_by.rows_rerun === a.verified_by.rows_equal && a.verified_by.rows_rerun === 400, `5: ${path.basename(d)} attestation is a later re-verification with 400/400 baseline rows reproduced`);
+    // Issue #57 (Owner 2026-11-06, option 2): the code files not recorded at generation are reported as UNVERIFIABLE, not as verified
+    const vc: any = validateCommitted(d, tmp); // eslint-disable-line @typescript-eslint/no-explicit-any
+    const cp = vc.checks?.input_manifest?.code_provenance;
+    ok(vc.ok && cp?.status === 'unverifiable_not_recorded_at_generation' && cp.files > 0 && cp.files === vc.checks.input_manifest.code_files_not_recorded_at_generation.length, `5 (#57): ${path.basename(d)} states its code provenance as unverifiable (${cp?.files} code files not recorded at generation; not compared, no hash back-filled)`);
     fs.rmSync(att);
     const v = validateCommitted(d, tmp);
     ok(!v.ok && v.errors.some((e) => /provenance gap/.test(e)), `5: without it ${path.basename(d)} reports a provenance gap (${v.errors[0]})`);

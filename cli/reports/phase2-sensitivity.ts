@@ -319,7 +319,12 @@ export function validate(doc: Any, opts: { day0Eval?: Any; tables?: string; curr
     if (unattested.length) err(`provenance gap: ${unattested.join(', ')} not recorded when the data were produced and not re-verified (rerun, or attest with --attest)`);
     const drifted = gap.filter((f) => att?.data?.[f] && att.data[f].sha256 !== man.data[f].sha256);
     if (drifted.length) err(`input data changed since the later re-verification (stale): ${drifted.join(', ')}`);
-    checks.input_manifest = { schema: 'legacy (pre-Issue #51 hand-picked list)', listed_files_used_and_equal: used.length - changed.length + allowed.length, listed_files_not_read: unused, provenance_gap_files: gap, gap_covered_by_later_attestation: att ? { attested_on: att.attested_on, rows_reproduced: att.verified_by?.rows_equal } : null, code_files_not_recorded_at_generation: Object.keys(man.code).filter((f) => !(f in old)) };
+    checks.input_manifest = { schema: 'legacy (pre-Issue #51 hand-picked list)', listed_files_used_and_equal: used.length - changed.length + allowed.length, listed_files_not_read: unused, provenance_gap_files: gap, gap_covered_by_later_attestation: att ? { attested_on: att.attested_on, rows_reproduced: att.verified_by?.rows_equal } : null, code_files_not_recorded_at_generation: Object.keys(man.code).filter((f) => !(f in old)),
+      // Issue #57 (Owner 2026-11-06, option 2): these code files were not recorded when the data were produced, so whether
+      // the data came from them CANNOT be verified. They are not compared and not counted as verified; no hash is filled in
+      // afterwards (#49 N3). The later attestation re-ran the stored baseline rows with today's code: that shows consistency,
+      // not what ran at generation time.
+      code_provenance: { status: 'unverifiable_not_recorded_at_generation', files: Object.keys(man.code).filter((f) => !(f in old)).length, note: 'not recorded when the data were produced; not compared; no hash back-filled (Issue #57)' } };
   }
   let shaOk = 0;
   const base = archived ? () => bundleAtVersion(doc.engine_version, { forHash: true }) : loadBundle;
