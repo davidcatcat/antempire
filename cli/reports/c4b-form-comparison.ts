@@ -20,7 +20,8 @@ import type { SpeciesParams } from '../../engine/params.ts';
 import { rng } from '../../engine/rng.ts';
 
 type Form = 'clamp_linear' | 'threshold' | 'saturating';
-export const THETAS = [0.25, 0.5, 0.75], KS = [0.1, 0.5, 2];
+// θ grid includes both legal bounds (engine/params.ts accepts θ ∈ [0, 1]); θ = 0 is the one legal value whose N(0) is 1, not n_min
+export const THETAS = [0, 0.25, 0.5, 0.75, 1], KS = [0.1, 0.5, 2];
 export function variants(sp: SpeciesParams): { id: string; sp: SpeciesParams }[] {
   const mk = (form: Form, theta: number | null, k: number | null) => ({ ...sp, larval_development: { ...sp.larval_development, nutrition_response: form, threshold_theta: theta, saturation_k: k } }) as SpeciesParams;
   return [{ id: 'clamp_linear', sp: mk('clamp_linear', null, null) }, ...THETAS.map((t) => ({ id: `threshold θ=${t}`, sp: mk('threshold', t, null) })), ...KS.map((k) => ({ id: `saturating K=${k}`, sp: mk('saturating', null, k) }))];
@@ -47,17 +48,18 @@ export function compare(sp: SpeciesParams) {
   }
   const spread = (xs: number[]) => +(Math.max(...xs) - Math.min(...xs)).toFixed(9);
   return {
-    schema: 'antempire.c4b-form-comparison.v1', note: 'Report only (Owner D4): no form chosen; θ and K are TEST grids (null in the species file). Temperature factor 1 (reference temperature).',
+    schema: 'antempire.c4b-form-comparison.v2', note: 'Report only (Owner D4): no form chosen; θ and K are TEST grids (null in the species file). Temperature factor 1 (reference temperature).',
     inputs: { larva_days: L, n_min: nmin, n_min_basis: '遊戲假設 (species development.larva_min_nutrition_growth_factor)', larva_days_basis: '遊戲假設 (mechanism R94)', thetas: THETAS, ks: KS },
     E1_constant_x: { x: grid, rows: E1 },
-    E2_phillips_unfed14_then_fed: { rows: E2, spread_days_across_forms: spread(E2.map((r) => r.pupation_day)) },
+    E2_phillips_unfed14_then_fed: { rows: E2, spread_days_across_forms: spread(E2.map((r) => r.pupation_day)), spread_days_excluding_theta0: spread(E2.filter((r) => r.variant !== 'threshold θ=0').map((r) => r.pupation_day)) },
     E3_yuan_ad_libitum: { rows: E3, spread_days_across_forms: spread(E3.map((r) => r.larval_days)) },
     E4_variable_partial_feeding: { replicates: 2000, rows: E4 },
     identifiability: {
-      endpoints_shared: 'every form has N(0) = n_min and N(1) = 1, so any feeding history made only of unfed days (x = 0) and fully fed days (x = 1) gives the same development under every form and every θ, K',
-      phillips_1933: 'unfed then fed: x ∈ {0, 1} only -> cannot distinguish the forms (E2 spread across forms ≈ 0); it supports only the direction "no food, slower development; resumes when fed"',
-      yuan_2026: 'ad libitum: x = 1 only -> cannot distinguish the forms (E3 spread 0)',
-      conclusion: 'With the species data in hand the form is NOT identifiable. Distinguishing data would be development time under controlled PARTIAL rations (several intermediate x levels, per individual), which no species study in docs/references.md reports. n_min itself is a game assumption and fully determines the unfed rate under every form.',
+      endpoints: 'N(1) = 1 for every form and every legal θ ∈ [0, 1], K > 0. N(0) = n_min for clamp_linear, every saturating K > 0 and every threshold θ ∈ (0, 1]; the legal θ = 0 is the exception: x ≥ 0 always holds, so N ≡ 1 and an unfed larva develops at the full rate',
+      endpoints_shared_except_theta0: 'excluding threshold θ = 0, any feeding history made only of unfed days (x = 0) and fully fed days (x = 1) gives the same development under every form and every θ, K',
+      phillips_1933: 'unfed then fed: x ∈ {0, 1} only. It CAN separate threshold θ = 0 (no slowdown when unfed; E2 gives larva_days) from every other variant, and its direction "no food, slower development; resumes when fed" excludes θ = 0. It cannot distinguish the remaining forms (E2 spread across them ≈ 0)',
+      yuan_2026: 'ad libitum: x = 1 only -> cannot distinguish any variant, θ = 0 included (E3 spread 0)',
+      conclusion: 'With the species data in hand the form is NOT identifiable, beyond excluding threshold θ = 0 (and, in the same way, any variant with N(0) = 1) by the Phillips direction. Distinguishing data would be development time under controlled PARTIAL rations (several intermediate x levels, per individual), which no species study in docs/references.md reports. Outside θ = 0, n_min is a game assumption and fully determines the unfed rate.',
     },
   };
 }
