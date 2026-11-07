@@ -14,6 +14,7 @@ import { consume, storageOverflow } from './nutrition.ts';
 import { developBrood } from './brood.ts';
 import { oviposition, queenSurvival, workerSurvival } from './queen.ts';
 import { checkQueenRound, ensureQueens, expectedInitBasis, nestRound, queenMetabolism, queenRoundStart, type QueenRoundStart, type RoundResult } from './queen-feeding.ts';
+import { checkLarvaDevelopment } from './larva-development.ts';
 import { checkLarvaRound, ensureBroodRecords, larvaMetabolism, larvaRoundStart, type LarvaRoundStart } from './larva-feeding.ts';
 import { bindFoodTransfers, checkColonyFood, checkSources, colonySnapshot, foodTimingFor, sourceSnapshot } from './transfers.ts';
 import { checkColonyDomain, checkEventDomain, checkParamDomain, checkPopulationDay, checkRngInputs, populationSnapshot } from './invariants.ts';
@@ -56,8 +57,20 @@ import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from '
  *     on (requires C3a), each larva has its own account (larva_body), fed only in the C3a nest round after a larva_contact
  *     (feed_larva), pays its own metabolism, and begs from its own intake; hatch is an accounting record only. Development
  *     and starvation keep the old rules (C4b/C4c). Introduced OFF: every output byte-identical to v2-review.27.
+ *   v2-review.29 (C4a first-seen begging): with larval_feeding.first_seen_begging_prior_v29 on (requires C4a), a larva that C4a
+ *     sees for the first time starts its begging from the explicit prior default_larva_begging_prior (game assumption) instead
+ *     of the old colony-derived value, which is kept in the initialization event for tracing only. Introduced OFF: every
+ *     output byte-identical to v2-review.28.
+ *   v2-review.30 (C4b, docs/design-c4b-larval-development.md): with larval_development.individual_development_c4b on (requires
+ *     C4a and an Owner-chosen nutrition-response form; null as shipped, so it cannot be switched on yet), a larva develops by
+ *     r(T)/larva_days × N(own paid fraction), recorded as larva_development; never from the colony fraction. Introduced
+ *     OFF: every output byte-identical to v2-review.29.
+ *   v2-review.31 (Owner D5, docs/design-nurse-cue-locality-v31.md): with local_signals.nurse_cue_same_place_v31 on, the nurse
+ *     begging cue (workers.ts nurseContact) draws only among larvae at the nurse's own place — the nurse in the nest, the larva
+ *     in the brood chamber (a larva without a place counts as there); a nurse outside the nest touches no larva. Same stream
+ *     and draw. Introduced OFF: every output byte-identical to v2-review.30.
  */
-export const ENGINE_VERSION = 'antempire.v2-review.28-c4a-larva-body';
+export const ENGINE_VERSION = 'antempire.v2-review.31-nurse-cue-same-place';
 /** Implementation of that behaviour (bumped for refactors that keep results byte-identical). */
 export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
 /**
@@ -66,7 +79,7 @@ export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
  */
 const ENGINE_FIRST_STATE_DAY = 0;
 
-export const NATURAL_EVENT_TYPES: ReadonlySet<string> = new Set(['new_food_source', 'source_batch_consumed', 'food_delivered', 'insect_immigration', 'insect_natural_death', 'insect_population_birth', 'insect_background_death', 'physical_scout_visit', 'discovery', 'scouted_empty', 'nest_local_route_learning', 'local_contact_cue', 'local_brood_begging_contact', 'local_unloading_feedback', 'host_plant_death', 'hemipteran_colony_change', 'local_recruitment', 'route_step', 'route_timeout', 'trail_decay', 'trail_deposited', 'local_trail_choice', 'food_collected', 'trophallaxis', 'protein_cached_at_nest', 'live_prey_encounter', 'prey_escaped', 'local_alarm_signal', 'long_range_recruitment_trail', 'hunt_recruitment', 'joint_prey_transport', 'waiting_prey_joined', 'route_memory_initialized', 'worker_activity', 'forager_stopped', 'action_cancelled_no_time', 'no_route_cannot_depart', 'recruitment_no_nestmate', 'recruitment_failed', 'exploration_step', 'exploration_no_new_direction', 'exploration_found_nothing', 'trail_lost', 'insect_predation', 'food_transfer', 'hatch', 'pupation', 'eclosion', 'egg_laid', 'worker_death', 'brood_death', 'injury_recovery', 'queen_death', 'queen_body_initialized', 'nest_move', 'queen_contact', 'queen_feeding_refused', 'queen_encounter_food', 'queen_nutrition', 'source_flow', 'brood_nutrition_record_initialized', 'larva_contact', 'larva_hatch_nutrition', 'larva_nutrition']);
+export const NATURAL_EVENT_TYPES: ReadonlySet<string> = new Set(['new_food_source', 'source_batch_consumed', 'food_delivered', 'insect_immigration', 'insect_natural_death', 'insect_population_birth', 'insect_background_death', 'physical_scout_visit', 'discovery', 'scouted_empty', 'nest_local_route_learning', 'local_contact_cue', 'local_brood_begging_contact', 'local_unloading_feedback', 'host_plant_death', 'hemipteran_colony_change', 'local_recruitment', 'route_step', 'route_timeout', 'trail_decay', 'trail_deposited', 'local_trail_choice', 'food_collected', 'trophallaxis', 'protein_cached_at_nest', 'live_prey_encounter', 'prey_escaped', 'local_alarm_signal', 'long_range_recruitment_trail', 'hunt_recruitment', 'joint_prey_transport', 'waiting_prey_joined', 'route_memory_initialized', 'worker_activity', 'forager_stopped', 'action_cancelled_no_time', 'no_route_cannot_depart', 'recruitment_no_nestmate', 'recruitment_failed', 'exploration_step', 'exploration_no_new_direction', 'exploration_found_nothing', 'trail_lost', 'insect_predation', 'food_transfer', 'hatch', 'pupation', 'eclosion', 'egg_laid', 'worker_death', 'brood_death', 'injury_recovery', 'queen_death', 'queen_body_initialized', 'nest_move', 'queen_contact', 'queen_feeding_refused', 'queen_encounter_food', 'queen_nutrition', 'source_flow', 'brood_nutrition_record_initialized', 'larva_contact', 'larva_hatch_nutrition', 'larva_nutrition', 'larva_development']);
 
 /** Structural validation of a world (legacy error messages preserved). */
 export function validateWorld(s: WorldState): void {
@@ -132,7 +145,7 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
   // C4a (requires C3a, checked when the parameters are read): every egg and larva gets its record before the snapshot
   const c4a = new Map<string, LarvaRoundStart>();
   for (const w of work) if (w.sp.larval_feeding.individual_larva_body_c4a) {
-    const day0 = expectedInitBasis(s) === 'day0_scenario', had = ensureBroodRecords(w.colony, day0, w.events);
+    const day0 = expectedInitBasis(s) === 'day0_scenario', had = ensureBroodRecords(w.colony, day0, w.events, w.sp.larval_feeding.first_seen_begging_prior_v29 ? w.sp.local_signals.default_larva_begging_prior : null);
     w.food = colonySnapshot(w.colony, true, true);
     c4a.set(w.colony.id, larvaRoundStart(w.colony, w.sp, had, day0));
   }
@@ -160,8 +173,9 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
     const ratios = consume(s, colony, sp, summary, weather, events);
     if (q3) queenMetabolism(colony, sp, summary.metabolic_factor as number, events);
     const l4 = c4a.get(colony.id);
-    if (l4) larvaMetabolism(colony, sp, summary.metabolic_factor as number, q3?.round.larvae?.intake ?? new Map(), events);
-    developBrood(s, colony, sp, weather, ratios, events, summary);
+    const own = l4 ? larvaMetabolism(colony, sp, summary.metabolic_factor as number, q3?.round.larvae?.intake ?? new Map(), events).fraction : undefined;
+    const workersAtStart = colony.population.workers.length;
+    developBrood(s, colony, sp, weather, ratios, events, summary, own);
     workerSurvival(s, colony, sp, events, summary);
     queenSurvival(s, colony, sp, events);
     oviposition(s, colony, sp, ratios, weather, events, summary);
@@ -169,6 +183,7 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
     if (sp.nutrition_rules.egg_laying_settles_crops) checkColonyFood(w.food, colony, events, foodTimingFor(sp));
     if (q3) checkQueenRound(q3.start, colony, events, sp);
     if (l4) checkLarvaRound(l4, colony, events, sp, summary.metabolic_factor as number);
+    if (l4 && sp.larval_development.individual_development_c4b) checkLarvaDevelopment(l4, colony, events, sp, weather.nest_temp_model_c, summary.metabolic_factor as number, workersAtStart);
     const pop = colony.population;
     summary.population = { queen: pop.queen_alive ? 1 : 0, workers: pop.workers.length, eggs: pop.brood.filter((b) => b.stage === 'egg').length, larvae: pop.brood.filter((b) => b.stage === 'larva').length, pupae: pop.brood.filter((b) => b.stage === 'pupa').length };
     summary.stock = { sugar: round(colony.stores.sugar), protein: round(colony.stores.protein) };

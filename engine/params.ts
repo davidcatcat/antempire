@@ -50,6 +50,20 @@ function bool(file: ParamFile, path: string): boolean {
   return v;
 }
 
+function nullableNum(file: ParamFile, path: string): number | null {
+  const v = at(file, path);
+  if (v === null) return null;
+  if (typeof v !== 'number' || !Number.isFinite(v)) throw Error('Parameter ' + path + ' must be a finite number or null');
+  return v;
+}
+
+function nullableStr(file: ParamFile, path: string): string | null {
+  const v = at(file, path);
+  if (v === null) return null;
+  if (typeof v !== 'string') throw Error('Parameter ' + path + ' must be a string or null');
+  return v;
+}
+
 function section<K extends string>(file: ParamFile, name: string, keys: readonly K[]): Record<K, number> {
   const out = {} as Record<K, number>;
   for (const k of keys) out[k] = num(file, `${name}.${k}`);
@@ -95,7 +109,7 @@ export function resolveSpecies(file: ParamFile) {
     worker_lifespan: section(file, 'worker_lifespan', ['natural_daily_base_hazard', 'age_risk_from_days', 'age_hazard_slope', 'injury_mortality_multiplier', 'newborn_initial_age_days', 'injury_repair_probability', 'adult_total_daily_hazard_cap', 'injury_repair_multiplier_abrasion', 'injury_repair_multiplier_appendage_damage', 'injury_repair_multiplier_unknown'] as const),
     queen_laying: section(file, 'queen_laying', ['base_laying_probability', 'max_eggs_per_day', 'existing_brood_pressure', 'previous_laying_penalty', 'adequate_nutrition_threshold', 'laying_reference_c', 'laying_temperature_q10', 'second_egg_given_laying_probability', 'laying_probability_cap'] as const),
     task_allocation: section(file, 'task_allocation', ['rest_baseline_probability', 'nurse_baseline_probability', 'maintenance_baseline_probability', 'forage_baseline_probability', 'defence_baseline_probability', 'newborn_nurse_days', 'injured_task_forage_multiplier', 'newborn_forage_multiplier', 'hunger_own_crop_weight', 'hunger_peer_weight', 'hunger_forage_boost', 'brood_begging_nurse_boost', 'newborn_nurse_multiplier', 'injured_rest_multiplier', 'soil_wetness_repair_boost'] as const),
-    local_signals: section(file, 'local_signals', ['local_peer_contact_probability', 'local_signal_smoothing', 'default_own_crop_sugar_fill', 'default_peer_sugar_hunger', 'default_direct_brood_begging', 'default_peer_protein_request', 'nurse_larva_contact_probability', 'default_larva_begging_contact_signal', 'crop_fill_previous_weight', 'crop_fill_today_weight', 'default_crop_fill_before_feeding', 'larva_begging_previous_weight', 'larva_begging_shortfall_weight', 'default_larva_begging_prior', 'unload_feedback_default', 'unload_ease_base', 'unload_ease_contact_weight', 'unload_feedback_previous_weight', 'unload_feedback_today_weight'] as const),
+    local_signals: { ...section(file, 'local_signals', ['local_peer_contact_probability', 'local_signal_smoothing', 'default_own_crop_sugar_fill', 'default_peer_sugar_hunger', 'default_direct_brood_begging', 'default_peer_protein_request', 'nurse_larva_contact_probability', 'default_larva_begging_contact_signal', 'crop_fill_previous_weight', 'crop_fill_today_weight', 'default_crop_fill_before_feeding', 'larva_begging_previous_weight', 'larva_begging_shortfall_weight', 'default_larva_begging_prior', 'unload_feedback_default', 'unload_ease_base', 'unload_ease_contact_weight', 'unload_feedback_previous_weight', 'unload_feedback_today_weight'] as const), nurse_cue_same_place_v31: bool(file, 'local_signals.nurse_cue_same_place_v31') },
     foraging_activity: section(file, 'foraging_activity', ['rain_suppression_fraction', 'min_rain_activity_multiplier', 'foraging_cold_limit_c', 'foraging_full_activity_c', 'foraging_cold_min_multiplier', 'daily_window_minutes'] as const),
     foraging_trips: section(file, 'foraging_trips', ['max_trips_per_forager', 'foraging_trip_sugar_cost', 'repeat_trip_probability'] as const),
     scouting: section(file, 'scouting', ['scout_discovery_probability', 'scout_search_when_route_unproductive_probability', 'unproductive_route_threshold_portions'] as const),
@@ -115,7 +129,16 @@ export function resolveSpecies(file: ParamFile) {
     // C4a (docs/design-c4-larval-nutrition.md §7.0 D1–D8): each larva's own nutrition account, fed only in the C3a nest round
     larval_feeding: {
       individual_larva_body_c4a: bool(file, 'larval_feeding.individual_larva_body_c4a'),
+      first_seen_begging_prior_v29: bool(file, 'larval_feeding.first_seen_begging_prior_v29'),
       ...section(file, 'larval_feeding', ['feed_begging_threshold', 'feed_bolus_sugar_portions', 'feed_bolus_protein_portions'] as const),
+    },
+    // C4b (docs/design-c4b-larval-development.md): each larva's development from what it could itself pay for; the
+    // nutrition-response form is an Owner decision and stays null (refused when switched on) until chosen
+    larval_development: {
+      individual_development_c4b: bool(file, 'larval_development.individual_development_c4b'),
+      nutrition_response: nullableStr(file, 'larval_development.nutrition_response'),
+      threshold_theta: nullableNum(file, 'larval_development.threshold_theta.value'),
+      saturation_k: nullableNum(file, 'larval_development.saturation_k.value'),
     },
     predation: {
       ...section(file, 'predation', ['live_prey_encounter_probability', 'large_prey_min_team', 'live_prey_capture_probability', 'large_prey_escape_while_recruiting_probability', 'large_prey_max_team'] as const),
@@ -129,6 +152,18 @@ export function resolveSpecies(file: ParamFile) {
   // D1 (Owner 2026-11-06): C4a shares the C3a nest round (one ordinal time and one set of nest places), so it cannot run alone
   if (p.larval_feeding.individual_larva_body_c4a && !p.queen_feeding.individual_queen_body_c3a) {
     throw Error(`Species ${p.species_id}: larval_feeding.individual_larva_body_c4a=true requires queen_feeding.individual_queen_body_c3a=true (C4a uses the C3a nest round, D1)`);
+  }
+  if (p.larval_feeding.first_seen_begging_prior_v29 && !p.larval_feeding.individual_larva_body_c4a) {
+    throw Error(`Species ${p.species_id}: larval_feeding.first_seen_begging_prior_v29=true requires larval_feeding.individual_larva_body_c4a=true`);
+  }
+  // C4b needs C4a (the larva's own account) and an Owner-chosen nutrition-response form with its own parameter
+  const ld = p.larval_development;
+  if (ld.individual_development_c4b) {
+    if (!p.larval_feeding.individual_larva_body_c4a) throw Error(`Species ${p.species_id}: larval_development.individual_development_c4b=true requires larval_feeding.individual_larva_body_c4a=true`);
+    if (ld.nutrition_response === null) throw Error(`Species ${p.species_id}: larval_development.nutrition_response is null — the form is an Owner decision (docs/design-c4b-larval-development.md §3); C4b cannot be switched on until it is chosen`);
+    if (!['clamp_linear', 'threshold', 'saturating'].includes(ld.nutrition_response)) throw Error(`Species ${p.species_id}: larval_development.nutrition_response ${JSON.stringify(ld.nutrition_response)} is not clamp_linear, threshold or saturating`);
+    if (ld.nutrition_response === 'threshold' && !(ld.threshold_theta !== null && ld.threshold_theta >= 0 && ld.threshold_theta <= 1)) throw Error(`Species ${p.species_id}: the threshold form needs larval_development.threshold_theta in [0, 1] (it is ${ld.threshold_theta})`);
+    if (ld.nutrition_response === 'saturating' && !(ld.saturation_k !== null && ld.saturation_k > 0)) throw Error(`Species ${p.species_id}: the saturating form needs larval_development.saturation_k > 0 (it is ${ld.saturation_k})`);
   }
   if (p.castes.major_worker_production_enabled) {
     throw Error(`Species ${p.species_id}: castes.major_worker_production_enabled=true is not implemented by this engine`);
