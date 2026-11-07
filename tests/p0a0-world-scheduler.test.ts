@@ -279,6 +279,32 @@ const split3 = harness(42, world(3, 12), 3, { split: true });
     internals.logEntries.push({ ...(internals.logEntries[0] as object) }); refuses(() => s5.audit(), /logged twice/, 'audit detects an event logged twice');
     internals.logEntries.pop(); internals.finishedAtRestore = 1; refuses(() => s5.audit(), /disagree/, 'audit detects log and states disagreeing');
   }
+  // Owner P2 (2026-11-07, #116): output validation failed but the batch was already partly committed. Cause: the
+  // handler's output was read twice (validate, then commit); a getter / proxy could change in between.
+  {
+    const mk2 = () => { const s = new WorldScheduler(W); for (const [k, m] of [['x', 1], ['y', 5]] as const) s.schedule({ kind: 'a', key: k, at: { day: 0, minute: m }, scope: ref(null, null), source: null, target: null }); return s; };
+    // each field of the output is read exactly once
+    const reads: Record<string, number> = {}; const count = (k: string) => { reads[k] = (reads[k] ?? 0) + 1; };
+    const s = mk2();
+    s.step((b) => { const spec = { kind: 'b', key: 'k', get at() { count('at'); return { day: 0, minute: 2 }; }, get scope() { count('scope'); return ref(null, null); }, source: null, target: null, get payload() { count('payload'); return { v: 1 }; } }; return { get children() { count('children'); return [{ get cause() { count('cause'); return b[0].id; }, spec }]; }, get cancel() { count('cancel'); return [{ id: 'a:y', get reason() { count('reason'); return 'test'; } }]; } }; });
+    ok(Object.values(reads).every((n) => n === 1) && Object.keys(reads).length === 7, `every output field is read exactly once (${JSON.stringify(reads)})`);
+    ok(s.get('a:y')!.state === 'cancelled' && s.get('a:x/b:k')!.at.minute === 2, 'the single read is what is committed');
+    // a getter that would turn valid -> invalid on a second read cannot split validation from commit
+    for (const [what, out] of [
+      ['cancel getter', (b: readonly Readonly<WorldEvent>[]) => { let n = 0; void b; return { get cancel() { return n++ === 0 ? [{ id: 'nope', reason: 'r' }] : []; } }; }],
+      ['scope getter', (b: readonly Readonly<WorldEvent>[]) => { let n = 0; return { children: [{ cause: b[0].id, spec: { kind: 'b', key: 'k', at: { day: 0, minute: 2 }, get scope() { return n++ === 0 ? { world: 'other', colony: null, individual: null } : ref(null, null); }, source: null, target: null } }] }; }],
+      ['payload getter', (b: readonly Readonly<WorldEvent>[]) => { let n = 0; return { children: [{ cause: b[0].id, spec: { kind: 'b', key: 'k', at: { day: 0, minute: 2 }, scope: ref(null, null), source: null, target: null, payload: { get v() { return n++ === 0 ? NaN : 1; } } } }] }; }],
+      ['throwing proxy', (b: readonly Readonly<WorldEvent>[]) => { let n = 0; return new Proxy({ children: [{ cause: b[0].id, spec: { kind: 'b', key: 'k', at: { day: 0, minute: 2 }, scope: ref(null, null), source: null, target: null } }], cancel: [{ id: 'nope', reason: 'r' }] }, { get(t, k) { if (n++ > 3) throw new Error('second read'); return (t as Record<string | symbol, unknown>)[k]; } }); }],
+    ] as const) {
+      const t = mk2(), before = JSON.stringify(t.snapshot());
+      assert.throws(() => t.step(out as never), (e: unknown) => e instanceof SchedulerError || /second read/.test(String(e)), `${what}: invalid output refused`); checks++;
+      ok(JSON.stringify(t.snapshot()) === before && t.audit().executed === 0 && t.log.length === 0, `${what}: nothing committed (batch still pending, no log entry)`);
+    }
+    // schedule() also reads its spec once
+    const u = new WorldScheduler(W); let n = 0;
+    refuses(() => u.schedule({ kind: 'a', key: 'g', at: { day: 0, minute: 1 }, get scope() { return n++ === 0 ? { world: 'other', colony: null, individual: null } : ref(null, null); }, source: null, target: null } as EventSpec), /not this world/, 'schedule(): a spec whose getter is invalid on its single read is refused');
+    ok(u.pending().length === 0, 'schedule(): nothing added');
+  }
   // restore refuses each inconsistency
   {
     const snap = base.s.snapshot();

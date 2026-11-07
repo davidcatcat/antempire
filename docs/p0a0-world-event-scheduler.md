@@ -7,7 +7,7 @@
 > - 沒有生物參數、沒有行為、不抽亂數。
 >
 > **程式**：`engine/scheduler/world-events.ts`
-> **測試**：`tests/p0a0-world-scheduler.test.ts`（174 項）、`tests/scheduler-isolation.test.ts`
+> **測試**：`tests/p0a0-world-scheduler.test.ts`（186 項）、`tests/scheduler-isolation.test.ts`
 > **依據**：`docs/research-design-p0a-24h-clock.md` §2.1、§3；`docs/multi-colony-timeline.md`（A09、#9）；`docs/roadmap.md` 的 P0-A／A09。
 
 ## 1. 為什麼要有共用排程器
@@ -61,6 +61,8 @@
    - 處理函式執行中，不得呼叫 `schedule`、`cancel`、`step`、`runUntil`、`runDay`、`snapshot`（拒絕重入）。只能讀取，讀到的是凍結的複本；
    - `get`、`pending`、`log` 與交給處理函式的事件都是凍結的深複本，外部改不到內部狀態。
 4. **原子性**：處理函式的輸出全部驗證通過才套用。驗證失敗或處理函式丟出錯誤時，狀態完全不變，那一批仍待處理。
+   - **只讀一次**（Owner P2，2026-11-07 更正）：前一版先讀輸出來驗證、提交時再讀一次。輸出若帶 getter 或是 Proxy，兩次讀到的值可以不同：驗證通過，提交時才失敗，批次卻已標為已執行（部分提交）；或者驗證的是合法值，存進去的卻是另一個值。
+   - 現在處理函式的輸出與 `schedule()` 的事件規格，每個欄位都**只讀一次**，複製成純資料；驗證與提交都只用這份複本。提交階段不再讀取任何生產者物件，也不會失敗。
 5. **跨日**：
    - `addMinutes` 跨越午夜時進位到下一日；
    - `runDay(d)` 只處理第 d 日的事件，之後日期的事件留在佇列中，**不在 24:00 重設**；

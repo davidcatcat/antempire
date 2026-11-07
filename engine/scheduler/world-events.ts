@@ -108,6 +108,49 @@ function checkJson(v: unknown, path: string, depth = 0): void {
   if (typeof v === 'object' && Object.getPrototypeOf(v) === Object.prototype) { for (const [k, x] of Object.entries(v as object)) checkJson(x, `${path}.${k}`, depth + 1); return; }
   fail(`payload ${path} is not JSON data`);
 }
+/*
+ * SINGLE-READ COPIES (Owner P2 2026-11-07, #116): producer objects may carry getters or be proxies, so a value read
+ * twice can differ (validated once, committed as something else). Every input is read EXACTLY ONCE into plain data,
+ * and only that copy is validated and committed.
+ */
+function copyJson(v: unknown, path: string, depth = 0): JsonValue {
+  if (depth > 32) fail(`payload too deep at ${path}`);
+  if (v === null || typeof v === 'boolean' || typeof v === 'string') return v;
+  if (typeof v === 'number') { if (!Number.isFinite(v)) fail(`payload ${path} is not a finite number`); return v; }
+  if (Array.isArray(v)) { const n = v.length, out: JsonValue[] = []; for (let i = 0; i < n; i++) out.push(copyJson(v[i], `${path}[${i}]`, depth + 1)); return out; }
+  if (typeof v === 'object' && Object.getPrototypeOf(v) === Object.prototype) { const out: Record<string, JsonValue> = {}; for (const k of Object.keys(v as object)) out[k] = copyJson((v as Record<string, unknown>)[k], `${path}.${k}`, depth + 1); return out; }
+  return fail(`payload ${path} is not JSON data`);
+}
+function copyRef(r: unknown, what: string): EntityRef | null {
+  if (r === null) return null;
+  if (r === undefined || typeof r !== 'object') return fail(`${what} must be an entity reference or null`);
+  const keys = Object.keys(r).sort().join();
+  if (keys !== 'colony,individual,world') fail(`${what} must have exactly world, colony, individual (got ${keys})`);
+  const o = r as Record<string, unknown>;
+  return { world: o.world as string, colony: o.colony as string | null, individual: o.individual as string | null };
+}
+function copySpec(spec: unknown): EventSpec {
+  if (spec === null || typeof spec !== 'object') return fail('event spec is not an object');
+  const allowed = new Set(['kind', 'key', 'at', 'scope', 'source', 'target', 'payload']), keys = Object.keys(spec);
+  for (const k of keys) if (!allowed.has(k)) fail(`event spec has an unknown field ${k}`);
+  const o = spec as Record<string, unknown>, at = o.at;
+  if (at === null || typeof at !== 'object') fail('event spec at is not a world time');
+  const a = at as Record<string, unknown>;
+  const out: EventSpec = { kind: o.kind as string, key: o.key as string, at: { day: a.day as number, minute: a.minute as number }, scope: copyRef(o.scope, 'scope') as EntityRef, source: copyRef(o.source, 'source'), target: copyRef(o.target, 'target') };
+  if (keys.includes('payload')) out.payload = copyJson(o.payload, 'payload');
+  return out;
+}
+function copyOutput(out: unknown): { children: { cause: string; spec: EventSpec }[]; cancel: Cancel[] } {
+  if (out === undefined) return { children: [], cancel: [] };
+  if (out === null || typeof out !== 'object') return fail('handler output must be an object or undefined');
+  const o = out as Record<string, unknown>, ch = o.children, ca = o.cancel;
+  if (ch !== undefined && !Array.isArray(ch)) fail('children must be an array');
+  if (ca !== undefined && !Array.isArray(ca)) fail('cancel must be an array');
+  const children: { cause: string; spec: EventSpec }[] = [], cancel: Cancel[] = [];
+  if (ch) { const n = (ch as unknown[]).length; for (let i = 0; i < n; i++) { const c = (ch as unknown[])[i]; if (c === null || typeof c !== 'object') fail('a child must be { cause, spec }'); const r = c as Record<string, unknown>; children.push({ cause: r.cause as string, spec: copySpec(r.spec) }); } }
+  if (ca) { const n = (ca as unknown[]).length; for (let i = 0; i < n; i++) { const c = (ca as unknown[])[i]; if (c === null || typeof c !== 'object') fail('a cancel needs an id and a non-empty reason'); const r = c as Record<string, unknown>; cancel.push({ id: r.id as string, reason: r.reason as string }); } }
+  return { children, cancel };
+}
 const canonJson = (v: JsonValue): JsonValue => (Array.isArray(v) ? v.map(canonJson) : v !== null && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, canonJson((v as Record<string, JsonValue>)[k])])) : v);
 const deepFreeze = <T>(v: T): T => { if (v && typeof v === 'object') { for (const x of Object.values(v as object)) deepFreeze(x); Object.freeze(v); } return v; };
 /** a frozen deep copy for readers (internal objects never leave the scheduler) */
@@ -164,15 +207,13 @@ export class WorldScheduler {
   /** the canonical id: a root is "<kind>:<key>", a child "<cause id>/<kind>:<key>" */
   static idOf(cause: string | null, kind: string, key: string): string { return `${cause === null ? '' : cause + '/'}${kind}:${key}`; }
 
+  /** spec must be a plain copy from copySpec() (read once); nothing here reads producer objects */
   private build(spec: EventSpec, cause: WorldEvent | null, batchAt: { at: WorldTime; round: number } | null): WorldEvent {
-    if (spec === null || typeof spec !== 'object') fail('event spec is not an object');
-    const allowed = new Set(['kind', 'key', 'at', 'scope', 'source', 'target', 'payload']);
-    for (const k of Object.keys(spec)) if (!allowed.has(k)) fail(`event spec has an unknown field ${k}`);
     if (!(typeof spec.kind === 'string' && KIND_RE.test(spec.kind))) fail(`event kind ${spec.kind} must match ${KIND_RE}`);
     if (!(typeof spec.key === 'string' && KEY_RE.test(spec.key))) fail(`event key ${spec.key} must match ${KEY_RE}`);
     const at = checkTime(spec.at, `${spec.kind}:${spec.key} at`);
     checkRef(spec.scope, 'scope', this.world, false); checkRef(spec.source, 'source', this.world, true); checkRef(spec.target, 'target', this.world, true);
-    const payload = spec.payload === undefined ? null : spec.payload; checkJson(payload, 'payload');
+    const payload = spec.payload === undefined ? null : spec.payload; checkJson(payload, 'payload'); // already a plain copy
     const id = WorldScheduler.idOf(cause ? cause.id : null, spec.kind, spec.key);
     let round = 0;
     if (cause && batchAt) {
@@ -187,7 +228,7 @@ export class WorldScheduler {
     return {
       id, kind: spec.kind, key: spec.key, at, round,
       scope: { ...spec.scope }, source: spec.source ? { ...spec.source } : null, target: spec.target ? { ...spec.target } : null,
-      payload: deepFreeze(canonJson(JSON.parse(JSON.stringify(payload)) as JsonValue)), cause: cause ? cause.id : null,
+      payload: deepFreeze(canonJson(payload)), cause: cause ? cause.id : null,
       state: 'scheduled', cancelled_by: null, cancel_reason: null,
     };
   }
@@ -195,13 +236,13 @@ export class WorldScheduler {
   /** schedule a ROOT event (a world input, no cause) from outside a batch. Returns its id. */
   schedule(spec: EventSpec): string {
     this.guard('schedule');
-    const e = this.build(spec, null, null);
+    const e = this.build(copySpec(spec), null, null);
     if (this.events.has(e.id)) fail(`duplicate event id ${e.id}`);
     this.events.set(e.id, e); this.heap.push(e); return e.id;
   }
 
   /** cancel a pending event from outside a batch */
-  cancel(id: string, reason: string): void { this.guard('cancel'); this.applyCancels([{ id, reason }], null, new Set()); }
+  cancel(id: string, reason: string): void { this.guard('cancel'); const cs = [{ id, reason }]; this.checkCancels(cs, new Set()); this.applyCancels(cs, null); }
 
   private checkCancels(cs: Cancel[], inBatch: Set<string>): void {
     if (!Array.isArray(cs)) fail('cancel must be an array');
@@ -216,8 +257,8 @@ export class WorldScheduler {
       seen.add(c.id);
     }
   }
-  private applyCancels(cs: Cancel[], by: string | null, inBatch: Set<string>): void {
-    this.checkCancels(cs, inBatch);
+  /** commit only: callers have validated cs with checkCancels on the same plain copy */
+  private applyCancels(cs: Cancel[], by: string | null): void {
     for (const c of [...cs].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))) {
       const e = this.events.get(c.id)!; e.state = 'cancelled'; e.cancelled_by = by; e.cancel_reason = c.reason;
       this.logEntries.push({ seq: this.seq++, id: e.id, kind: e.kind, at: { ...e.at }, round: e.round, cause: e.cause, state: 'cancelled', by, reason: c.reason });
@@ -241,27 +282,29 @@ export class WorldScheduler {
     const batch: WorldEvent[] = [];
     while (this.heap.size) { this.dropCancelledTop(); const t = this.heap.peek(); if (!t || compareTime(t.at, top.at) !== 0 || t.round !== top.round) break; batch.push(this.heap.pop()!); }
     const inBatch = new Set(batch.map((e) => e.id)), restore = () => { for (const e of batch) this.heap.push(e); };
-    let out: StepOutput | void;
+    let raw: StepOutput | void;
     this.inHandler = true;
-    try { out = handler(view(batch), { at: { ...top.at }, round: top.round }); }
+    try { raw = handler(view(batch), { at: { ...top.at }, round: top.round }); }
     catch (err) { restore(); throw err; }
     finally { this.inHandler = false; }
+    // read the output ONCE into plain data, validate that copy in full, and commit only that copy (atomic batch)
+    let out: ReturnType<typeof copyOutput>;
     const children: WorldEvent[] = [], newIds = new Set<string>();
     try {
-      if (out !== undefined && (out === null || typeof out !== 'object')) fail('handler output must be an object or undefined');
-      if (out && out.children !== undefined && !Array.isArray(out.children)) fail('children must be an array');
-      for (const c of out?.children ?? []) {
-        if (!c || typeof c.cause !== 'string' || !inBatch.has(c.cause)) fail(`a child must name a cause in the current batch (got ${c && c.cause})`);
+      out = copyOutput(raw);
+      for (const c of out.children) {
+        if (typeof c.cause !== 'string' || !inBatch.has(c.cause)) fail(`a child must name a cause in the current batch (got ${c.cause})`);
         const e = this.build(c.spec, this.events.get(c.cause)!, top);
         if (this.events.has(e.id) || newIds.has(e.id)) fail(`duplicate event id ${e.id}`);
         newIds.add(e.id); children.push(e);
       }
-      this.checkCancels(out?.cancel ?? [], inBatch);
+      this.checkCancels(out.cancel, inBatch);
     } catch (err) { restore(); throw err; }
+    // nothing below can fail: every value was validated above and is no longer read from the producer
     // commit: the batch executes, then its cancellations, then its children are queued
     this.started = true; this.clockAt = { ...top.at }; this.clockRound = top.round;
     for (const e of batch) { e.state = 'executed'; this.logEntries.push({ seq: this.seq++, id: e.id, kind: e.kind, at: { ...e.at }, round: e.round, cause: e.cause, state: 'executed', by: null, reason: null }); }
-    this.applyCancels(out?.cancel ?? [], batch.length === 1 ? batch[0].id : `batch@${fmt(top.at)}#${top.round}`, inBatch);
+    this.applyCancels(out.cancel, batch.length === 1 ? batch[0].id : `batch@${fmt(top.at)}#${top.round}`);
     for (const e of children) { this.events.set(e.id, e); this.heap.push(e); }
     return view(batch);
   }
