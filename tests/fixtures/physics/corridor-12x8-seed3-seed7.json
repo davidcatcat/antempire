@@ -1,0 +1,276 @@
+{
+ "schema": "antempire.physics-counterexample.v1",
+ "synthetic": true,
+ "title": "Two-way single-file corridor, 12 seeds x 8 ants (tests/ph2-collision.test.ts section 9b): seeds 3 and 7",
+ "geometry_ref": "scenarios/physics/narrow-corridor.geometry.json",
+ "source": "Generated exactly as tests/ph2-collision.test.ts section 9b (rng(seed); per ant: speed 15 + 4u, then start 8u; minor body from body-candidates, width = upper candidate; reach = lower candidate + 0.5 mm; encounter rules from interaction-candidates with inside_turn_back_probability = candidate_values[1]). Recorded 2026-11-06 on branch claude/ant-empire-engine-refactor-i45q93-ph-p2d.",
+ "observation": "Since the PH-P2-B fix (PR #98) these two seeds end with the four outbound ants (A0, A2, A4, A6) reported unresolved: \"mutual wait, every ant blocked ahead\". At that instant all four stand at the same precomputed back-out point s = 18.1255002 mm (front 1e-6 mm outside the single-file section [19.3755, 80.6245]); their arc lengths differ only by rounding (<= 1.5e-14 mm), so which of them is \"ahead\" of another is decided by the sign of a rounding difference. Before PH-P2-B, boundary arrivals ~0.5 ns apart were merged into one instant and handled early, which produced an \"arrived together\" draw and all 96 ants arrived. Classification: a numerical degeneracy of the 1-D entry-queue solver (abreast ants at coincident arc lengths; lateral position not modelled), not a geometric deadlock and not a scheduling artefact. Kept as an explicit counterexample on Owner instruction (#100); not tuned away.",
+ "cases": {
+  "seed-3": {
+   "seed": 3,
+   "horizon_s": 120,
+   "encounter": {
+    "priority": "entry_yield",
+    "entry_yield_probability": 0.957346,
+    "laden_yield_probability": 0.98,
+    "contact_pause_s": null,
+    "inside_turn_back_probability": 0.5
+   },
+   "agents": [
+    {
+     "id": "A0",
+     "passage": "P-corridor",
+     "s_mm": 2,
+     "dir": 1,
+     "start_t_s": 0.3092972841113806,
+     "free_speed_mm_s": 17.88090713508427,
+     "goal_s_mm": 98,
+     "body": {
+      "length_mm": 2.5,
+      "width_mm": 0.8,
+      "contact_reach_mm": 1
+     },
+     "load": null
+    },
+    {
+     "id": "A1",
+     "passage": "P-corridor",
+     "s_mm": 98,
+     "dir": -1,
+     "start_t_s": 0.5994240771979094,
+     "free_speed_mm_s": 16.824768770486116,
+     "goal_s_mm": 2,
+     "body": {
+      "length_mm": 2.5,
+      "width_mm": 0.8,
+      "contact_reach_mm": 1
+     },
+     "load": null
+    },
+    {
+     "id": "A2",
+     "passage": "P-corridor",
+     "s_mm": 5,
+     "dir": 1,
+     "start_t_s": 3.849443342536688,
+     "free_speed_mm_s": 18.05202155932784,
+     "goal_s_mm": 98,
+     "body": {
+      "length_mm": 2.5,
+      "width_mm": 0.8,
+      "contact_reach_mm": 1
+     },
+     "load": null
+    },
+    {
+     "id": "A3",
+     "passage": "P-corridor",
+     "s_mm": 95,
+     "dir": -1,
+     "start_t_s": 1.2944045327603817,
+     "free_speed_mm_s": 16.946918298490345,
+     "goal_s_mm": 2,
+     "body": {
+      "length_mm": 2.5,
+      "width_mm": 0.8,
+      "contact_reach_mm": 1
+     },
+     "load": null
+    },
+    {
+     "id": "A4",
+     "passage": "P-corridor",
+     "s_mm": 8,
+     "dir": 1,
+     "start_t_s": 4.420857796445489,
+     "free_speed_mm_s": 16.053025073371828,
+     "goal_s_mm": 98,
+     "body": {
+      "length_mm": 2.5,
+      "width_mm": 0.8,
+      "contact_reach_mm": 1
+     },
+     "load": null
+    },
+    {
+     "id": "A5",
+     "passage": "P-corridor",
+     "s_mm": 92,
+     "dir": -1,
+     "start_t_s": 0.6687430534511805,
+     "free_speed_mm_s": 15.779665007255971,
+     "goal_s_mm": 2,
+     "body": {
+      "length_mm": 2.5,
+      "width_mm": 0.8,
+      "contact_reach_mm": 1
+     },
+     "load": null
+    },
+    {
+     "id": "A6",
+     "passage": "P-corridor",
+     "s_mm": 11,
+     "dir": 1,
+     "start_t_s": 3.8138243090361357,
+     "free_speed_mm_s": 17.85514956433326,
+     "goal_s_mm": 98,
+     "body": {
+      "length_mm": 2.5,
+      "width_mm": 0.8,
+      "contact_reach_mm": 1
+     },
+     "load": null
+    },
+    {
+     "id": "A7",
+     "passage": "P-corridor",
+     "s_mm": 89,
+     "dir": -1,
+     "start_t_s": 7.038186615332961,
+     "free_speed_mm_s": 18.174928232096136,
+     "goal_s_mm": 2,
+     "body": {
+      "length_mm": 2.5,
+      "width_mm": 0.8,
+      "contact_reach_mm": 1
+     },
+     "load": null
+    }
+   ]
+  },
+  "seed-7": {
+   "seed": 7,
+   "horizon_s": 120,
+   "encounter": {
+    "priority": "entry_yield",
+    "entry_yield_probability": 0.957346,
+    "laden_yield_probability": 0.98,
+    "contact_pause_s": null,
+    "inside_turn_back_probability": 0.5
+   },
+   "agents": [
+    {
+     "id": "A0",
+     "passage": "P-corridor",
+     "s_mm": 2,
+     "dir": 1,
+     "start_t_s": 0.4956660605967045,
+     "free_speed_mm_s": 15.046819012612104,
+     "goal_s_mm": 98,
+     "body": {
+      "length_mm": 2.5,
+      "width_mm": 0.8,
+      "contact_reach_mm": 1
+     },
+     "load": null
+    },
+    {
+     "id": "A1",
+     "passage": "P-corridor",
+     "s_mm": 98,
+     "dir": -1,
+     "start_t_s": 5.592229645699263,
+     "free_speed_mm_s": 18.90763053111732,
+     "goal_s_mm": 2,
+     "body": {
+      "length_mm": 2.5,
+      "width_mm": 0.8,
+      "contact_reach_mm": 1
+     },
+     "load": null
+    },
+    {
+     "id": "A2",
+     "passage": "P-corridor",
+     "s_mm": 5,
+     "dir": 1,
+     "start_t_s": 3.2441735044121742,
+     "free_speed_mm_s": 17.085781074129045,
+     "goal_s_mm": 98,
+     "body": {
+      "length_mm": 2.5,
+      "width_mm": 0.8,
+      "contact_reach_mm": 1
+     },
+     "load": null
+    },
+    {
+     "id": "A3",
+     "passage": "P-corridor",
+     "s_mm": 95,
+     "dir": -1,
+     "start_t_s": 1.9194014873355627,
+     "free_speed_mm_s": 16.86493053007871,
+     "goal_s_mm": 2,
+     "body": {
+      "length_mm": 2.5,
+      "width_mm": 0.8,
+      "contact_reach_mm": 1
+     },
+     "load": null
+    },
+    {
+     "id": "A4",
+     "passage": "P-corridor",
+     "s_mm": 8,
+     "dir": 1,
+     "start_t_s": 5.838576719164848,
+     "free_speed_mm_s": 17.213302415795624,
+     "goal_s_mm": 98,
+     "body": {
+      "length_mm": 2.5,
+      "width_mm": 0.8,
+      "contact_reach_mm": 1
+     },
+     "load": null
+    },
+    {
+     "id": "A5",
+     "passage": "P-corridor",
+     "s_mm": 92,
+     "dir": -1,
+     "start_t_s": 1.2475869115442038,
+     "free_speed_mm_s": 16.03126224409789,
+     "goal_s_mm": 2,
+     "body": {
+      "length_mm": 2.5,
+      "width_mm": 0.8,
+      "contact_reach_mm": 1
+     },
+     "load": null
+    },
+    {
+     "id": "A6",
+     "passage": "P-corridor",
+     "s_mm": 11,
+     "dir": 1,
+     "start_t_s": 4.147220365703106,
+     "free_speed_mm_s": 18.056359546259046,
+     "goal_s_mm": 98,
+     "body": {
+      "length_mm": 2.5,
+      "width_mm": 0.8,
+      "contact_reach_mm": 1
+     },
+     "load": null
+    },
+    {
+     "id": "A7",
+     "passage": "P-corridor",
+     "s_mm": 89,
+     "dir": -1,
+     "start_t_s": 2.943668747320771,
+     "free_speed_mm_s": 15.788549040444195,
+     "goal_s_mm": 2,
+     "body": {
+      "length_mm": 2.5,
+      "width_mm": 0.8,
+      "contact_reach_mm": 1
+     },
+     "load": null
+    }
+   ]
+  }
+ }
+}
