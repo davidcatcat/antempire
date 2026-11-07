@@ -119,6 +119,12 @@
 - Rapier 的參數（摩擦 0、恢復 0、密度 1、預設積分參數 `lengthUnit` 1＝1 mm、允許誤差 0.005 mm、預測距離 0.02 mm、解算迭代 4）都是預設或數值選擇，**沒有調參**；結果在每個輸出檔的 `params` 中。
 - 沒有網頁播放、沒有 Pixi。
 
+## 6b. 模擬終點（Owner P2，2026-11-07 更正）
+- 前一版 Rapier 跑 `Math.round(H / dt)` 步：dt 不整除 H 時，最後一步可能**超過**終點（H = 1 s、dt = 0.4 s 會跑到 1.2 s，終點之後的抵達仍被計入），也可能**不到**終點（dt = 0.3 s 停在 0.9 s）。
+- 現在：整步 dt 之後，以一個較短的最後一步剛好停在 H；只有 t ≤ H 的抵達才算。裁判另外把 t > H 的抵達改為 `null`，列在 `arrivals_after_horizon_excluded`；輸出的 `cost.simulated_until_s` 等於 H。
+- 已提交的輸出不受影響：所有情境的 H（10、20、40、120 s）都是所用 dt（1/60、1/120、1/240 s）的整數倍；重跑小情境的軌跡雜湊與抵達時間逐位元相同。
+- 測試：`tests/solver-compare.test.ts` 用 dt ∈ {0.3, 0.4, 0.07, 1/120} 與抵達前後的 H 檢查；舊程式在這些檢查上失敗。
+
 ## 7. 執行
 ```
 cd prototypes/solver-compare && npm ci            # 只裝本子專案（Rapier 0.21.0）

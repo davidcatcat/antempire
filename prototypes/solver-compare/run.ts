@@ -37,7 +37,7 @@ export function nativeReport(sc: Scenario, o: { dense?: number | null; traj?: bo
   const hasU = sc.agents.some((a) => a.u_mm !== 0);
   const jSpecU = hasU && small ? judge(sc, toTrajectory(sc, run1.res, { u: 'spec' }), { occupancy2d: true }) : null;
   const other = toTrajectory(sc, runNative(sc, sc.seed + 1).res);
-  const solo = small ? Object.fromEntries(sc.agents.map((a) => { const s1 = { ...sc, agents: [a] }; const t = toTrajectory(s1, runNative(s1).res).agents[a.id].arrival_t_s; return [a.id, t === null ? null : t - analytic(sc)[a.id]]; })) : null;
+  const solo = small ? Object.fromEntries(sc.agents.map((a) => { const s1 = { ...sc, agents: [a] }; const t = toTrajectory(s1, runNative(s1).res).agents[a.id].arrival_t_s; return [a.id, t === null || t > sc.horizon_s ? null : t - analytic(sc)[a.id]]; })) : null;
   return {
     solver: 'native', model: 'engine/physics/collision.ts simulate() — PH-1 lanes, MV-1 piecewise-constant kinematics, PH-2 encounter rules; event-driven, exact event times',
     lateral_dof: false, lateral_note: 'native 1-D model: u = 0 imposed (no lateral coordinate); the 2-D judge therefore sees every wide-lane pass as bodies on one centre-line',
@@ -56,7 +56,7 @@ export async function rapierReport(sc: Scenario, o: { dt?: number; ccd?: boolean
     const r1 = await runRapier(sc, { dt_s: dts, ccd }), r2 = await runRapier(sc, { dt_s: dts, ccd }), rr = await runRapier(sc, { dt_s: dts, ccd, reverse_order: true });
     const j = judge(sc, r1.tr, { occupancy2d: small }), jd = dense ? judge(sc, r1.tr, { dense_dt_s: dense }) : null;
     const an = analytic(sc);
-    const solo = small ? Object.fromEntries(await Promise.all(sc.agents.map(async (a) => { const t = (await runRapier(sc, { dt_s: dts, ccd, only: [a.id] })).tr.agents[a.id].arrival_t_s; return [a.id, t === null ? null : t - an[a.id]] as const; }))) : null;
+    const solo = small ? Object.fromEntries(await Promise.all(sc.agents.map(async (a) => { const t = (await runRapier(sc, { dt_s: dts, ccd, only: [a.id] })).tr.agents[a.id].arrival_t_s; return [a.id, t === null || t > sc.horizon_s ? null : t - an[a.id]] as const; }))) : null;
     return { dt_s: dts, ccd, params: r1.params, cost: r2.cost, cost_first_run: r1.cost, cost_note: 'cost = second (warm) run of the same dt; cost_first_run may include WASM warm-up', replay: { rerun_identical: hashTraj(r1.tr) === hashTraj(r2.tr), creation_order_reversed_identical: hashTraj(r1.tr) === hashTraj(rr.tr), hash: hashTraj(r1.tr), seed_note: 'no random draw in the Rapier run: the scenario seed has no effect' }, events: counts(r1.tr), arrivals: j.arrivals, solo_arrival_minus_analytic_s: solo, judge: j, judge_dense: jd ? { dense_dt_s: dense, ...jd } : null, tr: r1.tr };
   };
   const main = await one(dt);

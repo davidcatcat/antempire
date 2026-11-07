@@ -36,7 +36,9 @@ export interface JudgeResult {
   obstacle_violation_agent_instants: number; max_obstacle_penetration_mm: number; obstacle_depth_note: string;
   max_abs_u_mm: number;
   occupancy2d: null | { instants: number; outside_lane: number; not_checked: number; overlap: number; note: string };
+  /** arrival times at or before the horizon only; an arrival after the end of the simulated interval is not an arrival */
   arrivals: Record<string, number | null>;
+  arrivals_after_horizon_excluded: string[];
   judge_wall_ms: number;
 }
 
@@ -51,7 +53,7 @@ export function judge(sc: Scenario, tr: Trajectory, opts: JudgeOptions = {}): Ju
   const hints = A.map(() => ({ i: 0 }));
   const capsAt = (t: number) => A.map((a, i) => { const p = posAt(a.samples, t, hints[i]); return { p, c: capsuleOf({ x: p.x, y: p.y, heading_rad: p.heading }, body) }; });
   const shift = (c: Capsule, dx: number, dy: number, tt: number): Capsule => ({ a: { x: c.a.x + dx * tt, y: c.a.y + dy * tt }, b: { x: c.b.x + dx * tt, y: c.b.y + dy * tt }, r: c.r });
-  const r: JudgeResult = { instants: times.length, pieces: Math.max(0, times.length - 1), pair_checks: 0, overlap_pair_instants: 0, max_penetration_mm: 0, overlap_between_instants: 0, max_penetration_between_mm: 0, body_contact_episodes: 0, body_contacts_only_between_instants: 0, first_body_contact_t_s: null, reach_contact_episodes: 0, first_reach_contact_t_s: null, out_of_walkable_agent_instants: 0, not_checked_agent_instants: 0, junction_not_checked_agent_instants: 0, max_out_of_walkable_mm: 0, out_of_walkable_gt_coarse: 0, overlap_pair_instants_gt_coarse: 0, obstacle_violation_gt_coarse: 0, coarse_tol_mm: COARSE_TOL_MM, overlap_pair_instants_wide_section: 0, overlap_between_instants_wide_section: 0, obstacle_violation_agent_instants: 0, max_obstacle_penetration_mm: 0, obstacle_depth_note: 'circle: exact depth; polygon: a capsule whose axis touches or enters the polygon is reported with depth ≥ its radius (lower bound)', max_abs_u_mm: 0, occupancy2d: null, arrivals: Object.fromEntries(ids.map((id) => [id, tr.agents[id].arrival_t_s])), judge_wall_ms: 0 };
+  const r: JudgeResult = { instants: times.length, pieces: Math.max(0, times.length - 1), pair_checks: 0, overlap_pair_instants: 0, max_penetration_mm: 0, overlap_between_instants: 0, max_penetration_between_mm: 0, body_contact_episodes: 0, body_contacts_only_between_instants: 0, first_body_contact_t_s: null, reach_contact_episodes: 0, first_reach_contact_t_s: null, out_of_walkable_agent_instants: 0, not_checked_agent_instants: 0, junction_not_checked_agent_instants: 0, max_out_of_walkable_mm: 0, out_of_walkable_gt_coarse: 0, overlap_pair_instants_gt_coarse: 0, obstacle_violation_gt_coarse: 0, coarse_tol_mm: COARSE_TOL_MM, overlap_pair_instants_wide_section: 0, overlap_between_instants_wide_section: 0, obstacle_violation_agent_instants: 0, max_obstacle_penetration_mm: 0, obstacle_depth_note: 'circle: exact depth; polygon: a capsule whose axis touches or enters the polygon is reported with depth ≥ its radius (lower bound)', max_abs_u_mm: 0, occupancy2d: null, arrivals: Object.fromEntries(ids.map((id) => { const t = tr.agents[id].arrival_t_s; return [id, t !== null && t <= sc.horizon_s ? t : null]; })), arrivals_after_horizon_excluded: ids.filter((id) => { const t = tr.agents[id].arrival_t_s; return t !== null && t > sc.horizon_s; }), judge_wall_ms: 0 };
   const touching = new Set<string>(), reaching = new Set<string>();
   const lanesByLayer = new Map<string, LaneFrame[]>();
   for (const l of sc.lanes) { const list = lanesByLayer.get(l.layer) ?? []; list.push(frames.get(l.passage.id)!); lanesByLayer.set(l.layer, list); }

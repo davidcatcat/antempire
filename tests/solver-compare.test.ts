@@ -56,6 +56,16 @@ const file = (id: string): ScenarioFile => JSON.parse(fs.readFileSync(scenarioPa
   ok(Math.abs(j.first_body_contact_t_s! - tc) < 1e-9, `swept contact time ${j.first_body_contact_t_s} = analytic ${tc}`);
 }
 
+// ---- Owner P2 (2026-11-07): an arrival after the simulated horizon is not an arrival
+{
+  const sc = loadScenario('crossing');
+  const mk = (t: number | null): Trajectory => ({ solver: 'native', scenario: 'horizon', lateral_dof: true, notes: [], events: [], agents: {
+    E: { lane: 'P-east-west', layer: 'z=0', arrival_t_s: t, final_mode: 'x', samples: [[0, 200, 0, 0, 200, 0], [1, 210, 0, 0, 210, 0]] } } });
+  const late = judge({ ...sc, horizon_s: 1 }, mk(1.1)), edge = judge({ ...sc, horizon_s: 1 }, mk(1)), early = judge({ ...sc, horizon_s: 1 }, mk(0.5));
+  ok(late.arrivals.E === null && late.arrivals_after_horizon_excluded.join() === 'E', 'judge: an arrival at 1.1 s with horizon 1 s is not counted, and is listed as excluded');
+  ok(edge.arrivals.E === 1 && early.arrivals.E === 0.5 && edge.arrivals_after_horizon_excluded.length === 0, 'judge: arrivals at or before the horizon are kept (1 s, 0.5 s)');
+}
+
 // ---- native runner on the four comparison scenarios
 for (const id of ['head-on-2', 'corridor-8', 'stone', 'crossing']) {
   const sc = loadScenario(id), r = nativeReport(sc, { dense: id === 'head-on-2' ? 0.002 : null });
@@ -80,5 +90,15 @@ if (R) {
   const sc = loadScenario('head-on-2'), a = await runRapier(sc, { dt_s: 1 / 120, ccd: false }), b = await runRapier(sc, { dt_s: 1 / 120, ccd: false });
   ok(JSON.stringify(a.tr.agents) === JSON.stringify(b.tr.agents), 'Rapier head-on: rerun identical');
   ok(a.tr.lateral_dof && a.tr.events.every((e) => e.class !== 'behavioural_response'), 'Rapier: lateral DOF, no behavioural responses');
+  // Owner P2 counterexample: the step count was Math.round(H/dt), so H = 1, dt = 0.4 ran to 1.2 s and could count an arrival
+  // after the horizon (dt = 0.3 stopped at 0.9 s). Now the steps end exactly at H and no counted arrival exceeds it.
+  const solo = await runRapier(sc, { dt_s: 1 / 120, ccd: false, only: ['W2'] }), tStar = solo.tr.agents.W2.arrival_t_s as number;
+  ok(tStar !== null && tStar < sc.horizon_s, `Rapier solo W2 arrives at ${tStar} s within the scenario horizon`);
+  for (const dt of [0.3, 0.4, 0.07, 1 / 120]) for (const H of [tStar - 0.5 * dt, tStar - 0.05, tStar + 0.05, tStar + 0.6 * dt]) {
+    const r = await runRapier({ ...sc, horizon_s: H }, { dt_s: dt, ccd: false, only: ['W2'] }), t = r.tr.agents.W2.arrival_t_s, last = r.tr.agents.W2.samples.at(-1)![0];
+    ok(Math.abs(r.cost.simulated_until_s - H) < 1e-12 && Math.abs(last - H) < 1e-12 && r.tr.agents.W2.samples.every((q) => q[0] <= H + 1e-12), `Rapier dt=${dt.toFixed(4)} H=${H.toFixed(4)}: steps end exactly at the horizon (last sample ${last.toFixed(6)})`);
+    ok(t === null || t <= H, `Rapier dt=${dt.toFixed(4)} H=${H.toFixed(4)}: no counted arrival after the horizon (${t})`);
+    if (H < tStar - 0.04) ok(t === null, `Rapier dt=${dt.toFixed(4)} H=${H.toFixed(4)} < solo arrival ${tStar.toFixed(4)}: not arrived`);
+  }
 } else console.error('Rapier not installed in prototypes/solver-compare: Rapier checks skipped (native side and judge fully checked)');
 console.log(JSON.stringify({ solver_compare: 'pass', checks, rapier: R ? 'checked' : 'skipped (not installed)' }, null, 2));

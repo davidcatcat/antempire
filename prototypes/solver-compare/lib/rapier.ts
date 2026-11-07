@@ -95,7 +95,10 @@ export async function runRapier(sc: Scenario, o: RapierOptions) {
     return { a, f, body, goal, heading: p.heading, samples: [[0, p.x, p.y, p.heading, s0.s, s0.u]] as Sample[], arrived: null as number | null };
   });
   const eq = new RA.EventQueue(true), events: TrajEvent[] = [];
-  const nSteps = Math.round(sc.horizon_s / dt);
+  // Steps cover exactly [0, horizon]: whole steps of dt, then one shorter final step ending AT the horizon when dt does not
+  // divide it. (Owner P2 2026-11-07: Math.round(H/dt) steps could end after the horizon — H = 1, dt = 0.4 ran to 1.2 s and
+  // counted arrivals after the end — or before it — dt = 0.3 stopped at 0.9 s.)
+  const H = sc.horizon_s, nSteps = Math.ceil(H / dt - 1e-9), rem = H - (nSteps - 1) * dt, lastStep = Math.abs(rem - dt) <= 1e-9 * dt ? dt : rem; // dt divides H: keep the step bit-identical
   let rawContacts = 0;
   for (let n = 0; n < nSteps; n++) {
     const t = n * dt;
@@ -107,8 +110,9 @@ export async function runRapier(sc: Scenario, o: RapierOptions) {
       }
       r.body.setLinvel({ x: vx, y: vy }, true);
     }
+    const t1 = n === nSteps - 1 ? H : (n + 1) * dt;
+    if (n === nSteps - 1 && lastStep !== dt) world.timestep = lastStep;
     world.step(eq);
-    const t1 = (n + 1) * dt;
     eq.drainCollisionEvents((h1: number, h2: number, started: boolean) => {
       rawContacts++;
       const ids = [names.get(h1) ?? `?${h1}`, names.get(h2) ?? `?${h2}`].sort();
@@ -117,7 +121,7 @@ export async function runRapier(sc: Scenario, o: RapierOptions) {
     for (const r of rt) {
       const q = r.body.translation(), pr = project(r.f, q.x, q.y), prev = r.samples[r.samples.length - 1];
       r.samples.push([t1, q.x, q.y, r.heading, pr.s, pr.u]);
-      if (r.arrived === null && t1 >= r.a.start_t_s && (pr.s - r.a.goal_s_mm) * r.a.dir >= 0) {
+      if (r.arrived === null && t1 >= r.a.start_t_s && t1 <= H && (pr.s - r.a.goal_s_mm) * r.a.dir >= 0) {
         // crossing time interpolated inside the step (the step itself is the solver's resolution)
         const f0 = (prev[4] - r.a.goal_s_mm) * r.a.dir, f1 = (pr.s - r.a.goal_s_mm) * r.a.dir;
         r.arrived = f1 === f0 ? t1 : prev[0] + (t1 - prev[0]) * (-f0 / (f1 - f0));
@@ -134,5 +138,5 @@ export async function runRapier(sc: Scenario, o: RapierOptions) {
     agents: Object.fromEntries([...rt].sort((x, y) => (x.a.id < y.a.id ? -1 : 1)).map((r) => [r.a.id, { lane: r.a.passage, layer: r.a.layer, samples: r.samples, arrival_t_s: r.arrived, final_mode: r.arrived !== null ? 'arrived' : 'not_arrived' }])),
     events,
   };
-  return { tr, params, cost: { wall_ms, cpu_user_ms: cpu.user / 1000, cpu_system_ms: cpu.system / 1000, heap_used_delta_mb: (m1.heapUsed - m0.heapUsed) / 2 ** 20, array_buffers_mb: m1.arrayBuffers / 2 ** 20, rss_mb: m1.rss / 2 ** 20, steps: nSteps, raw_collision_events: rawContacts } };
+  return { tr, params, cost: { wall_ms, cpu_user_ms: cpu.user / 1000, cpu_system_ms: cpu.system / 1000, heap_used_delta_mb: (m1.heapUsed - m0.heapUsed) / 2 ** 20, array_buffers_mb: m1.arrayBuffers / 2 ** 20, rss_mb: m1.rss / 2 ** 20, steps: nSteps, last_step_s: lastStep, simulated_until_s: (nSteps - 1) * dt + lastStep, raw_collision_events: rawContacts } };
 }
