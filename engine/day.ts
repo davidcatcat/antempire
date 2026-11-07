@@ -14,6 +14,7 @@ import { consume, storageOverflow } from './nutrition.ts';
 import { developBrood } from './brood.ts';
 import { oviposition, queenSurvival, workerSurvival } from './queen.ts';
 import { checkQueenRound, ensureQueens, expectedInitBasis, nestRound, queenMetabolism, queenRoundStart, type QueenRoundStart, type RoundResult } from './queen-feeding.ts';
+import { checkLarvaRound, ensureBroodRecords, larvaMetabolism, larvaRoundStart, type LarvaRoundStart } from './larva-feeding.ts';
 import { bindFoodTransfers, checkColonyFood, checkSources, colonySnapshot, foodTimingFor, sourceSnapshot } from './transfers.ts';
 import { checkColonyDomain, checkEventDomain, checkParamDomain, checkPopulationDay, checkRngInputs, populationSnapshot } from './invariants.ts';
 import { resolveBundle, type ParamBundle, type ResolvedParams, type SpeciesParams } from './params.ts';
@@ -51,8 +52,12 @@ import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from '
  *   v2-review.27 (Issue #82): with weather_rules.rh_offsets_balanced_v27 on, the relative-humidity wet/dry offsets are centred
  *     on the day's rain prior (as the temperature offset is), so their long-run mean is 0. Read by no ant mechanism.
  *     Introduced OFF: every output byte-identical to v2-review.26.
+ *   v2-review.28 (C4a, Issue #81, docs/design-c4-larval-nutrition.md §7.0 D1–D8): with larval_feeding.individual_larva_body_c4a
+ *     on (requires C3a), each larva has its own account (larva_body), fed only in the C3a nest round after a larva_contact
+ *     (feed_larva), pays its own metabolism, and begs from its own intake; hatch is an accounting record only. Development
+ *     and starvation keep the old rules (C4b/C4c). Introduced OFF: every output byte-identical to v2-review.27.
  */
-export const ENGINE_VERSION = 'antempire.v2-review.27-rh-offsets';
+export const ENGINE_VERSION = 'antempire.v2-review.28-c4a-larva-body';
 /** Implementation of that behaviour (bumped for refactors that keep results byte-identical). */
 export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
 /**
@@ -61,7 +66,7 @@ export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
  */
 const ENGINE_FIRST_STATE_DAY = 0;
 
-export const NATURAL_EVENT_TYPES: ReadonlySet<string> = new Set(['new_food_source', 'source_batch_consumed', 'food_delivered', 'insect_immigration', 'insect_natural_death', 'insect_population_birth', 'insect_background_death', 'physical_scout_visit', 'discovery', 'scouted_empty', 'nest_local_route_learning', 'local_contact_cue', 'local_brood_begging_contact', 'local_unloading_feedback', 'host_plant_death', 'hemipteran_colony_change', 'local_recruitment', 'route_step', 'route_timeout', 'trail_decay', 'trail_deposited', 'local_trail_choice', 'food_collected', 'trophallaxis', 'protein_cached_at_nest', 'live_prey_encounter', 'prey_escaped', 'local_alarm_signal', 'long_range_recruitment_trail', 'hunt_recruitment', 'joint_prey_transport', 'waiting_prey_joined', 'route_memory_initialized', 'worker_activity', 'forager_stopped', 'action_cancelled_no_time', 'no_route_cannot_depart', 'recruitment_no_nestmate', 'recruitment_failed', 'exploration_step', 'exploration_no_new_direction', 'exploration_found_nothing', 'trail_lost', 'insect_predation', 'food_transfer', 'hatch', 'pupation', 'eclosion', 'egg_laid', 'worker_death', 'brood_death', 'injury_recovery', 'queen_death', 'queen_body_initialized', 'nest_move', 'queen_contact', 'queen_feeding_refused', 'queen_encounter_food', 'queen_nutrition', 'source_flow']);
+export const NATURAL_EVENT_TYPES: ReadonlySet<string> = new Set(['new_food_source', 'source_batch_consumed', 'food_delivered', 'insect_immigration', 'insect_natural_death', 'insect_population_birth', 'insect_background_death', 'physical_scout_visit', 'discovery', 'scouted_empty', 'nest_local_route_learning', 'local_contact_cue', 'local_brood_begging_contact', 'local_unloading_feedback', 'host_plant_death', 'hemipteran_colony_change', 'local_recruitment', 'route_step', 'route_timeout', 'trail_decay', 'trail_deposited', 'local_trail_choice', 'food_collected', 'trophallaxis', 'protein_cached_at_nest', 'live_prey_encounter', 'prey_escaped', 'local_alarm_signal', 'long_range_recruitment_trail', 'hunt_recruitment', 'joint_prey_transport', 'waiting_prey_joined', 'route_memory_initialized', 'worker_activity', 'forager_stopped', 'action_cancelled_no_time', 'no_route_cannot_depart', 'recruitment_no_nestmate', 'recruitment_failed', 'exploration_step', 'exploration_no_new_direction', 'exploration_found_nothing', 'trail_lost', 'insect_predation', 'food_transfer', 'hatch', 'pupation', 'eclosion', 'egg_laid', 'worker_death', 'brood_death', 'injury_recovery', 'queen_death', 'queen_body_initialized', 'nest_move', 'queen_contact', 'queen_feeding_refused', 'queen_encounter_food', 'queen_nutrition', 'source_flow', 'brood_nutrition_record_initialized', 'larva_contact', 'larva_hatch_nutrition', 'larva_nutrition']);
 
 /** Structural validation of a world (legacy error messages preserved). */
 export function validateWorld(s: WorldState): void {
@@ -124,6 +129,13 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
     w.food = colonySnapshot(w.colony, true);
     c3a.set(w.colony.id, { start: queenRoundStart(w.colony, hadRecord, expectedInitBasis(s)), round: { taken_from_cache: 0, returned_to_cache: 0, fed: { sugar: 0, protein: 0 }, self_fed: 0, contacts: 0 } });
   }
+  // C4a (requires C3a, checked when the parameters are read): every egg and larva gets its record before the snapshot
+  const c4a = new Map<string, LarvaRoundStart>();
+  for (const w of work) if (w.sp.larval_feeding.individual_larva_body_c4a) {
+    const day0 = expectedInitBasis(s) === 'day0_scenario', had = ensureBroodRecords(w.colony, day0, w.events);
+    w.food = colonySnapshot(w.colony, true, true);
+    c4a.set(w.colony.id, larvaRoundStart(w.colony, w.sp, had, day0));
+  }
 
   growEcology(s, wp, weather, worldEvents);
   assertCausalFood(worldEvents, 'NO_GOD_MODE: food has no physical source death');
@@ -147,6 +159,8 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
     w.overflow = storageOverflow(colony, sp, events);
     const ratios = consume(s, colony, sp, summary, weather, events);
     if (q3) queenMetabolism(colony, sp, summary.metabolic_factor as number, events);
+    const l4 = c4a.get(colony.id);
+    if (l4) larvaMetabolism(colony, sp, summary.metabolic_factor as number, q3?.round.larvae?.intake ?? new Map(), events);
     developBrood(s, colony, sp, weather, ratios, events, summary);
     workerSurvival(s, colony, sp, events, summary);
     queenSurvival(s, colony, sp, events);
@@ -154,6 +168,7 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
     // v2-review.22 (C2): replay this day's food transfers per compartment (defined while crops are a subset of the ledger)
     if (sp.nutrition_rules.egg_laying_settles_crops) checkColonyFood(w.food, colony, events, foodTimingFor(sp));
     if (q3) checkQueenRound(q3.start, colony, events, sp);
+    if (l4) checkLarvaRound(l4, colony, events, sp, summary.metabolic_factor as number);
     const pop = colony.population;
     summary.population = { queen: pop.queen_alive ? 1 : 0, workers: pop.workers.length, eggs: pop.brood.filter((b) => b.stage === 'egg').length, larvae: pop.brood.filter((b) => b.stage === 'larva').length, pupae: pop.brood.filter((b) => b.stage === 'pupa').length };
     summary.stock = { sugar: round(colony.stores.sugar), protein: round(colony.stores.protein) };
@@ -162,8 +177,14 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
     // C3a: food that left the old ledger scope in the nest round (into the queen, or as liquid protein into crops)
     // C3a: food that left the old ledger scope in the nest round — into the queen (liquid protein taken and not put back was
     // fed; crops hold none after the round). held_outside_legacy_stores: the queen's eaten balance (design §12.1)
-    const toQueen = q3 ? { sugar: q3.round.fed.sugar, protein: round(q3.round.taken_from_cache - q3.round.returned_to_cache + q3.round.self_fed) } : { sugar: 0, protein: 0 };
-    summary.mass_ledger = q3 ? { ...ledger, left_ledger_scope_c3a: { into_queen_body: toQueen, held_outside_legacy_stores: { queen_body_known: { ...(colony.population.queens?.[0]?.body.known_balance ?? { sugar: 0, protein: 0 }) }, crop_protein_liquid: 0 } } } : ledger;
+    const larvaFed = q3?.round.larvae?.fed ?? { sugar: 0, protein: 0 };
+    // C4a: food fed to larvae leaves the legacy stores too (sugar from crops, liquid protein taken from the cache)
+    const toQueen = q3 ? { sugar: round(q3.round.fed.sugar + larvaFed.sugar), protein: round(q3.round.taken_from_cache - q3.round.returned_to_cache + q3.round.self_fed) } : { sugar: 0, protein: 0 };
+    // C4a: what left the larva accounts today (their own metabolism, eclosion D5, death), so the summary closes the bodies too
+    const outOfLarvae = (cause: string) => events.reduce((a, e) => (e.type === 'food_transfer' && e.cause === cause ? { ...a, [e.food_type as string]: round((a as Record<string, number>)[e.food_type as string] + Number(e.portions)) } : a), { sugar: 0, protein: 0 });
+    const scope: Record<string, unknown> = l4 ? { into_queen_body: { sugar: q3?.round.fed.sugar ?? 0, protein: round((q3?.round.fed.protein ?? 0) + (q3?.round.self_fed ?? 0)) }, into_larva_bodies: { ...larvaFed }, into_bodies_total: toQueen, out_of_larva_bodies: { larva_metabolism: outOfLarvae('larva_metabolism'), brood_body_at_eclosion: outOfLarvae('brood_body_at_eclosion'), death_body_to_corpse: outOfLarvae('death_body_to_corpse') } } : { into_queen_body: toQueen };
+    const held = l4 ? { queen_body_known: { ...(colony.population.queens?.[0]?.body.known_balance ?? { sugar: 0, protein: 0 }) }, larva_bodies_known: colony.population.brood.reduce((a, b) => (b.body ? { sugar: round(a.sugar + b.body.fed_balance.sugar), protein: round(a.protein + b.body.fed_balance.protein) } : a), { sugar: 0, protein: 0 }), crop_protein_liquid: 0 } : { queen_body_known: { ...(colony.population.queens?.[0]?.body.known_balance ?? { sugar: 0, protein: 0 }) }, crop_protein_liquid: 0 };
+    summary.mass_ledger = q3 ? { ...ledger, left_ledger_scope_c3a: { ...scope, held_outside_legacy_stores: held } } : ledger;
     for (const x of ['sugar', 'protein'] as const) {
       const rhs = round(initial[x] + summary.income[x] - ledger.metabolized[x] - ledger.egg_laying[x] - ledger.storage_overflow_not_retained[x] - toQueen[x]);
       const stock = summary.stock[x];

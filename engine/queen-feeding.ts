@@ -26,6 +26,7 @@
 import { round } from './math.ts';
 import { colonyDice } from './workers.ts';
 import { foodTransfer } from './transfers.ts';
+import { BROOD_PLACE, broodLeg, type BroodLegResult } from './larva-feeding.ts';
 import type { SpeciesParams } from './params.ts';
 import type { ColonyState, QueenRecord, SimEvent, Worker, WorldState } from './types.ts';
 
@@ -60,14 +61,16 @@ export function ensureQueens(world: WorldState, colony: ColonyState, sp: Species
   events.push({ type: 'queen_body_initialized', queen: q.id, basis: q.body.basis, unknown_initial_reserve: q.body.unknown_initial_reserve, known_balance: { ...q.body.known_balance }, reserve_days_of_need_assumption: day0 ? k : null, assumption: true });
 }
 
-export interface RoundResult { taken_from_cache: number; returned_to_cache: number; fed: { sugar: number; protein: number }; self_fed: number; contacts: number }
+export interface RoundResult { taken_from_cache: number; returned_to_cache: number; fed: { sugar: number; protein: number }; self_fed: number; contacts: number; larvae?: BroodLegResult }
 
 /** One nest round (ordinal time) before the old settlement (§12.1 D). Returns what left the old ledger scope. */
 export function nestRound(world: WorldState, colony: ColonyState, sp: SpeciesParams, events: SimEvent[]): RoundResult {
   const out: RoundResult = { taken_from_cache: 0, returned_to_cache: 0, fed: { sugar: 0, protein: 0 }, self_fed: 0, contacts: 0 };
-  const q = colony.population.queens?.[0], qf = sp.queen_feeding, nest = colony.nest_node, cap = sp.trophallaxis.crop_capacity;
-  if (!q || !colony.population.queen_alive) return out;
-  const store = storePlace(sp), need = dailyNeed(sp), day = world.sim_day + 1;
+  const q0 = colony.population.queens?.[0], qf = sp.queen_feeding, nest = colony.nest_node, cap = sp.trophallaxis.crop_capacity;
+  // C4a (D1): the round also serves the larvae, so it runs when there is no living queen; the queen legs are then skipped
+  const c4a = sp.larval_feeding.individual_larva_body_c4a, queenHere = !!q0 && colony.population.queen_alive;
+  if (!queenHere && !c4a) return out;
+  const q = q0 as QueenRecord, store = storePlace(sp), need = dailyNeed(sp), day = world.sim_day + 1;
   const satiated = (f: 'sugar' | 'protein') => q.body.known_balance[f] >= qf.queen_satiation_days_of_need * need[f];
   // nurses at the nest take part; each draws its own arrival (stream named by its ID), ties by ID (not array order)
   const nurses = colony.population.workers.filter((w) => w.task === 'nurse' && w.last_location === nest)
@@ -83,10 +86,10 @@ export function nestRound(world: WorldState, colony: ColonyState, sp: SpeciesPar
         foodTransfer(events, { minute: null, ordinal: u, phase: 'nest_round', source: { kind: 'cache', id: nest }, recipient: { kind: 'crop', id: w.id }, food_type: 'protein', portions: a, cause: 'take_from_cache', attribution: 'individual', nest_ledger_delta: round(-a), contact: { worker: w.id, location: store }, basis: 'candidate route B1 (D: 1 portion of solid gives 1 portion of liquid)' });
       }
     }
-    events.push({ type: 'nest_move', worker: w.id, from: store, to: QUEEN_PLACE, depart_ordinal: round(u + 0.5), arrive_ordinal: round(1 + u), time_scale: 'ordinal_nest_round', assumption: true });
+    if (queenHere) events.push({ type: 'nest_move', worker: w.id, from: store, to: QUEEN_PLACE, depart_ordinal: round(u + 0.5), arrive_ordinal: round(1 + u), time_scale: 'ordinal_nest_round', assumption: true });
   }
   // at the queen (ordinal 1 + u): contact, then at most one feeding per contact and food
-  for (const { w, u } of nurses) {
+  if (queenHere) for (const { w, u } of nurses) {
     const t = round(1 + u), contactId = `QC-${day}-${colony.id}-${++n}`;
     events.push({ type: 'queen_contact', contact_event_id: contactId, worker: w.id, queen: q.id, location: QUEEN_PLACE, worker_location: QUEEN_PLACE, queen_location: q.location, ordinal: t, time_scale: 'ordinal_nest_round', assumption: true });
     out.contacts++;
@@ -102,7 +105,7 @@ export function nestRound(world: WorldState, colony: ColonyState, sp: SpeciesPar
     }
   }
   // route C: the queen eats protein that lies where she is (only if the store is her place, D), at the end of the round
-  if (qf.route_c_self_feed && store === q.location && !satiated('protein')) {
+  if (queenHere && qf.route_c_self_feed && store === q.location && !satiated('protein')) {
     const a = round(Math.min(qf.self_feed_max_portions, colony.stores.protein));
     if (a > 0) {
       colony.stores.protein = round(colony.stores.protein - a); q.body.known_balance.protein = round(q.body.known_balance.protein + a); out.self_fed = a; intake++;
@@ -110,8 +113,11 @@ export function nestRound(world: WorldState, colony: ColonyState, sp: SpeciesPar
       foodTransfer(events, { minute: null, ordinal: 2, phase: 'nest_round', source: { kind: 'cache', id: nest }, recipient: { kind: 'queen_body', id: q.id }, food_type: 'protein', portions: a, cause: 'queen_self_feed', attribution: 'individual', nest_ledger_delta: round(-a), contact: { queen: q.id, location: q.location, food_location: store }, basis: 'candidate route C (Chang 1985: the queen can forage for herself)' });
     }
   }
+  // C4a: the brood leg (ordinal 2 + u; engine/larva-feeding.ts), from the queen or, without a living queen, from the store
+  if (c4a) out.larvae = broodLeg(world, colony, sp, events, nurses, queenHere ? QUEEN_PLACE : store);
   // put back (ordinal 3 + u): liquid protein still held goes back to the store; the crop is empty of it after the round
-  if (store !== QUEEN_PLACE) for (const { w, u } of nurses) if ((w.crop_cargo_protein_liquid || 0) > 0) events.push({ type: 'nest_move', worker: w.id, from: QUEEN_PLACE, to: store, depart_ordinal: round(2.5 + u), arrive_ordinal: round(3 + u), time_scale: 'ordinal_nest_round', assumption: true });
+  const last = c4a ? BROOD_PLACE : QUEEN_PLACE;
+  if (last !== store) for (const { w, u } of nurses) if ((w.crop_cargo_protein_liquid || 0) > 0) events.push({ type: 'nest_move', worker: w.id, from: last, to: store, depart_ordinal: round(2.5 + u), arrive_ordinal: round(3 + u), time_scale: 'ordinal_nest_round', assumption: true });
   for (const { w, u } of nurses) {
     const a = round(w.crop_cargo_protein_liquid || 0);
     if (a <= 0) continue;
@@ -119,6 +125,7 @@ export function nestRound(world: WorldState, colony: ColonyState, sp: SpeciesPar
     foodTransfer(events, { minute: null, ordinal: round(3 + u), phase: 'nest_round', source: { kind: 'crop', id: w.id }, recipient: { kind: 'cache', id: nest }, food_type: 'protein', portions: a, cause: 'return_to_cache', attribution: 'individual', nest_ledger_delta: a, contact: { worker: w.id, location: store }, basis: 'unfed liquid protein put back at the store at the end of the round (design §4; D)' });
   }
   for (const { w } of nurses) if (w.crop_cargo_protein_liquid === 0) delete w.crop_cargo_protein_liquid;
+  if (!queenHere) return out;
   q.days_unfed = intake > 0 ? 0 : q.days_unfed + 1;
   q.days_without_worker_contact = out.contacts > 0 ? 0 : q.days_without_worker_contact + 1;
   return out;
@@ -196,18 +203,28 @@ export function checkQueenRound(start: QueenRoundStart, colony: ColonyState, eve
   // in the day is not in the end state and cannot be checked here — stated limit)
   const nestOf = new Map(colony.population.workers.map((w) => [w.id, w]));
   for (const w of colony.population.workers) if ((w.crop_cargo_protein_liquid || 0) > 0) fail(`worker ${w.id} still holds ${w.crop_cargo_protein_liquid} liquid protein after the nest round (it is put back)`);
-  // moves first (a take at the store is written before the move): out store -> queen, optionally back queen -> store
-  const back = new Map<string, number>(), leaveQueen = new Map<string, number>();
+  // moves first (a take at the store is written before the move): out store -> queen, optionally back queen -> store.
+  // C4a (D1): the route may go on queen -> brood (or store -> brood without a living queen), and back brood -> store.
+  // Each move starts where the previous one ended; once back at the store the round is over.
+  const c4a = sp.larval_feeding.individual_larva_body_c4a;
+  const back = new Map<string, number>(), leaveQueen = new Map<string, number>(), at = new Map<string, { place: string; since: number }>();
+  const next = (from: string, to: string, first: boolean): boolean =>
+    first ? from === store && (to === QUEEN_PLACE ? start.queen.alive || !c4a : c4a && to === BROOD_PLACE && !start.queen.alive)
+      : (from === QUEEN_PLACE && to === BROOD_PLACE && c4a) || ((from === QUEEN_PLACE || (from === BROOD_PLACE && c4a)) && to === store);
   for (const e of events) if (e.type === 'nest_move') {
-    const w = String(e.worker), ww = nestOf.get(w);
+    const w = String(e.worker), ww = nestOf.get(w), now = at.get(w);
     if (!start.workers.has(w)) fail(`nest_move of ${w}, who was not in the nest round`);
     if (ww && (ww.task !== 'nurse' || ww.last_location !== colony.nest_node)) fail(`nest_move of ${w}, task ${ww.task} at ${ww.last_location}: only nurses at the nest take part`);
     if (!(Number(e.arrive_ordinal) >= Number(e.depart_ordinal))) fail(`nest_move of ${w} arrives before it leaves`);
-    if (!depart.has(w)) {
-      if (e.from !== store || e.to !== QUEEN_PLACE) fail(`first nest_move of ${w} is ${e.from} -> ${e.to}`);
-      depart.set(w, Number(e.depart_ordinal)); arrive.set(w, Number(e.arrive_ordinal));
-    } else if (!back.has(w) && e.from === QUEEN_PLACE && e.to === store && Number(e.depart_ordinal) >= (arrive.get(w) as number)) { back.set(w, Number(e.arrive_ordinal)); leaveQueen.set(w, Number(e.depart_ordinal)); }
-    else fail(`worker ${w} moves ${e.from} -> ${e.to} a further time in one round`);
+    if (!now) {
+      if (!next(String(e.from), String(e.to), true)) fail(`first nest_move of ${w} is ${e.from} -> ${e.to}`);
+      depart.set(w, Number(e.depart_ordinal));
+    } else if (!back.has(w) && e.from === now.place && Number(e.depart_ordinal) >= now.since && next(String(e.from), String(e.to), false)) {
+      if (e.from === QUEEN_PLACE) leaveQueen.set(w, Number(e.depart_ordinal));
+      if (e.to === store) back.set(w, Number(e.arrive_ordinal));
+    } else fail(`worker ${w} moves ${e.from} -> ${e.to} a further time in one round`);
+    if (e.to === QUEEN_PLACE && !back.has(w)) arrive.set(w, Number(e.arrive_ordinal));
+    at.set(w, { place: String(e.to), since: Number(e.arrive_ordinal) });
   }
   events.forEach((e, i) => {
     if (e.type === 'queen_contact') {
@@ -239,9 +256,9 @@ export function checkQueenRound(start: QueenRoundStart, colony: ColonyState, eve
         if (!(x.ordinal < (leaveQueen.get(x.source.id) ?? Infinity))) fail(`${x.transfer_id}: delivered at ${x.ordinal}, after ${x.source.id} left the queen (${leaveQueen.get(x.source.id)})`);
         const k = `${x.contact?.contact_event_id}:${x.food_type}`; if (fed.has(k)) fail(`${x.transfer_id}: a second ${x.food_type} feeding in one contact`); fed.add(k);
       } else if (x.cause === 'return_to_cache') {
-        const w = x.source.id, at = store === QUEEN_PLACE ? arrive.get(w) : back.get(w);
+        const w = x.source.id, here = at.get(w), atStore = here && here.place === store ? here.since : undefined;
         if (x.contact?.location !== store) fail(`${x.transfer_id}: put back at ${x.contact?.location}, the store is at ${store}`);
-        if (at === undefined || x.ordinal < at) fail(`${x.transfer_id}: put back at ${x.ordinal}, before ${w} is back at the store (${at})`);
+        if (atStore === undefined || x.ordinal < atStore) fail(`${x.transfer_id}: put back at ${x.ordinal}, before ${w} is back at the store (${atStore})`);
       } else if (x.cause === 'queen_self_feed') {
         if (!sp.queen_feeding.route_c_self_feed) fail(`${x.transfer_id}: self-feeding while route C is off`);
         if (x.contact?.location !== queen.location || x.contact?.food_location !== x.contact?.location || store !== queen.location) fail(`${x.transfer_id}: the queen at ${x.contact?.location} eats food at ${x.contact?.food_location} (store at ${store})`);
