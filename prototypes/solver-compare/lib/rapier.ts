@@ -36,7 +36,9 @@ export async function loadRapier(): Promise<Any | null> {
   return R;
 }
 
-export interface RapierOptions { dt_s: number; ccd: boolean; reverse_order?: boolean; only?: string[] }
+/** solver_iterations / lateral_locked: driving VARIANTS for comparison only (PH-3b), never tuned for arrivals; lateral_locked
+ *  disables translation across the lane (the lane is axis-aligned), i.e. the same fixed-u assumption as PH-3b */
+export interface RapierOptions { dt_s: number; ccd: boolean; reverse_order?: boolean; only?: string[]; solver_iterations?: number; lateral_locked?: boolean }
 
 /** walls: complement of the union of axis-aligned lane bands inside their bounding box grown by `margin` */
 function bandWalls(sc: Scenario, margin: number) {
@@ -66,7 +68,8 @@ export async function runRapier(sc: Scenario, o: RapierOptions) {
   const world = new RA.World({ x: 0, y: 0 });
   world.timestep = dt;
   const ip = world.integrationParameters;
-  const params = { rapier_version: RA.version(), dt_s: dt, ccd: o.ccd, length_unit: ip.lengthUnit, normalized_allowed_linear_error: ip.normalizedAllowedLinearError, normalized_prediction_distance: ip.normalizedPredictionDistance, num_solver_iterations: ip.numSolverIterations, gravity: [0, 0], friction: 0, restitution: 0, density: 1, rotation: 'locked along the lane', float: 'f32 inside Rapier' };
+  if (o.solver_iterations !== undefined) ip.numSolverIterations = o.solver_iterations;
+  const params = { rapier_version: RA.version(), dt_s: dt, ccd: o.ccd, length_unit: ip.lengthUnit, normalized_allowed_linear_error: ip.normalizedAllowedLinearError, normalized_prediction_distance: ip.normalizedPredictionDistance, num_solver_iterations: ip.numSolverIterations, gravity: [0, 0], friction: 0, restitution: 0, density: 1, rotation: 'locked along the lane', lateral_translation: o.lateral_locked ? 'locked (fixed u, as PH-3b)' : 'free', float: 'f32 inside Rapier' };
   const names = new Map<number, string>();
   const fixed = world.createRigidBody(RA.RigidBodyDesc.fixed());
   const wallMargin = 5; // mm: thickness of the bounding walls (numerical; far thicker than one step's travel)
@@ -88,6 +91,7 @@ export async function runRapier(sc: Scenario, o: RapierOptions) {
   const rt = agents.map((a) => {
     const f = frames.get(a.passage)!, p = poseOn(f, a.s_mm, a.u_mm, a.dir), goal = poseOn(f, a.goal_s_mm, a.u_mm, a.dir);
     const desc = RA.RigidBodyDesc.dynamic().setTranslation(p.x, p.y).setRotation(p.heading - Math.PI / 2).lockRotations().setLinearDamping(0).setAngularDamping(0).setCcdEnabled(o.ccd);
+    if (o.lateral_locked) desc.enabledTranslations(f.t.x !== 0, f.t.y !== 0);
     const body = world.createRigidBody(desc);
     const col = world.createCollider(RA.ColliderDesc.capsule(half, w / 2).setFriction(0).setRestitution(0).setDensity(1).setActiveEvents(RA.ActiveEvents.COLLISION_EVENTS), body);
     names.set(col.handle, a.id);
