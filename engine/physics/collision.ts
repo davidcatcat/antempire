@@ -47,9 +47,10 @@
  *    a press or a release without either ant having moved or turned (no near-zero-time yield loop).
  *  - Contact geometry (PH-P1-B): across lanes every contact, touch and release is decided by `discEncounter` from
  *    |r + v·τ|² = R² — one geometry for scheduling and handling; an exact tangent (graze) is no contact.
- *  - Time (PH-P2-B/C): event times and positions come from the start of each motion record, its velocity and the elapsed
- *    time, never from per-step accumulation; an event after a window end is never handled in that window; events at one
- *    instant (within SAME_INSTANT) are handled in a fixed total order (KIND_ORDER, ids, data).
+ *  - Time (PH-P2-B/C, PH-P2D): event times and positions come from the start of each motion record, its velocity and the
+ *    elapsed time, never from per-step accumulation; the clock stops only at event instants (a broadphase window end is
+ *    not an evaluation instant); events at one instant (within SAME_INSTANT) are handled in a fixed total order
+ *    (KIND_ORDER, ids, data). A pressed back-out ant's speed-up is the boundary event of its front (PH-P2D).
  *  - Turning around takes no time; backing out is at the ant's own free speed; passing abreast in a wide section costs no
  *    time; spontaneous U-turns (rare: ≈1 % per bridge crossing in L. humile, R108) are not modelled; no slow-down from
  *    load, slope or temperature (no species data; stated limits).
@@ -182,10 +183,10 @@ export interface SimConfig {
   geometry: PhysicsGeometry; agents: SimAgentSpec[]; objects?: PhysObject[];
   horizon_s: number; seed: number;
   encounter: EncounterRules;
-  /** broadphase window (s). Intended: any positive value gives the same events. Since the PH-P2-B/C fixes, event times and
-   *  positions are computed from motion-record starts (never per step) and no event after a window end is handled in that
-   *  window; tested by window-split tests (tests/physics-event-fixes.test.ts) and the review fuzz. This is an engineering
-   *  test, not a proof for every geometry (docs/physics-motion-engine.md §6–§7). */
+  /** broadphase window (s): only how far ahead the pair set reaches. Any positive value gives the same events: event times
+   *  and positions come from motion-record starts (PH-P2-C), and a window end is never an evaluation instant (PH-P2-B,
+   *  PH-P2D) — the clock stops only at event instants. Tested by window-split tests incl. boundary-aligned windows
+   *  (tests/physics-event-fixes.test.ts, tests/physics-p2d.test.ts); an engineering test, not a proof for every geometry. */
   window_s?: number;
   /** spacing (mm) of the numerical scan that remains: the back-out target. Narrow-section boundaries are analytic and
    *  do not use it (Codex physics review F2). */
@@ -465,7 +466,12 @@ export function simulate(cfg: SimConfig): SimResult {
       // backing out behind another ant moving the same way: no faster than it while they touch in single file
       for (const r of rts) {
         if (r.mode !== 'retreat' || !r.pressOn || (r.holdUntil !== null && r.holdUntil > t + T_EPS)) continue;
-        const f = byId.get(r.pressOn)!, m = -r.travel, touching = Math.abs(f.s - r.s) <= M(r, f) + 1e-9 && (f.s - r.s) * m > 0 && pinched(r, f);
+        // PH-P2D (#100): 'still pressed' is decided by the stretch the pair is about to share — just ahead of the contact
+        // point (r's front in its walking direction m) — the same directional test as the follow release above. The old
+        // closed test (pinched, ±1e-9 mm) still called the pair pinched AT the section boundary, so the scheduled boundary
+        // event of r's front released nothing and the speed-up waited for the next unrelated event or a window end.
+        const f = byId.get(r.pressOn)!, m = -r.travel, cpt = r.s + m * r.L / 2, ahead = m > 0 ? [cpt, cpt + 1e-6] : [cpt - 1e-6, cpt];
+        const touching = Math.abs(f.s - r.s) <= M(r, f) + 1e-9 && (f.s - r.s) * m > 0 && narrowOver(r.p, r.w + f.w, ahead[0], ahead[1]);
         if (!touching || f.v * m >= r.free) { r.pressOn = null; if (r.v !== m * r.free) { modeMotion(r, t); changed = true; } continue; }
         const nv = m * Math.max(0, Math.min(r.free, f.v * m));
         if (r.v !== nv) { setMotion(r, t, nv, 'yield_back_out', r.partner); changed = true; }
@@ -487,7 +493,7 @@ export function simulate(cfg: SimConfig): SimResult {
         if (!wp) continue;
         const p = byId.get(wp)!;
         if (terminal(p)) { unresolved(t, a, p, `waits for ${p.id}, which has stopped for good (${p.mode})`); changed = true; continue; }
-        const ring: RT[] = [a];
+        const ring: RT[] = [a], r0len = laneLength(a.p);
         let q = p;
         while (waitPartner(q) && !ring.includes(q)) { ring.push(q); q = byId.get(waitPartner(q)!)!; }
         if (q === a && ring.length > 1 && ring.every((r) => r.mode === 'follow' && sameLane(r, a))) {
@@ -495,7 +501,12 @@ export function simulate(cfg: SimConfig): SimResult {
           // per-ant rank drawn for this instant; game assumption) and the others wait for it — a queue, not a deadlock
           const rank = (x: RT) => rng(hash32(`${cfg.seed}|physics.encounter.queue|${x.id}|ring|${t.toFixed(9)}`))();
           // only an ant whose way ahead is not blocked (a touching body in single file that is not moving away) can go first
-          const blockedAhead = (r: RT) => rts.some((o) => o !== r && sameLane(o, r) && (o.s - r.s) * r.travel > 0 && o.v * r.travel <= 0 && Math.abs(o.s - r.s) <= M(r, o) + 1e-7 && (() => { const fr = r.s + r.travel * r.L / 2; return narrowOver(r.p, r.w + o.w, Math.min(fr, fr + r.travel * 1e-6), Math.max(fr, fr + r.travel * 1e-6)); })());
+          // PH-P2E B (review 2026-11-07): bodies whose 1-D arc coordinates differ by no more than LEN_TOL(lane length) are
+          // coincident in arc length: neither is 'ahead' of the other. Before, the sign of a 1–4 ulp rounding residue decided it
+          // (seeds 3/7 of the 12 × 8 corridor). A numerical equivalence, not a model parameter. Coincident ARC LENGTH is not a
+          // claim that the bodies fit side by side: the lane model has no lateral coordinate (see checkWidthOccupancy, P2-E).
+          const aheadTol = LEN_TOL(r0len);
+          const blockedAhead = (r: RT) => rts.some((o) => o !== r && sameLane(o, r) && (o.s - r.s) * r.travel > aheadTol && o.v * r.travel <= 0 && Math.abs(o.s - r.s) <= M(r, o) + 1e-7 && (() => { const fr = r.s + r.travel * r.L / 2; return narrowOver(r.p, r.w + o.w, Math.min(fr, fr + r.travel * 1e-6), Math.max(fr, fr + r.travel * 1e-6)); })());
           const free = ring.filter((r) => !blockedAhead(r));
           if (!free.length) { for (let i = 0; i < ring.length; i++) if (!terminal(ring[i])) unresolved(t, ring[i], ring[(i + 1) % ring.length], `mutual wait, every ant blocked ahead (${ring.map((r) => r.id).join(' → ')})`); changed = true; continue; }
           const first = [...free].sort((x, y) => rank(y) - rank(x) || (x.id < y.id ? -1 : 1))[0];
@@ -520,8 +531,13 @@ export function simulate(cfg: SimConfig): SimResult {
     // the same value whichever step (window) asks — and is never earlier than now
     const tAt = (x: number) => Math.max(t, a.open.t + (x - a.open.s) / a.v);
     const at = (x: number, kind: string, data?: number) => { const dt = (x - a.s) / a.v; if (dt > T_EPS || (dt >= 0 && Math.abs(x - a.s) > S_EPS)) out.push({ t: tAt(x), kind, a: a.id, b: null, data }); };
-    if (a.mode === 'retreat') at(a.retreat_s!, 'retreat_done');
-    else if (m === a.travel) at(a.spec.goal_s_mm, 'arrive');
+    // PH-P2E A (review 2026-11-07): the END of a walk (back-out target, goal) is never dropped. Before, when an unrelated event
+    // fell within T_EPS / S_EPS before the end (traffic seed 30: 3.5e-11 s, 6.5e-10 mm), the guard of at() dropped it and the
+    // ant walked on out of the passage. Within S_EPS of the end (or past it) the end is scheduled at its ANALYTIC time tAt(x)
+    // (never earlier than now; a.v is the signed velocity) — not at the current instant, which would end the walk up to S_EPS / v early (Owner review #108).
+    const end = (x: number, kind: string) => { if ((x - a.s) * m <= S_EPS) out.push({ t: a.v !== 0 ? tAt(x) : t, kind, a: a.id, b: null }); else at(x, kind); };
+    if (a.mode === 'retreat') end(a.retreat_s!, 'retreat_done');
+    else if (m === a.travel) end(a.spec.goal_s_mm, 'arrive');
     for (const x of vertexArcs(a.p)) if ((x - a.s) * m > S_EPS) at(x, 'vertex');
     // boundaries ahead of the leading edge, and one the edge is standing on when it starts to move (checked once per motion piece)
     for (const b of boundaries.get(`${a.p.id}|${a.w}`)!) {
@@ -896,45 +912,61 @@ export function simulate(cfg: SimConfig): SimResult {
   // ---- main loop
   let t = 0, lastT = -1, sameT = 0;
   const vmax = Math.max(...rts.map((a) => a.free));
-  while (t < cfg.horizon_s && rts.some((a) => !terminal(a))) {
-    const wEnd = Math.min(t + H, cfg.horizon_s);
+  // PH-P2D (#100) / PH-P2-B: the clock stops ONLY at event instants. A broadphase window end is not an evaluation step:
+  // when no candidate lies at or before it, the window is extended (pairs re-collected from the positions at the current
+  // event instant, with a larger reach) and the SAME instant is evaluated again — nothing is moved and nothing is
+  // handled at a window end. So every tolerance-based 'now' test (touching within 1e-7 mm, a boundary under the front,
+  // an event 'already passed') is only ever evaluated at an event instant, whatever window_s is.
+  let wEnd = Math.min(H, cfg.horizon_s), wStart = 0, pairs: (readonly [RT, RT])[] = [], pairKeys = new Set<string>(), pairsAt = -1;
+  const collectPairs = () => {
     stats.windows++;
-    // broadphase for this window: any pair that can come within contact range before wEnd (conservative reach discs)
-    const discs: ReachDisc[] = rts.map((a) => { const q = pos(a); return { id: a.id, x: q.x, y: q.y, r: vmax * (wEnd - t) + a.L / 2 + a.reach }; });
-    const pairs = gridPairs(discs, Math.max(1e-6, 2 * Math.max(...discs.map((d) => d.r)))).map(([x, y]) => [byId.get(x)!, byId.get(y)!] as const);
-    // a waiting ant is always evaluated with the ant it waits for, however far apart: its release must not depend on the
-    // broadphase window (independent review of cdd0258: with small windows the pair dropped out and the waiter was stuck)
-    const pairKeys = new Set(pairs.map(([x, y]) => pairKey(x.id, y.id)));
-    const withPartners = () => { const out = [...pairs]; const seen = new Set(pairKeys); const add = (x: RT, y: RT) => { const k = pairKey(x.id, y.id); if (!seen.has(k)) { seen.add(k); out.push(x.id < y.id ? [x, y] as const : [y, x] as const); } };
-      for (const x of rts) if (x.partner && !terminal(x)) add(x, byId.get(x.partner)!);
-      // pairs in contact too: their contact_end must come at its own time, not when the broadphase next picks them up
-      for (const k of inContact) { const [i, j] = k.split('|'); const x = byId.get(i), y = byId.get(j); if (x && y) add(x, y); }
-      return out; };
-    while (t < wEnd) {
-      stats.steps++;
-      const cands: Cand[] = [];
-      for (const a of rts) intrinsic(a, t, cands);
-      for (const [a, b] of withPartners()) pairCands(a, b, t, cands);
-      // PH-P2-B: explicit event time boundary. The next step is the earliest candidate if it is at or before the window
-      // end; otherwise the clock only moves to the window end and NOTHING is handled there (an event even 1e-12 s after
-      // the window end belongs to the next window). Events at one instant are those within SAME_INSTANT(t) of the earliest
-      // (a few ulps: different formulas for one mathematical instant), never beyond the window end.
-      let tmin = Infinity;
-      for (const c of cands) if (c.t < tmin) tmin = c.t;
-      const tn = tmin <= wEnd ? Math.max(t, tmin) : wEnd;
-      // PH-P2-C: positions are computed from the start of the current motion record (anchor), its velocity and the
-      // elapsed time — never accumulated step by step, so the number of steps (windows) does not change them
-      for (const a of rts) if (a.open.v !== 0) a.s = a.open.s + a.open.v * (tn - a.open.t);
-      t = tn;
-      const due = tmin <= wEnd ? cands.filter((c) => c.t <= Math.min(wEnd, tn + SAME_INSTANT(tn))).sort(candOrder) : [];
-      for (const c of due) handle(c, t);
-      resolveFollow(t);
-      detectStuck(t);
-      if (stats.steps > 1e7) throw Error('PHYSICS: event budget exceeded (Zeno or runaway)');
-      if (t === lastT) { if (++sameT > 10000) throw Error(`PHYSICS: more than 10000 steps at t=${t} s (a rule loop without progress)`); } else { lastT = t; sameT = 0; }
-      // the run ends at the event that stopped the last ant, not at the end of the window (review of cdd0258, P3-1)
-      if (rts.every((x) => terminal(x))) break;
+    // broadphase: any pair that can come within contact range in [from, wEnd + SAME_INSTANT] (conservative reach discs;
+    // the SAME_INSTANT margin covers every candidate that can join a same-instant group). `from` is the later of now and
+    // the previous window end: no event lies between them, so every motion is unchanged there and the disc centres are
+    // the analytic positions at `from` (sAt; nothing is moved).
+    const from = Math.max(t, wStart), span = wEnd + SAME_INSTANT(wEnd) - from;
+    const discs: ReachDisc[] = rts.map((a) => { const q = positionAt(a.p, sAt(a, from)); return { id: a.id, x: q.x, y: q.y, r: vmax * span + a.L / 2 + a.reach }; });
+    pairs = gridPairs(discs, Math.max(1e-6, 2 * Math.max(...discs.map((d) => d.r)))).map(([x, y]) => [byId.get(x)!, byId.get(y)!] as const);
+    pairKeys = new Set(pairs.map(([x, y]) => pairKey(x.id, y.id))); pairsAt = wEnd;
+  };
+  // a waiting ant is always evaluated with the ant it waits for, however far apart: its release must not depend on the
+  // broadphase window (independent review of cdd0258: with small windows the pair dropped out and the waiter was stuck)
+  const withPartners = () => { const out = [...pairs]; const seen = new Set(pairKeys); const add = (x: RT, y: RT) => { const k = pairKey(x.id, y.id); if (!seen.has(k)) { seen.add(k); out.push(x.id < y.id ? [x, y] as const : [y, x] as const); } };
+    for (const x of rts) if (x.partner && !terminal(x)) add(x, byId.get(x.partner)!);
+    // pairs in contact too: their contact_end must come at its own time, not when the broadphase next picks them up
+    for (const k of inContact) { const [i, j] = k.split('|'); const x = byId.get(i), y = byId.get(j); if (x && y) add(x, y); }
+    return out; };
+  while (t < cfg.horizon_s && rts.some((a) => !terminal(a))) {
+    if (pairsAt !== wEnd) collectPairs();
+    const cands: Cand[] = [];
+    for (const a of rts) intrinsic(a, t, cands);
+    for (const [a, b] of withPartners()) pairCands(a, b, t, cands);
+    let tmin = Infinity;
+    for (const c of cands) if (c.t < tmin) tmin = c.t;
+    if (!(tmin <= wEnd)) {
+      if (wEnd >= cfg.horizon_s) {
+        // nothing more before the horizon: move to it without handling anything (an event after it is not handled)
+        for (const a of rts) if (a.open.v !== 0) a.s = a.open.s + a.open.v * (cfg.horizon_s - a.open.t);
+        t = cfg.horizon_s; break;
+      }
+      wStart = wEnd; wEnd = Math.min(wEnd + H, cfg.horizon_s);   // extend the broadphase window; the clock does not move
+      continue;
     }
+    stats.steps++;
+    const tn = Math.max(t, tmin);
+    // PH-P2-C: positions are computed from the start of the current motion record (anchor), its velocity and the
+    // elapsed time — never accumulated step by step
+    for (const a of rts) if (a.open.v !== 0) a.s = a.open.s + a.open.v * (tn - a.open.t);
+    t = tn;
+    // events at one instant: within SAME_INSTANT(t) of the earliest (a few ulps: different formulas for one instant)
+    const due = cands.filter((c) => c.t <= tn + SAME_INSTANT(tn)).sort(candOrder);
+    for (const c of due) handle(c, t);
+    resolveFollow(t);
+    detectStuck(t);
+    if (stats.steps > 1e7) throw Error('PHYSICS: event budget exceeded (Zeno or runaway)');
+    if (t === lastT) { if (++sameT > 10000) throw Error(`PHYSICS: more than 10000 steps at t=${t} s (a rule loop without progress)`); } else { lastT = t; sameT = 0; }
+    // the run ends at the event that stopped the last ant, not at the end of the window (review of cdd0258, P3-1)
+    if (rts.every((x) => terminal(x))) break;
   }
   stats.t_end_s = t;
   for (const a of rts) close(a, t);
@@ -949,7 +981,40 @@ export function simulate(cfg: SimConfig): SimResult {
  * Independent check of a simulation result (tests): samples every trajectory at every record boundary and every dt and
  * verifies that no two bodies are in mutually exclusive positions (21 samples per overlap region), no body is in a section
  * too narrow for it (21 samples per body), and no body straddles an entrance narrower than it. Returns violations.
+ * SCOPE: bodies are checked in PAIRS on a 1-D lane. It does NOT check that three or more bodies sharing an arc position fit
+ * side by side (the lane model has no lateral coordinate); passing it is not a 2-D exclusion proof. See checkWidthOccupancy.
  */
+/**
+ * P2-E diagnostic (issue #107; NOT part of checkExclusion and not enforced by the engine): at every record boundary and
+ * every dt, for each passage, sums the widths of ALL bodies whose length intervals cover an arc position and reports where
+ * that sum exceeds the usable width. Pairs are already checked by checkExclusion; this reports the states of three or more
+ * bodies that the 1-D lane model accepts but that cannot be laid out side by side in 2-D. A report is a model limitation,
+ * not a measured collision. Returns one message per (instant, passage) with an excess.
+ */
+export function checkWidthOccupancy(cfg: SimConfig, res: SimResult, dt: number): string[] {
+  const g = cfg.geometry, out: string[] = [], specs = new Map(cfg.agents.map((a) => [a.id, a]));
+  const width = (id: string) => { const a = specs.get(id)!; const o = a.load ? cfg.objects!.find((x) => x.id === a.load)! : null; return Math.max(a.body.width_mm, o?.width_mm ?? 0); };
+  const times = new Set<number>();
+  for (const ivs of Object.values(res.intervals)) for (const r of ivs) { times.add(r.t_start_s); times.add(r.t_end_s); }
+  for (let t = 0; t <= res.stats.t_end_s; t += dt) times.add(t);
+  const sAt = (id: string, t: number) => { const ivs = res.intervals[id]; for (const r of ivs) if (t >= r.t_start_s - 1e-12 && t <= r.t_end_s + 1e-12) { const f = r.t_end_s === r.t_start_s ? 1 : (t - r.t_start_s) / (r.t_end_s - r.t_start_s); return r.s_start_mm + (r.s_end_mm - r.s_start_mm) * Math.max(0, Math.min(1, f)); } return ivs.length ? ivs[ivs.length - 1].s_end_mm : specs.get(id)!.s_mm; };
+  for (const t of [...times].sort((a, b) => a - b)) {
+    const byP = new Map<string, { id: string; lo: number; hi: number; w: number }[]>();
+    for (const [id, a] of specs) { const s = sAt(id, t), list = byP.get(a.passage) ?? []; list.push({ id, lo: s - a.body.length_mm / 2, hi: s + a.body.length_mm / 2, w: width(id) }); byP.set(a.passage, list); }
+    for (const [pid, bs] of [...byP].sort(([x], [y]) => (x < y ? -1 : 1))) {
+      if (bs.length < 3) continue;
+      const p = passageOf(g, pid);
+      // the set of covering bodies changes only at interval ends: test just inside every end
+      for (const x of bs.flatMap((b) => [b.lo + 1e-6, b.hi - 1e-6]).sort((u, v) => u - v)) {
+        const cov = bs.filter((b) => b.lo < x && x < b.hi); if (cov.length < 3) continue;
+        const need = cov.reduce((q, b) => q + b.w, 0), have = usableWidth(g, p, x);
+        if (have < need - 1e-6) { out.push(`t=${t}: ${cov.map((b) => b.id).sort().join('+')} need ${need.toFixed(3)} mm side by side at s=${x.toFixed(4)} on ${pid}, usable width ${have.toFixed(3)} mm`); break; }
+      }
+    }
+  }
+  return out;
+}
+
 export function checkExclusion(cfg: SimConfig, res: SimResult, dt: number): string[] {
   const g = cfg.geometry, out: string[] = [], specs = new Map(cfg.agents.map((a) => [a.id, a]));
   const width = (id: string) => { const a = specs.get(id)!; const o = a.load ? cfg.objects!.find((x) => x.id === a.load)! : null; return Math.max(a.body.width_mm, o?.width_mm ?? 0); };

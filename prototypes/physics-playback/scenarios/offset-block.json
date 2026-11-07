@@ -1,0 +1,99 @@
+{
+  "schema": "antempire.solver-compare.scenario.v1",
+  "id": "offset-block",
+  "title": "兩隻迎面：10 mm 寬通路、給定 u = −0.2／+0.2 mm（寬度夠，但給定的 u 擋住）",
+  "synthetic": true,
+  "units": {
+    "length": "mm",
+    "time": "s",
+    "speed": "mm/s"
+  },
+  "refs": {
+    "geometry": "scenarios/physics/nest-entrance.geometry.json",
+    "body": "scenarios/physics/pheidole-megacephala.body-candidates.json",
+    "interaction": "scenarios/physics/pheidole-megacephala.interaction-candidates.json",
+    "motion": "scenarios/physics/pheidole-megacephala.motion-candidates.json"
+  },
+  "body": {
+    "length": {
+      "file": "body",
+      "path": "castes.minor.body_length_mm.value",
+      "why": "小工蟻體長約 2.5 mm（R94，文獻支持）"
+    },
+    "width": {
+      "file": "body",
+      "path": "castes.minor.effective_collision_width_mm.candidate_range.1",
+      "why": "value 為 null；取候選範圍上限 0.8 mm（與 tests/ph2-collision.test.ts 的 wHi 相同），只作敏感度，非量測"
+    },
+    "contact_reach": {
+      "file": "interaction",
+      "path": "contact_reach_mm.candidate_range",
+      "op": "midpoint",
+      "why": "value 為 null；取候選範圍中點 1.0 mm（與 tests/ph2-collision.test.ts 相同），只作敏感度，非量測"
+    }
+  },
+  "encounter": {
+    "priority": {
+      "file": "interaction",
+      "path": "encounter.priority.value",
+      "why": "檔案預設"
+    },
+    "entry_yield_probability": {
+      "file": "interaction",
+      "path": "encounter.entry_yield_probability.value",
+      "why": "非本種 Lasius niger 202/211（R380）"
+    },
+    "laden_yield_probability": {
+      "file": "interaction",
+      "path": "encounter.laden_yield_probability.value",
+      "why": "非本種 Atta colombica（R381）；本情境無負載，不會用到"
+    },
+    "contact_pause_s": {
+      "file": "interaction",
+      "path": "encounter.contact_pause_s.value",
+      "nullable": true,
+      "why": "檔案值 null＝不停頓"
+    },
+    "inside_turn_back_probability": {
+      "file": "interaction",
+      "path": "encounter.inside_turn_back_probability.candidate_values.1",
+      "why": "檔案 value 為 null；取候選值 0.5（與 tests/ph2-collision.test.ts 相同，遊戲假設）。若改為 null，原生模型會回報 unresolved"
+    }
+  },
+  "agents": [
+    {
+      "id": "A",
+      "passage": "P-entry",
+      "s_mm": 5,
+      "u_mm": -0.2,
+      "dir": 1,
+      "start_t_s": 0,
+      "goal_s_mm": 95,
+      "speed": {
+        "file": "motion",
+        "path": "trail_speed_mm_s.outbound.value",
+        "why": "離巢 18.5 mm/s（R133，文獻支持；本情境把 +x 方向當作離巢是情境假設）"
+      }
+    },
+    {
+      "id": "B",
+      "passage": "P-entry",
+      "s_mm": 95,
+      "u_mm": 0.2,
+      "dir": -1,
+      "start_t_s": 0,
+      "goal_s_mm": 5,
+      "speed": {
+        "file": "motion",
+        "path": "trail_speed_mm_s.returning.value",
+        "why": "回巢 15.5 mm/s（R133，文獻支持；本情境把 −x 方向當作回巢是情境假設）"
+      }
+    }
+  ],
+  "horizon_s": 10,
+  "seed": 1,
+  "provenance": {
+    "scenario_values": "起點、橫向偏移 u、出發時間、時間長度都是合成情境值（遊戲假設），不是量測，也不是臺中西屯花園。u 是給定值、整段固定：橫向轉向模型未知（null），解算器不替螞蟻選 u。",
+    "note": "通路寬 10 mm，幾何上放得下兩隻並排；但 u 固定、中心線只相距 0.4 mm < 0.8 mm，頭部斜向相碰，兩隻都停。要錯身需要橫向位置模型（未知，null）。"
+  }
+}
