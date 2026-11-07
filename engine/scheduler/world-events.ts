@@ -113,45 +113,80 @@ function checkJson(v: unknown, path: string, depth = 0): void {
  * twice can differ (validated once, committed as something else). Every input is read EXACTLY ONCE into plain data,
  * and only that copy is validated and committed.
  */
-function copyJson(v: unknown, path: string, depth = 0): JsonValue {
+/** limits on what a producer may hand over (engineering bounds, not model parameters) */
+export const MAX_PAYLOAD_NODES = 100_000, MAX_OUTPUT_ITEMS = 100_000;
+const isPlain = (v: unknown) => { if (v === null || typeof v !== 'object') return false; const p = Object.getPrototypeOf(v); return p === Object.prototype || p === null; };
+/** own property names, enumerable or not (a non-enumerable field is never silently dropped); symbols refused */
+function ownKeys(v: object, what: string): string[] {
+  if (Object.getOwnPropertySymbols(v).length) fail(`${what} has symbol keys`);
+  return Object.getOwnPropertyNames(v);
+}
+function copyJson(v: unknown, path: string, budget = { n: 0 }, depth = 0): JsonValue {
+  if (++budget.n > MAX_PAYLOAD_NODES) fail(`payload has more than ${MAX_PAYLOAD_NODES} values`);
   if (depth > 32) fail(`payload too deep at ${path}`);
   if (v === null || typeof v === 'boolean' || typeof v === 'string') return v;
   if (typeof v === 'number') { if (!Number.isFinite(v)) fail(`payload ${path} is not a finite number`); return v; }
-  if (Array.isArray(v)) { const n = v.length, out: JsonValue[] = []; for (let i = 0; i < n; i++) out.push(copyJson(v[i], `${path}[${i}]`, depth + 1)); return out; }
-  if (typeof v === 'object' && Object.getPrototypeOf(v) === Object.prototype) { const out: Record<string, JsonValue> = {}; for (const k of Object.keys(v as object)) out[k] = copyJson((v as Record<string, unknown>)[k], `${path}.${k}`, depth + 1); return out; }
+  if (Array.isArray(v)) {
+    const n = v.length;
+    if (!Number.isSafeInteger(n) || n > MAX_PAYLOAD_NODES) fail(`payload ${path} array too long`);
+    const out: JsonValue[] = [];
+    for (let i = 0; i < n; i++) { if (!(i in v)) fail(`payload ${path}[${i}] is a hole`); out.push(copyJson(v[i], `${path}[${i}]`, budget, depth + 1)); }
+    return out;
+  }
+  if (isPlain(v)) {
+    const out: Record<string, JsonValue> = {};
+    // defineProperty: a key named "__proto__" stays an ordinary key (assignment would set the prototype)
+    for (const k of ownKeys(v as object, `payload ${path}`)) Object.defineProperty(out, k, { value: copyJson((v as Record<string, unknown>)[k], `${path}.${k}`, budget, depth + 1), enumerable: true, writable: true, configurable: true });
+    return out;
+  }
   return fail(`payload ${path} is not JSON data`);
 }
 function copyRef(r: unknown, what: string): EntityRef | null {
   if (r === null) return null;
-  if (r === undefined || typeof r !== 'object') return fail(`${what} must be an entity reference or null`);
-  const keys = Object.keys(r).sort().join();
+  if (!isPlain(r)) return fail(`${what} must be an entity reference or null`);
+  const keys = ownKeys(r as object, what).sort().join();
   if (keys !== 'colony,individual,world') fail(`${what} must have exactly world, colony, individual (got ${keys})`);
   const o = r as Record<string, unknown>;
   return { world: o.world as string, colony: o.colony as string | null, individual: o.individual as string | null };
 }
 function copySpec(spec: unknown): EventSpec {
-  if (spec === null || typeof spec !== 'object') return fail('event spec is not an object');
-  const allowed = new Set(['kind', 'key', 'at', 'scope', 'source', 'target', 'payload']), keys = Object.keys(spec);
+  if (!isPlain(spec)) return fail('event spec must be a plain object');
+  const allowed = new Set(['kind', 'key', 'at', 'scope', 'source', 'target', 'payload']), keys = ownKeys(spec as object, 'event spec');
   for (const k of keys) if (!allowed.has(k)) fail(`event spec has an unknown field ${k}`);
   const o = spec as Record<string, unknown>, at = o.at;
-  if (at === null || typeof at !== 'object') fail('event spec at is not a world time');
+  if (!isPlain(at)) fail('event spec at is not a world time');
   const a = at as Record<string, unknown>;
   const out: EventSpec = { kind: o.kind as string, key: o.key as string, at: { day: a.day as number, minute: a.minute as number }, scope: copyRef(o.scope, 'scope') as EntityRef, source: copyRef(o.source, 'source'), target: copyRef(o.target, 'target') };
-  if (keys.includes('payload')) out.payload = copyJson(o.payload, 'payload');
+  if (keys.includes('payload')) { const pv = o.payload; out.payload = pv === undefined ? null : copyJson(pv, 'payload'); }   // explicit undefined = no payload (null)
   return out;
 }
+function copyList(v: unknown, what: string): unknown[] {
+  if (!Array.isArray(v)) return fail(`${what} must be an array`);
+  const n = v.length;
+  if (!Number.isSafeInteger(n) || n > MAX_OUTPUT_ITEMS) fail(`${what} has more than ${MAX_OUTPUT_ITEMS} items`);
+  const out: unknown[] = []; for (let i = 0; i < n; i++) out.push(v[i]); return out;
+}
+/** a handler must return undefined or a plain { children?, cancel? }: a Promise, a misspelt field or any other shape is refused */
 function copyOutput(out: unknown): { children: { cause: string; spec: EventSpec }[]; cancel: Cancel[] } {
   if (out === undefined) return { children: [], cancel: [] };
-  if (out === null || typeof out !== 'object') return fail('handler output must be an object or undefined');
-  const o = out as Record<string, unknown>, ch = o.children, ca = o.cancel;
-  if (ch !== undefined && !Array.isArray(ch)) fail('children must be an array');
-  if (ca !== undefined && !Array.isArray(ca)) fail('cancel must be an array');
+  if (!isPlain(out)) return fail('handler output must be undefined or a plain object { children?, cancel? } (an async handler is not allowed)');
+  const keys = ownKeys(out as object, 'handler output');
+  for (const k of keys) if (k !== 'children' && k !== 'cancel') fail(`handler output has an unknown field ${k}`);
+  const o = out as Record<string, unknown>, ch = keys.includes('children') ? o.children : undefined, ca = keys.includes('cancel') ? o.cancel : undefined;
   const children: { cause: string; spec: EventSpec }[] = [], cancel: Cancel[] = [];
-  if (ch) { const n = (ch as unknown[]).length; for (let i = 0; i < n; i++) { const c = (ch as unknown[])[i]; if (c === null || typeof c !== 'object') fail('a child must be { cause, spec }'); const r = c as Record<string, unknown>; children.push({ cause: r.cause as string, spec: copySpec(r.spec) }); } }
-  if (ca) { const n = (ca as unknown[]).length; for (let i = 0; i < n; i++) { const c = (ca as unknown[])[i]; if (c === null || typeof c !== 'object') fail('a cancel needs an id and a non-empty reason'); const r = c as Record<string, unknown>; cancel.push({ id: r.id as string, reason: r.reason as string }); } }
+  if (ch !== undefined) for (const c of copyList(ch, 'children')) {
+    if (!isPlain(c)) fail('a child must be a plain { cause, spec }');
+    const ks = ownKeys(c as object, 'child').sort().join(); if (ks !== 'cause,spec') fail(`a child must have exactly cause, spec (got ${ks})`);
+    const r = c as Record<string, unknown>; children.push({ cause: r.cause as string, spec: copySpec(r.spec) });
+  }
+  if (ca !== undefined) for (const c of copyList(ca, 'cancel')) {
+    if (!isPlain(c)) fail('a cancel needs an id and a non-empty reason');
+    const ks = ownKeys(c as object, 'cancel').sort().join(); if (ks !== 'id,reason') fail(`a cancel must have exactly id, reason (got ${ks})`);
+    const r = c as Record<string, unknown>; cancel.push({ id: r.id as string, reason: r.reason as string });
+  }
   return { children, cancel };
 }
-const canonJson = (v: JsonValue): JsonValue => (Array.isArray(v) ? v.map(canonJson) : v !== null && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, canonJson((v as Record<string, JsonValue>)[k])])) : v);
+const canonJson = (v: JsonValue): JsonValue => (Array.isArray(v) ? v.map(canonJson) : v !== null && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, canonJson((v as Record<string, JsonValue>)[k])])) : v); // fromEntries keeps a "__proto__" key
 const deepFreeze = <T>(v: T): T => { if (v && typeof v === 'object') { for (const x of Object.values(v as object)) deepFreeze(x); Object.freeze(v); } return v; };
 /** a frozen deep copy for readers (internal objects never leave the scheduler) */
 const view = <T>(v: T): T => deepFreeze(JSON.parse(JSON.stringify(v)) as T);

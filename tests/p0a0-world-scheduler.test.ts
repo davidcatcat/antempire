@@ -255,7 +255,7 @@ const split3 = harness(42, world(3, 12), 3, { split: true });
     const b = s.step(() => {}); ok(b.map((e) => e.id).join() === 'a:p,a:r' && s.get('a:q')!.state === 'cancelled', 'a cancelled event in the same instant and round is not executed with its batch');
     // handler output type
     const s2 = new WorldScheduler(W); s2.schedule({ kind: 'a', key: 'x', at: { day: 0, minute: 1 }, scope: ref(null, null), source: null, target: null });
-    refuses(() => s2.step(() => 'oops' as never), /must be an object/, 'handler output that is not an object is refused');
+    refuses(() => s2.step(() => 'oops' as never), /must be undefined or a plain object/, 'handler output that is not an object is refused');
     refuses(() => s2.step(() => ({ children: 'x' as never })), /children must be an array/, 'children that is not an array is refused');
     ok(s2.pending().length === 1, 'refused output: batch still pending');
     // closed days
@@ -304,6 +304,31 @@ const split3 = harness(42, world(3, 12), 3, { split: true });
     const u = new WorldScheduler(W); let n = 0;
     refuses(() => u.schedule({ kind: 'a', key: 'g', at: { day: 0, minute: 1 }, get scope() { return n++ === 0 ? { world: 'other', colony: null, individual: null } : ref(null, null); }, source: null, target: null } as EventSpec), /not this world/, 'schedule(): a spec whose getter is invalid on its single read is refused');
     ok(u.pending().length === 0, 'schedule(): nothing added');
+  }
+  // review (Claude subagent, not Codex) of e49deb9: regressions of the copy rewrite and output-shape contract
+  {
+    const one = () => { const s = new WorldScheduler(W); s.schedule({ kind: 'a', key: 'x', at: { day: 0, minute: 1 }, scope: ref(null, null), source: null, target: null }); return s; };
+    const sp = (over: Record<string, unknown> = {}) => ({ kind: 'b', key: 'k', at: { day: 0, minute: 2 }, scope: ref(null, null), source: null, target: null, ...over });
+    { const s = one(); s.step((b) => ({ children: [{ cause: b[0].id, spec: sp({ payload: undefined }) as EventSpec }] })); ok(s.get('a:x/b:k')!.payload === null, 'an explicit payload: undefined is no payload (null), as before'); }
+    { const s = one(), pl = JSON.parse('{"__proto__": 5, "a": {"__proto__": {"z": 1}}}'); s.step((b) => ({ children: [{ cause: b[0].id, spec: sp({ payload: pl }) as EventSpec }] }));
+      const got = s.get('a:x/b:k')!.payload as Record<string, unknown>; ok(Object.prototype.hasOwnProperty.call(got, '__proto__') && JSON.stringify(got) === '{"__proto__":5,"a":{"__proto__":{"z":1}}}', 'a payload key named __proto__ is kept as an ordinary key (not dropped, not a prototype)');
+      const r = WorldScheduler.restore(s.snapshot()); ok(JSON.stringify(r.get('a:x/b:k')!.payload) === JSON.stringify(got), '__proto__ key survives snapshot / restore'); }
+    for (const [what, f, re] of [
+      ['async handler (Promise)', () => Promise.resolve({ children: [] }), /async handler is not allowed/],
+      ['misspelt field', () => ({ childs: [] }), /unknown field childs/],
+      ['extra field in a child', (b: readonly Readonly<WorldEvent>[]) => ({ children: [{ cause: b[0].id, spec: sp() as EventSpec, priority: 1 }] }), /exactly cause, spec/],
+      ['extra field in a cancel', () => ({ cancel: [{ id: 'a:x', reason: 'r', when: 1 }] }), /exactly id, reason/],
+      ['non-enumerable unknown field', () => Object.defineProperty({}, 'kids', { value: [], enumerable: false }), /unknown field kids/],
+      ['symbol key', () => ({ [Symbol('x')]: 1 }), /symbol keys/],
+      ['huge array-like length', () => ({ children: new Proxy([], { get: (t, k) => (k === 'length' ? 1e12 : (t as unknown as Record<string | symbol, unknown>)[k]) }) }), /more than/],
+      ['huge payload (shared subtree)', (b: readonly Readonly<WorldEvent>[]) => { let v: unknown = 1; for (let i = 0; i < 30; i++) v = [v, v]; return { children: [{ cause: b[0].id, spec: sp({ payload: v }) as EventSpec }] }; }, /more than 100000 values/],
+      ['sparse payload array', (b: readonly Readonly<WorldEvent>[]) => ({ children: [{ cause: b[0].id, spec: sp({ payload: [1, , 3] }) as EventSpec }] }), /hole/],
+    ] as const) {
+      const s = one(), before = JSON.stringify(s.snapshot()), t0 = Date.now();
+      refuses(() => s.step(f as never), re, `refused: ${what}`);
+      ok(JSON.stringify(s.snapshot()) === before && Date.now() - t0 < 2000, `${what}: nothing committed, refused promptly`);
+    }
+    { const s = one(); s.step((b) => ({ children: [{ cause: b[0].id, spec: Object.defineProperty(sp(), 'payload', { value: { v: 1 }, enumerable: false }) as EventSpec }] })); ok(JSON.stringify(s.get('a:x/b:k')!.payload) === '{"v":1}', 'a non-enumerable payload is read, not silently dropped'); }
   }
   // restore refuses each inconsistency
   {
