@@ -6,13 +6,19 @@
  *     T_EPS / S_EPS before it: the `at()` guard skips an event that is "not ahead", and the end was then never scheduled,
  *     so the ant walked on past the passage end (traffic seed 30: A6 to s = −1978.77 mm; seed 44: A7 to s = 2175.20 mm,
  *     both still `retreat` at the horizon). Window-split invariance cannot see this (every window drops it the same way)
- *     and the 12-seed traffic test did not reach these seeds. Fix: the end of a walk is due NOW when the ant is within
- *     S_EPS of it or past it — the same rule boundary / wall / aperture events already use.
- *  B. The entry queue decided which of several ABREAST ants (same arc length up to 1–4 ulp, e.g. seeds 3 and 7 of the
- *     12 × 8 corridor) is "ahead" by the sign of the rounding residue: `(o.s − r.s)·travel > 0`. Every ring member was
- *     then "blocked ahead" by a coincident nestmate and all were reported unresolved, although none of their bodies was
- *     in the single-file section. Fix: a difference within LEN_TOL(lane length) is coincident — neither is ahead — and
- *     the existing entry-queue rule (game assumption, unchanged) applies.
+ *     and the 12-seed traffic test did not reach these seeds. Fix: within S_EPS of the end (or past it) the end is
+ *     scheduled at its ANALYTIC time (never earlier than now). A2 measures that no end fires early: every move record and
+ *     every arrival agrees with t_start + distance / speed within SAME_INSTANT (Owner review of #108).
+ *  B. The entry queue decided which of several ants with COINCIDENT 1-D ARC COORDINATES (equal up to 1–4 ulp, e.g. seeds
+ *     3 and 7 of the 12 × 8 corridor) is "ahead" by the sign of the rounding residue: `(o.s − r.s)·travel > 0`. Every
+ *     ring member was then "blocked ahead" by a nestmate at the same arc length and all were reported unresolved,
+ *     although none of their bodies was in the single-file section. Fix: a difference within LEN_TOL(lane length) is
+ *     coincident — neither is ahead — and the existing entry-queue rule (game assumption, unchanged) applies.
+ *     Coincident arc length is NOT a claim that the bodies fit side by side: the lane model has no lateral coordinate.
+ *  C. P2-E, NOT fixed (model limitation, recorded): the engine and checkExclusion check bodies in PAIRS. Three or more
+ *     bodies at one arc position may need more width than the passage has; checkWidthOccupancy reports this. The tests
+ *     pin the counterexamples (accepted by the engine, invisible to checkExclusion, reported by the width-sum check) and
+ *     record how often it happens — so no result here (e.g. 96/96 arrivals) is evidence of 2-D physical feasibility.
  *
  * Before the fixes (ef8308d, PR #105 head): A fails for traffic seeds 30 and 44; B fails for seeds 3 and 7 (fixture).
  * Engineering evidence only: the physics layer is experimental and not connected to the daily simulation.
@@ -23,7 +29,7 @@ import path from 'node:path';
 import { REPO_ROOT } from '../cli/lib/load.ts';
 import type { PhysicsGeometry } from '../engine/physics/geometry.ts';
 import { checkTrajectory, passageOf } from '../engine/physics/kinematics.ts';
-import { type EncounterRules, type SimAgentSpec, type SimConfig, type SimResult, type PhysObject, simulate, checkExclusion, LEN_TOL } from '../engine/physics/collision.ts';
+import { type EncounterRules, type SimAgentSpec, type SimConfig, type SimResult, type PhysObject, simulate, checkExclusion, checkWidthOccupancy, LEN_TOL, SAME_INSTANT } from '../engine/physics/collision.ts';
 import { rng } from '../engine/rng.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -82,13 +88,33 @@ const inPassage = (cfg: SimConfig, r: SimResult) => {
   console.error(`A. traffic seeds 1–60: ${arrived}/${total} arrived (recorded, not a target)`);
 }
 
-// ---- B. coincident (abreast) ants are never "ahead" of each other in the entry queue
+// ---- A2. no end fires early: every move record ends at t_start + distance / speed, every arrival at its analytic time
+{
+  let worstRec = 0, worstArr = 0, recs = 0, arrs = 0;
+  for (const [gen, n, f] of [['traffic', 60, traffic], ['dense', 200, dense]] as const) for (let seed = 1; seed <= n; seed++) {
+    const cfg = f(seed), r = simulate(cfg);
+    for (const [id, ivs] of Object.entries(r.intervals)) for (const iv of ivs) if (iv.kind === 'move' && iv.speed_mm_s > 0) {
+      const early = iv.t_start_s + iv.distance_mm / iv.speed_mm_s - iv.t_end_s; recs++; worstRec = Math.max(worstRec, early);
+      assert.ok(early <= SAME_INSTANT(iv.t_end_s), `${gen} ${seed} ${id}: a move record ends ${early.toExponential(2)} s before t_start + distance / speed (more than SAME_INSTANT)`);
+    }
+    for (const e of r.events.filter((x) => x.kind === 'arrive')) {
+      const mv = r.intervals[e.agent].filter((iv) => iv.kind === 'move' && iv.t_end_s <= e.t_s + 1e-12).at(-1); if (!mv) continue;
+      const early = mv.t_start_s + Math.abs(e.s_mm - mv.s_start_mm) / mv.speed_mm_s - e.t_s; arrs++; worstArr = Math.max(worstArr, early);
+      assert.ok(early <= SAME_INSTANT(e.t_s), `${gen} ${seed} ${e.agent}: arrival ${early.toExponential(2)} s before its analytic time`);
+      assert.equal(e.s_mm, cfg.agents.find((a) => a.id === e.agent)!.goal_s_mm, 'an arrival is exactly at the goal');
+    }
+  }
+  ok(recs > 0 && arrs > 0, `A2: ${recs} move records and ${arrs} arrivals: none earlier than its analytic time by more than SAME_INSTANT (worst ${worstRec.toExponential(2)} s / ${worstArr.toExponential(2)} s)`);
+  console.error(`A2. worst early end: move record ${worstRec.toExponential(2)} s, arrival ${worstArr.toExponential(2)} s (tolerance SAME_INSTANT = 16 ulps of t)`);
+}
+
+// ---- B. ants with coincident 1-D arc coordinates are never "ahead" of each other in the entry queue
 {
   const fx: Any = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'tests/fixtures/physics/corridor-12x8-seed3-seed7.json'), 'utf8'));
   for (const [name, c] of Object.entries(fx.cases) as [string, Any][]) {
     const cfg: SimConfig = { encounter: c.encounter, geometry: cor, agents: c.agents, horizon_s: c.horizon_s, seed: c.seed }, r = simulate(cfg);
     const blocked = r.events.filter((e) => e.kind === 'unresolved' && /every ant blocked ahead/.test(e.detail ?? ''));
-    ok(blocked.length === 0, `${name}: no entry-queue ring is declared 'every ant blocked ahead' between abreast ants (${blocked.map((e) => `${e.agent}@${r.final[e.agent].s_mm}`).join(', ')})`);
+    ok(blocked.length === 0, `${name}: no entry-queue ring is declared 'every ant blocked ahead' between ants at coincident arc lengths (${blocked.map((e) => `${e.agent}@${r.final[e.agent].s_mm}`).join(', ')})`);
     ok(inPassage(cfg, r).length === 0 && checkExclusion(cfg, r, 0.005).length === 0 && Object.values(r.final).every((f) => STOPPED.has(f.mode)), `${name}: in the passage, no overlap, every ant arrived or reported`);
     console.error(`B. ${name}: ${Object.values(r.final).filter((f) => f.mode === 'arrived').length}/${cfg.agents.length} arrived (recorded, not a target)`);
   }
@@ -104,5 +130,31 @@ const inPassage = (cfg: SimConfig, r: SimResult) => {
   }
   console.error(`B. blocked rings remaining in traffic 1–60 + dense 1–200: ${rings} (all non-coincident)`);
   ok(rings > 0, `the non-coincidence check met real blocked rings (${rings})`);
+}
+
+// ---- C. P2-E (not fixed): three bodies at one arc position can need more width than the passage — pinned and counted
+{
+  const prov = { source: 'synthetic_scenario', assumption: true, basis: '遊戲假設', note: 'P2-E counterexample lane' };
+  const lane2: PhysicsGeometry = { schema: 'antempire.physics-geometry.v1', layer_of: 'antempire.world-geometry.v1', world_geometry_ref: null, world_id: 'synthetic-p2e', geometry_version: '0.1.0', synthetic: true, synthetic_note: 'P2-E: a straight 100 mm lane 2.0 mm wide', frame: { units: 'mm', axes: { x: 'east', y: 'north', z: 'up' }, origin: 'synthetic' }, obstacles: [], entrances: [],
+    surfaces: [{ id: 'S', material: 'bare_soil', polygon_mm: [[-10, -10], [110, -10], [110, 10], [-10, 10]], elevation: { kind: 'flat', z_mm: 0 }, provenance: prov }],
+    passages: [{ id: 'P', centerline_mm: [[0, 0, 0], [100, 0, 0]], width_mm: 2.0, route_edge_ref: null, provenance: prov }] } as Any;
+  const ag = (id: string, s: number, w: number): SimAgentSpec => ({ id, passage: 'P', s_mm: s, dir: 1, start_t_s: 0, free_speed_mm_s: 10, goal_s_mm: 90, body: { length_mm: 2.5, width_mm: w, contact_reach_mm: 0.5 }, load: null });
+  const run = (agents: SimAgentSpec[]) => { const cfg: SimConfig = { encounter: { ...ENC, contact_pause_s: null }, geometry: lane2, agents, horizon_s: 20, seed: 1 }; return { cfg, r: simulate(cfg) }; };
+  // two bodies that do not fit side by side (1.1 + 1.1 > 2.0) are refused at the start: pairs ARE enforced
+  assert.throws(() => run([ag('a', 10, 1.1), ag('b', 10.5, 1.1)]), /start in the same space/); checks++;
+  const two = run([ag('a', 10, 1.1), ag('b', 14, 1.1)]);
+  ok(checkExclusion(two.cfg, two.r, 0.005).length === 0 && checkWidthOccupancy(two.cfg, two.r, 0.005).length === 0, 'two bodies in single file: no pairwise and no width-sum excess (control)');
+  // three bodies of 0.8 mm overlapping in arc length on a 2.0 mm lane need 2.4 mm: KNOWN LIMITATION P2-E
+  const three = run([ag('a', 10, 0.8), ag('b', 10.5, 0.8), ag('c', 11, 0.8)]), wx = checkWidthOccupancy(three.cfg, three.r, 0.005);
+  ok(Object.values(three.r.final).every((f) => f.mode === 'arrived'), 'P2-E counterexample: the 1-D engine accepts three 0.8 mm bodies at one arc position on a 2.0 mm lane (2.4 mm needed) — recorded, not fixed');
+  ok(checkExclusion(three.cfg, three.r, 0.005).length === 0, 'P2-E counterexample: checkExclusion (pairwise) does not see it — passing it is NOT a 2-D exclusion proof');
+  ok(wx.length > 0 && /need 2\.400 mm/.test(wx[0]), `P2-E counterexample: the width-sum check reports it (${wx[0]})`);
+  // how often the 1-D model reaches such states in the corridor generators (recorded; the 1-D model cannot represent the fix)
+  const tally: Record<string, number> = {};
+  for (const [gen, n, f] of [['traffic', 60, traffic], ['dense', 200, dense]] as const) for (let seed = 1; seed <= n; seed++) { const cfg = f(seed), r = simulate(cfg); if (checkWidthOccupancy(cfg, r, 0.005).length) tally[gen] = (tally[gen] ?? 0) + 1; }
+  const fx: Any = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'tests/fixtures/physics/corridor-12x8-seed3-seed7.json'), 'utf8'));
+  for (const [name, c] of Object.entries(fx.cases) as [string, Any][]) { const cfg: SimConfig = { encounter: c.encounter, geometry: cor, agents: c.agents, horizon_s: c.horizon_s, seed: c.seed }; tally[name] = checkWidthOccupancy(cfg, simulate(cfg), 0.005).length; }
+  ok(Object.keys(tally).length > 0, `P2-E occurrence (recorded): ${JSON.stringify(tally)} — scenes / instants where three or more bodies need more than the usable width`);
+  console.error(`C. P2-E width-sum excess: ${JSON.stringify(tally)} (traffic/dense = scenes; seed-3/7 = sampled instants)`);
 }
 console.log(JSON.stringify({ passed: true, checks }));

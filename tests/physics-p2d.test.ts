@@ -94,9 +94,10 @@ for (const seed of [7, 34, 38]) {
     ok(modes.every((m) => m === 'arrived' || m === 'unresolved') && Object.entries(r.final).every(([id, f]) => f.mode !== 'unresolved' || unresolvedIds.has(id)), `${name}: every ant arrives or is reported unresolved with a named partner (no silent wait)`);
     const stuck = Object.entries(r.final).filter(([, f]) => f.mode === 'unresolved');
     // PH-P2E B (#107): before, all four outbound ants stood at one arc length (spread ≤ 1e-12 mm) and were each judged
-    // 'blocked ahead' by an abreast nestmate on the sign of a rounding residue. Now coincident ants are never 'ahead'.
-    const abreastBlocked = r.events.filter((e) => e.kind === 'unresolved' && /every ant blocked ahead/.test(e.detail ?? '') && (() => { const ss = stuck.map(([, f]) => f.s_mm); return ss.length > 1 && Math.max(...ss) - Math.min(...ss) <= 1e-12; })());
-    ok(abreastBlocked.length === 0, `${name}: no ring of coincident (abreast) ants is reported 'every ant blocked ahead' (PH-P2E B, #107)`);
+    // 'blocked ahead' by a nestmate at the same arc length on the sign of a rounding residue. Now ants with coincident 1-D
+    // arc coordinates are never 'ahead' of each other (this says nothing about fitting side by side: P2-E, #107).
+    const coincidentBlocked = r.events.filter((e) => e.kind === 'unresolved' && /every ant blocked ahead/.test(e.detail ?? '') && (() => { const ss = stuck.map(([, f]) => f.s_mm); return ss.length > 1 && Math.max(...ss) - Math.min(...ss) <= 1e-12; })());
+    ok(coincidentBlocked.length === 0, `${name}: no ring of ants at coincident arc lengths is reported 'every ant blocked ahead' (PH-P2E B, #107)`);
     console.error(`${name}: ${modes.filter((m) => m === 'arrived').length} arrived, ${stuck.length} unresolved (${stuck.map(([id]) => id).join(', ') || '—'})`);
   }
 }
