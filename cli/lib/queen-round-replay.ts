@@ -130,6 +130,52 @@ export function replayQueenRound(start: Any, end: Any, events: Any[], species: A
       }
     }
   });
+  // Codex review (2026-11-07): the feeding rule, replayed here independently of the engine. Crops and the queen's own known
+  // balance are followed record by record from the start of the day; at each contact, per food: a nurse holding none gives
+  // nothing; a queen whose own balance is at the satiation threshold refuses (one refusal, no feeding); otherwise exactly one
+  // feeding of min(held, feed_max_portions_per_contact). Contacts follow their ordinal times, ties by worker ID.
+  {
+    const r6 = (x: number) => Math.round((x + Number.EPSILON) * 1e6) / 1e6;
+    const maxBolus = val(qf.feed_max_portions_per_contact), sat = val(qf.queen_satiation_days_of_need);
+    const daily = { sugar: val(species?.nutrition?.queen_sugar_daily), protein: val(species?.nutrition?.queen_protein_daily) };
+    const initRec = ev.find((x) => x.type === 'queen_body_initialized');
+    const bal: Record<string, number> = { ...(q0?.body?.known_balance ?? initRec?.known_balance ?? { sugar: 0, protein: 0 }) };
+    const crop = new Map<string, Record<string, number>>((start?.population?.workers ?? []).map((w: Any) => [w.id, { sugar: Number(w.crop_cargo_sugar) || 0, protein: Number(w.crop_cargo_protein_liquid) || 0 }]));
+    const expect = new Map<string, { what: 'nothing' | 'refusal' | 'feeding'; amount?: number }>(), fedN = new Map<string, number>(), refused = new Set<string>();
+    let prev: { t: number; w: string } | null = null, current: string | null = null;
+    const mine = (cid: unknown, what: string) => { if (String(cid) !== current) err(`${what} of contact ${cid} comes after a later contact (${current}); it must follow its own contact directly`); };
+    for (const e of ev) {
+      if (e.type === 'queen_contact') {
+        current = String(e.contact_event_id);
+        const t = Number(e.ordinal), w = String(e.worker);
+        if (prev && (t < prev.t || (t === prev.t && w < prev.w))) err(`${e.contact_event_id}: contact at ${t} by ${w} comes after ${prev.w} at ${prev.t} (ordinal order, ties by ID)`);
+        prev = { t, w };
+        const h = crop.get(w) ?? { sugar: 0, protein: 0 };
+        for (const f of ['sugar', 'protein']) expect.set(`${e.contact_event_id}/${f}`, !(h[f] > 0) ? { what: 'nothing' } : bal[f] >= sat * daily[f as 'sugar' | 'protein'] ? { what: 'refusal' } : { what: 'feeding', amount: r6(Math.min(h[f], maxBolus)) });
+      } else if (e.type === 'queen_feeding_refused') {
+        mine(e.contact_event_id, 'a refusal');
+        const k = `${e.contact_event_id}/${e.food_type}`, x = expect.get(k);
+        if (refused.has(k)) err(`${k}: refused twice`); refused.add(k);
+        if (x?.what !== 'refusal') err(`${k}: a refusal where the rule gives ${x?.what ?? 'no contact'}`);
+      } else if (e.type === 'food_transfer') {
+        if (e.cause === 'feed_queen') {
+          mine(e.contact?.contact_event_id, `${e.transfer_id} feed_queen`);
+          const k = `${e.contact?.contact_event_id}/${e.food_type}`, x = expect.get(k);
+          fedN.set(k, (fedN.get(k) ?? 0) + 1);
+          if (x?.what !== 'feeding') err(`${e.transfer_id}: a feeding where the rule gives ${x?.what ?? 'no contact'} (queen balance ${bal[e.food_type]})`);
+          else if (Number(e.portions) !== x.amount) err(`${e.transfer_id}: ${e.portions} ${e.food_type}; min(held, ${maxBolus}) = ${x.amount}`);
+        }
+        for (const [side, sg] of [[e.source, -1], [e.recipient, 1]] as [Any, number][]) {
+          if (side?.kind === 'crop') { const h = crop.get(side.id) ?? { sugar: 0, protein: 0 }; h[e.food_type] = r6(h[e.food_type] + sg * Number(e.portions)); crop.set(side.id, h); }
+          if (side?.kind === 'queen_body' && side.id === (q1?.id ?? q0?.id)) bal[e.food_type] = r6(bal[e.food_type] + sg * Number(e.portions));
+        }
+      }
+    }
+    for (const [k, x] of expect) {
+      if (x.what === 'feeding' && fedN.get(k) !== 1) err(`${k}: the rule gives one feeding of ${x.amount}; ${fedN.get(k) ?? 0} recorded`);
+      if (x.what === 'refusal' && !refused.has(k)) err(`${k}: the queen was satiated, no refusal recorded`);
+    }
+  }
   out.ok = errors.length === 0;
   return out;
 }
