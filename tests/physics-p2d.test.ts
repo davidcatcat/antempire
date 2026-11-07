@@ -8,7 +8,8 @@
  * Before the fix (commit 003184d): the dense-corridor comparisons of window_s 100 vs 1 / 0.37 / 0.05 / 0.003 differed in
  * 4 of 400 runs (event times up to 2.7e-3 s apart, seeds 7, 34, 38), and 369 of 4,000 comparisons over 200 seeds with
  * boundary-aligned windows differed. The preserved 12 × 8 corridor counterexamples (seeds 3 and 7) are recorded, not
- * required to arrive (Owner #100: keep 88/96; do not tune to 96/96).
+ * required to arrive (Owner #100: keep 88/96; do not tune to 96/96). Since PH-P2E (#107) the numerical cause is fixed and
+ * the fixture checks that coincident ants are never 'ahead' of each other; arrivals are still only recorded.
  *
  * Engineering evidence only: the physics layer is experimental, not connected to the daily simulation, and not a
  * validated model of P. megacephala behaviour.
@@ -92,10 +93,11 @@ for (const seed of [7, 34, 38]) {
     const modes = Object.values(r.final).map((f) => f.mode), unresolvedIds = new Set(r.events.filter((e) => e.kind === 'unresolved').flatMap((e) => [e.agent, e.other]));
     ok(modes.every((m) => m === 'arrived' || m === 'unresolved') && Object.entries(r.final).every(([id, f]) => f.mode !== 'unresolved' || unresolvedIds.has(id)), `${name}: every ant arrives or is reported unresolved with a named partner (no silent wait)`);
     const stuck = Object.entries(r.final).filter(([, f]) => f.mode === 'unresolved');
-    if (stuck.length) {
-      const ss = stuck.map(([, f]) => f.s_mm), spread = Math.max(...ss) - Math.min(...ss);
-      ok(spread <= 1e-12, `${name}: the unresolved ants stand at one arc length (spread ${spread.toExponential(1)} mm ≤ 1e-12 mm): the solver's 'ahead' test meets coincident bodies — numerical degeneracy, recorded`);
-    }
+    // PH-P2E B (#107): before, all four outbound ants stood at one arc length (spread ≤ 1e-12 mm) and were each judged
+    // 'blocked ahead' by a nestmate at the same arc length on the sign of a rounding residue. Now ants with coincident 1-D
+    // arc coordinates are never 'ahead' of each other (this says nothing about fitting side by side: P2-E, #107).
+    const coincidentBlocked = r.events.filter((e) => e.kind === 'unresolved' && /every ant blocked ahead/.test(e.detail ?? '') && (() => { const ss = stuck.map(([, f]) => f.s_mm); return ss.length > 1 && Math.max(...ss) - Math.min(...ss) <= 1e-12; })());
+    ok(coincidentBlocked.length === 0, `${name}: no ring of ants at coincident arc lengths is reported 'every ant blocked ahead' (PH-P2E B, #107)`);
     console.error(`${name}: ${modes.filter((m) => m === 'arrived').length} arrived, ${stuck.length} unresolved (${stuck.map(([id]) => id).join(', ') || '—'})`);
   }
 }

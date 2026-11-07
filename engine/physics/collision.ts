@@ -493,7 +493,7 @@ export function simulate(cfg: SimConfig): SimResult {
         if (!wp) continue;
         const p = byId.get(wp)!;
         if (terminal(p)) { unresolved(t, a, p, `waits for ${p.id}, which has stopped for good (${p.mode})`); changed = true; continue; }
-        const ring: RT[] = [a];
+        const ring: RT[] = [a], r0len = laneLength(a.p);
         let q = p;
         while (waitPartner(q) && !ring.includes(q)) { ring.push(q); q = byId.get(waitPartner(q)!)!; }
         if (q === a && ring.length > 1 && ring.every((r) => r.mode === 'follow' && sameLane(r, a))) {
@@ -501,7 +501,12 @@ export function simulate(cfg: SimConfig): SimResult {
           // per-ant rank drawn for this instant; game assumption) and the others wait for it — a queue, not a deadlock
           const rank = (x: RT) => rng(hash32(`${cfg.seed}|physics.encounter.queue|${x.id}|ring|${t.toFixed(9)}`))();
           // only an ant whose way ahead is not blocked (a touching body in single file that is not moving away) can go first
-          const blockedAhead = (r: RT) => rts.some((o) => o !== r && sameLane(o, r) && (o.s - r.s) * r.travel > 0 && o.v * r.travel <= 0 && Math.abs(o.s - r.s) <= M(r, o) + 1e-7 && (() => { const fr = r.s + r.travel * r.L / 2; return narrowOver(r.p, r.w + o.w, Math.min(fr, fr + r.travel * 1e-6), Math.max(fr, fr + r.travel * 1e-6)); })());
+          // PH-P2E B (review 2026-11-07): bodies whose 1-D arc coordinates differ by no more than LEN_TOL(lane length) are
+          // coincident in arc length: neither is 'ahead' of the other. Before, the sign of a 1–4 ulp rounding residue decided it
+          // (seeds 3/7 of the 12 × 8 corridor). A numerical equivalence, not a model parameter. Coincident ARC LENGTH is not a
+          // claim that the bodies fit side by side: the lane model has no lateral coordinate (see checkWidthOccupancy, P2-E).
+          const aheadTol = LEN_TOL(r0len);
+          const blockedAhead = (r: RT) => rts.some((o) => o !== r && sameLane(o, r) && (o.s - r.s) * r.travel > aheadTol && o.v * r.travel <= 0 && Math.abs(o.s - r.s) <= M(r, o) + 1e-7 && (() => { const fr = r.s + r.travel * r.L / 2; return narrowOver(r.p, r.w + o.w, Math.min(fr, fr + r.travel * 1e-6), Math.max(fr, fr + r.travel * 1e-6)); })());
           const free = ring.filter((r) => !blockedAhead(r));
           if (!free.length) { for (let i = 0; i < ring.length; i++) if (!terminal(ring[i])) unresolved(t, ring[i], ring[(i + 1) % ring.length], `mutual wait, every ant blocked ahead (${ring.map((r) => r.id).join(' → ')})`); changed = true; continue; }
           const first = [...free].sort((x, y) => rank(y) - rank(x) || (x.id < y.id ? -1 : 1))[0];
@@ -526,8 +531,13 @@ export function simulate(cfg: SimConfig): SimResult {
     // the same value whichever step (window) asks — and is never earlier than now
     const tAt = (x: number) => Math.max(t, a.open.t + (x - a.open.s) / a.v);
     const at = (x: number, kind: string, data?: number) => { const dt = (x - a.s) / a.v; if (dt > T_EPS || (dt >= 0 && Math.abs(x - a.s) > S_EPS)) out.push({ t: tAt(x), kind, a: a.id, b: null, data }); };
-    if (a.mode === 'retreat') at(a.retreat_s!, 'retreat_done');
-    else if (m === a.travel) at(a.spec.goal_s_mm, 'arrive');
+    // PH-P2E A (review 2026-11-07): the END of a walk (back-out target, goal) is never dropped. Before, when an unrelated event
+    // fell within T_EPS / S_EPS before the end (traffic seed 30: 3.5e-11 s, 6.5e-10 mm), the guard of at() dropped it and the
+    // ant walked on out of the passage. Within S_EPS of the end (or past it) the end is scheduled at its ANALYTIC time tAt(x)
+    // (never earlier than now; a.v is the signed velocity) — not at the current instant, which would end the walk up to S_EPS / v early (Owner review #108).
+    const end = (x: number, kind: string) => { if ((x - a.s) * m <= S_EPS) out.push({ t: a.v !== 0 ? tAt(x) : t, kind, a: a.id, b: null }); else at(x, kind); };
+    if (a.mode === 'retreat') end(a.retreat_s!, 'retreat_done');
+    else if (m === a.travel) end(a.spec.goal_s_mm, 'arrive');
     for (const x of vertexArcs(a.p)) if ((x - a.s) * m > S_EPS) at(x, 'vertex');
     // boundaries ahead of the leading edge, and one the edge is standing on when it starts to move (checked once per motion piece)
     for (const b of boundaries.get(`${a.p.id}|${a.w}`)!) {
@@ -971,7 +981,40 @@ export function simulate(cfg: SimConfig): SimResult {
  * Independent check of a simulation result (tests): samples every trajectory at every record boundary and every dt and
  * verifies that no two bodies are in mutually exclusive positions (21 samples per overlap region), no body is in a section
  * too narrow for it (21 samples per body), and no body straddles an entrance narrower than it. Returns violations.
+ * SCOPE: bodies are checked in PAIRS on a 1-D lane. It does NOT check that three or more bodies sharing an arc position fit
+ * side by side (the lane model has no lateral coordinate); passing it is not a 2-D exclusion proof. See checkWidthOccupancy.
  */
+/**
+ * P2-E diagnostic (issue #107; NOT part of checkExclusion and not enforced by the engine): at every record boundary and
+ * every dt, for each passage, sums the widths of ALL bodies whose length intervals cover an arc position and reports where
+ * that sum exceeds the usable width. Pairs are already checked by checkExclusion; this reports the states of three or more
+ * bodies that the 1-D lane model accepts but that cannot be laid out side by side in 2-D. A report is a model limitation,
+ * not a measured collision. Returns one message per (instant, passage) with an excess.
+ */
+export function checkWidthOccupancy(cfg: SimConfig, res: SimResult, dt: number): string[] {
+  const g = cfg.geometry, out: string[] = [], specs = new Map(cfg.agents.map((a) => [a.id, a]));
+  const width = (id: string) => { const a = specs.get(id)!; const o = a.load ? cfg.objects!.find((x) => x.id === a.load)! : null; return Math.max(a.body.width_mm, o?.width_mm ?? 0); };
+  const times = new Set<number>();
+  for (const ivs of Object.values(res.intervals)) for (const r of ivs) { times.add(r.t_start_s); times.add(r.t_end_s); }
+  for (let t = 0; t <= res.stats.t_end_s; t += dt) times.add(t);
+  const sAt = (id: string, t: number) => { const ivs = res.intervals[id]; for (const r of ivs) if (t >= r.t_start_s - 1e-12 && t <= r.t_end_s + 1e-12) { const f = r.t_end_s === r.t_start_s ? 1 : (t - r.t_start_s) / (r.t_end_s - r.t_start_s); return r.s_start_mm + (r.s_end_mm - r.s_start_mm) * Math.max(0, Math.min(1, f)); } return ivs.length ? ivs[ivs.length - 1].s_end_mm : specs.get(id)!.s_mm; };
+  for (const t of [...times].sort((a, b) => a - b)) {
+    const byP = new Map<string, { id: string; lo: number; hi: number; w: number }[]>();
+    for (const [id, a] of specs) { const s = sAt(id, t), list = byP.get(a.passage) ?? []; list.push({ id, lo: s - a.body.length_mm / 2, hi: s + a.body.length_mm / 2, w: width(id) }); byP.set(a.passage, list); }
+    for (const [pid, bs] of [...byP].sort(([x], [y]) => (x < y ? -1 : 1))) {
+      if (bs.length < 3) continue;
+      const p = passageOf(g, pid);
+      // the set of covering bodies changes only at interval ends: test just inside every end
+      for (const x of bs.flatMap((b) => [b.lo + 1e-6, b.hi - 1e-6]).sort((u, v) => u - v)) {
+        const cov = bs.filter((b) => b.lo < x && x < b.hi); if (cov.length < 3) continue;
+        const need = cov.reduce((q, b) => q + b.w, 0), have = usableWidth(g, p, x);
+        if (have < need - 1e-6) { out.push(`t=${t}: ${cov.map((b) => b.id).sort().join('+')} need ${need.toFixed(3)} mm side by side at s=${x.toFixed(4)} on ${pid}, usable width ${have.toFixed(3)} mm`); break; }
+      }
+    }
+  }
+  return out;
+}
+
 export function checkExclusion(cfg: SimConfig, res: SimResult, dt: number): string[] {
   const g = cfg.geometry, out: string[] = [], specs = new Map(cfg.agents.map((a) => [a.id, a]));
   const width = (id: string) => { const a = specs.get(id)!; const o = a.load ? cfg.objects!.find((x) => x.id === a.load)! : null; return Math.max(a.body.width_mm, o?.width_mm ?? 0); };
