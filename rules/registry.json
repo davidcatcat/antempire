@@ -406,6 +406,24 @@
       "save_schema": "antempire.engine-v2",
       "state_migration": null,
       "note": "C4a (Issue #81, D1–D8): with larval_feeding.individual_larva_body_c4a on (requires C3a) each larva has its own account (larva_body), fed only in the C3a nest round after a larva_contact at the same place (feed_larva: one fixed bolus per food when its own begging is at or above the threshold), pays its own metabolism and begs from its own protein intake; hatch is an accounting record only (reserve_at_hatch null). Development and starvation keep the old colony-wide rules (C4b/C4c). Introduced OFF: every output byte-identical to v2-review.27."
+    },
+    {
+      "rules_version": "antempire.v2-review.29-c4a-begging-prior",
+      "tag": "v29",
+      "fingerprint": {
+        "engine": "15c5cadf1d50eb32e9ef00e42c23d5bdea416b80693fda5fba81f66a321865ed",
+        "params": "a514f1b7ea51ec1f0cd3888de7b5fe7c3578a93c4085d3eff76cddf365871a02"
+      },
+      "approved_in": "Owner instruction 2026-11-07 (phase 3: C4a first-seen begging; separate rules-update PR, model choice for the Owner, not merged by Claude)",
+      "golden": {
+        "traces": "tests/golden/v29-trace-sha256.json",
+        "reports": "reports/day15-134-v29-*",
+        "day0_traces": "tests/golden/day0-v29-trace-sha256.json"
+      },
+      "previous": "antempire.v2-review.28-c4a-larva-body",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null,
+      "note": "C4a first-seen begging (larval_feeding.first_seen_begging_prior_v29, requires C4a): a larva C4a sees for the first time starts from the explicit prior default_larva_begging_prior (game assumption) instead of the old colony-derived begging, which is kept in the initialization event only. Changes first-day feeding eligibility (prior = threshold = 0.3). Introduced OFF: every output byte-identical to v2-review.28."
     }
   ]
 }
