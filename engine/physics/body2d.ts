@@ -82,7 +82,12 @@ type Disk = { kind: 'disk'; c: Vec2; R: number };
 type Piece = Rect | Disk;
 type Bnd = { kind: 'seg'; p: Vec2; q: Vec2 } | { kind: 'arc'; c: Vec2; R: number; th0: number; th1: number };
 const TAU = 2 * Math.PI;
-const regionCache = new WeakMap<Lane2, { pieces: Piece[]; boundary: Bnd[] }>();
+// cache keyed by the lane object AND checked against a content signature: a lane edited in place (narrowed, moved)
+// is recomputed, never served from a stale entry (Owner P2 2026-11-07)
+const regionCache = new WeakMap<Lane2, { sig: string; pieces: Piece[]; boundary: Bnd[] }>();
+const laneSig = (l: Lane2) => JSON.stringify([l.width_mm, l.centerline_mm.map((p) => [p.x, p.y])]);
+/** offset used to tell an internal seam (lane on both sides) from a real edge: the contract tolerance */
+const SEAM_DELTA_MM = OCC_TOL_MM;
 
 /** open interval of τ ∈ ℝ with lo < f0 + τ f1 < hi (null if empty) */
 function linOpen(f0: number, f1: number, lo: number, hi: number): [number, number] | null {
@@ -108,8 +113,39 @@ function complementIv(open: [number, number][], d0: number, d1: number, eps: num
 }
 const pt = (p: Vec2, d: Vec2, k: number): Vec2 => ({ x: p.x + d.x * k, y: p.y + d.y * k });
 
+/** parameters where p + τ d crosses a boundary of K (each constraint separately; over-splitting is harmless) */
+function segBreaks(p: Vec2, d: Vec2, K: Piece): number[] {
+  const out: number[] = [];
+  if (K.kind === 'rect') {
+    const a0 = (p.x - K.a.x) * K.t.x + (p.y - K.a.y) * K.t.y, a1 = d.x * K.t.x + d.y * K.t.y, n0 = (p.x - K.a.x) * K.n.x + (p.y - K.a.y) * K.n.y, n1 = d.x * K.n.x + d.y * K.n.y;
+    if (a1 !== 0) out.push(-a0 / a1, (K.len - a0) / a1);
+    if (n1 !== 0) out.push((-K.h - n0) / n1, (K.h - n0) / n1);
+  } else {
+    const ex = p.x - K.c.x, ey = p.y - K.c.y, A = d.x * d.x + d.y * d.y, B = 2 * (ex * d.x + ey * d.y), C = ex * ex + ey * ey - K.R * K.R, D = B * B - 4 * A * C;
+    if (A > 0 && D >= 0) out.push((-B - Math.sqrt(D)) / (2 * A), (-B + Math.sqrt(D)) / (2 * A));
+  }
+  return out;
+}
+/** angles where the circle c + R e(θ) crosses a boundary of K, in [0, 2π) */
+function arcBreaks(c: Vec2, R: number, K: Piece): number[] {
+  const out: number[] = [], add = (beta: number, k: number) => { if (k >= -1 && k <= 1) { const w = Math.acos(k); for (const th of [beta - w, beta + w]) out.push(((th % TAU) + TAU) % TAU); } };
+  if (K.kind === 'rect') {
+    const at = Math.atan2(K.t.y, K.t.x), an = Math.atan2(K.n.y, K.n.x), A0 = (c.x - K.a.x) * K.t.x + (c.y - K.a.y) * K.t.y, N0 = (c.x - K.a.x) * K.n.x + (c.y - K.a.y) * K.n.y;
+    add(at, -A0 / R); add(at, (K.len - A0) / R); add(an, (-K.h - N0) / R); add(an, (K.h - N0) / R);
+  } else {
+    const dx = c.x - K.c.x, dy = c.y - K.c.y, dd = Math.hypot(dx, dy);
+    if (dd > 0) add(Math.atan2(dy, dx) + Math.PI, -(K.R * K.R - R * R - dd * dd) / (2 * R * dd));
+  }
+  return out;
+}
+/** split [a, b] at the given points strictly inside it (pieces shorter than 1e-12 dropped) */
+function splitAt(a: number, b: number, at: number[]): [number, number][] {
+  const cuts = [a, ...at.filter((x) => x > a + 1e-12 && x < b - 1e-12).sort((x, y) => x - y), b], out: [number, number][] = [];
+  for (let i = 1; i < cuts.length; i++) if (cuts[i] - cuts[i - 1] > 1e-12) out.push([cuts[i - 1], cuts[i]]);
+  return out;
+}
 function laneRegion(l: Lane2): { pieces: Piece[]; boundary: Bnd[] } {
-  const hit = regionCache.get(l); if (hit) return hit;
+  const sig = laneSig(l), hit = regionCache.get(l); if (hit && hit.sig === sig) return hit;
   const h = (l.width_mm as number) / 2, raw = laneSegments(l), segs: typeof raw = [];
   for (const g of raw) {
     const last = segs[segs.length - 1];
@@ -119,6 +155,7 @@ function laneRegion(l: Lane2): { pieces: Piece[]; boundary: Bnd[] } {
   const pieces: Piece[] = segs.map((g) => ({ kind: 'rect', a: g.a, t: g.t, n: g.n, len: g.len, h }) as Rect);
   for (let i = 1; i < segs.length; i++) pieces.push({ kind: 'disk', c: segs[i].a, R: h });
   const boundary: Bnd[] = [];
+  const inU = (q: Vec2) => pieces.some((K) => inPiece(q, K, 0));
   const segOpenIn = (p: Vec2, d: Vec2, K: Piece): [number, number] | null => {   // τ-interval of p + τ d in int K
     if (K.kind === 'rect') {
       const al = linOpen((p.x - K.a.x) * K.t.x + (p.y - K.a.y) * K.t.y, d.x * K.t.x + d.y * K.t.y, 0, K.len);
@@ -148,16 +185,29 @@ function laneRegion(l: Lane2): { pieces: Piece[]; boundary: Bnd[] } {
       for (let e = 0; e < 4; e++) {
         const p = c[e], q = c[(e + 1) % 4], d = { x: q.x - p.x, y: q.y - p.y };
         const cov = others.map((K) => segOpenIn(p, d, K)).filter((x): x is [number, number] => x !== null);
-        for (const [a, b] of complementIv(cov, 0, 1, 1e-12)) boundary.push({ kind: 'seg', p: pt(p, d, a), q: pt(p, d, b) });
+        const len = Math.hypot(d.x, d.y), nrm = { x: -d.y / len, y: d.x / len }, brk = others.flatMap((K) => segBreaks(p, d, K));
+        for (const [a, b] of complementIv(cov, 0, 1, 1e-12)) for (const [u, v] of splitAt(a, b, brk)) {
+          const m = pt(p, d, (u + v) / 2);
+          if (inU(pt(m, nrm, SEAM_DELTA_MM)) && inU(pt(m, nrm, -SEAM_DELTA_MM))) continue;   // internal seam: lane on both sides
+          boundary.push({ kind: 'seg', p: pt(p, d, u), q: pt(p, d, v) });
+        }
       }
     } else {
       const cov = others.flatMap((K) => arcOpenIn(P.c, P.R, K));
       const free = complementIv(cov, 0, TAU, 1e-12);
       if (free.length > 1 && free[0][0] === 0 && free[free.length - 1][1] === TAU) { const last = free.pop()!; free[0] = [last[0], free[0][1] + TAU]; }
-      for (const [a, b] of free) boundary.push({ kind: 'arc', c: P.c, R: P.R, th0: a, th1: b });
+      const brk = others.flatMap((K) => arcBreaks(P.c, P.R, K));
+      for (const [a, b] of free) {
+        const extra = brk.flatMap((x) => [x, x + TAU]);   // free arcs may be unwrapped past 2π
+        for (const [u, v] of splitAt(a, b, extra)) {
+          const th = (u + v) / 2, e = { x: Math.cos(th), y: Math.sin(th) }, m = pt(P.c, e, P.R);
+          if (inU(pt(m, e, SEAM_DELTA_MM)) && inU(pt(m, e, -SEAM_DELTA_MM))) continue;
+          boundary.push({ kind: 'arc', c: P.c, R: P.R, th0: u, th1: v });
+        }
+      }
     }
   });
-  const out = { pieces, boundary }; regionCache.set(l, out); return out;
+  const out = { sig, pieces, boundary }; regionCache.set(l, out); return out;
 }
 const inArc = (phi: number, th0: number, th1: number) => (((phi - th0) % TAU) + TAU) % TAU <= th1 - th0 + 1e-15;
 function pointArcDist(p: Vec2, c: Vec2, R: number, th0: number, th1: number): number {

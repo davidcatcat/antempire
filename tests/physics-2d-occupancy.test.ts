@@ -7,7 +7,8 @@
  *  3. lane region (points within W/2 of the centerline, round joints, flat ends) containment is exact: on a straight band
  *     at the boundary; a collinear vertex changes nothing (Owner P2 counterexample: a body across it was rejected); bends
  *     against brute-force sampling on 400 random polyline lanes; a body past a lane end is not_checked (valid null), not a
- *     violation;
+ *     violation; internal seams (bands touching exactly) are not edges (300 zigzag lanes vs brute force); a lane edited
+ *     in place is recomputed, never judged from a stale cache;
  *  4. lateral packing is exact with along-lane offsets (Owner P2 counterexample: two 0.8 mm bodies 2.3 mm apart fit in
  *     1.4 mm although Σw = 1.6 mm); Σw ≤ W only when all axes overlap; witnesses pass the contract and random search never
  *     beats an 'infeasible';
@@ -20,7 +21,7 @@
  *  7. determinism: input order does not change the violations.
  */
 import assert from 'node:assert/strict';
-import { capsuleOf, capsuleGap, capsulesOverlap, checkOccupancy2D, lateralPacking, sweptCapsuleContact, laneBodyPose, capsuleInLane, OCC_TOL_MM, type Capsule, type Lane2, type LaneBody } from '../engine/physics/body2d.ts';
+import { capsuleOf, capsuleGap, capsulesOverlap, pointCapsuleGap, checkOccupancy2D, lateralPacking, sweptCapsuleContact, laneBodyPose, capsuleInLane, OCC_TOL_MM, type Capsule, type Lane2, type LaneBody } from '../engine/physics/body2d.ts';
 import { rng } from '../engine/rng.ts';
 
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
@@ -95,6 +96,35 @@ for (let k = 0; k < 400; k++) {
   }
 }
 ok(nIn > 100 && nOut > 100, `random polyline lanes (2–4 segments, turns up to ±149°): ${nIn} inside / ${nOut} outside — exact inside ⇒ every sampled point inside; exact outside ⇒ sampling finds a point outside unless the protrusion is below the sampling step`);
+// Owner P2 (2026-11-07): an internal seam (two pieces whose edges coincide, lane on both sides) was taken for an outer edge
+{
+  const zig = (gap: number) => lane(2.0, [[0, 0], [10, 0], [10, 2 + gap], [0, 2 + gap]]);   // bands 1 and 3 touch along y = 1 when gap = 0
+  const cs = capsuleOf({ x: 5, y: 0.9, heading_rad: 0 }, { length_mm: 2.5, width_mm: 0.8 });   // axis at y = 0.9, reaches 1.3
+  const seam = capsuleInLane(zig(0), cs);
+  ok(seam.inside === true && capPoints(cs, 40).every((q) => inRegionBF(zig(0), q, 1e-9)), 'a body across the seam where two bands touch exactly: legal (was rejected: "edge 0.1 mm from the axis"); brute force agrees');
+  const gapped = capsuleInLane(zig(1e-3), cs);
+  ok(gapped.inside === false && !inRegionBF(zig(1e-3), { x: 5, y: 1.0005 }, 1e-9) && pointCapsuleGap({ x: 5, y: 1.0005 }, cs) < 0, 'control: the same body across a 0.001 mm gap between the bands is outside (a real edge is kept)');
+  ok(capsuleInLane(zig(-0.5), cs).inside === true, 'overlapping bands (no seam, no gap): legal');
+  let zin = 0, zout = 0;
+  for (let k = 0; k < 300; k++) {
+    const W = rand(1, 3), gap = [0, 0, 0, rand(1e-4, 0.3), -rand(0, W / 2)][k % 5], len = rand(6, 15), l = lane(W, [[0, 0], [len, 0], [len, W + gap], [0, W + gap], [0, 2 * (W + gap)], [len, 2 * (W + gap)]]);
+    for (let m = 0; m < 4; m++) {
+      const c = capsuleOf({ x: rand(1.5, len - 1.5), y: rand(-W / 2, 2.5 * (W + gap)), heading_rad: rand(-0.4, 0.4) }, { length_mm: 2.5, width_mm: 0.8 }), ex = capsuleInLane(l, c);
+      const N = 30, step = Math.max(Math.hypot(c.b.x - c.a.x, c.b.y - c.a.y) / N, (2 * Math.PI * c.r) / (4 * N)), bf = capPoints(c, N).every((q) => inRegionBF(l, q, 1e-9));
+      if (ex.inside) { assert.ok(bf, `zigzag: exact inside but a sampled point is outside (W ${W}, gap ${gap})`); zin++; }
+      else { const prot = Number(/protrudes ([0-9.e-]+)/.exec(ex.why ?? '')?.[1] ?? Infinity); assert.ok(!bf || prot <= step, `zigzag: exact outside (${ex.why}) but sampling finds every point inside (W ${W}, gap ${gap})`); zout++; }
+    }
+  }
+  ok(zin > 100 && zout > 100, `300 zigzag lanes with touching (seam), gapped and overlapping bands: ${zin} inside / ${zout} outside, all agreeing with brute force`);
+}
+// Owner P2 (2026-11-07): after a lane was narrowed in place, the cached region still judged the old geometry
+{
+  const l = lane(2.0), b = B('a', 50, 0.5), c = capsuleOf(laneBodyPose(l, b), b.body);
+  ok(capsuleInLane(l, c).inside === true, 'cache: legal at W = 2.0 (region cached)');
+  l.width_mm = 1.0; ok(capsuleInLane(l, c).inside === false, 'cache: the same lane object narrowed to 1.0 in place: outside (recomputed, not the stale region)');
+  l.width_mm = 2.0; ok(capsuleInLane(l, c).inside === true, 'cache: widened back: legal again');
+  l.centerline_mm[0].y = 5; l.centerline_mm[1].y = 5; ok(capsuleInLane(l, c).inside === false, 'cache: centerline moved in place: recomputed (the body is now off the lane)');
+}
 { const res = checkOccupancy2D([L2], [B('a', 0.5, 0)]); ok(res.valid === null && res.violations.length === 0 && res.not_checked.length === 1, 'a body extending past the lane start into the node: not_checked, valid null — not a violation'); }
 { const res = checkOccupancy2D([lane(null)], [B('a', 50, 0)]); ok(res.valid === null && res.violations.length === 0, 'unknown lane width: valid null, not accepted, not a violation'); }
 
