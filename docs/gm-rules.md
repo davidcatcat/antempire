@@ -466,3 +466,24 @@ Day14 權威已知卵：E001／E002／E003／E004／E005 分別經過 **12／6�
 - **仍用舊式**（C4b、C4c 才改）：發育的營養係數（L2）與長期缺蛋白死亡（L3）。全巢代謝不再含幼蟲後，全巢蛋白比例與缺口天數的意義改變，舊式的輸入也跟著改變（診斷中報告）。
 - **保守界線**：未知儲備是 `null`，所以已知缺口會**高估**真正的缺口。不得當成科學結論。
 - **引擎行為版本**：`antempire.v2-review.28-c4a-larva-body`。
+
+## 2026-11-07 規則版本 v2-review.29：C4a 首次初始化的求食訊號（開關預設關閉）
+- **開關**：`larval_feeding.first_seen_begging_prior_v29`，預設 **false**；需 C4a 打開。關閉時所有輸出與 v2-review.28 逐位元組相同。
+- **打開時**：C4a 第一次為既有幼蟲建立紀錄時，求食訊號設為 `default_larva_begging_prior`（0.3，遊戲假設，不是實測飢餓）；舊值（舊規則依全巢蛋白比例算出，或遷移預設 0.25）只記在初始化事件的 `legacy_begging_signal`。
+- **影響**：先驗等於餵食門檻，所以第一天被接觸的既有幼蟲都符合餵食資格。反事實結果與待選模型見 `docs/design-c4-larval-nutrition.md` §7.3。
+- **引擎行為版本**：`antempire.v2-review.29-c4a-begging-prior`。
+
+## 2026-11-07 規則版本 v2-review.30：C4b 幼蟲個體發育（開關預設關閉；營養反應形式待 Owner 選定）
+- **開關**：`larval_development.individual_development_c4b`，預設 **false**；需 C4a 打開，而且 `nutrition_response` 必須是 Owner 選定的形式（出廠為 `null`，所以目前**無法打開**）。關閉時所有輸出與 v2-review.29 逐位元組相同。
+- **打開時**：每隻有帳的幼蟲每日發育 `r(T) / larva_days × N(xᵢ)`；xᵢ＝自己當日實際支付的代謝 ÷ 自己的需求（糖、蛋白取較小值）；不再讀全巢比例。每隻幼蟲每日一筆 `larva_development`，引擎與獨立讀取器重算。
+- **不變**：溫度反應 r(T)、照護規則（全巢有沒有工蟻）、飢餓死亡（L3，C4c）。
+- **候選形式**與可辨識性見 `docs/design-c4b-larval-development.md` §3。
+- **引擎行為版本**：`antempire.v2-review.30-c4b-larva-development`。
+
+## 2026-11-07 規則版本 v2-review.31：保育工蟻求食訊號只來自同一地點的幼蟲（Owner D5；開關預設關閉）
+- **開關**：`local_signals.nurse_cue_same_place_v31`，預設 **false**。關閉時所有輸出與 v2-review.30 逐位元組相同。
+- **缺陷**：舊的保育工蟻接觸（`engine/workers.ts` `nurseContact`）從全巢所有幼蟲中抽一隻，不論工蟻在哪、幼蟲在哪；違反 CLAUDE.md §2.1（只有實際接觸到的幼蟲）。
+- **打開時**：保育工蟻必須在巢內（`last_location`＝巢節點），而且只能抽到位於育幼室（`brood`，目前唯一的巢內地點）的幼蟲；沒有地點的幼蟲（C4a 之前或 C4a 關閉）視為在育幼室，所以不需要 C4a。不在巢內的保育工蟻當日不接觸任何幼蟲（無事件）。亂數流與依 ID 排序的抽取不變；`local_brood_begging_contact` 事件多記 `worker_location`、`larva_location`（只在打開時）。
+- **不變**：接觸機率、門檻、保育工蟻人數、食物與其他一切規則。
+- 證據分類與診斷見 `docs/design-nurse-cue-locality-v31.md`。
+- **引擎行為版本**：`antempire.v2-review.31-nurse-cue-same-place`。
