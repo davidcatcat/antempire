@@ -1750,5 +1750,57 @@
         "approved_in": "Owner instruction 2026-11-05 (C3a, docs/design-c3-queen-feeding.md §9-§12; separate PR for Owner review, not merged by Claude)"
       }
     }
+  },
+  "larval_feeding": {
+    "individual_larva_body_c4a": false,
+    "individual_larva_body_c4a_note": "模型開關（C4a，docs/design-c4-larval-nutrition.md §3、§4.1、§4.2、§7.0 D1–D8；預設關閉）。true＝每隻幼蟲有自己的營養帳 body（已知收支 fed_balance；卵的投入 egg_investment；孵化時儲備 reserve_at_hatch 一律 null；來源 reserve_basis），只經 C3a 巢內回合中的局部、有來源、有序數時間與地點的事件增加：育幼工蟻走到 brood 位置、與一隻同位置的幼蟲接觸（larva_contact），若這隻幼蟲的求食訊號達門檻，就從自己嗉囊各餵一口糖與液態蛋白（feed_larva）。幼蟲自己的代謝由 fed_balance 支付（larva_metabolism），從全巢代謝中移出（D3）；求食訊號只由自己今日的蛋白攝取與自己的需求更新（D6）。發育（L2）與飢餓死亡（L3）仍用舊的全巢公式（C4b、C4c 才改）；因為全巢代謝不再含幼蟲，舊公式的輸入會改變。只能在 queen_feeding.individual_queen_body_c3a 也為 true 時打開（D1，共用巢內回合），否則讀參數時拒絕。false＝v2-review.27 的行為。",
+    "feed_begging_threshold": {
+      "value": 0.3,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持（非本種）",
+      "reference_for_mechanism_only": [
+        "R210"
+      ],
+      "basis_note": "機制：被餵的頻率由幼蟲求食訊號決定、每口量固定（R210，Solenopsis invicta，非本種）；門檻數值：遊戲假設，取 local_signals.default_larva_begging_prior（0.3）同值，未依結果挑選；敏感度見 reports/c4a-v28-sensitivity",
+      "description": "接觸時，幼蟲的求食訊號（0..1，回合開始時的值）≥ 此值，工蟻才餵（D4）",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.28-c4a-larva-body",
+        "approved_in": "Owner 2026-11-06「照建議」(C4a D1–D8, docs/design-c4-larval-nutrition.md §7.0; separate rules-update PR for Owner review, not merged by Claude)"
+      }
+    },
+    "feed_bolus_sugar_portions": {
+      "value": 0.025,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持（非本種）",
+      "reference_for_mechanism_only": [
+        "R210"
+      ],
+      "basis_note": "每口量固定的機制方向：R210（S. invicta，非本種）；數值：遊戲假設，取 nutrition.larva_sugar_daily（一口＝一隻幼蟲在參考溫度下一日的糖需求），未依結果挑選",
+      "description": "一次接觸中最多餵這隻幼蟲的糖（遊戲份量，不是 mg）；受工蟻自己嗉囊內容限制",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.28-c4a-larva-body",
+        "approved_in": "Owner 2026-11-06「照建議」(C4a D1–D8, docs/design-c4-larval-nutrition.md §7.0; separate rules-update PR for Owner review, not merged by Claude)"
+      }
+    },
+    "feed_bolus_protein_portions": {
+      "value": 0.08,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "mechanism_basis": "文獻支持（非本種）",
+      "reference_for_mechanism_only": [
+        "R210"
+      ],
+      "basis_note": "每口量固定的機制方向：R210（S. invicta，非本種）；數值：遊戲假設，取 nutrition.larva_protein_daily（一口＝一隻幼蟲在參考溫度下一日的蛋白需求），未依結果挑選",
+      "description": "一次接觸中最多餵這隻幼蟲的液態蛋白（遊戲份量）；受工蟻自己嗉囊內容限制",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.28-c4a-larva-body",
+        "approved_in": "Owner 2026-11-06「照建議」(C4a D1–D8, docs/design-c4-larval-nutrition.md §7.0; separate rules-update PR for Owner review, not merged by Claude)"
+      }
+    }
   }
 }

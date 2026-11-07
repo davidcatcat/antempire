@@ -19,6 +19,11 @@ export interface LocalSensory {
   origin?: string;
   [k: string]: unknown;
 }
+export type LarvaReserveBasis = 'egg_laid_with_record' | 'egg_laid_before_switch' | 'day0_scenario' | 'unknown_at_migration';
+/** C4a (docs/design-c4-larval-nutrition.md §3, §3.1): fed_balance = what it was actually fed − the metabolism it paid
+ *  (known part only); egg_investment = what its egg received at laying (accounting record, NOT a spendable reserve);
+ *  reserve_at_hatch = the reserve usable at hatch — always null (unknown: never spent, filled in or read as 0). */
+export interface LarvaBody { fed_balance: { sugar: number; protein: number }; egg_investment: { sugar: number; protein: number } | null; reserve_at_hatch: null; reserve_basis: LarvaReserveBasis }
 
 export interface SiteMemory { last_success_portions: number; last_visit_day: number }
 
@@ -59,6 +64,14 @@ export interface Brood {
   no_caretaker_days?: number;
   alive?: boolean;
   origin?: string;
+  /** C4a: the larva's place in the nest (transitional named place; default 'brood'). */
+  location?: string;
+  /** C4a: what was invested in this egg when it was laid (C2 lay_egg), or null when not recorded; moves into `body` at hatch. */
+  egg_investment?: { sugar: number; protein: number } | null;
+  /** C4a: where the egg's record comes from; moves into `body` at hatch. */
+  reserve_basis?: LarvaReserveBasis;
+  /** C4a: the larva's own nutrition account (kept through the pupa until eclosion, D5). */
+  body?: LarvaBody;
   [k: string]: unknown;
 }
 
