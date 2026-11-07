@@ -117,6 +117,37 @@ ok(nIn > 100 && nOut > 100, `random polyline lanes (2–4 segments, turns up to 
   }
   ok(zin > 100 && zout > 100, `300 zigzag lanes with touching (seam), gapped and overlapping bands: ${zin} inside / ${zout} outside, all agreeing with brute force`);
 }
+// review (Claude subagent, not Codex): U-turns / backtracking (antiparallel coincident bands) erased each other's sides
+// through rounding, accepting a body 1.6 mm outside the band
+{
+  ok(capsuleInLane({ id: 'U', centerline_mm: [{ x: 8, y: 1 }, { x: 6, y: 4 }, { x: 8, y: 1 }], width_mm: 1.5 }, { a: { x: 4.568, y: 2.915 }, b: { x: 7.833, y: 3.040 }, r: 0.568 }).inside === false, 'U-turn (8,1)-(6,4)-(8,1): a body 1.6 mm outside the band is outside (was accepted)');
+  let mis = 0, n = 0;
+  for (let k = 0; k < 200; k++) {
+    const th = k * 0.0634, c = Math.cos(th), sn = Math.sin(th), R = (x: number, y: number) => ({ x: c * x - sn * y, y: sn * x + c * y });
+    for (const pts of [[[0, 0], [10, 0], [0, 0]], [[0, 0], [10, 0], [4, 0]]]) {
+      const L: Lane2 = { id: 'P', centerline_mm: pts.map(([x, y]) => R(x, y)), width_mm: 2 };
+      if (capsuleInLane(L, { a: R(3, 1.3), b: R(5, 1.3), r: 0.4 }).inside) mis++;
+      if (!capsuleInLane(L, { a: R(3, 0), b: R(5, 0), r: 0.4 }).inside) mis++;
+      n += 2;
+    }
+  }
+  ok(mis === 0, `${n} rotated U-turn and backtrack cases: 0 mismatches (outside by 0.3 mm rejected, centred accepted)`);
+  let bin = 0, bout = 0;
+  for (let k = 0; k < 300; k++) {
+    const ang = rand(-Math.PI, Math.PI), len = rand(4, 10), back = rand(1, len), W = rand(1, 3), ca = Math.cos(ang), sa = Math.sin(ang), pts: [number, number][] = [[0, 0], [len * ca, len * sa], [(len - back) * ca, (len - back) * sa]];
+    if (k % 2) pts.push([(len - back) * ca - rand(1.5, 5) * sa, (len - back) * sa + rand(1.5, 5) * ca]);
+    const l = lane(W, pts);
+    for (let m = 0; m < 4; m++) {
+      const c = capsuleOf({ x: rand(-2, len + 2) * ca, y: rand(-2, len + 2) * sa + rand(-W, W), heading_rad: rand(-Math.PI, Math.PI) }, { length_mm: 2.5, width_mm: 0.8 }), ex = capsuleInLane(l, c);
+      const N = 30, step = Math.max(Math.hypot(c.b.x - c.a.x, c.b.y - c.a.y) / N, (2 * Math.PI * c.r) / (4 * N)), bf = capPoints(c, N).every((q) => inRegionBF(l, q, 1e-9));
+      if (ex.inside) { assert.ok(bf, `backtrack: exact inside but a sampled point is outside (${JSON.stringify(pts)})`); bin++; }
+      else { const prot = Number(/protrudes ([0-9.e-]+)/.exec(ex.why ?? '')?.[1] ?? Infinity); assert.ok(!bf || prot <= step, `backtrack: exact outside (${ex.why}) but sampling finds every point inside`); bout++; }
+    }
+  }
+  ok(bin > 50 && bout > 50, `300 random backtracking lanes (antiparallel overlap, some with a further turn): ${bin} inside / ${bout} outside, agreeing with brute force`);
+  const l = lane(2.0), c = capsuleOf({ x: 50, y: 0, heading_rad: 0 }, { length_mm: 2.5, width_mm: 0.8 });
+  capsuleInLane(l, c); l.width_mm = NaN; ok(capsuleInLane(l, c).inside === false, 'cache: a width changed to NaN is not served the cached region');
+}
 // Owner P2 (2026-11-07): after a lane was narrowed in place, the cached region still judged the old geometry
 {
   const l = lane(2.0), b = B('a', 50, 0.5), c = capsuleOf(laneBodyPose(l, b), b.body);

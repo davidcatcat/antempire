@@ -85,9 +85,12 @@ const TAU = 2 * Math.PI;
 // cache keyed by the lane object AND checked against a content signature: a lane edited in place (narrowed, moved)
 // is recomputed, never served from a stale entry (Owner P2 2026-11-07)
 const regionCache = new WeakMap<Lane2, { sig: string; pieces: Piece[]; boundary: Bnd[] }>();
-const laneSig = (l: Lane2) => JSON.stringify([l.width_mm, l.centerline_mm.map((p) => [p.x, p.y])]);
+// String() keeps NaN / ±Infinity distinct (JSON.stringify would write all of them as null)
+const laneSig = (l: Lane2) => [l.width_mm, ...l.centerline_mm.flatMap((p) => [p.x, p.y])].map((v) => String(v)).join('|');
 /** offset used to tell an internal seam (lane on both sides) from a real edge: the contract tolerance */
 const SEAM_DELTA_MM = OCC_TOL_MM;
+/** a boundary point closer than this to another piece's edge is not 'covered' by that piece; the seam test decides */
+const COVER_EPS = OCC_TOL_MM / 2;
 
 /** open interval of τ ∈ ℝ with lo < f0 + τ f1 < hi (null if empty) */
 function linOpen(f0: number, f1: number, lo: number, hi: number): [number, number] | null {
@@ -158,25 +161,29 @@ function laneRegion(l: Lane2): { pieces: Piece[]; boundary: Bnd[] } {
   const inU = (q: Vec2) => pieces.some((K) => inPiece(q, K, 0));
   const segOpenIn = (p: Vec2, d: Vec2, K: Piece): [number, number] | null => {   // τ-interval of p + τ d in int K
     if (K.kind === 'rect') {
-      const al = linOpen((p.x - K.a.x) * K.t.x + (p.y - K.a.y) * K.t.y, d.x * K.t.x + d.y * K.t.y, 0, K.len);
-      const la = linOpen((p.x - K.a.x) * K.n.x + (p.y - K.a.y) * K.n.y, d.x * K.n.x + d.y * K.n.y, -K.h, K.h);
+      // interior shrunk by COVER_EPS: a point within rounding distance of K's edge is NOT treated as covered; the seam
+      // test decides (two coincident antiparallel bands must not erase each other's sides)
+      const al = linOpen((p.x - K.a.x) * K.t.x + (p.y - K.a.y) * K.t.y, d.x * K.t.x + d.y * K.t.y, COVER_EPS, K.len - COVER_EPS);
+      const la = linOpen((p.x - K.a.x) * K.n.x + (p.y - K.a.y) * K.n.y, d.x * K.n.x + d.y * K.n.y, -K.h + COVER_EPS, K.h - COVER_EPS);
       if (!al || !la) return null; const lo = Math.max(al[0], la[0]), hi = Math.min(al[1], la[1]); return lo < hi ? [lo, hi] : null;
     }
-    const ex = p.x - K.c.x, ey = p.y - K.c.y, A = d.x * d.x + d.y * d.y, B = 2 * (ex * d.x + ey * d.y), C = ex * ex + ey * ey - K.R * K.R, D = B * B - 4 * A * C;
-    if (A === 0 || D <= 0) return null; const sq = Math.sqrt(D); return [(-B - sq) / (2 * A), (-B + sq) / (2 * A)];
+    const Rin = K.R - COVER_EPS, ex = p.x - K.c.x, ey = p.y - K.c.y, A = d.x * d.x + d.y * d.y, B = 2 * (ex * d.x + ey * d.y), C = ex * ex + ey * ey - Rin * Rin, D = B * B - 4 * A * C;
+    if (A === 0 || D <= 0 || Rin <= 0) return null; const sq = Math.sqrt(D); return [(-B - sq) / (2 * A), (-B + sq) / (2 * A)];
   };
   const arcOpenIn = (c: Vec2, R: number, K: Piece): [number, number][] => {        // θ-set of c + R e(θ) in int K
     if (K.kind === 'rect') {
       const at = Math.atan2(K.t.y, K.t.x), an = Math.atan2(K.n.y, K.n.x);
       const A0 = (c.x - K.a.x) * K.t.x + (c.y - K.a.y) * K.t.y, N0 = (c.x - K.a.x) * K.n.x + (c.y - K.a.y) * K.n.y;
       // A0 + R cos(θ − at) ∈ (0, len), N0 + R cos(θ − an) ∈ (−h, h)
-      let s4 = cosArc(at, -A0 / R); s4 = intersectIv(s4, cosArc(at + Math.PI, (A0 - K.len) / R));
-      s4 = intersectIv(s4, cosArc(an + Math.PI, (N0 - K.h) / R)); return intersectIv(s4, cosArc(an, (-K.h - N0) / R));
+      const e = COVER_EPS;
+      let s4 = cosArc(at, (e - A0) / R); s4 = intersectIv(s4, cosArc(at + Math.PI, (A0 - K.len + e) / R));
+      s4 = intersectIv(s4, cosArc(an + Math.PI, (N0 - K.h + e) / R)); return intersectIv(s4, cosArc(an, (-K.h + e - N0) / R));
     }
     const dx = c.x - K.c.x, dy = c.y - K.c.y, dd = Math.hypot(dx, dy);
     if (dd === 0) return [];
     // |d + R e|² < K.R² ⟺ cos(θ − ∠d) < (K.R² − R² − dd²) / (2 R dd)
-    return cosArc(Math.atan2(dy, dx) + Math.PI, -(K.R * K.R - R * R - dd * dd) / (2 * R * dd));
+    const Rin = K.R - COVER_EPS; if (Rin <= 0) return [];
+    return cosArc(Math.atan2(dy, dx) + Math.PI, -(Rin * Rin - R * R - dd * dd) / (2 * R * dd));
   };
   pieces.forEach((P, i) => {
     const others = pieces.filter((_, j) => j !== i);
