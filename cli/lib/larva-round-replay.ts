@@ -28,7 +28,7 @@ export function replayLarvaRound(start: Any, end: Any, events: Any[], species: A
   const ev: Any[] = Array.isArray(events) ? events.filter((e) => e && typeof e === 'object') : [];
   const lf = species?.larval_feeding ?? {}, ls = species?.local_signals ?? {}, nut = species?.nutrition ?? {}, met = species?.metabolism ?? {};
   const threshold = val(lf.feed_begging_threshold), bolus = { sugar: val(lf.feed_bolus_sugar_portions), protein: val(lf.feed_bolus_protein_portions) };
-  const prior = val(ls.default_larva_begging_prior), wPrev = val(ls.larva_begging_previous_weight), wShort = val(ls.larva_begging_shortfall_weight);
+  const v29 = lf.first_seen_begging_prior_v29 === true, prior = val(ls.default_larva_begging_prior), wPrev = val(ls.larva_begging_previous_weight), wShort = val(ls.larva_begging_shortfall_weight);
   const factor = r6(Math.pow(val(met.q10), (nestTempC - val(met.reference_c)) / 10));
   const need = { sugar: r6(val(nut.larva_sugar_daily) * factor), protein: r6(val(nut.larva_protein_daily) * factor) };
   const day0 = world.sim_day === 0 && (world.migration_log ?? []).some((m: Any) => m?.type === 'day0_initialization');
@@ -47,6 +47,9 @@ export function replayLarvaRound(start: Any, end: Any, events: Any[], species: A
     const basis = day0 ? 'day0_scenario' : b.stage === 'egg' && b.origin === 'v2_scenario_laying' ? 'egg_laid_before_switch' : 'unknown_at_migration';
     if (e.stage !== b.stage || e.reserve_basis !== basis || e.egg_investment !== null) err(`${id}: initialized as ${e.stage}/${e.reserve_basis}/${JSON.stringify(e.egg_investment)}; expected ${b.stage}/${basis}/null`);
     if (b.stage === 'larva' && (!same(e.fed_balance, { sugar: 0, protein: 0 }) || e.reserve_at_hatch !== null)) err(`${id}: a first-seen larva starts at 0 with an unknown (null) reserve, recorded ${JSON.stringify(e.fed_balance)} / ${JSON.stringify(e.reserve_at_hatch)}`);
+    // v2-review.29 (read from the species parameters): a first-seen larva begs from the explicit prior; the event keeps its old value
+    if (b.stage === 'larva' && v29 && (e.begging_signal_set !== prior || e.legacy_begging_signal !== (typeof b.begging_signal === 'number' ? b.begging_signal : null))) err(`${id}: first-seen prior ${JSON.stringify(e.begging_signal_set)} (want ${prior}), old value recorded ${JSON.stringify(e.legacy_begging_signal)} (state had ${JSON.stringify(b.begging_signal ?? null)})`);
+    if (b.stage === 'larva' && !v29 && ('begging_signal_set' in e || 'legacy_begging_signal' in e)) err(`${id}: a begging prior set while first_seen_begging_prior_v29 is off`);
   }
   for (const id of init.keys()) if (!brood0.has(id)) err(`${id}: initialized but not brood at the start`);
   // the larvae at the start of the round: account start, place, start-of-round begging
@@ -55,7 +58,7 @@ export function replayLarvaRound(start: Any, end: Any, events: Any[], species: A
     const e = init.get(id);
     const bal = b.body ? { sugar: Number(b.body.fed_balance?.sugar), protein: Number(b.body.fed_balance?.protein) } : e ? { sugar: 0, protein: 0 } : null;
     if (!bal) continue;
-    larva.set(id, { bal, place: b.location ?? e?.location, begging: r6(typeof b.begging_signal === 'number' ? b.begging_signal : prior), basis: b.body?.reserve_basis ?? e?.reserve_basis, inv: b.body ? b.body.egg_investment : null });
+    larva.set(id, { bal, place: b.location ?? e?.location, begging: r6(v29 && !b.body && e ? prior : typeof b.begging_signal === 'number' ? b.begging_signal : prior), basis: b.body?.reserve_basis ?? e?.reserve_basis, inv: b.body ? b.body.egg_investment : null });
   }
 
   // 2. nurse presence at the brood place
