@@ -1,0 +1,250 @@
+{
+ "solver": "native",
+ "model": "engine/physics/collision.ts simulate() — PH-1 lanes, MV-1 piecewise-constant kinematics, PH-2 encounter rules; event-driven, exact event times",
+ "lateral_dof": false,
+ "lateral_note": "native 1-D model: u = 0 imposed (no lateral coordinate); the 2-D judge therefore sees every wide-lane pass as bodies on one centre-line",
+ "scenario": {
+  "id": "stone",
+  "title": "石頭擋在直線通路中央（50 mm 寬）",
+  "agents": 2,
+  "horizon_s": 40,
+  "seed": 1,
+  "refs": {
+   "geometry": "scenarios/physics/stone-road.geometry.json",
+   "body": "scenarios/physics/pheidole-megacephala.body-candidates.json",
+   "interaction": "scenarios/physics/pheidole-megacephala.interaction-candidates.json",
+   "motion": "scenarios/physics/pheidole-megacephala.motion-candidates.json"
+  },
+  "body": {
+   "length_mm": {
+    "value": 2.5,
+    "source": "scenarios/physics/pheidole-megacephala.body-candidates.json#castes.minor.body_length_mm.value",
+    "basis": "文獻支持",
+    "why": "小工蟻體長約 2.5 mm（R94，文獻支持）"
+   },
+   "width_mm": {
+    "value": 0.8,
+    "source": "scenarios/physics/pheidole-megacephala.body-candidates.json#castes.minor.effective_collision_width_mm.candidate_range.1",
+    "basis": "遊戲假設",
+    "why": "value 為 null；取候選範圍上限 0.8 mm（與 tests/ph2-collision.test.ts 的 wHi 相同），只作敏感度，非量測"
+   },
+   "contact_reach_mm": {
+    "value": 1,
+    "source": "scenarios/physics/pheidole-megacephala.interaction-candidates.json#contact_reach_mm.candidate_range (midpoint)",
+    "basis": "遊戲假設",
+    "why": "value 為 null；取候選範圍中點 1.0 mm（與 tests/ph2-collision.test.ts 相同），只作敏感度，非量測"
+   }
+  },
+  "encounter": {
+   "priority": "entry_yield",
+   "entry_yield_probability": 0.957346,
+   "laden_yield_probability": 0.98,
+   "contact_pause_s": null,
+   "inside_turn_back_probability": 0.5
+  },
+  "encounter_provenance": {
+   "priority": "scenarios/physics/pheidole-megacephala.interaction-candidates.json#encounter.priority.value [遊戲假設（選擇）] 檔案預設",
+   "entry_yield_probability": "scenarios/physics/pheidole-megacephala.interaction-candidates.json#encounter.entry_yield_probability.value [文獻支持（非本種：Lasius niger）] 非本種 Lasius niger 202/211（R380）",
+   "laden_yield_probability": "scenarios/physics/pheidole-megacephala.interaction-candidates.json#encounter.laden_yield_probability.value [文獻支持（非本種：Atta colombica）] 非本種 Atta colombica（R381）；本情境無負載，不會用到",
+   "contact_pause_s": "scenarios/physics/pheidole-megacephala.interaction-candidates.json#encounter.contact_pause_s.value = null (file value; engine null case) 檔案值 null＝不停頓",
+   "inside_turn_back_probability": "scenarios/physics/pheidole-megacephala.interaction-candidates.json#encounter.inside_turn_back_probability.candidate_values.1 [遊戲假設] 檔案 value 為 null；取候選值 0.5（與 tests/ph2-collision.test.ts 相同，遊戲假設）。若改為 null，原生模型會回報 unresolved"
+  },
+  "lanes": [
+   {
+    "id": "P-straight",
+    "width_mm": 50,
+    "layer": "z=0"
+   }
+  ],
+  "obstacles": [
+   "O-stone"
+  ],
+  "obstacles_not_at_level": [],
+  "unused_passages": [
+   "P-detour"
+  ],
+  "provenance": {
+   "scenario_values": "起點、橫向偏移、出發時間、時間長度與種子都是合成情境值（遊戲假設），不是量測，也不是臺中西屯花園。",
+   "note": "S1 在中心線（u=0），S2 在 u=+8 mm（石頭半徑 15 mm，仍在石頭正前方）。原生 1-D 模型沒有橫向座標，忽略 S2 的 u。P-detour 沒有螞蟻使用（兩種解算器都沒有路線選擇）。"
+  },
+  "tolerances": {
+   "overlap_mm": 1e-9,
+   "touching_mm": 0.000001,
+   "note": "numerical, not model parameters"
+  }
+ },
+ "cost": {
+  "wall_ms": 1.0206529999999958,
+  "cpu_user_ms": 1.91,
+  "cpu_system_ms": 0.249,
+  "heap_used_delta_mb": 0.4718170166015625,
+  "rss_mb": 91.66796875,
+  "steps": 6,
+  "pair_evaluations": 19,
+  "t_end_s": 13.585294117647058
+ },
+ "cost_first_run": {
+  "wall_ms": 7.335689000000002,
+  "cpu_user_ms": 21.521,
+  "cpu_system_ms": 4.79,
+  "heap_used_delta_mb": -0.2114715576171875,
+  "rss_mb": 91.29296875,
+  "steps": 6,
+  "pair_evaluations": 19,
+  "t_end_s": 13.585294117647058
+ },
+ "cost_note": "cost = second (warm) run; cost_first_run includes module warm-up",
+ "replay": {
+  "rerun_identical": true,
+  "hash": "bcbbac992d8e2429",
+  "seed_plus_1_identical": true
+ },
+ "events": {
+  "by_kind": {
+   "start": 2,
+   "blocked": 1,
+   "contact_start": 1,
+   "obstruction": 1,
+   "follow_start": 1,
+   "unresolved": 1
+  },
+  "by_class": {
+   "motion": 2,
+   "physical_constraint": 2,
+   "physical_contact": 2,
+   "solver_status": 1
+  }
+ },
+ "arrivals": {
+  "S1": null,
+  "S2": null
+ },
+ "final_modes": {
+  "S1": "unresolved",
+  "S2": "blocked"
+ },
+ "solo_arrival_minus_analytic_s": {
+  "S1": null,
+  "S2": null
+ },
+ "judge": {
+  "instants": 4,
+  "pieces": 3,
+  "pair_checks": 4,
+  "overlap_pair_instants": 2,
+  "max_penetration_mm": 0.8,
+  "overlap_between_instants": 0,
+  "max_penetration_between_mm": 0,
+  "body_contact_episodes": 1,
+  "body_contacts_only_between_instants": 0,
+  "first_body_contact_t_s": 13.461764705882352,
+  "reach_contact_episodes": 1,
+  "first_reach_contact_t_s": 13.40294117647059,
+  "out_of_walkable_agent_instants": 0,
+  "not_checked_agent_instants": 0,
+  "junction_not_checked_agent_instants": 0,
+  "max_out_of_walkable_mm": 0,
+  "out_of_walkable_gt_coarse": 0,
+  "overlap_pair_instants_gt_coarse": 2,
+  "obstacle_violation_gt_coarse": 0,
+  "coarse_tol_mm": 0.001,
+  "overlap_pair_instants_wide_section": 2,
+  "overlap_between_instants_wide_section": 0,
+  "obstacle_violation_agent_instants": 0,
+  "max_obstacle_penetration_mm": 0,
+  "obstacle_depth_note": "circle: exact depth; polygon: a capsule whose axis touches or enters the polygon is reported with depth ≥ its radius (lower bound)",
+  "max_abs_u_mm": 0,
+  "occupancy2d": {
+   "instants": 4,
+   "outside_lane": 0,
+   "not_checked": 0,
+   "overlap": 2,
+   "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
+  },
+  "arrivals": {
+   "S1": null,
+   "S2": null
+  },
+  "judge_wall_ms": 4.578341999999992
+ },
+ "judge_dense": {
+  "dense_dt_s": 0.002,
+  "instants": 20003,
+  "pieces": 20002,
+  "pair_checks": 20003,
+  "overlap_pair_instants": 13271,
+  "max_penetration_mm": 0.8,
+  "overlap_between_instants": 0,
+  "max_penetration_between_mm": 0,
+  "body_contact_episodes": 1,
+  "body_contacts_only_between_instants": 0,
+  "first_body_contact_t_s": 13.461764705882352,
+  "reach_contact_episodes": 1,
+  "first_reach_contact_t_s": 13.40294117647059,
+  "out_of_walkable_agent_instants": 0,
+  "not_checked_agent_instants": 0,
+  "junction_not_checked_agent_instants": 0,
+  "max_out_of_walkable_mm": 0,
+  "out_of_walkable_gt_coarse": 0,
+  "overlap_pair_instants_gt_coarse": 13271,
+  "obstacle_violation_gt_coarse": 0,
+  "coarse_tol_mm": 0.001,
+  "overlap_pair_instants_wide_section": 13271,
+  "overlap_between_instants_wide_section": 0,
+  "obstacle_violation_agent_instants": 0,
+  "max_obstacle_penetration_mm": 0,
+  "obstacle_depth_note": "circle: exact depth; polygon: a capsule whose axis touches or enters the polygon is reported with depth ≥ its radius (lower bound)",
+  "max_abs_u_mm": 0,
+  "occupancy2d": null,
+  "arrivals": {
+   "S1": null,
+   "S2": null
+  },
+  "judge_wall_ms": 149.74251800000002
+ },
+ "judge_u_held_at_spec": {
+  "instants": 4,
+  "pieces": 3,
+  "pair_checks": 4,
+  "overlap_pair_instants": 0,
+  "max_penetration_mm": 0,
+  "overlap_between_instants": 0,
+  "max_penetration_between_mm": 0,
+  "body_contact_episodes": 0,
+  "body_contacts_only_between_instants": 0,
+  "first_body_contact_t_s": null,
+  "reach_contact_episodes": 0,
+  "first_reach_contact_t_s": null,
+  "out_of_walkable_agent_instants": 0,
+  "not_checked_agent_instants": 0,
+  "junction_not_checked_agent_instants": 0,
+  "max_out_of_walkable_mm": 0,
+  "out_of_walkable_gt_coarse": 0,
+  "overlap_pair_instants_gt_coarse": 0,
+  "obstacle_violation_gt_coarse": 0,
+  "coarse_tol_mm": 0.001,
+  "overlap_pair_instants_wide_section": 0,
+  "overlap_between_instants_wide_section": 0,
+  "obstacle_violation_agent_instants": 0,
+  "max_obstacle_penetration_mm": 0,
+  "obstacle_depth_note": "circle: exact depth; polygon: a capsule whose axis touches or enters the polygon is reported with depth ≥ its radius (lower bound)",
+  "max_abs_u_mm": 8,
+  "occupancy2d": {
+   "instants": 4,
+   "outside_lane": 0,
+   "not_checked": 0,
+   "overlap": 0,
+   "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
+  },
+  "arrivals": {
+   "S1": null,
+   "S2": null
+  },
+  "judge_wall_ms": 0.3175679999999943
+ },
+ "notes": [
+  "native PH-2 is 1-D along each lane: no lateral degree of freedom; converted with u = 0 (centre-line) unless stated",
+  "spec lateral offsets ignored by the native solver for: S2"
+ ],
+ "trajectory": null
+}

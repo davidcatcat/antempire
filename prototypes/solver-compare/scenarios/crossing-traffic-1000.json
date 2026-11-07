@@ -1,0 +1,88 @@
+{
+  "schema": "antempire.solver-compare.scenario.v1",
+  "id": "crossing-traffic-1000",
+  "title": "效能：1000 隻在交叉口四個方向",
+  "synthetic": true,
+  "units": {
+    "length": "mm",
+    "time": "s",
+    "speed": "mm/s"
+  },
+  "refs": {
+    "geometry": "scenarios/physics/crossing.geometry.json",
+    "body": "scenarios/physics/pheidole-megacephala.body-candidates.json",
+    "interaction": "scenarios/physics/pheidole-megacephala.interaction-candidates.json",
+    "motion": "scenarios/physics/pheidole-megacephala.motion-candidates.json"
+  },
+  "body": {
+    "length": {
+      "file": "body",
+      "path": "castes.minor.body_length_mm.value",
+      "why": "小工蟻體長約 2.5 mm（R94，文獻支持）"
+    },
+    "width": {
+      "file": "body",
+      "path": "castes.minor.effective_collision_width_mm.candidate_range.1",
+      "why": "value 為 null；取候選範圍上限 0.8 mm（與 tests/ph2-collision.test.ts 的 wHi 相同），只作敏感度，非量測"
+    },
+    "contact_reach": {
+      "file": "interaction",
+      "path": "contact_reach_mm.candidate_range",
+      "op": "midpoint",
+      "why": "value 為 null；取候選範圍中點 1.0 mm（與 tests/ph2-collision.test.ts 相同），只作敏感度，非量測"
+    }
+  },
+  "encounter": {
+    "priority": {
+      "file": "interaction",
+      "path": "encounter.priority.value",
+      "why": "檔案預設"
+    },
+    "entry_yield_probability": {
+      "file": "interaction",
+      "path": "encounter.entry_yield_probability.value",
+      "why": "非本種 Lasius niger 202/211（R380）"
+    },
+    "laden_yield_probability": {
+      "file": "interaction",
+      "path": "encounter.laden_yield_probability.value",
+      "why": "非本種 Atta colombica（R381）；本情境無負載，不會用到"
+    },
+    "contact_pause_s": {
+      "file": "interaction",
+      "path": "encounter.contact_pause_s.value",
+      "nullable": true,
+      "why": "檔案值 null＝不停頓"
+    },
+    "inside_turn_back_probability": {
+      "file": "interaction",
+      "path": "encounter.inside_turn_back_probability.candidate_values.1",
+      "why": "檔案 value 為 null；取候選值 0.5（與 tests/ph2-collision.test.ts 相同，遊戲假設）。若改為 null，原生模型會回報 unresolved"
+    }
+  },
+  "generator": {
+    "kind": "crossing-lattice",
+    "n": 1000,
+    "seed": 1,
+    "speed": {
+      "file": "motion",
+      "path": "trail_speed_mm_s.pooled.value",
+      "why": "合併 17.0 mm/s（R133，文獻支持）"
+    },
+    "front_gap_mm": 20,
+    "col_pitch_mm": 1.2,
+    "row_pitch_mm": 3.0,
+    "start_spread_s": 5,
+    "goal_past_crossing_mm": 60
+  },
+  "horizon_s": 20,
+  "seed": 1,
+  "rapier": {
+    "dt_s": 0.008333333333333333,
+    "ccd": false
+  },
+  "provenance": {
+    "scenario_values": "起點、橫向偏移、出發時間、時間長度與種子都是合成情境值（遊戲假設），不是量測，也不是臺中西屯花園。",
+    "note": "格狀起點（橫向間距 1.2 mm、縱向 3.0 mm、距交叉點 20 mm）、出發時間 0～5 s 均勻抽樣、目標在交叉點後 60 mm：全是情境值（遊戲假設），只用於效能與事件量測。"
+  }
+}
