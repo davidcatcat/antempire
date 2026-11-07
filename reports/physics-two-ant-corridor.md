@@ -126,7 +126,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    }
   },
   "exclusion_violations": 0,
-  "result_hash": "58751a558a0ec99e",
+  "result_hash": "d053992d3ba7771d",
   "replay_identical": true,
   "order_identical": true
  },
@@ -166,7 +166,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    }
   },
   "exclusion_violations": 0,
-  "result_hash": "e661bac3aaf3620d",
+  "result_hash": "5672a824bd23a6a4",
   "replay_identical": true,
   "order_identical": true
  },
@@ -206,7 +206,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    }
   },
   "exclusion_violations": 0,
-  "result_hash": "ffdddab707381529",
+  "result_hash": "bda9e401bf2927e4",
   "replay_identical": true,
   "order_identical": true
  },
@@ -358,7 +358,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
     }
    },
    "exclusion_violations": 0,
-   "result_hash": "1cefa0bd950c8265",
+   "result_hash": "b0437f595ec1a668",
    "replay_identical": true,
    "order_identical": true
   },
@@ -398,7 +398,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
     }
    },
    "exclusion_violations": 0,
-   "result_hash": "8c323c3ff3a3b3e4",
+   "result_hash": "7e1cb5fe7cc76d27",
    "replay_identical": true,
    "order_identical": true
   },
@@ -438,7 +438,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
     }
    },
    "exclusion_violations": 0,
-   "result_hash": "58751a558a0ec99e",
+   "result_hash": "d053992d3ba7771d",
    "replay_identical": true,
    "order_identical": true
   }
