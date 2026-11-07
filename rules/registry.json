@@ -442,6 +442,24 @@
       "save_schema": "antempire.engine-v2",
       "state_migration": null,
       "note": "C4b (larval_development.individual_development_c4b, requires C4a): a larva develops by r(T)/larva_days x N(own paid fraction), never from the colony fraction; one larva_development record per larva-day, checked by the engine and an independent reader. The nutrition-response form is null as shipped (Owner decision), so the switch cannot be turned on. Introduced OFF: every output byte-identical to v2-review.29."
+    },
+    {
+      "rules_version": "antempire.v2-review.31-nurse-cue-same-place",
+      "tag": "v31",
+      "fingerprint": {
+        "engine": "ae9f3270de2b9e7d1af8b55cb5cd9bd8c15ebfcc8e04b7540d08b0ee5776a82f",
+        "params": "319128df6959d222c66fc744ac0bdc5ca762dd0e24164f887f0fc25b50ed4dc9"
+      },
+      "approved_in": "Owner decision D5 2026-11-07 (PR #97 §7.2: nurse begging cue must come only from larvae at the nurse's own place; separate rules-update PR, not merged by Claude)",
+      "golden": {
+        "traces": "tests/golden/v31-trace-sha256.json",
+        "reports": "reports/day15-134-v31-*",
+        "day0_traces": "tests/golden/day0-v31-trace-sha256.json"
+      },
+      "previous": "antempire.v2-review.30-c4b-larva-development",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null,
+      "note": "Nurse begging cue locality (local_signals.nurse_cue_same_place_v31, CLAUDE.md §2.1): a nurse draws its begging-cue larva only among larvae at its own place (nurse in the nest, larva in the brood chamber; a larva without a place counts as there; does not require C4a); a nurse outside the nest touches no larva. Same stream and ID-ordered draw; the contact event gains worker_location and larva_location only when on. Introduced OFF: every output byte-identical to v2-review.30."
     }
   ]
 }

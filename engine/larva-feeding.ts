@@ -32,13 +32,13 @@
  * No worker, larva or queen reads any colony total, count, ratio or gap here (CLAUDE.md §2.1, §2.1b).
  */
 import { clamp, round } from './math.ts';
-import { colonyDice } from './workers.ts';
+import { BROOD_PLACE, colonyDice } from './workers.ts';
 import { foodTransfer } from './transfers.ts';
 import type { SpeciesParams } from './params.ts';
 import { ownPaidFraction } from './larva-development.ts';
 import type { Brood, ColonyState, LarvaBody, LarvaReserveBasis, SimEvent, Worker, WorldState } from './types.ts';
 
-export const BROOD_PLACE = 'brood';
+export { BROOD_PLACE };
 type Food = { sugar: number; protein: number };
 const FOODS = ['sugar', 'protein'] as const;
 const larvaNeed = (sp: SpeciesParams, factor: number): Food => ({ sugar: round(sp.nutrition.larva_sugar_daily * factor), protein: round(sp.nutrition.larva_protein_daily * factor) });
