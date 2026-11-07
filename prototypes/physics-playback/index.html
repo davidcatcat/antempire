@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>物理接觸播放</title>
+<style>
+  :root {
+    --bg: #f6f5f1; --panel: #ffffff; --ink: #1d1f21; --muted: #5d6166; --line: #d9d6cf;
+    --lane: #ebe4d3; --lane-edge: #b9ab8a; --wall: #6f6a62; --accent: #1b5fae; --warn-bg: #fff3d6; --warn-ink: #6b4800;
+    --c-contact: #c4372d; --c-constraint: #d07a12; --c-motion: #1b5fae; --c-status: #6c7178; --c-behaviour: #7b3fa6; --c-record: #9aa0a6;
+    --sel: #fff1b8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17191c; --panel: #202327; --ink: #e8e6e1; --muted: #a3a7ad; --line: #383c42;
+      --lane: #3a3428; --lane-edge: #8d7f5f; --wall: #8b867d; --accent: #6aa5f0; --warn-bg: #3b3018; --warn-ink: #f2d38a;
+      --c-contact: #ff7a6e; --c-constraint: #f0a54a; --c-motion: #6aa5f0; --c-status: #a3a7ad; --c-behaviour: #c792ea; --c-record: #7d838a;
+      --sel: #4a4120;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17191c; --panel: #202327; --ink: #e8e6e1; --muted: #a3a7ad; --line: #383c42;
+    --lane: #3a3428; --lane-edge: #8d7f5f; --wall: #8b867d; --accent: #6aa5f0; --warn-bg: #3b3018; --warn-ink: #f2d38a;
+    --c-contact: #ff7a6e; --c-constraint: #f0a54a; --c-motion: #6aa5f0; --c-status: #a3a7ad; --c-behaviour: #c792ea; --c-record: #7d838a;
+    --sel: #4a4120;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", "Noto Sans TC", sans-serif; }
+  header { padding: 10px 16px 8px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  h1 { font-size: 17px; margin: 0 0 4px; }
+  .badge { display: inline-block; background: var(--warn-bg); color: var(--warn-ink); border: 1px solid currentColor; border-radius: 4px; padding: 2px 8px; font-weight: 600; font-size: 13px; }
+  .sub { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 12px; padding: 12px 16px 16px; }
+  @media (max-width: 900px) { main { grid-template-columns: minmax(0, 1fr); } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; min-width: 0; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
+  label { color: var(--muted); font-size: 12.5px; }
+  select, button { font: inherit; font-size: 13px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; min-height: 32px; }
+  button { cursor: pointer; }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); min-width: 64px; }
+  select { max-width: 100%; }
+  #stage { position: relative; margin-top: 8px; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; touch-action: none; }
+  #view { display: block; width: 100%; height: 440px; }
+  @media (max-width: 900px) { #view { height: 360px; } }
+  #timeline { display: block; width: 100%; height: 40px; margin-top: 8px; cursor: pointer; touch-action: none; }
+  .time { font-variant-numeric: tabular-nums; font-weight: 600; }
+  #now { margin-top: 6px; font-size: 13px; }
+  #now .k { font-weight: 600; }
+  .legend { margin-top: 8px; font-size: 12.5px; color: var(--muted); }
+  .legend b { color: var(--ink); }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 3px; vertical-align: baseline; }
+  #events { height: 420px; overflow-y: auto; position: relative; border: 1px solid var(--line); border-radius: 6px; margin-top: 6px; }
+  @media (max-width: 900px) { #events { height: 300px; } }
+  .ev { position: absolute; left: 0; right: 0; height: 26px; padding: 3px 6px; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; border-bottom: 1px solid var(--line); }
+  .ev:hover { background: var(--bg); }
+  .ev.sel { background: var(--sel); }
+  .ev .t { font-variant-numeric: tabular-nums; color: var(--muted); display: inline-block; width: 78px; }
+  .ev .kd { font-weight: 600; }
+  details { margin-top: 8px; font-size: 12.5px; color: var(--muted); }
+  details p, details li { margin: 4px 0; overflow-wrap: anywhere; }
+  details ul { padding-left: 18px; margin: 4px 0; }
+  .agents { margin-top: 6px; font-size: 12.5px; }
+  .agents table { border-collapse: collapse; width: 100%; }
+  .agents td, .agents th { padding: 2px 4px; border-bottom: 1px solid var(--line); text-align: left; font-variant-numeric: tabular-nums; }
+  .agents th { color: var(--muted); font-weight: 500; white-space: nowrap; }
+  .agents td { white-space: nowrap; }
+  .tablewrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+<header>
+  <h1>物理接觸播放（PH-3b 解算器）</h1>
+  <span class="badge" id="badge">隔離物理實驗・非正式・不是生物行為（讓路／側移決策尚未建模）</span>
+  <div class="sub">合成情境（synthetic），不是臺中西屯花園。畫面上每一個運動變化都對應一個解算器事件；播放只讀取匯出的 JSON，不執行模擬。</div>
+</header>
+<main>
+  <section class="card" aria-label="播放">
+    <div class="row">
+      <label for="scenario">情境</label>
+      <select id="scenario"></select>
+      <label for="solver">解算器</label>
+      <select id="solver"></select>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <button id="prev" title="上一個事件時刻">◀ 事件</button>
+      <button id="play" class="primary">播放</button>
+      <button id="next" title="下一個事件時刻">事件 ▶</button>
+      <label for="rate">播放速度</label>
+      <select id="rate">
+        <option value="0.01">0.01×</option><option value="0.1">0.1×</option><option value="0.25">0.25×</option><option value="0.5">0.5×</option>
+        <option value="1" selected>1×</option><option value="2">2×</option><option value="5">5×</option>
+      </select>
+      <span class="time" id="clock">t = 0 s</span>
+    </div>
+    <div id="stage"><canvas id="view"></canvas></div>
+    <div class="row" style="margin-top:6px">
+      <button id="zin" title="放大">＋</button>
+      <button id="zout" title="縮小">－</button>
+      <button id="fit">全景</button>
+      <button id="focus">聚焦目前事件</button>
+      <label><input type="checkbox" id="follow" checked> 點事件時聚焦</label>
+    </div>
+    <canvas id="timeline" aria-label="時間軸（刻度＝事件）"></canvas>
+    <div id="now"></div>
+    <div class="legend" id="legend">
+      <b>位置怎麼畫</b>：每一段是解算器在兩個事件之間的<b>直線等速運動</b>（兩端是解算器紀錄的精確姿態），畫面直接算這個運動——<b>不是取樣點插值，沒有任何平滑</b>。播放速度只改變播放，不改變模擬。<br>
+      身體是<b>真實尺寸</b>的膠囊（長 <span id="lenTxt"></span>、碰撞寬 <span id="widTxt"></span>），左下角是比例尺。通道帶＝可走寬度；深灰＝牆或障礙物。
+      粗框＝目前事件涉及的個體。<br>
+      <span class="dot" style="background:var(--c-contact)"></span>接觸
+      <span class="dot" style="background:var(--c-constraint)"></span>約束（停／跟隨／恢復）
+      <span class="dot" style="background:var(--c-motion)"></span>運動（出發／錯身／抵達）
+      <span class="dot" style="background:var(--c-status)"></span>解算器狀態
+      <span class="dot" style="background:var(--c-behaviour)"></span>原生的候選規則（非本種）
+      <span class="dot" style="background:var(--c-record)"></span>原生運動紀錄
+    </div>
+  </section>
+  <aside class="card" aria-label="事件">
+    <div class="row"><b>引擎事件</b><span class="sub" id="evcount" style="margin:0"></span></div>
+    <div id="events" role="listbox" tabindex="0"></div>
+    <div class="agents tablewrap" id="agents"></div>
+    <details open>
+      <summary>這個情境</summary>
+      <div id="about"></div>
+    </details>
+    <details>
+      <summary>沒有建模（不宣稱）</summary>
+      <ul>
+        <li>讓路、側移、掉頭、交叉口誰先走：生物決策，本種依據未知（null），PH-3b 不做。走不動就等；沒有東西讓它走，就在時間終點回報「卡住」。</li>
+        <li>橫向位置 u 整段固定為情境給定值。能不能錯身取決於給定的 u 與通道寬度。</li>
+        <li>沒有推擠、摩擦、質量、加速度；身體不含觸角與腳。</li>
+        <li>側面滑過的接觸以分段等速近似（每次間距打開 1e-7 mm 就重解），所以滑過時會有很多細碎事件——這是解算器的真實輸出。</li>
+      </ul>
+    </details>
+  </aside>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>

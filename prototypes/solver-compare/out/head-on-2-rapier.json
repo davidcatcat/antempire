@@ -1,0 +1,641 @@
+{
+ "solver": "rapier",
+ "model": "Rapier 2D (deterministic-compat) dynamic capsules; velocity towards goal each step; contacts by Rapier; NO biological decisions",
+ "lateral_dof": true,
+ "biology_note": "Rapier run has NO yield, give-way, crossing wait, contact pause, recruitment or perception; every native behavioural_response has no counterpart here",
+ "scenario": {
+  "id": "head-on-2",
+  "title": "兩隻迎面：狹窄通道（1.0 mm 可用寬度）",
+  "agents": 2,
+  "horizon_s": 20,
+  "seed": 1,
+  "refs": {
+   "geometry": "scenarios/physics/narrow-corridor.geometry.json",
+   "body": "scenarios/physics/pheidole-megacephala.body-candidates.json",
+   "interaction": "scenarios/physics/pheidole-megacephala.interaction-candidates.json",
+   "motion": "scenarios/physics/pheidole-megacephala.motion-candidates.json"
+  },
+  "body": {
+   "length_mm": {
+    "value": 2.5,
+    "source": "scenarios/physics/pheidole-megacephala.body-candidates.json#castes.minor.body_length_mm.value",
+    "basis": "文獻支持",
+    "why": "小工蟻體長約 2.5 mm（R94，文獻支持）"
+   },
+   "width_mm": {
+    "value": 0.8,
+    "source": "scenarios/physics/pheidole-megacephala.body-candidates.json#castes.minor.effective_collision_width_mm.candidate_range.1",
+    "basis": "遊戲假設",
+    "why": "value 為 null；取候選範圍上限 0.8 mm（與 tests/ph2-collision.test.ts 的 wHi 相同），只作敏感度，非量測"
+   },
+   "contact_reach_mm": {
+    "value": 1,
+    "source": "scenarios/physics/pheidole-megacephala.interaction-candidates.json#contact_reach_mm.candidate_range (midpoint)",
+    "basis": "遊戲假設",
+    "why": "value 為 null；取候選範圍中點 1.0 mm（與 tests/ph2-collision.test.ts 相同），只作敏感度，非量測"
+   }
+  },
+  "encounter": {
+   "priority": "entry_yield",
+   "entry_yield_probability": 0.957346,
+   "laden_yield_probability": 0.98,
+   "contact_pause_s": null,
+   "inside_turn_back_probability": 0.5
+  },
+  "encounter_provenance": {
+   "priority": "scenarios/physics/pheidole-megacephala.interaction-candidates.json#encounter.priority.value [遊戲假設（選擇）] 檔案預設",
+   "entry_yield_probability": "scenarios/physics/pheidole-megacephala.interaction-candidates.json#encounter.entry_yield_probability.value [文獻支持（非本種：Lasius niger）] 非本種 Lasius niger 202/211（R380）",
+   "laden_yield_probability": "scenarios/physics/pheidole-megacephala.interaction-candidates.json#encounter.laden_yield_probability.value [文獻支持（非本種：Atta colombica）] 非本種 Atta colombica（R381）；本情境無負載，不會用到",
+   "contact_pause_s": "scenarios/physics/pheidole-megacephala.interaction-candidates.json#encounter.contact_pause_s.value = null (file value; engine null case) 檔案值 null＝不停頓",
+   "inside_turn_back_probability": "scenarios/physics/pheidole-megacephala.interaction-candidates.json#encounter.inside_turn_back_probability.candidate_values.1 [遊戲假設] 檔案 value 為 null；取候選值 0.5（與 tests/ph2-collision.test.ts 相同，遊戲假設）。若改為 null，原生模型會回報 unresolved"
+  },
+  "lanes": [
+   {
+    "id": "P-corridor",
+    "width_mm": 20,
+    "layer": "z=0"
+   }
+  ],
+  "obstacles": [
+   "O-wall-north",
+   "O-wall-south"
+  ],
+  "obstacles_not_at_level": [],
+  "unused_passages": [],
+  "provenance": {
+   "scenario_values": "起點、橫向偏移、出發時間、時間長度與種子都是合成情境值（遊戲假設），不是量測，也不是臺中西屯花園。",
+   "note": "同 tests/ph2-collision.test.ts §1 的起點與目標（W1 2→98，W2 98→2）。"
+  },
+  "tolerances": {
+   "overlap_mm": 1e-9,
+   "touching_mm": 0.000001,
+   "note": "numerical, not model parameters"
+  }
+ },
+ "dt_s": 0.008333333333333333,
+ "ccd": false,
+ "params": {
+  "rapier_version": "0.21.0",
+  "dt_s": 0.008333333333333333,
+  "ccd": false,
+  "length_unit": 1,
+  "normalized_allowed_linear_error": 0.004999999888241291,
+  "normalized_prediction_distance": 0.019999999552965164,
+  "num_solver_iterations": 4,
+  "gravity": [
+   0,
+   0
+  ],
+  "friction": 0,
+  "restitution": 0,
+  "density": 1,
+  "rotation": "locked along the lane",
+  "float": "f32 inside Rapier"
+ },
+ "cost": {
+  "wall_ms": 82.90901999999994,
+  "cpu_user_ms": 237.389,
+  "cpu_system_ms": 11.546,
+  "heap_used_delta_mb": 1.3422622680664062,
+  "array_buffers_mb": 0.07297325134277344,
+  "rss_mb": 223.8984375,
+  "steps": 2400,
+  "raw_collision_events": 1
+ },
+ "cost_first_run": {
+  "wall_ms": 202.058403,
+  "cpu_user_ms": 398.398,
+  "cpu_system_ms": 73.186,
+  "heap_used_delta_mb": 3.2223281860351562,
+  "array_buffers_mb": 0.07293510437011719,
+  "rss_mb": 195.7734375,
+  "steps": 2400,
+  "raw_collision_events": 1
+ },
+ "cost_note": "cost = second (warm) run of the same dt; cost_first_run may include WASM warm-up",
+ "replay": {
+  "rerun_identical": true,
+  "creation_order_reversed_identical": false,
+  "hash": "db26a2d64c8bc6de",
+  "seed_note": "no random draw in the Rapier run: the scenario seed has no effect"
+ },
+ "events": {
+  "by_kind": {
+   "rapier_collision_start": 1
+  },
+  "by_class": {
+   "physical_contact": 1
+  }
+ },
+ "arrivals": {
+  "W1": null,
+  "W2": null
+ },
+ "solo_arrival_minus_analytic_s": {
+  "W1": -0.00002194519341269796,
+  "W2": -0.00021491225040826123
+ },
+ "judge": {
+  "instants": 2401,
+  "pieces": 2400,
+  "pair_checks": 2401,
+  "overlap_pair_instants": 2071,
+  "max_penetration_mm": 0.11185450594328494,
+  "overlap_between_instants": 0,
+  "max_penetration_between_mm": 0,
+  "body_contact_episodes": 1,
+  "body_contacts_only_between_instants": 0,
+  "first_body_contact_t_s": 2.7499176450524203,
+  "reach_contact_episodes": 1,
+  "first_reach_contact_t_s": 2.7205050355450244,
+  "out_of_walkable_agent_instants": 0,
+  "not_checked_agent_instants": 0,
+  "junction_not_checked_agent_instants": 0,
+  "max_out_of_walkable_mm": 0,
+  "out_of_walkable_gt_coarse": 0,
+  "overlap_pair_instants_gt_coarse": 2071,
+  "obstacle_violation_gt_coarse": 0,
+  "coarse_tol_mm": 0.001,
+  "overlap_pair_instants_wide_section": 0,
+  "overlap_between_instants_wide_section": 0,
+  "obstacle_violation_agent_instants": 0,
+  "max_obstacle_penetration_mm": 0,
+  "obstacle_depth_note": "circle: exact depth; polygon: a capsule whose axis touches or enters the polygon is reported with depth ≥ its radius (lower bound)",
+  "max_abs_u_mm": 0.00024142288020811975,
+  "occupancy2d": {
+   "instants": 2401,
+   "outside_lane": 0,
+   "not_checked": 0,
+   "overlap": 2071,
+   "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
+  },
+  "arrivals": {
+   "W1": null,
+   "W2": null
+  },
+  "judge_wall_ms": 84.03491599999995
+ },
+ "judge_dense": {
+  "dense_dt_s": 0.002,
+  "instants": 12094,
+  "pieces": 12093,
+  "pair_checks": 12094,
+  "overlap_pair_instants": 10434,
+  "max_penetration_mm": 0.11185450594328494,
+  "overlap_between_instants": 0,
+  "max_penetration_between_mm": 0,
+  "body_contact_episodes": 1,
+  "body_contacts_only_between_instants": 0,
+  "first_body_contact_t_s": 2.7499176450524203,
+  "reach_contact_episodes": 1,
+  "first_reach_contact_t_s": 2.720505035545024,
+  "out_of_walkable_agent_instants": 0,
+  "not_checked_agent_instants": 0,
+  "junction_not_checked_agent_instants": 0,
+  "max_out_of_walkable_mm": 0,
+  "out_of_walkable_gt_coarse": 0,
+  "overlap_pair_instants_gt_coarse": 10434,
+  "obstacle_violation_gt_coarse": 0,
+  "coarse_tol_mm": 0.001,
+  "overlap_pair_instants_wide_section": 0,
+  "overlap_between_instants_wide_section": 0,
+  "obstacle_violation_agent_instants": 0,
+  "max_obstacle_penetration_mm": 0,
+  "obstacle_depth_note": "circle: exact depth; polygon: a capsule whose axis touches or enters the polygon is reported with depth ≥ its radius (lower bound)",
+  "max_abs_u_mm": 0.00024142288020811975,
+  "occupancy2d": null,
+  "arrivals": {
+   "W1": null,
+   "W2": null
+  },
+  "judge_wall_ms": 186.55370599999992
+ },
+ "dt_sweep": [
+  {
+   "dt_s": 0.016666666666666666,
+   "ccd": false,
+   "params": {
+    "rapier_version": "0.21.0",
+    "dt_s": 0.016666666666666666,
+    "ccd": false,
+    "length_unit": 1,
+    "normalized_allowed_linear_error": 0.004999999888241291,
+    "normalized_prediction_distance": 0.019999999552965164,
+    "num_solver_iterations": 4,
+    "gravity": [
+     0,
+     0
+    ],
+    "friction": 0,
+    "restitution": 0,
+    "density": 1,
+    "rotation": "locked along the lane",
+    "float": "f32 inside Rapier"
+   },
+   "cost": {
+    "wall_ms": 25.09647800000016,
+    "cpu_user_ms": 71.779,
+    "cpu_system_ms": 7.942,
+    "heap_used_delta_mb": 0.8743133544921875,
+    "array_buffers_mb": 0.07308769226074219,
+    "rss_mb": 256.4609375,
+    "steps": 1200,
+    "raw_collision_events": 1
+   },
+   "cost_first_run": {
+    "wall_ms": 32.10757700000022,
+    "cpu_user_ms": 72.306,
+    "cpu_system_ms": 0,
+    "heap_used_delta_mb": -1.63067626953125,
+    "array_buffers_mb": 0.07308769226074219,
+    "rss_mb": 246.5859375,
+    "steps": 1200,
+    "raw_collision_events": 1
+   },
+   "cost_note": "cost = second (warm) run of the same dt; cost_first_run may include WASM warm-up",
+   "replay": {
+    "rerun_identical": true,
+    "creation_order_reversed_identical": false,
+    "hash": "09f96d3fbefb8352",
+    "seed_note": "no random draw in the Rapier run: the scenario seed has no effect"
+   },
+   "events": {
+    "by_kind": {
+     "rapier_collision_start": 1
+    },
+    "by_class": {
+     "physical_contact": 1
+    }
+   },
+   "arrivals": {
+    "W1": null,
+    "W2": null
+   },
+   "solo_arrival_minus_analytic_s": {
+    "W1": 0.00007555065706110753,
+    "W2": 0.00003827302337722216
+   },
+   "judge": {
+    "instants": 1201,
+    "pieces": 1200,
+    "pair_checks": 1201,
+    "overlap_pair_instants": 1034,
+    "max_penetration_mm": 0.054363250425999765,
+    "overlap_between_instants": 0,
+    "max_penetration_between_mm": 0,
+    "body_contact_episodes": 1,
+    "body_contacts_only_between_instants": 0,
+    "first_body_contact_t_s": 2.766666666666339,
+    "reach_contact_episodes": 1,
+    "first_reach_contact_t_s": 2.720594016748796,
+    "out_of_walkable_agent_instants": 0,
+    "not_checked_agent_instants": 0,
+    "junction_not_checked_agent_instants": 0,
+    "max_out_of_walkable_mm": 0,
+    "out_of_walkable_gt_coarse": 0,
+    "overlap_pair_instants_gt_coarse": 1034,
+    "obstacle_violation_gt_coarse": 0,
+    "coarse_tol_mm": 0.001,
+    "overlap_pair_instants_wide_section": 0,
+    "overlap_between_instants_wide_section": 0,
+    "obstacle_violation_agent_instants": 0,
+    "max_obstacle_penetration_mm": 0,
+    "obstacle_depth_note": "circle: exact depth; polygon: a capsule whose axis touches or enters the polygon is reported with depth ≥ its radius (lower bound)",
+    "max_abs_u_mm": 0.0000676808922435157,
+    "occupancy2d": {
+     "instants": 1201,
+     "outside_lane": 0,
+     "not_checked": 0,
+     "overlap": 1034,
+     "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
+    },
+    "arrivals": {
+     "W1": null,
+     "W2": null
+    },
+    "judge_wall_ms": 35.259735999999975
+   },
+   "judge_dense": {
+    "dense_dt_s": 0.002,
+    "instants": 10894,
+    "pieces": 10893,
+    "pair_checks": 10894,
+    "overlap_pair_instants": 9389,
+    "max_penetration_mm": 0.054363250425999765,
+    "overlap_between_instants": 0,
+    "max_penetration_between_mm": 0,
+    "body_contact_episodes": 1,
+    "body_contacts_only_between_instants": 0,
+    "first_body_contact_t_s": 2.7666666666664055,
+    "reach_contact_episodes": 1,
+    "first_reach_contact_t_s": 2.7205940167487954,
+    "out_of_walkable_agent_instants": 0,
+    "not_checked_agent_instants": 0,
+    "junction_not_checked_agent_instants": 0,
+    "max_out_of_walkable_mm": 0,
+    "out_of_walkable_gt_coarse": 0,
+    "overlap_pair_instants_gt_coarse": 9388,
+    "obstacle_violation_gt_coarse": 0,
+    "coarse_tol_mm": 0.001,
+    "overlap_pair_instants_wide_section": 0,
+    "overlap_between_instants_wide_section": 0,
+    "obstacle_violation_agent_instants": 0,
+    "max_obstacle_penetration_mm": 0,
+    "obstacle_depth_note": "circle: exact depth; polygon: a capsule whose axis touches or enters the polygon is reported with depth ≥ its radius (lower bound)",
+    "max_abs_u_mm": 0.0000676808922435157,
+    "occupancy2d": null,
+    "arrivals": {
+     "W1": null,
+     "W2": null
+    },
+    "judge_wall_ms": 211.77562399999988
+   }
+  },
+  {
+   "dt_s": 0.008333333333333333,
+   "ccd": false,
+   "params": {
+    "rapier_version": "0.21.0",
+    "dt_s": 0.008333333333333333,
+    "ccd": false,
+    "length_unit": 1,
+    "normalized_allowed_linear_error": 0.004999999888241291,
+    "normalized_prediction_distance": 0.019999999552965164,
+    "num_solver_iterations": 4,
+    "gravity": [
+     0,
+     0
+    ],
+    "friction": 0,
+    "restitution": 0,
+    "density": 1,
+    "rotation": "locked along the lane",
+    "float": "f32 inside Rapier"
+   },
+   "cost": {
+    "wall_ms": 82.90901999999994,
+    "cpu_user_ms": 237.389,
+    "cpu_system_ms": 11.546,
+    "heap_used_delta_mb": 1.3422622680664062,
+    "array_buffers_mb": 0.07297325134277344,
+    "rss_mb": 223.8984375,
+    "steps": 2400,
+    "raw_collision_events": 1
+   },
+   "cost_first_run": {
+    "wall_ms": 202.058403,
+    "cpu_user_ms": 398.398,
+    "cpu_system_ms": 73.186,
+    "heap_used_delta_mb": 3.2223281860351562,
+    "array_buffers_mb": 0.07293510437011719,
+    "rss_mb": 195.7734375,
+    "steps": 2400,
+    "raw_collision_events": 1
+   },
+   "cost_note": "cost = second (warm) run of the same dt; cost_first_run may include WASM warm-up",
+   "replay": {
+    "rerun_identical": true,
+    "creation_order_reversed_identical": false,
+    "hash": "db26a2d64c8bc6de",
+    "seed_note": "no random draw in the Rapier run: the scenario seed has no effect"
+   },
+   "events": {
+    "by_kind": {
+     "rapier_collision_start": 1
+    },
+    "by_class": {
+     "physical_contact": 1
+    }
+   },
+   "arrivals": {
+    "W1": null,
+    "W2": null
+   },
+   "solo_arrival_minus_analytic_s": {
+    "W1": -0.00002194519341269796,
+    "W2": -0.00021491225040826123
+   },
+   "judge": {
+    "instants": 2401,
+    "pieces": 2400,
+    "pair_checks": 2401,
+    "overlap_pair_instants": 2071,
+    "max_penetration_mm": 0.11185450594328494,
+    "overlap_between_instants": 0,
+    "max_penetration_between_mm": 0,
+    "body_contact_episodes": 1,
+    "body_contacts_only_between_instants": 0,
+    "first_body_contact_t_s": 2.7499176450524203,
+    "reach_contact_episodes": 1,
+    "first_reach_contact_t_s": 2.7205050355450244,
+    "out_of_walkable_agent_instants": 0,
+    "not_checked_agent_instants": 0,
+    "junction_not_checked_agent_instants": 0,
+    "max_out_of_walkable_mm": 0,
+    "out_of_walkable_gt_coarse": 0,
+    "overlap_pair_instants_gt_coarse": 2071,
+    "obstacle_violation_gt_coarse": 0,
+    "coarse_tol_mm": 0.001,
+    "overlap_pair_instants_wide_section": 0,
+    "overlap_between_instants_wide_section": 0,
+    "obstacle_violation_agent_instants": 0,
+    "max_obstacle_penetration_mm": 0,
+    "obstacle_depth_note": "circle: exact depth; polygon: a capsule whose axis touches or enters the polygon is reported with depth ≥ its radius (lower bound)",
+    "max_abs_u_mm": 0.00024142288020811975,
+    "occupancy2d": {
+     "instants": 2401,
+     "outside_lane": 0,
+     "not_checked": 0,
+     "overlap": 2071,
+     "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
+    },
+    "arrivals": {
+     "W1": null,
+     "W2": null
+    },
+    "judge_wall_ms": 84.03491599999995
+   },
+   "judge_dense": {
+    "dense_dt_s": 0.002,
+    "instants": 12094,
+    "pieces": 12093,
+    "pair_checks": 12094,
+    "overlap_pair_instants": 10434,
+    "max_penetration_mm": 0.11185450594328494,
+    "overlap_between_instants": 0,
+    "max_penetration_between_mm": 0,
+    "body_contact_episodes": 1,
+    "body_contacts_only_between_instants": 0,
+    "first_body_contact_t_s": 2.7499176450524203,
+    "reach_contact_episodes": 1,
+    "first_reach_contact_t_s": 2.720505035545024,
+    "out_of_walkable_agent_instants": 0,
+    "not_checked_agent_instants": 0,
+    "junction_not_checked_agent_instants": 0,
+    "max_out_of_walkable_mm": 0,
+    "out_of_walkable_gt_coarse": 0,
+    "overlap_pair_instants_gt_coarse": 10434,
+    "obstacle_violation_gt_coarse": 0,
+    "coarse_tol_mm": 0.001,
+    "overlap_pair_instants_wide_section": 0,
+    "overlap_between_instants_wide_section": 0,
+    "obstacle_violation_agent_instants": 0,
+    "max_obstacle_penetration_mm": 0,
+    "obstacle_depth_note": "circle: exact depth; polygon: a capsule whose axis touches or enters the polygon is reported with depth ≥ its radius (lower bound)",
+    "max_abs_u_mm": 0.00024142288020811975,
+    "occupancy2d": null,
+    "arrivals": {
+     "W1": null,
+     "W2": null
+    },
+    "judge_wall_ms": 186.55370599999992
+   }
+  },
+  {
+   "dt_s": 0.004166666666666667,
+   "ccd": false,
+   "params": {
+    "rapier_version": "0.21.0",
+    "dt_s": 0.004166666666666667,
+    "ccd": false,
+    "length_unit": 1,
+    "normalized_allowed_linear_error": 0.004999999888241291,
+    "normalized_prediction_distance": 0.019999999552965164,
+    "num_solver_iterations": 4,
+    "gravity": [
+     0,
+     0
+    ],
+    "friction": 0,
+    "restitution": 0,
+    "density": 1,
+    "rotation": "locked along the lane",
+    "float": "f32 inside Rapier"
+   },
+   "cost": {
+    "wall_ms": 103.27648199999999,
+    "cpu_user_ms": 196.724,
+    "cpu_system_ms": 13.114,
+    "heap_used_delta_mb": 10.852157592773438,
+    "array_buffers_mb": 0.07312583923339844,
+    "rss_mb": 401.9609375,
+    "steps": 4800,
+    "raw_collision_events": 1
+   },
+   "cost_first_run": {
+    "wall_ms": 93.46165900000005,
+    "cpu_user_ms": 189.167,
+    "cpu_system_ms": 3.596,
+    "heap_used_delta_mb": 2.1707611083984375,
+    "array_buffers_mb": 0.07308769226074219,
+    "rss_mb": 382.0859375,
+    "steps": 4800,
+    "raw_collision_events": 1
+   },
+   "cost_note": "cost = second (warm) run of the same dt; cost_first_run may include WASM warm-up",
+   "replay": {
+    "rerun_identical": true,
+    "creation_order_reversed_identical": false,
+    "hash": "3e2e16d126c9fec2",
+    "seed_note": "no random draw in the Rapier run: the scenario seed has no effect"
+   },
+   "events": {
+    "by_kind": {
+     "rapier_collision_start": 1
+    },
+    "by_class": {
+     "physical_contact": 1
+    }
+   },
+   "arrivals": {
+    "W1": null,
+    "W2": null
+   },
+   "solo_arrival_minus_analytic_s": {
+    "W1": -0.00015060710948500144,
+    "W2": 0.00006224974146107343
+   },
+   "judge": {
+    "instants": 4801,
+    "pieces": 4800,
+    "pair_checks": 4801,
+    "overlap_pair_instants": 4139,
+    "max_penetration_mm": 0.22696362443137053,
+    "overlap_between_instants": 0,
+    "max_penetration_between_mm": 0,
+    "body_contact_episodes": 1,
+    "body_contacts_only_between_instants": 0,
+    "first_body_contact_t_s": 2.754166666666657,
+    "reach_contact_episodes": 1,
+    "first_reach_contact_t_s": 2.720676606533836,
+    "out_of_walkable_agent_instants": 0,
+    "not_checked_agent_instants": 0,
+    "junction_not_checked_agent_instants": 0,
+    "max_out_of_walkable_mm": 0,
+    "out_of_walkable_gt_coarse": 0,
+    "overlap_pair_instants_gt_coarse": 4139,
+    "obstacle_violation_gt_coarse": 0,
+    "coarse_tol_mm": 0.001,
+    "overlap_pair_instants_wide_section": 0,
+    "overlap_between_instants_wide_section": 0,
+    "obstacle_violation_agent_instants": 0,
+    "max_obstacle_penetration_mm": 0,
+    "obstacle_depth_note": "circle: exact depth; polygon: a capsule whose axis touches or enters the polygon is reported with depth ≥ its radius (lower bound)",
+    "max_abs_u_mm": 0.0017582295695319772,
+    "occupancy2d": {
+     "instants": 4801,
+     "outside_lane": 0,
+     "not_checked": 0,
+     "overlap": 4139,
+     "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
+    },
+    "arrivals": {
+     "W1": null,
+     "W2": null
+    },
+    "judge_wall_ms": 100.74397199999999
+   },
+   "judge_dense": {
+    "dense_dt_s": 0.002,
+    "instants": 14494,
+    "pieces": 14493,
+    "pair_checks": 14494,
+    "overlap_pair_instants": 12500,
+    "max_penetration_mm": 0.22696362443137053,
+    "overlap_between_instants": 0,
+    "max_penetration_between_mm": 0,
+    "body_contact_episodes": 1,
+    "body_contacts_only_between_instants": 0,
+    "first_body_contact_t_s": 2.754166666666661,
+    "reach_contact_episodes": 1,
+    "first_reach_contact_t_s": 2.7206766065338357,
+    "out_of_walkable_agent_instants": 0,
+    "not_checked_agent_instants": 0,
+    "junction_not_checked_agent_instants": 0,
+    "max_out_of_walkable_mm": 0,
+    "out_of_walkable_gt_coarse": 0,
+    "overlap_pair_instants_gt_coarse": 12500,
+    "obstacle_violation_gt_coarse": 0,
+    "coarse_tol_mm": 0.001,
+    "overlap_pair_instants_wide_section": 0,
+    "overlap_between_instants_wide_section": 0,
+    "obstacle_violation_agent_instants": 0,
+    "max_obstacle_penetration_mm": 0,
+    "obstacle_depth_note": "circle: exact depth; polygon: a capsule whose axis touches or enters the polygon is reported with depth ≥ its radius (lower bound)",
+    "max_abs_u_mm": 0.0017582295695319772,
+    "occupancy2d": null,
+    "arrivals": {
+     "W1": null,
+     "W2": null
+    },
+    "judge_wall_ms": 176.7741699999999
+   }
+  }
+ ],
+ "notes": [
+  "Rapier 2D independent solve: dynamic capsules, velocity set towards the goal every step, contacts resolved by Rapier",
+  "NO biological decisions: no yield / give-way / crossing wait / contact pause (native encounter rules have no Rapier counterpart)",
+  "positions are Rapier f32 values; motion between samples = the integrator's straight step"
+ ],
+ "trajectory": null
+}

@@ -1,0 +1,683 @@
+[
+ {
+  "scenario": "head-on-2",
+  "agents": 2,
+  "horizon_s": 20,
+  "cost": {
+   "wall_ms": 23.71590200000003,
+   "cpu_user_ms": 9.418,
+   "cpu_system_ms": 0.148,
+   "heap_used_delta_mb": 0.5103607177734375,
+   "rss_mb": 93.5546875
+  },
+  "peak_rss_mb": 95.59765625,
+  "stats": {
+   "batches": 2,
+   "events_processed": 3,
+   "queue_pushes": 6,
+   "stale_pops": 3,
+   "pair_hit_evals": 1,
+   "windows": 81,
+   "candidate_pairs_total": 71,
+   "candidate_pairs_max": 1,
+   "velocity_solves": 3,
+   "max_component": 2,
+   "max_same_instant_batches": 1,
+   "contacts": 1,
+   "releases": 0,
+   "passes": 0,
+   "turns": 0,
+   "turn_blocked": 0,
+   "stalled": 2,
+   "arrived": 0,
+   "unresolved": 0,
+   "aborted": null,
+   "t_end_s": 20
+  },
+  "events_by_kind": {
+   "start": 2,
+   "contact_start": 1,
+   "stop": 2,
+   "stalled": 2
+  },
+  "events_by_class": {
+   "motion": 2,
+   "physical_contact": 1,
+   "physical_constraint": 2,
+   "solver_status": 2
+  },
+  "arrived": 0,
+  "final_modes": {
+   "stopped_by_contact": 2
+  },
+  "replay": {
+   "hash": "2c88dbc53de36815",
+   "input_order_reversed_identical": true,
+   "variants_identical": true,
+   "variants": {
+    "grid": "2c88dbc53de36815",
+    "sap": "2c88dbc53de36815",
+    "brute": "2c88dbc53de36815",
+    "window_0.05": "2c88dbc53de36815",
+    "window_1": "2c88dbc53de36815"
+   }
+  },
+  "broadphase": {
+   "windows": 81,
+   "identical_candidate_sets": true,
+   "cost": {
+    "brute": {
+     "ms": 0.11831300000000056,
+     "pairs": 71
+    },
+    "grid_8mm": {
+     "ms": 0.4828499999999849,
+     "pairs": 71
+    },
+    "grid_2mm": {
+     "ms": 4.6922159999999735,
+     "pairs": 71
+    },
+    "sap": {
+     "ms": 0.3365259999999921,
+     "pairs": 71
+    }
+   },
+   "note": "cost of the three methods on the solver's own window box sets; brute = O(N²) reference"
+  },
+  "head_on_stalls": {
+   "head_on_pairs": 1,
+   "packing_infeasible": 1,
+   "packing_feasible_given_u_blocks": 0,
+   "packing_unknown": 0
+  },
+  "judge": {
+   "overlap_pair_instants": 0,
+   "overlap_between_instants": 0,
+   "max_penetration_mm": 0,
+   "max_penetration_between_mm": 0,
+   "out_of_walkable_agent_instants": 0,
+   "max_out_of_walkable_mm": 0,
+   "obstacle_violation_agent_instants": 0,
+   "max_obstacle_penetration_mm": 0,
+   "body_contact_episodes": 1,
+   "body_contacts_only_between_instants": 0,
+   "occupancy2d": {
+    "instants": 3,
+    "outside_lane": 0,
+    "not_checked": 0,
+    "overlap": 0,
+    "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
+   },
+   "instants": 3,
+   "judge_wall_ms": 5.08549099999999
+  }
+ },
+ {
+  "scenario": "corridor-8",
+  "agents": 8,
+  "horizon_s": 120,
+  "cost": {
+   "wall_ms": 139.28045799999995,
+   "cpu_user_ms": 42.485,
+   "cpu_system_ms": 4.257,
+   "heap_used_delta_mb": 2.1579132080078125,
+   "rss_mb": 94.703125
+  },
+  "peak_rss_mb": 95.21484375,
+  "stats": {
+   "batches": 17,
+   "events_processed": 17,
+   "queue_pushes": 62,
+   "stale_pops": 45,
+   "pair_hit_evals": 56,
+   "windows": 481,
+   "candidate_pairs_total": 9109,
+   "candidate_pairs_max": 20,
+   "velocity_solves": 18,
+   "max_component": 8,
+   "max_same_instant_batches": 1,
+   "contacts": 8,
+   "releases": 1,
+   "passes": 0,
+   "turns": 0,
+   "turn_blocked": 0,
+   "stalled": 8,
+   "arrived": 0,
+   "unresolved": 0,
+   "aborted": null,
+   "t_end_s": 120
+  },
+  "events_by_kind": {
+   "start": 8,
+   "contact_start": 8,
+   "stop": 11,
+   "resume": 3,
+   "contact_end": 1,
+   "stalled": 8
+  },
+  "events_by_class": {
+   "motion": 8,
+   "physical_contact": 9,
+   "physical_constraint": 14,
+   "solver_status": 8
+  },
+  "arrived": 0,
+  "final_modes": {
+   "stopped_by_contact": 8
+  },
+  "replay": {
+   "hash": "c20d827087ec5a96",
+   "input_order_reversed_identical": true,
+   "variants_identical": true,
+   "variants": {
+    "grid": "c20d827087ec5a96",
+    "sap": "c20d827087ec5a96",
+    "brute": "c20d827087ec5a96",
+    "window_0.05": "c20d827087ec5a96",
+    "window_1": "c20d827087ec5a96"
+   }
+  },
+  "broadphase": {
+   "windows": 481,
+   "identical_candidate_sets": true,
+   "cost": {
+    "brute": {
+     "ms": 3.3296609999999873,
+     "pairs": 9109
+    },
+    "grid_8mm": {
+     "ms": 2.931728000000021,
+     "pairs": 9109
+    },
+    "grid_2mm": {
+     "ms": 5.996808999999985,
+     "pairs": 9109
+    },
+    "sap": {
+     "ms": 9.34711100000004,
+     "pairs": 9109
+    }
+   },
+   "note": "cost of the three methods on the solver's own window box sets; brute = O(N²) reference"
+  },
+  "head_on_stalls": {
+   "head_on_pairs": 1,
+   "packing_infeasible": 1,
+   "packing_feasible_given_u_blocks": 0,
+   "packing_unknown": 0
+  },
+  "judge": {
+   "overlap_pair_instants": 0,
+   "overlap_between_instants": 0,
+   "max_penetration_mm": 0,
+   "max_penetration_between_mm": 0,
+   "out_of_walkable_agent_instants": 0,
+   "max_out_of_walkable_mm": 0,
+   "obstacle_violation_agent_instants": 0,
+   "max_obstacle_penetration_mm": 0,
+   "body_contact_episodes": 8,
+   "body_contacts_only_between_instants": 0,
+   "occupancy2d": {
+    "instants": 18,
+    "outside_lane": 0,
+    "not_checked": 0,
+    "overlap": 0,
+    "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
+   },
+   "instants": 18,
+   "judge_wall_ms": 17.04272000000003
+  }
+ },
+ {
+  "scenario": "stone",
+  "agents": 2,
+  "horizon_s": 40,
+  "cost": {
+   "wall_ms": 16.270714999999996,
+   "cpu_user_ms": 11.399,
+   "cpu_system_ms": 0,
+   "heap_used_delta_mb": 0.49774932861328125,
+   "rss_mb": 93.8125
+  },
+  "peak_rss_mb": 95.65234375,
+  "stats": {
+   "batches": 3,
+   "events_processed": 4,
+   "queue_pushes": 4,
+   "stale_pops": 0,
+   "pair_hit_evals": 0,
+   "windows": 161,
+   "candidate_pairs_total": 0,
+   "candidate_pairs_max": 0,
+   "velocity_solves": 4,
+   "max_component": 1,
+   "max_same_instant_batches": 1,
+   "contacts": 0,
+   "releases": 0,
+   "passes": 0,
+   "turns": 0,
+   "turn_blocked": 0,
+   "stalled": 2,
+   "arrived": 0,
+   "unresolved": 0,
+   "aborted": null,
+   "t_end_s": 40
+  },
+  "events_by_kind": {
+   "start": 2,
+   "stop": 2,
+   "stalled": 2
+  },
+  "events_by_class": {
+   "motion": 2,
+   "physical_constraint": 2,
+   "solver_status": 2
+  },
+  "arrived": 0,
+  "final_modes": {
+   "stopped_by_geometry": 2
+  },
+  "replay": {
+   "hash": "ac058ca54e0cbfef",
+   "input_order_reversed_identical": true,
+   "variants_identical": true,
+   "variants": {
+    "grid": "ac058ca54e0cbfef",
+    "sap": "ac058ca54e0cbfef",
+    "brute": "ac058ca54e0cbfef",
+    "window_0.05": "ac058ca54e0cbfef",
+    "window_1": "ac058ca54e0cbfef"
+   }
+  },
+  "broadphase": {
+   "windows": 161,
+   "identical_candidate_sets": true,
+   "cost": {
+    "brute": {
+     "ms": 0.1443970000000263,
+     "pairs": 0
+    },
+    "grid_8mm": {
+     "ms": 0.33859300000000303,
+     "pairs": 0
+    },
+    "grid_2mm": {
+     "ms": 0.524091999999996,
+     "pairs": 0
+    },
+    "sap": {
+     "ms": 0.2033620000000269,
+     "pairs": 0
+    }
+   },
+   "note": "cost of the three methods on the solver's own window box sets; brute = O(N²) reference"
+  },
+  "head_on_stalls": {
+   "head_on_pairs": 0,
+   "packing_infeasible": 0,
+   "packing_feasible_given_u_blocks": 0,
+   "packing_unknown": 0
+  },
+  "judge": {
+   "overlap_pair_instants": 0,
+   "overlap_between_instants": 0,
+   "max_penetration_mm": 0,
+   "max_penetration_between_mm": 0,
+   "out_of_walkable_agent_instants": 0,
+   "max_out_of_walkable_mm": 0,
+   "obstacle_violation_agent_instants": 0,
+   "max_obstacle_penetration_mm": 0,
+   "body_contact_episodes": 0,
+   "body_contacts_only_between_instants": 0,
+   "occupancy2d": {
+    "instants": 4,
+    "outside_lane": 0,
+    "not_checked": 0,
+    "overlap": 0,
+    "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
+   },
+   "instants": 4,
+   "judge_wall_ms": 6.31402300000002
+  }
+ },
+ {
+  "scenario": "crossing",
+  "agents": 2,
+  "horizon_s": 10,
+  "cost": {
+   "wall_ms": 6.911448000000007,
+   "cpu_user_ms": 7.484,
+   "cpu_system_ms": 0,
+   "heap_used_delta_mb": 1.18505859375,
+   "rss_mb": 90.3203125
+  },
+  "peak_rss_mb": 94.16015625,
+  "stats": {
+   "batches": 2,
+   "events_processed": 3,
+   "queue_pushes": 5,
+   "stale_pops": 2,
+   "pair_hit_evals": 1,
+   "windows": 41,
+   "candidate_pairs_total": 30,
+   "candidate_pairs_max": 1,
+   "velocity_solves": 3,
+   "max_component": 2,
+   "max_same_instant_batches": 1,
+   "contacts": 1,
+   "releases": 0,
+   "passes": 0,
+   "turns": 0,
+   "turn_blocked": 0,
+   "stalled": 2,
+   "arrived": 0,
+   "unresolved": 0,
+   "aborted": null,
+   "t_end_s": 10
+  },
+  "events_by_kind": {
+   "start": 2,
+   "contact_start": 1,
+   "stop": 2,
+   "stalled": 2
+  },
+  "events_by_class": {
+   "motion": 2,
+   "physical_contact": 1,
+   "physical_constraint": 2,
+   "solver_status": 2
+  },
+  "arrived": 0,
+  "final_modes": {
+   "stopped_by_contact": 2
+  },
+  "replay": {
+   "hash": "f21a34b6333aeb5f",
+   "input_order_reversed_identical": true,
+   "variants_identical": true,
+   "variants": {
+    "grid": "f21a34b6333aeb5f",
+    "sap": "f21a34b6333aeb5f",
+    "brute": "f21a34b6333aeb5f",
+    "window_0.05": "f21a34b6333aeb5f",
+    "window_1": "f21a34b6333aeb5f"
+   }
+  },
+  "broadphase": {
+   "windows": 41,
+   "identical_candidate_sets": true,
+   "cost": {
+    "brute": {
+     "ms": 0.10770399999995561,
+     "pairs": 30
+    },
+    "grid_8mm": {
+     "ms": 0.22807000000000244,
+     "pairs": 30
+    },
+    "grid_2mm": {
+     "ms": 6.251490999999987,
+     "pairs": 30
+    },
+    "sap": {
+     "ms": 0.15065999999995938,
+     "pairs": 30
+    }
+   },
+   "note": "cost of the three methods on the solver's own window box sets; brute = O(N²) reference"
+  },
+  "head_on_stalls": {
+   "head_on_pairs": 0,
+   "packing_infeasible": 0,
+   "packing_feasible_given_u_blocks": 0,
+   "packing_unknown": 0
+  },
+  "judge": {
+   "overlap_pair_instants": 0,
+   "overlap_between_instants": 0,
+   "max_penetration_mm": 0,
+   "max_penetration_between_mm": 0,
+   "out_of_walkable_agent_instants": 0,
+   "max_out_of_walkable_mm": 0,
+   "obstacle_violation_agent_instants": 0,
+   "max_obstacle_penetration_mm": 0,
+   "body_contact_episodes": 1,
+   "body_contacts_only_between_instants": 0,
+   "occupancy2d": {
+    "instants": 3,
+    "outside_lane": 0,
+    "not_checked": 0,
+    "overlap": 0,
+    "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
+   },
+   "instants": 3,
+   "judge_wall_ms": 11.572746999999993
+  }
+ },
+ {
+  "scenario": "crossing-traffic-100",
+  "agents": 100,
+  "horizon_s": 20,
+  "cost": {
+   "wall_ms": 2426.8284790000002,
+   "cpu_user_ms": 1403.133,
+   "cpu_system_ms": 86.16,
+   "heap_used_delta_mb": 27.459503173828125,
+   "rss_mb": 156.390625
+  },
+  "peak_rss_mb": 359.19140625,
+  "stats": {
+   "batches": 20656,
+   "events_processed": 20694,
+   "queue_pushes": 93234,
+   "stale_pops": 68370,
+   "pair_hit_evals": 100611,
+   "windows": 81,
+   "candidate_pairs_total": 55169,
+   "candidate_pairs_max": 810,
+   "velocity_solves": 30702,
+   "max_component": 29,
+   "max_same_instant_batches": 1,
+   "contacts": 10261,
+   "releases": 10172,
+   "passes": 163,
+   "turns": 0,
+   "turn_blocked": 0,
+   "stalled": 100,
+   "arrived": 0,
+   "unresolved": 0,
+   "aborted": null,
+   "t_end_s": 20
+  },
+  "events_by_kind": {
+   "start": 100,
+   "contact_start": 10261,
+   "stop": 126,
+   "pass": 163,
+   "resume": 26,
+   "contact_end": 10172,
+   "follow": 12306,
+   "free": 11730,
+   "stalled": 100
+  },
+  "events_by_class": {
+   "motion": 263,
+   "physical_contact": 20433,
+   "physical_constraint": 24188,
+   "solver_status": 100
+  },
+  "arrived": 0,
+  "final_modes": {
+   "stopped_by_contact": 100
+  },
+  "replay": {
+   "hash": "d4c755b966c63304",
+   "input_order_reversed_identical": true,
+   "variants_identical": true,
+   "variants": {
+    "grid": "d4c755b966c63304",
+    "sap": "d4c755b966c63304",
+    "brute": "d4c755b966c63304",
+    "window_0.05": "d4c755b966c63304",
+    "window_1": "d4c755b966c63304"
+   }
+  },
+  "broadphase": {
+   "windows": 81,
+   "identical_candidate_sets": true,
+   "cost": {
+    "brute": {
+     "ms": 34.77603199999794,
+     "pairs": 55169
+    },
+    "grid_8mm": {
+     "ms": 30.32347999999911,
+     "pairs": 55169
+    },
+    "grid_2mm": {
+     "ms": 54.30637399999978,
+     "pairs": 55169
+    },
+    "sap": {
+     "ms": 44.268152000000555,
+     "pairs": 55169
+    }
+   },
+   "note": "cost of the three methods on the solver's own window box sets; brute = O(N²) reference"
+  },
+  "head_on_stalls": {
+   "head_on_pairs": 7,
+   "packing_infeasible": 0,
+   "packing_feasible_given_u_blocks": 7,
+   "packing_unknown": 0
+  },
+  "judge": {
+   "overlap_pair_instants": 0,
+   "overlap_between_instants": 0,
+   "max_penetration_mm": 0,
+   "max_penetration_between_mm": 0,
+   "out_of_walkable_agent_instants": 0,
+   "max_out_of_walkable_mm": 0,
+   "obstacle_violation_agent_instants": 0,
+   "max_obstacle_penetration_mm": 0,
+   "body_contact_episodes": 97,
+   "body_contacts_only_between_instants": 0,
+   "occupancy2d": null,
+   "instants": 20530,
+   "judge_wall_ms": 32361.18801
+  }
+ },
+ {
+  "scenario": "crossing-traffic-1000",
+  "agents": 1000,
+  "horizon_s": 20,
+  "cost": {
+   "wall_ms": 6253.493375,
+   "cpu_user_ms": 3492.375,
+   "cpu_system_ms": 121.818,
+   "heap_used_delta_mb": 73.54737091064453,
+   "rss_mb": 201.76953125
+  },
+  "peak_rss_mb": 573.98046875,
+  "stats": {
+   "batches": 37945,
+   "events_processed": 44021,
+   "queue_pushes": 231069,
+   "stale_pops": 173913,
+   "pair_hit_evals": 442070,
+   "windows": 81,
+   "candidate_pairs_total": 895722,
+   "candidate_pairs_max": 11745,
+   "velocity_solves": 51092,
+   "max_component": 315,
+   "max_same_instant_batches": 1,
+   "contacts": 17355,
+   "releases": 16370,
+   "passes": 9296,
+   "turns": 0,
+   "turn_blocked": 0,
+   "stalled": 1000,
+   "arrived": 0,
+   "unresolved": 0,
+   "aborted": null,
+   "t_end_s": 20
+  },
+  "events_by_kind": {
+   "start": 1000,
+   "contact_start": 17355,
+   "stop": 2439,
+   "resume": 1439,
+   "pass": 9296,
+   "contact_end": 16370,
+   "follow": 30562,
+   "free": 28210,
+   "stalled": 1000
+  },
+  "events_by_class": {
+   "motion": 10296,
+   "physical_contact": 33725,
+   "physical_constraint": 62650,
+   "solver_status": 1000
+  },
+  "arrived": 0,
+  "final_modes": {
+   "stopped_by_contact": 1000
+  },
+  "replay": {
+   "hash": "d772a522d23b0ef5",
+   "input_order_reversed_identical": true,
+   "variants_identical": true,
+   "variants": {
+    "grid": "d772a522d23b0ef5",
+    "sap": "d772a522d23b0ef5",
+    "window_0.05": "d772a522d23b0ef5",
+    "window_1": "d772a522d23b0ef5"
+   }
+  },
+  "broadphase": {
+   "windows": 81,
+   "identical_candidate_sets": true,
+   "cost": {
+    "brute": {
+     "ms": 309.7051710000014,
+     "pairs": 895722
+    },
+    "grid_8mm": {
+     "ms": 245.23990100000083,
+     "pairs": 895722
+    },
+    "grid_2mm": {
+     "ms": 572.8697549999997,
+     "pairs": 895722
+    },
+    "sap": {
+     "ms": 508.4514710000003,
+     "pairs": 895722
+    }
+   },
+   "note": "cost of the three methods on the solver's own window box sets; brute = O(N²) reference"
+  },
+  "head_on_stalls": {
+   "head_on_pairs": 9,
+   "packing_infeasible": 0,
+   "packing_feasible_given_u_blocks": 9,
+   "packing_unknown": 0
+  },
+  "judge": {
+   "overlap_pair_instants": 0,
+   "overlap_between_instants": 0,
+   "max_penetration_mm": 0,
+   "max_penetration_between_mm": 0,
+   "out_of_walkable_agent_instants": 0,
+   "max_out_of_walkable_mm": 0,
+   "obstacle_violation_agent_instants": 0,
+   "max_obstacle_penetration_mm": 0,
+   "body_contact_episodes": 1001,
+   "body_contacts_only_between_instants": 0,
+   "occupancy2d": null,
+   "instants": 34716,
+   "judge_wall_ms": 1203391.148408
+  }
+ }
+]
