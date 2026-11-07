@@ -12,8 +12,10 @@
  * day 1: a behaviour change (reported as a counterfactual, a model choice for the Owner), not a refactor.
  */
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import { buildDay0 } from '../cli/lib/day0.ts';
-import { loadBundle } from '../cli/lib/load.ts';
+import { REPO_ROOT, loadBundle } from '../cli/lib/load.ts';
 import { simulateWorldDay, legacyToWorldState, legacyColonyMeta } from '../engine/index.ts';
 import { resolveBundle } from '../engine/params.ts';
 import { checkLarvaRound, ensureBroodRecords, larvaRoundStart } from '../engine/larva-feeding.ts';
@@ -107,6 +109,19 @@ const begOf = (s: Any) => new Map(s.colonies[0].population.brood.map((b: Any) =>
   { const ev = structuredClone(ev0); init(ev).legacy_begging_signal = 0.77; ok(reader(ev).length > 0, 'P2 an old value that is not the state\'s: rejected by the reader (the engine writes the record itself)'); }
   ok(/first-seen begging/.test(engine(ev0, d14.colonies[0], null)), 'P3 the old (colony-derived) value kept as the start-of-round begging while v29 is on: rejected by the engine');
   { const ev = structuredClone(ev0); for (const e of ev) if (e.type === 'brood_nutrition_record_initialized') { delete e.legacy_begging_signal; delete e.begging_signal_set; delete e.begging_basis; } ok(/first-seen begging/.test(engine(ev, d14.colonies[0], PRIOR)) && reader(ev).length > 0, 'P4 the prior applied without its record: rejected by engine and reader'); }
+}
+
+// Owner P2 (2026-11-07): the committed sensitivity report must disclose the denominator of every day-14 first-seen statistic.
+// Counterexample in the earlier version: "mean progress of the first-seen larvae at day 14" averaged only the 2–3 (of 105)
+// still larvae, silently dropping the pupated, eclosed and dead ones.
+{
+  const rep = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'reports', 'c4a-prior-sensitivity.json'), 'utf8'));
+  for (const r of rep.rows) {
+    const parts = r.d14_first_seen_still_larva + r.d14_first_seen_pupa + r.d14_first_seen_eclosed + r.d14_first_seen_died_as_larva;
+    ok(parts === r.first_seen, `report ${r.prior}: day-14 fates partition all ${r.first_seen} first-seen larvae (${parts})`);
+    ok(!('mean_progress_d14_first_seen' in r) && 'mean_progress_d14_first_seen_still_larva' in r, `report ${r.prior}: the progress mean is named for its subset (still larvae, n = ${r.d14_first_seen_still_larva}), never for all first-seen larvae`);
+    ok(r.d14_first_seen_still_larva > 0 || r.mean_progress_d14_first_seen_still_larva === null, `report ${r.prior}: an empty subset gives null, not 0`);
+  }
 }
 
 console.log(JSON.stringify({ test: 'c4a-begging-prior', checks, evidence, note: 'v2-review.29 candidate fix; the prior is a game assumption, not a measured hunger; first-day eligibility changes (model choice for the Owner)' }, null, 2));

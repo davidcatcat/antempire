@@ -1,5 +1,5 @@
 {
- "schema": "antempire.c4a-prior-sensitivity.v1",
+ "schema": "antempire.c4a-prior-sensitivity.v2",
  "note": "Report only (Owner D6): the prior is a candidate game assumption, not a species measurement; the feed threshold is 0.3 (game assumption). Not tuned.",
  "threshold": 0.3,
  "rows": [
@@ -14,7 +14,12 @@
    "feedings_d1_7": 253,
    "feedings_d8_30": 1213,
    "pupations_by_d30": 177,
-   "mean_progress_d14_first_seen": 0.945755
+   "d14_first_seen_still_larva": 2,
+   "d14_first_seen_pupa": 61,
+   "d14_first_seen_eclosed": 21,
+   "d14_first_seen_died_as_larva": 21,
+   "d14_first_seen_pupated_share": 0.780952,
+   "mean_progress_d14_first_seen_still_larva": 0.945755
   },
   {
    "prior": 0.1,
@@ -27,7 +32,12 @@
    "feedings_d1_7": 233,
    "feedings_d8_30": 1128,
    "pupations_by_d30": 180,
-   "mean_progress_d14_first_seen": 0.945755
+   "d14_first_seen_still_larva": 2,
+   "d14_first_seen_pupa": 62,
+   "d14_first_seen_eclosed": 22,
+   "d14_first_seen_died_as_larva": 19,
+   "d14_first_seen_pupated_share": 0.8,
+   "mean_progress_d14_first_seen_still_larva": 0.945755
   },
   {
    "prior": 0.2,
@@ -40,7 +50,12 @@
    "feedings_d1_7": 235,
    "feedings_d8_30": 1115,
    "pupations_by_d30": 180,
-   "mean_progress_d14_first_seen": 0.945755
+   "d14_first_seen_still_larva": 2,
+   "d14_first_seen_pupa": 62,
+   "d14_first_seen_eclosed": 22,
+   "d14_first_seen_died_as_larva": 19,
+   "d14_first_seen_pupated_share": 0.8,
+   "mean_progress_d14_first_seen_still_larva": 0.945755
   },
   {
    "prior": 0.29,
@@ -53,7 +68,12 @@
    "feedings_d1_7": 237,
    "feedings_d8_30": 1149,
    "pupations_by_d30": 177,
-   "mean_progress_d14_first_seen": 0.949092
+   "d14_first_seen_still_larva": 3,
+   "d14_first_seen_pupa": 61,
+   "d14_first_seen_eclosed": 22,
+   "d14_first_seen_died_as_larva": 19,
+   "d14_first_seen_pupated_share": 0.790476,
+   "mean_progress_d14_first_seen_still_larva": 0.949092
   },
   {
    "prior": 0.3,
@@ -66,7 +86,12 @@
    "feedings_d1_7": 267,
    "feedings_d8_30": 1237,
    "pupations_by_d30": 181,
-   "mean_progress_d14_first_seen": 0.949092
+   "d14_first_seen_still_larva": 3,
+   "d14_first_seen_pupa": 61,
+   "d14_first_seen_eclosed": 22,
+   "d14_first_seen_died_as_larva": 19,
+   "d14_first_seen_pupated_share": 0.790476,
+   "mean_progress_d14_first_seen_still_larva": 0.949092
   },
   {
    "prior": 0.31,
@@ -79,7 +104,12 @@
    "feedings_d1_7": 267,
    "feedings_d8_30": 1238,
    "pupations_by_d30": 180,
-   "mean_progress_d14_first_seen": 0.949092
+   "d14_first_seen_still_larva": 3,
+   "d14_first_seen_pupa": 61,
+   "d14_first_seen_eclosed": 22,
+   "d14_first_seen_died_as_larva": 19,
+   "d14_first_seen_pupated_share": 0.790476,
+   "mean_progress_d14_first_seen_still_larva": 0.949092
   },
   {
    "prior": 0.4,
@@ -92,7 +122,12 @@
    "feedings_d1_7": 269,
    "feedings_d8_30": 1216,
    "pupations_by_d30": 180,
-   "mean_progress_d14_first_seen": 0.949092
+   "d14_first_seen_still_larva": 3,
+   "d14_first_seen_pupa": 61,
+   "d14_first_seen_eclosed": 22,
+   "d14_first_seen_died_as_larva": 19,
+   "d14_first_seen_pupated_share": 0.790476,
+   "mean_progress_d14_first_seen_still_larva": 0.949092
   },
   {
    "prior": 0.6,
@@ -105,7 +140,12 @@
    "feedings_d1_7": 277,
    "feedings_d8_30": 1258,
    "pupations_by_d30": 183,
-   "mean_progress_d14_first_seen": 0.657863
+   "d14_first_seen_still_larva": 2,
+   "d14_first_seen_pupa": 62,
+   "d14_first_seen_eclosed": 22,
+   "d14_first_seen_died_as_larva": 19,
+   "d14_first_seen_pupated_share": 0.8,
+   "mean_progress_d14_first_seen_still_larva": 0.657863
   },
   {
    "prior": 0.9,
@@ -118,7 +158,12 @@
    "feedings_d1_7": 278,
    "feedings_d8_30": 1291,
    "pupations_by_d30": 183,
-   "mean_progress_d14_first_seen": 0.657863
+   "d14_first_seen_still_larva": 2,
+   "d14_first_seen_pupa": 62,
+   "d14_first_seen_eclosed": 22,
+   "d14_first_seen_died_as_larva": 19,
+   "d14_first_seen_pupated_share": 0.8,
+   "mean_progress_d14_first_seen_still_larva": 0.657863
   }
  ],
  "colony_store_counterfactual": {
