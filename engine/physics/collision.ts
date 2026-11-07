@@ -40,8 +40,16 @@
  *    yielder steps back out to the nearest wide place (possibly far: a long back-out is a model consequence).
  *  - across lanes (crossing): an ant that has the other in its forward half stops (local: the other is ahead of its
  *    antennae); if both do, an even draw decides; if the stopped ant is pressed by the other, it backs off until it is
- *    out of antennal reach of the other, and the other waits until it has done so; it walks on once the other is out of
- *    antennal reach and not approaching (game assumptions; no crossing study found).
+ *    out of antennal reach of the LINE the other is heading along (its conflict region; PH-P1-A — not just out of reach
+ *    of the other's present position), and the other waits until it has done so; it walks on from the earliest instant
+ *    at which walking would not bring it within antennal reach of the other, given the other's present velocity
+ *    (game assumptions; no crossing study found). Two progress invariants stop the run with an error if a pair repeats
+ *    a press or a release without either ant having moved or turned (no near-zero-time yield loop).
+ *  - Contact geometry (PH-P1-B): across lanes every contact, touch and release is decided by `discEncounter` from
+ *    |r + v·τ|² = R² — one geometry for scheduling and handling; an exact tangent (graze) is no contact.
+ *  - Time (PH-P2-B/C): event times and positions come from the start of each motion record, its velocity and the elapsed
+ *    time, never from per-step accumulation; an event after a window end is never handled in that window; events at one
+ *    instant (within SAME_INSTANT) are handled in a fixed total order (KIND_ORDER, ids, data).
  *  - Turning around takes no time; backing out is at the ant's own free speed; passing abreast in a wide section costs no
  *    time; spontaneous U-turns (rare: ≈1 % per bridge crossing in L. humile, R108) are not modelled; no slow-down from
  *    load, slope or temperature (no species data; stated limits).
@@ -68,6 +76,87 @@ const EDGE_EPS = 1e-6;
 /** Cross-lane bodies count as on one height layer a little before the checker's |dz| ≤ L limit, so that an ant meeting
  *  another by changing height is stopped while the two are still apart (mm; numerical, not a model parameter). */
 const LEVEL_EPS = 1e-6;
+/** Same-instant tolerance (s) at clock value t (PH-P2-B): 16 ulps of t — candidates for one mathematical instant computed by
+ *  different formulas differ by rounding only. Scale-aware and numerical, not a model parameter; far below T_EPS. */
+export const SAME_INSTANT = (t: number): number => 16 * Number.EPSILON * Math.max(1, Math.abs(t));
+/** Length tolerance (mm) for coordinates of magnitude `scale` (PH-P1-B, PH-P2-C): 64 ulps of the coordinate scale, the
+ *  rounding a planar relative position can carry. Numerical, not a model parameter. */
+export const LEN_TOL = (scale: number): number => 64 * Number.EPSILON * Math.max(1, Math.abs(scale));
+
+/**
+ * PH-P1-B: the ONE planar contact geometry used to trigger AND to handle every cross-lane contact, touch and release.
+ * Two discs with relative position r (mm) and constant relative velocity v (mm/s) are within distance R at time τ when
+ * |r + v·τ|² < R², i.e. A·τ² + 2h·τ + (|r|² − R²) < 0 with A = |v|², h = r·v. The interval is decided by the miss distance
+ * b = |r × v| / |v| (the closest approach of the centres), which does not depend on the time at which r is taken (r + v·τ
+ * has the same cross product with v), so neither does the decision:
+ *  - b < R − tol: the discs are within R for the open interval (τ_in, τ_out) (may already have begun: τ_in < 0);
+ *  - b ≥ R − tol (an exact tangent within rounding, or a miss): no encounter — a graze is NOT a contact or a touch;
+ *  - v = 0: within R for all time when |r| < R − tol, otherwise never.
+ * tol = LEN_TOL(scale): `scale` is the magnitude of the coordinates r was computed from. Returns null when there is no
+ * encounter. Times are relative to the instant r was taken.
+ */
+export function discEncounter(rx: number, ry: number, vx: number, vy: number, R: number, scale: number): { t_in: number; t_out: number } | null {
+  if (!(R > 0)) throw Error(`PHYSICS: contact radius ${R} must be positive`);
+  const tol = LEN_TOL(Math.max(scale, R)), Ri = R - tol, A = vx * vx + vy * vy, r2 = rx * rx + ry * ry;
+  if (A === 0) return r2 < Ri * Ri ? { t_in: -Infinity, t_out: Infinity } : null;
+  const h = rx * vx + ry * vy, cr = rx * vy - ry * vx;
+  if (!(cr * cr < A * Ri * Ri)) return null;                       // b ≥ R − tol: tangent (graze) or miss
+  const sq = Math.sqrt(A * R * R - cr * cr);                        // = |v|·sqrt(R² − b²) > 0
+  const q = h >= 0 ? -(h + sq) : -(h - sq);                         // numerically stable roots of A τ² + 2h τ + (r² − R²)
+  const t1 = q / A, t2 = (r2 - R * R) / q;
+  return t1 <= t2 ? { t_in: t1, t_out: t2 } : { t_in: t2, t_out: t1 };
+}
+
+/**
+ * PH-P1-A: the earliest instant τ ≥ now (relative to the instant r was taken) from which a standing ant w can walk on
+ * without coming within distance R of another ant o — the crossing waiter's release. While w stands, the relative position
+ * o − w is r + v_o·τ; once w walks from τ the relative velocity is u = v_o − v_w. Released at τ when
+ * discEncounter(r + v_o·τ, u, R) is empty or already over (the same geometry as every contact). The predicate can only
+ * switch where |r + v_o τ| = R, where the miss distance for u equals R, or where (r + v_o τ)·u = 0; it is evaluated
+ * between consecutive switch points (never on them), so rounding at a switch point cannot flip the decision.
+ * Returns null when no such instant exists for the present motions (re-evaluated when either motion changes).
+ */
+export function releaseTime(rx: number, ry: number, vox: number, voy: number, vwx: number, vwy: number, R: number, scale: number, now: number): number | null {
+  const ux = vox - vwx, uy = voy - vwy, U = Math.hypot(ux, uy);
+  const P = (τ: number) => { const e = discEncounter(rx + vox * τ, ry + voy * τ, ux, uy, R, scale); return e === null || e.t_out <= 0; };
+  if (P(now)) return now;
+  if (vox === 0 && voy === 0) return null;                          // nothing changes while w stands
+  const cand: number[] = [], add = (τ: number) => { if (Number.isFinite(τ) && τ > now) cand.push(τ); };
+  const A = vox * vox + voy * voy, B = 2 * (rx * vox + ry * voy), C0 = rx * rx + ry * ry - R * R, D = B * B - 4 * A * C0;
+  if (D >= 0) { const q = -(B + (B >= 0 ? 1 : -1) * Math.sqrt(D)) / 2; add(q / A); if (q !== 0) add(C0 / q); }
+  const c0 = rx * uy - ry * ux, c1 = vox * uy - voy * ux;          // cross(r(τ), u) = c0 + c1·τ
+  if (c1 !== 0) { add((R * U - c0) / c1); add((-R * U - c0) / c1); }
+  const d0 = rx * ux + ry * uy, d1 = vox * ux + voy * uy;          // r(τ)·u = d0 + d1·τ
+  if (d1 !== 0) add(-d0 / d1);
+  const xs = [...new Set(cand)].sort((x, y) => x - y);
+  let lo = now;
+  for (const hi of [...xs, Infinity]) {
+    const mid = Number.isFinite(hi) ? (lo + hi) / 2 : lo + Math.max(1, Math.abs(lo));
+    if (P(mid)) return lo;
+    lo = hi;
+  }
+  return null;
+}
+
+/** State recorded when an ant w backs off out of the heading line of an ant o that pressed it (PH-P1-A). */
+export interface PressRecord { wS: number; oS: number; dir: number; hx: number; hy: number }
+/**
+ * PH-P1-A progress invariant (press): true when o presses w again although w still stands where it backed off out of o's
+ * heading line (same arc length), o walks in the same direction with the same heading, and o is not behind the point
+ * where it pressed. Geometrically o cannot reach w then (w is out of reach of every point o can walk through), so a
+ * repeat means a yield loop without progress.
+ */
+export function pressWithoutProgress(rec: PressRecord, now: PressRecord): boolean {
+  return Math.abs(now.wS - rec.wS) <= S_EPS && now.dir === rec.dir && Math.abs(now.hx - rec.hx) <= 1e-12 && Math.abs(now.hy - rec.hy) <= 1e-12 && (now.oS - rec.oS) * now.dir >= -S_EPS;
+}
+/**
+ * PH-P1-A progress invariant (release): true when y, released because walking on could not bring it within reach of o,
+ * touches o again with neither motion changed since the release (y still on the motion record that began at the release,
+ * o on the same record at the same velocity).
+ */
+export function releaseWithoutProgress(rec: { t: number; oT: number; oV: number }, now: { yT: number; oT: number; oV: number }): boolean {
+  return now.yT === rec.t && now.oT === rec.oT && now.oV === rec.oV;
+}
 
 export interface PhysBody { length_mm: number; width_mm: number; contact_reach_mm: number }
 export interface PhysObject { id: string; width_mm: number; holder: string | null }
@@ -93,10 +182,10 @@ export interface SimConfig {
   geometry: PhysicsGeometry; agents: SimAgentSpec[]; objects?: PhysObject[];
   horizon_s: number; seed: number;
   encounter: EncounterRules;
-  /** broadphase window (s). Intended: any positive value gives the same events. Tested on the review fuzz (2 × 2000 2.5D
-   *  scenes, windows 0.003–100: identical); known exceptions remain (docs/physics-motion-engine.md §7: events within
-   *  T_EPS after a window end are handled early; position rounding accumulates per step; follower release waits for the
-   *  next event) — to be fixed before joining the official model. */
+  /** broadphase window (s). Intended: any positive value gives the same events. Since the PH-P2-B/C fixes, event times and
+   *  positions are computed from motion-record starts (never per step) and no event after a window end is handled in that
+   *  window; tested by window-split tests (tests/physics-event-fixes.test.ts) and the review fuzz. This is an engineering
+   *  test, not a proof for every geometry (docs/physics-motion-engine.md §6–§7). */
   window_s?: number;
   /** spacing (mm) of the numerical scan that remains: the back-out target. Narrow-section boundaries are analytic and
    *  do not use it (Codex physics review F2). */
@@ -422,65 +511,77 @@ export function simulate(cfg: SimConfig): SimResult {
 
   // ---- event prediction
   interface Cand { t: number; kind: string; a: string; b: string | null; data?: number }
-  const linRoot = (d0: number, rate: number, target: number) => { if (rate === 0) return Infinity; const dt = (target - d0) / rate; return dt >= 0 ? dt : Infinity; };
   const intrinsic = (a: RT, t: number, out: Cand[]) => {
     if (a.mode === 'idle') { out.push({ t: Math.max(t, a.spec.start_t_s), kind: 'start', a: a.id, b: null }); return; }
     if (a.holdUntil !== null) { out.push({ t: Math.max(t, a.holdUntil), kind: 'hold_end', a: a.id, b: null }); return; }
     if (a.v === 0) return;
     const m = sgn(a.v), lead = a.s + m * a.L / 2;
-    const at = (x: number, kind: string, data?: number) => { const dt = (x - a.s) / a.v; if (dt > T_EPS || (dt >= 0 && Math.abs(x - a.s) > S_EPS)) out.push({ t: t + dt, kind, a: a.id, b: null, data }); };
+    // PH-P2-C: the time at which the centre reaches arc length x is computed from the motion record's start (anchor) —
+    // the same value whichever step (window) asks — and is never earlier than now
+    const tAt = (x: number) => Math.max(t, a.open.t + (x - a.open.s) / a.v);
+    const at = (x: number, kind: string, data?: number) => { const dt = (x - a.s) / a.v; if (dt > T_EPS || (dt >= 0 && Math.abs(x - a.s) > S_EPS)) out.push({ t: tAt(x), kind, a: a.id, b: null, data }); };
     if (a.mode === 'retreat') at(a.retreat_s!, 'retreat_done');
     else if (m === a.travel) at(a.spec.goal_s_mm, 'arrive');
     for (const x of vertexArcs(a.p)) if ((x - a.s) * m > S_EPS) at(x, 'vertex');
     // boundaries ahead of the leading edge, and one the edge is standing on when it starts to move (checked once per motion piece)
     for (const b of boundaries.get(`${a.p.id}|${a.w}`)!) {
       const dx = (b - lead) * m;
-      if (dx > S_EPS) out.push({ t: t + dx / Math.abs(a.v), kind: 'boundary', a: a.id, b: null, data: b });
+      if (dx > S_EPS) out.push({ t: tAt(b - m * a.L / 2), kind: 'boundary', a: a.id, b: null, data: b });
       else if (dx > -1e-7 && !boundaryDone.has(`${a.id}|${b}|${a.open.t}|${a.open.v}`)) out.push({ t, kind: 'boundary', a: a.id, b: null, data: b });
     }
     // own-width blocks: passage too narrow for this body/load, or an entrance aperture
-    for (const [s0, s1] of sections(a.p, a.w)) { const edge = m > 0 ? s0 : s1, dx = (edge - lead) * m; if (dx > -S_EPS) { out.push({ t: t + Math.max(0, dx) / Math.abs(a.v), kind: 'wall', a: a.id, b: null, data: edge }); } }
-    for (const e of entranceBlocks(a)) { const dx = (e.s - lead) * m; if (dx > -S_EPS) out.push({ t: t + Math.max(0, dx) / Math.abs(a.v), kind: 'aperture', a: a.id, b: null, data: e.s }); }
+    for (const [s0, s1] of sections(a.p, a.w)) { const edge = m > 0 ? s0 : s1, dx = (edge - lead) * m; if (dx > -S_EPS) { out.push({ t: dx > 0 ? tAt(edge - m * a.L / 2) : t, kind: 'wall', a: a.id, b: null, data: edge }); } }
+    for (const e of entranceBlocks(a)) { const dx = (e.s - lead) * m; if (dx > -S_EPS) out.push({ t: dx > 0 ? tAt(e.s - m * a.L / 2) : t, kind: 'aperture', a: a.id, b: null, data: e.s }); }
   };
   const inContact = new Set<string>();
   const boundaryDone = new Set<string>();
+  /** arc length of a at time T on its current motion record (PH-P2-C: from the record's start, never accumulated) */
+  const sAt = (a: RT, T: number) => (a.open.v === 0 ? a.s : a.open.s + a.open.v * (T - a.open.t));
   const pairCands = (a: RT, b: RT, t: number, out: Cand[]) => {
     stats.pair_evaluations++;
     const key = pairKey(a.id, b.id);
+    // PH-P2-C: a pair's event times are solved at a reference instant that does not depend on the step asking — the later
+    // of the two motion records' starts — and are never earlier than now. Window boundaries therefore cannot move them.
+    const tref = Math.max(a.open.t, b.open.t), sh = t - tref;
     if (sameLane(a, b)) {
       const d0 = b.s - a.s, rate = b.v - a.v, gap = Math.abs(d0), grate = gap <= S_EPS ? Math.abs(rate) : sgn(d0) * rate;   // at a centre crossing (|d0| ≤ S_EPS, sign is rounding) the pair is separating: never a stall
+      const sig = gap <= S_EPS ? sgn(rate) : sgn(d0), gRef = sig * (sAt(b, tref) - sAt(a, tref));
+      /** when the (signed-consistent) gap reaches `target`, solved from the reference instant */
+      const when = (target: number) => (grate === 0 ? Infinity : Math.max(t, tref + (target - gRef) / grate));
       const c = C(a, b), mm = M(a, b);
-      if (!inContact.has(key) && gap > c + S_EPS && grate < 0) out.push({ t: t + linRoot(gap, grate, c), kind: 'contact_start', a: a.id, b: b.id });
-      if (inContact.has(key) && grate > 0 && gap < c + CONTACT_EXIT_EPS) out.push({ t: t + linRoot(gap, grate, c + CONTACT_EXIT_EPS), kind: 'contact_end', a: a.id, b: b.id });
+      if (!inContact.has(key) && gap > c + S_EPS && grate < 0) out.push({ t: when(c), kind: 'contact_start', a: a.id, b: b.id });
+      if (inContact.has(key) && grate > 0 && gap < c + CONTACT_EXIT_EPS) out.push({ t: when(c + CONTACT_EXIT_EPS), kind: 'contact_end', a: a.id, b: b.id });
       // a contact whose end was not scheduled (independent review of cdd0258, P2-a): end it now, never keep a stale one
       else if (inContact.has(key) && gap >= c + CONTACT_EXIT_EPS) out.push({ t, kind: 'contact_end', a: a.id, b: b.id });
-      if (gap > mm + S_EPS && grate < 0) out.push({ t: t + linRoot(gap, grate, mm), kind: 'touch', a: a.id, b: b.id });
+      if (gap > mm + S_EPS && grate < 0) out.push({ t: when(mm), kind: 'touch', a: a.id, b: b.id });
       // already touching and still closing in a single-file stretch (e.g. a faster ant behind one that just started to back out)
       else if (Math.abs(gap - mm) <= 1e-7 && grate < 0 && pinchedAhead(a, b)) out.push({ t, kind: 'touch', a: a.id, b: b.id });
       // overlapping bodies sliding past each other: an event when their centres cross (re-evaluation point)
       // (also from exactly touching: in a wide lane two bodies may then overlap and pass — review of cdd0258, P2-a)
-      if (gap <= mm + S_EPS && gap > S_EPS && grate < 0) out.push({ t: t + linRoot(gap, grate, 0), kind: 'centre', a: a.id, b: b.id });
+      if (gap <= mm + S_EPS && gap > S_EPS && grate < 0) out.push({ t: when(0), kind: 'centre', a: a.id, b: b.id });
       // a follower waiting for room (overlapping) gets an event when the room opens
-      for (const [f, l] of [[a, b], [b, a]] as const) if (f.mode === 'follow' && f.partner === l.id && gap < mm - S_EPS && grate > 0) out.push({ t: t + linRoot(gap, grate, mm), kind: 'room', a: f.id, b: l.id });
+      for (const [f, l] of [[a, b], [b, a]] as const) if (f.mode === 'follow' && f.partner === l.id && gap < mm - S_EPS && grate > 0) out.push({ t: when(mm), kind: 'room', a: f.id, b: l.id });
       // a backed-out ant resumes when the other has passed it (other's centre M beyond it, on its back side)
       for (const [y, p] of [[a, b], [b, a]] as const) if (y.mode === 'yield_wait' && y.partner === p.id) {
-        const rel = (p.s - y.s) * y.travel, rrate = (p.v - y.v) * y.travel;
-        if (rel > -(mm + CONTACT_EXIT_EPS) && rrate < 0) out.push({ t: t + linRoot(rel, rrate, -(mm + CONTACT_EXIT_EPS)), kind: 'passed', a: y.id, b: p.id });
+        const rel = (p.s - y.s) * y.travel, rrate = (p.v - y.v) * y.travel, relRef = (sAt(p, tref) - sAt(y, tref)) * y.travel;
+        if (rel > -(mm + CONTACT_EXIT_EPS) && rrate < 0) out.push({ t: Math.max(t, tref + (-(mm + CONTACT_EXIT_EPS) - relRef) / rrate), kind: 'passed', a: y.id, b: p.id });
       }
     } else {
-      const pa = pos(a), pb = pos(b);
-      const ha = a.v ? headingAt(a.p, a.s, sgn(a.v) as 1 | -1) : { x: 0, y: 0, z: 0 }, hb = b.v ? headingAt(b.p, b.s, sgn(b.v) as 1 | -1) : { x: 0, y: 0, z: 0 };
+      // all planar and height quantities at the reference instant; τ below is relative to it, `sh` is now
+      const pa = positionAt(a.p, sAt(a, tref)), pb = positionAt(b.p, sAt(b, tref));
+      const ha = a.v ? headingAt(a.p, sAt(a, tref), sgn(a.v) as 1 | -1) : { x: 0, y: 0, z: 0 }, hb = b.v ? headingAt(b.p, sAt(b, tref), sgn(b.v) as 1 | -1) : { x: 0, y: 0, z: 0 };
+      const abs = (τ: number) => Math.max(t, tref + τ);
       // Codex physics review f61db12, F1: bodies on different lanes interact only while on one height layer
       // (|dz| ≤ max(L) + LEVEL_EPS; stated simplification). dz changes linearly until the next event (vertices are events),
       // so the layer window [lo, hi] is exact; planar events are kept only inside it.
       const H = Math.max(a.L, b.L) + LEVEL_EPS, dz0 = pb.z - pa.z, dzr = hb.z * Math.abs(b.v) - ha.z * Math.abs(a.v);
-      let lo = 0, hi = Infinity, off = false;
+      let lo = sh, hi = Infinity, off = false;
       if (dzr === 0) { if (Math.abs(dz0) > H - 1e-9) off = true; }   // a pair resting exactly on the layer edge is off it (as for the checker's |dz| ≤ L): no window-dependent flip on rounding
-      else { const t1 = (-H - dz0) / dzr, t2 = (H - dz0) / dzr; lo = Math.max(0, Math.min(t1, t2)); hi = Math.max(t1, t2); if (!(hi > lo + T_EPS)) off = true; }   // a layer stay shorter than T_EPS counts as off (no zero-time touch/release loop at the layer edge)
+      else { const t1 = (-H - dz0) / dzr, t2 = (H - dz0) / dzr; lo = Math.max(sh, Math.min(t1, t2)); hi = Math.max(t1, t2); if (!(hi > lo + T_EPS)) off = true; }   // a layer stay shorter than T_EPS counts as off (no zero-time touch/release loop at the layer edge)
       // independent review of cdd0258, P2-b: a crossing waiter is released when the other is off its height layer — but only
       // if it stays off when the waiter walks on (a stopped waiter can let the other leave the layer for an instant and
       // walking would bring them back: that is no release). Otherwise the planar 'cleared' rule below still applies.
-      const offNow = off || lo > T_EPS;
+      const offNow = off || lo > sh + T_EPS;
       const offIfWalking = (y: RT, p: RT) => {
         const hy = headingAt(y.p, y.s, y.travel), hp = p === b ? hb : ha, d0 = pos(p).z - pos(y).z, r = hp.z * Math.abs(p.v) - hy.z * y.free;
         if (r === 0) return Math.abs(d0) > H;
@@ -491,48 +592,72 @@ export function simulate(cfg: SimConfig): SimResult {
         if (offIfWalking(y, p)) { out.push({ t, kind: 'cleared', a: y.id, b: p.id, data: 1 }); continue; }   // data 1: released by height, not by planar distance
         // not yet: while y stands, only p's height changes (linearly); re-evaluate when |dz| has grown past the layer limit
         // with the margin a walking y would need — so the release never waits for a window boundary
-        const hy = headingAt(y.p, y.s, y.travel), hp = p === b ? hb : ha, d0 = pos(p).z - pos(y).z, pr = hp.z * Math.abs(p.v), r = pr - hy.z * y.free;
+        const hy = headingAt(y.p, y.s, y.travel), hp = p === b ? hb : ha, d0 = (p === b ? pb : pa).z - (y === a ? pa : pb).z, pr = hp.z * Math.abs(p.v), r = pr - hy.z * y.free;
         const sg = d0 !== 0 ? Math.sign(d0) : Math.sign(pr), grow = sg * pr;
-        if (grow > 0) { const need = H + Math.max(0, -sg * r) * 2 * T_EPS + 1e-12, tau = (need - Math.abs(d0)) / grow; if (tau > 0 && Number.isFinite(tau)) out.push({ t: t + tau, kind: 'relevel', a: a.id, b: b.id }); }
+        if (grow > 0) { const need = H + Math.max(0, -sg * r) * 2 * T_EPS + 1e-12, tau = (need - sg * d0) / grow; if (tau > sh && Number.isFinite(tau)) out.push({ t: abs(tau), kind: 'relevel', a: a.id, b: b.id }); }
       }
       // leaving the layer later is a re-evaluation point (no state change by itself)
-      if (!off && Number.isFinite(hi) && hi > T_EPS) out.push({ t: t + hi, kind: 'relevel', a: a.id, b: b.id });
+      if (!off && Number.isFinite(hi) && hi > sh + T_EPS) out.push({ t: abs(hi), kind: 'relevel', a: a.id, b: b.id });
       if (off && inContact.has(key)) out.push({ t, kind: 'contact_end', a: a.id, b: b.id });
       if (!off) {
       const dpx = pb.x - pa.x, dpy = pb.y - pa.y, dvx = hb.x * Math.abs(b.v) - ha.x * Math.abs(a.v), dvy = hb.y * Math.abs(b.v) - ha.y * Math.abs(a.v);
-      const A = dvx * dvx + dvy * dvy, B = 2 * (dpx * dvx + dpy * dvy), d2 = dpx * dpx + dpy * dpy, dd = Math.sqrt(d2);
-      const first = (R: number) => { const c0 = d2 - R * R, disc = B * B - 4 * A * c0; if (A === 0 || disc < 0 || B >= 0) return Infinity; const r = (-B - Math.sqrt(disc)) / (2 * A); return r >= 0 ? r : Infinity; };
-      const later = (R: number) => { const c0 = d2 - R * R, disc = B * B - 4 * A * c0; if (A === 0 || disc < 0) return Infinity; const r = (-B + Math.sqrt(disc)) / (2 * A); return r >= 0 ? r : Infinity; };
+      // PH-P1-B: every planar decision below uses discEncounter (|r + v τ| < R) at the reference instant — contact start
+      // (R = C), contact end (R = C + exit hysteresis), touch (R = M) and the crossing release — so the condition that
+      // schedules an event is the condition that handles it, a graze (exact tangent) is neither, and no decision depends
+      // on the step at which it is evaluated.
+      const scale = Math.max(Math.abs(pa.x), Math.abs(pa.y), Math.abs(pb.x), Math.abs(pb.y));
+      const encR = (R: number) => discEncounter(dpx, dpy, dvx, dvy, R, scale);
+      const insideNow = (e: { t_in: number; t_out: number } | null) => !!e && e.t_in <= sh && sh < e.t_out;
       const c = C(a, b), mm = M(a, b);
-      // the planar "within R" interval [enter, leave) of the current motion
-      const within = (R: number): [number, number] => (dd <= R ? [0, later(R)] : [first(R), later(R)]);
-      const [cIn, cOut] = within(c), cStart = Math.max(cIn, lo);
-      if (!inContact.has(key) && Number.isFinite(cStart) && cStart < Math.min(cOut, hi) - T_EPS) out.push({ t: t + cStart, kind: 'contact_start', a: a.id, b: b.id });
-      if (inContact.has(key)) { const end = Math.min(dd < c + CONTACT_EXIT_EPS ? later(c + CONTACT_EXIT_EPS) : 0, hi); if (Number.isFinite(end)) out.push({ t: t + end, kind: 'contact_end', a: a.id, b: b.id }); }
-      const [mIn, mOut] = within(mm);
-      if (lo > T_EPS) {
+      if (!inContact.has(key)) {
+        const ce = encR(c);
+        if (ce) { const st = Math.max(ce.t_in, lo), en = Math.min(ce.t_out, hi); if (st < en && en > sh) out.push({ t: abs(st), kind: 'contact_start', a: a.id, b: b.id }); }
+      } else {
+        const xe = encR(c + CONTACT_EXIT_EPS), end = Math.min(insideNow(xe) ? xe!.t_out : sh, hi);
+        if (Number.isFinite(end)) out.push({ t: abs(end), kind: 'contact_end', a: a.id, b: b.id });
+      }
+      const me = encR(mm);
+      if (lo > sh + T_EPS) {
         // the pair reaches one height layer later: if their footprints already overlap then, the ant cannot be put
         // anywhere consistent (vertical approach is not modelled) — stopped and reported, never passed through
-        if (mIn <= lo + T_EPS && mOut > lo + T_EPS && lo < hi) out.push({ t: t + lo, kind: 'layer_overlap', a: a.id, b: b.id });
-        else if (mIn > lo && mIn < hi) out.push({ t: t + mIn, kind: 'disc_touch', a: a.id, b: b.id });
-      } else if (dd > mm + S_EPS) { if (mIn < hi) out.push({ t: t + mIn, kind: 'disc_touch', a: a.id, b: b.id }); }
-      // already touching and still closing (e.g. starting at exactly one body length apart): handle now
-      else if (dd <= mm + 1e-7 && B < -1e-12 && hi > T_EPS) out.push({ t, kind: 'disc_touch', a: a.id, b: b.id });
+        if (me && me.t_in <= lo + T_EPS && me.t_out > lo + T_EPS && lo < hi) out.push({ t: abs(lo), kind: 'layer_overlap', a: a.id, b: b.id });
+        else if (me && me.t_in > lo && me.t_in < hi) out.push({ t: abs(me.t_in), kind: 'disc_touch', a: a.id, b: b.id });
+      } else if (me) {
+        // on the layer now: the bodies reach distance M at τ_in; if τ_in is now or past (touching within rounding) and the
+        // pair is still closing (before the midpoint of the interval), the touch is handled now
+        if (me.t_in > sh) { if (me.t_in < hi) out.push({ t: abs(me.t_in), kind: 'disc_touch', a: a.id, b: b.id }); }
+        else if (sh < (me.t_in + me.t_out) / 2 && hi > sh + T_EPS) out.push({ t, kind: 'disc_touch', a: a.id, b: b.id });
+      }
       for (const [y, p] of [[a, b], [b, a]] as const) if (y.mode === 'cross_wait' && y.partner === p.id && !y.waitRoom) {
         // local resume (on one layer): the other is out of antennal reach (distance ≥ C) and not approaching; off the layer
         // the release above applies
-        const cr = C(y, p) + CONTACT_EXIT_EPS;
-        if (dd < cr) { const r = later(cr); if (r !== Infinity) out.push({ t: t + r, kind: 'cleared', a: y.id, b: p.id }); }
-        else if (B < -1e-12 && A > 0) out.push({ t: t + -B / (2 * A), kind: 'cleared', a: y.id, b: p.id });
-        else out.push({ t, kind: 'cleared', a: y.id, b: p.id });
+        // PH-P1-A: 'out of reach and not approaching' is decided for the motion y would START now: y walks on at the earliest
+        // instant from which walking (at its free speed along its heading) would not bring it within C + exit margin of p,
+        // given p's present velocity (sensed locally; game assumption). The old rule (release at p's closest approach to
+        // the STANDING y) let y walk into p again after 1e-6 mm when the reach was 0, a near-zero-time yield loop.
+        const py = y === a ? pa : pb, pp = p === a ? pa : pb, hp = p === a ? ha : hb, hy = headingAt(y.p, y.s, y.travel);
+        const tr = releaseTime(pp.x - py.x, pp.y - py.y, hp.x * Math.abs(p.v), hp.y * Math.abs(p.v), hy.x * y.free, hy.y * y.free, C(y, p) + CONTACT_EXIT_EPS, scale, sh);
+        if (tr !== null) out.push({ t: abs(tr), kind: 'cleared', a: y.id, b: p.id, data: 2 });   // data 2: release decided by the scheduled prediction
       }
       }
     }
   };
 
-  /** arc length behind y (opposite to its walking direction) where y is at least `need` from o's current position */
-  const backOffFrom = (y: RT, o: RT, need: number): number | null => {
-    const m = (sgn(y.v) || y.travel) as 1 | -1, Lp = laneLength(y.p), po = pos(o), f = (s: number) => { const q = positionAt(y.p, s); return Math.hypot(q.x - po.x, q.y - po.y) >= need; };
+  /**
+   * PH-P1-A: arc length behind y (opposite to its walking direction) where y's centre is at least `need` (planar) from the
+   * line o is heading along — the half-line from o's centre in o's walking direction, i.e. the conflict region o's body
+   * sweeps while it walks straight on. Backing off only out of antennal reach of o's current POSITION (the old rule) let
+   * o touch y again after a step of the size of the reach (≈ 2e-6 mm when the reach is 0), so the two could repeat the
+   * yield hundreds of thousands of times. o's heading is sensed by touch (game assumption; o's route and goal are NOT
+   * used). Numerical scan (boundary_step_mm) + bisection, as before; null when y's lane ends first.
+   */
+  const backOffFromLine = (y: RT, o: RT, need: number): number | null => {
+    const m = (sgn(y.v) || y.travel) as 1 | -1, Lp = laneLength(y.p), po = pos(o), ho = headingAt(o.p, o.s, sgn(o.v) as 1 | -1), hl = Math.hypot(ho.x, ho.y);
+    const ux = hl > 0 ? ho.x / hl : 0, uy = hl > 0 ? ho.y / hl : 0;
+    const f = (s: number) => {
+      const q = positionAt(y.p, s), dx = q.x - po.x, dy = q.y - po.y, lam = dx * ux + dy * uy;
+      return (lam <= 0 ? Math.hypot(dx, dy) : Math.abs(dx * uy - dy * ux)) >= need;
+    };
     let prev = y.s;
     for (let k = 1; ; k++) {
       const s = y.s - m * k * step;
@@ -540,6 +665,19 @@ export function simulate(cfg: SimConfig): SimResult {
       if (f(s)) { let lo = prev, hi = s; for (let i = 0; i < 80; i++) { const mid = (lo + hi) / 2; if (f(mid)) hi = mid; else lo = mid; } return hi; }
       prev = s;
     }
+  };
+  /**
+   * PH-P1-A progress invariant: after y has backed off out of o's heading line, o cannot touch y again while y stands
+   * there and o walks on along the same line (a sub-ray of the one y left). A second press of the same pair is therefore
+   * legal only if y has moved since, or o has turned (another heading or direction) or is behind the point where it
+   * pressed. Anything else is a yield loop without progress and stops the run with an error, never a silent repeat.
+   */
+  const releaseLog = new Map<string, { t: number; oT: number; oV: number }>();   // t: the release instant (= y's new motion record start)
+  const pressLog = new Map<string, PressRecord & { t: number }>();
+  const checkPressProgress = (t: number, w: RT, o: RT) => {
+    const k = `${w.id}|${o.id}`, rec = pressLog.get(k), h = headingAt(o.p, o.s, sgn(o.v) as 1 | -1);
+    if (rec && pressWithoutProgress(rec, { wS: w.s, oS: o.s, dir: sgn(o.v), hx: h.x, hy: h.y }))
+      throw Error(`PHYSICS: no event progress at t=${t} s: ${w.id} is pressed again by ${o.id} (last at t=${rec.t} s) while standing where it backed off out of ${o.id}'s heading line, and ${o.id} has not turned (crossing yield loop; PH-P1-A invariant)`);
   };
   /**
    * Where x steps back to when it gives way: just outside the single-file section (threshold T) that contains `at`, on the
@@ -558,6 +696,10 @@ export function simulate(cfg: SimConfig): SimResult {
     return { target, dist: Math.abs(x.s - target) };
   };
   // ---- event handling
+  // Same-instant priority (PH-P2-B): at one instant events are handled by kind (KIND_ORDER: motion bookkeeping, then
+  // releases, then contact bookkeeping before obstruction handling), then by agent id, other id, data and time — a total
+  // order that never depends on array or insertion order.
+  const candOrder = (x: Cand, y: Cand) => KIND_ORDER.indexOf(x.kind) - KIND_ORDER.indexOf(y.kind) || (x.a < y.a ? -1 : x.a > y.a ? 1 : 0) || ((x.b ?? '') < (y.b ?? '') ? -1 : (x.b ?? '') > (y.b ?? '') ? 1 : 0) || (x.data ?? -Infinity) - (y.data ?? -Infinity) || x.t - y.t;
   const KIND_ORDER = ['vertex', 'hold_end', 'start', 'arrive', 'retreat_done', 'wall', 'aperture', 'passed', 'cleared', 'room', 'centre', 'contact_end', 'contact_start', 'boundary', 'touch', 'disc_touch', 'layer_overlap', 'relevel'];
   const unresolved = (t: number, x: RT, y: RT, why: string) => {
     for (const z of [x, y]) if (!terminal(z)) { z.mode = 'unresolved'; z.partner = z === x ? y.id : x.id; z.holdUntil = null; modeMotion(z, t); }
@@ -577,7 +719,7 @@ export function simulate(cfg: SimConfig): SimResult {
       case 'retreat_done': if (a.mode === 'retreat') {
         const p = byId.get(a.partner!)!;
         if (a.crossRetreat) {
-          a.s = a.retreat_s!; a.crossRetreat = false; a.mode = 'cross_wait'; modeMotion(a, t); ev(t, 'cross_wait', a, p, 'backed off out of antennal reach; waits until the other is out of reach and not approaching');
+          a.s = a.retreat_s!; a.crossRetreat = false; a.mode = 'cross_wait'; modeMotion(a, t); ev(t, 'cross_wait', a, p, 'backed off out of the line the other is heading along; waits until the other is out of reach and not approaching');
           if (p.mode === 'cross_wait' && p.partner === a.id && p.waitRoom) { p.mode = 'free'; p.partner = null; p.waitRoom = false; modeMotion(p, t); ev(t, 'cross_resume', p, a, 'room made'); }
           return;
         }
@@ -589,7 +731,12 @@ export function simulate(cfg: SimConfig): SimResult {
         ev(t, 'blocked', a, null, c.kind === 'wall' ? `passage narrower than effective width ${a.w} mm (body ${a.spec.body.width_mm} mm${a.spec.load ? `, load ${a.spec.load}` : ''})` : `entrance aperture narrower than effective width ${a.w} mm${a.spec.load ? ` (load ${a.spec.load})` : ''}`);
       } return;
       case 'passed': if (a.mode === 'yield_wait' && a.partner === b!.id) { a.mode = 'free'; a.partner = null; modeMotion(a, t); ev(t, 'yield_resume', a, b, null); } return;
-      case 'cleared': if (a.mode === 'cross_wait' && a.partner === b!.id && !a.waitRoom && (c.data === 1 || (() => { const pa = pos(a), pb = pos(b!); return Math.hypot(pa.x - pb.x, pa.y - pb.y) >= C(a, b!) - 1e-9; })())) { a.mode = 'free'; a.partner = null; modeMotion(a, t); ev(t, 'cross_resume', a, b, null); } return;
+      case 'cleared': if (a.mode === 'cross_wait' && a.partner === b!.id && !a.waitRoom && (c.data === 1 || c.data === 2)) {
+        // data 1: the other is off the height layer; data 2: walking on from now cannot bring the two within reach (both
+        // decided by the scheduler from the present motions, so the handler does not re-test them with another tolerance)
+        a.mode = 'free'; a.partner = null; modeMotion(a, t); ev(t, 'cross_resume', a, b, null);
+        if (c.data === 2) releaseLog.set(`${a.id}|${b!.id}`, { t, oT: b!.open.t, oV: b!.v });
+      } return;
       case 'room': case 'centre': return; // velocities are re-resolved after every step
       case 'contact_start': { const k = pairKey(a.id, b!.id); if (!inContact.has(k)) { inContact.add(k); ev(t, 'contact_start', a, b, null, sameLane(a, b!) ? lateralCertain(a, b!) : null); } return; }
       case 'contact_end': { const k = pairKey(a.id, b!.id); if (inContact.delete(k)) ev(t, 'contact_end', a, b, null); return; }
@@ -709,11 +856,14 @@ export function simulate(cfg: SimConfig): SimResult {
         const ha = ahead(a, pa, pb), hb = ahead(b, pb, pa);
         // a waiting ant pressed by the one it waits for backs off out of antennal reach; the other waits until it has
         for (const [w, o] of [[a, b], [b, a]] as const) if (w.mode === 'cross_wait' && w.partner === o.id && !w.waitRoom && (o === a ? ha : hb)) {
-          const back = backOffFrom(w, o, C(w, o) + 2 * CONTACT_EXIT_EPS);
-          if (back === null) { unresolved(t, w, o, 'pressed at a crossing with no room to back off'); return; }
+          checkPressProgress(t, w, o);
+          const back = backOffFromLine(w, o, C(w, o) + 2 * CONTACT_EXIT_EPS);
+          if (back === null) { unresolved(t, w, o, 'pressed at a crossing with no room to back off out of the line the other is heading along'); return; }
+          const h = headingAt(o.p, o.s, sgn(o.v) as 1 | -1);
+          pressLog.set(`${w.id}|${o.id}`, { wS: back, oS: o.s, dir: sgn(o.v), hx: h.x, hy: h.y, t });
           w.mode = 'retreat'; w.crossRetreat = true; w.retreat_s = back; modeMotion(w, t);
           o.mode = 'cross_wait'; o.partner = w.id; o.waitRoom = true; modeMotion(o, t);
-          ev(t, 'yield_start', w, o, `pressed by the ant it waits for: backs off ${Math.abs(w.s - back).toFixed(6)} mm out of antennal reach; the other waits (game assumption)`);
+          ev(t, 'yield_start', w, o, `pressed by the ant it waits for: backs off ${Math.abs(w.s - back).toFixed(6)} mm until it is out of antennal reach of the line the other is heading along (sensed by touch; game assumption); the other waits`);
           return;
         }
         if (!ha && !hb) return;                                    // neither is moving towards the other
@@ -723,6 +873,10 @@ export function simulate(cfg: SimConfig): SimResult {
         else { y = ha ? a : b; why = 'it has the other ahead of its antennae (local; game assumption)'; }
         const other = y === a ? b : a;
         if (terminal(other)) { unresolved(t, y, other, `blocked across lanes by an ant that has stopped for good (${other.mode})`); return; }
+        // PH-P1-A progress invariant: y was released from waiting for `other` because walking on could not bring them within
+        // reach; touching it again with neither motion changed since is a yield loop without progress — stop with an error
+        const rel = releaseLog.get(`${y.id}|${other.id}`);
+        if (rel && releaseWithoutProgress(rel, { yT: y.open.t, oT: other.open.t, oV: other.v })) throw Error(`PHYSICS: no event progress at t=${t} s: ${y.id} touches ${other.id} again after being released at t=${rel.t} s with neither motion changed (crossing release loop; PH-P1-A invariant)`);
         y.mode = 'cross_wait'; y.partner = other.id; modeMotion(y, t);
         ev(t, 'cross_wait', y, other, `stops: ${why}`);
         return;
@@ -742,7 +896,7 @@ export function simulate(cfg: SimConfig): SimResult {
   // ---- main loop
   let t = 0, lastT = -1, sameT = 0;
   const vmax = Math.max(...rts.map((a) => a.free));
-  while (t < cfg.horizon_s - T_EPS && rts.some((a) => !terminal(a))) {
+  while (t < cfg.horizon_s && rts.some((a) => !terminal(a))) {
     const wEnd = Math.min(t + H, cfg.horizon_s);
     stats.windows++;
     // broadphase for this window: any pair that can come within contact range before wEnd (conservative reach discs)
@@ -756,17 +910,23 @@ export function simulate(cfg: SimConfig): SimResult {
       // pairs in contact too: their contact_end must come at its own time, not when the broadphase next picks them up
       for (const k of inContact) { const [i, j] = k.split('|'); const x = byId.get(i), y = byId.get(j); if (x && y) add(x, y); }
       return out; };
-    while (t < wEnd - T_EPS) {
+    while (t < wEnd) {
       stats.steps++;
       const cands: Cand[] = [];
       for (const a of rts) intrinsic(a, t, cands);
       for (const [a, b] of withPartners()) pairCands(a, b, t, cands);
-      let tn = wEnd;
-      for (const c of cands) if (c.t < tn) tn = c.t;
-      if (!(tn >= t)) tn = t;
-      for (const a of rts) a.s = a.s + a.v * (tn - t);
+      // PH-P2-B: explicit event time boundary. The next step is the earliest candidate if it is at or before the window
+      // end; otherwise the clock only moves to the window end and NOTHING is handled there (an event even 1e-12 s after
+      // the window end belongs to the next window). Events at one instant are those within SAME_INSTANT(t) of the earliest
+      // (a few ulps: different formulas for one mathematical instant), never beyond the window end.
+      let tmin = Infinity;
+      for (const c of cands) if (c.t < tmin) tmin = c.t;
+      const tn = tmin <= wEnd ? Math.max(t, tmin) : wEnd;
+      // PH-P2-C: positions are computed from the start of the current motion record (anchor), its velocity and the
+      // elapsed time — never accumulated step by step, so the number of steps (windows) does not change them
+      for (const a of rts) if (a.open.v !== 0) a.s = a.open.s + a.open.v * (tn - a.open.t);
       t = tn;
-      const due = cands.filter((c) => c.t <= tn + T_EPS).sort((x, y) => KIND_ORDER.indexOf(x.kind) - KIND_ORDER.indexOf(y.kind) || (x.a < y.a ? -1 : x.a > y.a ? 1 : 0) || ((x.b ?? '') < (y.b ?? '') ? -1 : (x.b ?? '') > (y.b ?? '') ? 1 : 0));
+      const due = tmin <= wEnd ? cands.filter((c) => c.t <= Math.min(wEnd, tn + SAME_INSTANT(tn))).sort(candOrder) : [];
       for (const c of due) handle(c, t);
       resolveFollow(t);
       detectStuck(t);
