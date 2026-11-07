@@ -3,18 +3,20 @@
  * Day14 snapshot (static) and engine-generated experimental Day0 replays. It never runs the simulation, never
  * writes anything, and every position between two recorded points is a display interpolation (model.poseAt).
  */
-import { ACTION_LABEL, NEST, assertKind, REASON_LABEL, TASK_LABEL, describeEvent, displayPositions, eventsUntil, exploredEdges, poseAt, segmentsOf, stateAtStart, taskOf, trailScale, type Experiment, type Official, type Place, type Link, stateAt, isSettled, isTimed, windowOf, SETTLEMENT_STEP } from './model.ts';
+import { ACTION_LABEL, NEST, assertKind, REASON_LABEL, TASK_LABEL, describeEvent, displayPositions, eventsUntil, exploredEdges, poseAt, segmentsOf, stateAtStart, taskOf, trailScale, type Experiment, type Official, type Place, type Link, stateAt, isSettled, windowOf, SETTLEMENT_STEP, dayTimeline, eventJump, eventWorkers, followStatus, type EventJump } from './model.ts';
 
 type Pos = Record<string, { x: number; y: number; known: boolean }>;
 interface Index { official: string; experiments: { id: string; file: string; title: string }[] }
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const canvas = $<HTMLCanvasElement>('map'), ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-const ui = { mode: $<HTMLSelectElement>('mode'), day: $<HTMLInputElement>('day'), minute: $<HTMLInputElement>('minute'), play: $<HTMLButtonElement>('play'), speed: $<HTMLSelectElement>('speed'), time: $('timeLabel'), badge: $('badge'), info: $('info'), events: $('events'), nest: $('nest'), weather: $('weather'), view: $<HTMLSelectElement>('view'), ovTrail: $<HTMLInputElement>('ovTrail'), ovExplored: $<HTMLInputElement>('ovExplored'), ovFood: $<HTMLInputElement>('ovFood'), ovLabels: $<HTMLInputElement>('ovLabels'), ovTask: $<HTMLInputElement>('ovTask'), legend: $('legend'), timeline: $('timeline') };
+const ui = { mode: $<HTMLSelectElement>('mode'), day: $<HTMLInputElement>('day'), minute: $<HTMLInputElement>('minute'), play: $<HTMLButtonElement>('play'), speed: $<HTMLSelectElement>('speed'), time: $('timeLabel'), badge: $('badge'), info: $('info'), events: $('events'), nest: $('nest'), weather: $('weather'), view: $<HTMLSelectElement>('view'), ovTrail: $<HTMLInputElement>('ovTrail'), ovExplored: $<HTMLInputElement>('ovExplored'), ovFood: $<HTMLInputElement>('ovFood'), ovLabels: $<HTMLInputElement>('ovLabels'), ovTask: $<HTMLInputElement>('ovTask'), legend: $('legend'), timeline: $('timeline'), follow: $<HTMLButtonElement>('follow'), who: $<HTMLSelectElement>('who'), followMsg: $('followMsg'), jump: $('jump'), evMine: $<HTMLInputElement>('evMine') };
 
 /** Canvas colours come from the page's CSS tokens so both light and dark themes stay readable. */
 const tok = (name: string, fallback: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
 let index: Index, official: Official | null = null, exp: Experiment | null = null, pos: Pos = {}, places: Place[] = [], links: Link[] = [];
 let selected: string | null = null, playing = false, last = 0, modeRequest = 0;
+/** V3 follow camera: the followed worker (null = free camera), and the last event jump (shown until the next one). */
+let whoKey = '', following: string | null = null, followNote = '', lastJump: (EventJump & { event: string; type: string }) | null = null, eventsKey = '';
 const cam = { x: 0, y: 0, scale: 3 };
 
 async function load<T>(file: string): Promise<T> { const r = await fetch('data/' + file); if (!r.ok) throw Error('cannot load ' + file); return r.json() as Promise<T>; }
@@ -24,6 +26,13 @@ async function init() {
   ui.mode.innerHTML = `<option value="official">正式遊戲 Day14（唯讀快照）</option>` + index.experiments.map((e) => `<option value="${e.id}">${e.title}</option>`).join('');
   ui.mode.onchange = () => switchMode(ui.mode.value);
   ui.day.oninput = () => { ui.minute.value = '0'; draw(); };
+  ui.follow.onclick = () => { if (following) stopFollow('已取消追蹤'); else if (selected && exp) { following = selected; followNote = ''; draw(); } };
+  ui.evMine.onchange = () => draw();
+  // picker: on a phone the ants gathered at the nest are too close together to tap one by one
+  ui.who.onchange = () => { selected = ui.who.value || null; draw(); };
+  // the event list and the jump panel are re-rendered only when their content changes, so a click is never lost
+  ui.events.onclick = (e) => { const b = (e.target as HTMLElement).closest('button[data-ev]') as HTMLElement | null; if (b) jumpTo(Number(b.dataset.ev)); };
+  ui.jump.onclick = (e) => { const b = (e.target as HTMLElement).closest('button[data-w]') as HTMLElement | null; if (b) { selected = b.dataset.w as string; draw(); } };
   ui.minute.oninput = () => draw();
   ui.play.onclick = () => { playing = !playing; ui.play.textContent = playing ? '暫停' : '播放'; last = performance.now(); if (playing) requestAnimationFrame(tick); };
   for (const el of [ui.ovTrail, ui.ovExplored, ui.ovFood, ui.ovLabels, ui.ovTask, ui.view]) el.onchange = () => draw();
@@ -33,7 +42,7 @@ async function init() {
 }
 
 async function switchMode(id: string) {
-  playing = false; ui.play.textContent = '播放'; selected = null;
+  playing = false; ui.play.textContent = '播放'; selected = null; following = null; whoKey = ''; followNote = ''; lastJump = null; eventsKey = ''; ui.jump.hidden = true;
   const req = ++modeRequest; // a slower earlier load must never overwrite the world chosen later
   if (id === 'official') {
     const o = official ?? assertKind(await load<Official>(index.official), 'official', index.official);
@@ -71,12 +80,18 @@ function setupPanZoom() {
   canvas.onpointerdown = (e) => { canvas.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); downAt = { x: e.clientX, y: e.clientY }; if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch0 = Math.hypot(a.x - b.x, a.y - b.y); scale0 = cam.scale; } };
   canvas.onpointermove = (e) => {
     const p = pts.get(e.pointerId); if (!p) return; const dpr = window.devicePixelRatio || 1;
-    if (pts.size === 1) { cam.x -= ((e.clientX - p.x) * dpr) / cam.scale; cam.y += ((e.clientY - p.y) * dpr) / cam.scale; }
+    if (pts.size === 1) {
+      // dragging the map is a manual camera move: it ends following (a tap that barely moves does not)
+      if (following && downAt && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) >= 6) stopFollow('拖曳地圖：已手動取消追蹤');
+      cam.x -= ((e.clientX - p.x) * dpr) / cam.scale; cam.y += ((e.clientY - p.y) * dpr) / cam.scale;
+    }
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pts.size === 2) { const [a, b] = [...pts.values()]; cam.scale = scale0 * Math.hypot(a.x - b.x, a.y - b.y) / pinch0; }
     draw();
   };
   canvas.onpointerup = (e) => { const p = pts.get(e.pointerId); pts.delete(e.pointerId); if (p && downAt && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) < 6) pick(e); };
+  // a touch that the browser cancels must not stay in the pointer set (it would turn the next drag into a pinch)
+  canvas.onpointercancel = (e) => { pts.delete(e.pointerId); downAt = null; };
   canvas.onwheel = (e) => { e.preventDefault(); cam.scale *= e.deltaY < 0 ? 1.15 : 1 / 1.15; draw(); };
 }
 
@@ -128,6 +143,10 @@ function draw() {
   const W = canvas.width, H = canvas.height, dpr = window.devicePixelRatio || 1;
   const INK = tok('--ink', '#2f2a22'), LINK = tok('--link', '#b9ad8f'), MUTED = tok('--muted', '#8c8270'), ANT = tok('--ant', '#1d1d1d'), SEL = tok('--select', '#d62828'), TRAIL = tok('--trail', '196,76,32'), EXPL = tok('--explored', '46,125,90');
   ctx.fillStyle = tok('--ground', '#e9e2cf'); ctx.fillRect(0, 0, W, H);
+  // the follow state is updated in EVERY view (Codex #106 P3: in the nest view a death at the settlement left the follow
+  // state and its note behind); the camera itself only matters on the garden map
+  const drawnAnts = ants();
+  applyFollow(drawnAnts);
   if (ui.view.value === 'nest') { drawNest(); renderPanels(); renderLegend(); return; }
   const day = exp ? Number(ui.day.value) : 0, s = exp ? stateAtStart(exp, day) : null, explored = s ? exploredEdges(s) : new Set<string>();
   // links
@@ -156,13 +175,15 @@ function draw() {
     }
   }
   // ants
-  for (const a of ants()) {
+  for (const a of drawnAnts) {
     const S = a.trayAt ? trayScreen(a.trayAt) : toScreen(a.x, a.y), sel = a.id === selected;
     ctx.fillStyle = sel ? SEL : ui.ovTask.checked && exp && a.task ? tok(`--task-${a.task}`, ANT) : a.injured ? MUTED : ANT;
     ctx.beginPath(); ctx.ellipse(S.sx, S.sy, (sel ? 5 : 3.5) * dpr, (sel ? 3.2 : 2.3) * dpr, 0, 0, Math.PI * 2); ctx.fill();
     if (a.interpolated) { ctx.strokeStyle = MUTED; ctx.lineWidth = 1 * dpr; ctx.beginPath(); ctx.arc(S.sx, S.sy, 6 * dpr, 0, Math.PI * 2); ctx.stroke(); }
-    if (sel) { ctx.fillStyle = SEL; ctx.font = `bold ${12 * dpr}px system-ui`; ctx.fillText(a.id, S.sx + 7 * dpr, S.sy + 4 * dpr); }
+    if (sel) { ctx.fillStyle = SEL; ctx.font = `bold ${12 * dpr}px system-ui`; ctx.fillText(a.id === following ? `${a.id}（追蹤中）` : a.id, S.sx + 7 * dpr, S.sy + 4 * dpr); if (a.id === following) { ctx.strokeStyle = SEL; ctx.lineWidth = 1.5 * dpr; ctx.setLineDash([4 * dpr, 3 * dpr]); ctx.beginPath(); ctx.arc(S.sx, S.sy, 11 * dpr, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); } }
   }
+  // follow badge (on the canvas, so it is visible wherever the panels are scrolled)
+  if (following || followNote) { const msg = following ? `追蹤 ${following}${followNote.includes('插值') ? '｜顯示插值位置' : followNote.includes('位置未知') ? '｜位置未知' : ''}` : followNote; ctx.font = `${12 * dpr}px system-ui`; const w = ctx.measureText(msg).width + 16 * dpr; ctx.fillStyle = tok('--panel', '#f7f3ea'); ctx.globalAlpha = 0.92; ctx.fillRect(8 * dpr, 8 * dpr, w, 22 * dpr); ctx.globalAlpha = 1; ctx.fillStyle = following ? SEL : INK; ctx.fillText(msg, 16 * dpr, 23 * dpr); }
   // scale bar
   const bar = 20 * cam.scale; ctx.fillStyle = INK; ctx.fillRect(12 * dpr, H - 18 * dpr, bar, 3 * dpr); ctx.font = `${11 * dpr}px system-ui`; ctx.fillText('20 cm（示意比例：方位＋約距離，非測量）', 12 * dpr, H - 24 * dpr);
   renderPanels(); renderLegend();
@@ -200,7 +221,9 @@ function renderPanels() {
     ui.nest.innerHTML = `<b>蟻后</b> ${official.queen.id}（${official.queen.status}）<br><b>幼體</b> ${official.brood.filter((b) => b.living).map((b) => `${b.id}·${b.stage}`).join('、') || '無'}<br><b>存活工蟻</b> ${alive.length}　<b>已死亡</b> ${dead.map((w) => `${w.id}（${w.cause_of_death ?? '原因未記錄'}）`).join('、')}`;
     const w = official.workers.find((x) => x.id === selected);
     ui.info.innerHTML = w ? `<h3>${w.id}</h3><p>狀態：${w.status}${w.injured_preexisting ? '｜帶有舊傷' : ''}</p><p>Day${w.last_recorded_day} 經過地點：${w.site_sequence.join(' → ') || '—'}；日終在 ${w.location_at_day_end ?? '—'}</p><p>紀錄的活動：${w.activity.join('；')}</p><p class="note">正式歷史只有日終狀態與敘述，沒有逐分鐘位置。</p>` : '<p class="note">點選地圖上的工蟻查看資料。</p>';
-    ui.events.innerHTML = '<p class="note">正式 Day1～14 沒有引擎事件時間軸。</p>';
+    updateWho(alive.map((x) => x.id));
+    setEvents('official', '<p class="note">正式 Day1～14 沒有引擎事件時間軸，所以沒有可跳轉的事件。</p>');
+    ui.follow.disabled = true; ui.follow.textContent = '追蹤個體'; ui.followMsg.textContent = w ? '正式快照沒有逐分鐘位置，無法追蹤' : '';
     return;
   }
   if (!exp) return;
@@ -217,12 +240,85 @@ function renderPanels() {
     ui.info.innerHTML = `<h3>${w.id}</h3><p>物種：熱帶大頭家蟻（小工蟻；引擎尚未模擬大工蟻）｜年齡 ${w.age_days} 日${w.injured ? `｜受傷（${w.injury_type ?? '類型未記錄'}）` : ''}</p>
       <p>今日紀錄任務（日摘要，不是逐分鐘的目前任務）：${TASK_LABEL[task?.task ?? w.task] ?? task?.task ?? w.task}；出巢 ${task?.trips ?? 0} 趟、成功 ${task?.successes ?? 0}${task?.stop_reason && (p.action === 'in_nest' || t >= wmin) ? `；停止原因 ${REASON_LABEL[task.stop_reason] ?? task.stop_reason}` : ''}</p>
       <p>現在：${ACTION_LABEL[p.action] ?? p.action} @ ${p.place}${seg ? `（${(seg.start as number).toFixed(1)}–${(seg.end as number).toFixed(1)} 分）` : ''}${p.interpolated ? '<span class="tag">位置為顯示插值</span>' : ''}</p>
+      <p>位置：${placeText(p.place, p.x, p.y, p.interpolated)}</p>
       <p>嗉囊糖（一日開始）：${w.crop_sugar.toFixed(2)} 份｜記得的地點：${w.known_sources.join('、') || '無'}｜走過的路段：${w.route_edges.join('、') || '無'}</p>
       <p>今日到目前為止的行動：${segs.length ? segs.map((x) => `${(x.start as number).toFixed(0)}′ ${ACTION_LABEL[x.action as string] ?? x.action}`).join(' → ') : '在巢內（沒有外出紀錄）'}</p>
       <p>最近事件：${mine.map(describeEvent).join('；') || '—'}</p>`;
-  } else ui.info.innerHTML = '<p class="note">點選地圖上的工蟻查看資料。黑點＝工蟻；外圈＝正在兩個紀錄點之間（顯示插值）。</p>';
-  const evs = eventsUntil(d, t).slice(-30).reverse();
-  ui.events.innerHTML = evs.map((e) => `<div>${typeof e.minute === 'number' ? (e.minute as number).toFixed(0) + '′' : isTimed(e) ? (e.start as number).toFixed(0) + '′' : '日終（無時刻）'} ${describeEvent(e)}</div>`).join('') || '<p class="note">到目前為止沒有事件。</p>';
+  } else {
+    const st = selected ? followStatus(exp, day, t, selected, pos) : null;
+    ui.info.innerHTML = st?.kind === 'dead' ? `<h3>${selected}</h3><p>已於 Day${st.day} 日終結算死亡（引擎沒有記錄死亡時刻），此後不再畫出。</p>`
+      : st?.kind === 'not_present' ? `<h3>${selected}</h3><p>此時不在蟻群中${st.eclosion_day ? `：Day${st.eclosion_day} 日終結算時羽化，之後才畫出` : ''}。</p>`
+      : '<p class="note">點選地圖上的工蟻查看資料。黑點＝工蟻；外圈＝正在兩個紀錄點之間（顯示插值）。</p>';
+  }
+  // event timeline: the whole day, in recorded order; future rows dimmed; each row jumps to its recorded time
+  const rows = dayTimeline(d).filter((r) => !ui.evMine.checked || !selected || eventWorkers(r.e).includes(selected));
+  const shown = rows.filter((r) => r.t <= t || (settled && r.t === Infinity)).length;
+  setEvents(`${exp.spec.id}|${day}|${ui.evMine.checked ? selected : ''}|${shown}|${lastJump?.event ?? ''}`, rows.map((r) => {
+    const past = r.t <= t || (settled && r.t === Infinity), cur = lastJump?.event === `${day}:${r.i}`;
+    return `<button type="button" class="ev${past ? '' : ' future'}${cur ? ' current' : ''}" data-ev="${r.i}">${r.t === Infinity ? '日終（無時刻）' : r.t.toFixed(1) + '′'} ${describeEvent(r.e)}</button>`;
+  }).join('') || '<p class="note">這一天沒有符合的事件。</p>');
+  updateFollowUI(day, t);
+  updateWho(s.workers.map((x) => x.id));
+}
+
+/** The worker picker lists exactly the workers drawn now (re-rendered only when that list changes). */
+function updateWho(ids: string[]) {
+  const key = ids.join(',');
+  if (key !== whoKey) { whoKey = key; ui.who.innerHTML = `<option value="">選擇工蟻…（${ids.length} 隻）</option>` + ids.map((id) => `<option value="${id}">${id}</option>`).join(''); }
+  ui.who.value = selected && ids.includes(selected) ? selected : '';
+  ui.who.disabled = !ids.length;
+}
+
+/** A place in words: the recorded place ID, its schematic coordinates when it has a recorded bearing+distance, or
+ *  「位置未知」 when it has none — never an invented coordinate. */
+function placeText(place: string, x: number, y: number, interpolated: boolean) {
+  const ends = place.split('>');
+  if (ends.some((id) => pos[id]?.known === false)) return `${place}｜位置未知（${ends.filter((id) => pos[id]?.known === false).join('、')} 沒有記錄方位與距離，不在地圖比例上）`;
+  return `${place}｜示意座標 東 ${x.toFixed(1)}、北 ${y.toFixed(1)} cm（方位＋約距離推得，非測量）${interpolated ? '；兩個紀錄點之間的顯示插值，不是實際量到的位置' : ''}`;
+}
+
+function setEvents(key: string, html: string) { if (key !== eventsKey) { eventsKey = key; ui.events.innerHTML = html; } }
+
+function stopFollow(note: string) { following = null; followNote = note; draw(); }
+
+/** Follow camera: centre on the followed worker's DRAWN position each frame. Ends (with the reason) when the worker
+ *  dies or is not in the colony; holds still (「位置未知」) while it is at a place with no recorded position. */
+function applyFollow(drawn: ReturnType<typeof ants>) {
+  if (!following || !exp) return;
+  const st = followStatus(exp, Number(ui.day.value), Number(ui.minute.value), following, pos);
+  if (st.kind === 'dead') { followNote = `${following} 於 Day${st.day} 日終結算死亡（無時刻紀錄），追蹤結束`; following = null; return; }
+  if (st.kind === 'not_present') { followNote = `${following} 此時不在蟻群中${st.eclosion_day ? `（Day${st.eclosion_day} 羽化）` : ''}，追蹤結束`; following = null; return; }
+  if (st.kind === 'unknown_position') { followNote = `位置未知：${st.place} 沒有記錄座標，鏡頭停在原處`; return; }
+  const a = drawn.find((x) => x.id === following);
+  if (a && !a.trayAt) { cam.x = a.x; cam.y = a.y; }
+  followNote = st.interpolated ? '追蹤中：鏡頭跟隨的是兩個紀錄點之間的顯示插值位置' : `追蹤中：${st.place}（引擎紀錄點）`;
+}
+
+function updateFollowUI(day: number, t: number) {
+  const st = selected && exp ? followStatus(exp, day, t, selected, pos) : null;
+  ui.follow.disabled = !following && !(st && (st.kind === 'visible' || st.kind === 'unknown_position'));
+  ui.follow.textContent = following ? `取消追蹤 ${following}` : selected ? `追蹤個體 ${selected}` : '追蹤個體';
+  ui.followMsg.textContent = followNote;
+}
+
+/** Event jump: go to the event's recorded minute (or the day's settlement step when the engine recorded none), pause,
+ *  centre on its recorded place when that place has a position, and offer the workers it names for selection. */
+function jumpTo(i: number) {
+  if (!exp) return;
+  const day = Number(ui.day.value), d = exp.days[day - 1], e = d.events[i]; if (!e) return;
+  const j = eventJump(d, e, pos);
+  playing = false; ui.play.textContent = '播放';
+  if (following) { following = null; followNote = '跳到事件：已取消追蹤'; }
+  ui.day.value = String(j.day); ui.minute.value = String(j.t);
+  if (j.place.known && j.place.place) { cam.x = pos[j.place.place].x; cam.y = pos[j.place.place].y; }
+  lastJump = { ...j, event: `${day}:${i}`, type: e.type };
+  const present = new Set(stateAt(exp, j.day, j.t).workers.map((w) => w.id));
+  const first = j.workers.find((w) => present.has(w)); if (first) selected = first;
+  const when = j.timed ? `Day${j.day} 第 ${(j.minute as number).toFixed(2)} 分（引擎紀錄的時刻）` : `Day${j.day} 日終結算（引擎沒有記錄這個事件的時刻，不顯示分鐘）`;
+  const where = j.place.known ? `${j.place.place}（示意位置：方位＋約距離，非測量）` : j.place.place ? `位置未知：${j.place.place} 沒有記錄方位與距離` : '位置未知：這個事件沒有記錄地點，鏡頭不移動';
+  ui.jump.hidden = false;
+  ui.jump.innerHTML = `<div><b>${describeEvent(e)}</b></div><div>時間：${when}</div><div>地點：${where}</div>${j.workers.length ? `<div class="chips">相關工蟻：${j.workers.map((w) => `<button type="button" data-w="${w}"${present.has(w) ? '' : ' disabled title="此時不在蟻群中"'}>${w}</button>`).join('')}</div>` : ''}`;
+  draw();
 }
 
 function pick(e: PointerEvent) {
@@ -247,6 +343,12 @@ function tick(now: number) {
 (window as unknown as { antempireViewer: unknown }).antempireViewer = {
   antsOnScreen: () => { const dpr = window.devicePixelRatio || 1, r = canvas.getBoundingClientRect(); return ants().map((a) => { const S = a.trayAt ? trayScreen(a.trayAt) : toScreen(a.x, a.y); return { id: a.id, x: r.left + S.sx / dpr, y: r.top + S.sy / dpr, interpolated: a.interpolated, task: a.task }; }); },
   selected: () => selected,
+  following: () => following,
+  followNote: () => followNote,
+  camera: () => ({ ...cam }),
+  lastJump: () => lastJump,
+  placeOnScreen: (id: string) => { const dpr = window.devicePixelRatio || 1, r = canvas.getBoundingClientRect(); if (!pos[id]) return null; const S = screenOf(id); return { x: r.left + S.sx / dpr, y: r.top + S.sy / dpr, known: pos[id].known }; },
+  canvasCentre: () => { const r = canvas.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; },
   state: () => ({ mode: exp ? exp.spec.id : 'official', official: !exp, day: exp ? Number(ui.day.value) : null, minute: exp ? Number(ui.minute.value) : null, workers: exp ? stateAt(exp, Number(ui.day.value), Number(ui.minute.value)).workers.map((w) => w.id) : (official?.workers.filter((w) => w.status === 'alive').map((w) => w.id) ?? []), info: ui.info.textContent ?? '' }),
 };
 
