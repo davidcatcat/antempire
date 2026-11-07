@@ -1754,6 +1754,8 @@
   "larval_feeding": {
     "individual_larva_body_c4a": false,
     "individual_larva_body_c4a_note": "模型開關（C4a，docs/design-c4-larval-nutrition.md §3、§4.1、§4.2、§7.0 D1–D8；預設關閉）。true＝每隻幼蟲有自己的營養帳 body（已知收支 fed_balance；卵的投入 egg_investment；孵化時儲備 reserve_at_hatch 一律 null；來源 reserve_basis），只經 C3a 巢內回合中的局部、有來源、有序數時間與地點的事件增加：育幼工蟻走到 brood 位置、與一隻同位置的幼蟲接觸（larva_contact），若這隻幼蟲的求食訊號達門檻，就從自己嗉囊各餵一口糖與液態蛋白（feed_larva）。幼蟲自己的代謝由 fed_balance 支付（larva_metabolism），從全巢代謝中移出（D3）；求食訊號只由自己今日的蛋白攝取與自己的需求更新（D6）。發育（L2）與飢餓死亡（L3）仍用舊的全巢公式（C4b、C4c 才改）；因為全巢代謝不再含幼蟲，舊公式的輸入會改變。只能在 queen_feeding.individual_queen_body_c3a 也為 true 時打開（D1，共用巢內回合），否則讀參數時拒絕。false＝v2-review.27 的行為。",
+    "first_seen_begging_prior_v29": false,
+    "first_seen_begging_prior_v29_note": "模型開關（v2-review.29，C4a 首次初始化；預設關閉；只在 C4a 打開時有作用）。true＝C4a 第一次為既有幼蟲建立紀錄時（Day14 遷移、Day0 之後才打開、中途切換），把求食訊號設為明示的先驗 local_signals.default_larva_begging_prior（0.3，遊戲假設，不是實測的飢餓程度），舊值只寫進初始化事件的 legacy_begging_signal 供追溯，不再進入任何決策。舊值是舊規則用全巢蛋白比例算出的（或遷移預設 0.25），沿用它等於讓首日的餵食資格依全巢量決定。因為先驗 0.3 等於餵食門檻 0.3，打開後首日被接觸的既有幼蟲都符合餵食資格：這是新的行為變更，待 Owner 選擇模型（見 docs/design-c4-larval-nutrition.md §7.3）。false＝v2-review.28 的行為（沿用舊值）。",
     "feed_begging_threshold": {
       "value": 0.3,
       "assumption": true,

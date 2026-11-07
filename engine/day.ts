@@ -56,8 +56,12 @@ import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from '
  *     on (requires C3a), each larva has its own account (larva_body), fed only in the C3a nest round after a larva_contact
  *     (feed_larva), pays its own metabolism, and begs from its own intake; hatch is an accounting record only. Development
  *     and starvation keep the old rules (C4b/C4c). Introduced OFF: every output byte-identical to v2-review.27.
+ *   v2-review.29 (C4a first-seen begging): with larval_feeding.first_seen_begging_prior_v29 on (requires C4a), a larva that C4a
+ *     sees for the first time starts its begging from the explicit prior default_larva_begging_prior (game assumption) instead
+ *     of the old colony-derived value, which is kept in the initialization event for tracing only. Introduced OFF: every
+ *     output byte-identical to v2-review.28.
  */
-export const ENGINE_VERSION = 'antempire.v2-review.28-c4a-larva-body';
+export const ENGINE_VERSION = 'antempire.v2-review.29-c4a-begging-prior';
 /** Implementation of that behaviour (bumped for refactors that keep results byte-identical). */
 export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
 /**
@@ -132,7 +136,7 @@ export function runWorldDay(s: WorldState, rp: ResolvedParams): WorldDayResult {
   // C4a (requires C3a, checked when the parameters are read): every egg and larva gets its record before the snapshot
   const c4a = new Map<string, LarvaRoundStart>();
   for (const w of work) if (w.sp.larval_feeding.individual_larva_body_c4a) {
-    const day0 = expectedInitBasis(s) === 'day0_scenario', had = ensureBroodRecords(w.colony, day0, w.events);
+    const day0 = expectedInitBasis(s) === 'day0_scenario', had = ensureBroodRecords(w.colony, day0, w.events, w.sp.larval_feeding.first_seen_begging_prior_v29 ? w.sp.local_signals.default_larva_begging_prior : null);
     w.food = colonySnapshot(w.colony, true, true);
     c4a.set(w.colony.id, larvaRoundStart(w.colony, w.sp, had, day0));
   }

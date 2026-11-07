@@ -589,6 +589,24 @@
       "kind": "engine",
       "day14_output_unchanged": true,
       "description": "C4a engine paths (engine/larva-feeding.ts; brood leg in engine/queen-feeding.ts nestRound; larval share out of engine/nutrition.ts consume; hatch / eclosion / death records in engine/brood.ts; egg record in engine/queen.ts) run only when larval_feeding.individual_larva_body_c4a is on; with it off every output is byte-identical to v2-review.27 (tests/golden.test.ts, tests/rules-isolation.test.ts)."
+    },
+    {
+      "rules_version": "antempire.v2-review.29-c4a-begging-prior",
+      "approved_in": "Owner instruction 2026-11-07 (phase 3: C4a first-seen begging; separate rules-update PR, model choice for the Owner, not merged by Claude)",
+      "kind": "param_switch",
+      "file": "species:pheidole-megacephala",
+      "path": "larval_feeding.first_seen_begging_prior_v29",
+      "from": false,
+      "to": false,
+      "introduced": true,
+      "description": "v29 switch, introduced OFF (off = v2-review.28 byte-identical); refused on unless larval_feeding.individual_larva_body_c4a is on"
+    },
+    {
+      "rules_version": "antempire.v2-review.29-c4a-begging-prior",
+      "approved_in": "Owner instruction 2026-11-07 (phase 3: C4a first-seen begging; separate rules-update PR, model choice for the Owner, not merged by Claude)",
+      "kind": "engine",
+      "day14_output_unchanged": true,
+      "description": "engine/larva-feeding.ts ensureBroodRecords sets the first-seen begging prior only when larval_feeding.first_seen_begging_prior_v29 is on; off, every output is byte-identical to v2-review.28 (tests/golden.test.ts, tests/rules-isolation.test.ts)."
     }
   ]
 }

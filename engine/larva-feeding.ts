@@ -51,8 +51,11 @@ export const beggingNow = (b: Brood, sp: SpeciesParams): number => b.begging_sig
 export const firstSeenBasis = (b: Brood, day0: boolean): LarvaReserveBasis =>
   day0 ? 'day0_scenario' : b.stage === 'egg' && b.origin === 'v2_scenario_laying' ? 'egg_laid_before_switch' : 'unknown_at_migration';
 
-/** Gives every egg and larva without a C4a record one (D8), with an event; returns the IDs that had one before. */
-export function ensureBroodRecords(colony: ColonyState, day0: boolean, events: SimEvent[]): Set<string> {
+/** Gives every egg and larva without a C4a record one (D8), with an event; returns the IDs that had one before.
+ *  v2-review.29 (`firstSeenPrior` a number, switch larval_feeding.first_seen_begging_prior_v29): a first-seen larva's begging
+ *  is set to that explicit prior (default_larva_begging_prior, a game assumption, not a measured hunger); the old value —
+ *  computed by the old rule from the colony protein fraction, or the migration default — is kept in the event only. */
+export function ensureBroodRecords(colony: ColonyState, day0: boolean, events: SimEvent[], firstSeenPrior: number | null = null): Set<string> {
   const had = new Set<string>();
   for (const b of [...colony.population.brood].sort(byId)) {
     if (b.stage === 'egg') {
@@ -63,7 +66,9 @@ export function ensureBroodRecords(colony: ColonyState, day0: boolean, events: S
       if (b.body) { had.add(b.id); continue; }
       b.body = { fed_balance: { sugar: 0, protein: 0 }, egg_investment: null, reserve_at_hatch: null, reserve_basis: firstSeenBasis(b, day0) };
       b.location ??= BROOD_PLACE;
-      events.push({ type: 'brood_nutrition_record_initialized', id: b.id, stage: 'larva', location: b.location, fed_balance: { sugar: 0, protein: 0 }, egg_investment: null, reserve_at_hatch: null, reserve_basis: b.body.reserve_basis, note: 'larva present when the C4a switch first applied: its account starts at 0 (D8); its reserve is unknown (null), so the known balance overstates its shortfall', assumption: true });
+      const prior = firstSeenPrior === null ? null : { legacy_begging_signal: b.begging_signal ?? null, begging_signal_set: firstSeenPrior, begging_basis: 'v2-review.29: explicit prior local_signals.default_larva_begging_prior (game assumption, not a measured hunger); the old value is kept here for tracing only' };
+      if (firstSeenPrior !== null) b.begging_signal = firstSeenPrior;
+      events.push({ type: 'brood_nutrition_record_initialized', id: b.id, stage: 'larva', location: b.location, fed_balance: { sugar: 0, protein: 0 }, egg_investment: null, reserve_at_hatch: null, reserve_basis: b.body.reserve_basis, ...(prior ?? {}), note: 'larva present when the C4a switch first applied: its account starts at 0 (D8); its reserve is unknown (null), so the known balance overstates its shortfall', assumption: true });
     } else had.add(b.id);
   }
   return had;
@@ -180,6 +185,10 @@ export function checkLarvaRound(start: LarvaRoundStart, colony: ColonyState, eve
     if (start.had.has(id)) { if (e) fail(`brood ${id} already had a record and was initialized again`); continue; }
     if (!e) fail(`brood ${id} (${b.stage}) has no record and no initialization event`);
     const ev = e as SimEvent, want = start.day0 ? 'day0_scenario' : b.stage === 'egg' && b.origin === 'v2_scenario_laying' ? 'egg_laid_before_switch' : 'unknown_at_migration';
+    // v2-review.29: with the switch on a first-seen larva carries the explicit prior (and the event its old value); off, neither
+    const v29 = sp.larval_feeding.first_seen_begging_prior_v29, pr = sp.local_signals.default_larva_begging_prior;
+    if (b.stage === 'larva' && v29 && (ev.begging_signal_set !== pr || b.beggingRaw !== pr || !('legacy_begging_signal' in ev))) fail(`larva ${id}: first-seen begging ${JSON.stringify(b.beggingRaw)} / event ${JSON.stringify(ev.begging_signal_set)}; v2-review.29 sets the explicit prior ${pr} and records the old value`);
+    if (b.stage === 'larva' && !v29 && ('begging_signal_set' in ev || 'legacy_begging_signal' in ev)) fail(`larva ${id}: a begging prior was set although first_seen_begging_prior_v29 is off`);
     if (ev.stage !== b.stage || ev.reserve_basis !== want || ev.egg_investment !== null || (b.stage === 'larva' && (!eq(ev.fed_balance, { sugar: 0, protein: 0 }) || ev.reserve_at_hatch !== null))) fail(`brood ${id} initialized as ${JSON.stringify(ev).slice(0, 200)}; the rules give ${b.stage} / ${want} / null / 0`);
     const rec = b.stage === 'larva' ? b.body : { egg_investment: b.egg_investment, reserve_basis: b.reserve_basis };
     if (b.stage === 'larva' ? !(b.body && b.body.reserve_basis === want && b.body.egg_investment === null && b.body.fed_balance.sugar === 0 && b.body.fed_balance.protein === 0) : !(b.egg_investment === null && b.reserve_basis === want)) fail(`brood ${id} record ${JSON.stringify(rec)} does not match its initialization`);
