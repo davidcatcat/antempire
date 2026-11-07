@@ -128,6 +128,13 @@ const KNOWN = (exp) => new Set(exp.map.places.filter((p) => p.layout).map((p) =>
       await press('#follow'); await setDay(dd.day, dw + 1); s = await st();
       check(s.following === null && s.note.includes('死亡') && s.note.includes(`Day${dd.day}`), `${name}: following ${victim} ends at its death settlement (${s.note})`);
     } else check(false, `${name}: could not select ${victim} before its death`);
+    // the same death while the NEST view is shown (Codex #106 P3: the follow state and its note were left behind there)
+    await setDay(dd.day, dw); await page.selectOption('#who', victim); await press('#follow');
+    check((await st()).following === victim, `${name}: following ${victim} before switching to the nest view`);
+    await page.selectOption('#view', 'nest'); await setDay(dd.day, dw + 1); s = await st();
+    const fm = await page.$eval('#followMsg', (e) => e.textContent), fb = await page.$eval('#follow', (e) => e.textContent);
+    check(s.following === null && fm.includes('死亡') && fm.includes(`Day${dd.day}`) && !fb.includes('取消追蹤'), `${name}: in the nest view, following ${victim} also ends at its death settlement and the hint says so (${fm} | ${fb})`);
+    await page.selectOption('#view', 'garden');
 
     // ── eclosion: selectable only from its eclosion settlement ──
     await mode(eclCase.meta.id);

@@ -143,9 +143,11 @@ function draw() {
   const W = canvas.width, H = canvas.height, dpr = window.devicePixelRatio || 1;
   const INK = tok('--ink', '#2f2a22'), LINK = tok('--link', '#b9ad8f'), MUTED = tok('--muted', '#8c8270'), ANT = tok('--ant', '#1d1d1d'), SEL = tok('--select', '#d62828'), TRAIL = tok('--trail', '196,76,32'), EXPL = tok('--explored', '46,125,90');
   ctx.fillStyle = tok('--ground', '#e9e2cf'); ctx.fillRect(0, 0, W, H);
-  if (ui.view.value === 'nest') { drawNest(); renderPanels(); renderLegend(); return; }
+  // the follow state is updated in EVERY view (Codex #106 P3: in the nest view a death at the settlement left the follow
+  // state and its note behind); the camera itself only matters on the garden map
   const drawnAnts = ants();
   applyFollow(drawnAnts);
+  if (ui.view.value === 'nest') { drawNest(); renderPanels(); renderLegend(); return; }
   const day = exp ? Number(ui.day.value) : 0, s = exp ? stateAtStart(exp, day) : null, explored = s ? exploredEdges(s) : new Set<string>();
   // links
   for (const l of links) {
