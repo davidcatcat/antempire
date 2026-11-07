@@ -1,0 +1,13 @@
+{
+  "name": "antempire-solver-compare",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Issue #101 PH-Rapier-2: native analytic solver vs Rapier 2D (deterministic-compat) on common synthetic scenarios; isolated experiment, not the official engine",
+  "scripts": {
+    "compare": "node run.ts"
+  },
+  "dependencies": {
+    "@dimforge/rapier2d-deterministic-compat": "0.21.0"
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "antempire.solver-compare.scenario.v1",
+  "title": "Issue #101 solver-comparison scenario (synthetic; refers to scenarios/physics/*, contains no species number of its own)",
+  "type": "object",
+  "required": ["schema", "id", "title", "synthetic", "units", "refs", "body", "encounter", "horizon_s", "seed", "provenance"],
+  "additionalProperties": false,
+  "$defs": {
+    "pick": {
+      "description": "A value read from a candidate file by dotted path (array indices as numbers). A null result refuses the scenario unless nullable (encounter rules only).",
+      "type": "object",
+      "required": ["file", "path", "why"],
+      "additionalProperties": false,
+      "properties": {
+        "file": { "enum": ["body", "interaction", "motion"] },
+        "path": { "type": "string" },
+        "op": { "enum": ["value", "midpoint"] },
+        "why": { "type": "string" },
+        "nullable": { "type": "boolean" }
+      }
+    },
+    "agent": {
+      "type": "object",
+      "required": ["id", "passage", "s_mm", "u_mm", "dir", "start_t_s", "goal_s_mm", "speed"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "passage": { "type": "string" },
+        "s_mm": { "type": "number", "description": "arc length on the passage centre-line (mm)" },
+        "u_mm": { "type": "number", "description": "lateral offset, left of the centre-line direction positive (mm); ignored by the native 1-D solver" },
+        "dir": { "enum": [1, -1] },
+        "start_t_s": { "type": "number", "minimum": 0 },
+        "goal_s_mm": { "type": "number" },
+        "speed": { "$ref": "#/$defs/pick" }
+      }
+    }
+  },
+  "properties": {
+    "schema": { "const": "antempire.solver-compare.scenario.v1" },
+    "id": { "type": "string" },
+    "title": { "type": "string" },
+    "synthetic": { "const": true },
+    "units": { "const": { "length": "mm", "time": "s", "speed": "mm/s" } },
+    "refs": {
+      "type": "object",
+      "required": ["geometry", "body", "interaction", "motion"],
+      "additionalProperties": false,
+      "properties": { "geometry": { "type": "string" }, "body": { "type": "string" }, "interaction": { "type": "string" }, "motion": { "type": "string" } }
+    },
+    "body": {
+      "type": "object", "required": ["length", "width", "contact_reach"], "additionalProperties": false,
+      "properties": { "length": { "$ref": "#/$defs/pick" }, "width": { "$ref": "#/$defs/pick" }, "contact_reach": { "$ref": "#/$defs/pick" } }
+    },
+    "encounter": {
+      "type": "object", "additionalProperties": false,
+      "required": ["priority", "entry_yield_probability", "laden_yield_probability", "contact_pause_s", "inside_turn_back_probability"],
+      "properties": {
+        "priority": { "$ref": "#/$defs/pick" }, "entry_yield_probability": { "$ref": "#/$defs/pick" }, "laden_yield_probability": { "$ref": "#/$defs/pick" },
+        "contact_pause_s": { "oneOf": [{ "$ref": "#/$defs/pick" }, { "type": "null" }] },
+        "inside_turn_back_probability": { "oneOf": [{ "$ref": "#/$defs/pick" }, { "type": "null" }] }
+      }
+    },
+    "agents": { "type": "array", "items": { "$ref": "#/$defs/agent" } },
+    "generator": {
+      "oneOf": [
+        { "type": "object", "required": ["kind", "n", "seed", "passage"], "properties": { "kind": { "const": "ph2-9b-traffic" }, "n": { "type": "integer" }, "seed": { "type": "integer" }, "passage": { "type": "string" } }, "additionalProperties": false },
+        { "type": "object", "required": ["kind", "n", "seed", "speed", "front_gap_mm", "col_pitch_mm", "row_pitch_mm", "start_spread_s", "goal_past_crossing_mm"], "properties": { "kind": { "const": "crossing-lattice" }, "n": { "type": "integer" }, "seed": { "type": "integer" }, "speed": { "$ref": "#/$defs/pick" }, "front_gap_mm": { "type": "number" }, "col_pitch_mm": { "type": "number" }, "row_pitch_mm": { "type": "number" }, "start_spread_s": { "type": "number" }, "goal_past_crossing_mm": { "type": "number" } }, "additionalProperties": false }
+      ]
+    },
+    "horizon_s": { "type": "number", "exclusiveMinimum": 0 },
+    "seed": { "type": "integer" },
+    "rapier": { "type": "object", "properties": { "dt_s": { "type": "number", "exclusiveMinimum": 0 }, "ccd": { "type": "boolean" } }, "additionalProperties": false },
+    "provenance": { "type": "object", "required": ["scenario_values"], "properties": { "scenario_values": { "type": "string" }, "note": { "type": "string" } }, "additionalProperties": false }
+  }
+}
