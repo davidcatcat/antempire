@@ -50,6 +50,20 @@ function bool(file: ParamFile, path: string): boolean {
   return v;
 }
 
+function nullableNum(file: ParamFile, path: string): number | null {
+  const v = at(file, path);
+  if (v === null) return null;
+  if (typeof v !== 'number' || !Number.isFinite(v)) throw Error('Parameter ' + path + ' must be a finite number or null');
+  return v;
+}
+
+function nullableStr(file: ParamFile, path: string): string | null {
+  const v = at(file, path);
+  if (v === null) return null;
+  if (typeof v !== 'string') throw Error('Parameter ' + path + ' must be a string or null');
+  return v;
+}
+
 function section<K extends string>(file: ParamFile, name: string, keys: readonly K[]): Record<K, number> {
   const out = {} as Record<K, number>;
   for (const k of keys) out[k] = num(file, `${name}.${k}`);
@@ -118,6 +132,14 @@ export function resolveSpecies(file: ParamFile) {
       first_seen_begging_prior_v29: bool(file, 'larval_feeding.first_seen_begging_prior_v29'),
       ...section(file, 'larval_feeding', ['feed_begging_threshold', 'feed_bolus_sugar_portions', 'feed_bolus_protein_portions'] as const),
     },
+    // C4b (docs/design-c4b-larval-development.md): each larva's development from what it could itself pay for; the
+    // nutrition-response form is an Owner decision and stays null (refused when switched on) until chosen
+    larval_development: {
+      individual_development_c4b: bool(file, 'larval_development.individual_development_c4b'),
+      nutrition_response: nullableStr(file, 'larval_development.nutrition_response'),
+      threshold_theta: nullableNum(file, 'larval_development.threshold_theta.value'),
+      saturation_k: nullableNum(file, 'larval_development.saturation_k.value'),
+    },
     predation: {
       ...section(file, 'predation', ['live_prey_encounter_probability', 'large_prey_min_team', 'live_prey_capture_probability', 'large_prey_escape_while_recruiting_probability', 'large_prey_max_team'] as const),
       simultaneous_site_group_hunting: bool(file, 'predation.simultaneous_site_group_hunting'),
@@ -133,6 +155,15 @@ export function resolveSpecies(file: ParamFile) {
   }
   if (p.larval_feeding.first_seen_begging_prior_v29 && !p.larval_feeding.individual_larva_body_c4a) {
     throw Error(`Species ${p.species_id}: larval_feeding.first_seen_begging_prior_v29=true requires larval_feeding.individual_larva_body_c4a=true`);
+  }
+  // C4b needs C4a (the larva's own account) and an Owner-chosen nutrition-response form with its own parameter
+  const ld = p.larval_development;
+  if (ld.individual_development_c4b) {
+    if (!p.larval_feeding.individual_larva_body_c4a) throw Error(`Species ${p.species_id}: larval_development.individual_development_c4b=true requires larval_feeding.individual_larva_body_c4a=true`);
+    if (ld.nutrition_response === null) throw Error(`Species ${p.species_id}: larval_development.nutrition_response is null — the form is an Owner decision (docs/design-c4b-larval-development.md §3); C4b cannot be switched on until it is chosen`);
+    if (!['clamp_linear', 'threshold', 'saturating'].includes(ld.nutrition_response)) throw Error(`Species ${p.species_id}: larval_development.nutrition_response ${JSON.stringify(ld.nutrition_response)} is not clamp_linear, threshold or saturating`);
+    if (ld.nutrition_response === 'threshold' && !(ld.threshold_theta !== null && ld.threshold_theta >= 0 && ld.threshold_theta <= 1)) throw Error(`Species ${p.species_id}: the threshold form needs larval_development.threshold_theta in [0, 1] (it is ${ld.threshold_theta})`);
+    if (ld.nutrition_response === 'saturating' && !(ld.saturation_k !== null && ld.saturation_k > 0)) throw Error(`Species ${p.species_id}: the saturating form needs larval_development.saturation_k > 0 (it is ${ld.saturation_k})`);
   }
   if (p.castes.major_worker_production_enabled) {
     throw Error(`Species ${p.species_id}: castes.major_worker_production_enabled=true is not implemented by this engine`);

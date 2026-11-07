@@ -424,6 +424,24 @@
       "save_schema": "antempire.engine-v2",
       "state_migration": null,
       "note": "C4a first-seen begging (larval_feeding.first_seen_begging_prior_v29, requires C4a): a larva C4a sees for the first time starts from the explicit prior default_larva_begging_prior (game assumption) instead of the old colony-derived begging, which is kept in the initialization event only. Changes first-day feeding eligibility (prior = threshold = 0.3). Introduced OFF: every output byte-identical to v2-review.28."
+    },
+    {
+      "rules_version": "antempire.v2-review.30-c4b-larva-development",
+      "tag": "v30",
+      "fingerprint": {
+        "engine": "252ffe5339a02d665bd0e4af79faaa1a63873788813ffbccf7b6e0086856934d",
+        "params": "a8268ef819dfd4e3bda5cacccd7cc2ab75222919c2f212ac6ba1aaee266bb046"
+      },
+      "approved_in": "Owner instruction 2026-11-07 (phase 4: C4b engineering; the nutrition-response form is an Owner decision, null until chosen; not merged by Claude)",
+      "golden": {
+        "traces": "tests/golden/v30-trace-sha256.json",
+        "reports": "reports/day15-134-v30-*",
+        "day0_traces": "tests/golden/day0-v30-trace-sha256.json"
+      },
+      "previous": "antempire.v2-review.29-c4a-begging-prior",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null,
+      "note": "C4b (larval_development.individual_development_c4b, requires C4a): a larva develops by r(T)/larva_days x N(own paid fraction), never from the colony fraction; one larva_development record per larva-day, checked by the engine and an independent reader. The nutrition-response form is null as shipped (Owner decision), so the switch cannot be turned on. Introduced OFF: every output byte-identical to v2-review.29."
     }
   ]
 }
