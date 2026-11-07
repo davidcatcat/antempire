@@ -1,0 +1,638 @@
+{
+ "schema": "antempire.c4b-form-comparison.v2",
+ "note": "Report only (Owner D4): no form chosen; θ and K are TEST grids (null in the species file). Temperature factor 1 (reference temperature).",
+ "inputs": {
+  "larva_days": 12,
+  "n_min": 0.1,
+  "n_min_basis": "遊戲假設 (species development.larva_min_nutrition_growth_factor)",
+  "larva_days_basis": "遊戲假設 (mechanism R94)",
+  "thetas": [
+   0,
+   0.25,
+   0.5,
+   0.75,
+   1
+  ],
+  "ks": [
+   0.1,
+   0.5,
+   2
+  ]
+ },
+ "E1_constant_x": {
+  "x": [
+   0,
+   0.1,
+   0.2,
+   0.3,
+   0.4,
+   0.5,
+   0.6,
+   0.7,
+   0.8,
+   0.9,
+   1
+  ],
+  "rows": [
+   {
+    "variant": "clamp_linear",
+    "N": [
+     0.1,
+     0.1,
+     0.2,
+     0.3,
+     0.4,
+     0.5,
+     0.6,
+     0.7,
+     0.8,
+     0.9,
+     1
+    ],
+    "days": [
+     120,
+     120,
+     60,
+     40,
+     30,
+     24,
+     20,
+     17.143,
+     15,
+     13.333,
+     12
+    ]
+   },
+   {
+    "variant": "threshold θ=0",
+    "N": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ],
+    "days": [
+     12,
+     12,
+     12,
+     12,
+     12,
+     12,
+     12,
+     12,
+     12,
+     12,
+     12
+    ]
+   },
+   {
+    "variant": "threshold θ=0.25",
+    "N": [
+     0.1,
+     0.1,
+     0.1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ],
+    "days": [
+     120,
+     120,
+     120,
+     12,
+     12,
+     12,
+     12,
+     12,
+     12,
+     12,
+     12
+    ]
+   },
+   {
+    "variant": "threshold θ=0.5",
+    "N": [
+     0.1,
+     0.1,
+     0.1,
+     0.1,
+     0.1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ],
+    "days": [
+     120,
+     120,
+     120,
+     120,
+     120,
+     12,
+     12,
+     12,
+     12,
+     12,
+     12
+    ]
+   },
+   {
+    "variant": "threshold θ=0.75",
+    "N": [
+     0.1,
+     0.1,
+     0.1,
+     0.1,
+     0.1,
+     0.1,
+     0.1,
+     0.1,
+     1,
+     1,
+     1
+    ],
+    "days": [
+     120,
+     120,
+     120,
+     120,
+     120,
+     120,
+     120,
+     120,
+     12,
+     12,
+     12
+    ]
+   },
+   {
+    "variant": "threshold θ=1",
+    "N": [
+     0.1,
+     0.1,
+     0.1,
+     0.1,
+     0.1,
+     0.1,
+     0.1,
+     0.1,
+     0.1,
+     0.1,
+     1
+    ],
+    "days": [
+     120,
+     120,
+     120,
+     120,
+     120,
+     120,
+     120,
+     120,
+     120,
+     120,
+     12
+    ]
+   },
+   {
+    "variant": "saturating K=0.1",
+    "N": [
+     0.1,
+     0.595,
+     0.76,
+     0.8425,
+     0.892,
+     0.925,
+     0.948571,
+     0.96625,
+     0.98,
+     0.991,
+     1
+    ],
+    "days": [
+     120,
+     20.168,
+     15.789,
+     14.243,
+     13.453,
+     12.973,
+     12.651,
+     12.419,
+     12.245,
+     12.109,
+     12
+    ]
+   },
+   {
+    "variant": "saturating K=0.5",
+    "N": [
+     0.1,
+     0.325,
+     0.485714,
+     0.60625,
+     0.7,
+     0.775,
+     0.836364,
+     0.8875,
+     0.930769,
+     0.967857,
+     1
+    ],
+    "days": [
+     120,
+     36.923,
+     24.706,
+     19.794,
+     17.143,
+     15.484,
+     14.348,
+     13.521,
+     12.893,
+     12.399,
+     12
+    ]
+   },
+   {
+    "variant": "saturating K=2",
+    "N": [
+     0.1,
+     0.228571,
+     0.345455,
+     0.452174,
+     0.55,
+     0.64,
+     0.723077,
+     0.8,
+     0.871429,
+     0.937931,
+     1
+    ],
+    "days": [
+     120,
+     52.5,
+     34.737,
+     26.538,
+     21.818,
+     18.75,
+     16.596,
+     15,
+     13.77,
+     12.794,
+     12
+    ]
+   }
+  ]
+ },
+ "E2_phillips_unfed14_then_fed": {
+  "rows": [
+   {
+    "variant": "clamp_linear",
+    "pupation_day": 24.6
+   },
+   {
+    "variant": "threshold θ=0",
+    "pupation_day": 12
+   },
+   {
+    "variant": "threshold θ=0.25",
+    "pupation_day": 24.6
+   },
+   {
+    "variant": "threshold θ=0.5",
+    "pupation_day": 24.6
+   },
+   {
+    "variant": "threshold θ=0.75",
+    "pupation_day": 24.6
+   },
+   {
+    "variant": "threshold θ=1",
+    "pupation_day": 24.6
+   },
+   {
+    "variant": "saturating K=0.1",
+    "pupation_day": 24.6
+   },
+   {
+    "variant": "saturating K=0.5",
+    "pupation_day": 24.6
+   },
+   {
+    "variant": "saturating K=2",
+    "pupation_day": 24.6
+   }
+  ],
+  "spread_days_across_forms": 12.6,
+  "spread_days_excluding_theta0": 0
+ },
+ "E3_yuan_ad_libitum": {
+  "rows": [
+   {
+    "variant": "clamp_linear",
+    "larval_days": 12
+   },
+   {
+    "variant": "threshold θ=0",
+    "larval_days": 12
+   },
+   {
+    "variant": "threshold θ=0.25",
+    "larval_days": 12
+   },
+   {
+    "variant": "threshold θ=0.5",
+    "larval_days": 12
+   },
+   {
+    "variant": "threshold θ=0.75",
+    "larval_days": 12
+   },
+   {
+    "variant": "threshold θ=1",
+    "larval_days": 12
+   },
+   {
+    "variant": "saturating K=0.1",
+    "larval_days": 12
+   },
+   {
+    "variant": "saturating K=0.5",
+    "larval_days": 12
+   },
+   {
+    "variant": "saturating K=2",
+    "larval_days": 12
+   }
+  ],
+  "spread_days_across_forms": 0
+ },
+ "E4_variable_partial_feeding": {
+  "replicates": 2000,
+  "rows": [
+   {
+    "variant": "clamp_linear",
+    "range": [
+     0,
+     1
+    ],
+    "mean": 23.861,
+    "sd": 2.723
+   },
+   {
+    "variant": "threshold θ=0",
+    "range": [
+     0,
+     1
+    ],
+    "mean": 12,
+    "sd": 0
+   },
+   {
+    "variant": "threshold θ=0.25",
+    "range": [
+     0,
+     1
+    ],
+    "mean": 15.591,
+    "sd": 2.055
+   },
+   {
+    "variant": "threshold θ=0.5",
+    "range": [
+     0,
+     1
+    ],
+    "mean": 22.064,
+    "sd": 3.801
+   },
+   {
+    "variant": "threshold θ=0.75",
+    "range": [
+     0,
+     1
+    ],
+    "mean": 37.358,
+    "sd": 7.323
+   },
+   {
+    "variant": "threshold θ=1",
+    "range": [
+     0,
+     1
+    ],
+    "mean": 120,
+    "sd": 0
+   },
+   {
+    "variant": "saturating K=0.1",
+    "range": [
+     0,
+     1
+    ],
+    "mean": 14.078,
+    "sd": 0.806
+   },
+   {
+    "variant": "saturating K=0.5",
+    "range": [
+     0,
+     1
+    ],
+    "mean": 16.984,
+    "sd": 1.39
+   },
+   {
+    "variant": "saturating K=2",
+    "range": [
+     0,
+     1
+    ],
+    "mean": 19.718,
+    "sd": 1.864
+   },
+   {
+    "variant": "clamp_linear",
+    "range": [
+     0.2,
+     0.6
+    ],
+    "mean": 29.979,
+    "sd": 1.576
+   },
+   {
+    "variant": "threshold θ=0",
+    "range": [
+     0.2,
+     0.6
+    ],
+    "mean": 12,
+    "sd": 0
+   },
+   {
+    "variant": "threshold θ=0.25",
+    "range": [
+     0.2,
+     0.6
+    ],
+    "mean": 13.525,
+    "sd": 1.264
+   },
+   {
+    "variant": "threshold θ=0.5",
+    "range": [
+     0.2,
+     0.6
+    ],
+    "mean": 37.358,
+    "sd": 7.323
+   },
+   {
+    "variant": "threshold θ=0.75",
+    "range": [
+     0.2,
+     0.6
+    ],
+    "mean": 120,
+    "sd": 0
+   },
+   {
+    "variant": "threshold θ=1",
+    "range": [
+     0.2,
+     0.6
+    ],
+    "mean": 120,
+    "sd": 0
+   },
+   {
+    "variant": "saturating K=0.1",
+    "range": [
+     0.2,
+     0.6
+    ],
+    "mean": 13.63,
+    "sd": 0.219
+   },
+   {
+    "variant": "saturating K=0.5",
+    "range": [
+     0.2,
+     0.6
+    ],
+    "mean": 17.468,
+    "sd": 0.603
+   },
+   {
+    "variant": "saturating K=2",
+    "range": [
+     0.2,
+     0.6
+    ],
+    "mean": 22.033,
+    "sd": 0.94
+   },
+   {
+    "variant": "clamp_linear",
+    "range": [
+     0.4,
+     0.9
+    ],
+    "mean": 18.477,
+    "sd": 0.947
+   },
+   {
+    "variant": "threshold θ=0",
+    "range": [
+     0.4,
+     0.9
+    ],
+    "mean": 12,
+    "sd": 0
+   },
+   {
+    "variant": "threshold θ=0.25",
+    "range": [
+     0.4,
+     0.9
+    ],
+    "mean": 12,
+    "sd": 0
+   },
+   {
+    "variant": "threshold θ=0.5",
+    "range": [
+     0.4,
+     0.9
+    ],
+    "mean": 14.691,
+    "sd": 1.72
+   },
+   {
+    "variant": "threshold θ=0.75",
+    "range": [
+     0.4,
+     0.9
+    ],
+    "mean": 32.87,
+    "sd": 6.494
+   },
+   {
+    "variant": "threshold θ=1",
+    "range": [
+     0.4,
+     0.9
+    ],
+    "mean": 120,
+    "sd": 0
+   },
+   {
+    "variant": "saturating K=0.1",
+    "range": [
+     0.4,
+     0.9
+    ],
+    "mean": 12.594,
+    "sd": 0.103
+   },
+   {
+    "variant": "saturating K=0.5",
+    "range": [
+     0.4,
+     0.9
+    ],
+    "mean": 14.058,
+    "sd": 0.337
+   },
+   {
+    "variant": "saturating K=2",
+    "range": [
+     0.4,
+     0.9
+    ],
+    "mean": 15.875,
+    "sd": 0.585
+   }
+  ]
+ },
+ "identifiability": {
+  "endpoints": "N(1) = 1 for every form and every legal θ ∈ [0, 1], K > 0. N(0) = n_min for clamp_linear, every saturating K > 0 and every threshold θ ∈ (0, 1]; the legal θ = 0 is the exception: x ≥ 0 always holds, so N ≡ 1 and an unfed larva develops at the full rate",
+  "endpoints_shared_except_theta0": "excluding threshold θ = 0, any feeding history made only of unfed days (x = 0) and fully fed days (x = 1) gives the same development under every form and every θ, K",
+  "phillips_1933": "unfed then fed: x ∈ {0, 1} only. It CAN separate threshold θ = 0 (no slowdown when unfed; E2 gives larva_days) from every other variant, and its direction \"no food, slower development; resumes when fed\" excludes θ = 0. It cannot distinguish the remaining forms (E2 spread across them ≈ 0)",
+  "yuan_2026": "ad libitum: x = 1 only -> cannot distinguish any variant, θ = 0 included (E3 spread 0)",
+  "conclusion": "With the species data in hand the form is NOT identifiable, beyond excluding threshold θ = 0 (and, in the same way, any variant with N(0) = 1) by the Phillips direction. Distinguishing data would be development time under controlled PARTIAL rations (several intermediate x levels, per individual), which no species study in docs/references.md reports. Outside θ = 0, n_min is a game assumption and fully determines the unfed rate."
+ }
+}
