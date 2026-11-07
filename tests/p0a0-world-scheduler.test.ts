@@ -11,6 +11,7 @@
  *     pending events are not reset at 24:00; days must run in order;
  *  5. exactly once: every id ends executed or cancelled or pending, once; an invalid batch output changes nothing;
  *  6. illegal times, ids, kinds, references, payloads, transitions and snapshots are refused;
+ *  8. (Codex R9-01 / R10) no re-entry while the handler OUTPUT or any caller object is read (getters, proxies, toString).
  *  7. (Claude subagent review, not Codex) handlers cannot re-enter the scheduler; readers get frozen copies; time is on
  *     an integer tick grid (0.1 + 0.2 = 0.3 is one instant); a world input cannot join an instant already processed;
  *     24:00 belongs to the next day; restore refuses each inconsistency found by mutation; verifyLog checks a post-restore
@@ -355,6 +356,72 @@ const split3 = harness(42, world(3, 12), 3, { split: true });
     bad((x) => { x.events = null as never; }, /must be an array/, 'restore refuses events: null with a SchedulerError');
     bad((x) => { x.events[0].at = { day: x.events[0].at.day, minute: x.events[0].at.minute + 1e-9 }; }, /tick grid|not after|before its cause|executed but/, 'restore refuses a time off the tick grid');
   }
+}
+
+// 8. Codex R9-01 / R10 §4: re-entry while the OUTPUT (or any caller object) is read, not only inside the handler body
+{
+  const root = (s: WorldScheduler, key: string, minute: number) => s.schedule({ kind: 'a', key, at: { day: 0, minute }, scope: ref(null, null), source: null, target: null });
+  const mk = () => { const s = new WorldScheduler(W); root(s, 'now', 1); root(s, 'future', 10); return s; };
+  const same = (s: WorldScheduler, snap: string, logN: number, why: string) => ok(JSON.stringify(s.snapshot()) === snap && s.log.length === logN && s.audit().executed === 0 && s.audit().cancelled === 0, why);
+  // (1) Codex case: the cancel getter cancels another pending event, then throws -> nothing changes
+  {
+    const s = mk(), snap = JSON.stringify(s.snapshot()), n = s.log.length; let inner: unknown = null;
+    assert.throws(() => s.step(() => ({ get cancel() { try { s.cancel('a:future', 'sneak'); } catch (e) { inner = e; } throw new Error('getter fails'); } }) as unknown as StepOutput));
+    ok(inner instanceof SchedulerError && /while its output is read/.test(String(inner)), 'R10-1: cancel() from an output getter is refused');
+    same(s, snap, n, 'R10-1: after the failed step both events are still scheduled, log and snapshot unchanged');
+    ok(s.get('a:future')!.state === 'scheduled' && s.get('a:now')!.state === 'scheduled', 'R10-1: future not cancelled, now not executed');
+  }
+  // (2) Codex case: the getter schedules an EARLIER root (minute 0.5) and returns [] -> refused; the clock never goes back
+  {
+    const s = mk(); let inner: unknown = null;
+    s.step(() => ({ get cancel() { try { root(s, 'early', 0.5); } catch (e) { inner = e; } return []; } }) as unknown as StepOutput);
+    ok(inner instanceof SchedulerError, 'R10-2: schedule() from an output getter is refused');
+    ok(s.get('a:early') === undefined, 'R10-2: the earlier event was not created');
+    const clock: number[] = []; s.runUntil({ day: 1, minute: 0 }, (b, ctx) => { clock.push(ctx.at.minute); });
+    ok(clock.length === 1 && clock[0] === 10 && verifyLog(s.log).ok, 'R10-2: later batches never run before the committed minute 1 (no clock reversal)');
+  }
+  // (3) every mutating API from every read path of step output is refused, and the batch stays atomic
+  const mutators: [string, (s: WorldScheduler) => unknown][] = [['cancel', (s) => s.cancel('a:future', 'r')], ['schedule', (s) => root(s, 'z', 0.5)], ['step', (s) => s.step(() => {})], ['runUntil', (s) => s.runUntil({ day: 1, minute: 0 }, () => {})], ['runDay', (s) => s.runDay(0, () => {})], ['snapshot', (s) => s.snapshot()]];
+  const paths: [string, (f: () => void) => unknown][] = [
+    ['children getter', (f) => ({ get children() { f(); return []; } })],
+    ['children array index getter', (f) => ({ children: Object.defineProperty([], 0, { get() { f(); return { cause: 'a:now', spec: { kind: 'b', key: 'k', at: { day: 0, minute: 2 }, scope: ref(null, null), source: null, target: null } }; }, enumerable: true }) })],
+    ['spec at getter', (f) => ({ children: [{ cause: 'a:now', spec: { kind: 'b', key: 'k', get at() { f(); return { day: 0, minute: 2 }; }, scope: ref(null, null), source: null, target: null } }] })],
+    ['payload getter', (f) => ({ children: [{ cause: 'a:now', spec: { kind: 'b', key: 'k', at: { day: 0, minute: 2 }, scope: ref(null, null), source: null, target: null, payload: { get v() { f(); return 1; } } } }] })],
+    ['cause toString', (f) => ({ children: [{ cause: { toString() { f(); return 'a:now'; } }, spec: { kind: 'b', key: 'k', at: { day: 0, minute: 2 }, scope: ref(null, null), source: null, target: null } }] })],
+    ['cancel id toString', (f) => ({ cancel: [{ id: { toString() { f(); return 'a:future'; } }, reason: 'r' }] })],
+    ['Proxy ownKeys trap', (f) => new Proxy({ cancel: [] }, { ownKeys(t) { f(); return Reflect.ownKeys(t); } })],
+    ['Proxy get trap', (f) => new Proxy({ cancel: [] }, { get(t, k, r) { f(); return Reflect.get(t, k, r); } })],
+  ];
+  for (const [pw, mkOut] of paths) for (const [mw, m] of mutators) {
+    const s = mk(), snap = JSON.stringify(s.snapshot()), n = s.log.length; let inner: unknown = null;
+    try { s.step(() => mkOut(() => { try { m(s); } catch (e) { inner = e; } throw new Error('stop'); }) as StepOutput); } catch { /* the step itself fails (or rejects the shape) */ }
+    ok(inner === null || (inner instanceof SchedulerError && /while its output is read/.test(String(inner))), `${pw} -> ${mw}: re-entry refused (or never reached)`);
+    same(s, snap, n, `${pw} -> ${mw}: state, log and snapshot unchanged after the failed step`);
+  }
+  // (4) a getter that swallows the refusal and returns a VALID output: the step commits only its own output
+  {
+    const s = mk();
+    s.step(() => ({ get cancel() { try { s.cancel('a:future', 'sneak'); } catch { /* refused */ } return []; } }) as unknown as StepOutput);
+    ok(s.get('a:now')!.state === 'executed' && s.get('a:future')!.state === 'scheduled' && s.log.length === 1, 'swallowed re-entry: only the batch itself was committed');
+  }
+  // (5) the same guard covers schedule()/cancel()/runUntil() reading THEIR caller objects
+  {
+    const s = mk(), snap = JSON.stringify(s.snapshot()); let inner: unknown = null;
+    assert.throws(() => s.schedule({ kind: 'b', key: 'g', get at() { try { s.cancel('a:future', 'sneak'); } catch (e) { inner = e; } throw new Error('stop'); }, scope: ref(null, null), source: null, target: null } as unknown as EventSpec));
+    ok(inner instanceof SchedulerError && /while schedule is reading its input/.test(String(inner)), 'schedule(): a spec getter cannot cancel');
+    ok(JSON.stringify(s.snapshot()) === snap, 'schedule(): state unchanged');
+    let inner2: unknown = null;
+    const id2 = s.schedule({ kind: 'b', key: 'h', get at() { try { root(s, 'other', 3); } catch (e) { inner2 = e; } return { day: 0, minute: 2 }; }, scope: ref(null, null), source: null, target: null } as unknown as EventSpec);
+    ok(inner2 instanceof SchedulerError && s.get('a:other') === undefined && s.get(id2)!.state === 'scheduled', 'schedule(): a spec getter cannot schedule another event');
+    let inner3: unknown = null;
+    assert.throws(() => s.cancel({ toString() { try { root(s, 'x2', 3); } catch (e) { inner3 = e; } return 'a:future'; } } as unknown as string, 'r'));
+    ok((inner3 === null || inner3 instanceof SchedulerError) && s.get('a:x2') === undefined && s.get('a:future')!.state === 'scheduled', 'cancel(): a non-string id is refused and its toString cannot schedule');
+    let inner4: unknown = null;
+    const s4 = mk(); const n4 = s4.runUntil({ day: 0, get minute() { try { root(s4, 'r4', 0.5); } catch (e) { inner4 = e; } return 5; } } as unknown as { day: number; minute: number }, () => {});
+    ok(inner4 instanceof SchedulerError && s4.get('a:r4') === undefined && n4 === 1, 'runUntil(): an end getter cannot schedule');
+  }
+  // (6) the guard is always released: after every refusal above the scheduler works normally
+  { const s = mk(); try { s.step(() => { throw new Error('x'); }); } catch { /* */ } s.runUntil({ day: 1, minute: 0 }, () => {}); ok(s.audit().executed === 2 && verifyLog(s.log).ok, 'guard released in finally: later steps run'); }
 }
 
 console.log(JSON.stringify({ test: 'p0a0-world-scheduler', passed: true, checks, harness: base.s.audit() }));
