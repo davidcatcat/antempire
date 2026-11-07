@@ -222,7 +222,8 @@ export class WorldScheduler {
   private seq = 0;
   /** events already executed or cancelled when this instance was restored (their log entries belong to the earlier segment) */
   private finishedAtRestore = 0;
-  private inHandler = false;
+  /** the operation that currently holds the scheduler (handler call, or reading a caller's object), else null */
+  private busy: string | null = null;
   /** last day closed by runDay() (-1: none); nothing may be scheduled on or before it */
   private closedDay = -1;
 
@@ -232,7 +233,16 @@ export class WorldScheduler {
     this.world = world; this.clockAt = checkTime(start, 'start');
   }
 
-  private guard(op: string): void { if (this.inHandler) fail(`${op} called from inside a batch handler: return children / cancellations instead`); }
+  private guard(op: string): void {
+    if (this.busy === null) return;
+    if (this.busy === 'step') fail(`${op} called from inside a batch handler or while its output is read: return children / cancellations instead`);
+    fail(`${op} called while ${this.busy} is reading its input (a getter or proxy may not re-enter the scheduler)`);
+  }
+  /** run fn holding the scheduler: any re-entry (from a handler, a getter, a proxy trap or toString) is refused until fn ends */
+  private exclusive<T>(op: string, fn: () => T): T {
+    this.guard(op); this.busy = op;
+    try { return fn(); } finally { this.busy = null; }
+  }
   get clock(): { at: WorldTime; round: number } { return { at: { ...this.clockAt }, round: this.clockRound }; }
   /** a frozen copy of this instance's log (entries since construction or restore) */
   get log(): readonly LogEntry[] { return view(this.logEntries); }
@@ -270,14 +280,15 @@ export class WorldScheduler {
 
   /** schedule a ROOT event (a world input, no cause) from outside a batch. Returns its id. */
   schedule(spec: EventSpec): string {
-    this.guard('schedule');
-    const e = this.build(copySpec(spec), null, null);
-    if (this.events.has(e.id)) fail(`duplicate event id ${e.id}`);
-    this.events.set(e.id, e); this.heap.push(e); return e.id;
+    return this.exclusive('schedule', () => {
+      const e = this.build(copySpec(spec), null, null);
+      if (this.events.has(e.id)) fail(`duplicate event id ${e.id}`);
+      this.events.set(e.id, e); this.heap.push(e); return e.id;
+    });
   }
 
   /** cancel a pending event from outside a batch */
-  cancel(id: string, reason: string): void { this.guard('cancel'); const cs = [{ id, reason }]; this.checkCancels(cs, new Set()); this.applyCancels(cs, null); }
+  cancel(id: string, reason: string): void { this.exclusive('cancel', () => { const cs = [{ id, reason }]; this.checkCancels(cs, new Set()); this.applyCancels(cs, null); }); }
 
   private checkCancels(cs: Cancel[], inBatch: Set<string>): void {
     if (!Array.isArray(cs)) fail('cancel must be an array');
@@ -312,36 +323,36 @@ export class WorldScheduler {
    * in full before anything changes; on any error the batch stays pending and the state is unchanged.
    */
   step(handler: Handler): Readonly<WorldEvent>[] {
-    this.guard('step');
-    const top = this.nextBatchAt(); if (!top) return [];
-    const batch: WorldEvent[] = [];
-    while (this.heap.size) { this.dropCancelledTop(); const t = this.heap.peek(); if (!t || compareTime(t.at, top.at) !== 0 || t.round !== top.round) break; batch.push(this.heap.pop()!); }
-    const inBatch = new Set(batch.map((e) => e.id)), restore = () => { for (const e of batch) this.heap.push(e); };
-    let raw: StepOutput | void;
-    this.inHandler = true;
-    try { raw = handler(view(batch), { at: { ...top.at }, round: top.round }); }
-    catch (err) { restore(); throw err; }
-    finally { this.inHandler = false; }
-    // read the output ONCE into plain data, validate that copy in full, and commit only that copy (atomic batch)
-    let out: ReturnType<typeof copyOutput>;
-    const children: WorldEvent[] = [], newIds = new Set<string>();
-    try {
-      out = copyOutput(raw);
-      for (const c of out.children) {
-        if (typeof c.cause !== 'string' || !inBatch.has(c.cause)) fail(`a child must name a cause in the current batch (got ${c.cause})`);
-        const e = this.build(c.spec, this.events.get(c.cause)!, top);
-        if (this.events.has(e.id) || newIds.has(e.id)) fail(`duplicate event id ${e.id}`);
-        newIds.add(e.id); children.push(e);
-      }
-      this.checkCancels(out.cancel, inBatch);
-    } catch (err) { restore(); throw err; }
-    // nothing below can fail: every value was validated above and is no longer read from the producer
-    // commit: the batch executes, then its cancellations, then its children are queued
-    this.started = true; this.clockAt = { ...top.at }; this.clockRound = top.round;
-    for (const e of batch) { e.state = 'executed'; this.logEntries.push({ seq: this.seq++, id: e.id, kind: e.kind, at: { ...e.at }, round: e.round, cause: e.cause, state: 'executed', by: null, reason: null }); }
-    this.applyCancels(out.cancel, batch.length === 1 ? batch[0].id : `batch@${fmt(top.at)}#${top.round}`);
-    for (const e of children) { this.events.set(e.id, e); this.heap.push(e); }
-    return view(batch);
+    // the scheduler is held from before the batch is taken until after the commit: the handler, every read of its output
+    // (getters, proxy traps, toString in messages) and the validation run with re-entry refused; on any error the batch
+    // goes back and nothing else has changed (the guard is released in finally, whatever happens)
+    return this.exclusive('step', () => {
+      const top = this.nextBatchAt(); if (!top) return [];
+      const batch: WorldEvent[] = [];
+      while (this.heap.size) { this.dropCancelledTop(); const t = this.heap.peek(); if (!t || compareTime(t.at, top.at) !== 0 || t.round !== top.round) break; batch.push(this.heap.pop()!); }
+      const inBatch = new Set(batch.map((e) => e.id));
+      // read the output ONCE into plain data, validate that copy in full, and commit only that copy (atomic batch)
+      let out: ReturnType<typeof copyOutput>;
+      const children: WorldEvent[] = [], newIds = new Set<string>();
+      try {
+        const raw = handler(view(batch), { at: { ...top.at }, round: top.round });
+        out = copyOutput(raw);
+        for (const c of out.children) {
+          if (typeof c.cause !== 'string' || !inBatch.has(c.cause)) fail(`a child must name a cause in the current batch (got ${c.cause})`);
+          const e = this.build(c.spec, this.events.get(c.cause)!, top);
+          if (this.events.has(e.id) || newIds.has(e.id)) fail(`duplicate event id ${e.id}`);
+          newIds.add(e.id); children.push(e);
+        }
+        this.checkCancels(out.cancel, inBatch);
+      } catch (err) { for (const e of batch) this.heap.push(e); throw err; }
+      // nothing below can fail: every value was validated above and is no longer read from the producer
+      // commit: the batch executes, then its cancellations, then its children are queued
+      this.started = true; this.clockAt = { ...top.at }; this.clockRound = top.round;
+      for (const e of batch) { e.state = 'executed'; this.logEntries.push({ seq: this.seq++, id: e.id, kind: e.kind, at: { ...e.at }, round: e.round, cause: e.cause, state: 'executed', by: null, reason: null }); }
+      this.applyCancels(out.cancel, batch.length === 1 ? batch[0].id : `batch@${fmt(top.at)}#${top.round}`);
+      for (const e of children) { this.events.set(e.id, e); this.heap.push(e); }
+      return view(batch);
+    });
   }
 
   /**
@@ -350,7 +361,7 @@ export class WorldScheduler {
    */
   runUntil(end: WorldTime, handler: Handler, maxBatches = 1_000_000): number {
     this.guard('runUntil');
-    const e = checkTime(end, 'runUntil end');
+    const e = this.exclusive('runUntil', () => { const t = checkTime(end, 'runUntil end'); return { day: t.day, minute: t.minute }; });
     let n = 0;
     for (;;) { const nx = this.nextBatchAt(); if (!nx || compareTime(nx.at, e) >= 0) break; if (++n > maxBatches) fail(`more than ${maxBatches} batches before ${fmt(e)} (runaway schedule?)`); this.step(handler); }
     return n;
