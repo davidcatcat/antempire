@@ -78,10 +78,12 @@ export function judge(sc: Scenario, tr: Trajectory, opts: JudgeOptions = {}): Ju
       const res = lanes.map((f) => capsuleInLane(f.lane2, c));
       if (!res.some((x) => x.inside)) {
         // not wholly inside one band: if both axis-end discs lie in some band each, the body straddles a junction of bands
-        // (union not proven by the straight-band contract) → not_checked; otherwise it is outside the walkable bands
+        // (the contract is exact per lane; the union of two lanes' regions at a junction is not proven) → not_checked;
+        // otherwise it is outside the walkable bands
         const discIn = (q: { x: number; y: number }) => lanes.some((f) => { const pr = project(f, q.x, q.y); return pr.s - c.r >= -OCC_TOL_MM && pr.s + c.r <= f.length + OCC_TOL_MM && Math.abs(pr.u) + c.r <= f.width / 2 + OCC_TOL_MM; });
         if (lanes.length > 1 && discIn(c.a) && discIn(c.b)) r.junction_not_checked_agent_instants++;
-        else if (res.some((x) => x.checked)) {
+        // a body extending past the end of every lane it could belong to is in the node there (not modelled): not_checked
+        else if (res.some((x) => x.checked) && lanes.some((f) => { const pa = project(f, c.a.x, c.a.y), pb = project(f, c.b.x, c.b.y); return Math.min(pa.s, pb.s) - c.r >= -OCC_TOL_MM && Math.max(pa.s, pb.s) + c.r <= f.length + OCC_TOL_MM; })) {
           r.out_of_walkable_agent_instants++;
           const ex = Math.min(...lanes.map((f) => { const pa = project(f, c.a.x, c.a.y), pb = project(f, c.b.x, c.b.y); return Math.max(Math.abs(pa.u), Math.abs(pb.u)) + c.r - f.width / 2; }));
           r.max_out_of_walkable_mm = Math.max(r.max_out_of_walkable_mm, ex); if (ex > COARSE_TOL_MM) r.out_of_walkable_gt_coarse++;
@@ -100,7 +102,7 @@ export function judge(sc: Scenario, tr: Trajectory, opts: JudgeOptions = {}): Ju
       let bad = false;
       for (let i = 0; i < A.length; i++) { const f = frames.get(A[i].lane)!, q = project(f, cur[i].p.x, cur[i].p.y); if (q.s < 0 || q.s > f.length) { bad = true; break; } bodies.push({ id: ids[i], lane: A[i].lane, s_mm: q.s, u_mm: q.u, dir: Math.cos(cur[i].p.heading) * f.t.x + Math.sin(cur[i].p.heading) * f.t.y >= 0 ? 1 : -1, body, layer: A[i].layer }); }
       occ.instants++;
-      if (bad) occ.not_checked++; else for (const v of checkOccupancy2D(sc.lanes.map((l) => frames.get(l.passage.id)!.lane2), bodies)) occ[v.kind]++;
+      if (bad) occ.not_checked++; else { const res = checkOccupancy2D(sc.lanes.map((l) => frames.get(l.passage.id)!.lane2), bodies); for (const v of res.violations) occ[v.kind]++; occ.not_checked += res.not_checked.length; }
     }
     const last = k === times.length - 1, t1 = last ? t0 : times[k + 1], dt = t1 - t0;
     const nxt = last ? cur : capsAt(t1);
