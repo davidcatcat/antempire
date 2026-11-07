@@ -254,7 +254,7 @@ export function walkSpeedAt(d: ExperimentDay, workerId: string, t: number, links
   return null;
 }
 
-export interface DayPoint { day: number; date: string; workers: number; eggs: number; larvae: number; pupae: number; store_sugar: number; store_protein: number; garden_sugar: number; garden_protein: number; income_sugar: number | null; income_protein: number | null; air_c: number | null; nest_c: number | null; rain_mm: number | null; deaths: number | null; eclosions: number | null; eggs_laid: number | null }
+export interface DayPoint { day: number; date: string; workers: number; eggs: number; larvae: number; pupae: number; store_sugar: number; store_protein: number; garden_sugar: number; garden_protein: number; income_sugar: number | null; income_protein: number | null; air_c: number | null; nest_c: number | null; rain_mm: number | null; deaths: number | null; eclosions: number | null; eggs_laid: number | null; insects: number; hemipteran_colonies: number; hosts_alive: number }
 /** One point per recorded state: Day0 (the initial state; no daily flows) and the END of every simulated day. Values are
  *  copied from the export (engine end-of-day state and day summary); nothing is smoothed or interpolated. */
 export function dailySeries(exp: Experiment): DayPoint[] {
@@ -263,7 +263,109 @@ export function dailySeries(exp: Experiment): DayPoint[] {
     return { day, date, workers: s.workers.length, eggs: n('egg'), larvae: n('larva'), pupae: n('pupa'), store_sugar: s.stores.sugar, store_protein: s.stores.protein,
       garden_sugar: src.reduce((q, x) => q + x.sugar, 0), garden_protein: src.reduce((q, x) => q + x.protein, 0),
       income_sugar: d ? d.income.sugar : null, income_protein: d ? d.income.protein : null, air_c: d ? d.weather.air_temp_c : null, nest_c: d ? d.weather.nest_temp_c : null, rain_mm: d ? d.weather.rain_mm : null,
-      deaths: d ? d.worker_deaths : null, eclosions: d ? d.eclosions : null, eggs_laid: d ? d.eggs_laid : null };
+      deaths: d ? d.worker_deaths : null, eclosions: d ? d.eclosions : null, eggs_laid: d ? d.eggs_laid : null,
+      // V5: garden biota at the end of the day (observer view; copied from the engine state)
+      insects: Object.values(s.insects).reduce((q, x) => q + x, 0), hemipteran_colonies: src.reduce((q, x) => q + (x.hemipteran_colonies ?? 0), 0), hosts_alive: src.filter((x) => x.host_alive === true).length };
   };
   return [pt(0, exp.day0.date, exp.day0.state, null), ...exp.days.map((d) => pt(d.day, d.date, d.end_state, d))];
+}
+
+// ───────────────────────── V5: event categories, cross-day filter, event map marks, recorded routes ─────────────────────────
+// Read-only views over recorded events. A category is a grouping of the engine's event TYPE (a fixed table), never a
+// judgement about what an ant "meant"; no event, minute or place is created.
+
+export type EventCategory = 'forage' | 'social' | 'explore' | 'hunt' | 'death' | 'brood' | 'care' | 'ecology' | 'other';
+export const EVENT_CATEGORY: Record<string, EventCategory> = {
+  discovery: 'forage', scouted_empty: 'forage', food_collected: 'forage', food_delivered: 'forage', forager_stopped: 'forage', action_cancelled_no_time: 'forage', no_route_cannot_depart: 'forage', protein_cached_at_nest: 'forage',
+  local_recruitment: 'social', trophallaxis: 'social', recruitment_no_nestmate: 'social', recruitment_failed: 'social', food_transfer: 'social',
+  exploration_step: 'explore', exploration_found_nothing: 'explore', exploration_no_new_direction: 'explore',
+  live_prey_encounter: 'hunt', insect_predation: 'hunt', prey_escaped: 'hunt', joint_prey_transport: 'hunt', hunt_recruitment: 'hunt', waiting_prey_joined: 'hunt',
+  worker_death: 'death', brood_death: 'death', queen_death: 'death',
+  egg_laid: 'brood', hatch: 'brood', pupation: 'brood', eclosion: 'brood',
+  // individual brood-care contacts exist only in the default-OFF C3a/C4a nest round; the committed replays contain none
+  larva_contact: 'care', local_brood_begging_contact: 'care', queen_contact: 'care', queen_encounter_food: 'care',
+  insect_natural_death: 'ecology', insect_background_death: 'ecology', insect_population_birth: 'ecology', insect_immigration: 'ecology', host_plant_death: 'ecology', hemipteran_colony_change: 'ecology', new_food_source: 'ecology',
+};
+export const CATEGORY_LABEL: Record<EventCategory, string> = { forage: '覓食與採集', social: '招募與交哺', explore: '探索', hunt: '捕獵', death: '死亡', brood: '產卵與發育', care: '育幼接觸', ecology: '環境生態', other: '其他' };
+export const categoryOf = (e: SimEvent): EventCategory => EVENT_CATEGORY[e.type] ?? 'other';
+
+export interface TimelineRow { day: number; i: number; e: SimEvent; t: number }
+/** Every listed event of the replay (all days), each day in dayTimeline order; `t` = recorded minute or Infinity
+ *  (end-of-day settlement, no clock time). */
+export function allTimeline(exp: Experiment): TimelineRow[] {
+  return exp.days.flatMap((d) => dayTimeline(d).map((r) => ({ day: d.day, i: r.i, e: r.e, t: r.t })));
+}
+/** Filter timeline rows by category set (empty = all) and by a worker named in the record (null = anyone). */
+export function filterRows<R extends { e: SimEvent }>(rows: R[], cats: ReadonlySet<EventCategory>, worker: string | null): R[] {
+  return rows.filter((r) => (!cats.size || cats.has(categoryOf(r.e))) && (!worker || eventWorkers(r.e).includes(worker)));
+}
+/** Counts of events per category (for the filter chips). */
+export function categoryCounts(rows: { e: SimEvent }[]): Record<EventCategory, number> {
+  const out = Object.fromEntries(Object.keys(CATEGORY_LABEL).map((k) => [k, 0])) as Record<EventCategory, number>;
+  for (const r of rows) out[categoryOf(r.e)]++;
+  return out;
+}
+
+export interface PlaceMark { place: string; total: number; byCat: Partial<Record<EventCategory, number>> }
+export interface EventMarks { marks: PlaceMark[]; noPlace: number; unknownPlace: number; noPlaceByCat: Partial<Record<EventCategory, number>> }
+/**
+ * Where the given events HAPPENED, grouped by recorded place (EVENT_PLACE_FIELD only). Events without a place field
+ * (deaths, egg laying, development, recruitment contacts …) are only counted (noPlace) — never put on the map;
+ * events at a place with no recorded bearing+distance are counted (unknownPlace) and drawn only in the unknown tray.
+ */
+export function eventMarks(events: SimEvent[], pos: Record<string, { known: boolean }>): EventMarks {
+  const by = new Map<string, PlaceMark>(), noPlaceByCat: Partial<Record<EventCategory, number>> = {};
+  let noPlace = 0, unknownPlace = 0;
+  for (const e of events) {
+    const p = eventPlace(e, pos), c = categoryOf(e);
+    if (!p.place || !pos[p.place]) { noPlace++; noPlaceByCat[c] = (noPlaceByCat[c] ?? 0) + 1; continue; }
+    if (!p.known) unknownPlace++;
+    const m = by.get(p.place) ?? { place: p.place, total: 0, byCat: {} };
+    m.total++; m.byCat[c] = (m.byCat[c] ?? 0) + 1; by.set(p.place, m);
+  }
+  return { marks: [...by.values()].sort((a, b) => (a.place < b.place ? -1 : 1)), noPlace, unknownPlace, noPlaceByCat };
+}
+
+export interface RouteLeg { from: string; to: string; t0: number | null; t1: number | null; recorded: boolean; length_cm: number | null; mm_s: number | null; segment_action: string; seg_start: number; seg_end: number }
+/**
+ * The recorded walk of one worker on one day, edge by edge: t0 = the previous recorded point (segment start or the
+ * previous route_step arrival; null after an edge whose arrival was not recorded), t1 = the engine's route_step arrival minute at `to`, or null when the engine recorded
+ * no arrival for that edge (the map then only interpolates the drawing; the time is NOT shown as recorded).
+ * mm_s is DERIVED (recorded length / recorded time) and null whenever either is missing.
+ */
+export function recordedRoute(d: ExperimentDay, workerId: string, links: Link[]): RouteLeg[] {
+  const legs: RouteLeg[] = [];
+  for (const s of segmentsOf(d, workerId)) {
+    const start = s.start as number, end = s.end as number, place = s.place as string;
+    if (!place.includes('>')) continue;
+    const route = place.split('>');
+    const steps = d.events.filter((e) => e.type === 'route_step' && e.worker === workerId && (e.minute as number) > start - 1e-9 && (e.minute as number) <= end + 1e-9);
+    let prev: number | null = start;
+    for (let i = 1; i < route.length; i++) {
+      const a = route[i - 1], b = route[i], p0: number | null = prev;
+      const st: SimEvent | undefined = p0 === null ? undefined : steps.find((e) => e.from === a && e.to === b && (e.minute as number) >= p0 - 1e-9);
+      const t1: number | null = st ? (st.minute as number) : null, l = links.find((x) => (x.from === a && x.to === b) || (x.from === b && x.to === a));
+      const len = typeof l?.length_cm === 'number' ? l.length_cm : null, t0 = p0;
+      legs.push({ from: a, to: b, t0, t1, recorded: t1 !== null && t0 !== null, length_cm: len, mm_s: len !== null && t1 !== null && t0 !== null && t1 > t0 ? (len * 10) / ((t1 - t0) * 60) : null, segment_action: s.action as string, seg_start: start, seg_end: end });
+      prev = t1;
+    }
+  }
+  return legs;
+}
+export interface RouteSummary { legs: number; recorded_legs: number; length_cm: number | null; walk_min: number | null }
+/** Totals of the legs completed by minute t (DERIVED): length = sum of recorded edge lengths (null if any is missing);
+ *  walking minutes = sum of recorded edge times (null if any arrival is missing). */
+export function routeSummary(legs: RouteLeg[], t: number): RouteSummary {
+  const done = legs.filter((l) => l.t1 !== null && l.t1 <= t + 1e-9);
+  const len = done.every((l) => l.length_cm !== null) ? done.reduce((q, l) => q + (l.length_cm as number), 0) : null;
+  const min = done.every((l) => l.recorded) ? done.reduce((q, l) => q + ((l.t1 as number) - (l.t0 as number)), 0) : null;
+  return { legs: done.length, recorded_legs: done.filter((l) => l.recorded).length, length_cm: len, walk_min: min };
+}
+
+/** Brood / new-worker IDs an event names, for highlighting in the (non-spatial) nest roster. */
+export function eventBroodIds(e: SimEvent): string[] {
+  if (e.type === 'eclosion') return [e.source_brood_id, e.new_worker_id].filter((x): x is string => typeof x === 'string');
+  if (['egg_laid', 'hatch', 'pupation', 'brood_death'].includes(e.type) && typeof e.id === 'string') return [e.id];
+  if (e.type === 'larva_contact' && typeof e.larva === 'string') return [e.larva];
+  return [];
 }

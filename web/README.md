@@ -67,6 +67,7 @@ npm run web          # 編譯 web/src → web/dist，並在 http://localhost:878
 - `tests/browser/web-viewer.check.cjs`（**CI 的 viewer-smoke 工作**，也可本機執行）：桌面與手機視窗；正式快照＝存檔的存活工蟻；每個實驗世界標示「非正式」；移動中的工蟻被選取時**必須**顯示「位置為顯示插值」，缺少就失敗；跨日、死亡、羽化與引擎資料一致；重播最後一刻與播放到底會停止；切回正式快照後不殘留實驗資料；無頁面錯誤。
 - `tests/web-v3-follow.test.ts`（Node，CI）：所有實驗的每一筆事件，跳轉時間＝紀錄的分鐘或日終結算、地點只來自發生地點欄位、相關工蟻都是重播中的工蟻；事件時刻工蟻畫在紀錄的地點；死亡、羽化、位置未知的追蹤狀態；資料凍結下執行（不寫入）。
 - `tests/browser/web-follow.check.cjs`（CI，Playwright）：桌面滑鼠與 Android Pixel 7 觸控的追蹤、取消、跨日、死亡、羽化、位置未知、事件跳轉、篩選與正式／實驗隔離。
+- `tests/web-v5-observer.test.ts`（Node，CI）與 `tests/browser/web-v5.check.cjs`（CI，Playwright，桌面 1280×800 與 412×915 觸控、DPR 2，並產生功能截圖）：V5 事件類別篩選與全部日子範圍、事件地圖標記、紀錄路線、巢內名冊標示、每日事件數與花園生物圖、畫布上的世界標示。說明見 [`docs/viewer-v5.md`](../docs/viewer-v5.md)。
 - 實驗世界：A1、A5、A4（蟻后＋帶來的蛹；涵蓋羽化），秋季，種子 20270001，各 30 日。
 
 引擎規則變更後，要重新執行 `npm run web:export` 並提交 `web/data/`，否則 `tests/web.test.ts` 會失敗。

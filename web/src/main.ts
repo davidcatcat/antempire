@@ -3,14 +3,14 @@
  * Day14 snapshot (static) and engine-generated experimental Day0 replays. It never runs the simulation, never
  * writes anything, and every position between two recorded points is a display interpolation (model.poseAt).
  */
-import { CHARTS, panelHtml, tableHtml, readout, dayAtX } from './charts.ts';
-import { dailySeries, walkSpeedAt, type DayPoint, ACTION_LABEL, NEST, assertKind, REASON_LABEL, TASK_LABEL, describeEvent, displayPositions, eventsUntil, exploredEdges, poseAt, segmentsOf, stateAtStart, taskOf, trailScale, type Experiment, type Official, type Place, type Link, stateAt, isSettled, windowOf, SETTLEMENT_STEP, dayTimeline, eventJump, eventWorkers, followStatus, type EventJump } from './model.ts';
+import { CHARTS, FLOW_CHARTS, FLOW_COLUMNS, panelHtml, tableHtml, readout, dayAtX } from './charts.ts';
+import { dailySeries, walkSpeedAt, type DayPoint, ACTION_LABEL, NEST, assertKind, REASON_LABEL, TASK_LABEL, describeEvent, displayPositions, eventsUntil, exploredEdges, poseAt, segmentsOf, stateAtStart, taskOf, trailScale, type Experiment, type Official, type Place, type Link, stateAt, isSettled, windowOf, SETTLEMENT_STEP, dayTimeline, eventJump, eventWorkers, followStatus, type EventJump, allTimeline, filterRows, categoryCounts, categoryOf, CATEGORY_LABEL, eventMarks, recordedRoute, routeSummary, eventBroodIds, type EventCategory, type TimelineRow, type RouteLeg } from './model.ts';
 
 type Pos = Record<string, { x: number; y: number; known: boolean }>;
 interface Index { official: string; experiments: { id: string; file: string; title: string }[] }
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const canvas = $<HTMLCanvasElement>('map'), ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-const ui = { mode: $<HTMLSelectElement>('mode'), day: $<HTMLInputElement>('day'), minute: $<HTMLInputElement>('minute'), play: $<HTMLButtonElement>('play'), speed: $<HTMLSelectElement>('speed'), time: $('timeLabel'), badge: $('badge'), info: $('info'), events: $('events'), nest: $('nest'), weather: $('weather'), view: $<HTMLSelectElement>('view'), ovTrail: $<HTMLInputElement>('ovTrail'), ovExplored: $<HTMLInputElement>('ovExplored'), ovFood: $<HTMLInputElement>('ovFood'), ovLabels: $<HTMLInputElement>('ovLabels'), ovTask: $<HTMLInputElement>('ovTask'), legend: $('legend'), timeline: $('timeline'), follow: $<HTMLButtonElement>('follow'), who: $<HTMLSelectElement>('who'), followMsg: $('followMsg'), jump: $('jump'), evMine: $<HTMLInputElement>('evMine'), stats: $('stats'), statsChart: $<HTMLButtonElement>('statsChart'), statsTable: $<HTMLButtonElement>('statsTable') };
+const ui = { mode: $<HTMLSelectElement>('mode'), day: $<HTMLInputElement>('day'), minute: $<HTMLInputElement>('minute'), play: $<HTMLButtonElement>('play'), speed: $<HTMLSelectElement>('speed'), time: $('timeLabel'), badge: $('badge'), info: $('info'), events: $('events'), nest: $('nest'), weather: $('weather'), view: $<HTMLSelectElement>('view'), ovTrail: $<HTMLInputElement>('ovTrail'), ovExplored: $<HTMLInputElement>('ovExplored'), ovFood: $<HTMLInputElement>('ovFood'), ovLabels: $<HTMLInputElement>('ovLabels'), ovTask: $<HTMLInputElement>('ovTask'), legend: $('legend'), timeline: $('timeline'), follow: $<HTMLButtonElement>('follow'), who: $<HTMLSelectElement>('who'), followMsg: $('followMsg'), jump: $('jump'), evMine: $<HTMLInputElement>('evMine'), stats: $('stats'), statsChart: $<HTMLButtonElement>('statsChart'), statsTable: $<HTMLButtonElement>('statsTable'), ovEvents: $<HTMLInputElement>('ovEvents'), ovRoute: $<HTMLInputElement>('ovRoute'), route: $('route'), flows: $('flows'), flowsChart: $<HTMLButtonElement>('flowsChart'), flowsTable: $<HTMLButtonElement>('flowsTable'), evScope: $<HTMLSelectElement>('evScope'), evCats: $('evCats'), evCount: $('evCount'), placeEvents: $('placeEvents') };
 
 /** Canvas colours come from the page's CSS tokens so both light and dark themes stay readable. */
 const tok = (name: string, fallback: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
@@ -19,6 +19,10 @@ let selected: string | null = null, playing = false, last = 0, modeRequest = 0;
 /** V3 follow camera: the followed worker (null = free camera), and the last event jump (shown until the next one). */
 let series: DayPoint[] = [], statsKey = '', statsView: 'chart' | 'table' = 'chart', whoKey = '', following: string | null = null, followNote = '', lastJump: (EventJump & { event: string; type: string }) | null = null, eventsKey = '';
 const cam = { x: 0, y: 0, scale: 3 };
+/** V5 state: event-category filter (empty = all), the whole replay's timeline (all days), daily flows view. */
+const cats = new Set<EventCategory>();
+let lastMarks: ReturnType<typeof eventMarks> | null = null, lastHl: [string, string][] = [], lastMark = '';
+let allRows: TimelineRow[] = [], flowsKey = '', flowsView: 'chart' | 'table' = 'chart', catsKey = '', routeKey = '', placeKey = '';
 
 async function load<T>(file: string): Promise<T> { const r = await fetch('data/' + file); if (!r.ok) throw Error('cannot load ' + file); return r.json() as Promise<T>; }
 
@@ -32,23 +36,29 @@ async function init() {
   // V4 charts: hover reads the values of that day, a click moves the map to that day (minute 0)
   ui.statsChart.onclick = () => { statsView = 'chart'; statsKey = ''; draw(); };
   ui.statsTable.onclick = () => { statsView = 'table'; statsKey = ''; draw(); };
+  ui.flowsChart.onclick = () => { flowsView = 'chart'; flowsKey = ''; draw(); };
+  ui.flowsTable.onclick = () => { flowsView = 'table'; flowsKey = ''; draw(); };
+  ui.flows.onpointermove = (e) => chartHover(e, ui.flows);
+  ui.flows.onclick = (e) => chartClick(e, ui.flows);
+  ui.evScope.onchange = () => { eventsKey = ''; draw(); };
+  ui.evCats.onclick = (e) => { const b = (e.target as HTMLElement).closest('button[data-cat]') as HTMLElement | null; if (!b) return; const c = b.dataset.cat as EventCategory | ''; if (!c) cats.clear(); else if (cats.has(c)) cats.delete(c); else cats.add(c); eventsKey = ''; catsKey = ''; draw(); };
   ui.stats.onpointermove = (e) => { const svg = (e.target as Element).closest('svg[data-chart]') as SVGSVGElement | null; if (!svg || !series.length) return; const d = dayAtX(svg, e.clientX), p = series.find((x) => x.day === d), spec = CHARTS.find((c) => c.id === svg.dataset.chart); const out = svg.parentElement?.querySelector('.readout'); if (p && spec && out) out.textContent = readout(spec, p); };
   ui.stats.onclick = (e) => { const svg = (e.target as Element).closest('svg[data-chart]') as SVGSVGElement | null; if (!svg || !exp) return; const d = Math.max(1, dayAtX(svg, e.clientX)); ui.day.value = String(Math.min(d, exp.days.length)); ui.minute.value = '0'; draw(); const p = series.find((x) => x.day === d), spec = CHARTS.find((c) => c.id === svg.dataset.chart), out = ui.stats.querySelector(`figure[data-chart="${svg.dataset.chart}"] .readout`); if (p && spec && out) out.textContent = readout(spec, p); };
   // picker: on a phone the ants gathered at the nest are too close together to tap one by one
   ui.who.onchange = () => { selected = ui.who.value || null; draw(); };
   // the event list and the jump panel are re-rendered only when their content changes, so a click is never lost
-  ui.events.onclick = (e) => { const b = (e.target as HTMLElement).closest('button[data-ev]') as HTMLElement | null; if (b) jumpTo(Number(b.dataset.ev)); };
+  ui.events.onclick = (e) => { const b = (e.target as HTMLElement).closest('button[data-ev]') as HTMLElement | null; if (b) jumpTo(Number(b.dataset.ev), b.dataset.day ? Number(b.dataset.day) : undefined); };
   ui.jump.onclick = (e) => { const b = (e.target as HTMLElement).closest('button[data-w]') as HTMLElement | null; if (b) { selected = b.dataset.w as string; draw(); } };
   ui.minute.oninput = () => draw();
   ui.play.onclick = () => { playing = !playing; ui.play.textContent = playing ? '暫停' : '播放'; last = performance.now(); if (playing) requestAnimationFrame(tick); };
-  for (const el of [ui.ovTrail, ui.ovExplored, ui.ovFood, ui.ovLabels, ui.ovTask, ui.view]) el.onchange = () => draw();
+  for (const el of [ui.ovTrail, ui.ovExplored, ui.ovFood, ui.ovLabels, ui.ovTask, ui.ovEvents, ui.ovRoute, ui.view]) el.onchange = () => draw();
   setupPanZoom();
   window.addEventListener('resize', () => { fit(); draw(); });
   await switchMode('official');
 }
 
 async function switchMode(id: string) {
-  playing = false; ui.play.textContent = '播放'; selected = null; following = null; whoKey = ''; followNote = ''; lastJump = null; eventsKey = ''; ui.jump.hidden = true;
+  playing = false; ui.play.textContent = '播放'; selected = null; following = null; whoKey = ''; followNote = ''; lastJump = null; eventsKey = ''; ui.jump.hidden = true; allRows = []; flowsKey = ''; catsKey = ''; routeKey = ''; placeKey = '';
   const req = ++modeRequest; // a slower earlier load must never overwrite the world chosen later
   if (id === 'official') {
     const o = official ?? assertKind(await load<Official>(index.official), 'official', index.official);
@@ -61,7 +71,7 @@ async function switchMode(id: string) {
     const meta = index.experiments.find((e) => e.id === id) as Index['experiments'][number];
     const e = assertKind(await load<Experiment>(meta.file), 'experiment', meta.file);
     if (req !== modeRequest) return;
-    exp = e; places = exp.map.places; links = exp.map.links; series = dailySeries(exp); statsKey = '';
+    exp = e; places = exp.map.places; links = exp.map.links; series = dailySeries(exp); statsKey = ''; allRows = allTimeline(exp);
     ui.badge.className = 'badge experiment'; ui.badge.textContent = `${meta.title}｜非正式、不寫入存檔｜引擎 ${exp.engine_version}`;
     ui.timeline.hidden = false; ui.day.min = '1'; ui.day.max = String(exp.days.length); ui.day.value = '1'; ui.minute.value = '0';
   }
@@ -73,7 +83,8 @@ function fit() {
   canvas.width = Math.round(r.width * dpr); canvas.height = Math.round(r.height * dpr);
   const xs = Object.values(pos).map((p) => p.x), ys = Object.values(pos).map((p) => p.y);
   const w = Math.max(...xs) - Math.min(...xs) + 40, h = Math.max(...ys) - Math.min(...ys) + 50;
-  cam.scale = Math.min(r.width / w, r.height / h) * dpr; cam.x = (Math.max(...xs) + Math.min(...xs)) / 2; cam.y = (Math.max(...ys) + Math.min(...ys)) / 2 - 5;
+  const band = 34; // V5: keep the top band (world mark, weather box) clear of the map
+  cam.scale = Math.min(r.width / w, (r.height - band) / h) * dpr; cam.x = (Math.max(...xs) + Math.min(...xs)) / 2; cam.y = (Math.max(...ys) + Math.min(...ys)) / 2 - 5 + (band / 2) * dpr / cam.scale;
 }
 const toScreen = (x: number, y: number) => ({ sx: canvas.width / 2 + (x - cam.x) * cam.scale, sy: canvas.height / 2 - (y - cam.y) * cam.scale });
 /** Places without a recorded position sit in a screen-anchored tray (bottom-left), never on the map scale. */
@@ -139,6 +150,8 @@ function renderLegend() {
     if (ui.ovTrail.checked) rows.push(`<div class="row"><span><span class="bar" style="border-top-width:3px;border-color:rgba(var(--trail),0.4)"></span><span class="bar" style="border-top-width:8px;border-color:rgba(var(--trail),0.9)"></span>費洛蒙：線越粗越濃＝引擎在<b>本日開始時</b>記錄的路段強度（遊戲單位，非化學濃度）；本日最強 ${tr.max.toFixed(2)}，${tr.edges} 條路段有訊號。畫面不在一天之內衰減或移動它。</span></div>`);
     if (ui.ovExplored.checked) rows.push(`<div class="row"><span><span class="bar" style="border-top-width:5px;border-color:rgba(var(--explored),0.55)"></span>已探索路段：本日開始時存活工蟻記得的路段聯集（玩家視角；個別螞蟻只知道自己走過的）</span></div>`);
     if (ui.ovTask.checked) rows.push(`<div class="row">${Object.entries(TASK_LABEL).map(([k, v]) => `<span>${sw(`--task-${k}`)}${v}</span>`).join('')}</div><div class="note">顏色＝引擎記錄的<b>當日任務摘要</b>（日終的最後紀錄；不是逐分鐘的目前任務：被招募前也已顯示為覓食）</div>`);
+    if (ui.ovEvents.checked) rows.push(`<div class="row"><span>事件位置：地點左上的圓圈＝本日到目前（套用篩選）在<b>引擎記錄的地點</b>發生的事件數，色段＝類別：</span>${(Object.keys(CATEGORY_LABEL) as EventCategory[]).map((c) => `<span>${sw(`--cat-${c}`)}${CATEGORY_LABEL[c]}</span>`).join('')}</div><div class="note">沒有地點紀錄的事件（死亡、產卵、發育、招募接觸等）不畫在地圖上，只計數；紅色虛線圈＝跳轉事件的地點。</div>`);
+    if (ui.ovRoute.checked) rows.push(`<div class="row"><span><span class="bar" style="border-top-width:4px;border-color:var(--route);opacity:.6"></span>所選個體今日走完的紀錄路段（節點＝引擎紀錄的抵達點；直線是示意）</span><span><span class="bar" style="border-top-width:2px;border-style:dashed;border-color:var(--route)"></span>正在走（顯示插值）</span></div>`);
   } else rows.push('<div class="note">正式快照沒有費洛蒙與任務的引擎紀錄，所以不畫這些圖層。</div>');
   if (ui.ovFood.checked) rows.push('<div class="row"><span><span class="bar" style="border-top-width:6px;border-color:var(--ink)"></span>食物存量：地點旁的長條＝引擎的現存量（糖或蛋白，份）</span></div>');
   rows.push(`<div class="row"><span><span class="sw" style="background:var(--ant)"></span>工蟻</span><span><span class="sw" style="background:var(--muted)"></span>受傷</span><span><span class="sw" style="background:transparent;border:1px solid var(--muted)"></span>外圈＝兩個紀錄點之間（顯示插值）</span></div>`);
@@ -153,7 +166,7 @@ function draw() {
   // state and its note behind); the camera itself only matters on the garden map
   const drawnAnts = ants();
   applyFollow(drawnAnts);
-  if (ui.view.value === 'nest') { drawNest(); renderPanels(); renderLegend(); return; }
+  if (ui.view.value === 'nest') { drawNest(); drawWorldMark(false); renderPanels(); renderLegend(); return; }
   const day = exp ? Number(ui.day.value) : 0, s = exp ? stateAtStart(exp, day) : null, explored = s ? exploredEdges(s) : new Set<string>();
   // links
   for (const l of links) {
@@ -165,6 +178,7 @@ function draw() {
     if (ui.ovTrail.checked && trail > 0) { ctx.strokeStyle = `rgba(${TRAIL},${Math.min(0.9, 0.25 + trail / 3)})`; ctx.lineWidth = (2 + trail * 2) * dpr; ctx.beginPath(); ctx.moveTo(A.sx, A.sy); ctx.lineTo(B.sx, B.sy); ctx.stroke(); }
   }
   ctx.setLineDash([]);
+  if (exp && s) drawRoute(exp.days[day - 1], Number(ui.minute.value));
   // unknown-position tray (screen-anchored, not on the map scale)
   const unknown = Object.entries(pos).filter(([, p]) => !p.known).map(([id]) => id).sort();
   if (unknown.length) { const a = trayScreen(unknown[0]), b = trayScreen(unknown[unknown.length - 1]); ctx.strokeStyle = MUTED; ctx.setLineDash([3 * dpr, 3 * dpr]); ctx.strokeRect(a.sx - 16 * dpr, a.sy - 16 * dpr, b.sx - a.sx + 60 * dpr, 32 * dpr); ctx.setLineDash([]); ctx.fillStyle = MUTED; ctx.font = `${11 * dpr}px system-ui`; ctx.fillText('位置未記錄（不在地圖比例上）', a.sx - 16 * dpr, a.sy - 20 * dpr); }
@@ -180,6 +194,7 @@ function draw() {
       if (p.id === NEST) ctx.fillText(label, S.sx - ctx.measureText(label).width / 2, S.sy + r + 14 * dpr); else ctx.fillText(label, S.sx + r + 3 * dpr, S.sy - 6 * dpr);
     }
   }
+  const marks = exp ? drawEventMarks(exp.days[day - 1], Number(ui.minute.value)) : null;
   // ants
   for (const a of drawnAnts) {
     const S = a.trayAt ? trayScreen(a.trayAt) : toScreen(a.x, a.y), sel = a.id === selected;
@@ -192,11 +207,79 @@ function draw() {
   if (following || followNote) { const msg = following ? `追蹤 ${following}${followNote.includes('插值') ? '｜顯示插值位置' : followNote.includes('位置未知') ? '｜位置未知' : ''}` : followNote; ctx.font = `${12 * dpr}px system-ui`; const w = ctx.measureText(msg).width + 16 * dpr; ctx.fillStyle = tok('--panel', '#f7f3ea'); ctx.globalAlpha = 0.92; ctx.fillRect(8 * dpr, 8 * dpr, w, 22 * dpr); ctx.globalAlpha = 1; ctx.fillStyle = following ? SEL : INK; ctx.fillText(msg, 16 * dpr, 23 * dpr); }
   // scale bar
   const bar = 20 * cam.scale; ctx.fillStyle = INK; ctx.fillRect(12 * dpr, H - 18 * dpr, bar, 3 * dpr); ctx.font = `${11 * dpr}px system-ui`; ctx.fillText('20 cm（示意比例：方位＋約距離，非測量）', 12 * dpr, H - 24 * dpr);
+  if (marks && marks.noPlace) {
+    // phone: a short note above the scale bar so the two never overlap
+    const narrow = W / dpr < 600, msg = narrow ? `無地點紀錄 ${marks.noPlace} 筆` : `無地點紀錄的事件 ${marks.noPlace} 筆（不畫在地圖上）`, yb = H - (narrow ? 46 : 26) * dpr;
+    ctx.font = `${11 * dpr}px system-ui`; const w = ctx.measureText(msg).width; ctx.fillStyle = tok('--panel', '#f7f3ea'); ctx.globalAlpha = 0.9; ctx.fillRect(W - w - 20 * dpr, yb, w + 12 * dpr, 18 * dpr); ctx.globalAlpha = 1; ctx.fillStyle = INK; ctx.fillText(msg, W - w - 14 * dpr, yb + 13 * dpr);
+  }
+  drawWorldMark();
   renderPanels(); renderLegend();
+}
+
+/** V5: the world kind, drawn ON the canvas (a screenshot of the map alone still says whether it is official). */
+function drawWorldMark(belowFollow = true) {
+  const dpr = window.devicePixelRatio || 1, txt = exp ? '實驗世界・非正式' : '正式 Day14・唯讀快照'; lastMark = txt;
+  ctx.font = `bold ${12 * dpr}px system-ui`; const w = ctx.measureText(txt).width + 14 * dpr, y = belowFollow && (following || followNote) ? 34 * dpr : 8 * dpr;
+  ctx.fillStyle = tok(exp ? '--exp-bg' : '--official-bg', '#eee'); ctx.fillRect(8 * dpr, y, w, 20 * dpr);
+  ctx.fillStyle = tok(exp ? '--exp-fg' : '--official-fg', '#222'); ctx.fillText(txt, 15 * dpr, y + 14.5 * dpr);
+}
+
+/** V5: rows of the current day under the event filter (category chips + 「只看所選個體」). */
+const dayRows = (d: ExperimentDayT) => filterRows(dayTimeline(d).map((r) => ({ day: d.day, ...r })), cats, ui.evMine.checked ? selected : null);
+type ExperimentDayT = Experiment['days'][number];
+const isPast = (r: { day: number; t: number }, day: number, t: number, settled: boolean) => r.day < day || (r.day === day && (r.t <= t || (settled && r.t === Infinity)));
+
+/** V5: the selected worker's recorded walk today. Solid = edges whose engine-recorded arrival is <= now; dashed = the
+ *  edge being walked (to the DISPLAY position) or an edge whose arrival the engine did not record. Straight lines join
+ *  recorded nodes on the schematic map: they are not a measured track. Edges touching an unpositioned place are skipped. */
+function drawRoute(d: ExperimentDayT, t: number) {
+  if (!ui.ovRoute.checked || !selected) return;
+  const dpr = window.devicePixelRatio || 1, RT = tok('--route', '#1f5fbf');
+  ctx.save(); ctx.strokeStyle = RT; ctx.fillStyle = RT; ctx.lineCap = 'round';
+  for (const l of recordedRoute(d, selected, links)) {
+    const a = pos[l.from], b = pos[l.to];
+    if (!a?.known || !b?.known || l.seg_start > t || (l.t0 !== null && l.t0 > t)) continue;
+    const A = toScreen(a.x, a.y), B = toScreen(b.x, b.y), done = l.t1 !== null && l.t1 <= t + 1e-9;
+    if (done) { ctx.globalAlpha = 0.5; ctx.setLineDash([]); ctx.lineWidth = 4 * dpr; ctx.beginPath(); ctx.moveTo(A.sx, A.sy); ctx.lineTo(B.sx, B.sy); ctx.stroke(); ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(B.sx, B.sy, 3 * dpr, 0, Math.PI * 2); ctx.fill(); continue; }
+    ctx.globalAlpha = 0.7; ctx.setLineDash([4 * dpr, 4 * dpr]); ctx.lineWidth = 2.5 * dpr; ctx.beginPath(); ctx.moveTo(A.sx, A.sy);
+    const p = poseAt(d, selected, t, pos);
+    if (t <= (l.t1 ?? l.seg_end) && p.place === `${l.from}>${l.to}`) { const P = toScreen(p.x, p.y); ctx.lineTo(P.sx, P.sy); } else if (l.t1 === null && t > l.seg_end) ctx.lineTo(B.sx, B.sy);
+    ctx.stroke(); ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+}
+
+/** V5: event marks at the recorded place of every event shown so far today (under the filter). A ring per place:
+ *  arcs coloured by category, the count in the middle; the jumped-to event's place gets a dashed ring. Events without
+ *  a recorded place are only counted (returned), never drawn. */
+function drawEventMarks(d: ExperimentDayT, t: number) {
+  lastMarks = null;
+  if (!ui.ovEvents.checked) return null;
+  const dpr = window.devicePixelRatio || 1, settled = isSettled(d, t), rows = dayRows(d).filter((r) => isPast(r, d.day, t, settled));
+  const m = eventMarks(rows.map((r) => r.e), pos); lastMarks = m;
+  for (const mk of m.marks) {
+    const S = screenOf(mk.place), cx = S.sx - 15 * dpr, cy = S.sy - 15 * dpr, R = 9 * dpr;
+    ctx.fillStyle = tok('--panel', '#f7f3ea'); ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
+    let a0 = -Math.PI / 2;
+    for (const c of Object.keys(CATEGORY_LABEL) as EventCategory[]) { const n = mk.byCat[c] ?? 0; if (!n) continue; const a1 = a0 + (n / mk.total) * Math.PI * 2; ctx.strokeStyle = tok(`--cat-${c}`, '#888'); ctx.lineWidth = 3.5 * dpr; ctx.beginPath(); ctx.arc(cx, cy, R, a0, a1); ctx.stroke(); a0 = a1; }
+    ctx.fillStyle = tok('--ink', '#222'); ctx.font = `bold ${9.5 * dpr}px system-ui`; const txt = String(mk.total); ctx.fillText(txt, cx - ctx.measureText(txt).width / 2, cy + 3.5 * dpr);
+  }
+  if (lastJump && lastJump.day === d.day && lastJump.place.place && pos[lastJump.place.place]) {
+    const S = screenOf(lastJump.place.place); ctx.strokeStyle = tok('--select', '#c0392b'); ctx.lineWidth = 2 * dpr; ctx.setLineDash([5 * dpr, 3 * dpr]); ctx.beginPath(); ctx.arc(S.sx, S.sy, 18 * dpr, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+  }
+  return m;
 }
 
 /** Nest view: the engine has NO nest geometry yet, so this draws only the individuals that exist, grouped by kind,
  *  without chambers or tunnels (a non-spatial roster, labelled as such). */
+/** Draw text wrapped at maxW (character-wise: the labels are Chinese); returns the y below the last line. */
+function wrapText(text: string, x: number, y: number, maxW: number, lh: number) {
+  let line = '';
+  for (const ch of text) { if (ctx.measureText(line + ch).width > maxW && line) { ctx.fillText(line, x, y); y += lh; line = ch; } else line += ch; }
+  if (line) { ctx.fillText(line, x, y); y += lh; }
+  return y;
+}
+const BROOD_EVENT_SHORT: Record<string, string> = { egg_laid: '今日產下', hatch: '今日孵化', pupation: '今日化蛹', eclosion: '今日羽化', brood_death: '今日死亡', larva_contact: '育幼接觸' };
 function drawNest() {
   const dpr = window.devicePixelRatio || 1, W = canvas.width;
   ctx.fillStyle = '#5a4632'; ctx.fillRect(0, 0, W, canvas.height);
@@ -207,12 +290,32 @@ function drawNest() {
   if (official && !exp) { queen = official.queen.status !== 'dead'; workers = official.workers.filter((w) => w.status === 'alive' && (w.location_at_day_end ?? NEST) === NEST).map((w) => w.id); brood = official.brood.filter((b) => b.living); }
   else if (exp) { const day = Number(ui.day.value), d = exp.days[day - 1], t = Number(ui.minute.value), s0 = stateAt(exp, day, t); queen = s0.queen_alive; workers = s0.workers.filter((w) => poseAt(d, w.id, t, pos).place === NEST).map((w) => w.id); brood = s0.brood; }
   else return;
+  // V5: individuals named by today's settlement brood events (once the settlement is shown) and by the jumped-to event.
+  // Highlighting an ID in the roster is not a position: the engine records no place inside the nest.
+  const hl = new Map<string, string>();
+  if (exp) {
+    const day = Number(ui.day.value), d = exp.days[day - 1];
+    if (isSettled(d, Number(ui.minute.value))) for (const e of d.events) for (const id of eventBroodIds(e)) hl.set(id, BROOD_EVENT_SHORT[e.type] ?? e.type);
+    if (lastJump && lastJump.day === day) { const e = d.events[Number(lastJump.event.split(':')[1])]; if (e) for (const id of [...eventBroodIds(e), ...lastJump.workers]) hl.set(id, '跳轉事件'); }
+  }
+  lastHl = [...hl];
+  const SELN = '#ff8a73', perRow = Math.max(4, Math.floor((W / dpr - 30) / 34));
   const row = (y: number, title: string, items: string[], draw: (x: number, y: number) => void) => {
     ctx.fillStyle = '#f3ead8'; ctx.font = `bold ${12 * dpr}px system-ui`; ctx.fillText(`${title}（${items.length}）`, 14 * dpr, y);
-    items.forEach((id, i) => { const x = 20 * dpr + (i % 12) * 34 * dpr, yy = y + 18 * dpr + Math.floor(i / 12) * 30 * dpr; draw(x, yy); ctx.fillStyle = '#d8ccb4'; ctx.font = `${9 * dpr}px system-ui`; ctx.fillText(id, x - 8 * dpr, yy + 16 * dpr); });
-    return y + 30 * dpr + Math.ceil(Math.max(1, items.length) / 12) * 30 * dpr;
+    items.forEach((id, i) => {
+      const x = 20 * dpr + (i % perRow) * 34 * dpr, yy = y + 18 * dpr + Math.floor(i / perRow) * 30 * dpr; draw(x, yy); ctx.fillStyle = '#d8ccb4'; ctx.font = `${9 * dpr}px system-ui`; ctx.fillText(id, x - 8 * dpr, yy + 16 * dpr);
+      if (hl.has(id) || id === selected) { ctx.strokeStyle = SELN; ctx.lineWidth = 2 * dpr; ctx.beginPath(); ctx.arc(x, yy, 10 * dpr, 0, Math.PI * 2); ctx.stroke(); }
+    });
+    return y + 30 * dpr + Math.ceil(Math.max(1, items.length) / perRow) * 30 * dpr;
   };
-  let y = 100 * dpr;
+  let y = 88 * dpr;
+  if (exp) {
+    const care = allRows.some((r) => categoryOf(r.e) === 'care');
+    ctx.fillStyle = '#f3ead8'; ctx.font = `${11 * dpr}px system-ui`;
+    y = wrapText(hl.size ? `紅圈＝${[...new Set(hl.values())].join('／')}的個體（日終結算：無時刻、無巢內位置）` : '紅圈＝所選個體；日終結算後也圈出當日產卵／孵化／化蛹／羽化的個體', 14 * dpr, y, W - 28 * dpr, 15 * dpr);
+    if (!care) { ctx.fillStyle = '#d8ccb4'; y = wrapText('育幼接觸：此重播沒有個體育幼事件（巢內照護回合預設關閉）＝尚未模擬', 14 * dpr, y, W - 28 * dpr, 15 * dpr); }
+  }
+  y += 22 * dpr;
   y = row(y, '蟻后', queen ? ['Q'] : [], (x, yy) => { ctx.fillStyle = '#e0a458'; ctx.beginPath(); ctx.ellipse(x, yy, 9 * dpr, 5 * dpr, 0, 0, Math.PI * 2); ctx.fill(); });
   y = row(y, '巢內工蟻', workers, (x, yy) => { ctx.fillStyle = '#111'; ctx.beginPath(); ctx.ellipse(x, yy, 5 * dpr, 3 * dpr, 0, 0, Math.PI * 2); ctx.fill(); });
   for (const [st, label, color] of [['egg', '卵', '#fffbe8'], ['larva', '幼蟲', '#f3e3c0'], ['pupa', '蛹', '#e8d2a6']] as const) {
@@ -230,6 +333,9 @@ function renderPanels() {
     updateWho(alive.map((x) => x.id));
     setStats('official', '<p class="note">正式 Day14 是唯讀快照，沒有每日序列。</p>');
     setEvents('official', '<p class="note">正式 Day1～14 沒有引擎事件時間軸，所以沒有可跳轉的事件。</p>');
+    setFlows('official', '<p class="note">正式 Day14 是唯讀快照，沒有每日序列。</p>');
+    setRoute('official', '<p class="note">正式快照沒有逐分鐘的路線紀錄（只有日終敘述的經過地點，見「個體」）。</p>');
+    if (catsKey !== 'official') { catsKey = 'official'; ui.evCats.innerHTML = ''; ui.evCount.textContent = ''; ui.placeEvents.innerHTML = ''; placeKey = ''; }
     ui.follow.disabled = true; ui.follow.textContent = '追蹤個體'; ui.followMsg.textContent = w ? '正式快照沒有逐分鐘位置，無法追蹤' : '';
     return;
   }
@@ -259,12 +365,19 @@ function renderPanels() {
       : '<p class="note">點選地圖上的工蟻查看資料。黑點＝工蟻；外圈＝正在兩個紀錄點之間（顯示插值）。</p>';
   }
   // event timeline: the whole day, in recorded order; future rows dimmed; each row jumps to its recorded time
-  const rows = dayTimeline(d).filter((r) => !ui.evMine.checked || !selected || eventWorkers(r.e).includes(selected));
-  const shown = rows.filter((r) => r.t <= t || (settled && r.t === Infinity)).length;
-  setEvents(`${exp.spec.id}|${day}|${ui.evMine.checked ? selected : ''}|${shown}|${lastJump?.event ?? ''}`, rows.map((r) => {
-    const past = r.t <= t || (settled && r.t === Infinity), cur = lastJump?.event === `${day}:${r.i}`;
-    return `<button type="button" class="ev${past ? '' : ' future'}${cur ? ' current' : ''}" data-ev="${r.i}">${r.t === Infinity ? '日終（無時刻）' : r.t.toFixed(1) + '′'} ${describeEvent(r.e)}</button>`;
-  }).join('') || '<p class="note">這一天沒有符合的事件。</p>');
+  // V5: scope (this day / every day of the replay) and category filter; rows of other days carry data-day
+  const scopeAll = ui.evScope.value === 'all', who = ui.evMine.checked ? selected : null;
+  const base = scopeAll ? allRows : dayTimeline(d).map((r) => ({ day, ...r }));
+  const rows = filterRows(base, cats, who);
+  const shown = rows.filter((r) => isPast(r, day, t, settled)).length, catTag = [...cats].sort().join('+');
+  setEvents(`${exp.spec.id}|${day}|${who ?? ''}|${shown}|${lastJump?.event ?? ''}|${scopeAll}|${catTag}`, rows.map((r) => {
+    const past = isPast(r, day, t, settled), cur = lastJump?.event === `${r.day}:${r.i}`;
+    return `<button type="button" class="ev${past ? '' : ' future'}${cur ? ' current' : ''}" data-ev="${r.i}"${scopeAll ? ` data-day="${r.day}"` : ''}>${scopeAll ? `<span class="d">D${r.day}</span>` : ''}${r.t === Infinity ? '日終（無時刻）' : r.t.toFixed(1) + '′'} ${describeEvent(r.e)}</button>`;
+  }).join('') || `<p class="note">${scopeAll ? '整個重播' : '這一天'}沒有符合的事件。</p>`);
+  renderCats(base, who, rows.length, scopeAll);
+  renderPlaceEvents(d, t, settled);
+  renderRoute(d, t);
+  setFlows(`${exp.spec.id}|${day}|${flowsView}`, flowsView === 'chart' ? panelHtml(series, day, FLOW_CHARTS) : tableHtml(series, FLOW_COLUMNS));
   updateFollowUI(day, t);
   setStats(`${exp.spec.id}|${day}|${statsView}`, statsView === 'chart' ? panelHtml(series, day) : tableHtml(series));
   updateWho(s.workers.map((x) => x.id));
@@ -295,6 +408,53 @@ function speedText(s: ReturnType<typeof walkSpeedAt>) {
   return `${s.edge} 平均約 ${s.mm_s.toFixed(2)} mm/s（${s.length_cm} cm ÷ ${(s.t1 - s.t0).toFixed(2)} 分；長度為世界設定的約距離，是路徑長度下限，非量測；整段平均，不是瞬時速度）`;
 }
 
+function setFlows(key: string, html: string) { if (key !== flowsKey) { flowsKey = key; ui.flows.innerHTML = html; ui.flowsChart.setAttribute('aria-pressed', String(flowsView === 'chart')); ui.flowsTable.setAttribute('aria-pressed', String(flowsView === 'table')); } }
+function setRoute(key: string, html: string) { if (key !== routeKey) { routeKey = key; ui.route.innerHTML = html; } }
+
+/** V5 filter chips: one per category with its count in the current scope (and worker filter); 「全部」 clears. */
+function renderCats(base: TimelineRow[], who: string | null, shownCount: number, scopeAll: boolean) {
+  const counts = categoryCounts(filterRows(base, new Set(), who)), key = `${JSON.stringify(counts)}|${[...cats].sort().join('+')}`;
+  ui.evCount.textContent = `${shownCount} 筆${scopeAll ? '（全部日子）' : '（當日）'}`;
+  if (key === catsKey) return; catsKey = key;
+  ui.evCats.innerHTML = `<button type="button" data-cat="" aria-pressed="${!cats.size}">全部</button>` + (Object.keys(CATEGORY_LABEL) as EventCategory[]).map((c) =>
+    `<button type="button" data-cat="${c}" aria-pressed="${cats.has(c)}"${counts[c] || cats.has(c) ? '' : ' disabled'}><span class="sw" style="background:var(--cat-${c})"></span>${CATEGORY_LABEL[c]} ${counts[c]}</button>`).join('');
+}
+
+/** V5: the map marks in words (text alternative): per recorded place, counts by category; events without a place. */
+function renderPlaceEvents(d: ExperimentDayT, t: number, settled: boolean) {
+  const rows = dayRows(d).filter((r) => isPast(r, d.day, t, settled)), m = eventMarks(rows.map((r) => r.e), pos);
+  const list = (bc: Partial<Record<EventCategory, number>>) => (Object.keys(bc) as EventCategory[]).map((c) => `${CATEGORY_LABEL[c]} ${bc[c]}`).join('、');
+  const html = `<p class="note">地圖上的事件位置（本日到目前、套用篩選）：${m.marks.length ? m.marks.map((k) => `<b>${k.place}</b>${pos[k.place]?.known ? '' : '（位置未記錄）'}：${list(k.byCat)}`).join('；') : '無'}${m.noPlace ? `；<b>無地點紀錄</b> ${m.noPlace} 筆（${list(m.noPlaceByCat)}）：只列在時間軸，不畫在地圖上` : ''}</p>`;
+  if (html !== placeKey) { placeKey = html; ui.placeEvents.innerHTML = html; }
+}
+
+/** V5 route panel: today's recorded edges of the selected worker (engine arrival minutes; derived lengths and speeds). */
+function renderRoute(d: ExperimentDayT, t: number) {
+  if (!exp || !selected) { setRoute('none', '<p class="note">選取一隻工蟻後顯示：今日引擎記錄的步行路段、抵達時刻與推得的速度。</p>'); return; }
+  const legs = recordedRoute(d, selected, links), sum = routeSummary(legs, t);
+  const state = (l: RouteLeg) => (l.t1 !== null && l.t1 <= t + 1e-9 ? 'done' : l.seg_start <= t && (l.t0 === null || l.t0 <= t) && t <= (l.t1 ?? l.seg_end) ? 'now' : l.seg_start > t || (l.t0 !== null && l.t0 > t) ? 'future' : 'done');
+  const key = `${exp.spec.id}|${d.day}|${selected}|${legs.map(state).join('')}`;
+  if (!legs.length) { setRoute(key, `<p><b>${selected}</b> 今日沒有步行紀錄（整天在巢內或在地點停留）。</p>`); return; }
+  const f = (v: number | null, k = 1) => (v === null ? '未記錄' : v.toFixed(k));
+  const body = legs.map((l) => { const st = state(l); return `<tr class="${st === 'future' ? 'future' : st === 'now' ? 'now' : ''}"><td>${l.from}→${l.to}</td><td>${f(l.t0)}</td><td>${f(l.t1)}</td><td>${l.length_cm ?? '未記錄'}</td><td>${l.mm_s === null ? '—' : l.mm_s.toFixed(2)}</td></tr>`; }).join('');
+  setRoute(key, `<p><b>${selected}</b> 今日 ${legs.length} 段步行；到目前完成 ${sum.legs} 段，推得總長 ${sum.length_cm === null ? '部分路段長度未記錄' : sum.length_cm + ' cm'}，紀錄的步行時間 ${sum.walk_min === null ? '部分抵達時刻未記錄' : sum.walk_min.toFixed(1) + ' 分'}。</p>
+    <div class="tablewrap"><table><thead><tr><th>路段</th><th>出發′</th><th>抵達′</th><th>長度 cm</th><th>推得速度 mm/s</th></tr></thead><tbody>${body}</tbody></table></div>
+    <p class="note">出發／抵達＝引擎紀錄的分鐘（活動起點與 route_step 抵達）；長度＝世界設定的約距離（遊戲假設，路徑下限）；速度與總長是<b>由紀錄推得</b>，不是量測。地圖上藍線只連接紀錄的節點，是示意，不是實際軌跡；虛線＝正在走（顯示插值位置）。</p>`);
+}
+
+/** V5 flows charts: hover reads that day; click moves the map to that day (minute 0). */
+function chartHover(e: PointerEvent, box: HTMLElement) {
+  const svg = (e.target as Element).closest('svg[data-chart]') as SVGSVGElement | null; if (!svg || !series.length) return;
+  const d = dayAtX(svg, e.clientX), p = series.find((x) => x.day === d), spec = [...CHARTS, ...FLOW_CHARTS].find((c) => c.id === svg.dataset.chart), out = svg.parentElement?.querySelector('.readout');
+  if (p && spec && out) out.textContent = readout(spec, p); void box;
+}
+function chartClick(e: MouseEvent, box: HTMLElement) {
+  const svg = (e.target as Element).closest('svg[data-chart]') as SVGSVGElement | null; if (!svg || !exp) return;
+  const d = Math.max(1, dayAtX(svg, e.clientX)); ui.day.value = String(Math.min(d, exp.days.length)); ui.minute.value = '0'; draw();
+  const p = series.find((x) => x.day === d), spec = [...CHARTS, ...FLOW_CHARTS].find((c) => c.id === svg.dataset.chart), out = box.querySelector(`figure[data-chart="${svg.dataset.chart}"] .readout`);
+  if (p && spec && out) out.textContent = readout(spec, p);
+}
+
 function setEvents(key: string, html: string) { if (key !== eventsKey) { eventsKey = key; ui.events.innerHTML = html; } }
 
 function stopFollow(note: string) { following = null; followNote = note; draw(); }
@@ -321,9 +481,9 @@ function updateFollowUI(day: number, t: number) {
 
 /** Event jump: go to the event's recorded minute (or the day's settlement step when the engine recorded none), pause,
  *  centre on its recorded place when that place has a position, and offer the workers it names for selection. */
-function jumpTo(i: number) {
+function jumpTo(i: number, dayArg?: number) {
   if (!exp) return;
-  const day = Number(ui.day.value), d = exp.days[day - 1], e = d.events[i]; if (!e) return;
+  const day = dayArg ?? Number(ui.day.value), d = exp.days[day - 1], e = d?.events[i]; if (!e) return;
   const j = eventJump(d, e, pos);
   playing = false; ui.play.textContent = '播放';
   if (following) { following = null; followNote = '跳到事件：已取消追蹤'; }
@@ -368,6 +528,11 @@ function tick(now: number) {
   series: () => series,
   speed: (id: string) => exp ? walkSpeedAt(exp.days[Number(ui.day.value) - 1], id, Number(ui.minute.value), links) : null,
   placeOnScreen: (id: string) => { const dpr = window.devicePixelRatio || 1, r = canvas.getBoundingClientRect(); if (!pos[id]) return null; const S = screenOf(id); return { x: r.left + S.sx / dpr, y: r.top + S.sy / dpr, known: pos[id].known }; },
+  // V5 (read-only): what the canvas drew last — world mark, event marks, nest highlights; the selected worker's route
+  worldMark: () => lastMark,
+  eventMarks: () => lastMarks,
+  nestHighlights: () => lastHl,
+  route: (id: string) => exp ? recordedRoute(exp.days[Number(ui.day.value) - 1], id, links) : null,
   canvasCentre: () => { const r = canvas.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; },
   state: () => ({ mode: exp ? exp.spec.id : 'official', official: !exp, day: exp ? Number(ui.day.value) : null, minute: exp ? Number(ui.minute.value) : null, workers: exp ? stateAt(exp, Number(ui.day.value), Number(ui.minute.value)).workers.map((w) => w.id) : (official?.workers.filter((w) => w.status === 'alive').map((w) => w.id) ?? []), info: ui.info.textContent ?? '' }),
 };
