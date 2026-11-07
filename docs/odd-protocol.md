@@ -1,6 +1,6 @@
 # 《螞蟻帝國》模擬引擎 ODD 描述（ODD protocol, Grimm et al. 2006／2010／2020）
 
-- **描述對象**：main 目前的引擎，行為版本 **`antempire.v2-review.27-rh-offsets`**（`engine/day.ts` 的 `ENGINE_VERSION`），實作版本 `antempire.engine-ts.1`。2026-11-03 依 Codex #61 R3-10 同步到 v21；2026-11-05 在 #60（v22）與 #63（v23）合併後同步到 v23；**#77（ME-1，v24）只增加執行期檢查，模擬輸出與 v23 逐位元組相同；#78（C3a，v25）新增開關 `queen_feeding.individual_queen_body_c3a`，預設關閉，關閉時輸出與 v24 逐位元組相同；v26（Issue #80）新增開關 `source_flows.record_source_flows_v26`，預設關閉，關閉時輸出與 v25 逐位元組相同**，所以下文描述的行為仍是 v23 的行為；兩個開關打開時的行為只寫在 §8.2 的 C3a 與食源收支條目，屬實驗用，正式存檔不打開。
+- **描述對象**：main 目前的引擎，行為版本 **`antempire.v2-review.28-c4a-larva-body`**（`engine/day.ts` 的 `ENGINE_VERSION`），實作版本 `antempire.engine-ts.1`。2026-11-03 依 Codex #61 R3-10 同步到 v21；2026-11-05 在 #60（v22）與 #63（v23）合併後同步到 v23；**#77（ME-1，v24）只增加執行期檢查，模擬輸出與 v23 逐位元組相同；#78（C3a，v25）新增開關 `queen_feeding.individual_queen_body_c3a`，預設關閉，關閉時輸出與 v24 逐位元組相同；v26（Issue #80）新增開關 `source_flows.record_source_flows_v26`，預設關閉，關閉時輸出與 v25 逐位元組相同；v27（#92）新增開關 `weather_rules.rh_offsets_balanced_v27`；v28（C4a）新增開關 `larval_feeding.individual_larva_body_c4a`，兩者都預設關閉，關閉時輸出與前一版逐位元組相同**，所以下文描述的行為仍是 v23 的行為；兩個開關打開時的行為只寫在 §8.2 的 C3a 與食源收支條目，屬實驗用，正式存檔不打開。
 - **版本對照**（本文件以 main 的 v25 為準；v24 與開關關閉的 v25，模擬行為都與 v23 相同）：
   | 版本 | 狀態 | 本文件的位置 |
   |---|---|---|
@@ -12,7 +12,8 @@
   | v2-review.24 | **#77**（ME-1：人口 ID 流量、生命期、日內因果順序、定義域與隨機輸入的執行期檢查，以及獨立讀取器；只檢查，輸出與 v23 逐位元組相同） | §8.2 |
   | v2-review.25 | **#78**（C3a：蟻后個體營養區室 `queen_body`、巢內序數回合、遷移蟻后的 `null` 儲備；開關預設關閉，關閉時輸出與 v24 逐位元組相同；打開時的路線是候選，不是已知的本種機制） | §8.2 |
   | v2-review.26 | **#88**（Issue #80：世界食源每一筆數量變化寫成 `source_flow` 事件，引擎檢查閉合，獨立讀取器重算；存量算式不變；開關預設關閉，關閉時輸出與 v25 逐位元組相同） | §8.2 |
-  | v2-review.27 | **本 PR**（Issue #82：相對濕度的雨日／非雨日偏移以當日雨日機率為中心，長期平均為 0；開關預設關閉，關閉時輸出與 v26 逐位元組相同；只改變濕度，螞蟻不讀它） | §2 天氣 |
+  | v2-review.27 | **#92**（Issue #82：相對濕度的雨日／非雨日偏移以當日雨日機率為中心，長期平均為 0；開關預設關閉，關閉時輸出與 v26 逐位元組相同；只改變濕度，螞蟻不讀它） | §2 天氣 |
+  | v2-review.28 | **本 PR**（C4a，Issue #81：每隻幼蟲的營養帳 `larva_body`，只在 C3a 巢內回合經同位置的 `larva_contact` 後以固定一口 `feed_larva` 增加；幼蟲自己支付代謝、求食訊號只由自己的蛋白攝取更新；孵化只記錄、`reserve_at_hatch` 為 `null`；發育與飢餓仍是舊式；開關預設關閉，需 C3a 同時打開，關閉時輸出與 v27 逐位元組相同） | §8.2 |
   | 費洛蒙的沉積決策 | **未決**：是否沉積、沉積多少、單訊號或雙訊號（M1／M2）、衰退時間尺度。研究設計見 `docs/research-pheromone-models-2026-11.md`（#64，已合併；只有設計，P-1～P-6 尚未執行） | §7.8 |
   - **設計中、未實作**的子模型（不是現況）：24 小時時鐘（P0-A）、生命史與溫度（P0-B）、大工蟻（P1-A）、巢穴空間（P1-B）、個體營養 C3～C5、開放式生態（D7-A）、完整繁殖系統（D4-A）。見 §7.16 與各設計文件。
 - **依據**：`engine/*.ts`、`species/pheidole-megacephala.json`、`world/xitun-garden.json`、`scenarios/day0/*.json`、`cli/lib/day0.ts`，以及 `CLAUDE.md`、`docs/gm-rules.md`、`docs/engine-architecture.md`、`docs/species-pheidole-megacephala.md`、`docs/references.md` 等文件。
@@ -1042,6 +1043,13 @@
     - `cli/lib/source-ledger.ts`：世界端食源收支，只在讀取器端。它讓**沒有事件就被刪除的食物**可見：超過容量的蜜露與花蜜、到期的屍體蛋白（登錄表 P1-E1、P1-E2；舊程式，ME-1 不修正；v26 在開關打開時為它們產生事件）。
   - 這些是工程與數學正確性的檢查，**不是科學驗證**。陣列順序不變性（#56）是已知違反，不在此宣稱。
 - **C3a（v2-review.25，開關 `queen_feeding.individual_queen_body_c3a`，預設關閉）**：打開時蟻后有自己的營養區室 `queen_body`，只經巢內序數回合的局部事件增加（`take_from_cache` → `nest_move` → `queen_contact` → `feed_queen`；或 `queen_self_feed`），自己的代謝由已知收支支付；C2 名冊、路徑表與閉合涵蓋新區室，引擎 `checkQueenRound` 與兩個獨立讀取器各自檢查（`docs/design-c3-queen-feeding.md` §14）。巢內位置與序數時間是過渡模型（D），不是巢室幾何或物理接觸。產卵與存活仍用舊規則（§4.7 G1、G6 仍是待修缺陷，C3b、C3c）。
+- **C4a（v2-review.28，Issue #81，開關 `larval_feeding.individual_larva_body_c4a`，預設關閉；需 C3a 同時打開；`docs/design-c4-larval-nutrition.md` §7.0、§7.2）**：
+  - 打開時每隻幼蟲有自己的營養帳 `larva_body`：`fed_balance`（已知收支）、`egg_investment`（卵產下時的投入，只是紀錄）、`reserve_at_hatch`（一律 `null`）、`reserve_basis`。
+  - 只在 C3a 巢內回合增加：工蟻在序數 2 + u 抵達 `brood`，與同位置一隻幼蟲接觸（`larva_contact`）；該幼蟲回合開始時的求食訊號 ≥ 門檻時，從自己嗉囊各餵一口糖與液態蛋白（`feed_larva`）。
+  - 幼蟲由 `fed_balance` 支付自己的代謝（`larva_metabolism`），全巢代謝不再含幼蟲；求食訊號只由自己的蛋白攝取與需求更新。
+  - 孵化寫 `larva_hatch_nutrition`（不轉移）；羽化時收支記為代謝，死亡時進入 `loss:brood_corpse`。
+  - 引擎 `checkLarvaRound` 與獨立讀取器 `cli/lib/larva-round-replay.ts` 從每隻工蟻與幼蟲自己的紀錄重驗；C2 名冊與閉合涵蓋 `larva_body`。
+  - 發育（L2）與飢餓死亡（L3）仍是舊的全巢公式（C4b、C4c）。門檻與每口量是遊戲假設；接觸規則與同位置稀釋是候選機制；已知缺口高估真正缺口（儲備未知）。
 - **世界食源收支（v2-review.26，Issue #80，開關 `source_flows.record_source_flows_v26`，預設關閉；`docs/design-source-flows-v26.md`）**：
   - 打開時，生態步驟中每個食源的每一筆數量變化都寫成 `source_flow` 世界事件，事件有原因、來處、去處與份量：
     - `secretion`、`rival_harvest`、`rain_washoff`；
@@ -1081,7 +1089,8 @@
 - 其餘參數沒有系統性的敏感度分析。
 
 **評估結果**：Day0 A1～A5 × 四季 × 20 種子 × 365 日。
-- **現行 v27，開關關閉**（`reports/day0-v27`）：400 次的每一項紀錄結果都與 v26 相同，只差版本字串與規則指紋。開關打開（`reports/day0-v27-rh-offsets-on-diagnostic`）只改變相對濕度。
+- **現行 v28，開關關閉**（`reports/day0-v28`）：見 PR 說明（與 v27 的逐項比較）。C4a 打開的診斷（`reports/day0-v28-c4a-on-diagnostic`，與同版本只開 C3a 的 `reports/day0-v28-c3a-only-diagnostic` 對照）與敏感度（`reports/c4a-v28-sensitivity`）都是實驗世界的診斷，不是目標，也不是幼蟲營養的科學結論。
+- **v27，開關關閉**（`reports/day0-v27`）：400 次的每一項紀錄結果都與 v26 相同，只差版本字串與規則指紋。開關打開（`reports/day0-v27-rh-offsets-on-diagnostic`）只改變相對濕度。
 - **v26，開關關閉**（`reports/day0-v26`）：400 次的每一項紀錄結果都與 v25 相同，只差版本字串與規則指紋。開關打開（`reports/day0-v26-source-flows-on-diagnostic`）只多了 `source_flow` 事件，紀錄結果也與關閉時相同。
 - **v25，開關關閉**（`reports/day0-v25`）：400 次的每一項紀錄結果都與 v24 相同，只差版本字串與規則指紋。開關打開的診斷（`reports/day0-v25-c3a-on-diagnostic`）不是目標，也不是蟻后營養的科學結論。
 - **v24**（`reports/day0-v24`）：400 次的每一項紀錄結果都與 v23 相同，只差版本字串與規則指紋。

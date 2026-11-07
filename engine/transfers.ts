@@ -18,6 +18,9 @@
  *   C3a (v2-review.25, switch queen_feeding.individual_queen_body_c3a): queen_body:<queen> (what the queen has EATEN, known
  *     balance only), crops may also hold liquid protein (shared capacity), loss:worker_corpse (a dead carrier's liquid
  *     protein until C5 models the corpse), phase nest_round with an ORDINAL time (no minutes; transitional, §12).
+ *   C4a (v2-review.28, switch larval_feeding.individual_larva_body_c4a): larva_body:<brood id> (what the larva was FED minus
+ *     what it paid, known part only; kept through the pupa until eclosion, D5), loss:brood_corpse (a dead larva's or pupa's
+ *     known balance; a sink until C5).
  * attribution: 'individual' = an individual act named by the engine (collect, unload, trophallaxis, hunt);
  *   'unknown' = taken from the colony ledger by an aggregate rule (metabolism, eggs, overflow; F01/A08, fixed by C3-C5);
  *   'engine_rule' = an engine bookkeeping rule, not an act (a dead worker's crop sugar stays in the nest ledger).
@@ -28,9 +31,9 @@ import { round } from './math.ts';
 import type { ColonyState, SimEvent, WorldState } from './types.ts';
 import type { SpeciesParams } from './params.ts';
 
-export type FoodKind = 'source' | 'insect' | 'in_transit' | 'crop' | 'cache' | 'nest_unlocated' | 'metabolized' | 'egg' | 'loss' | 'queen_body';
+export type FoodKind = 'source' | 'insect' | 'in_transit' | 'crop' | 'cache' | 'nest_unlocated' | 'metabolized' | 'egg' | 'loss' | 'queen_body' | 'larva_body';
 export interface FoodRef { kind: FoodKind; id: string }
-export type FoodCause = 'collect' | 'prey_kill' | 'unload' | 'trophallaxis' | 'storage_overflow' | 'metabolism' | 'lay_egg' | 'death_crop_to_nest_ledger' | 'take_from_cache' | 'feed_queen' | 'queen_self_feed' | 'queen_metabolism' | 'death_crop_to_corpse' | 'return_to_cache';
+export type FoodCause = 'collect' | 'prey_kill' | 'unload' | 'trophallaxis' | 'storage_overflow' | 'metabolism' | 'lay_egg' | 'death_crop_to_nest_ledger' | 'take_from_cache' | 'feed_queen' | 'queen_self_feed' | 'queen_metabolism' | 'death_crop_to_corpse' | 'return_to_cache' | 'feed_larva' | 'larva_metabolism' | 'brood_body_at_eclosion' | 'death_body_to_corpse';
 export type FoodPhase = 'foraging' | 'nest_round' | 'nest_settlement';
 export interface FoodTransferInput {
   minute: number | null; ordinal?: number; phase: FoodPhase;
@@ -40,11 +43,11 @@ export interface FoodTransferInput {
 }
 export const FOOD_TRANSFER_SCHEMA = 'antempire.food-transfer.v1';
 /** Compartments whose contents the engine holds and the closure check follows. */
-export const TRACKED_KINDS: ReadonlySet<FoodKind> = new Set(['source', 'in_transit', 'crop', 'cache', 'nest_unlocated', 'queen_body']);
+export const TRACKED_KINDS: ReadonlySet<FoodKind> = new Set(['source', 'in_transit', 'crop', 'cache', 'nest_unlocated', 'queen_body', 'larva_body']);
 /** Which food each nest compartment can hold (crops and the unlocated nest sugar hold sugar; the cache holds protein). */
 const HOLDS: Partial<Record<FoodKind, 'sugar' | 'protein'>> = { crop: 'sugar', nest_unlocated: 'sugar', cache: 'protein' };
 /** C3a: a crop may also hold liquid protein (and the queen's body both foods) — only on a C3a day. */
-const holdsOk = (kind: FoodKind, food: 'sugar' | 'protein', c3a: boolean) => (kind === 'queen_body' ? c3a : kind === 'crop' && c3a ? true : !HOLDS[kind] || HOLDS[kind] === food);
+const holdsOk = (kind: FoodKind, food: 'sugar' | 'protein', c3a: boolean, c4a = false) => (kind === 'larva_body' ? c4a : kind === 'queen_body' ? c3a : kind === 'crop' && c3a ? true : !HOLDS[kind] || HOLDS[kind] === food);
 
 interface Binding { day: number; colony: string; n: number }
 const BOUND = new WeakMap<SimEvent[], Binding>();
@@ -78,11 +81,13 @@ const key = (r: FoodRef, f: 'sugar' | 'protein') => `${r.kind}:${r.id}:${f}`;
 const isTransfer = (e: SimEvent) => typeof e === 'object' && e !== null && (e as { type?: unknown }).type === 'food_transfer';
 
 /** Start-of-day holdings of one colony (micro-portions), taken before foraging. */
-export interface ColonyFoodSnapshot { crops: Map<string, number>; sugar: number; protein: number; nests: string[]; c3a: boolean; cropsProtein: Map<string, number>; queen: { id: string; alive: boolean; sugar: number; protein: number } | null }
+export interface ColonyFoodSnapshot { crops: Map<string, number>; sugar: number; protein: number; nests: string[]; c3a: boolean; cropsProtein: Map<string, number>; queen: { id: string; alive: boolean; sugar: number; protein: number } | null; c4a?: boolean; larvae?: Map<string, { sugar: number; protein: number }> }
 /** The nests of a colony. Today one (`nest_node`); a list so that several nests can be added without changing callers. */
 export const colonyNests = (colony: ColonyState): string[] => [colony.nest_node];
-export function colonySnapshot(colony: ColonyState, c3a = false): ColonyFoodSnapshot {
+export function colonySnapshot(colony: ColonyState, c3a = false, c4a = false): ColonyFoodSnapshot {
   const q = colony.population.queens?.[0];
+  // C4a: every brood item with an account (larvae and pupae, D5), taken after the day's records are ensured
+  if (c4a) return { ...colonySnapshot(colony, c3a), c4a: true, larvae: new Map(colony.population.brood.filter((b) => b.body).map((b) => [b.id, { sugar: micro((b.body as { fed_balance: { sugar: number } }).fed_balance.sugar), protein: micro((b.body as { fed_balance: { protein: number } }).fed_balance.protein) }])) };
   return { crops: new Map(colony.population.workers.map((w) => [w.id, micro(w.crop_cargo_sugar || 0)])), sugar: micro(colony.stores.sugar), protein: micro(colony.stores.protein), nests: colonyNests(colony), c3a,
     cropsProtein: new Map(colony.population.workers.map((w) => [w.id, micro(w.crop_cargo_protein_liquid || 0)])), queen: c3a && q ? { id: q.id, alive: colony.population.queen_alive, sugar: micro(q.body.known_balance.sugar), protein: micro(q.body.known_balance.protein) } : null };
 }
@@ -108,8 +113,10 @@ export function legalColonyRef(start: ColonyFoodSnapshot, colony: ColonyState, e
       case 'cache': return nests.has(r.id);
       case 'nest_unlocated': case 'metabolized': return r.id === colony.id;
       case 'egg': return eggs.has(r.id);
+      // C4a: a brood item that had an account at the start of the day (hatchlings get theirs after every transfer to it)
+      case 'larva_body': return !!start.c4a && !!start.larvae?.has(r.id);
       case 'insect': return kills.has(r.id);
-      case 'loss': return r.id === 'storage_overflow' || (start.c3a && r.id === 'worker_corpse');
+      case 'loss': return r.id === 'storage_overflow' || (start.c3a && r.id === 'worker_corpse') || (!!start.c4a && r.id === 'brood_corpse');
       case 'source': return true; // sources are shared; their existence is checked world-wide (checkSources)
       default: return false;
     }
@@ -122,6 +129,7 @@ const PATHS: Record<FoodCause, [string[], string[]]> = {
   storage_overflow: [['crop', 'nest_unlocated', 'cache'], ['loss']], metabolism: [['crop', 'nest_unlocated', 'cache'], ['metabolized']],
   lay_egg: [['crop', 'nest_unlocated', 'cache'], ['egg']], death_crop_to_nest_ledger: [['crop'], ['nest_unlocated']],
   take_from_cache: [['cache'], ['crop']], feed_queen: [['crop'], ['queen_body']], queen_self_feed: [['cache'], ['queen_body']], queen_metabolism: [['queen_body'], ['metabolized']], death_crop_to_corpse: [['crop'], ['loss']], return_to_cache: [['crop'], ['cache']],
+  feed_larva: [['crop'], ['larva_body']], larva_metabolism: [['larva_body'], ['metabolized']], brood_body_at_eclosion: [['larva_body'], ['metabolized']], death_body_to_corpse: [['larva_body'], ['loss']],
 };
 /**
  * Path, holder and one-shot rules of one transfer (Issue #61 R3-08, independent reviews of 7ae0967 and 4a78ee4):
@@ -132,16 +140,16 @@ const PATHS: Record<FoodCause, [string[], string[]]> = {
  *   - a kill is a one-shot compartment: one prey_kill per insect_predation, to that event's site, of exactly the protein
  *     of the carcass the engine created for it (new_food_source with the same id).
  */
-const PHASE_OF: Record<FoodCause, FoodPhase> = { collect: 'foraging', prey_kill: 'foraging', unload: 'foraging', trophallaxis: 'foraging', storage_overflow: 'nest_settlement', metabolism: 'nest_settlement', death_crop_to_nest_ledger: 'nest_settlement', lay_egg: 'nest_settlement', take_from_cache: 'nest_round', feed_queen: 'nest_round', queen_self_feed: 'nest_round', queen_metabolism: 'nest_settlement', death_crop_to_corpse: 'nest_settlement', return_to_cache: 'nest_round' };
+const PHASE_OF: Record<FoodCause, FoodPhase> = { collect: 'foraging', prey_kill: 'foraging', unload: 'foraging', trophallaxis: 'foraging', storage_overflow: 'nest_settlement', metabolism: 'nest_settlement', death_crop_to_nest_ledger: 'nest_settlement', lay_egg: 'nest_settlement', take_from_cache: 'nest_round', feed_queen: 'nest_round', queen_self_feed: 'nest_round', queen_metabolism: 'nest_settlement', death_crop_to_corpse: 'nest_settlement', return_to_cache: 'nest_round', feed_larva: 'nest_round', larva_metabolism: 'nest_settlement', brood_body_at_eclosion: 'nest_settlement', death_body_to_corpse: 'nest_settlement' };
 /** The engine's settlement order (engine/day.ts): overflow, metabolism, deaths, eggs. */
-const SETTLE_STEP: Partial<Record<FoodCause, number>> = { return_to_cache: -0.5, take_from_cache: -0.5, feed_queen: -0.5, queen_self_feed: -0.5, storage_overflow: 0, metabolism: 1, queen_metabolism: 1.5, death_crop_to_nest_ledger: 2, death_crop_to_corpse: 2, lay_egg: 3 };
-const FOOD_KINDS: ReadonlySet<string> = new Set(['source', 'insect', 'in_transit', 'crop', 'cache', 'nest_unlocated', 'metabolized', 'egg', 'loss', 'queen_body']);
+const SETTLE_STEP: Partial<Record<FoodCause, number>> = { return_to_cache: -0.5, take_from_cache: -0.5, feed_queen: -0.5, queen_self_feed: -0.5, storage_overflow: 0, metabolism: 1, queen_metabolism: 1.5, feed_larva: -0.5, larva_metabolism: 1.6, brood_body_at_eclosion: 1.8, death_body_to_corpse: 1.8, death_crop_to_nest_ledger: 2, death_crop_to_corpse: 2, lay_egg: 3 };
+const FOOD_KINDS: ReadonlySet<string> = new Set(['source', 'insect', 'in_transit', 'crop', 'cache', 'nest_unlocated', 'metabolized', 'egg', 'loss', 'queen_body', 'larva_body']);
 /**
  * Runtime shape of every transfer record before any field is used (Codex review of 1bdba72, F1: records may come from
  * JSON, where the TypeScript types prove nothing). Throws a FOOD_TRANSFER error naming the record.
  */
 /** The attribution each cause carries (written here independently of the cli reader's table). */
-const ATTRIBUTION_OF: Record<FoodCause, 'individual' | 'unknown' | 'engine_rule'> = { collect: 'individual', prey_kill: 'individual', unload: 'individual', trophallaxis: 'individual', storage_overflow: 'unknown', metabolism: 'unknown', lay_egg: 'unknown', death_crop_to_nest_ledger: 'engine_rule', take_from_cache: 'individual', feed_queen: 'individual', queen_self_feed: 'individual', queen_metabolism: 'individual', death_crop_to_corpse: 'engine_rule', return_to_cache: 'individual' };
+const ATTRIBUTION_OF: Record<FoodCause, 'individual' | 'unknown' | 'engine_rule'> = { collect: 'individual', prey_kill: 'individual', unload: 'individual', trophallaxis: 'individual', storage_overflow: 'unknown', metabolism: 'unknown', lay_egg: 'unknown', death_crop_to_nest_ledger: 'engine_rule', take_from_cache: 'individual', feed_queen: 'individual', queen_self_feed: 'individual', queen_metabolism: 'individual', death_crop_to_corpse: 'engine_rule', return_to_cache: 'individual', feed_larva: 'individual', larva_metabolism: 'individual', brood_body_at_eclosion: 'engine_rule', death_body_to_corpse: 'engine_rule' };
 /** Minutes in a day: the latest a timed (foraging) record can be. */
 const DAY_MINUTES = 1440;
 export function assertTransferShape(colonyId: string, events: SimEvent[]): void {
@@ -204,6 +212,7 @@ function checkPathAndKills(colonyId: string, events: SimEvent[]): void {
     if (x.cause === 'prey_kill' && x.food_type !== 'protein') fail(`${x.transfer_id}: a kill yields protein, recorded as ${x.food_type}`);
     if ((x.cause === 'take_from_cache' || x.cause === 'queen_self_feed' || x.cause === 'death_crop_to_corpse' || x.cause === 'return_to_cache') && x.food_type !== 'protein') fail(`${x.transfer_id}: ${x.cause} moves protein, recorded as ${x.food_type}`);
     if (x.cause === 'death_crop_to_corpse' && x.recipient.id !== 'worker_corpse') fail(`${x.transfer_id}: a dead carrier's liquid protein goes to loss:worker_corpse, not ${x.recipient.id}`);
+    if (x.cause === 'death_body_to_corpse' && x.recipient.id !== 'brood_corpse') fail(`${x.transfer_id}: a dead larva's or pupa's balance goes to loss:brood_corpse, not ${x.recipient.id}`);
     if (x.cause === 'death_crop_to_nest_ledger' && x.food_type !== 'sugar') fail(`${x.transfer_id}: only crop sugar stays in the nest ledger at death`);
   }
   const kills = new Map(events.filter((e) => e.type === 'insect_predation').map((e) => [String(e.event_id), String(e.site)]));
@@ -318,6 +327,7 @@ export function checkColonyFood(start: ColonyFoodSnapshot, colony: ColonyState, 
   const unl = `nest_unlocated:${colony.id}:sugar`, cache = `cache:${colony.nest_node}:protein`;
   cur.set(unl, start.sugar - cropSum); cur.set(cache, start.protein);
   if (start.c3a) { for (const [id, v] of start.cropsProtein) if (v) cur.set(`crop:${id}:protein`, v); if (start.queen) { cur.set(`queen_body:${start.queen.id}:sugar`, start.queen.sugar); cur.set(`queen_body:${start.queen.id}:protein`, start.queen.protein); } }
+  if (start.c4a) for (const [id, v] of start.larvae ?? []) { cur.set(`larva_body:${id}:sugar`, v.sugar); cur.set(`larva_body:${id}:protein`, v.protein); }
   if ((cur.get(unl) as number) < 0) throw Error(`FOOD_TRANSFER: ${colony.id} starts the day with crops above the sugar ledger`);
   const fail = (m: string) => { throw Error(`FOOD_TRANSFER ${colony.id}: ${m}`); };
   assertTransferShape(colony.id, events); // before any field of any event is read (legalColonyRef reads the events)
@@ -327,7 +337,7 @@ export function checkColonyFood(start: ColonyFoodSnapshot, colony: ColonyState, 
     const x = e as unknown as FoodTransferInput & { transfer_id: string; colony: string }, a = micro(x.portions);
     if (x.colony !== colony.id) fail(`${x.transfer_id} is recorded for colony ${x.colony}`);
     for (const r of [x.source, x.recipient]) if (!legal(r, x.phase)) fail(`${x.transfer_id} uses ${r.kind}:${r.id}, which is not a compartment of this colony on this day (Issue #61 R3-08)`);
-    for (const r of [x.source, x.recipient]) if (!holdsOk(r.kind, x.food_type, start.c3a)) fail(`${x.transfer_id} moves ${x.food_type} through ${r.kind}:${r.id}, which holds only ${HOLDS[r.kind] ?? 'nothing on this day'}`);
+    for (const r of [x.source, x.recipient]) if (!holdsOk(r.kind, x.food_type, start.c3a, !!start.c4a)) fail(`${x.transfer_id} moves ${x.food_type} through ${r.kind}:${r.id}, which holds only ${HOLDS[r.kind] ?? 'nothing on this day'}`);
     // sources are shared by all colonies and are checked world-wide (checkSources); only the colony side is followed here
     if (TRACKED_KINDS.has(x.source.kind) && x.source.kind !== 'source') {
       const k = key(x.source, x.food_type), h = cur.get(k) ?? 0;
@@ -354,8 +364,17 @@ export function checkColonyFood(start: ColonyFoodSnapshot, colony: ColonyState, 
       const [, id, f] = k.split(':'), want = q && q.id === id ? micro(q.body.known_balance[f as 'sugar' | 'protein']) : 0;
       if (v !== want) fail(`${k} is ${want} µp in the state, the transfers give ${v}`);
     }
+    else if (k.startsWith('larva_body:')) {
+      const [, id, f] = k.split(':'), b = colony.population.brood.find((x) => x.id === id), want = b?.body ? micro(b.body.fed_balance[f as 'sugar' | 'protein']) : 0;
+      if (v !== want) fail(`${k} is ${want} µp in the state, the transfers give ${v}`);
+    }
     else if (k.startsWith('in_transit:')) { if (v !== 0) fail(`${k} still holds ${v} µp at the end of the day`); }
     else if (k !== unl && k !== cache) fail(`${k} holds ${v} µp at the end of the day but has no end state`);
+  }
+  // C4a (A11): every account at the end has its start balance and transfers behind it (a hatchling's starts at 0)
+  if (start.c4a) for (const b of colony.population.brood) if (b.body) for (const f of ['sugar', 'protein'] as const) {
+    const k = `larva_body:${b.id}:${f}`, want = micro(b.body.fed_balance[f]);
+    if (!cur.has(k) && want !== 0) fail(`${k} is ${want} µp with no start balance or transfer behind it`);
   }
   if ((cur.get(unl) as number) !== micro(colony.stores.sugar) - endCrops) fail(`${unl} is ${micro(colony.stores.sugar) - endCrops} µp, the transfers give ${cur.get(unl)}`);
   if ((cur.get(cache) as number) !== micro(colony.stores.protein)) fail(`${cache} is ${micro(colony.stores.protein)} µp, the transfers give ${cur.get(cache)}`);

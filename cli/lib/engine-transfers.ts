@@ -26,22 +26,26 @@ export interface EngineTransfer { type: 'food_transfer'; schema: string; transfe
 export const engineTransfers = (events: SimEvent[]): EngineTransfer[] => events.filter((e) => typeof e === 'object' && e !== null && (e as { type?: unknown }).type === 'food_transfer') as unknown as EngineTransfer[];
 
 const ATTRIBUTION: Record<string, string> = { collect: 'individual', prey_kill: 'individual', unload: 'individual', trophallaxis: 'individual', storage_overflow: 'unknown', metabolism: 'unknown', lay_egg: 'unknown', death_crop_to_nest_ledger: 'engine_rule',
-  take_from_cache: 'individual', feed_queen: 'individual', queen_self_feed: 'individual', queen_metabolism: 'individual', death_crop_to_corpse: 'engine_rule', return_to_cache: 'individual' };
+  take_from_cache: 'individual', feed_queen: 'individual', queen_self_feed: 'individual', queen_metabolism: 'individual', death_crop_to_corpse: 'engine_rule', return_to_cache: 'individual',
+  feed_larva: 'individual', larva_metabolism: 'individual', brood_body_at_eclosion: 'engine_rule', death_body_to_corpse: 'engine_rule' };
 // settlement steps (C3a: the queen's own metabolism after the colony's; a dead carrier's crop with the other death records)
-const SETTLEMENT_ORDER = ['storage_overflow', 'metabolism', 'queen_metabolism', 'death_crop_to_nest_ledger', 'lay_egg'];
-const SETTLEMENT_STEP = (cause: string) => (cause === 'death_crop_to_corpse' ? SETTLEMENT_ORDER.indexOf('death_crop_to_nest_ledger') : SETTLEMENT_ORDER.indexOf(cause));
-const ROUND_CAUSES = new Set(['take_from_cache', 'feed_queen', 'queen_self_feed', 'return_to_cache']);
+// C4a: the larvae's own metabolism after the queen's; brood leaving the brood (eclosion, death) in the brood step
+const SETTLEMENT_ORDER = ['storage_overflow', 'metabolism', 'queen_metabolism', 'larva_metabolism', 'brood_body_at_eclosion', 'death_crop_to_nest_ledger', 'lay_egg'];
+const SETTLEMENT_STEP = (cause: string) => (cause === 'death_crop_to_corpse' ? SETTLEMENT_ORDER.indexOf('death_crop_to_nest_ledger') : cause === 'death_body_to_corpse' ? SETTLEMENT_ORDER.indexOf('brood_body_at_eclosion') : SETTLEMENT_ORDER.indexOf(cause));
+const ROUND_CAUSES = new Set(['take_from_cache', 'feed_queen', 'queen_self_feed', 'return_to_cache', 'feed_larva']);
 const HOLDS: Record<string, ('sugar' | 'protein')[]> = { crop: ['sugar'], nest_unlocated: ['sugar'], cache: ['protein'], in_transit: ['sugar', 'protein'], source: ['sugar', 'protein'] };
 const ENDPOINTS: Record<string, [string[], string[]]> = { // allowed [source kinds, recipient kinds] per cause
   collect: [['source'], ['in_transit']], prey_kill: [['insect'], ['source']], unload: [['in_transit'], ['crop', 'cache']], trophallaxis: [['crop'], ['crop']],
   storage_overflow: [['crop', 'nest_unlocated', 'cache'], ['loss']], metabolism: [['crop', 'nest_unlocated', 'cache'], ['metabolized']], lay_egg: [['crop', 'nest_unlocated', 'cache'], ['egg']], death_crop_to_nest_ledger: [['crop'], ['nest_unlocated']],
   take_from_cache: [['cache'], ['crop']], feed_queen: [['crop'], ['queen_body']], queen_self_feed: [['cache'], ['queen_body']], queen_metabolism: [['queen_body'], ['metabolized']], death_crop_to_corpse: [['crop'], ['loss']], return_to_cache: [['crop'], ['cache']],
+  feed_larva: [['crop'], ['larva_body']], larva_metabolism: [['larva_body'], ['metabolized']], brood_body_at_eclosion: [['larva_body'], ['metabolized']], death_body_to_corpse: [['larva_body'], ['loss']],
 };
 
 /** The phase each cause belongs to (written here independently of the engine's table). */
 const PHASE_OF_CAUSE: Record<string, 'foraging' | 'nest_round' | 'nest_settlement'> = { collect: 'foraging', prey_kill: 'foraging', unload: 'foraging', trophallaxis: 'foraging', storage_overflow: 'nest_settlement', metabolism: 'nest_settlement', death_crop_to_nest_ledger: 'nest_settlement', lay_egg: 'nest_settlement',
-  take_from_cache: 'nest_round', feed_queen: 'nest_round', queen_self_feed: 'nest_round', queen_metabolism: 'nest_settlement', death_crop_to_corpse: 'nest_settlement', return_to_cache: 'nest_round' };
-const KINDS = new Set(['source', 'insect', 'in_transit', 'crop', 'cache', 'nest_unlocated', 'metabolized', 'egg', 'loss', 'queen_body']);
+  take_from_cache: 'nest_round', feed_queen: 'nest_round', queen_self_feed: 'nest_round', queen_metabolism: 'nest_settlement', death_crop_to_corpse: 'nest_settlement', return_to_cache: 'nest_round',
+  feed_larva: 'nest_round', larva_metabolism: 'nest_settlement', brood_body_at_eclosion: 'nest_settlement', death_body_to_corpse: 'nest_settlement' };
+const KINDS = new Set(['source', 'insect', 'in_transit', 'crop', 'cache', 'nest_unlocated', 'metabolized', 'egg', 'loss', 'queen_body', 'larva_body']);
 const ATTRIBUTIONS = new Set(['individual', 'unknown', 'engine_rule']);
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const nonEmpty = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
@@ -127,9 +131,11 @@ export function speciesFoodTiming(species: unknown): 'timed' | 'untimed_legacy' 
   const sp = (species ?? {}) as { activity?: { individual_timeline?: unknown }; navigation?: { individual_route_memory?: unknown } };
   return sp.activity?.individual_timeline === false || sp.navigation?.individual_route_memory === false ? 'untimed_legacy' : 'timed';
 }
+/** C4a switch as given in the species parameters (read here, not from the engine). */
+export const speciesC4a = (species: unknown): boolean => (species as { larval_feeding?: { individual_larva_body_c4a?: unknown } } | undefined)?.larval_feeding?.individual_larva_body_c4a === true;
 /** C3a switch as given in the species parameters (read here, not from the engine). */
 export const speciesC3a = (species: unknown): boolean => (species as { queen_feeding?: { individual_queen_body_c3a?: unknown } } | undefined)?.queen_feeding?.individual_queen_body_c3a === true;
-export function replayEngineColonyDay(start: ColonyState, end: ColonyState, events: SimEvent[], day: number, sourceIds: ReadonlySet<string>, timing: 'timed' | 'untimed_legacy' = 'timed', c3a = false): EngineReplay {
+export function replayEngineColonyDay(start: ColonyState, end: ColonyState, events: SimEvent[], day: number, sourceIds: ReadonlySet<string>, timing: 'timed' | 'untimed_legacy' = 'timed', c3a = false, c4a = false): EngineReplay {
   const errors: string[] = [], err = (m: string) => { if (errors.length < 50) errors.push(m); };
   // independent review of 9888217 (F-d): the event list itself is checked before anything reads it
   if (!Array.isArray(events)) return { ok: false, errors: ['the event list is not an array'], transfers: 0, time_validation: 'invalid', by_cause: {}, by_attribution: {}, unattributed_by_cause: {} };
@@ -148,15 +154,23 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
   // the carcass each kill created (new_food_source caused by that kill): a kill is credited once, with exactly that protein
   const killYield = new Map((events as Any[]).filter((e) => e.type === 'new_food_source' && killIds.has(String(e.caused_by_event_id))).map((e) => [String(e.caused_by_event_id), toMicro(Number(e.protein_portions))]));
   const credited = new Set<string>();
+  // C4a: start balances of the larva accounts — from the start state, or (created today) from their initialization record (0)
+  const larvaStart = new Map<string, { sugar: number; protein: number }>();
+  if (c4a) {
+    for (const b of start.population.brood as Any[]) if (b.body?.fed_balance) larvaStart.set(b.id, { sugar: toMicro(b.body.fed_balance.sugar), protein: toMicro(b.body.fed_balance.protein) });
+    for (const e of events as Any[]) if (e?.type === 'brood_nutrition_record_initialized' && e.stage === 'larva' && !larvaStart.has(String(e.id))) larvaStart.set(String(e.id), { sugar: toMicro(Number(e.fed_balance?.sugar)), protein: toMicro(Number(e.fed_balance?.protein)) });
+  }
   let curPhase = 'foraging';
   const exists = (r: { kind: string; id: string }): boolean => ({
     crop: () => (curPhase === 'foraging' ? startWorkers : workerIds).has(r.id), in_transit: () => (curPhase === 'foraging' ? startWorkers : workerIds).has(r.id), cache: () => nestIds.has(r.id),
     nest_unlocated: () => r.id === start.id, metabolized: () => r.id === start.id, egg: () => eggIds.has(r.id),
-    insect: () => killIds.has(r.id), loss: () => r.id === 'storage_overflow' || (c3a && r.id === 'worker_corpse'), source: () => sourceIds.has(r.id),
+    insect: () => killIds.has(r.id), loss: () => r.id === 'storage_overflow' || (c3a && r.id === 'worker_corpse') || (c4a && r.id === 'brood_corpse'), source: () => sourceIds.has(r.id),
+    // C4a: a brood item that had an account at the start of the day, or got one at the start of the round (initialization)
+    larva_body: () => c4a && larvaStart.has(r.id),
     // C3a: only this colony's queen, alive when the day began, with a queen record (round and her metabolism precede deaths)
     queen_body: () => c3a && start.population.queen_alive && r.id === start.queen_id && (end.population.queens ?? []).some((q) => q.id === r.id),
   } as Record<string, () => boolean>)[r.kind]?.() ?? false;
-  const holds = (kind: string): ('sugar' | 'protein')[] | undefined => (c3a && kind === 'crop' ? ['sugar', 'protein'] : c3a && kind === 'queen_body' ? ['sugar', 'protein'] : HOLDS[kind]);
+  const holds = (kind: string): ('sugar' | 'protein')[] | undefined => (c3a && kind === 'crop' ? ['sugar', 'protein'] : c3a && kind === 'queen_body' ? ['sugar', 'protein'] : c4a && kind === 'larva_body' ? ['sugar', 'protein'] : HOLDS[kind]);
   const xs = engineTransfers(events), by_cause: Record<string, number> = {}, by_attribution: Record<string, { sugar: number; protein: number }> = {}, unattributed_by_cause: Record<string, { sugar: number; protein: number }> = {};
   const cur = new Map<string, number>(), k = (r: { kind: string; id: string }, f: string) => `${r.kind}:${r.id}:${f}`;
   let crops = 0;
@@ -172,6 +186,7 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
     const qs = start.population.queens?.[0] ? start.population.queens[0].body.known_balance : init ? init.known_balance : null;
     if (startQueen && qs) { cur.set(`queen_body:${startQueen.id}:sugar`, toMicro(qs.sugar)); cur.set(`queen_body:${startQueen.id}:protein`, toMicro(qs.protein)); }
   }
+  for (const [id, v] of larvaStart) { cur.set(`larva_body:${id}:sugar`, v.sugar); cur.set(`larva_body:${id}:protein`, v.protein); }
   let lastOrdinal = -Infinity;
   let phase = 'foraging', settleStep = 0, lastUnload: { worker: string; minute: number | null } | null = null;
   xs.forEach((x, i) => {
@@ -189,6 +204,7 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
     for (const r of [x.source, x.recipient]) { const h = holds(r.kind); if (h && !h.includes(x.food_type)) err(`${x.transfer_id}: ${r.kind} cannot hold ${x.food_type}`); }
     if ((x.cause === 'take_from_cache' || x.cause === 'queen_self_feed' || x.cause === 'death_crop_to_corpse' || x.cause === 'return_to_cache') && x.food_type !== 'protein') err(`${x.transfer_id}: ${x.cause} must move protein`);
     if (x.cause === 'death_crop_to_nest_ledger' && x.food_type !== 'sugar') err(`${x.transfer_id}: only sugar stays in the nest ledger at a death`);
+    if (x.cause === 'death_body_to_corpse' && x.recipient.id !== 'brood_corpse') err(`${x.transfer_id}: a dead larva's or pupa's balance must go to loss:brood_corpse`);
     if (x.cause === 'death_crop_to_corpse' && x.recipient.id !== 'worker_corpse') err(`${x.transfer_id}: a dead carrier's liquid protein must go to loss:worker_corpse`);
     curPhase = x.phase;
     if (x.cause === 'unload' && x.recipient.kind === 'crop' && x.recipient.id !== x.source.id) err(`${x.transfer_id}: the transit load of ${x.source.id} is unloaded into the crop of ${x.recipient.id}`);
@@ -247,6 +263,9 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
     else if (key.startsWith('crop:')) {
       if (!alive.has(key.split(':')[1]) && v !== 0) err(`${key}: a worker that is gone still holds ${v} µp`);
       else if (key.endsWith(':protein')) { const w = end.population.workers.find((x) => x.id === key.split(':')[1]); if (w && toMicro(w.crop_cargo_protein_liquid || 0) !== v) err(`${key}: state ${toMicro(w.crop_cargo_protein_liquid || 0)} µp, replay ${v}`); }
+    } else if (key.startsWith('larva_body:')) {
+      const [, bid, f] = key.split(':'), b = (end.population.brood as Any[]).find((x) => x.id === bid), want = b?.body ? toMicro(b.body.fed_balance[f]) : 0;
+      if (want !== v) err(`${key}: state ${want} µp, replay ${v}`);
     } else if (key.startsWith('queen_body:')) {
       const [, qid, f] = key.split(':'), q = (end.population.queens ?? []).find((x) => x.id === qid);
       if (!q || toMicro(q.body.known_balance[f as 'sugar' | 'protein']) !== v) err(`${key}: state ${q ? toMicro(q.body.known_balance[f as 'sugar' | 'protein']) : 'missing'} µp, replay ${v}`);
@@ -256,6 +275,11 @@ export function replayEngineColonyDay(start: ColonyState, end: ColonyState, even
   // Codex review of 9d2933f (R6-01): every queen_body that exists at the end is checked, also one no transfer touched
   if (c3a) for (const q of end.population.queens ?? []) for (const f of ['sugar', 'protein'] as const) {
     const key = `queen_body:${q.id}:${f}`, want = toMicro(q.body.known_balance[f]);
+    if (!cur.has(key) && want !== 0) err(`${key}: state ${want} µp with no start balance, initialization or transfer behind it`);
+  }
+  // C4a (A11): an account at the end of the day needs a start balance, an initialization or a transfer behind it
+  if (c4a) for (const b of end.population.brood as Any[]) if (b.body) for (const f of ['sugar', 'protein']) {
+    const key = `larva_body:${b.id}:${f}`, want = toMicro(Number(b.body.fed_balance?.[f]));
     if (!cur.has(key) && want !== 0) err(`${key}: state ${want} µp with no start balance, initialization or transfer behind it`);
   }
   if ((cur.get(unl) as number) !== toMicro(end.stores.sugar) - endCrops) err(`${unl}: state ${toMicro(end.stores.sugar) - endCrops} µp, replay ${cur.get(unl)}`);

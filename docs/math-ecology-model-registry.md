@@ -120,6 +120,12 @@
 | W-NESTCONTACT | workers.ts:63-75 | 以 0.58 的機率接觸，同伴由陣列索引選出；訊號以 EWMA 0.5 更新 | G | `nest_contact:<id>`，依陣列（#56） | 間接（帶有全巢 pF） | 單向接觸 | 接觸率（他種） | C3～C5、P1-B |
 | W-NURSECONTACT | workers.ts:78-88 | 0.75 機率接觸一隻幼蟲（幼蟲依 ID 排序） | G | `nurse_contact:<id>`，與順序無關 | — | 接觸不會餵食幼蟲 | — | C4 |
 
+**C4a（v2-review.28，Issue #81，開關 `larval_feeding.individual_larva_body_c4a` 預設關閉，需 C3a 打開）對上表的影響**（開關關閉時上表各列不變，缺陷仍在）：
+- COL-DEMAND：幼蟲那一份移出全巢需求，由每隻幼蟲從自己的 `fed_balance` 支付（`engine/larva-feeding.ts` `larvaMetabolism`）。
+- BROOD-BEG：begging = clamp(0.3·old + 0.7·(1 − 自己今日蛋白攝取 / 自己的需求), 0, 1)，不再讀全巢 pF（D6）。
+- W-NURSECONTACT：另有巢內回合的 `larva_contact`（同位置、依 ID 排序均勻抽一隻，串流 `c4a_larva_contact:<id>`），接觸後依該幼蟲回合開始時的訊號，以固定一口 `feed_larva` 餵食（門檻 0.3、一口＝幼蟲一日需求，遊戲假設；機制 R210 非本種）。
+- BROOD-DEV、幼蟲飢餓死亡（G2、G3）**不變**（C4b、C4c）；因為全巢需求不再含幼蟲，兩者讀到的全巢比例與缺口天數的意義改變（見 PR #90 診斷）。
+
 ## 6. 覓食時間軸（`engine/activity.ts`，現行路徑）
 大多數抽樣用 `act:{worker}:{action}:{purpose}` 串流，與陣列順序無關。**例外**（§8 P2-R1）：獵物等待沿用發現者的 `site` 串流；招募沿用 `unload` 串流，抽樣次數依其他工蟻的狀態而變。同時間的事件依事件種類、再依工蟻 ID 處理。
 

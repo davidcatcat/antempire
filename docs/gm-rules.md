@@ -447,3 +447,22 @@ Day14 權威已知卵：E001／E002／E003／E004／E005 分別經過 **12／6�
 - **未處理**：距平係數的符號（越暖越濕）；月平年值線性內插造成的偏差（最多約 0.7 個百分點，氣溫也有同樣的效應）。
 - 這是合成天氣，不是實測；工程檢驗通過不等於氣候驗證。
 - **引擎行為版本**：`antempire.v2-review.27-rh-offsets`。
+
+## 2026-11-06 規則版本 v2-review.28：C4a 幼蟲個體營養帳（Issue #81；開關預設關閉）
+- **開關**：`larval_feeding.individual_larva_body_c4a`，預設 **false**；關閉時所有輸出與 v2-review.27 逐位元組相同。只能在 `queen_feeding.individual_queen_body_c3a` 也為 true 時打開，否則讀參數時拒絕（D1：共用 C3a 巢內回合，不建立第二套接觸時間）。
+- **Owner 決策**：2026-11-06「照建議」核准 D1～D8（`docs/design-c4-larval-nutrition.md` §7.0）。
+- **每日順序**：C3a 巢內回合（store → queen → **brood** → store）→ 儲存溢出 → 全巢代謝（**不再含幼蟲**）→ 蟻后代謝 → **幼蟲代謝與求食訊號** → 發育（孵化紀錄、化蛹、羽化）→ 工蟻死亡 → 蟻后存活 → 產卵（**卵的投入紀錄**）。
+- **接觸與餵食（D4、D7）**：
+  - 育幼工蟻在序數 2 + u 抵達 `brood`；u 沿用 C3a 自己的抽籤。蟻后不在時，從 store 直接走到 brood。
+  - 每隻工蟻從同一位置的幼蟲中（依 ID 排序，串流 `c4a_larva_contact:<worker>`）均勻抽一隻接觸，記為 `larva_contact`。
+  - 這隻幼蟲回合開始時的求食訊號 ≥ `feed_begging_threshold`（0.3）時，工蟻從自己嗉囊各餵一口糖與液態蛋白（`feed_larva`）。每口固定 `feed_bolus_*`：糖 0.025、蛋白 0.08，等於一隻幼蟲參考溫度下一日的需求。
+  - 依據：機制 R210（*S. invicta*，非本種）：訊號決定被餵的頻率，每口量固定。門檻與每口量是遊戲假設。
+  - 同一位置的幼蟲越多，每隻被接觸的機率越低。這是候選的稀釋機制，結果中要報告。
+- **代謝（D3）**：每隻幼蟲從自己的 `fed_balance` 支付 min(自己的需求, 自己的收支)；不足只記為自己的缺口，不向全巢借。全巢代謝移出幼蟲那一份。
+- **求食訊號（D6）**：`begging ← w_prev · begging + w_short · clamp(1 − 今日自己的蛋白攝取 / 自己的需求, 0, 1)`。只讀自己的紀錄，不讀全巢比例。
+- **孵化（D2a）**：寫一筆 `larva_hatch_nutrition`，記下卵產下時 `lay_egg` 的投入（`egg_investment`），沒有紀錄的卵寫 `null`；`reserve_at_hatch` 一律 `null`。這只是帳務追蹤：沒有轉移、沒有 `larva_yolk`、`egg:<id>` 帳不變、不模擬胚胎消耗。
+- **化蛹、羽化與死亡（D5）**：化蛹時收支留在個體身上；羽化時剩下的收支記為代謝（`brood_body_at_eclosion`，遊戲假設）；死亡時隨屍體進入 `loss:brood_corpse`（C5 之前只是匯）。
+- **既有個體（D8）**：開關第一次看到、還沒有紀錄的卵與幼蟲，收支從 0 起算，`egg_investment: null`，`reserve_at_hatch: null`。`reserve_basis` 依來源：Day0 第 0 日為 `day0_scenario`；引擎在開關打開前產下的卵為 `egg_laid_before_switch`；其他（Day14 遷移、之後才打開）為 `unknown_at_migration`。
+- **仍用舊式**（C4b、C4c 才改）：發育的營養係數（L2）與長期缺蛋白死亡（L3）。全巢代謝不再含幼蟲後，全巢蛋白比例與缺口天數的意義改變，舊式的輸入也跟著改變（診斷中報告）。
+- **保守界線**：未知儲備是 `null`，所以已知缺口會**高估**真正的缺口。不得當成科學結論。
+- **引擎行為版本**：`antempire.v2-review.28-c4a-larva-body`。
