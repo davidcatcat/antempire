@@ -4,7 +4,7 @@
  "title": "Two-way single-file corridor, 12 seeds x 8 ants (tests/ph2-collision.test.ts section 9b): seeds 3 and 7",
  "geometry_ref": "scenarios/physics/narrow-corridor.geometry.json",
  "source": "Generated exactly as tests/ph2-collision.test.ts section 9b (rng(seed); per ant: speed 15 + 4u, then start 8u; minor body from body-candidates, width = upper candidate; reach = lower candidate + 0.5 mm; encounter rules from interaction-candidates with inside_turn_back_probability = candidate_values[1]). Recorded 2026-11-06 on branch claude/ant-empire-engine-refactor-i45q93-ph-p2d.",
- "observation": "Since the PH-P2-B fix (PR #98) these two seeds end with the four outbound ants (A0, A2, A4, A6) reported unresolved: \"mutual wait, every ant blocked ahead\". At that instant all four stand at the same precomputed back-out point s = 18.1255002 mm (front 1e-6 mm outside the single-file section [19.3755, 80.6245]); their arc lengths differ only by rounding (<= 1.5e-14 mm), so which of them is \"ahead\" of another is decided by the sign of a rounding difference. Before PH-P2-B, boundary arrivals ~0.5 ns apart were merged into one instant and handled early, which produced an \"arrived together\" draw and all 96 ants arrived. Classification: a numerical degeneracy of the 1-D entry-queue solver (abreast ants at coincident arc lengths; lateral position not modelled), not a geometric deadlock and not a scheduling artefact. Kept as an explicit counterexample on Owner instruction (#100); not tuned away.",
+ "observation": "Since the PH-P2-B fix (PR #98) these two seeds end with the four outbound ants (A0, A2, A4, A6) reported unresolved: \"mutual wait, every ant blocked ahead\". At that instant all four stand at the same precomputed back-out point s = 18.1255002 mm (front 1e-6 mm outside the single-file section [19.3755, 80.6245]); their arc lengths differ only by rounding (<= 1.5e-14 mm), so which of them is \"ahead\" of another is decided by the sign of a rounding difference. Before PH-P2-B, boundary arrivals ~0.5 ns apart were merged into one instant and handled early, which produced an \"arrived together\" draw and all 96 ants arrived. Classification: a numerical degeneracy of the 1-D entry-queue solver (abreast ants at coincident arc lengths; lateral position not modelled), not a geometric deadlock and not a scheduling artefact. Kept as an explicit counterexample on Owner instruction (#100); not tuned away. Update 2026-11-07 (PH-P2E, issue #107): the independent review traced the cause to detectStuck's blockedAhead test (o.s - r.s)*travel > 0, which has no tolerance; arc lengths 1-4 ulp apart were ordered by the sign of the rounding residue. With a LEN_TOL(lane length) tolerance (coincident 1-D arc coordinates: neither ahead) the existing entry-queue rule resolves both seeds (8/8 arrive each). Speeds, probabilities, bodies, rules and seeds unchanged. The fixture is kept as the regression case for coincident ants.",
  "cases": {
   "seed-3": {
    "seed": 3,
@@ -272,5 +272,77 @@
     }
    ]
   }
+ },
+ "results_by_engine": {
+  "note": "Recorded outcomes of these exact cases, kept as history (Owner review of #108). Arrival counts are records, never targets. Computed with the probe physrev/fxres.ts of the independent review on each commit.",
+  "ef8308d (PR #105 head; before PH-P2E)": {
+   "seed-3": {
+    "arrived": [
+     "A1",
+     "A3",
+     "A5",
+     "A7"
+    ],
+    "unresolved": [
+     "A0",
+     "A2",
+     "A4",
+     "A6"
+    ],
+    "reasons": [
+     "mutual wait, every ant blocked ahead",
+     "waits for A0, which has stopped for good"
+    ]
+   },
+   "seed-7": {
+    "arrived": [
+     "A1",
+     "A3",
+     "A5",
+     "A7"
+    ],
+    "unresolved": [
+     "A0",
+     "A2",
+     "A4",
+     "A6"
+    ],
+    "reasons": [
+     "mutual wait, every ant blocked ahead",
+     "waits for A0, which has stopped for good"
+    ]
+   },
+   "ph2-collision 9b (12 seeds x 8 ants)": "88/96 arrived"
+  },
+  "PH-P2E (issue #107, PR #108)": {
+   "seed-3": {
+    "arrived": [
+     "A0",
+     "A1",
+     "A2",
+     "A3",
+     "A4",
+     "A5",
+     "A6",
+     "A7"
+    ],
+    "unresolved": []
+   },
+   "seed-7": {
+    "arrived": [
+     "A0",
+     "A1",
+     "A2",
+     "A3",
+     "A4",
+     "A5",
+     "A6",
+     "A7"
+    ],
+    "unresolved": []
+   },
+   "ph2-collision 9b (12 seeds x 8 ants)": "96/96 arrived"
+  },
+  "not_2d_feasibility_evidence": "The lane model has no lateral coordinate and checks bodies in pairs only (P2-E, issue #107). checkWidthOccupancy reports instants where three or more bodies at one arc position need more than the usable width: 478 sampled instants in seed-3 and 396 in seed-7 after PH-P2E (1422 / 1016 before), and it occurs in every one of the 12 x 8 traffic scenes. 96/96 is therefore NOT evidence that the traffic is physically feasible in 2-D; it only shows that the numerical defects A and B are gone."
  }
 }
