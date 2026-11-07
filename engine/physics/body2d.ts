@@ -63,57 +63,212 @@ export function laneBodyPose(l: Lane2, b: LaneBody): Pose2 {
   return { x: c.x, y: c.y, heading_rad: Math.atan2(seg.t.y * b.dir, seg.t.x * b.dir) };
 }
 
+// ---------------------------------------------------------------- lane region (exact)
+/*
+ * LANE REGION (geometric convention, PH-3a r2; Owner P2 2026-11-07): the set of points within W/2 of the centerline,
+ * with FLAT ends at the lane's two extremities = the union of one W-wide rectangle per straight segment and one disk of
+ * radius W/2 at every interior vertex (a constant-width trail; round joints). Consecutive collinear segments are merged
+ * first, so a vertex on a straight line is not a joint. The region beyond a lane end belongs to the node there (junction,
+ * nest entrance), which this module does not model.
+ * EXACT containment of a capsule C (axis S, radius r) in the closed region U: C ⊆ U ⟺ the axis midpoint is in U and no
+ * point of ∂U is closer than r to S. (C is connected; a part of C outside U would make int C meet ∂U.) ∂U is computed
+ * once per lane: every edge of every rectangle and every joint circle, minus the parts lying in the OPEN interior of
+ * another piece; the remaining pieces are segments and circular arcs, and segment–segment / segment–arc distances are
+ * exact. Former version: a body across a joint (even a collinear one) or a bend was reported 'not_checked' and counted
+ * as a violation, so legal geometry was rejected.
+ */
+type Rect = { kind: 'rect'; a: Vec2; t: Vec2; n: Vec2; len: number; h: number };
+type Disk = { kind: 'disk'; c: Vec2; R: number };
+type Piece = Rect | Disk;
+type Bnd = { kind: 'seg'; p: Vec2; q: Vec2 } | { kind: 'arc'; c: Vec2; R: number; th0: number; th1: number };
+const TAU = 2 * Math.PI;
+const regionCache = new WeakMap<Lane2, { pieces: Piece[]; boundary: Bnd[] }>();
+
+/** open interval of τ ∈ ℝ with lo < f0 + τ f1 < hi (null if empty) */
+function linOpen(f0: number, f1: number, lo: number, hi: number): [number, number] | null {
+  if (f1 === 0) return f0 > lo && f0 < hi ? [-Infinity, Infinity] : null;
+  let a = (lo - f0) / f1, b = (hi - f0) / f1; if (a > b) [a, b] = [b, a];
+  return a < b ? [a, b] : null;
+}
+/** open set of θ with cos(θ − β) > k, as intervals inside [0, 2π) */
+function cosArc(beta: number, k: number): [number, number][] {
+  if (k >= 1) return [];
+  if (k < -1) return [[0, TAU]];
+  const w = Math.acos(k), lo = ((beta - w) % TAU + TAU) % TAU, hi = lo + 2 * w;
+  return hi <= TAU ? [[lo, hi]] : [[lo, TAU], [0, hi - TAU]];
+}
+const intersectIv = (A: [number, number][], B: [number, number][]) => { const out: [number, number][] = []; for (const [a0, a1] of A) for (const [b0, b1] of B) { const lo = Math.max(a0, b0), hi = Math.min(a1, b1); if (lo < hi) out.push([lo, hi]); } return out; };
+/** closed complement of a union of open intervals within [d0, d1]; pieces shorter than eps dropped */
+function complementIv(open: [number, number][], d0: number, d1: number, eps: number): [number, number][] {
+  const iv = open.map(([a, b]) => [Math.max(a, d0), Math.min(b, d1)] as [number, number]).filter(([a, b]) => a < b).sort((x, y) => x[0] - y[0]);
+  const out: [number, number][] = []; let cur = d0;
+  for (const [a, b] of iv) { if (a > cur + eps) out.push([cur, a]); cur = Math.max(cur, b); }
+  if (d1 > cur + eps) out.push([cur, d1]);
+  return out;
+}
+const pt = (p: Vec2, d: Vec2, k: number): Vec2 => ({ x: p.x + d.x * k, y: p.y + d.y * k });
+
+function laneRegion(l: Lane2): { pieces: Piece[]; boundary: Bnd[] } {
+  const hit = regionCache.get(l); if (hit) return hit;
+  const h = (l.width_mm as number) / 2, raw = laneSegments(l), segs: typeof raw = [];
+  for (const g of raw) {
+    const last = segs[segs.length - 1];
+    if (last && Math.abs(last.t.x * g.t.y - last.t.y * g.t.x) <= 1e-12 && last.t.x * g.t.x + last.t.y * g.t.y > 0) { const len = last.len + g.len; segs[segs.length - 1] = { ...last, b: g.b, len }; }
+    else segs.push(g);
+  }
+  const pieces: Piece[] = segs.map((g) => ({ kind: 'rect', a: g.a, t: g.t, n: g.n, len: g.len, h }) as Rect);
+  for (let i = 1; i < segs.length; i++) pieces.push({ kind: 'disk', c: segs[i].a, R: h });
+  const boundary: Bnd[] = [];
+  const segOpenIn = (p: Vec2, d: Vec2, K: Piece): [number, number] | null => {   // τ-interval of p + τ d in int K
+    if (K.kind === 'rect') {
+      const al = linOpen((p.x - K.a.x) * K.t.x + (p.y - K.a.y) * K.t.y, d.x * K.t.x + d.y * K.t.y, 0, K.len);
+      const la = linOpen((p.x - K.a.x) * K.n.x + (p.y - K.a.y) * K.n.y, d.x * K.n.x + d.y * K.n.y, -K.h, K.h);
+      if (!al || !la) return null; const lo = Math.max(al[0], la[0]), hi = Math.min(al[1], la[1]); return lo < hi ? [lo, hi] : null;
+    }
+    const ex = p.x - K.c.x, ey = p.y - K.c.y, A = d.x * d.x + d.y * d.y, B = 2 * (ex * d.x + ey * d.y), C = ex * ex + ey * ey - K.R * K.R, D = B * B - 4 * A * C;
+    if (A === 0 || D <= 0) return null; const sq = Math.sqrt(D); return [(-B - sq) / (2 * A), (-B + sq) / (2 * A)];
+  };
+  const arcOpenIn = (c: Vec2, R: number, K: Piece): [number, number][] => {        // θ-set of c + R e(θ) in int K
+    if (K.kind === 'rect') {
+      const at = Math.atan2(K.t.y, K.t.x), an = Math.atan2(K.n.y, K.n.x);
+      const A0 = (c.x - K.a.x) * K.t.x + (c.y - K.a.y) * K.t.y, N0 = (c.x - K.a.x) * K.n.x + (c.y - K.a.y) * K.n.y;
+      // A0 + R cos(θ − at) ∈ (0, len), N0 + R cos(θ − an) ∈ (−h, h)
+      let s4 = cosArc(at, -A0 / R); s4 = intersectIv(s4, cosArc(at + Math.PI, (A0 - K.len) / R));
+      s4 = intersectIv(s4, cosArc(an + Math.PI, (N0 - K.h) / R)); return intersectIv(s4, cosArc(an, (-K.h - N0) / R));
+    }
+    const dx = c.x - K.c.x, dy = c.y - K.c.y, dd = Math.hypot(dx, dy);
+    if (dd === 0) return [];
+    // |d + R e|² < K.R² ⟺ cos(θ − ∠d) < (K.R² − R² − dd²) / (2 R dd)
+    return cosArc(Math.atan2(dy, dx) + Math.PI, -(K.R * K.R - R * R - dd * dd) / (2 * R * dd));
+  };
+  pieces.forEach((P, i) => {
+    const others = pieces.filter((_, j) => j !== i);
+    if (P.kind === 'rect') {
+      const c = [pt(pt(P.a, P.n, P.h), P.t, 0), pt(pt(P.a, P.n, P.h), P.t, P.len), pt(pt(P.a, P.n, -P.h), P.t, P.len), pt(pt(P.a, P.n, -P.h), P.t, 0)];
+      for (let e = 0; e < 4; e++) {
+        const p = c[e], q = c[(e + 1) % 4], d = { x: q.x - p.x, y: q.y - p.y };
+        const cov = others.map((K) => segOpenIn(p, d, K)).filter((x): x is [number, number] => x !== null);
+        for (const [a, b] of complementIv(cov, 0, 1, 1e-12)) boundary.push({ kind: 'seg', p: pt(p, d, a), q: pt(p, d, b) });
+      }
+    } else {
+      const cov = others.flatMap((K) => arcOpenIn(P.c, P.R, K));
+      const free = complementIv(cov, 0, TAU, 1e-12);
+      if (free.length > 1 && free[0][0] === 0 && free[free.length - 1][1] === TAU) { const last = free.pop()!; free[0] = [last[0], free[0][1] + TAU]; }
+      for (const [a, b] of free) boundary.push({ kind: 'arc', c: P.c, R: P.R, th0: a, th1: b });
+    }
+  });
+  const out = { pieces, boundary }; regionCache.set(l, out); return out;
+}
+const inArc = (phi: number, th0: number, th1: number) => (((phi - th0) % TAU) + TAU) % TAU <= th1 - th0 + 1e-15;
+function pointArcDist(p: Vec2, c: Vec2, R: number, th0: number, th1: number): number {
+  const dx = p.x - c.x, dy = p.y - c.y, d = Math.hypot(dx, dy);
+  if (d > 0 && inArc(Math.atan2(dy, dx), th0, th1)) return Math.abs(d - R);
+  if (d === 0) return R;
+  const e = (th: number) => Math.hypot(p.x - c.x - R * Math.cos(th), p.y - c.y - R * Math.sin(th));
+  return Math.min(e(th0), e(th1));
+}
+/** exact distance from segment AB to an arc (candidates: endpoints both ways, crossings, the foot of the centre) */
+function segArcDist(A: Vec2, B: Vec2, arc: Extract<Bnd, { kind: 'arc' }>): number {
+  const { c, R, th0, th1 } = arc, end = (th: number) => ({ x: c.x + R * Math.cos(th), y: c.y + R * Math.sin(th) });
+  let best = Math.min(pointArcDist(A, c, R, th0, th1), pointArcDist(B, c, R, th0, th1), pointSegment2D(end(th0), A, B).d, pointSegment2D(end(th1), A, B).d);
+  const d = { x: B.x - A.x, y: B.y - A.y }, ex = A.x - c.x, ey = A.y - c.y, a2 = d.x * d.x + d.y * d.y;
+  if (a2 > 0) {
+    const b2 = 2 * (ex * d.x + ey * d.y), c2 = ex * ex + ey * ey - R * R, D = b2 * b2 - 4 * a2 * c2;
+    if (D >= 0) for (const tau of [(-b2 - Math.sqrt(D)) / (2 * a2), (-b2 + Math.sqrt(D)) / (2 * a2)]) if (tau >= 0 && tau <= 1) { const x = pt(A, d, tau); if (inArc(Math.atan2(x.y - c.y, x.x - c.x), th0, th1)) best = 0; }
+    const tq = Math.min(1, Math.max(0, -(ex * d.x + ey * d.y) / a2)); best = Math.min(best, pointArcDist(pt(A, d, tq), c, R, th0, th1));
+  }
+  return best;
+}
+const inPiece = (p: Vec2, K: Piece, tol: number) => {
+  if (K.kind === 'disk') return Math.hypot(p.x - K.c.x, p.y - K.c.y) <= K.R + tol;
+  const al = (p.x - K.a.x) * K.t.x + (p.y - K.a.y) * K.t.y, la = (p.x - K.a.x) * K.n.x + (p.y - K.a.y) * K.n.y;
+  return al >= -tol && al <= K.len + tol && Math.abs(la) <= K.h + tol;
+};
+
 /**
- * Is a capsule inside a STRAIGHT lane segment's band (|lateral offset| + r ≤ W/2 at both axis ends, along-lane extent
- * within the segment)? For a straight band the lateral offset is affine along the axis, so checking the two axis ends is
- * exact. Polyline lanes: each body must lie within one straight segment (bodies across a bend are reported as
- * 'not checked', never silently accepted).
+ * Is a capsule inside the lane region (exact; see LANE REGION above)? Unknown width: not checked (never accepted).
+ * A body extending past a lane END is outside THIS region (the part beyond lies in the node); checkOccupancy2D reports
+ * such bodies as not_checked, not as violations.
  */
 export function capsuleInLane(l: Lane2, c: Capsule, tol = OCC_TOL_MM): { inside: boolean; checked: boolean; why?: string } {
   if (typeof l.width_mm !== 'number') return { inside: false, checked: false, why: `lane ${l.id} width unknown` };
-  const W2 = l.width_mm / 2;
-  for (const g of laneSegments(l)) {
-    const along = (p: Vec2) => (p.x - g.a.x) * g.t.x + (p.y - g.a.y) * g.t.y, lat = (p: Vec2) => (p.x - g.a.x) * g.n.x + (p.y - g.a.y) * g.n.y;
-    const sa = along(c.a), sb = along(c.b);
-    if (Math.min(sa, sb) - c.r < -tol || Math.max(sa, sb) + c.r > g.len + tol) continue;   // not (entirely) within this segment
-    const ok = Math.abs(lat(c.a)) + c.r <= W2 + tol && Math.abs(lat(c.b)) + c.r <= W2 + tol;
-    return ok ? { inside: true, checked: true } : { inside: false, checked: true, why: `lateral extent ${Math.max(Math.abs(lat(c.a)), Math.abs(lat(c.b))) + c.r} mm > half width ${W2} mm` };
-  }
-  return { inside: false, checked: false, why: 'body spans a bend or a lane end: not checked by the straight-band contract' };
+  const { pieces, boundary } = laneRegion(l), mid = { x: (c.a.x + c.b.x) / 2, y: (c.a.y + c.b.y) / 2 };
+  if (!pieces.some((K) => inPiece(mid, K, tol))) return { inside: false, checked: true, why: 'body centre outside the lane region' };
+  let dmin = Infinity;
+  for (const b of boundary) dmin = Math.min(dmin, b.kind === 'seg' ? segmentSegment2D(c.a, c.b, b.p, b.q) : segArcDist(c.a, c.b, b));
+  return dmin >= c.r - tol ? { inside: true, checked: true } : { inside: false, checked: true, why: `lane edge ${dmin} mm from the body axis < radius ${c.r} mm (protrudes ${c.r - dmin} mm)` };
 }
 
-export interface OccupancyViolation { kind: 'outside_lane' | 'not_checked' | 'overlap'; ids: string[]; detail: string }
+export interface OccupancyViolation { kind: 'outside_lane' | 'overlap'; ids: string[]; detail: string }
+export interface OccupancyResult {
+  /** true: proven legal; false: at least one violation; null: no violation found but some body could not be checked */
+  valid: boolean | null;
+  violations: OccupancyViolation[];
+  /** bodies the contract cannot judge (unknown lane width; body extending past a lane end into the node): NOT violations */
+  not_checked: { ids: string[]; detail: string }[];
+}
 /**
- * 2-D occupancy contract for one instant: every body lies inside its lane band, and no two bodies of the SAME layer
- * (default: same lane) overlap. Unlike the 1-D pairwise width test this is an exclusion proof for the given lateral
- * positions: a state that cannot be laid out side by side fails here whatever the u values.
+ * 2-D occupancy contract for one instant: every body lies inside its lane region, and no two bodies of the SAME layer
+ * (default: same lane) overlap. An exclusion proof for the given lateral positions. Bodies that cannot be judged are
+ * listed separately (not_checked) and make the result null, never false: they are not evidence of a violation.
  */
-export function checkOccupancy2D(lanes: Lane2[], bodies: LaneBody[], tol = OCC_TOL_MM): OccupancyViolation[] {
-  const byId = new Map(lanes.map((l) => [l.id, l])), out: OccupancyViolation[] = [];
+export function checkOccupancy2D(lanes: Lane2[], bodies: LaneBody[], tol = OCC_TOL_MM): OccupancyResult {
+  const byId = new Map(lanes.map((l) => [l.id, l])), violations: OccupancyViolation[] = [], not_checked: OccupancyResult['not_checked'] = [];
   const caps = bodies.map((b) => { const l = byId.get(b.lane); if (!l) throw Error(`BODY2D: lane ${b.lane} unknown`); return { b, l, c: capsuleOf(laneBodyPose(l, b), b.body) }; });
-  for (const { b, l, c } of caps) { const r = capsuleInLane(l, c, tol); if (!r.inside) out.push({ kind: r.checked ? 'outside_lane' : 'not_checked', ids: [b.id], detail: r.why ?? '' }); }
+  for (const { b, l, c } of [...caps].sort((x, y) => (x.b.id < y.b.id ? -1 : 1))) {
+    const half = (b.body.length_mm as number) / 2, total = laneLength2(l);
+    if (b.s_mm - half < -tol || b.s_mm + half > total + tol) { not_checked.push({ ids: [b.id], detail: `body extends past an end of lane ${l.id} (s ${b.s_mm} ± ${half} mm, lane 0–${total} mm) into the node: node geometry not modelled` }); continue; }
+    const r = capsuleInLane(l, c, tol);
+    if (!r.checked) not_checked.push({ ids: [b.id], detail: r.why ?? '' }); else if (!r.inside) violations.push({ kind: 'outside_lane', ids: [b.id], detail: r.why ?? '' });
+  }
   const sorted = [...caps].sort((x, y) => (x.b.id < y.b.id ? -1 : 1));
   for (let i = 0; i < sorted.length; i++) for (let j = i + 1; j < sorted.length; j++) {
     const p = sorted[i], q = sorted[j];
     if ((p.b.layer ?? p.b.lane) !== (q.b.layer ?? q.b.lane)) continue;
     const g = capsuleGap(p.c, q.c);
-    if (g < -tol) out.push({ kind: 'overlap', ids: [p.b.id, q.b.id], detail: `interpenetration ${(-g).toExponential(3)} mm` });
+    if (g < -tol) violations.push({ kind: 'overlap', ids: [p.b.id, q.b.id], detail: `interpenetration ${(-g).toExponential(3)} mm` });
   }
-  return out;
+  return { valid: violations.length ? false : not_checked.length ? null : true, violations, not_checked };
 }
 
+export interface PackItem { s_mm: number; length_mm: number | null; width_mm: number | null }
+/** largest n for which lateralPacking searches exhaustively (n! orderings, pruned); larger inputs return null */
+export const PACK_EXACT_MAX = 9;
 /**
- * Exact lateral packing on a straight section: can bodies whose along-lane extents share a common point be placed
- * side by side (parallel, non-overlapping, inside the band)? For parallel capsules of widths wᵢ in a band of width W the
- * answer is Σwᵢ ≤ W (stack them edge to edge). Returns the feasibility and, when feasible, one witness assignment of u.
+ * Exact lateral packing on ONE straight section: can bodies at arc positions sᵢ (heading along the section, so all
+ * parallel) be given lateral offsets uᵢ so that every capsule lies in the band (|uᵢ| ≤ W/2 − rᵢ) and no two overlap?
+ * Two parallel capsules with axis intervals whose along-gap is d need |uᵢ − uⱼ| ≥ sᵢⱼ = √max(0, (rᵢ + rⱼ)² − d²).
+ * Former criterion Σwᵢ ≤ W (Owner P2 2026-11-07) is exact only when every pair's AXES overlap along the lane (d = 0); for
+ * bodies offset along the lane the rounded ends need less lateral room, and Σw wrongly rejected legal arrangements.
+ * Search: any feasible assignment sorted by u gives an ordering; for a fixed ordering the least placement
+ * u_k = max(−h_k, max_{j before k} u_j + s_jk) is optimal (difference constraints), so trying every ordering (depth-first,
+ * pruned when a body cannot fit) is exact. Returns a witness when feasible; null with a reason when sizes or the width are
+ * unknown or n > PACK_EXACT_MAX.
  */
-export function lateralPacking(widths: number[], laneWidth: number | null, tol = OCC_TOL_MM): { feasible: boolean | null; u: number[] | null; need: number } {
-  const need = widths.reduce((q, w) => q + w, 0);
-  if (typeof laneWidth !== 'number') return { feasible: null, u: null, need };            // unknown width: unknown
-  if (need > laneWidth + tol) return { feasible: false, u: null, need };
-  const u: number[] = []; let edge = -laneWidth / 2;
-  for (const w of widths) { u.push(edge + w / 2); edge += w; }
-  return { feasible: true, u, need };
+export function lateralPacking(items: PackItem[], laneWidth: number | null, tol = OCC_TOL_MM): { feasible: boolean | null; u: number[] | null; why?: string } {
+  if (typeof laneWidth !== 'number') return { feasible: null, u: null, why: 'lane width unknown' };
+  if (items.some((b) => typeof b.length_mm !== 'number' || typeof b.width_mm !== 'number')) return { feasible: null, u: null, why: 'body size unknown' };
+  const n = items.length;
+  if (n > PACK_EXACT_MAX) return { feasible: null, u: null, why: `n = ${n} > ${PACK_EXACT_MAX}: exhaustive search not attempted` };
+  const r = items.map((b) => (b.width_mm as number) / 2), hw = items.map((b) => Math.max(0, (b.length_mm as number) - (b.width_mm as number)) / 2);
+  const hmax = r.map((ri) => laneWidth / 2 - ri);
+  if (hmax.some((x) => x < -tol)) return { feasible: false, u: null };
+  // touching within tol is contact, not overlap (as in checkOccupancy2D); half the tolerance keeps the witness inside it after rounding
+  const sep = (i: number, j: number) => { const d = Math.max(0, Math.abs(items[i].s_mm - items[j].s_mm) - hw[i] - hw[j]), rr = r[i] + r[j] - tol / 2; return d >= rr ? 0 : Math.sqrt(rr * rr - d * d); };
+  const S = items.map((_, i) => items.map((_, j) => (i === j ? 0 : sep(i, j))));
+  const u = new Array<number>(n), used = new Array<boolean>(n).fill(false), order: number[] = [];
+  const dfs = (): boolean => {
+    if (order.length === n) return true;
+    for (let k = 0; k < n; k++) if (!used[k]) {
+      let x = -hmax[k]; for (const j of order) x = Math.max(x, u[j] + S[j][k]);
+      if (x > hmax[k] + tol) continue;
+      used[k] = true; order.push(k); u[k] = x;
+      if (dfs()) return true;
+      used[k] = false; order.pop();
+    }
+    return false;
+  };
+  return dfs() ? { feasible: true, u: [...u] } : { feasible: false, u: null };
 }
 
 /**
