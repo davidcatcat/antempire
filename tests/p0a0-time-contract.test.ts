@@ -178,7 +178,9 @@ const ticksOf = (t_s: number) => (t_s * 1e6) / TICK_US;
     }
   }
   console.error(`window_s: ${compared} comparable runs (${timesDiffer} with bit-different times, max ≈ 7e-13 s), batch structure identical under every contract; physics event sequence itself differs in: ${seqDiffer.join(', ') || 'none'}`);
-  ok(seqDiffer.join() === 'traffic-7@0.5', `known PHYSICS window dependence (not the scheduler): ${seqDiffer.join()} — reported as an open defect`);
+  // the PH-2 window dependence recorded here before (traffic-7 @ window 0.5 s: 158 vs 194 events) was fixed by #98
+  // (physics-event-fixes); from now on ANY physics event sequence that depends on window_s fails this test
+  ok(seqDiffer.length === 0, `physics event sequence independent of window_s (was traffic-7@0.5 before #98): ${seqDiffer.join() || 'none'}`);
 }
 
 // ---------------------------------------------------------------- 2e. seed / id / input-order invariance (real PH-2)
