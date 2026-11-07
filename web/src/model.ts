@@ -136,7 +136,7 @@ export function trailScale(s: ColonySnap): { max: number; edges: number } {
 export function exploredEdges(s: ColonySnap): Set<string> { return new Set(s.workers.flatMap((w) => w.route_edges)); }
 
 const EVENT_LABEL: Record<string, string> = {
-  discovery: '發現食源', scouted_empty: '到達但沒有食物', exploration_step: '探索新路段', exploration_found_nothing: '探索沒有發現', food_collected: '採集', food_delivered: '回巢卸貨', trophallaxis: '交哺', local_recruitment: '招募同伴', hunt_recruitment: '捕獵招募', live_prey_encounter: '遇到活獵物', insect_predation: '捕獲獵物', prey_escaped: '獵物逃走', joint_prey_transport: '共同搬運', worker_death: '工蟻死亡', brood_death: '幼體死亡', queen_death: '蟻后死亡', egg_laid: '產卵', hatch: '孵化', pupation: '化蛹', eclosion: '羽化', forager_stopped: '停止覓食', action_cancelled_no_time: '時間不足取消', insect_natural_death: '昆蟲自然死亡', host_plant_death: '寄主植物死亡', hemipteran_colony_change: '半翅目族群變化',
+  discovery: '發現食源', scouted_empty: '到達但沒有食物', exploration_step: '探索新路段', exploration_found_nothing: '探索沒有發現', food_collected: '採集', food_delivered: '回巢卸貨', trophallaxis: '交哺', local_recruitment: '招募同伴', hunt_recruitment: '捕獵招募', live_prey_encounter: '遇到活獵物', insect_predation: '捕獲獵物', prey_escaped: '獵物逃走', joint_prey_transport: '共同搬運', worker_death: '工蟻死亡', brood_death: '幼體死亡', queen_death: '蟻后死亡', egg_laid: '產卵', larva_development: '幼蟲發育（日結紀錄）', hatch: '孵化', pupation: '化蛹', eclosion: '羽化', forager_stopped: '停止覓食', action_cancelled_no_time: '時間不足取消', insect_natural_death: '昆蟲自然死亡', host_plant_death: '寄主植物死亡', hemipteran_colony_change: '半翅目族群變化',
 };
 export const ACTION_LABEL: Record<string, string> = { foraging_depart: '出巢覓食', foraging_return: '回巢', search: '搜尋', collect: '採集', unload: '卸貨', rest: '巢內休息', explore_depart: '出去探索', explore_return: '探索後回巢', trail_follow_depart: '沿費洛蒙出發', recruit_follow_trail: '跟隨招募', hunt_recruit_trail_home: '回巢招募捕獵', hunt_recruit_lead: '帶領捕獵隊', hunt_recruit_follow_trail: '跟隨捕獵隊', prey_handling: '處理獵物', hold_prey: '守住獵物', joint_prey_transport: '共同搬運', in_nest: '在巢內', at_site: '在地點' };
 export const TASK_LABEL: Record<string, string> = { forage: '覓食', nurse: '照護', rest: '休息', repair: '修繕', guard: '守衛' };
@@ -282,6 +282,8 @@ export const EVENT_CATEGORY: Record<string, EventCategory> = {
   live_prey_encounter: 'hunt', insect_predation: 'hunt', prey_escaped: 'hunt', joint_prey_transport: 'hunt', hunt_recruitment: 'hunt', waiting_prey_joined: 'hunt',
   worker_death: 'death', brood_death: 'death', queen_death: 'death',
   egg_laid: 'brood', hatch: 'brood', pupation: 'brood', eclosion: 'brood',
+  // C4b per-larva development record (end-of-day, no clock time); emitted only with the default-OFF C4b switch
+  larva_development: 'brood',
   // individual brood-care contacts exist only in the default-OFF C3a/C4a nest round; the committed replays contain none
   larva_contact: 'care', local_brood_begging_contact: 'care', queen_contact: 'care', queen_encounter_food: 'care',
   insect_natural_death: 'ecology', insect_background_death: 'ecology', insect_population_birth: 'ecology', insect_immigration: 'ecology', host_plant_death: 'ecology', hemipteran_colony_change: 'ecology', new_food_source: 'ecology',
@@ -366,6 +368,6 @@ export function routeSummary(legs: RouteLeg[], t: number): RouteSummary {
 export function eventBroodIds(e: SimEvent): string[] {
   if (e.type === 'eclosion') return [e.source_brood_id, e.new_worker_id].filter((x): x is string => typeof x === 'string');
   if (['egg_laid', 'hatch', 'pupation', 'brood_death'].includes(e.type) && typeof e.id === 'string') return [e.id];
-  if (e.type === 'larva_contact' && typeof e.larva === 'string') return [e.larva];
+  if ((e.type === 'larva_contact' || e.type === 'larva_development') && typeof e.larva === 'string') return [e.larva];
   return [];
 }
