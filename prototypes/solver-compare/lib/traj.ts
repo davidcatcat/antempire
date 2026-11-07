@@ -12,7 +12,7 @@ export type EventClass = 'physical_contact' | 'physical_constraint' | 'behaviour
 export interface TrajEvent { t_s: number; kind: string; agents: string[]; class: EventClass; source: string; detail?: string | null }
 export interface AgentTraj { lane: string; layer: string; samples: Sample[]; arrival_t_s: number | null; final_mode: string }
 export interface Trajectory {
-  solver: 'native' | 'rapier'; scenario: string;
+  solver: 'native' | 'rapier' | 'ph3b'; scenario: string;
   /** native: false — the 1-D lane model has no lateral coordinate, u = 0 is imposed when converting */
   lateral_dof: boolean;
   notes: string[];

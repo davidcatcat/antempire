@@ -132,3 +132,6 @@ node prototypes/solver-compare/run.ts --scenario head-on-2 --sweep-dt
 node prototypes/solver-compare/run.ts --scenario corridor-8 --solver rapier --ccd
 node tests/solver-compare.test.ts                 # 離線可跑；沒裝 Rapier 時只跳過 Rapier 檢查
 ```
+
+## 8. PH-3b：事件驅動二維解算器（第三個參賽者）
+`engine/physics/solver2d.ts`（隔離）以相同的情境、相同的共同軌跡格式、**同一個裁判**比較；設計、保證、結果表與未解缺陷見 [`docs/physics-ph3b-solver2d.md`](../../docs/physics-ph3b-solver2d.md)。執行：`node prototypes/solver-compare/bench-ph3b.ts`（輸出 `out/ph3b-*.json`）；Rapier 的便宜驅動變體（解算迭代 16、鎖住橫向平移）：`--rapier-variants`（`lib/rapier.ts` 新增兩個選項，預設行為不變）。

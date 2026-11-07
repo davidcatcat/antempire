@@ -80,7 +80,8 @@ export function laneBodyPose(l: Lane2, b: LaneBody): Pose2 {
 type Rect = { kind: 'rect'; a: Vec2; t: Vec2; n: Vec2; len: number; h: number };
 type Disk = { kind: 'disk'; c: Vec2; R: number };
 type Piece = Rect | Disk;
-type Bnd = { kind: 'seg'; p: Vec2; q: Vec2 } | { kind: 'arc'; c: Vec2; R: number; th0: number; th1: number };
+/** boundary pieces of a lane region; `end` marks the two flat lane-end edges (they border the node, not a wall) */
+export type Bnd = { kind: 'seg'; p: Vec2; q: Vec2; end?: boolean } | { kind: 'arc'; c: Vec2; R: number; th0: number; th1: number };
 const TAU = 2 * Math.PI;
 // cache keyed by the lane object AND checked against a content signature: a lane edited in place (narrowed, moved)
 // is recomputed, never served from a stale entry (Owner P2 2026-11-07)
@@ -196,7 +197,7 @@ function laneRegion(l: Lane2): { pieces: Piece[]; boundary: Bnd[] } {
         for (const [a, b] of complementIv(cov, 0, 1, 1e-12)) for (const [u, v] of splitAt(a, b, brk)) {
           const m = pt(p, d, (u + v) / 2);
           if (inU(pt(m, nrm, SEAM_DELTA_MM)) && inU(pt(m, nrm, -SEAM_DELTA_MM))) continue;   // internal seam: lane on both sides
-          boundary.push({ kind: 'seg', p: pt(p, d, u), q: pt(p, d, v) });
+          boundary.push({ kind: 'seg', p: pt(p, d, u), q: pt(p, d, v), end: (i === 0 && e === 3) || (i === segs.length - 1 && e === 1) });
         }
       }
     } else {
@@ -225,7 +226,7 @@ function pointArcDist(p: Vec2, c: Vec2, R: number, th0: number, th1: number): nu
   return Math.min(e(th0), e(th1));
 }
 /** exact distance from segment AB to an arc (candidates: endpoints both ways, crossings, the foot of the centre) */
-function segArcDist(A: Vec2, B: Vec2, arc: Extract<Bnd, { kind: 'arc' }>): number {
+export function segArcDist(A: Vec2, B: Vec2, arc: Extract<Bnd, { kind: 'arc' }>): number {
   const { c, R, th0, th1 } = arc, end = (th: number) => ({ x: c.x + R * Math.cos(th), y: c.y + R * Math.sin(th) });
   let best = Math.min(pointArcDist(A, c, R, th0, th1), pointArcDist(B, c, R, th0, th1), pointSegment2D(end(th0), A, B).d, pointSegment2D(end(th1), A, B).d);
   const d = { x: B.x - A.x, y: B.y - A.y }, ex = A.x - c.x, ey = A.y - c.y, a2 = d.x * d.x + d.y * d.y;
@@ -241,6 +242,22 @@ const inPiece = (p: Vec2, K: Piece, tol: number) => {
   const al = (p.x - K.a.x) * K.t.x + (p.y - K.a.y) * K.t.y, la = (p.x - K.a.x) * K.n.x + (p.y - K.a.y) * K.n.y;
   return al >= -tol && al <= K.len + tol && Math.abs(la) <= K.h + tol;
 };
+
+/**
+ * The exact boundary of a lane region (segments and arcs, internal seams removed), as used by capsuleInLane. Read-only
+ * view for the isolated PH-3b solver (engine/physics/solver2d.ts), which needs distances to the lane edges. Unknown width
+ * throws: the caller refuses such lanes.
+ */
+export function laneBoundary(l: Lane2): readonly Bnd[] {
+  if (typeof l.width_mm !== 'number' || !(l.width_mm > 0)) throw Error(`BODY2D: lane ${l.id} width unknown or not positive`);
+  return laneRegion(l).boundary;
+}
+
+/** Is a point inside the closed lane region (union of the segment rectangles and joint discs)? Read-only view for PH-3b. */
+export function pointInLaneRegion(l: Lane2, p: Vec2, tol = OCC_TOL_MM): boolean {
+  if (typeof l.width_mm !== 'number' || !(l.width_mm > 0)) throw Error(`BODY2D: lane ${l.id} width unknown or not positive`);
+  return laneRegion(l).pieces.some((K) => inPiece(p, K, tol));
+}
 
 /**
  * Is a capsule inside the lane region (exact; see LANE REGION above)? Unknown width: not checked (never accepted).
