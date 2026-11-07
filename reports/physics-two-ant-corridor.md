@@ -18,13 +18,13 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
 | 情境 | 接觸 | 阻擋（s） | 讓路者 | 規則 | 接觸停頓 s | 退後 mm | W1 抵達 s（比單獨多） | W2 抵達 s（比單獨多） | 互斥違反 | 重播／換順序相同 |
 |---|---|---|---|---|---|---|---|---|---|---|
 | ENTRY (L. niger rule, pause 0.18 s) | 4.079 s（確定） | 4.108 | W2 | entry yield | 0.18 | 1.37 | 5.384（+0.194） | 9.800（+0.628） | 0 | 是 |
-| CONTROL (no walls) | 4.079 s（可能） | 無 | — | — | 0.00 | — | 5.189（+-0.000） | 9.173（+0.000） | 0 | 是 |
+| CONTROL (no walls) | 4.079 s（可能） | 無 | — | — | 0.00 | — | 5.189（+0.000） | 9.173（+0.000） | 0 | 是 |
 | LADEN (Atta rule, W2 carries an item) | 4.079 s（確定） | 4.108 | W1 | laden priority | 0.18 | 59.87 | 12.791（+7.602） | 9.353（+0.180） | 0 | 是 |
 
 - **400 個種子**（輕量模式：只記錄讓路者）：W2（尚未進入的那隻）讓路 387/400 = 0.968；文獻比例 202/211 = 0.957。模型只是重現了輸入的比例，這**不是**對本種的驗證。
 - **帶食優先（LADEN）**：W2 帶著小物件，改用 Atta colombica 的規則（R381：294/300）。已在牆間的空手 W1 讓路 388/400 = 0.970。兩條規則在這個情境給出**相反**的讓路者：本種的答案取決於哪條規則適用，目前沒有資料可決定（預設用不依負重的 entry_yield）。
 - **無牆對照**：只有一次「可能」的接觸，抵達時間與單獨行走相同（本版的接觸不觸發任何行為；C3–C5 尚未接上）。
-- **解析解核對**：照規則手算（給定讓路者與停頓時間），W1 5.383569309 s、W2 9.800249493 s，引擎差 -8.9e-16、-3.6e-15 s。窄段端點用牆角幾何手算（80 + √(w² − 0.25)），不用引擎程式。
+- **解析解核對**：照規則手算（給定讓路者與停頓時間），W1 5.383569309 s、W2 9.800249493 s，引擎差 0.0e+0、0.0e+0 s。窄段端點用牆角幾何手算（80 + √(w² − 0.25)），不用引擎程式。
 
 ## 2. 兩隻都已在窄段內（INSIDE）：沒有任何研究
 兩隻同時出發，在牆間迎面相遇。L. niger 與 Atta 的窄口都很短，沒有研究描述這種情況。模型的候選規則：每次接觸，兩隻**各自**以機率 p 決定回頭；剛好一隻回頭時那隻讓路，否則再接觸一次（每次都停 τ）。p 與 τ 都是候選值，以下是敏感度（每格 100 個種子）：
@@ -43,12 +43,12 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
 
 - 誰讓路：規則對兩隻完全對稱，也不使用「誰離出口近」這類螞蟻不知道的資訊（v0 的規則已移除）；每格都用同一組 100 個種子，所以各格的讓路比例相同或幾乎相同，偏離一半屬抽樣誤差（測試以 2,000 個種子檢查接近 0.5）。
 - p 越小，要接觸越多次才決定（期望 1/(2p(1−p)) 次），每次都付出 τ。**延遲主要取決於這兩個本種未量測的值。**
-- 解析解核對（給定讓路者與停頓）：45 次，最大差 3.6e-15 s。
+- 解析解核對（給定讓路者與停頓）：45 次，最大差 1.8e-15 s。
 
 ## 3. 碰撞寬度敏感度（ENTRY 情境）
 | 情境 | 接觸 | 阻擋（s） | 讓路者 | 規則 | 接觸停頓 s | 退後 mm | W1 抵達 s（比單獨多） | W2 抵達 s（比單獨多） | 互斥違反 | 重播／換順序相同 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| width 0.5 mm | 4.079 s（確定） | 無 | — | — | 0.00 | — | 5.189（+-0.000） | 9.173（+0.000） | 0 | 是 |
+| width 0.5 mm | 4.079 s（確定） | 無 | — | — | 0.00 | — | 5.189（+0.000） | 9.173（+0.000） | 0 | 是 |
 | width 0.65 mm | 4.079 s（確定） | 4.108 | W2 | entry yield | 0.18 | 1.17 | 5.381（+0.192） | 9.773（+0.601） | 0 | 是 |
 | width 0.8 mm | 4.079 s（確定） | 4.108 | W2 | entry yield | 0.18 | 1.37 | 5.384（+0.194） | 9.800（+0.628） | 0 | 是 |
 
@@ -97,7 +97,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
   "seed": 1,
   "contact_t_s": 4.078696343402226,
   "contact_certain": true,
-  "obstruction_t_s": 4.108108108108109,
+  "obstruction_t_s": 4.108108108108108,
   "yielder": "W2",
   "rule": "entry yield",
   "contacts": 1,
@@ -105,28 +105,28 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
   "back_out_mm": 1.374501,
   "ants": {
    "W1": {
-    "arrive_s": 5.383569309152639,
+    "arrive_s": 5.38356930915264,
     "alone_s": 5.1891891891891895,
-    "added_s": 0.19438011996344962,
+    "added_s": 0.1943801199634505,
     "path_mm": 96,
     "displacement_mm": 96,
     "waiting_s": 0.17999999999999972,
-    "mean_moving_speed": 18.448875050274452,
-    "trip_speed": 17.832035678780954
+    "mean_moving_speed": 18.44887505027445,
+    "trip_speed": 17.83203567878095
    },
    "W2": {
-    "arrive_s": 9.80024949291743,
-    "alone_s": 9.172624237140367,
-    "added_s": 0.6276252557770636,
+    "arrive_s": 9.800249492917434,
+    "alone_s": 9.172624237140365,
+    "added_s": 0.627625255777069,
     "path_mm": 98.74900159967967,
     "displacement_mm": 96,
-    "waiting_s": 0.45027031386224703,
-    "mean_moving_speed": 15.5,
-    "trip_speed": 14.476834452505681
+    "waiting_s": 0.4502703138622497,
+    "mean_moving_speed": 15.499999999999998,
+    "trip_speed": 14.476834452505674
    }
   },
   "exclusion_violations": 0,
-  "result_hash": "9c0f7daa4ee788f7",
+  "result_hash": "58751a558a0ec99e",
   "replay_identical": true,
   "order_identical": true
  },
@@ -145,28 +145,28 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
   "back_out_mm": null,
   "ants": {
    "W1": {
-    "arrive_s": 5.189189189189189,
+    "arrive_s": 5.1891891891891895,
     "alone_s": 5.1891891891891895,
-    "added_s": -8.881784197001252e-16,
-    "path_mm": 96,
-    "displacement_mm": 96,
-    "waiting_s": 0,
-    "mean_moving_speed": 18.500000000000004,
-    "trip_speed": 18.500000000000004
-   },
-   "W2": {
-    "arrive_s": 9.172624237140367,
-    "alone_s": 9.172624237140367,
     "added_s": 0,
     "path_mm": 96,
     "displacement_mm": 96,
     "waiting_s": 0,
-    "mean_moving_speed": 15.499999999999998,
-    "trip_speed": 15.499999999999998
+    "mean_moving_speed": 18.5,
+    "trip_speed": 18.5
+   },
+   "W2": {
+    "arrive_s": 9.172624237140365,
+    "alone_s": 9.172624237140365,
+    "added_s": 0,
+    "path_mm": 96,
+    "displacement_mm": 96,
+    "waiting_s": 0,
+    "mean_moving_speed": 15.500000000000002,
+    "trip_speed": 15.500000000000002
    }
   },
   "exclusion_violations": 0,
-  "result_hash": "23b28087cd7cf991",
+  "result_hash": "e661bac3aaf3620d",
   "replay_identical": true,
   "order_identical": true
  },
@@ -177,7 +177,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
   "seed": 1,
   "contact_t_s": 4.078696343402226,
   "contact_certain": true,
-  "obstruction_t_s": 4.108108108108109,
+  "obstruction_t_s": 4.108108108108108,
   "yielder": "W1",
   "rule": "laden priority",
   "contacts": 1,
@@ -185,28 +185,28 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
   "back_out_mm": 59.874501,
   "ants": {
    "W1": {
-    "arrive_s": 12.791100420905162,
+    "arrive_s": 12.79110042090516,
     "alone_s": 5.1891891891891895,
-    "added_s": 7.601911231715972,
-    "path_mm": 215.7490015996797,
+    "added_s": 7.60191123171597,
+    "path_mm": 215.74900159967967,
     "displacement_mm": 96,
     "waiting_s": 1.1289922263278793,
     "mean_moving_speed": 18.5,
     "trip_speed": 16.86711811339311
    },
    "W2": {
-    "arrive_s": 9.352624237140367,
-    "alone_s": 9.172624237140367,
+    "arrive_s": 9.352624237140365,
+    "alone_s": 9.172624237140365,
     "added_s": 0.17999999999999972,
     "path_mm": 96,
     "displacement_mm": 96,
     "waiting_s": 0.17999999999999972,
-    "mean_moving_speed": 15.499999999999998,
-    "trip_speed": 15.062253264500454
+    "mean_moving_speed": 15.500000000000002,
+    "trip_speed": 15.062253264500459
    }
   },
   "exclusion_violations": 0,
-  "result_hash": "eaeae8127fa78fbd",
+  "result_hash": "ffdddab707381529",
   "replay_identical": true,
   "order_identical": true
  },
@@ -227,9 +227,9 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    "seeds": 100,
    "W1_gave_way": 61,
    "mean_contacts": 6.47,
-   "mean_added_W1_s": 3.9828530867985728,
-   "mean_added_W2_s": 2.6035286884627338,
-   "max_added_s": 11.789560739648037,
+   "mean_added_W1_s": 3.982853086798572,
+   "mean_added_W2_s": 2.603528688462733,
+   "max_added_s": 11.789560739648033,
    "violations": 0
   },
   {
@@ -238,8 +238,8 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    "seeds": 100,
    "W1_gave_way": 61,
    "mean_contacts": 6.47,
-   "mean_added_W1_s": 5.600353086798573,
-   "mean_added_W2_s": 4.221028688462736,
+   "mean_added_W1_s": 5.600353086798574,
+   "mean_added_W2_s": 4.221028688462734,
    "max_added_s": 23.03956073964804,
    "violations": 0
   },
@@ -249,7 +249,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    "seeds": 100,
    "W1_gave_way": 61,
    "mean_contacts": 6.47,
-   "mean_added_W1_s": 7.994253086798572,
+   "mean_added_W1_s": 7.9942530867985715,
    "mean_added_W2_s": 6.614928688462735,
    "max_added_s": 39.68956073964804,
    "violations": 0
@@ -261,7 +261,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    "W1_gave_way": 61,
    "mean_contacts": 2.17,
    "mean_added_W1_s": 3.208853086798571,
-   "mean_added_W2_s": 1.8295286884627335,
+   "mean_added_W2_s": 1.8295286884627333,
    "max_added_s": 6.2428353816723785,
    "violations": 0
   },
@@ -272,7 +272,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    "W1_gave_way": 61,
    "mean_contacts": 2.17,
    "mean_added_W1_s": 3.7513530867985696,
-   "mean_added_W2_s": 2.3720286884627346,
+   "mean_added_W2_s": 2.3720286884627333,
    "max_added_s": 8.742835381672379,
    "violations": 0
   },
@@ -282,7 +282,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    "seeds": 100,
    "W1_gave_way": 61,
    "mean_contacts": 2.17,
-   "mean_added_W1_s": 4.554253086798571,
+   "mean_added_W1_s": 4.55425308679857,
    "mean_added_W2_s": 3.1749286884627343,
    "max_added_s": 12.489560739648036,
    "violations": 0
@@ -293,9 +293,9 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    "seeds": 100,
    "W1_gave_way": 60,
    "mean_contacts": 5.87,
-   "mean_added_W1_s": 3.8331971305197565,
-   "mean_added_W2_s": 2.5324242958592147,
-   "max_added_s": 8.369560739648035,
+   "mean_added_W1_s": 3.833197130519756,
+   "mean_added_W2_s": 2.532424295859214,
+   "max_added_s": 8.369560739648033,
    "violations": 0
   },
   {
@@ -305,8 +305,8 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    "W1_gave_way": 60,
    "mean_contacts": 5.87,
    "mean_added_W1_s": 5.300697130519756,
-   "mean_added_W2_s": 3.999924295859216,
-   "max_added_s": 14.869560739648035,
+   "mean_added_W2_s": 3.999924295859214,
+   "max_added_s": 14.869560739648032,
    "violations": 0
   },
   {
@@ -315,7 +315,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    "seeds": 100,
    "W1_gave_way": 60,
    "mean_contacts": 5.87,
-   "mean_added_W1_s": 7.4725971305197625,
+   "mean_added_W1_s": 7.472597130519762,
    "mean_added_W2_s": 6.171824295859214,
    "max_added_s": 24.489560739648034,
    "violations": 0
@@ -337,28 +337,28 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    "back_out_mm": null,
    "ants": {
     "W1": {
-     "arrive_s": 5.189189189189189,
+     "arrive_s": 5.1891891891891895,
      "alone_s": 5.1891891891891895,
-     "added_s": -8.881784197001252e-16,
-     "path_mm": 96,
-     "displacement_mm": 96,
-     "waiting_s": 0,
-     "mean_moving_speed": 18.500000000000004,
-     "trip_speed": 18.500000000000004
-    },
-    "W2": {
-     "arrive_s": 9.172624237140367,
-     "alone_s": 9.172624237140367,
      "added_s": 0,
      "path_mm": 96,
      "displacement_mm": 96,
      "waiting_s": 0,
-     "mean_moving_speed": 15.499999999999998,
-     "trip_speed": 15.499999999999998
+     "mean_moving_speed": 18.5,
+     "trip_speed": 18.5
+    },
+    "W2": {
+     "arrive_s": 9.172624237140365,
+     "alone_s": 9.172624237140365,
+     "added_s": 0,
+     "path_mm": 96,
+     "displacement_mm": 96,
+     "waiting_s": 0,
+     "mean_moving_speed": 15.500000000000002,
+     "trip_speed": 15.500000000000002
     }
    },
    "exclusion_violations": 0,
-   "result_hash": "3076d39c6cd8b5e6",
+   "result_hash": "1cefa0bd950c8265",
    "replay_identical": true,
    "order_identical": true
   },
@@ -369,7 +369,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    "seed": 1,
    "contact_t_s": 4.078696343402226,
    "contact_certain": true,
-   "obstruction_t_s": 4.108108108108109,
+   "obstruction_t_s": 4.108108108108108,
    "yielder": "W2",
    "rule": "entry yield",
    "contacts": 1,
@@ -377,28 +377,28 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    "back_out_mm": 1.165332,
    "ants": {
     "W1": {
-     "arrive_s": 5.381380971506322,
+     "arrive_s": 5.381380971506321,
      "alone_s": 5.1891891891891895,
-     "added_s": 0.1921917823171322,
+     "added_s": 0.1921917823171313,
      "path_mm": 96,
      "displacement_mm": 96,
      "waiting_s": 0.17999999999999972,
-     "mean_moving_speed": 18.45663690583279,
-     "trip_speed": 17.83928707302213
+     "mean_moving_speed": 18.456636905832795,
+     "trip_speed": 17.839287073022135
     },
     "W2": {
-     "arrive_s": 9.773259995279505,
-     "alone_s": 9.172624237140367,
-     "added_s": 0.6006357581391377,
+     "arrive_s": 9.773259995279506,
+     "alone_s": 9.172624237140365,
+     "added_s": 0.6006357581391413,
      "path_mm": 98.3306643862918,
      "displacement_mm": 96,
-     "waiting_s": 0.45027031386224703,
-     "mean_moving_speed": 15.499999999999998,
-     "trip_speed": 14.472769987437173
+     "waiting_s": 0.4502703138622497,
+     "mean_moving_speed": 15.5,
+     "trip_speed": 14.47276998743717
     }
    },
    "exclusion_violations": 0,
-   "result_hash": "66fe48daab063335",
+   "result_hash": "8c323c3ff3a3b3e4",
    "replay_identical": true,
    "order_identical": true
   },
@@ -409,7 +409,7 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    "seed": 1,
    "contact_t_s": 4.078696343402226,
    "contact_certain": true,
-   "obstruction_t_s": 4.108108108108109,
+   "obstruction_t_s": 4.108108108108108,
    "yielder": "W2",
    "rule": "entry yield",
    "contacts": 1,
@@ -417,28 +417,28 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    "back_out_mm": 1.374501,
    "ants": {
     "W1": {
-     "arrive_s": 5.383569309152639,
+     "arrive_s": 5.38356930915264,
      "alone_s": 5.1891891891891895,
-     "added_s": 0.19438011996344962,
+     "added_s": 0.1943801199634505,
      "path_mm": 96,
      "displacement_mm": 96,
      "waiting_s": 0.17999999999999972,
-     "mean_moving_speed": 18.448875050274452,
-     "trip_speed": 17.832035678780954
+     "mean_moving_speed": 18.44887505027445,
+     "trip_speed": 17.83203567878095
     },
     "W2": {
-     "arrive_s": 9.80024949291743,
-     "alone_s": 9.172624237140367,
-     "added_s": 0.6276252557770636,
+     "arrive_s": 9.800249492917434,
+     "alone_s": 9.172624237140365,
+     "added_s": 0.627625255777069,
      "path_mm": 98.74900159967967,
      "displacement_mm": 96,
-     "waiting_s": 0.45027031386224703,
-     "mean_moving_speed": 15.5,
-     "trip_speed": 14.476834452505681
+     "waiting_s": 0.4502703138622497,
+     "mean_moving_speed": 15.499999999999998,
+     "trip_speed": 14.476834452505674
     }
    },
    "exclusion_violations": 0,
-   "result_hash": "9c0f7daa4ee788f7",
+   "result_hash": "58751a558a0ec99e",
    "replay_identical": true,
    "order_identical": true
   }
@@ -449,11 +449,11 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    "W2": 9.800249492917434
   },
   "engine_minus_analytic_s": [
-   -8.881784197001252e-16,
-   -3.552713678800501e-15
+   0,
+   0
   ],
   "inside_checked": 45,
-  "inside_max_abs_diff_s": 3.552713678800501e-15
+  "inside_max_abs_diff_s": 1.7763568394002505e-15
  },
  "convergence": {
   "speeds_mm_s": [
@@ -466,27 +466,27 @@ W2 到達遠端入口時，W1 已經完全在牆間。依 Lasius niger 的觀察
    {
     "dt_s": 0.1,
     "W1_err_s": -0.19513015658266664,
-    "W2_err_s": -0.5986517850993724
+    "W2_err_s": -0.5986517850993707
    },
    {
     "dt_s": 0.01,
     "W1_err_s": 0.0017738707395134057,
-    "W2_err_s": 0.0021940704528304877
+    "W2_err_s": 0.002194070452832264
    },
    {
     "dt_s": 0.001,
     "W1_err_s": 0.0007738707395228417,
-    "W2_err_s": 0.0011940704529731505
+    "W2_err_s": 0.0011940704529749269
    },
    {
     "dt_s": 0.0001,
     "W1_err_s": 0.00005387479136054196,
-    "W2_err_s": 0.00009407044592535385
+    "W2_err_s": 0.00009407044592713021
    },
    {
     "dt_s": 0.00001,
     "W1_err_s": 7.159858332883573e-7,
-    "W2_err_s": 0.000004070290730240345
+    "W2_err_s": 0.0000040702907320167014
    }
   ]
  }
