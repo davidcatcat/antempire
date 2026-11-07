@@ -493,7 +493,7 @@ export function simulate(cfg: SimConfig): SimResult {
         if (!wp) continue;
         const p = byId.get(wp)!;
         if (terminal(p)) { unresolved(t, a, p, `waits for ${p.id}, which has stopped for good (${p.mode})`); changed = true; continue; }
-        const ring: RT[] = [a];
+        const ring: RT[] = [a], r0len = laneLength(a.p);
         let q = p;
         while (waitPartner(q) && !ring.includes(q)) { ring.push(q); q = byId.get(waitPartner(q)!)!; }
         if (q === a && ring.length > 1 && ring.every((r) => r.mode === 'follow' && sameLane(r, a))) {
@@ -501,7 +501,11 @@ export function simulate(cfg: SimConfig): SimResult {
           // per-ant rank drawn for this instant; game assumption) and the others wait for it — a queue, not a deadlock
           const rank = (x: RT) => rng(hash32(`${cfg.seed}|physics.encounter.queue|${x.id}|ring|${t.toFixed(9)}`))();
           // only an ant whose way ahead is not blocked (a touching body in single file that is not moving away) can go first
-          const blockedAhead = (r: RT) => rts.some((o) => o !== r && sameLane(o, r) && (o.s - r.s) * r.travel > 0 && o.v * r.travel <= 0 && Math.abs(o.s - r.s) <= M(r, o) + 1e-7 && (() => { const fr = r.s + r.travel * r.L / 2; return narrowOver(r.p, r.w + o.w, Math.min(fr, fr + r.travel * 1e-6), Math.max(fr, fr + r.travel * 1e-6)); })());
+          // PH-P2E B (review 2026-11-07): bodies whose arc lengths differ by no more than LEN_TOL(lane length) are coincident
+          // (abreast; lateral position not modelled): neither is 'ahead' of the other. Before, the sign of a 1–4 ulp rounding
+          // residue decided it (seeds 3/7 of the 12 × 8 corridor). A numerical tolerance, not a model parameter.
+          const aheadTol = LEN_TOL(r0len);
+          const blockedAhead = (r: RT) => rts.some((o) => o !== r && sameLane(o, r) && (o.s - r.s) * r.travel > aheadTol && o.v * r.travel <= 0 && Math.abs(o.s - r.s) <= M(r, o) + 1e-7 && (() => { const fr = r.s + r.travel * r.L / 2; return narrowOver(r.p, r.w + o.w, Math.min(fr, fr + r.travel * 1e-6), Math.max(fr, fr + r.travel * 1e-6)); })());
           const free = ring.filter((r) => !blockedAhead(r));
           if (!free.length) { for (let i = 0; i < ring.length; i++) if (!terminal(ring[i])) unresolved(t, ring[i], ring[(i + 1) % ring.length], `mutual wait, every ant blocked ahead (${ring.map((r) => r.id).join(' → ')})`); changed = true; continue; }
           const first = [...free].sort((x, y) => rank(y) - rank(x) || (x.id < y.id ? -1 : 1))[0];
