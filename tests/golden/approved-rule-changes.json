@@ -607,6 +607,55 @@
       "kind": "engine",
       "day14_output_unchanged": true,
       "description": "engine/larva-feeding.ts ensureBroodRecords sets the first-seen begging prior only when larval_feeding.first_seen_begging_prior_v29 is on; off, every output is byte-identical to v2-review.28 (tests/golden.test.ts, tests/rules-isolation.test.ts)."
+    },
+    {
+      "rules_version": "antempire.v2-review.30-c4b-larva-development",
+      "approved_in": "Owner instruction 2026-11-07 (phase 4: C4b engineering; the nutrition-response form is an Owner decision, null until chosen; not merged by Claude)",
+      "kind": "param_switch",
+      "file": "species:pheidole-megacephala",
+      "path": "larval_development.individual_development_c4b",
+      "from": false,
+      "to": false,
+      "introduced": true,
+      "description": "C4b switch, introduced OFF; refused on without C4a or without an Owner-chosen nutrition_response"
+    },
+    {
+      "rules_version": "antempire.v2-review.30-c4b-larva-development",
+      "approved_in": "Owner instruction 2026-11-07 (phase 4: C4b engineering; the nutrition-response form is an Owner decision, null until chosen; not merged by Claude)",
+      "kind": "param_switch",
+      "file": "species:pheidole-megacephala",
+      "path": "larval_development.nutrition_response",
+      "from": null,
+      "to": null,
+      "introduced": true,
+      "description": "C4b nutrition-response form (string or null), introduced as null: an Owner decision"
+    },
+    {
+      "rules_version": "antempire.v2-review.30-c4b-larva-development",
+      "approved_in": "Owner instruction 2026-11-07 (phase 4: C4b engineering; the nutrition-response form is an Owner decision, null until chosen; not merged by Claude)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "larval_development.threshold_theta",
+      "description": "C4b candidate-form parameter, null (unknown; no species data)",
+      "from": null,
+      "to": null
+    },
+    {
+      "rules_version": "antempire.v2-review.30-c4b-larva-development",
+      "approved_in": "Owner instruction 2026-11-07 (phase 4: C4b engineering; the nutrition-response form is an Owner decision, null until chosen; not merged by Claude)",
+      "kind": "param_added",
+      "file": "species:pheidole-megacephala",
+      "path": "larval_development.saturation_k",
+      "description": "C4b candidate-form parameter, null (unknown; no species data)",
+      "from": null,
+      "to": null
+    },
+    {
+      "rules_version": "antempire.v2-review.30-c4b-larva-development",
+      "approved_in": "Owner instruction 2026-11-07 (phase 4: C4b engineering; the nutrition-response form is an Owner decision, null until chosen; not merged by Claude)",
+      "kind": "engine",
+      "day14_output_unchanged": true,
+      "description": "engine/larva-development.ts and the C4b branch of engine/brood.ts developBrood run only when larval_development.individual_development_c4b is on; off, every output is byte-identical to v2-review.29 (tests/golden.test.ts, tests/rules-isolation.test.ts)."
     }
   ]
 }

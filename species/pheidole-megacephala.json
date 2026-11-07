@@ -1804,5 +1804,33 @@
         "approved_in": "Owner 2026-11-06「照建議」(C4a D1–D8, docs/design-c4-larval-nutrition.md §7.0; separate rules-update PR for Owner review, not merged by Claude)"
       }
     }
+  },
+  "larval_development": {
+    "individual_development_c4b": false,
+    "individual_development_c4b_note": "模型開關（C4b，docs/design-c4b-larval-development.md；預設關閉；需 C4a 打開）。true＝每隻幼蟲的發育速度乘上自己的營養係數 N(x)，x＝自己當日實際支付的代謝比例 min(paid/need)（由自己的 fed_balance 支付，C4a），不再讀全巢比例；每隻幼蟲每日一筆 larva_development 事件。溫度反應 r_s(T) 與照護規則不變。nutrition_response 為 null 時不能打開（形式由 Owner 選定）。false＝前一版行為。",
+    "nutrition_response": null,
+    "nutrition_response_note": "營養反應形式（Owner 待決，docs/design-c4b-larval-development.md §3）：'clamp_linear'＝clamp(x, larva_min_nutrition_growth_factor, 1)（延續舊式，線性比例是假設）；'threshold'＝x ≥ threshold_theta 時 1，否則最低值；'saturating'＝最低值 + (1 − 最低值)·x(1+K)/(K+x)。累積量形式（N-d）需要單位轉換，未實作。null＝未選。",
+    "threshold_theta": {
+      "value": null,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "'threshold' 形式的門檻 θ（0..1）；本種無資料，null＝未給",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.30-c4b-larva-development",
+        "approved_in": "Owner instruction 2026-11-07 (phase 4: C4b engineering; the nutrition-response form is an Owner decision, null until chosen; not merged by Claude)"
+      }
+    },
+    "saturation_k": {
+      "value": null,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "description": "'saturating' 形式的半飽和常數 K（> 0）；本種無資料，null＝未給",
+      "legacy_path": null,
+      "added_in": {
+        "rules_version": "antempire.v2-review.30-c4b-larva-development",
+        "approved_in": "Owner instruction 2026-11-07 (phase 4: C4b engineering; the nutrition-response form is an Owner decision, null until chosen; not merged by Claude)"
+      }
+    }
   }
 }

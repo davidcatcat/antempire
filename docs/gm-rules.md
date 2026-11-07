@@ -472,3 +472,10 @@ Day14 權威已知卵：E001／E002／E003／E004／E005 分別經過 **12／6�
 - **打開時**：C4a 第一次為既有幼蟲建立紀錄時，求食訊號設為 `default_larva_begging_prior`（0.3，遊戲假設，不是實測飢餓）；舊值（舊規則依全巢蛋白比例算出，或遷移預設 0.25）只記在初始化事件的 `legacy_begging_signal`。
 - **影響**：先驗等於餵食門檻，所以第一天被接觸的既有幼蟲都符合餵食資格。反事實結果與待選模型見 `docs/design-c4-larval-nutrition.md` §7.3。
 - **引擎行為版本**：`antempire.v2-review.29-c4a-begging-prior`。
+
+## 2026-11-07 規則版本 v2-review.30：C4b 幼蟲個體發育（開關預設關閉；營養反應形式待 Owner 選定）
+- **開關**：`larval_development.individual_development_c4b`，預設 **false**；需 C4a 打開，而且 `nutrition_response` 必須是 Owner 選定的形式（出廠為 `null`，所以目前**無法打開**）。關閉時所有輸出與 v2-review.29 逐位元組相同。
+- **打開時**：每隻有帳的幼蟲每日發育 `r(T) / larva_days × N(xᵢ)`；xᵢ＝自己當日實際支付的代謝 ÷ 自己的需求（糖、蛋白取較小值）；不再讀全巢比例。每隻幼蟲每日一筆 `larva_development`，引擎與獨立讀取器重算。
+- **不變**：溫度反應 r(T)、照護規則（全巢有沒有工蟻）、飢餓死亡（L3，C4c）。
+- **候選形式**與可辨識性見 `docs/design-c4b-larval-development.md` §3。
+- **引擎行為版本**：`antempire.v2-review.30-c4b-larva-development`。
