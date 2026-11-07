@@ -526,8 +526,12 @@ export function simulate(cfg: SimConfig): SimResult {
     // the same value whichever step (window) asks — and is never earlier than now
     const tAt = (x: number) => Math.max(t, a.open.t + (x - a.open.s) / a.v);
     const at = (x: number, kind: string, data?: number) => { const dt = (x - a.s) / a.v; if (dt > T_EPS || (dt >= 0 && Math.abs(x - a.s) > S_EPS)) out.push({ t: tAt(x), kind, a: a.id, b: null, data }); };
-    if (a.mode === 'retreat') at(a.retreat_s!, 'retreat_done');
-    else if (m === a.travel) at(a.spec.goal_s_mm, 'arrive');
+    // PH-P2E A (review 2026-11-07): the END of a walk (back-out target, goal) is never dropped. When the ant is already within
+    // S_EPS of it, or past it, the end is due now. Before, when an unrelated event fell within T_EPS / S_EPS before the end
+    // (traffic seed 30: 3.5e-11 s, 6.5e-10 mm), the guard of at() dropped it and the ant walked on out of the passage.
+    const end = (x: number, kind: string) => { if ((x - a.s) * m <= S_EPS) out.push({ t, kind, a: a.id, b: null }); else at(x, kind); };
+    if (a.mode === 'retreat') end(a.retreat_s!, 'retreat_done');
+    else if (m === a.travel) end(a.spec.goal_s_mm, 'arrive');
     for (const x of vertexArcs(a.p)) if ((x - a.s) * m > S_EPS) at(x, 'vertex');
     // boundaries ahead of the leading edge, and one the edge is standing on when it starts to move (checked once per motion piece)
     for (const b of boundaries.get(`${a.p.id}|${a.w}`)!) {
