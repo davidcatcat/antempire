@@ -28,6 +28,7 @@
  *   v2-review.28 (C4a larva body; switch larval_feeding.individual_larva_body_c4a off) -> reproduces v27
  *   v2-review.29 (C4a first-seen begging prior; switch larval_feeding.first_seen_begging_prior_v29 off) -> reproduces v28
  *   v2-review.30 (C4b larva development; switch larval_development.individual_development_c4b off) -> reproduces v29
+ *   v2-review.31 (nurse cue same place; switch local_signals.nurse_cue_same_place_v31 off) -> reproduces v30
  * Every step also undoes the output normalisers of its own and later diagnostics-only versions.
  * Each step undoes its own changes AND every later step's, so step N is compared with the engine as it was.
  */
@@ -67,6 +68,7 @@ const STEPS = [
   { version: 'antempire.v2-review.28-c4a-larva-body', previousGolden: 'tests/golden/v27-trace-sha256.json' },
   { version: 'antempire.v2-review.29-c4a-begging-prior', previousGolden: 'tests/golden/v28-trace-sha256.json' },
   { version: 'antempire.v2-review.30-c4b-larva-development', previousGolden: 'tests/golden/v29-trace-sha256.json' },
+  { version: 'antempire.v2-review.31-nurse-cue-same-place', previousGolden: 'tests/golden/v30-trace-sha256.json' },
 ];
 const ORDER = STEPS.map((s) => s.version);
 const results: Record<string, string> = {};

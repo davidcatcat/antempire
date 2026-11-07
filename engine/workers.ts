@@ -74,9 +74,22 @@ export function nestContacts(world: WorldState, colony: ColonyState, sp: Species
   }
 }
 
-/** Nurses physically touch one larva and carry away only that larva's begging signal. */
+/**
+ * The brood chamber: the one in-nest place where larvae lie (C4a gives each larva a `location`; a larva without one — before
+ * C4a, or C4a off — is treated as lying here).
+ */
+export const BROOD_PLACE = 'brood';
+
+/**
+ * Nurses physically touch one larva and carry away only that larva's begging signal.
+ * v2-review.31 (local_signals.nurse_cue_same_place_v31, CLAUDE.md §2.1): with the switch on a nurse can touch only larvae at
+ * its own place — it must be in the nest (last_location === nest_node), and only larvae in the brood chamber (BROOD_PLACE, the
+ * one in-nest place today) can be drawn; a nurse elsewhere touches no larva. Same stream and same ID-ordered draw, so when every
+ * larva is in the brood chamber and the nurse is in the nest the result equals the switch-off draw bit for bit.
+ */
 export function nurseContact(world: WorldState, colony: ColonyState, sp: SpeciesParams, worker: Worker, events: SimEvent[]): void {
-  const larvae = colony.population.brood.filter((b) => b.stage === 'larva'), g = colonyDice(world, colony, 'nurse_contact:' + worker.id);
+  const samePlace = sp.local_signals.nurse_cue_same_place_v31, inNest = worker.last_location === colony.nest_node;
+  const larvae = colony.population.brood.filter((b) => b.stage === 'larva' && (!samePlace || (inNest && (b.location ?? BROOD_PLACE) === BROOD_PLACE))), g = colonyDice(world, colony, 'nurse_contact:' + worker.id);
   // v2-review.21 (Issue #50): the uniform draw picks among the larvae in id order, so WHICH larva a draw reaches does not
   // depend on where the larvae sit in the stored brood array (v2-review.20 indexed the array as stored).
   if (sp.brood_care.daily_care_snapshot_v21) larvae.sort((x, y) => (x.id < y.id ? -1 : x.id > y.id ? 1 : 0));
@@ -84,6 +97,6 @@ export function nurseContact(world: WorldState, colony: ColonyState, sp: Species
     const brood = larvae[Math.floor(g() * larvae.length)];
     worker.local_sensory ??= {};
     worker.local_sensory.direct_brood_begging = round(brood.begging_signal ?? sp.local_signals.default_larva_begging_contact_signal);
-    events.push({ type: 'local_brood_begging_contact', worker: worker.id, larva: brood.id, signal: brood.begging_signal ?? sp.local_signals.default_larva_begging_contact_signal });
+    events.push({ type: 'local_brood_begging_contact', worker: worker.id, larva: brood.id, signal: brood.begging_signal ?? sp.local_signals.default_larva_begging_contact_signal, ...(samePlace ? { worker_location: worker.last_location, larva_location: brood.location ?? BROOD_PLACE } : {}) });
   }
 }

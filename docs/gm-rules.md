@@ -479,3 +479,11 @@ Day14 權威已知卵：E001／E002／E003／E004／E005 分別經過 **12／6�
 - **不變**：溫度反應 r(T)、照護規則（全巢有沒有工蟻）、飢餓死亡（L3，C4c）。
 - **候選形式**與可辨識性見 `docs/design-c4b-larval-development.md` §3。
 - **引擎行為版本**：`antempire.v2-review.30-c4b-larva-development`。
+
+## 2026-11-07 規則版本 v2-review.31：保育工蟻求食訊號只來自同一地點的幼蟲（Owner D5；開關預設關閉）
+- **開關**：`local_signals.nurse_cue_same_place_v31`，預設 **false**。關閉時所有輸出與 v2-review.30 逐位元組相同。
+- **缺陷**：舊的保育工蟻接觸（`engine/workers.ts` `nurseContact`）從全巢所有幼蟲中抽一隻，不論工蟻在哪、幼蟲在哪；違反 CLAUDE.md §2.1（只有實際接觸到的幼蟲）。
+- **打開時**：保育工蟻必須在巢內（`last_location`＝巢節點），而且只能抽到位於育幼室（`brood`，目前唯一的巢內地點）的幼蟲；沒有地點的幼蟲（C4a 之前或 C4a 關閉）視為在育幼室，所以不需要 C4a。不在巢內的保育工蟻當日不接觸任何幼蟲（無事件）。亂數流與依 ID 排序的抽取不變；`local_brood_begging_contact` 事件多記 `worker_location`、`larva_location`（只在打開時）。
+- **不變**：接觸機率、門檻、保育工蟻人數、食物與其他一切規則。
+- 證據分類與診斷見 `docs/design-nurse-cue-locality-v31.md`。
+- **引擎行為版本**：`antempire.v2-review.31-nurse-cue-same-place`。

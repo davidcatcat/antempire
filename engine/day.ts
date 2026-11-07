@@ -65,8 +65,12 @@ import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from '
  *     C4a and an Owner-chosen nutrition-response form; null as shipped, so it cannot be switched on yet), a larva develops by
  *     r(T)/larva_days × N(own paid fraction), recorded as larva_development; never from the colony fraction. Introduced
  *     OFF: every output byte-identical to v2-review.29.
+ *   v2-review.31 (Owner D5, docs/design-nurse-cue-locality-v31.md): with local_signals.nurse_cue_same_place_v31 on, the nurse
+ *     begging cue (workers.ts nurseContact) draws only among larvae at the nurse's own place — the nurse in the nest, the larva
+ *     in the brood chamber (a larva without a place counts as there); a nurse outside the nest touches no larva. Same stream
+ *     and draw. Introduced OFF: every output byte-identical to v2-review.30.
  */
-export const ENGINE_VERSION = 'antempire.v2-review.30-c4b-larva-development';
+export const ENGINE_VERSION = 'antempire.v2-review.31-nurse-cue-same-place';
 /** Implementation of that behaviour (bumped for refactors that keep results byte-identical). */
 export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
 /**
