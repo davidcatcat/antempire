@@ -393,7 +393,7 @@
       "rules_version": "antempire.v2-review.28-c4a-larva-body",
       "tag": "v28",
       "fingerprint": {
-        "engine": "c76a71853094f5caeb8afcab3e6db227b673671693a9fbe227dfe9ba3ac947a8",
+        "engine": "e4a336ecfa99ce435d01265797b36da50f9464816262261caf43d916e58bbf97",
         "params": "f2197fa90988ddbd5a71a84b4ea7defa8d0ed0f3f870c7b1da671f12081a3355"
       },
       "approved_in": "Owner 2026-11-06「照建議」(C4a D1–D8, docs/design-c4-larval-nutrition.md §7.0; separate rules-update PR for Owner review, not merged by Claude)",
@@ -411,7 +411,7 @@
       "rules_version": "antempire.v2-review.29-c4a-begging-prior",
       "tag": "v29",
       "fingerprint": {
-        "engine": "15c5cadf1d50eb32e9ef00e42c23d5bdea416b80693fda5fba81f66a321865ed",
+        "engine": "3519450861a4c1385972470cd67bd113128dae99dc98753bc8521bd044ad3c93",
         "params": "a514f1b7ea51ec1f0cd3888de7b5fe7c3578a93c4085d3eff76cddf365871a02"
       },
       "approved_in": "Owner instruction 2026-11-07 (phase 3: C4a first-seen begging; separate rules-update PR, model choice for the Owner, not merged by Claude)",
