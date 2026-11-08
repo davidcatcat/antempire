@@ -200,6 +200,8 @@ async function init() {
 
 /** Show the world view for the world now in the Worker (new, loaded or temporary) and start it at 1×. */
 async function enterWorld(autostart: boolean) {
+  // the scene must exist before the first drawn frame (the renderer bakes chunks from it): set it up, THEN activate
+  setScene(); resize(); homeCamera();
   active = true; $('menu').hidden = true;
   selected = null; following = null; lastDisplay = null; ui.follow.length = 1; ui.card.hidden = true; ui.notice.hidden = true;
   const cur = session?.current;
@@ -207,7 +209,7 @@ async function enterWorld(autostart: boolean) {
   ui.saveBtn.hidden = ui.menuBtn.hidden = tempMode; ui.saveStatus.hidden = tempMode;
   await client.setSpeed(DEFAULT_SPEED);
   ui.badge.textContent = `${MODE_LABEL}｜${tempMode ? '臨時實驗（不存檔）' : `「${cur?.name ?? ''}」`}｜世界 ${frame?.world_id}｜種子 ${frame?.seed}｜規則指紋 ${frame?.rules_fingerprint.slice(0, 12)}…`;
-  setScene(); resize(); homeCamera(); R.warm(camera());
+  R.warm(camera());
   if (autostart) await client.start();
   syncControls();
 }

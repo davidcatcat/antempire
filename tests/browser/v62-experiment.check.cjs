@@ -46,7 +46,7 @@ const COUNT_WORKERS = () => { window.__workerCount = 0; const W = window.Worker;
     ctx.on('request', (r) => requests.push(r.url()));
     const open = async (q) => {
       const page = await ctx.newPage();
-      page.on('pageerror', (e) => errors.push(`${tag}: ${e}`)); page.on('console', (m) => { if (m.type() === 'error') errors.push(`${tag}: ${m.text()}`); });
+      page.on("pageerror", (e) => errors.push(`${tag}: ${e.stack || e}`)); page.on('console', (m) => { if (m.type() === 'error') errors.push(`${tag}: ${m.text()}`); });
       await page.goto(url(`experiment.html${q}`));
       await page.waitForFunction(() => window.__v62 && window.__v62.frame() && window.__v62.pacing(), null, { timeout: 20000 });
       return page;
@@ -158,7 +158,7 @@ const COUNT_WORKERS = () => { window.__workerCount = 0; const W = window.Worker;
     // --- 5. isolation: official pages never create the Worker
     for (const p of ['index.html', 'analysis.html']) {
       const before = requests.length, o = await ctx.newPage();
-      o.on('pageerror', (e) => errors.push(`${tag} ${p}: ${e}`));
+      o.on("pageerror", (e) => errors.push(`${tag} ${p}: ${e.stack || e}`));
       await o.goto(url(p)); await o.waitForTimeout(2500);
       const n = await o.evaluate(() => window.__workerCount);
       check(n === 0 && !requests.slice(before).some((r) => r.includes('worker-dist')), `${tag}: official ${p} creates no Worker and loads nothing from worker-dist`);
