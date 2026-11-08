@@ -69,6 +69,8 @@ jobs:
         run: |
           set -o pipefail
           node tests/browser/v62-experiment.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/ | tee "$RUNNER_TEMP/viewer-shots/v62-experiment-results.json"
+      - name: SAVE-1 experiment-world save store in Chromium (synthetic payloads; atomicity, recovery, kill, locks, isolation, browser restart, migrations, export/import, save cost)
+        run: node tests/browser/save-store.check.cjs "$RUNNER_TEMP/viewer-shots"
       - name: Assemble the static preview (page + compiled script + data + screenshots + test results + instructions)
         if: always()
         run: |

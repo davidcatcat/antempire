@@ -1,0 +1,27 @@
+{
+  "schema": "antempire.experiment-snapshot-content.v1",
+  "label_zh": "非正式實驗世界／不屬於正式遊戲歷史",
+  "principle": "Everything that can affect the future is saved. Data may be omitted only if it is rebuilt deterministically from saved data AND a test proves the rebuilt state is identical (listed under rebuildable with that test). Loading never resamples fates.",
+  "never_resample_on_load": true,
+  "sections": {
+    "world": {
+      "required_when": "always",
+      "items": ["world_id", "seed", "world_settings", "species_settings", "rules_version", "rules_fingerprint", "t_sim", "weather_environment_state", "ecological_resources", "production_ledger", "consumption_ledger", "migration_ledger", "food_ledger"]
+    },
+    "colony": {
+      "required_when": "always",
+      "items": ["stable_ids", "life_state", "age", "stage", "hunger", "nutrition", "crop_load", "carried_load", "injury", "position", "heading", "current_activity", "memory", "nest", "nest_resources"]
+    },
+    "physics_chemistry": {
+      "required_when": "integrated",
+      "note": "Required only once the Worker simulates these; never fabricated before.",
+      "items": ["body_state", "velocities", "pending_physics_events", "chemical_field", "chemical_decay_state", "local_sensing_state"]
+    },
+    "continuity": {
+      "required_when": "always",
+      "items": ["prng_seeds", "named_rng_streams", "rng_draw_progress", "event_queue", "event_order_keys", "pending_behaviours", "timers", "other_future_affecting_state"]
+    }
+  },
+  "rebuildable": [],
+  "boundary": "Snapshots only at consistent event boundaries: no half trophallaxis, half predation, open carry or open food transfer; ledgers balance at that instant. Checked by the Worker before it emits (SAVE-2)."
+}

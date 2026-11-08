@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "antempire.experiment-world-export.v1",
+  "title": "Exported non-official experiment world (SAVE-0)",
+  "description": "One world's metadata plus its latest verified snapshot envelope. export_sha256 = SHA-256 of canonical JSON of this object without export_sha256. Import never overwrites an existing world_id and never produces an official save.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "label", "official", "exported_at", "world", "snapshot", "export_sha256"],
+  "properties": {
+    "schema": { "const": "antempire.experiment-world-export.v1" },
+    "label": { "const": "非正式實驗世界／不屬於正式遊戲歷史" },
+    "official": { "const": false },
+    "exported_at": { "type": "string", "minLength": 1 },
+    "world": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["world_id", "name", "seed", "created_at"],
+      "properties": {
+        "world_id": { "type": "string", "pattern": "^exp-[A-Za-z0-9._-]{1,60}$" },
+        "name": { "type": "string", "maxLength": 200 },
+        "seed": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+        "created_at": { "type": "string", "minLength": 1 },
+        "summary": { "type": "object" }
+      }
+    },
+    "snapshot": { "$ref": "antempire.experiment-world-snapshot.v1" },
+    "export_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}
