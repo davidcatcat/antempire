@@ -181,6 +181,7 @@ try {
     const hourly = fixtureInputs(ANCHOR, 3, 9, () => 0).map((x) => ({ ...x, provenance: { ...SYN(x.date), kind: 'observation' as const, synthetic: false, assumption: false, station_id: 'TEST', generator: null, rng_stream: null }, hourly: { temp_c: Array.from({ length: 24 }, (_, h) => 20 + h / 10), rh_percent: Array.from({ length: 24 }, () => 80), rain_mm: Array.from({ length: 24 }, (_, h) => (h === 3 || h === 4 ? 0.5 : 0)) } }));
     const hs = new WeatherSeries(ANCHOR, SITE, hourly, null);
     ok(hs.temperature(1, 600).value === 21 && hs.temperature(1, 600).source === 'observation_hourly', 'an observed hourly value is used as is, labelled observation');
+    ok(Math.abs(hs.temperature(1, 630).value! - 21.05) < 1e-12 && hs.relativeHumidity(1, 630).value === 80 && hs.temperature(1, 1439).source === 'observation_hourly', 'between observed hours: linear interpolation, across 24:00 into the next day\'s 00:00 value');
   }
 
   // ------------------------------------------------------------ 5. rain conservation

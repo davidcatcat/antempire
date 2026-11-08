@@ -125,16 +125,7 @@ export class WeatherSeries {
   temperature(day: number, minute: number): TempValue {
     const c = this.days.get(day);
     if (!c) return { value: null, source: 'unavailable', reason: 'no input for this day' };
-    const h = c.input.hourly;
-    if (h) {
-      // observed hourly values are instants at hour starts; between them linear interpolation (display-grade, general method)
-      const i = Math.floor(minute / 60), f = (minute - 60 * i) / 60;
-      const a = h.temp_c[i], bNext = i + 1 < 24 ? h.temp_c[i + 1] : this.days.get(day + 1)?.input.hourly?.temp_c[0] ?? null;
-      if (a === null) return { value: null, source: 'unavailable', reason: 'hourly observation missing' };
-      if (f === 0) return { value: a, source: 'observation_hourly', reason: null };
-      if (bNext === null) return { value: null, source: 'unavailable', reason: 'next hourly observation missing' };
-      return { value: a + (bNext - a) * f, source: 'observation_hourly', reason: null };
-    }
+    if (c.input.hourly) return this.hourlyAt(day, minute, 'temp_c');
     if (!this.shape) return { value: null, source: 'unavailable', reason: 'temperature shape coefficients are null (R247 not read)' };
     const s = this.shape;
     const tMinAt = (k: number) => this.days.get(k)!.light.sunrise + 60 * s.min_lag_after_sunrise_h;
@@ -142,6 +133,15 @@ export class WeatherSeries {
     if (minute < tMinAt(day)) return this.night(day - 1, minute + 1440);
     if (minute >= c.light.sunset) return this.night(day, minute);
     return this.dayBranch(day, minute);
+  }
+  /** observed hourly values are instants at hour starts; between two of them, linear interpolation (labelled observation-based) */
+  private hourlyAt(day: number, minute: number, k: 'temp_c' | 'rh_percent'): TempValue {
+    const i = Math.floor(minute / 60), f = (minute - 60 * i) / 60, a = this.days.get(day)!.input.hourly![k][i];
+    if (a === null) return { value: null, source: 'unavailable', reason: 'hourly observation missing' };
+    if (f === 0) return { value: a, source: 'observation_hourly', reason: null };
+    const b = i + 1 < 24 ? this.days.get(day)!.input.hourly![k][i + 1] : this.days.get(day + 1)?.input.hourly?.[k][0] ?? null;
+    if (b === null) return { value: null, source: 'unavailable', reason: 'next hourly observation missing' };
+    return { value: a + (b - a) * f, source: 'observation_hourly', reason: null };
   }
   private minMax(day: number): [number, number] | null { const i = this.days.get(day)?.input; return i && i.t_min_c !== null && i.t_max_c !== null ? [i.t_min_c, i.t_max_c] : null; }
   private dayBranch(day: number, minute: number): TempValue {
@@ -166,10 +166,7 @@ export class WeatherSeries {
   relativeHumidity(day: number, minute: number): TempValue {
     const c = this.days.get(day);
     if (!c) return { value: null, source: 'unavailable', reason: 'no input for this day' };
-    if (c.input.hourly) {
-      const i = Math.floor(minute / 60), v = c.input.hourly.rh_percent[i];
-      return v === null || minute !== i * 60 ? { value: v === null ? null : v, source: v === null ? 'unavailable' : 'observation_hourly', reason: v === null ? 'hourly observation missing' : null } : { value: v, source: 'observation_hourly', reason: null };
-    }
+    if (c.input.hourly) return this.hourlyAt(day, minute, 'rh_percent');
     const T = this.temperature(day, minute); if (T.value === null) return { value: null, source: 'unavailable', reason: `temperature unavailable: ${T.reason}` };
     const k = minute < 720 ? day - 1 : day, f = (minute + (minute < 720 ? 1440 : 0) - 720) / 1440;
     const ea0 = this.actualVapour(k), ea1 = this.actualVapour(k + 1);
