@@ -364,6 +364,52 @@ export interface SchedulerSnapshot {
   events: WorldEvent[];
 }
 
+// ------------------------------------------------------------------ commit cells (two-phase, scheduler-performed swap)
+/** phase 1 of a CommitCell: called once per batch, after the handler output passed validation and before anything
+ *  commits, with the batch (frozen copies, sorted by id) and the handler that produced it. Returns null (no change) or
+ *  a plain { value } (data property). It may throw (the batch then goes back and no cell changes); it MUST NOT mutate
+ *  anything: the scheduler cannot undo what it writes elsewhere. */
+export type CellPrepare<T> = (batch: readonly Readonly<WorldEvent>[], handler: Handler) => { value: T } | null;
+let schedulerGuard: (s: WorldScheduler, op: string) => void;
+let cellAccess: {
+  owner: (c: CommitCell<unknown>) => WorldScheduler | null; setOwner: (c: CommitCell<unknown>, s: WorldScheduler | null) => void;
+  prepare: (c: CommitCell<unknown>) => CellPrepare<unknown>; write: (c: CommitCell<unknown>, v: unknown) => void;
+};
+/**
+ * A value slot that commits in the same atomic step as the batches of the scheduler it is attached to (R13-02, Owner
+ * review of #125). Contract — exactly this, nothing more:
+ *  - GUARANTEED: for every batch, either the scheduler commits the batch AND every attached cell whose prepare returned
+ *    { value } now holds that value, or (any throw: handler, output validation, any prepare, refused re-entry) the
+ *    scheduler and every attached cell are unchanged. The swap is a private-field assignment done by the scheduler
+ *    after its own (non-throwing) commit; no caller code (getter, Proxy trap, hook) runs during it.
+ *  - NOT GUARANTEED: anything a handler or a prepare writes OUTSIDE the cells (other objects, closures, another
+ *    scheduler, a cell of another scheduler) is not rolled back when the batch fails, nor deduplicated on a retry.
+ *    prepare must be free of side effects; the scheduler cannot enforce that. The value itself is stored by reference
+ *    and not copied or frozen: the owner of the cell freezes it if it must not change afterwards.
+ *  - Outside a batch, replace() sets the value directly (refused while the owning scheduler holds a batch).
+ */
+export class CommitCell<T> {
+  #value: T; #owner: WorldScheduler | null = null; readonly #prepare: CellPrepare<T>;
+  constructor(initial: T, prepare: CellPrepare<T>) {
+    if (typeof prepare !== 'function') fail('a CommitCell needs a prepare function');
+    this.#value = initial; this.#prepare = prepare;
+  }
+  get value(): T { return this.#value; }
+  /** whether the cell is attached to a scheduler */
+  get attached(): boolean { return this.#owner !== null; }
+  /** set the value outside a batch (one assignment); refused while the owning scheduler holds a batch */
+  replace(v: T): void {
+    if (this.#owner) schedulerGuard(this.#owner, 'CommitCell.replace');
+    this.#value = v;
+  }
+  static {
+    cellAccess = {
+      owner: (c) => c.#owner, setOwner: (c, s) => { c.#owner = s; },
+      prepare: (c) => c.#prepare as CellPrepare<unknown>, write: (c, v) => { c.#value = v; },
+    };
+  }
+}
+
 export class WorldScheduler {
   readonly world: string;
   readonly order: TimeOrder;
@@ -383,6 +429,8 @@ export class WorldScheduler {
   private busy: string | null = null;
   /** last day closed by runDay() (-1: none); nothing may be scheduled on or before it */
   private closedDay = -1;
+  /** cells committed together with each batch (see CommitCell); empty = the scheduler behaves exactly as without cells */
+  private cells: readonly CommitCell<unknown>[] = [];
 
   /** start: the earliest instant anything may be scheduled at. time.order: 'tick' (default, the #116 contract) or 'layered'. */
   constructor(world: string, start: WorldTime = { day: 0, minute: 0 }, time: TimeOptions = {}) {
@@ -405,6 +453,33 @@ export class WorldScheduler {
   private exclusive<T>(op: string, fn: () => T): T {
     this.guard(op); this.busy = op;
     try { return fn(); } finally { this.busy = null; }
+  }
+  /**
+   * Attach a CommitCell: from now on every batch of this scheduler commits the cell's prepared value together with the
+   * batch (see CommitCell for exactly what is and is not guaranteed). A cell belongs to at most one scheduler; attaching
+   * it here moves it off its previous scheduler. Every check (this scheduler idle, the previous one idle) runs before
+   * anything changes, so a refused attach changes nothing. Cells are not part of a snapshot: re-attach after a restore.
+   */
+  attachCell(cell: CommitCell<unknown>): void {
+    this.guard('attachCell');
+    if (!(cell instanceof CommitCell)) fail('attachCell needs a CommitCell');
+    const prev = cellAccess.owner(cell);
+    if (prev === this) return;
+    if (prev) prev.guard('attachCell (moving a cell off its scheduler)');
+    // checks done; the assignments below cannot throw
+    if (prev) prev.cells = prev.cells.filter((c) => c !== cell);
+    this.cells = [...this.cells, cell]; cellAccess.setOwner(cell, this);
+  }
+  /** detach a cell attached here (no-op for a cell attached elsewhere or nowhere) */
+  detachCell(cell: CommitCell<unknown>): void {
+    this.guard('detachCell');
+    if (!(cell instanceof CommitCell)) fail('detachCell needs a CommitCell');
+    if (cellAccess.owner(cell) !== this) return;
+    this.cells = this.cells.filter((c) => c !== cell); cellAccess.setOwner(cell, null);
+  }
+  static {
+    // module-private access for CommitCell.replace(): refuse a replace while the owning scheduler holds a batch
+    schedulerGuard = (s, op) => s.guard(op);
   }
   get clock(): { at: WorldTime; round: number } { return { at: { ...this.clockAt }, round: this.clockRound }; }
   /** a frozen copy of this instance's log (entries since construction or restore) */
@@ -516,7 +591,7 @@ export class WorldScheduler {
       const ctx: BatchContext = { at: { ...top.at }, round: top.round, exact: { ...lo }, distinct_instants: distinct };
       // read the output ONCE into plain data, validate that copy in full, and commit only that copy (atomic batch)
       let out: ReturnType<typeof copyOutput>;
-      const children: WorldEvent[] = [], newIds = new Set<string>();
+      const children: WorldEvent[] = [], newIds = new Set<string>(), swaps: [CommitCell<unknown>, unknown][] = [];
       try {
         const raw = handler(view(batch), ctx);
         out = copyOutput(raw);
@@ -527,6 +602,19 @@ export class WorldScheduler {
           newIds.add(e.id); children.push(e);
         }
         this.checkCancels(out.cancel, inBatch);
+        // phase 1 of the attached cells (may throw; must not mutate): each returns the value to swap in, read ONCE from
+        // a data property; nothing is written yet
+        if (this.cells.length) {
+          const bv = view([...batch].sort(byId));
+          for (const c of this.cells) {
+            const r: unknown = cellAccess.prepare(c)(bv, handler);
+            if (r === null) continue;
+            if (!r || typeof r !== 'object' || Object.getPrototypeOf(r) !== Object.prototype || Reflect.ownKeys(r).join() !== 'value') fail('a cell prepare must return null or a plain { value }');
+            const d = Object.getOwnPropertyDescriptor(r, 'value');
+            if (!d || !('value' in d)) fail('a cell prepare must return { value } as a data property (no getter)');
+            swaps.push([c, d!.value]);
+          }
+        }
       } catch (err) { restore(); throw err; }
       // nothing below can fail: every value was validated above and is no longer read from the producer
       // commit: the batch executes, then its cancellations, then its children are queued
@@ -538,6 +626,8 @@ export class WorldScheduler {
       for (const e of batch) { e.state = 'executed'; this.logEntries.push({ seq: this.seq++, id: e.id, kind: e.kind, at: { ...e.at }, exact: { ...e.exact }, round: e.round, cause: e.cause, state: 'executed', by: null, reason: null }); }
       this.applyCancels(out.cancel, batch.length === 1 ? batch[0].id : `batch@${fmt(top.at)}#${top.round}`);
       for (const e of children) { this.events.set(e.id, e); this.heap.push(e); }
+      // phase 2 of the attached cells: one private-field assignment each, performed here (no caller code runs)
+      for (const [c, v] of swaps) cellAccess.write(c, v);
       return view(batch);
     });
   }
