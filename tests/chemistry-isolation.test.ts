@@ -24,7 +24,7 @@ ok(ruleFiles().engine.every((f) => !f.includes('chemistry')), 'engine/chemistry 
 // the other isolated layers do not depend on chemistry either (chemistry consumes their outputs, CHEM-3)
 for (const dir of ['engine/physics', 'engine/scheduler', 'engine/clock']) for (const f of walk(path.join(REPO_ROOT, dir))) ok(!refersTo(fs.readFileSync(f, 'utf8')), `${path.relative(REPO_ROOT, f)} does not import chemistry`);
 const files = fs.readdirSync(path.join(REPO_ROOT, 'engine/chemistry')).filter((f) => f.endsWith('.ts'));
-ok(files.includes('contract.ts'), 'engine/chemistry/contract.ts exists');
+ok(files.includes('contract.ts') && files.includes('core.ts'), 'engine/chemistry/contract.ts and core.ts exist');
 for (const f of files) {
   const raw = fs.readFileSync(path.join(REPO_ROOT, 'engine/chemistry', f), 'utf8'), src = strip(raw), code = noStrings(src);
   for (const m of src.matchAll(/from\s+'([^']+)'/g)) ok(/^\.\/[a-z0-9-]+\.ts$/.test(m[1]), `engine/chemistry/${f} imports only chemistry modules (${m[1]})`);
