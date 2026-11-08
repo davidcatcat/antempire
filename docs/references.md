@@ -728,3 +728,11 @@ R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-
 | R390 | NOAA Global Monitoring Laboratory, Solar Calculation Details. https://gml.noaa.gov/grad/solcalc/calcdetails.html（依 Meeus, *Astronomical Algorithms*） | 說明頁已讀（準確度、折射 0.833°、適用範圍）；方程式依 NOAA 試算表的公式實作，**試算表本身本次未下載核對**，改以 R392 獨立演算法交叉驗證（2027 全年最大差 0.2 分鐘） | 日出、日落、民用曙暮光（`engine/clock/solar.ts`） | NOAA：±72° 緯度內約 1 分鐘；實際觀測受大氣影響；NOAA 已不再維護；地形與建築未模擬 |
 | R391 | Allen RG, Pereira LS, Raes D, Smith M (1998) *Crop evapotranspiration*（FAO Irrigation and Drainage Paper 56），第 3 章 式 10、11。https://www.fao.org/4/x0490e/x0490e07.htm | 線上全文（第 3 章）；式 11 的常數由原文例題 3 確認（式本身是圖片） | 飽和水氣壓 e°(T) = 0.6108 exp(17.27T/(T+237.3)) kPa；RH = 實際／飽和水氣壓；RH 日變化（日出附近最高、午後最低）只作方向 | 一般物理；「日內實際水氣壓固定或內插」是本專案的遊戲假設，不是 FAO-56 的結論 |
 | R392 | Nautical Almanac Office, US Naval Observatory (1990) *Almanac for Computers*（日出日落簡化演算法） | **未讀原文**；演算法為廣泛流傳的轉載版本 | 只在測試中作為獨立的交叉驗證，不是引擎方法 | 精度約 1～2 分鐘；不用於任何輸出 |
+
+## 2026-11-08 KIN-2D 自然步行後續：觸角取樣（R810；`docs/physics-kinematics2d.md` §6、`docs/kin2d-model-c-diagnosis.md`）
+
+> 編號 R810 已先在 origin/main 與所有 origin 分支上 `git grep` 確認未被使用。**非本種**，只讀摘要；只作為模型 C「雙側取樣」的候選機制來源，不提供任何本種數值。
+
+| ID | 文獻 | 閱讀程度 | 物種 | 支持的內容 | 不可外推之處 |
+|---|---|---|---|---|---|
+| R810 | Draft RW, McGill MR, Kapoor V, Murthy VN (2018) Carpenter ants use diverse antennae sampling strategies to track odor trails. *J. Exp. Biol.* 221: jeb185124. DOI 10.1242/jeb.185124，PMID 30266788 | **只讀摘要** | **非本種**：*Camponotus pennsylvanicus* | 觸角探測有多種模式；左右觸角不是單純同步；觸角取樣方式與沿跡追蹤有關 | **不支持**本種的任何觸角角度、擺動頻率、頭部擺幅或運動參數；不支持把左右反相或特定取樣模式套到 *P. megacephala*；沒有本種的觸角量測 |
