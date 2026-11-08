@@ -68,73 +68,72 @@
    "m": {
     "agents": 100,
     "horizon_s": 30,
-    "arrived": 73,
+    "arrived": 51,
     "arrival_s": {
-     "min": 5.5158768230542705,
-     "p10": 6.174320193469809,
-     "median": 8.97234503284607,
-     "p90": 14.213080640608851,
-     "max": 15.659268186323713
+     "min": 5.515876823054314,
+     "p10": 5.909664365137186,
+     "median": 7.280883106676896,
+     "p90": 9.664002933266405,
+     "max": 17.285169631149238
     },
     "transit_s": {
-     "min": 4.821208906076492,
-     "median": 6.072266968953095,
-     "p90": 11.964116583525556,
-     "max": 13.125268238088587
+     "min": 4.821208906076536,
+     "median": 5.458097087032864,
+     "p90": 7.005574361088463,
+     "max": 13.01397614800333
     },
     "time_to_clear_s": null,
     "exited": 0,
     "never_entered": 0,
     "entry_delay_s": null,
-    "stalled": 27,
+    "stalled": 49,
     "deadlock": {
-     "stalled": 27,
-     "clusters": 6,
-     "agents_in_clusters": 19,
-     "largest": 7
+     "stalled": 49,
+     "clusters": 2,
+     "agents_in_clusters": 44,
+     "largest": 40
     },
     "final_modes": {
-     "stalled": 27,
-     "arrived": 73
+     "stalled": 49,
+     "arrived": 51
     },
     "blocked_reports": {
-     "blocked_by_nestmates": 97,
-     "way_ahead_free": 1
+     "blocked_by_nestmates": 65
     },
-    "contacts": 266,
-    "contact_ends_exact": 266,
+    "contacts": 197,
+    "contact_ends_exact": 191,
     "contact_ends_estimated": 0,
-    "stops_contact": 509,
-    "stops_conservative": 14,
+    "stops_contact": 374,
+    "stops_conservative": 9,
     "contact_end_check": {
-     "episodes": 266,
-     "exact": 266,
+     "episodes": 197,
+     "exact": 191,
      "estimated": 0,
-     "open": 0,
+     "open": 6,
      "violations": 0,
      "problems": [],
      "max_err_s": 2.3529709558545164e-7,
-     "median_err_s": 4.5112313884487776e-10,
-     "max_dev_from_mid_s": 2.9412738911105407e-10,
+     "median_err_s": 4.5199932685591193e-10,
+     "max_dev_from_mid_s": 2.9412650093263437e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
     },
     "verify": {
-     "min_pair_gap_mm": -3.68816088780477e-13,
+     "min_pair_gap_mm": -4.973799150320701e-14,
      "pair_penetrations": 0,
      "max_pair_penetration_mm": 0,
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 66306,
-     "ternary_searches": 2896,
+     "pieces": 61567,
+     "ternary_searches": 3041,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 5821,
-    "cpu_ms": 7948.327
+    "events": 3915,
+    "cpu_ms": 10535.06
    }
   },
   {
@@ -144,72 +143,72 @@
    "m": {
     "agents": 100,
     "horizon_s": 30,
-    "arrived": 45,
+    "arrived": 56,
     "arrival_s": {
-     "min": 5.5158768230542705,
-     "p10": 5.860259325910319,
-     "median": 7.27244025412826,
-     "p90": 10.503587268079066,
-     "max": 13.359393292566141
+     "min": 5.515876823054314,
+     "p10": 5.932452396166241,
+     "median": 7.664987118940632,
+     "p90": 10.465193374307537,
+     "max": 12.022389078982345
     },
     "transit_s": {
-     "min": 4.812251415071989,
-     "median": 5.425760917151733,
-     "p90": 6.91787823092311,
-     "max": 8.76497441925419
+     "min": 4.795760134332108,
+     "median": 5.4729188444786265,
+     "p90": 7.405733183030209,
+     "max": 8.323712306632515
     },
     "time_to_clear_s": null,
     "exited": 0,
     "never_entered": 0,
     "entry_delay_s": null,
-    "stalled": 55,
+    "stalled": 44,
     "deadlock": {
-     "stalled": 55,
-     "clusters": 1,
-     "agents_in_clusters": 52,
-     "largest": 52
+     "stalled": 44,
+     "clusters": 6,
+     "agents_in_clusters": 41,
+     "largest": 20
     },
     "final_modes": {
-     "stalled": 55,
-     "arrived": 45
+     "stalled": 44,
+     "arrived": 56
     },
     "blocked_reports": {
-     "blocked_by_nestmates": 72
+     "blocked_by_nestmates": 79
     },
-    "contacts": 212,
-    "contact_ends_exact": 205,
+    "contacts": 257,
+    "contact_ends_exact": 254,
     "contact_ends_estimated": 0,
-    "stops_contact": 405,
-    "stops_conservative": 11,
+    "stops_contact": 489,
+    "stops_conservative": 8,
     "contact_end_check": {
-     "episodes": 212,
-     "exact": 205,
+     "episodes": 257,
+     "exact": 254,
      "estimated": 0,
-     "open": 7,
+     "open": 3,
      "violations": 0,
      "problems": [],
      "max_err_s": 2.3529709558545164e-7,
-     "median_err_s": 4.515512408431732e-10,
-     "max_dev_from_mid_s": 2.941469290362875e-10,
+     "median_err_s": 4.526916619340682e-10,
+     "max_dev_from_mid_s": 2.9414426450102837e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
     },
     "verify": {
-     "min_pair_gap_mm": -5.306866057708248e-14,
+     "min_pair_gap_mm": -5.2513549064769904e-14,
      "pair_penetrations": 0,
      "max_pair_penetration_mm": 0,
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 65182,
-     "ternary_searches": 2916,
+     "pieces": 62866,
+     "ternary_searches": 3057,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 4591,
-    "cpu_ms": 13397.092
+    "events": 4245,
+    "cpu_ms": 9313.701
    }
   },
   {
@@ -219,72 +218,72 @@
    "m": {
     "agents": 100,
     "horizon_s": 30,
-    "arrived": 48,
+    "arrived": 42,
     "arrival_s": {
-     "min": 5.533213850742834,
-     "p10": 5.860259325910319,
-     "median": 7.653830321134622,
-     "p90": 11.981606781374033,
-     "max": 24.16506278320156
+     "min": 5.54193724938991,
+     "p10": 5.757876356989213,
+     "median": 7.237819678287588,
+     "p90": 9.712900908131699,
+     "max": 12.485448131419263
     },
     "transit_s": {
-     "min": 4.787814203202136,
-     "median": 5.519535244841757,
-     "p90": 7.717649724513928,
-     "max": 19.570643909889608
+     "min": 4.787814203202153,
+     "median": 5.316622520035075,
+     "p90": 6.192958205367958,
+     "max": 7.596035247051633
     },
     "time_to_clear_s": null,
     "exited": 0,
     "never_entered": 0,
     "entry_delay_s": null,
-    "stalled": 52,
+    "stalled": 58,
     "deadlock": {
-     "stalled": 52,
-     "clusters": 4,
-     "agents_in_clusters": 51,
-     "largest": 41
+     "stalled": 58,
+     "clusters": 1,
+     "agents_in_clusters": 50,
+     "largest": 50
     },
     "final_modes": {
-     "stalled": 52,
-     "arrived": 48
+     "stalled": 58,
+     "arrived": 42
     },
     "blocked_reports": {
-     "blocked_by_nestmates": 89
+     "blocked_by_nestmates": 72
     },
-    "contacts": 195,
-    "contact_ends_exact": 191,
+    "contacts": 183,
+    "contact_ends_exact": 178,
     "contact_ends_estimated": 0,
-    "stops_contact": 371,
-    "stops_conservative": 13,
+    "stops_contact": 347,
+    "stops_conservative": 7,
     "contact_end_check": {
-     "episodes": 195,
-     "exact": 191,
+     "episodes": 183,
+     "exact": 178,
      "estimated": 0,
-     "open": 4,
+     "open": 5,
      "violations": 0,
      "problems": [],
      "max_err_s": 2.3529709558545164e-7,
-     "median_err_s": 4.5152237504453296e-10,
-     "max_dev_from_mid_s": 2.941558108204845e-10,
+     "median_err_s": 4.524824959162288e-10,
+     "max_dev_from_mid_s": 2.941531462852254e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
     },
     "verify": {
-     "min_pair_gap_mm": -3.581579477440755e-13,
+     "min_pair_gap_mm": -4.551914400963142e-14,
      "pair_penetrations": 0,
      "max_pair_penetration_mm": 0,
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 60679,
-     "ternary_searches": 2167,
+     "pieces": 60372,
+     "ternary_searches": 1834,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 3766,
-    "cpu_ms": 11956.926
+    "events": 3492,
+    "cpu_ms": 11607.082
    }
   },
   {
@@ -294,44 +293,44 @@
    "m": {
     "agents": 100,
     "horizon_s": 30,
-    "arrived": 49,
+    "arrived": 60,
     "arrival_s": {
-     "min": 5.526045387130127,
-     "p10": 5.865795849110784,
-     "median": 7.509143198403429,
-     "p90": 9.692864045119855,
-     "max": 11.668575157488082
+     "min": 5.526045387130122,
+     "p10": 5.932452396166241,
+     "median": 8.086402352312321,
+     "p90": 10.589558170563752,
+     "max": 12.615947247927055
     },
     "transit_s": {
-     "min": 4.795760134332028,
-     "median": 5.492613090689453,
-     "p90": 7.051092570117264,
-     "max": 10.806360231036392
+     "min": 4.795760134332054,
+     "median": 5.562832260696322,
+     "p90": 7.422338901572111,
+     "max": 10.54237540802883
     },
     "time_to_clear_s": null,
     "exited": 0,
     "never_entered": 0,
     "entry_delay_s": null,
-    "stalled": 51,
+    "stalled": 40,
     "deadlock": {
-     "stalled": 51,
+     "stalled": 40,
      "clusters": 2,
-     "agents_in_clusters": 43,
-     "largest": 40
+     "agents_in_clusters": 29,
+     "largest": 27
     },
     "final_modes": {
-     "stalled": 51,
-     "arrived": 49
+     "arrived": 60,
+     "stalled": 40
     },
     "blocked_reports": {
-     "blocked_by_nestmates": 76,
+     "blocked_by_nestmates": 74,
      "way_ahead_free": 1
     },
     "contacts": 217,
     "contact_ends_exact": 212,
     "contact_ends_estimated": 0,
-    "stops_contact": 412,
-    "stops_conservative": 15,
+    "stops_contact": 413,
+    "stops_conservative": 9,
     "contact_end_check": {
      "episodes": 217,
      "exact": 212,
@@ -339,28 +338,28 @@
      "open": 5,
      "violations": 0,
      "problems": [],
-     "max_err_s": 2.3529709558545164e-7,
-     "median_err_s": 4.5072834353732105e-10,
-     "max_dev_from_mid_s": 2.941451526794481e-10,
+     "max_err_s": 2.3529709647363006e-7,
+     "median_err_s": 4.5110182256280495e-10,
+     "max_dev_from_mid_s": 2.941460408578678e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
     },
     "verify": {
-     "min_pair_gap_mm": -7.849276784099857e-14,
+     "min_pair_gap_mm": -2.1604940059205546e-13,
      "pair_penetrations": 0,
      "max_pair_penetration_mm": 0,
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 62417,
-     "ternary_searches": 2650,
+     "pieces": 60764,
+     "ternary_searches": 2360,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 4594,
-    "cpu_ms": 9885.445
+    "events": 3966,
+    "cpu_ms": 8346.375
    }
   },
   {
@@ -370,72 +369,72 @@
    "m": {
     "agents": 100,
     "horizon_s": 30,
-    "arrived": 55,
+    "arrived": 58,
     "arrival_s": {
-     "min": 5.5158768230542705,
-     "p10": 5.860259325910319,
-     "median": 7.48131745136172,
-     "p90": 10.274805691641689,
-     "max": 13.341004550359871
+     "min": 5.515876823054314,
+     "p10": 5.93048486001866,
+     "median": 7.529710002501668,
+     "p90": 9.761300235756632,
+     "max": 14.40159270774263
     },
     "transit_s": {
-     "min": 4.786110494516663,
-     "median": 5.492886038774408,
-     "p90": 6.849172604485581,
-     "max": 10.053247205117446
+     "min": 4.821208906076536,
+     "median": 5.577450830456797,
+     "p90": 7.188510377376506,
+     "max": 9.722121453393875
     },
     "time_to_clear_s": null,
     "exited": 0,
     "never_entered": 0,
     "entry_delay_s": null,
-    "stalled": 45,
+    "stalled": 42,
     "deadlock": {
-     "stalled": 45,
-     "clusters": 3,
-     "agents_in_clusters": 43,
-     "largest": 37
+     "stalled": 42,
+     "clusters": 4,
+     "agents_in_clusters": 37,
+     "largest": 27
     },
     "final_modes": {
-     "stalled": 45,
-     "arrived": 55
+     "stalled": 42,
+     "arrived": 58
     },
     "blocked_reports": {
-     "blocked_by_nestmates": 61
+     "blocked_by_nestmates": 57
     },
-    "contacts": 188,
-    "contact_ends_exact": 181,
+    "contacts": 239,
+    "contact_ends_exact": 234,
     "contact_ends_estimated": 0,
-    "stops_contact": 356,
-    "stops_conservative": 11,
+    "stops_contact": 456,
+    "stops_conservative": 8,
     "contact_end_check": {
-     "episodes": 188,
-     "exact": 181,
+     "episodes": 239,
+     "exact": 234,
      "estimated": 0,
-     "open": 7,
+     "open": 5,
      "violations": 0,
      "problems": [],
-     "max_err_s": 2.3529709558545164e-7,
-     "median_err_s": 4.523983410109622e-10,
-     "max_dev_from_mid_s": 2.9414426450102837e-10,
+     "max_err_s": 2.3529707027236668e-7,
+     "median_err_s": 4.5138115467580064e-10,
+     "max_dev_from_mid_s": 2.9414337632260867e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
     },
     "verify": {
-     "min_pair_gap_mm": -5.306866057708248e-14,
+     "min_pair_gap_mm": -4.729550084903167e-14,
      "pair_penetrations": 0,
      "max_pair_penetration_mm": 0,
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 57666,
-     "ternary_searches": 2358,
+     "pieces": 65372,
+     "ternary_searches": 3131,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 3412,
-    "cpu_ms": 8695.629
+    "events": 4614,
+    "cpu_ms": 8539.629
    }
   },
   {
@@ -445,134 +444,56 @@
    "m": {
     "agents": 100,
     "horizon_s": 30,
-    "arrived": 19,
+    "arrived": 24,
     "arrival_s": {
-     "min": 5.169741684699495,
+     "min": 5.169741684699491,
      "p10": 6.120807317016202,
-     "median": 8.825300561433991,
-     "p90": 13.29677167052735,
-     "max": 21.65632703441977
+     "median": 11.722860747518617,
+     "p90": 24.643536346891185,
+     "max": 29.613583053125048
     },
     "transit_s": {
      "min": 4.779411764705886,
-     "median": 7.117817601465864,
-     "p90": 10.65953647072759,
-     "max": 18.704414567750316
+     "median": 10.659536470727584,
+     "p90": 19.96406509254243,
+     "max": 28.290294936288127
     },
     "time_to_clear_s": null,
     "exited": 0,
     "never_entered": 0,
     "entry_delay_s": null,
-    "stalled": 24,
+    "stalled": 30,
     "deadlock": {
+     "stalled": 43,
+     "clusters": 8,
+     "agents_in_clusters": 30,
+     "largest": 10
+    },
+    "final_modes": {
+     "arrived": 24,
      "stalled": 30,
-     "clusters": 4,
-     "agents_in_clusters": 15,
-     "largest": 8
-    },
-    "final_modes": {
-     "moving": 51,
-     "arrived": 19,
-     "stalled": 24,
-     "waiting_or_stopped": 6
+     "moving": 33,
+     "waiting_or_stopped": 13
     },
     "blocked_reports": {
-     "blocked_by_nestmates": 187,
-     "way_ahead_free": 81
+     "blocked_by_nestmates": 225,
+     "way_ahead_free": 82
     },
-    "contacts": 139,
-    "contact_ends_exact": 115,
+    "contacts": 144,
+    "contact_ends_exact": 113,
     "contact_ends_estimated": 0,
-    "stops_contact": 285,
-    "stops_conservative": 28,
+    "stops_contact": 295,
+    "stops_conservative": 40,
     "contact_end_check": {
-     "episodes": 139,
-     "exact": 115,
+     "episodes": 144,
+     "exact": 113,
      "estimated": 0,
-     "open": 24,
+     "open": 31,
      "violations": 0,
      "problems": [],
-     "max_err_s": 2.352970760455264e-7,
-     "median_err_s": 1.8311530070036497e-10,
-     "max_dev_from_mid_s": 2.9412916546789347e-10,
-     "tol_mm": 1e-7,
-     "delta_g_mm": 1e-9,
-     "outside_bracket": 0
-    },
-    "verify": {
-     "min_pair_gap_mm": -7.394085344003543e-14,
-     "pair_penetrations": 0,
-     "max_pair_penetration_mm": 0,
-     "min_static_gap_mm": -2.275957200481571e-14,
-     "static_penetrations": 0,
-     "max_static_penetration_mm": 0,
-     "pieces": 43738,
-     "ternary_searches": 3258,
-     "tol_mm": 1e-9
-    },
-    "fallback_intervals": 0,
-    "unresolved": 0,
-    "events": 2372,
-    "cpu_ms": 2231.13
-   }
-  },
-  {
-   "variant": "K0_lattice_stay",
-   "policy": "B_contact_decision",
-   "seed": 2,
-   "m": {
-    "agents": 100,
-    "horizon_s": 30,
-    "arrived": 16,
-    "arrival_s": {
-     "min": 6.016895815616776,
-     "p10": 6.791276008945291,
-     "median": 7.916178929446419,
-     "p90": 11.881313172452511,
-     "max": 12.614200246318353
-    },
-    "transit_s": {
-     "min": 4.846290410438776,
-     "median": 7.178847691696724,
-     "p90": 9.223593087917553,
-     "max": 9.681721901228054
-    },
-    "time_to_clear_s": null,
-    "exited": 0,
-    "never_entered": 0,
-    "entry_delay_s": null,
-    "stalled": 45,
-    "deadlock": {
-     "stalled": 46,
-     "clusters": 1,
-     "agents_in_clusters": 42,
-     "largest": 42
-    },
-    "final_modes": {
-     "stalled": 45,
-     "moving": 38,
-     "arrived": 16,
-     "waiting_or_stopped": 1
-    },
-    "blocked_reports": {
-     "blocked_by_nestmates": 124,
-     "way_ahead_free": 52
-    },
-    "contacts": 93,
-    "contact_ends_exact": 67,
-    "contact_ends_estimated": 0,
-    "stops_contact": 312,
-    "stops_conservative": 17,
-    "contact_end_check": {
-     "episodes": 93,
-     "exact": 67,
-     "estimated": 0,
-     "open": 26,
-     "violations": 0,
-     "problems": [],
-     "max_err_s": 2.3529707782188325e-7,
-     "median_err_s": 1.5259882246709822e-10,
-     "max_dev_from_mid_s": 2.941233923081654e-10,
+     "max_err_s": 2.352970618346717e-7,
+     "median_err_s": 1.7747225911080022e-10,
+     "max_dev_from_mid_s": 2.941549226420648e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
@@ -584,14 +505,92 @@
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 45424,
-     "ternary_searches": 2211,
+     "pieces": 44244,
+     "ternary_searches": 3258,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 1791,
-    "cpu_ms": 2863.276
+    "events": 2495,
+    "cpu_ms": 2452.619
+   }
+  },
+  {
+   "variant": "K0_lattice_stay",
+   "policy": "B_contact_decision",
+   "seed": 2,
+   "m": {
+    "agents": 100,
+    "horizon_s": 30,
+    "arrived": 16,
+    "arrival_s": {
+     "min": 6.016895815616806,
+     "p10": 6.791276008945294,
+     "median": 7.916178929446421,
+     "p90": 10.891884505993168,
+     "max": 12.614200246318367
+    },
+    "transit_s": {
+     "min": 4.846290410438776,
+     "median": 7.170901760566831,
+     "p90": 8.762131123368752,
+     "max": 9.681721901228054
+    },
+    "time_to_clear_s": null,
+    "exited": 0,
+    "never_entered": 0,
+    "entry_delay_s": null,
+    "stalled": 46,
+    "deadlock": {
+     "stalled": 47,
+     "clusters": 1,
+     "agents_in_clusters": 43,
+     "largest": 43
+    },
+    "final_modes": {
+     "stalled": 46,
+     "moving": 37,
+     "arrived": 16,
+     "waiting_or_stopped": 1
+    },
+    "blocked_reports": {
+     "blocked_by_nestmates": 131,
+     "way_ahead_free": 50
+    },
+    "contacts": 93,
+    "contact_ends_exact": 66,
+    "contact_ends_estimated": 0,
+    "stops_contact": 151,
+    "stops_conservative": 14,
+    "contact_end_check": {
+     "episodes": 93,
+     "exact": 66,
+     "estimated": 0,
+     "open": 27,
+     "violations": 0,
+     "problems": [],
+     "max_err_s": 2.3529702852798096e-7,
+     "median_err_s": 1.4216983146297935e-10,
+     "max_dev_from_mid_s": 2.9412294821895557e-10,
+     "tol_mm": 1e-7,
+     "delta_g_mm": 1e-9,
+     "outside_bracket": 0
+    },
+    "verify": {
+     "min_pair_gap_mm": -5.651035195342047e-14,
+     "pair_penetrations": 0,
+     "max_pair_penetration_mm": 0,
+     "min_static_gap_mm": -2.275957200481571e-14,
+     "static_penetrations": 0,
+     "max_static_penetration_mm": 0,
+     "pieces": 44177,
+     "ternary_searches": 2031,
+     "tol_mm": 1e-9
+    },
+    "fallback_intervals": 0,
+    "unresolved": 0,
+    "events": 1448,
+    "cpu_ms": 3308.008
    }
   },
   {
@@ -604,72 +603,72 @@
     "arrived": 24,
     "arrival_s": {
      "min": 6.302871210016065,
-     "p10": 7.278417307977818,
-     "median": 11.575605247851794,
+     "p10": 7.201277649127099,
+     "median": 11.575605247851795,
      "p90": 28.653301377915408,
-     "max": 29.725809820371676
+     "max": 29.725809820371673
     },
     "transit_s": {
      "min": 5.279411764705886,
-     "median": 8.162972501363653,
-     "p90": 26.29955236035019,
-     "max": 29.137821685432453
+     "median": 8.16297250136365,
+     "p90": 26.299552360350194,
+     "max": 29.13782168543245
     },
     "time_to_clear_s": null,
     "exited": 0,
     "never_entered": 0,
     "entry_delay_s": null,
-    "stalled": 21,
+    "stalled": 20,
     "deadlock": {
      "stalled": 32,
      "clusters": 6,
-     "agents_in_clusters": 14,
-     "largest": 3
+     "agents_in_clusters": 17,
+     "largest": 5
     },
     "final_modes": {
      "moving": 44,
      "arrived": 24,
-     "waiting_or_stopped": 11,
-     "stalled": 21
+     "waiting_or_stopped": 12,
+     "stalled": 20
     },
     "blocked_reports": {
-     "blocked_by_nestmates": 156,
-     "way_ahead_free": 94
+     "blocked_by_nestmates": 159,
+     "way_ahead_free": 96
     },
-    "contacts": 140,
-    "contact_ends_exact": 119,
+    "contacts": 131,
+    "contact_ends_exact": 109,
     "contact_ends_estimated": 0,
-    "stops_contact": 213,
-    "stops_conservative": 26,
+    "stops_contact": 201,
+    "stops_conservative": 29,
     "contact_end_check": {
-     "episodes": 140,
-     "exact": 119,
+     "episodes": 131,
+     "exact": 109,
      "estimated": 0,
-     "open": 21,
+     "open": 22,
      "violations": 0,
      "problems": [],
-     "max_err_s": 2.3529709736180848e-7,
-     "median_err_s": 1.9061552336552268e-10,
-     "max_dev_from_mid_s": 2.9414426450102837e-10,
+     "max_err_s": 2.3529708315095377e-7,
+     "median_err_s": 1.9061463518710298e-10,
+     "max_dev_from_mid_s": 2.941469290362875e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
     },
     "verify": {
-     "min_pair_gap_mm": -5.473399511402022e-14,
+     "min_pair_gap_mm": -4.551914400963142e-14,
      "pair_penetrations": 0,
      "max_pair_penetration_mm": 0,
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 42780,
-     "ternary_searches": 2738,
+     "pieces": 42320,
+     "ternary_searches": 2720,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 2094,
-    "cpu_ms": 2490.147
+    "events": 2060,
+    "cpu_ms": 2806.418
    }
   },
   {
@@ -679,75 +678,75 @@
    "m": {
     "agents": 100,
     "horizon_s": 30,
-    "arrived": 34,
+    "arrived": 27,
     "arrival_s": {
-     "min": 5.487477141305146,
-     "p10": 6.42114916803579,
-     "median": 9.582797729963561,
-     "p90": 23.80680427808939,
-     "max": 26.219802572068037
+     "min": 5.487477141305183,
+     "p10": 6.421149168035794,
+     "median": 8.523353351822383,
+     "p90": 11.967384200545279,
+     "max": 24.06190475540337
     },
     "transit_s": {
-     "min": 4.792809224327368,
-     "median": 7.535784147234795,
-     "p90": 22.44255759885562,
-     "max": 22.985459426806035
+     "min": 4.792809224327405,
+     "median": 6.680559356938305,
+     "p90": 8.876161521290866,
+     "max": 20.675830032891675
     },
     "time_to_clear_s": null,
     "exited": 0,
     "never_entered": 0,
     "entry_delay_s": null,
-    "stalled": 37,
+    "stalled": 41,
     "deadlock": {
-     "stalled": 40,
-     "clusters": 8,
-     "agents_in_clusters": 28,
-     "largest": 6
+     "stalled": 43,
+     "clusters": 5,
+     "agents_in_clusters": 35,
+     "largest": 26
     },
     "final_modes": {
-     "stalled": 37,
-     "arrived": 34,
-     "moving": 26,
-     "waiting_or_stopped": 3
+     "stalled": 41,
+     "arrived": 27,
+     "moving": 30,
+     "waiting_or_stopped": 2
     },
     "blocked_reports": {
-     "blocked_by_nestmates": 165,
-     "way_ahead_free": 88
+     "blocked_by_nestmates": 123,
+     "way_ahead_free": 83
     },
-    "contacts": 146,
-    "contact_ends_exact": 113,
+    "contacts": 122,
+    "contact_ends_exact": 94,
     "contact_ends_estimated": 0,
-    "stops_contact": 230,
-    "stops_conservative": 47,
+    "stops_contact": 186,
+    "stops_conservative": 12,
     "contact_end_check": {
-     "episodes": 146,
-     "exact": 113,
+     "episodes": 122,
+     "exact": 94,
      "estimated": 0,
-     "open": 33,
+     "open": 28,
      "violations": 0,
      "problems": [],
-     "max_err_s": 2.3529707693370483e-7,
-     "median_err_s": 2.042028768300952e-10,
-     "max_dev_from_mid_s": 2.941593635341633e-10,
+     "max_err_s": 2.352970804864185e-7,
+     "median_err_s": 1.7747137093238052e-10,
+     "max_dev_from_mid_s": 2.9418467661912473e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
     },
     "verify": {
-     "min_pair_gap_mm": -1.0236256287043943e-13,
+     "min_pair_gap_mm": -5.895284260759581e-14,
      "pair_penetrations": 0,
      "max_pair_penetration_mm": 0,
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 44648,
-     "ternary_searches": 3080,
+     "pieces": 43854,
+     "ternary_searches": 2716,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 2270,
-    "cpu_ms": 1657.61
+    "events": 1870,
+    "cpu_ms": 2052.496
    }
   },
   {
@@ -760,22 +759,22 @@
     "arrived": 16,
     "arrival_s": {
      "min": 5.553440059937869,
-     "p10": 6.567935590292893,
-     "median": 8.083810953001313,
-     "p90": 13.963014427820962,
-     "max": 29.562783949058755
+     "p10": 6.56793559029292,
+     "median": 8.392509202881133,
+     "p90": 12.503857508413816,
+     "max": 13.134388716929623
     },
     "transit_s": {
-     "min": 4.860097665695548,
-     "median": 6.719878229821854,
-     "p90": 12.341389813476052,
-     "max": 28.088434594664974
+     "min": 4.86009766569554,
+     "median": 7.1291625728283865,
+     "p90": 9.09707546406722,
+     "max": 9.479285550265455
     },
     "time_to_clear_s": null,
     "exited": 0,
     "never_entered": 0,
     "entry_delay_s": null,
-    "stalled": 45,
+    "stalled": 46,
     "deadlock": {
      "stalled": 46,
      "clusters": 3,
@@ -783,49 +782,48 @@
      "largest": 36
     },
     "final_modes": {
-     "stalled": 45,
+     "stalled": 46,
      "arrived": 16,
-     "moving": 38,
-     "waiting_or_stopped": 1
+     "moving": 38
     },
     "blocked_reports": {
-     "blocked_by_nestmates": 163,
-     "way_ahead_free": 65
+     "blocked_by_nestmates": 175,
+     "way_ahead_free": 58
     },
-    "contacts": 115,
-    "contact_ends_exact": 85,
+    "contacts": 118,
+    "contact_ends_exact": 87,
     "contact_ends_estimated": 0,
-    "stops_contact": 172,
-    "stops_conservative": 30,
+    "stops_contact": 170,
+    "stops_conservative": 33,
     "contact_end_check": {
-     "episodes": 115,
-     "exact": 85,
+     "episodes": 118,
+     "exact": 87,
      "estimated": 0,
-     "open": 30,
+     "open": 31,
      "violations": 0,
      "problems": [],
-     "max_err_s": 2.352970795982401e-7,
-     "median_err_s": 1.7747137093238052e-10,
-     "max_dev_from_mid_s": 2.9414337632260867e-10,
+     "max_err_s": 2.3529708226277535e-7,
+     "median_err_s": 1.7826540243959244e-10,
+     "max_dev_from_mid_s": 2.9412561275421467e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
     },
     "verify": {
-     "min_pair_gap_mm": -7.049916206369744e-14,
+     "min_pair_gap_mm": -5.218048215738236e-14,
      "pair_penetrations": 0,
      "max_pair_penetration_mm": 0,
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 43635,
-     "ternary_searches": 2950,
+     "pieces": 44460,
+     "ternary_searches": 2882,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 1768,
-    "cpu_ms": 2054.093
+    "events": 1845,
+    "cpu_ms": 2226.084
    }
   },
   {
@@ -837,242 +835,17 @@
     "horizon_s": 30,
     "arrived": 25,
     "arrival_s": {
-     "min": 5.487477141305146,
-     "p10": 5.612260283037797,
-     "median": 6.436446175099487,
-     "p90": 9.146655715097847,
-     "max": 9.820211807097015
+     "min": 5.487477141305183,
+     "p10": 5.61226028303779,
+     "median": 6.436446175099517,
+     "p90": 9.448603202712123,
+     "max": 9.610860999907276
     },
     "transit_s": {
      "min": 4.779411764705886,
-     "median": 5.337298609002338,
+     "median": 5.118901291775782,
      "p90": 6.56428913401802,
-     "max": 7.107070899004382
-    },
-    "time_to_clear_s": null,
-    "exited": 0,
-    "never_entered": 0,
-    "entry_delay_s": null,
-    "stalled": 75,
-    "deadlock": {
-     "stalled": 75,
-     "clusters": 5,
-     "agents_in_clusters": 69,
-     "largest": 50
-    },
-    "final_modes": {
-     "stalled": 75,
-     "arrived": 25
-    },
-    "blocked_reports": {
-     "blocked_by_nestmates": 91
-    },
-    "contacts": 227,
-    "contact_ends_exact": 177,
-    "contact_ends_estimated": 0,
-    "stops_contact": 374,
-    "stops_conservative": 16,
-    "contact_end_check": {
-     "episodes": 227,
-     "exact": 177,
-     "estimated": 0,
-     "open": 50,
-     "violations": 0,
-     "problems": [],
-     "max_err_s": 2.3529709558545164e-7,
-     "median_err_s": 4.512574758308574e-10,
-     "max_dev_from_mid_s": 2.9412472457579497e-10,
-     "tol_mm": 1e-7,
-     "delta_g_mm": 1e-9,
-     "outside_bracket": 0
-    },
-    "verify": {
-     "min_pair_gap_mm": -5.3734794391857577e-14,
-     "pair_penetrations": 0,
-     "max_pair_penetration_mm": 0,
-     "min_static_gap_mm": -2.275957200481571e-14,
-     "static_penetrations": 0,
-     "max_static_penetration_mm": 0,
-     "pieces": 59007,
-     "ternary_searches": 2662,
-     "tol_mm": 1e-9
-    },
-    "fallback_intervals": 0,
-    "unresolved": 0,
-    "events": 3448,
-    "cpu_ms": 12529.083
-   }
-  },
-  {
-   "variant": "K0_lattice_stay",
-   "policy": "C_sidestep",
-   "seed": 2,
-   "m": {
-    "agents": 100,
-    "horizon_s": 30,
-    "arrived": 28,
-    "arrival_s": {
-     "min": 5.487477141305146,
-     "p10": 5.910869808906123,
-     "median": 7.019611853655179,
-     "p90": 8.666042024720495,
-     "max": 9.555858464415989
-    },
-    "transit_s": {
-     "min": 4.792809224327368,
-     "median": 5.311070379514251,
-     "p90": 6.845060704484175,
-     "max": 8.065213870009442
-    },
-    "time_to_clear_s": null,
-    "exited": 0,
-    "never_entered": 0,
-    "entry_delay_s": null,
-    "stalled": 72,
-    "deadlock": {
-     "stalled": 72,
-     "clusters": 5,
-     "agents_in_clusters": 64,
-     "largest": 51
-    },
-    "final_modes": {
-     "stalled": 72,
-     "arrived": 28
-    },
-    "blocked_reports": {
-     "blocked_by_nestmates": 87
-    },
-    "contacts": 242,
-    "contact_ends_exact": 193,
-    "contact_ends_estimated": 0,
-    "stops_contact": 394,
-    "stops_conservative": 21,
-    "contact_end_check": {
-     "episodes": 242,
-     "exact": 193,
-     "estimated": 0,
-     "open": 49,
-     "violations": 0,
-     "problems": [],
-     "max_err_s": 2.3529709558545164e-7,
-     "median_err_s": 4.507474393733446e-10,
-     "max_dev_from_mid_s": 2.941455967686579e-10,
-     "tol_mm": 1e-7,
-     "delta_g_mm": 1e-9,
-     "outside_bracket": 0
-    },
-    "verify": {
-     "min_pair_gap_mm": -1.0236256287043943e-13,
-     "pair_penetrations": 0,
-     "max_pair_penetration_mm": 0,
-     "min_static_gap_mm": -2.275957200481571e-14,
-     "static_penetrations": 0,
-     "max_static_penetration_mm": 0,
-     "pieces": 61101,
-     "ternary_searches": 3522,
-     "tol_mm": 1e-9
-    },
-    "fallback_intervals": 0,
-    "unresolved": 0,
-    "events": 3803,
-    "cpu_ms": 12876.405
-   }
-  },
-  {
-   "variant": "K0_lattice_stay",
-   "policy": "C_sidestep",
-   "seed": 3,
-   "m": {
-    "agents": 100,
-    "horizon_s": 30,
-    "arrived": 34,
-    "arrival_s": {
-     "min": 5.5158768230542705,
-     "p10": 5.675425434699615,
-     "median": 6.979086423803422,
-     "p90": 9.724262221660645,
-     "max": 10.304454502396652
-    },
-    "transit_s": {
-     "min": 4.808701086587181,
-     "median": 5.304029749197181,
-     "p90": 6.417479586230607,
-     "max": 7.2934276257588255
-    },
-    "time_to_clear_s": null,
-    "exited": 0,
-    "never_entered": 0,
-    "entry_delay_s": null,
-    "stalled": 66,
-    "deadlock": {
-     "stalled": 66,
-     "clusters": 7,
-     "agents_in_clusters": 60,
-     "largest": 28
-    },
-    "final_modes": {
-     "stalled": 66,
-     "arrived": 34
-    },
-    "blocked_reports": {
-     "blocked_by_nestmates": 83
-    },
-    "contacts": 243,
-    "contact_ends_exact": 198,
-    "contact_ends_estimated": 0,
-    "stops_contact": 406,
-    "stops_conservative": 78,
-    "contact_end_check": {
-     "episodes": 243,
-     "exact": 198,
-     "estimated": 0,
-     "open": 45,
-     "violations": 0,
-     "problems": [],
-     "max_err_s": 2.3529709514136243e-7,
-     "median_err_s": 4.512574758308574e-10,
-     "max_dev_from_mid_s": 2.941438204118185e-10,
-     "tol_mm": 1e-7,
-     "delta_g_mm": 1e-9,
-     "outside_bracket": 0
-    },
-    "verify": {
-     "min_pair_gap_mm": -5.3290705182007514e-14,
-     "pair_penetrations": 0,
-     "max_pair_penetration_mm": 0,
-     "min_static_gap_mm": -2.275957200481571e-14,
-     "static_penetrations": 0,
-     "max_static_penetration_mm": 0,
-     "pieces": 61166,
-     "ternary_searches": 3168,
-     "tol_mm": 1e-9
-    },
-    "fallback_intervals": 0,
-    "unresolved": 0,
-    "events": 4009,
-    "cpu_ms": 11056.374
-   }
-  },
-  {
-   "variant": "K0_lattice_stay",
-   "policy": "C_sidestep",
-   "seed": 4,
-   "m": {
-    "agents": 100,
-    "horizon_s": 30,
-    "arrived": 25,
-    "arrival_s": {
-     "min": 5.487477141305146,
-     "p10": 5.658968970598109,
-     "median": 6.635535545543064,
-     "p90": 8.787726319352533,
-     "max": 10.645914768032082
-    },
-    "transit_s": {
-     "min": 4.791221620573305,
-     "median": 5.241825845159842,
-     "p90": 6.832711484813026,
-     "max": 7.134056622906386
+     "max": 7.107070899004386
     },
     "time_to_clear_s": null,
     "exited": 0,
@@ -1082,107 +855,107 @@
     "deadlock": {
      "stalled": 75,
      "clusters": 6,
-     "agents_in_clusters": 71,
-     "largest": 55
+     "agents_in_clusters": 69,
+     "largest": 54
     },
     "final_modes": {
      "stalled": 75,
      "arrived": 25
     },
     "blocked_reports": {
-     "blocked_by_nestmates": 93,
-     "way_ahead_free": 1
+     "blocked_by_nestmates": 90
     },
-    "contacts": 217,
-    "contact_ends_exact": 173,
+    "contacts": 229,
+    "contact_ends_exact": 178,
     "contact_ends_estimated": 0,
-    "stops_contact": 356,
-    "stops_conservative": 44,
+    "stops_contact": 370,
+    "stops_conservative": 41,
     "contact_end_check": {
-     "episodes": 217,
-     "exact": 173,
+     "episodes": 229,
+     "exact": 178,
      "estimated": 0,
-     "open": 44,
+     "open": 51,
      "violations": 0,
      "problems": [],
-     "max_err_s": 2.352970760455264e-7,
-     "median_err_s": 3.5206770832019174e-10,
-     "max_dev_from_mid_s": 2.941460408578678e-10,
+     "max_err_s": 2.352970804864185e-7,
+     "median_err_s": 4.512838991388435e-10,
+     "max_dev_from_mid_s": 2.9414159996576927e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
     },
     "verify": {
-     "min_pair_gap_mm": -3.297362383136715e-13,
+     "min_pair_gap_mm": -6.217248937900877e-14,
      "pair_penetrations": 0,
      "max_pair_penetration_mm": 0,
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 59625,
-     "ternary_searches": 3132,
+     "pieces": 58955,
+     "ternary_searches": 2616,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 3440,
-    "cpu_ms": 12853.314
+    "events": 3395,
+    "cpu_ms": 12234.097
    }
   },
   {
    "variant": "K0_lattice_stay",
    "policy": "C_sidestep",
-   "seed": 5,
+   "seed": 2,
    "m": {
     "agents": 100,
     "horizon_s": 30,
-    "arrived": 27,
+    "arrived": 31,
     "arrival_s": {
-     "min": 5.461842498434195,
-     "p10": 5.910869808906123,
-     "median": 6.908644260045729,
-     "p90": 8.997699058197448,
-     "max": 9.695635124217791
+     "min": 5.487477141305183,
+     "p10": 5.910869808906129,
+     "median": 7.192666558418559,
+     "p90": 9.323513574832116,
+     "max": 10.739709060051373
     },
     "transit_s": {
-     "min": 4.792809224327368,
-     "median": 5.321481121552175,
-     "p90": 5.801072395696521,
-     "max": 6.900755155457337
+     "min": 4.792809224327405,
+     "median": 5.311070379514256,
+     "p90": 6.6489156256808055,
+     "max": 7.023729959661432
     },
     "time_to_clear_s": null,
     "exited": 0,
     "never_entered": 0,
     "entry_delay_s": null,
-    "stalled": 73,
+    "stalled": 69,
     "deadlock": {
-     "stalled": 73,
-     "clusters": 7,
-     "agents_in_clusters": 68,
-     "largest": 43
+     "stalled": 69,
+     "clusters": 8,
+     "agents_in_clusters": 64,
+     "largest": 36
     },
     "final_modes": {
-     "stalled": 73,
-     "arrived": 27
+     "stalled": 69,
+     "arrived": 31
     },
     "blocked_reports": {
-     "blocked_by_nestmates": 110
+     "blocked_by_nestmates": 87,
+     "way_ahead_free": 1
     },
-    "contacts": 250,
-    "contact_ends_exact": 204,
+    "contacts": 271,
+    "contact_ends_exact": 221,
     "contact_ends_estimated": 0,
-    "stops_contact": 400,
-    "stops_conservative": 11,
+    "stops_contact": 445,
+    "stops_conservative": 44,
     "contact_end_check": {
-     "episodes": 250,
-     "exact": 204,
+     "episodes": 271,
+     "exact": 221,
      "estimated": 0,
-     "open": 46,
+     "open": 50,
      "violations": 0,
      "problems": [],
-     "max_err_s": 2.3529709514136243e-7,
-     "median_err_s": 4.5074788346255446e-10,
-     "max_dev_from_mid_s": 2.9412383639737527e-10,
+     "max_err_s": 2.3529709558545164e-7,
+     "median_err_s": 4.510241069510812e-10,
+     "max_dev_from_mid_s": 2.9414426450102837e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
@@ -1194,14 +967,239 @@
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 59756,
-     "ternary_searches": 2716,
+     "pieces": 63729,
+     "ternary_searches": 4139,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 3414,
-    "cpu_ms": 11940.579
+    "events": 4310,
+    "cpu_ms": 8631.903
+   }
+  },
+  {
+   "variant": "K0_lattice_stay",
+   "policy": "C_sidestep",
+   "seed": 3,
+   "m": {
+    "agents": 100,
+    "horizon_s": 30,
+    "arrived": 30,
+    "arrival_s": {
+     "min": 5.515876823054314,
+     "p10": 5.675425434699648,
+     "median": 6.665962016135378,
+     "p90": 8.953365535255678,
+     "max": 10.102523998011524
+    },
+    "transit_s": {
+     "min": 4.821208906076536,
+     "median": 5.228866760659317,
+     "p90": 6.4030723804739935,
+     "max": 7.1307896459054945
+    },
+    "time_to_clear_s": null,
+    "exited": 0,
+    "never_entered": 0,
+    "entry_delay_s": null,
+    "stalled": 70,
+    "deadlock": {
+     "stalled": 70,
+     "clusters": 9,
+     "agents_in_clusters": 65,
+     "largest": 35
+    },
+    "final_modes": {
+     "stalled": 70,
+     "arrived": 30
+    },
+    "blocked_reports": {
+     "blocked_by_nestmates": 86
+    },
+    "contacts": 231,
+    "contact_ends_exact": 187,
+    "contact_ends_estimated": 0,
+    "stops_contact": 378,
+    "stops_conservative": 81,
+    "contact_end_check": {
+     "episodes": 231,
+     "exact": 187,
+     "estimated": 0,
+     "open": 44,
+     "violations": 0,
+     "problems": [],
+     "max_err_s": 2.3529709558545164e-7,
+     "median_err_s": 4.5199932685591193e-10,
+     "max_dev_from_mid_s": 2.9418378844070503e-10,
+     "tol_mm": 1e-7,
+     "delta_g_mm": 1e-9,
+     "outside_bracket": 0
+    },
+    "verify": {
+     "min_pair_gap_mm": -4.7628567756419216e-14,
+     "pair_penetrations": 0,
+     "max_pair_penetration_mm": 0,
+     "min_static_gap_mm": -2.275957200481571e-14,
+     "static_penetrations": 0,
+     "max_static_penetration_mm": 0,
+     "pieces": 59678,
+     "ternary_searches": 3281,
+     "tol_mm": 1e-9
+    },
+    "fallback_intervals": 0,
+    "unresolved": 0,
+    "events": 4046,
+    "cpu_ms": 10664.347
+   }
+  },
+  {
+   "variant": "K0_lattice_stay",
+   "policy": "C_sidestep",
+   "seed": 4,
+   "m": {
+    "agents": 100,
+    "horizon_s": 30,
+    "arrived": 25,
+    "arrival_s": {
+     "min": 5.487477141305183,
+     "p10": 5.658968970598109,
+     "median": 6.635535545543068,
+     "p90": 8.860146300774817,
+     "max": 10.250298648090908
+    },
+    "transit_s": {
+     "min": 4.791221620573303,
+     "median": 5.241825845159866,
+     "p90": 6.832711484813043,
+     "max": 7.134056622906383
+    },
+    "time_to_clear_s": null,
+    "exited": 0,
+    "never_entered": 0,
+    "entry_delay_s": null,
+    "stalled": 75,
+    "deadlock": {
+     "stalled": 75,
+     "clusters": 6,
+     "agents_in_clusters": 72,
+     "largest": 56
+    },
+    "final_modes": {
+     "stalled": 75,
+     "arrived": 25
+    },
+    "blocked_reports": {
+     "blocked_by_nestmates": 99
+    },
+    "contacts": 216,
+    "contact_ends_exact": 172,
+    "contact_ends_estimated": 0,
+    "stops_contact": 353,
+    "stops_conservative": 15,
+    "contact_end_check": {
+     "episodes": 216,
+     "exact": 172,
+     "estimated": 0,
+     "open": 44,
+     "violations": 0,
+     "problems": [],
+     "max_err_s": 2.3529709558545164e-7,
+     "median_err_s": 2.885141014985493e-10,
+     "max_dev_from_mid_s": 2.9414337632260867e-10,
+     "tol_mm": 1e-7,
+     "delta_g_mm": 1e-9,
+     "outside_bracket": 0
+    },
+    "verify": {
+     "min_pair_gap_mm": -5.440092820663267e-14,
+     "pair_penetrations": 0,
+     "max_pair_penetration_mm": 0,
+     "min_static_gap_mm": -2.275957200481571e-14,
+     "static_penetrations": 0,
+     "max_static_penetration_mm": 0,
+     "pieces": 60674,
+     "ternary_searches": 3352,
+     "tol_mm": 1e-9
+    },
+    "fallback_intervals": 0,
+    "unresolved": 0,
+    "events": 3474,
+    "cpu_ms": 12343.818
+   }
+  },
+  {
+   "variant": "K0_lattice_stay",
+   "policy": "C_sidestep",
+   "seed": 5,
+   "m": {
+    "agents": 100,
+    "horizon_s": 30,
+    "arrived": 28,
+    "arrival_s": {
+     "min": 5.461842498434192,
+     "p10": 5.910869808906129,
+     "median": 6.9106195312029115,
+     "p90": 9.554530575304517,
+     "max": 10.163897939486636
+    },
+    "transit_s": {
+     "min": 4.792809224327405,
+     "median": 5.411709079019747,
+     "p90": 5.910145449592056,
+     "max": 8.335597257830521
+    },
+    "time_to_clear_s": null,
+    "exited": 0,
+    "never_entered": 0,
+    "entry_delay_s": null,
+    "stalled": 72,
+    "deadlock": {
+     "stalled": 72,
+     "clusters": 9,
+     "agents_in_clusters": 67,
+     "largest": 38
+    },
+    "final_modes": {
+     "stalled": 72,
+     "arrived": 28
+    },
+    "blocked_reports": {
+     "blocked_by_nestmates": 92
+    },
+    "contacts": 272,
+    "contact_ends_exact": 219,
+    "contact_ends_estimated": 0,
+    "stops_contact": 436,
+    "stops_conservative": 40,
+    "contact_end_check": {
+     "episodes": 272,
+     "exact": 219,
+     "estimated": 0,
+     "open": 53,
+     "violations": 0,
+     "problems": [],
+     "max_err_s": 2.3529709558545164e-7,
+     "median_err_s": 4.5163828232830383e-10,
+     "max_dev_from_mid_s": 2.9412650093263437e-10,
+     "tol_mm": 1e-7,
+     "delta_g_mm": 1e-9,
+     "outside_bracket": 0
+    },
+    "verify": {
+     "min_pair_gap_mm": -9.259260025373806e-14,
+     "pair_penetrations": 0,
+     "max_pair_penetration_mm": 0,
+     "min_static_gap_mm": -2.275957200481571e-14,
+     "static_penetrations": 0,
+     "max_static_penetration_mm": 0,
+     "pieces": 60785,
+     "ternary_searches": 3079,
+     "tol_mm": 1e-9
+    },
+    "fallback_intervals": 0,
+    "unresolved": 0,
+    "events": 3891,
+    "cpu_ms": 9568.273
    }
   },
   {
@@ -1232,50 +1230,50 @@
     "stalled": 100,
     "deadlock": {
      "stalled": 100,
-     "clusters": 9,
+     "clusters": 7,
      "agents_in_clusters": 100,
-     "largest": 41
+     "largest": 50
     },
     "final_modes": {
      "stalled": 100
     },
     "blocked_reports": {
-     "blocked_by_nestmates": 112
+     "blocked_by_nestmates": 113
     },
-    "contacts": 116,
+    "contacts": 119,
     "contact_ends_exact": 32,
     "contact_ends_estimated": 0,
-    "stops_contact": 1905,
-    "stops_conservative": 148,
+    "stops_contact": 1241,
+    "stops_conservative": 106,
     "contact_end_check": {
-     "episodes": 116,
+     "episodes": 119,
      "exact": 32,
      "estimated": 0,
-     "open": 84,
+     "open": 87,
      "violations": 0,
      "problems": [],
-     "max_err_s": 2.3529707826597246e-7,
+     "max_err_s": 2.352970800423293e-7,
      "median_err_s": 1.176481134734786e-10,
-     "max_dev_from_mid_s": 2.9413982360892987e-10,
+     "max_dev_from_mid_s": 2.9414426450102837e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
     },
     "verify": {
-     "min_pair_gap_mm": -5.937716984760755e-11,
+     "min_pair_gap_mm": -6.984923750508187e-11,
      "pair_penetrations": 0,
      "max_pair_penetration_mm": 0,
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 60906,
-     "ternary_searches": 582,
+     "pieces": 61175,
+     "ternary_searches": 533,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 4571,
-    "cpu_ms": 3952.684
+    "events": 3162,
+    "cpu_ms": 4256.595
    }
   },
   {
@@ -1285,243 +1283,19 @@
    "m": {
     "agents": 100,
     "horizon_s": 30,
-    "arrived": 100,
-    "arrival_s": {
-     "min": 5.5158768230542705,
-     "p10": 6.336523272875697,
-     "median": 9.85486759362048,
-     "p90": 14.594159266366702,
-     "max": 16.22083428634087
-    },
-    "transit_s": {
-     "min": 4.821208906076492,
-     "median": 6.60094707073684,
-     "p90": 11.962412874840009,
-     "max": 14.343620705591364
-    },
-    "time_to_clear_s": 18,
-    "exited": 100,
-    "never_entered": 0,
-    "entry_delay_s": null,
-    "stalled": 0,
-    "deadlock": {
-     "stalled": 0,
-     "clusters": 0,
-     "agents_in_clusters": 0,
-     "largest": 0
-    },
-    "final_modes": {
-     "exited": 100
-    },
-    "blocked_reports": {
-     "blocked_by_nestmates": 70
-    },
-    "contacts": 239,
-    "contact_ends_exact": 239,
-    "contact_ends_estimated": 0,
-    "stops_contact": 460,
-    "stops_conservative": 12,
-    "contact_end_check": {
-     "episodes": 239,
-     "exact": 239,
-     "estimated": 0,
-     "open": 0,
-     "violations": 0,
-     "problems": [],
-     "max_err_s": 2.3529709558545164e-7,
-     "median_err_s": 4.525109176256592e-10,
-     "max_dev_from_mid_s": 2.9412738911105407e-10,
-     "tol_mm": 1e-7,
-     "delta_g_mm": 1e-9,
-     "outside_bracket": 0
-    },
-    "verify": {
-     "min_pair_gap_mm": -5.595524044110789e-14,
-     "pair_penetrations": 0,
-     "max_pair_penetration_mm": 0,
-     "min_static_gap_mm": -2.275957200481571e-14,
-     "static_penetrations": 0,
-     "max_static_penetration_mm": 0,
-     "pieces": 31433,
-     "ternary_searches": 2790,
-     "tol_mm": 1e-9
-    },
-    "fallback_intervals": 0,
-    "unresolved": 0,
-    "events": 3783,
-    "cpu_ms": 2920.672
-   }
-  },
-  {
-   "variant": "K1_lattice_exit",
-   "policy": "A_free_direction",
-   "seed": 2,
-   "m": {
-    "agents": 100,
-    "horizon_s": 30,
-    "arrived": 48,
-    "arrival_s": {
-     "min": 5.5158768230542705,
-     "p10": 5.900089364035315,
-     "median": 7.288617772589125,
-     "p90": 10.59040633351032,
-     "max": 12.94769954163013
-    },
-    "transit_s": {
-     "min": 4.812251415071989,
-     "median": 5.477737700984449,
-     "p90": 6.91787823092311,
-     "max": 10.187555141274206
-    },
-    "time_to_clear_s": null,
-    "exited": 48,
-    "never_entered": 0,
-    "entry_delay_s": null,
-    "stalled": 52,
-    "deadlock": {
-     "stalled": 52,
-     "clusters": 1,
-     "agents_in_clusters": 52,
-     "largest": 52
-    },
-    "final_modes": {
-     "stalled": 52,
-     "exited": 48
-    },
-    "blocked_reports": {
-     "blocked_by_nestmates": 69
-    },
-    "contacts": 208,
-    "contact_ends_exact": 201,
-    "contact_ends_estimated": 0,
-    "stops_contact": 397,
-    "stops_conservative": 10,
-    "contact_end_check": {
-     "episodes": 208,
-     "exact": 201,
-     "estimated": 0,
-     "open": 7,
-     "violations": 0,
-     "problems": [],
-     "max_err_s": 2.3529709558545164e-7,
-     "median_err_s": 4.5192960484996547e-10,
-     "max_dev_from_mid_s": 2.941469290362875e-10,
-     "tol_mm": 1e-7,
-     "delta_g_mm": 1e-9,
-     "outside_bracket": 0
-    },
-    "verify": {
-     "min_pair_gap_mm": -5.306866057708248e-14,
-     "pair_penetrations": 0,
-     "max_pair_penetration_mm": 0,
-     "min_static_gap_mm": -2.275957200481571e-14,
-     "static_penetrations": 0,
-     "max_static_penetration_mm": 0,
-     "pieces": 50809,
-     "ternary_searches": 2856,
-     "tol_mm": 1e-9
-    },
-    "fallback_intervals": 0,
-    "unresolved": 0,
-    "events": 4279,
-    "cpu_ms": 11684.974
-   }
-  },
-  {
-   "variant": "K1_lattice_exit",
-   "policy": "A_free_direction",
-   "seed": 3,
-   "m": {
-    "agents": 100,
-    "horizon_s": 30,
-    "arrived": 59,
-    "arrival_s": {
-     "min": 5.533213850742834,
-     "p10": 5.880111126056647,
-     "median": 7.936315727085139,
-     "p90": 11.129922181100387,
-     "max": 12.999274311690664
-    },
-    "transit_s": {
-     "min": 4.779411764705886,
-     "median": 5.560636326596212,
-     "p90": 7.547463843017651,
-     "max": 10.679034370145137
-    },
-    "time_to_clear_s": null,
-    "exited": 59,
-    "never_entered": 0,
-    "entry_delay_s": null,
-    "stalled": 41,
-    "deadlock": {
-     "stalled": 41,
-     "clusters": 1,
-     "agents_in_clusters": 41,
-     "largest": 41
-    },
-    "final_modes": {
-     "stalled": 41,
-     "exited": 59
-    },
-    "blocked_reports": {
-     "blocked_by_nestmates": 74
-    },
-    "contacts": 177,
-    "contact_ends_exact": 173,
-    "contact_ends_estimated": 0,
-    "stops_contact": 335,
-    "stops_conservative": 12,
-    "contact_end_check": {
-     "episodes": 177,
-     "exact": 173,
-     "estimated": 0,
-     "open": 4,
-     "violations": 0,
-     "problems": [],
-     "max_err_s": 2.3529709558545164e-7,
-     "median_err_s": 4.5287062988563775e-10,
-     "max_dev_from_mid_s": 2.941558108204845e-10,
-     "tol_mm": 1e-7,
-     "delta_g_mm": 1e-9,
-     "outside_bracket": 0
-    },
-    "verify": {
-     "min_pair_gap_mm": -5.306866057708248e-14,
-     "pair_penetrations": 0,
-     "max_pair_penetration_mm": 0,
-     "min_static_gap_mm": -2.275957200481571e-14,
-     "static_penetrations": 0,
-     "max_static_penetration_mm": 0,
-     "pieces": 39969,
-     "ternary_searches": 2066,
-     "tol_mm": 1e-9
-    },
-    "fallback_intervals": 0,
-    "unresolved": 0,
-    "events": 2907,
-    "cpu_ms": 9034.911
-   }
-  },
-  {
-   "variant": "K1_lattice_exit",
-   "policy": "A_free_direction",
-   "seed": 4,
-   "m": {
-    "agents": 100,
-    "horizon_s": 30,
     "arrived": 60,
     "arrival_s": {
-     "min": 5.526045387130127,
-     "p10": 5.932452396166234,
-     "median": 7.975023190566809,
-     "p90": 10.673111857042201,
-     "max": 12.160451333012562
+     "min": 5.515876823054314,
+     "p10": 5.9253382327175235,
+     "median": 7.32721411409985,
+     "p90": 10.104138016187713,
+     "max": 10.974150450881536
     },
     "transit_s": {
-     "min": 4.779411764705886,
-     "median": 5.519535244841757,
-     "p90": 7.343824005309516,
-     "max": 10.704970192856141
+     "min": 4.821208906076536,
+     "median": 5.5024521298743325,
+     "p90": 6.911849984131542,
+     "max": 9.03148617521053
     },
     "time_to_clear_s": null,
     "exited": 60,
@@ -1539,525 +1313,139 @@
      "exited": 60
     },
     "blocked_reports": {
-     "blocked_by_nestmates": 65,
-     "way_ahead_free": 1
+     "blocked_by_nestmates": 54
     },
-    "contacts": 204,
-    "contact_ends_exact": 199,
+    "contacts": 195,
+    "contact_ends_exact": 189,
     "contact_ends_estimated": 0,
-    "stops_contact": 387,
-    "stops_conservative": 15,
+    "stops_contact": 370,
+    "stops_conservative": 9,
     "contact_end_check": {
-     "episodes": 204,
-     "exact": 199,
+     "episodes": 195,
+     "exact": 189,
      "estimated": 0,
-     "open": 5,
+     "open": 6,
      "violations": 0,
      "problems": [],
      "max_err_s": 2.3529709558545164e-7,
-     "median_err_s": 4.511013784735951e-10,
-     "max_dev_from_mid_s": 2.941451526794481e-10,
+     "median_err_s": 4.522671126494515e-10,
+     "max_dev_from_mid_s": 2.9412650093263437e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
     },
     "verify": {
-     "min_pair_gap_mm": -7.849276784099857e-14,
+     "min_pair_gap_mm": -4.973799150320701e-14,
      "pair_penetrations": 0,
      "max_pair_penetration_mm": 0,
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 42557,
-     "ternary_searches": 2585,
+     "pieces": 43291,
+     "ternary_searches": 2983,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 3949,
-    "cpu_ms": 7864.651
+    "events": 3812,
+    "cpu_ms": 8312.483
    }
   },
   {
    "variant": "K1_lattice_exit",
    "policy": "A_free_direction",
-   "seed": 5,
-   "m": {
-    "agents": 100,
-    "horizon_s": 30,
-    "arrived": 63,
-    "arrival_s": {
-     "min": 5.5158768230542705,
-     "p10": 5.93048486001865,
-     "median": 7.534595804050294,
-     "p90": 10.209453095611387,
-     "max": 11.150591293771022
-    },
-    "transit_s": {
-     "min": 4.779411764705886,
-     "median": 5.486161454083318,
-     "p90": 6.759527943544908,
-     "max": 10.490988380696827
-    },
-    "time_to_clear_s": null,
-    "exited": 63,
-    "never_entered": 0,
-    "entry_delay_s": null,
-    "stalled": 37,
-    "deadlock": {
-     "stalled": 37,
-     "clusters": 1,
-     "agents_in_clusters": 37,
-     "largest": 37
-    },
-    "final_modes": {
-     "stalled": 37,
-     "exited": 63
-    },
-    "blocked_reports": {
-     "blocked_by_nestmates": 51
-    },
-    "contacts": 188,
-    "contact_ends_exact": 181,
-    "contact_ends_estimated": 0,
-    "stops_contact": 356,
-    "stops_conservative": 11,
-    "contact_end_check": {
-     "episodes": 188,
-     "exact": 181,
-     "estimated": 0,
-     "open": 7,
-     "violations": 0,
-     "problems": [],
-     "max_err_s": 2.3529709558545164e-7,
-     "median_err_s": 4.523983410109622e-10,
-     "max_dev_from_mid_s": 2.9414426450102837e-10,
-     "tol_mm": 1e-7,
-     "delta_g_mm": 1e-9,
-     "outside_bracket": 0
-    },
-    "verify": {
-     "min_pair_gap_mm": -5.306866057708248e-14,
-     "pair_penetrations": 0,
-     "max_pair_penetration_mm": 0,
-     "min_static_gap_mm": -2.275957200481571e-14,
-     "static_penetrations": 0,
-     "max_static_penetration_mm": 0,
-     "pieces": 38120,
-     "ternary_searches": 2308,
-     "tol_mm": 1e-9
-    },
-    "fallback_intervals": 0,
-    "unresolved": 0,
-    "events": 3142,
-    "cpu_ms": 6864.448
-   }
-  },
-  {
-   "variant": "K1_lattice_exit",
-   "policy": "B_contact_decision",
-   "seed": 1,
-   "m": {
-    "agents": 100,
-    "horizon_s": 30,
-    "arrived": 42,
-    "arrival_s": {
-     "min": 5.169741684699495,
-     "p10": 6.285666829664425,
-     "median": 12.444754641892827,
-     "p90": 27.87263362917053,
-     "max": 28.421015728219423
-    },
-    "transit_s": {
-     "min": 4.779411764705886,
-     "median": 10.58205907056003,
-     "p90": 25.148132890882913,
-     "max": 27.371454016458074
-    },
-    "time_to_clear_s": null,
-    "exited": 42,
-    "never_entered": 0,
-    "entry_delay_s": null,
-    "stalled": 4,
-    "deadlock": {
-     "stalled": 4,
-     "clusters": 0,
-     "agents_in_clusters": 0,
-     "largest": 0
-    },
-    "final_modes": {
-     "moving": 54,
-     "exited": 42,
-     "stalled": 4
-    },
-    "blocked_reports": {
-     "blocked_by_nestmates": 172,
-     "way_ahead_free": 68
-    },
-    "contacts": 129,
-    "contact_ends_exact": 110,
-    "contact_ends_estimated": 5,
-    "stops_contact": 284,
-    "stops_conservative": 20,
-    "contact_end_check": {
-     "episodes": 129,
-     "exact": 110,
-     "estimated": 5,
-     "open": 14,
-     "violations": 0,
-     "problems": [],
-     "max_err_s": 2.3529706361102853e-7,
-     "median_err_s": 1.7610490843367188e-10,
-     "max_dev_from_mid_s": 2.941233923081654e-10,
-     "tol_mm": 1e-7,
-     "delta_g_mm": 1e-9,
-     "outside_bracket": 0
-    },
-    "verify": {
-     "min_pair_gap_mm": -8.060219158778636e-14,
-     "pair_penetrations": 0,
-     "max_pair_penetration_mm": 0,
-     "min_static_gap_mm": -2.275957200481571e-14,
-     "static_penetrations": 0,
-     "max_static_penetration_mm": 0,
-     "pieces": 37065,
-     "ternary_searches": 3104,
-     "tol_mm": 1e-9
-    },
-    "fallback_intervals": 0,
-    "unresolved": 0,
-    "events": 2273,
-    "cpu_ms": 1787.675
-   }
-  },
-  {
-   "variant": "K1_lattice_exit",
-   "policy": "B_contact_decision",
    "seed": 2,
    "m": {
     "agents": 100,
     "horizon_s": 30,
-    "arrived": 17,
+    "arrived": 73,
     "arrival_s": {
-     "min": 6.016895815616776,
-     "p10": 6.791276008945291,
-     "median": 7.916178929446419,
-     "p90": 10.45418757590033,
-     "max": 12.614200246318353
+     "min": 5.515876823054314,
+     "p10": 6.1059512421191675,
+     "median": 8.473844800611145,
+     "p90": 11.352747615067456,
+     "max": 12.850217190182278
     },
     "transit_s": {
-     "min": 4.846290410438776,
-     "median": 6.719512313431283,
-     "p90": 8.762131123368738,
-     "max": 9.681721901228054
+     "min": 4.794056425646559,
+     "median": 5.640251066588354,
+     "p90": 8.142585300740647,
+     "max": 10.649331327043047
     },
     "time_to_clear_s": null,
-    "exited": 17,
+    "exited": 73,
     "never_entered": 0,
     "entry_delay_s": null,
-    "stalled": 40,
+    "stalled": 27,
     "deadlock": {
-     "stalled": 40,
-     "clusters": 1,
-     "agents_in_clusters": 40,
-     "largest": 40
+     "stalled": 27,
+     "clusters": 2,
+     "agents_in_clusters": 27,
+     "largest": 20
     },
     "final_modes": {
-     "stalled": 40,
-     "moving": 43,
-     "exited": 17
+     "exited": 73,
+     "stalled": 27
     },
     "blocked_reports": {
-     "blocked_by_nestmates": 119,
-     "way_ahead_free": 50
+     "blocked_by_nestmates": 63
     },
-    "contacts": 89,
-    "contact_ends_exact": 63,
+    "contacts": 256,
+    "contact_ends_exact": 253,
     "contact_ends_estimated": 0,
-    "stops_contact": 307,
-    "stops_conservative": 17,
+    "stops_contact": 487,
+    "stops_conservative": 7,
     "contact_end_check": {
-     "episodes": 89,
-     "exact": 63,
+     "episodes": 256,
+     "exact": 253,
      "estimated": 0,
-     "open": 26,
+     "open": 3,
      "violations": 0,
      "problems": [],
-     "max_err_s": 2.3529707782188325e-7,
-     "median_err_s": 1.411573080645212e-10,
-     "max_dev_from_mid_s": 2.941233923081654e-10,
-     "tol_mm": 1e-7,
-     "delta_g_mm": 1e-9,
-     "outside_bracket": 0
-    },
-    "verify": {
-     "min_pair_gap_mm": -1.0236256287043943e-13,
-     "pair_penetrations": 0,
-     "max_pair_penetration_mm": 0,
-     "min_static_gap_mm": -2.275957200481571e-14,
-     "static_penetrations": 0,
-     "max_static_penetration_mm": 0,
-     "pieces": 41790,
-     "ternary_searches": 2129,
-     "tol_mm": 1e-9
-    },
-    "fallback_intervals": 0,
-    "unresolved": 0,
-    "events": 1743,
-    "cpu_ms": 2786.189
-   }
-  },
-  {
-   "variant": "K1_lattice_exit",
-   "policy": "B_contact_decision",
-   "seed": 3,
-   "m": {
-    "agents": 100,
-    "horizon_s": 30,
-    "arrived": 46,
-    "arrival_s": {
-     "min": 6.302871210016065,
-     "p10": 7.898336472656501,
-     "median": 21.312244627809307,
-     "p90": 26.199999999999942,
-     "max": 27.33128737242942
-    },
-    "transit_s": {
-     "min": 5.279411764705886,
-     "median": 19.304411764705808,
-     "p90": 22.979468910556726,
-     "max": 24.90387237689612
-    },
-    "time_to_clear_s": null,
-    "exited": 46,
-    "never_entered": 0,
-    "entry_delay_s": null,
-    "stalled": 4,
-    "deadlock": {
-     "stalled": 4,
-     "clusters": 0,
-     "agents_in_clusters": 0,
-     "largest": 0
-    },
-    "final_modes": {
-     "moving": 50,
-     "exited": 46,
-     "stalled": 4
-    },
-    "blocked_reports": {
-     "blocked_by_nestmates": 109,
-     "way_ahead_free": 78
-    },
-    "contacts": 110,
-    "contact_ends_exact": 93,
-    "contact_ends_estimated": 11,
-    "stops_contact": 177,
-    "stops_conservative": 13,
-    "contact_end_check": {
-     "episodes": 110,
-     "exact": 93,
-     "estimated": 11,
-     "open": 6,
-     "violations": 0,
-     "problems": [],
-     "max_err_s": 2.3529709736180848e-7,
-     "median_err_s": 1.7043078059941763e-10,
+     "max_err_s": 2.3529709558545164e-7,
+     "median_err_s": 4.527342944982138e-10,
      "max_dev_from_mid_s": 2.9414426450102837e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
     },
     "verify": {
-     "min_pair_gap_mm": -2.454703107446221e-13,
+     "min_pair_gap_mm": -4.951594689828198e-14,
      "pair_penetrations": 0,
      "max_pair_penetration_mm": 0,
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 36214,
-     "ternary_searches": 2368,
+     "pieces": 38844,
+     "ternary_searches": 2983,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 1767,
-    "cpu_ms": 2452.939
+    "events": 3954,
+    "cpu_ms": 6693.965
    }
   },
   {
    "variant": "K1_lattice_exit",
-   "policy": "B_contact_decision",
-   "seed": 4,
-   "m": {
-    "agents": 100,
-    "horizon_s": 30,
-    "arrived": 55,
-    "arrival_s": {
-     "min": 5.487477141305146,
-     "p10": 6.625538992911315,
-     "median": 11.432979457285198,
-     "p90": 17.542316160499812,
-     "max": 19.781853162949883
-    },
-    "transit_s": {
-     "min": 4.792809224327368,
-     "median": 8.87616152129087,
-     "p90": 15.284378616117998,
-     "max": 19.18102500823883
-    },
-    "time_to_clear_s": null,
-    "exited": 55,
-    "never_entered": 0,
-    "entry_delay_s": null,
-    "stalled": 0,
-    "deadlock": {
-     "stalled": 0,
-     "clusters": 0,
-     "agents_in_clusters": 0,
-     "largest": 0
-    },
-    "final_modes": {
-     "exited": 55,
-     "moving": 45
-    },
-    "blocked_reports": {
-     "blocked_by_nestmates": 112,
-     "way_ahead_free": 77
-    },
-    "contacts": 111,
-    "contact_ends_exact": 99,
-    "contact_ends_estimated": 9,
-    "stops_contact": 184,
-    "stops_conservative": 29,
-    "contact_end_check": {
-     "episodes": 111,
-     "exact": 99,
-     "estimated": 9,
-     "open": 3,
-     "violations": 0,
-     "problems": [],
-     "max_err_s": 2.3529707693370483e-7,
-     "median_err_s": 2.0199575345714038e-10,
-     "max_dev_from_mid_s": 2.941593635341633e-10,
-     "tol_mm": 1e-7,
-     "delta_g_mm": 1e-9,
-     "outside_bracket": 0
-    },
-    "verify": {
-     "min_pair_gap_mm": -1.0236256287043943e-13,
-     "pair_penetrations": 0,
-     "max_pair_penetration_mm": 0,
-     "min_static_gap_mm": -2.275957200481571e-14,
-     "static_penetrations": 0,
-     "max_static_penetration_mm": 0,
-     "pieces": 30128,
-     "ternary_searches": 2734,
-     "tol_mm": 1e-9
-    },
-    "fallback_intervals": 0,
-    "unresolved": 0,
-    "events": 1970,
-    "cpu_ms": 1154.234
-   }
-  },
-  {
-   "variant": "K1_lattice_exit",
-   "policy": "B_contact_decision",
-   "seed": 5,
-   "m": {
-    "agents": 100,
-    "horizon_s": 30,
-    "arrived": 20,
-    "arrival_s": {
-     "min": 5.553440059937869,
-     "p10": 6.567935590292893,
-     "median": 8.526671005375661,
-     "p90": 12.145625960499201,
-     "max": 14.872819406292443
-    },
-    "transit_s": {
-     "min": 4.860097665695548,
-     "median": 7.0103884760383295,
-     "p90": 9.512050830853555,
-     "max": 14.051474555009086
-    },
-    "time_to_clear_s": null,
-    "exited": 20,
-    "never_entered": 0,
-    "entry_delay_s": null,
-    "stalled": 31,
-    "deadlock": {
-     "stalled": 32,
-     "clusters": 1,
-     "agents_in_clusters": 32,
-     "largest": 32
-    },
-    "final_modes": {
-     "stalled": 31,
-     "exited": 20,
-     "moving": 48,
-     "waiting_or_stopped": 1
-    },
-    "blocked_reports": {
-     "blocked_by_nestmates": 152,
-     "way_ahead_free": 59
-    },
-    "contacts": 105,
-    "contact_ends_exact": 83,
-    "contact_ends_estimated": 0,
-    "stops_contact": 159,
-    "stops_conservative": 30,
-    "contact_end_check": {
-     "episodes": 105,
-     "exact": 83,
-     "estimated": 0,
-     "open": 22,
-     "violations": 0,
-     "problems": [],
-     "max_err_s": 2.352970795982401e-7,
-     "median_err_s": 1.716600195322826e-10,
-     "max_dev_from_mid_s": 2.9414337632260867e-10,
-     "tol_mm": 1e-7,
-     "delta_g_mm": 1e-9,
-     "outside_bracket": 0
-    },
-    "verify": {
-     "min_pair_gap_mm": -7.049916206369744e-14,
-     "pair_penetrations": 0,
-     "max_pair_penetration_mm": 0,
-     "min_static_gap_mm": -2.275957200481571e-14,
-     "static_penetrations": 0,
-     "max_static_penetration_mm": 0,
-     "pieces": 38114,
-     "ternary_searches": 2970,
-     "tol_mm": 1e-9
-    },
-    "fallback_intervals": 0,
-    "unresolved": 0,
-    "events": 1696,
-    "cpu_ms": 1963.626
-   }
-  },
-  {
-   "variant": "K1_lattice_exit",
-   "policy": "C_sidestep",
-   "seed": 1,
+   "policy": "A_free_direction",
+   "seed": 3,
    "m": {
     "agents": 100,
     "horizon_s": 30,
     "arrived": 50,
     "arrival_s": {
-     "min": 5.487477141305146,
-     "p10": 5.937623431094791,
-     "median": 7.382167194096206,
-     "p90": 10.297029341042135,
-     "max": 13.097013982963654
+     "min": 5.54193724938991,
+     "p10": 5.860259325910321,
+     "median": 7.689751032338011,
+     "p90": 9.748920557434943,
+     "max": 10.627458864142882
     },
     "transit_s": {
-     "min": 4.779411764705886,
-     "median": 5.580154632564339,
-     "p90": 7.910142629590185,
-     "max": 9.71897395492615
+     "min": 4.781115473391374,
+     "median": 5.314918811349527,
+     "p90": 6.173468503000679,
+     "max": 7.630512820737353
     },
     "time_to_clear_s": null,
     "exited": 50,
@@ -2075,98 +1463,251 @@
      "exited": 50
     },
     "blocked_reports": {
-     "blocked_by_nestmates": 73
+     "blocked_by_nestmates": 63
     },
-    "contacts": 218,
-    "contact_ends_exact": 177,
-    "contact_ends_estimated": 16,
-    "stops_contact": 379,
-    "stops_conservative": 16,
+    "contacts": 177,
+    "contact_ends_exact": 172,
+    "contact_ends_estimated": 0,
+    "stops_contact": 335,
+    "stops_conservative": 7,
     "contact_end_check": {
-     "episodes": 218,
-     "exact": 177,
-     "estimated": 16,
-     "open": 25,
+     "episodes": 177,
+     "exact": 172,
+     "estimated": 0,
+     "open": 5,
      "violations": 0,
      "problems": [],
      "max_err_s": 2.3529709558545164e-7,
-     "median_err_s": 4.512574758308574e-10,
-     "max_dev_from_mid_s": 2.9412472457579497e-10,
+     "median_err_s": 4.54036808150704e-10,
+     "max_dev_from_mid_s": 2.941531462852254e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
     },
     "verify": {
-     "min_pair_gap_mm": -5.3734794391857577e-14,
+     "min_pair_gap_mm": -4.551914400963142e-14,
      "pair_penetrations": 0,
      "max_pair_penetration_mm": 0,
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 46246,
-     "ternary_searches": 2650,
+     "pieces": 44318,
+     "ternary_searches": 1769,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 3513,
-    "cpu_ms": 12029.719
+    "events": 3109,
+    "cpu_ms": 10449.699
    }
   },
   {
    "variant": "K1_lattice_exit",
-   "policy": "C_sidestep",
-   "seed": 2,
+   "policy": "A_free_direction",
+   "seed": 4,
    "m": {
     "agents": 100,
     "horizon_s": 30,
-    "arrived": 49,
+    "arrived": 73,
     "arrival_s": {
-     "min": 5.487477141305146,
-     "p10": 6.303113085253378,
-     "median": 7.377055255176503,
-     "p90": 9.555858464415989,
-     "max": 11.097047130165747
+     "min": 5.526045387130122,
+     "p10": 6.119115091384213,
+     "median": 8.855990902432431,
+     "p90": 10.914070091666447,
+     "max": 13.34042598095704
     },
     "transit_s": {
-     "min": 4.792809224327368,
-     "median": 5.416695401366118,
-     "p90": 7.719007102128243,
-     "max": 8.702800842667862
+     "min": 4.795760134332054,
+     "median": 5.664954300289713,
+     "p90": 7.666672959740996,
+     "max": 12.680823067882844
     },
     "time_to_clear_s": null,
-    "exited": 49,
+    "exited": 73,
     "never_entered": 0,
     "entry_delay_s": null,
-    "stalled": 51,
+    "stalled": 27,
     "deadlock": {
-     "stalled": 51,
+     "stalled": 27,
      "clusters": 1,
-     "agents_in_clusters": 51,
-     "largest": 51
+     "agents_in_clusters": 27,
+     "largest": 27
     },
     "final_modes": {
-     "stalled": 51,
-     "exited": 49
+     "exited": 73,
+     "stalled": 27
     },
     "blocked_reports": {
-     "blocked_by_nestmates": 70
+     "blocked_by_nestmates": 60,
+     "way_ahead_free": 1
     },
-    "contacts": 231,
-    "contact_ends_exact": 193,
-    "contact_ends_estimated": 10,
-    "stops_contact": 384,
-    "stops_conservative": 21,
+    "contacts": 209,
+    "contact_ends_exact": 203,
+    "contact_ends_estimated": 1,
+    "stops_contact": 398,
+    "stops_conservative": 9,
     "contact_end_check": {
-     "episodes": 231,
-     "exact": 193,
-     "estimated": 10,
-     "open": 28,
+     "episodes": 209,
+     "exact": 203,
+     "estimated": 1,
+     "open": 5,
      "violations": 0,
      "problems": [],
-     "max_err_s": 2.3529709558545164e-7,
-     "median_err_s": 4.507474393733446e-10,
-     "max_dev_from_mid_s": 2.941455967686579e-10,
+     "max_err_s": 2.3529709647363006e-7,
+     "median_err_s": 4.514520979270742e-10,
+     "max_dev_from_mid_s": 2.941460408578678e-10,
+     "tol_mm": 1e-7,
+     "delta_g_mm": 1e-9,
+     "outside_bracket": 0
+    },
+    "verify": {
+     "min_pair_gap_mm": -5.67323965583455e-14,
+     "pair_penetrations": 0,
+     "max_pair_penetration_mm": 0,
+     "min_static_gap_mm": -2.275957200481571e-14,
+     "static_penetrations": 0,
+     "max_static_penetration_mm": 0,
+     "pieces": 36134,
+     "ternary_searches": 2274,
+     "tol_mm": 1e-9
+    },
+    "fallback_intervals": 0,
+    "unresolved": 0,
+    "events": 3135,
+    "cpu_ms": 6099.69
+   }
+  },
+  {
+   "variant": "K1_lattice_exit",
+   "policy": "A_free_direction",
+   "seed": 5,
+   "m": {
+    "agents": 100,
+    "horizon_s": 30,
+    "arrived": 73,
+    "arrival_s": {
+     "min": 5.515876823054314,
+     "p10": 5.993642661547307,
+     "median": 7.92570595328416,
+     "p90": 10.249565377751082,
+     "max": 11.828697675805135
+    },
+    "transit_s": {
+     "min": 4.814346106874158,
+     "median": 5.556231156627766,
+     "p90": 7.188510377376506,
+     "max": 11.159279082795138
+    },
+    "time_to_clear_s": null,
+    "exited": 73,
+    "never_entered": 0,
+    "entry_delay_s": null,
+    "stalled": 27,
+    "deadlock": {
+     "stalled": 27,
+     "clusters": 1,
+     "agents_in_clusters": 27,
+     "largest": 27
+    },
+    "final_modes": {
+     "stalled": 27,
+     "exited": 73
+    },
+    "blocked_reports": {
+     "blocked_by_nestmates": 42
+    },
+    "contacts": 233,
+    "contact_ends_exact": 228,
+    "contact_ends_estimated": 0,
+    "stops_contact": 444,
+    "stops_conservative": 8,
+    "contact_end_check": {
+     "episodes": 233,
+     "exact": 228,
+     "estimated": 0,
+     "open": 5,
+     "violations": 0,
+     "problems": [],
+     "max_err_s": 2.3529707027236668e-7,
+     "median_err_s": 4.5138115467580064e-10,
+     "max_dev_from_mid_s": 2.9414337632260867e-10,
+     "tol_mm": 1e-7,
+     "delta_g_mm": 1e-9,
+     "outside_bracket": 0
+    },
+    "verify": {
+     "min_pair_gap_mm": -4.729550084903167e-14,
+     "pair_penetrations": 0,
+     "max_pair_penetration_mm": 0,
+     "min_static_gap_mm": -2.275957200481571e-14,
+     "static_penetrations": 0,
+     "max_static_penetration_mm": 0,
+     "pieces": 37758,
+     "ternary_searches": 2674,
+     "tol_mm": 1e-9
+    },
+    "fallback_intervals": 0,
+    "unresolved": 0,
+    "events": 3694,
+    "cpu_ms": 6494.506
+   }
+  },
+  {
+   "variant": "K1_lattice_exit",
+   "policy": "B_contact_decision",
+   "seed": 1,
+   "m": {
+    "agents": 100,
+    "horizon_s": 30,
+    "arrived": 34,
+    "arrival_s": {
+     "min": 5.169741684699491,
+     "p10": 6.120807317016202,
+     "median": 13.110495605655128,
+     "p90": 21.99705882352941,
+     "max": 22.613723094324207
+    },
+    "transit_s": {
+     "min": 4.779411764705882,
+     "median": 10.758790591767657,
+     "p90": 20.628900066587057,
+     "max": 22.248611220764417
+    },
+    "time_to_clear_s": null,
+    "exited": 34,
+    "never_entered": 0,
+    "entry_delay_s": null,
+    "stalled": 12,
+    "deadlock": {
+     "stalled": 12,
+     "clusters": 1,
+     "agents_in_clusters": 8,
+     "largest": 8
+    },
+    "final_modes": {
+     "exited": 34,
+     "stalled": 12,
+     "moving": 54
+    },
+    "blocked_reports": {
+     "blocked_by_nestmates": 204,
+     "way_ahead_free": 67
+    },
+    "contacts": 126,
+    "contact_ends_exact": 104,
+    "contact_ends_estimated": 4,
+    "stops_contact": 273,
+    "stops_conservative": 25,
+    "contact_end_check": {
+     "episodes": 126,
+     "exact": 104,
+     "estimated": 4,
+     "open": 18,
+     "violations": 0,
+     "problems": [],
+     "max_err_s": 2.352970618346717e-7,
+     "median_err_s": 1.7610313207683248e-10,
+     "max_dev_from_mid_s": 2.941549226420648e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
@@ -2178,190 +1719,39 @@
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 47344,
-     "ternary_searches": 3501,
+     "pieces": 37848,
+     "ternary_searches": 3068,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 3824,
-    "cpu_ms": 11159.85
+    "events": 2306,
+    "cpu_ms": 1917.228
    }
   },
   {
    "variant": "K1_lattice_exit",
-   "policy": "C_sidestep",
-   "seed": 3,
+   "policy": "B_contact_decision",
+   "seed": 2,
    "m": {
     "agents": 100,
     "horizon_s": 30,
-    "arrived": 61,
+    "arrived": 17,
     "arrival_s": {
-     "min": 5.5158768230542705,
-     "p10": 5.937623431094791,
-     "median": 8.024459787536328,
-     "p90": 11.246715197486804,
-     "max": 14.847042083678335
+     "min": 6.016895815616806,
+     "p10": 6.791276008945294,
+     "median": 7.916178929446421,
+     "p90": 10.45418757590033,
+     "max": 12.614200246318367
     },
     "transit_s": {
-     "min": 4.808701086587181,
-     "median": 5.552152899271057,
-     "p90": 9.422057553839943,
-     "max": 13.9056972021292
+     "min": 4.846290410438776,
+     "median": 6.719512313431284,
+     "p90": 8.23416442145821,
+     "max": 9.681721901228054
     },
     "time_to_clear_s": null,
-    "exited": 61,
-    "never_entered": 0,
-    "entry_delay_s": null,
-    "stalled": 39,
-    "deadlock": {
-     "stalled": 39,
-     "clusters": 2,
-     "agents_in_clusters": 39,
-     "largest": 28
-    },
-    "final_modes": {
-     "stalled": 39,
-     "exited": 61
-    },
-    "blocked_reports": {
-     "blocked_by_nestmates": 74
-    },
-    "contacts": 231,
-    "contact_ends_exact": 198,
-    "contact_ends_estimated": 15,
-    "stops_contact": 403,
-    "stops_conservative": 78,
-    "contact_end_check": {
-     "episodes": 231,
-     "exact": 198,
-     "estimated": 15,
-     "open": 18,
-     "violations": 0,
-     "problems": [],
-     "max_err_s": 2.3529709514136243e-7,
-     "median_err_s": 4.512574758308574e-10,
-     "max_dev_from_mid_s": 2.941438204118185e-10,
-     "tol_mm": 1e-7,
-     "delta_g_mm": 1e-9,
-     "outside_bracket": 0
-    },
-    "verify": {
-     "min_pair_gap_mm": -5.3290705182007514e-14,
-     "pair_penetrations": 0,
-     "max_pair_penetration_mm": 0,
-     "min_static_gap_mm": -2.275957200481571e-14,
-     "static_penetrations": 0,
-     "max_static_penetration_mm": 0,
-     "pieces": 43741,
-     "ternary_searches": 3172,
-     "tol_mm": 1e-9
-    },
-    "fallback_intervals": 0,
-    "unresolved": 0,
-    "events": 4072,
-    "cpu_ms": 9661.552
-   }
-  },
-  {
-   "variant": "K1_lattice_exit",
-   "policy": "C_sidestep",
-   "seed": 4,
-   "m": {
-    "agents": 100,
-    "horizon_s": 30,
-    "arrived": 45,
-    "arrival_s": {
-     "min": 5.487477141305146,
-     "p10": 5.89881076116125,
-     "median": 7.274618721550941,
-     "p90": 10.773391006815189,
-     "max": 12.045496436554554
-    },
-    "transit_s": {
-     "min": 4.791221620573305,
-     "median": 5.546412489148758,
-     "p90": 7.739264071954789,
-     "max": 9.540355269797988
-    },
-    "time_to_clear_s": null,
-    "exited": 45,
-    "never_entered": 0,
-    "entry_delay_s": null,
-    "stalled": 55,
-    "deadlock": {
-     "stalled": 55,
-     "clusters": 1,
-     "agents_in_clusters": 55,
-     "largest": 55
-    },
-    "final_modes": {
-     "stalled": 55,
-     "exited": 45
-    },
-    "blocked_reports": {
-     "blocked_by_nestmates": 79,
-     "way_ahead_free": 1
-    },
-    "contacts": 207,
-    "contact_ends_exact": 173,
-    "contact_ends_estimated": 10,
-    "stops_contact": 363,
-    "stops_conservative": 44,
-    "contact_end_check": {
-     "episodes": 207,
-     "exact": 173,
-     "estimated": 10,
-     "open": 24,
-     "violations": 0,
-     "problems": [],
-     "max_err_s": 2.352970760455264e-7,
-     "median_err_s": 3.5206770832019174e-10,
-     "max_dev_from_mid_s": 2.941460408578678e-10,
-     "tol_mm": 1e-7,
-     "delta_g_mm": 1e-9,
-     "outside_bracket": 0
-    },
-    "verify": {
-     "min_pair_gap_mm": -3.297362383136715e-13,
-     "pair_penetrations": 0,
-     "max_pair_penetration_mm": 0,
-     "min_static_gap_mm": -2.275957200481571e-14,
-     "static_penetrations": 0,
-     "max_static_penetration_mm": 0,
-     "pieces": 47869,
-     "ternary_searches": 3121,
-     "tol_mm": 1e-9
-    },
-    "fallback_intervals": 0,
-    "unresolved": 0,
-    "events": 3495,
-    "cpu_ms": 13415.084
-   }
-  },
-  {
-   "variant": "K1_lattice_exit",
-   "policy": "C_sidestep",
-   "seed": 5,
-   "m": {
-    "agents": 100,
-    "horizon_s": 30,
-    "arrived": 57,
-    "arrival_s": {
-     "min": 5.461842498434195,
-     "p10": 6.360228678191252,
-     "median": 8.095753073326724,
-     "p90": 12.146458938936727,
-     "max": 13.5468883554038
-    },
-    "transit_s": {
-     "min": 4.792809224327368,
-     "median": 5.801072395696521,
-     "p90": 9.067272821774251,
-     "max": 12.910270431727259
-    },
-    "time_to_clear_s": null,
-    "exited": 57,
+    "exited": 17,
     "never_entered": 0,
     "entry_delay_s": null,
     "stalled": 43,
@@ -2373,26 +1763,410 @@
     },
     "final_modes": {
      "stalled": 43,
-     "exited": 57
+     "moving": 40,
+     "exited": 17
     },
     "blocked_reports": {
-     "blocked_by_nestmates": 88
+     "blocked_by_nestmates": 128,
+     "way_ahead_free": 45
     },
-    "contacts": 238,
-    "contact_ends_exact": 204,
-    "contact_ends_estimated": 18,
-    "stops_contact": 398,
-    "stops_conservative": 11,
+    "contacts": 92,
+    "contact_ends_exact": 63,
+    "contact_ends_estimated": 0,
+    "stops_contact": 151,
+    "stops_conservative": 13,
     "contact_end_check": {
-     "episodes": 238,
-     "exact": 204,
-     "estimated": 18,
-     "open": 16,
+     "episodes": 92,
+     "exact": 63,
+     "estimated": 0,
+     "open": 29,
      "violations": 0,
      "problems": [],
-     "max_err_s": 2.3529709514136243e-7,
-     "median_err_s": 4.5074788346255446e-10,
-     "max_dev_from_mid_s": 2.9412383639737527e-10,
+     "max_err_s": 2.3529702852798096e-7,
+     "median_err_s": 1.411573080645212e-10,
+     "max_dev_from_mid_s": 2.9412294821895557e-10,
+     "tol_mm": 1e-7,
+     "delta_g_mm": 1e-9,
+     "outside_bracket": 0
+    },
+    "verify": {
+     "min_pair_gap_mm": -6.861178292183467e-14,
+     "pair_penetrations": 0,
+     "max_pair_penetration_mm": 0,
+     "min_static_gap_mm": -2.275957200481571e-14,
+     "static_penetrations": 0,
+     "max_static_penetration_mm": 0,
+     "pieces": 40809,
+     "ternary_searches": 1950,
+     "tol_mm": 1e-9
+    },
+    "fallback_intervals": 0,
+    "unresolved": 0,
+    "events": 1401,
+    "cpu_ms": 1968.605
+   }
+  },
+  {
+   "variant": "K1_lattice_exit",
+   "policy": "B_contact_decision",
+   "seed": 3,
+   "m": {
+    "agents": 100,
+    "horizon_s": 30,
+    "arrived": 45,
+    "arrival_s": {
+     "min": 6.302871210016065,
+     "p10": 7.398336472656505,
+     "median": 20.87256820425586,
+     "p90": 25.600538992911257,
+     "max": 26.73400981683274
+    },
+    "transit_s": {
+     "min": 5.279411764705886,
+     "median": 19.300755155457338,
+     "p90": 22.881940693883124,
+     "max": 24.40387237689612
+    },
+    "time_to_clear_s": null,
+    "exited": 45,
+    "never_entered": 0,
+    "entry_delay_s": null,
+    "stalled": 3,
+    "deadlock": {
+     "stalled": 3,
+     "clusters": 0,
+     "agents_in_clusters": 0,
+     "largest": 0
+    },
+    "final_modes": {
+     "moving": 52,
+     "exited": 45,
+     "stalled": 3
+    },
+    "blocked_reports": {
+     "blocked_by_nestmates": 111,
+     "way_ahead_free": 77
+    },
+    "contacts": 101,
+    "contact_ends_exact": 84,
+    "contact_ends_estimated": 13,
+    "stops_contact": 169,
+    "stops_conservative": 15,
+    "contact_end_check": {
+     "episodes": 101,
+     "exact": 84,
+     "estimated": 13,
+     "open": 4,
+     "violations": 0,
+     "problems": [],
+     "max_err_s": 2.35297075157348e-7,
+     "median_err_s": 1.5898748984000122e-10,
+     "max_dev_from_mid_s": 2.9412561275421467e-10,
+     "tol_mm": 1e-7,
+     "delta_g_mm": 1e-9,
+     "outside_bracket": 0
+    },
+    "verify": {
+     "min_pair_gap_mm": -7.960299086562372e-14,
+     "pair_penetrations": 0,
+     "max_pair_penetration_mm": 0,
+     "min_static_gap_mm": -2.275957200481571e-14,
+     "static_penetrations": 0,
+     "max_static_penetration_mm": 0,
+     "pieces": 35951,
+     "ternary_searches": 2334,
+     "tol_mm": 1e-9
+    },
+    "fallback_intervals": 0,
+    "unresolved": 0,
+    "events": 1750,
+    "cpu_ms": 1549.088
+   }
+  },
+  {
+   "variant": "K1_lattice_exit",
+   "policy": "B_contact_decision",
+   "seed": 4,
+   "m": {
+    "agents": 100,
+    "horizon_s": 30,
+    "arrived": 35,
+    "arrival_s": {
+     "min": 5.487477141305183,
+     "p10": 6.421149168035794,
+     "median": 8.956914992778751,
+     "p90": 12.2329871688482,
+     "max": 17.56190475540337
+    },
+    "transit_s": {
+     "min": 4.792809224327405,
+     "median": 6.686694163064102,
+     "p90": 11.03097906557124,
+     "max": 15.053497536149568
+    },
+    "time_to_clear_s": null,
+    "exited": 35,
+    "never_entered": 0,
+    "entry_delay_s": null,
+    "stalled": 22,
+    "deadlock": {
+     "stalled": 22,
+     "clusters": 1,
+     "agents_in_clusters": 22,
+     "largest": 22
+    },
+    "final_modes": {
+     "stalled": 22,
+     "exited": 35,
+     "moving": 43
+    },
+    "blocked_reports": {
+     "blocked_by_nestmates": 107,
+     "way_ahead_free": 66
+    },
+    "contacts": 112,
+    "contact_ends_exact": 93,
+    "contact_ends_estimated": 2,
+    "stops_contact": 176,
+    "stops_conservative": 11,
+    "contact_end_check": {
+     "episodes": 112,
+     "exact": 93,
+     "estimated": 2,
+     "open": 17,
+     "violations": 0,
+     "problems": [],
+     "max_err_s": 2.352970804864185e-7,
+     "median_err_s": 1.7982415556616616e-10,
+     "max_dev_from_mid_s": 2.9418467661912473e-10,
+     "tol_mm": 1e-7,
+     "delta_g_mm": 1e-9,
+     "outside_bracket": 0
+    },
+    "verify": {
+     "min_pair_gap_mm": -6.38378239159465e-14,
+     "pair_penetrations": 0,
+     "max_pair_penetration_mm": 0,
+     "min_static_gap_mm": -2.275957200481571e-14,
+     "static_penetrations": 0,
+     "max_static_penetration_mm": 0,
+     "pieces": 33960,
+     "ternary_searches": 2542,
+     "tol_mm": 1e-9
+    },
+    "fallback_intervals": 0,
+    "unresolved": 0,
+    "events": 1775,
+    "cpu_ms": 1410.79
+   }
+  },
+  {
+   "variant": "K1_lattice_exit",
+   "policy": "B_contact_decision",
+   "seed": 5,
+   "m": {
+    "agents": 100,
+    "horizon_s": 30,
+    "arrived": 22,
+    "arrival_s": {
+     "min": 5.553440059937869,
+     "p10": 6.56793559029292,
+     "median": 8.88131745136172,
+     "p90": 13.712656383286351,
+     "max": 17.949523114977985
+    },
+    "transit_s": {
+     "min": 4.86009766569554,
+     "median": 7.5383335595876595,
+     "p90": 9.479285550265455,
+     "max": 17.12817826369463
+    },
+    "time_to_clear_s": null,
+    "exited": 22,
+    "never_entered": 0,
+    "entry_delay_s": null,
+    "stalled": 35,
+    "deadlock": {
+     "stalled": 35,
+     "clusters": 1,
+     "agents_in_clusters": 35,
+     "largest": 35
+    },
+    "final_modes": {
+     "stalled": 35,
+     "exited": 22,
+     "moving": 43
+    },
+    "blocked_reports": {
+     "blocked_by_nestmates": 163,
+     "way_ahead_free": 53
+    },
+    "contacts": 109,
+    "contact_ends_exact": 85,
+    "contact_ends_estimated": 0,
+    "stops_contact": 161,
+    "stops_conservative": 32,
+    "contact_end_check": {
+     "episodes": 109,
+     "exact": 85,
+     "estimated": 0,
+     "open": 24,
+     "violations": 0,
+     "problems": [],
+     "max_err_s": 2.3529708226277535e-7,
+     "median_err_s": 1.7826540243959244e-10,
+     "max_dev_from_mid_s": 2.9412561275421467e-10,
+     "tol_mm": 1e-7,
+     "delta_g_mm": 1e-9,
+     "outside_bracket": 0
+    },
+    "verify": {
+     "min_pair_gap_mm": -5.218048215738236e-14,
+     "pair_penetrations": 0,
+     "max_pair_penetration_mm": 0,
+     "min_static_gap_mm": -2.275957200481571e-14,
+     "static_penetrations": 0,
+     "max_static_penetration_mm": 0,
+     "pieces": 38882,
+     "ternary_searches": 2796,
+     "tol_mm": 1e-9
+    },
+    "fallback_intervals": 0,
+    "unresolved": 0,
+    "events": 1777,
+    "cpu_ms": 2229.413
+   }
+  },
+  {
+   "variant": "K1_lattice_exit",
+   "policy": "C_sidestep",
+   "seed": 1,
+   "m": {
+    "agents": 100,
+    "horizon_s": 30,
+    "arrived": 46,
+    "arrival_s": {
+     "min": 5.487477141305183,
+     "p10": 5.937623431094791,
+     "median": 7.331317451361722,
+     "p90": 10.296665237778798,
+     "max": 12.396599409063507
+    },
+    "transit_s": {
+     "min": 4.779411764705886,
+     "median": 5.535519747774532,
+     "p90": 7.366641747978967,
+     "max": 8.49315179494213
+    },
+    "time_to_clear_s": null,
+    "exited": 46,
+    "never_entered": 0,
+    "entry_delay_s": null,
+    "stalled": 54,
+    "deadlock": {
+     "stalled": 54,
+     "clusters": 1,
+     "agents_in_clusters": 54,
+     "largest": 54
+    },
+    "final_modes": {
+     "stalled": 54,
+     "exited": 46
+    },
+    "blocked_reports": {
+     "blocked_by_nestmates": 75
+    },
+    "contacts": 219,
+    "contact_ends_exact": 178,
+    "contact_ends_estimated": 11,
+    "stops_contact": 361,
+    "stops_conservative": 41,
+    "contact_end_check": {
+     "episodes": 219,
+     "exact": 178,
+     "estimated": 11,
+     "open": 30,
+     "violations": 0,
+     "problems": [],
+     "max_err_s": 2.352970804864185e-7,
+     "median_err_s": 4.512838991388435e-10,
+     "max_dev_from_mid_s": 2.9414159996576927e-10,
+     "tol_mm": 1e-7,
+     "delta_g_mm": 1e-9,
+     "outside_bracket": 0
+    },
+    "verify": {
+     "min_pair_gap_mm": -6.217248937900877e-14,
+     "pair_penetrations": 0,
+     "max_pair_penetration_mm": 0,
+     "min_static_gap_mm": -2.275957200481571e-14,
+     "static_penetrations": 0,
+     "max_static_penetration_mm": 0,
+     "pieces": 46602,
+     "ternary_searches": 2595,
+     "tol_mm": 1e-9
+    },
+    "fallback_intervals": 0,
+    "unresolved": 0,
+    "events": 3420,
+    "cpu_ms": 11654.888
+   }
+  },
+  {
+   "variant": "K1_lattice_exit",
+   "policy": "C_sidestep",
+   "seed": 2,
+   "m": {
+    "agents": 100,
+    "horizon_s": 30,
+    "arrived": 64,
+    "arrival_s": {
+     "min": 5.487477141305183,
+     "p10": 6.305352424192398,
+     "median": 7.913233555747898,
+     "p90": 12.489714500481506,
+     "max": 14.07809922033883
+    },
+    "transit_s": {
+     "min": 4.792809224327405,
+     "median": 5.651250140915957,
+     "p90": 8.383313376740464,
+     "max": 13.208289877686996
+    },
+    "time_to_clear_s": null,
+    "exited": 64,
+    "never_entered": 0,
+    "entry_delay_s": null,
+    "stalled": 36,
+    "deadlock": {
+     "stalled": 36,
+     "clusters": 1,
+     "agents_in_clusters": 36,
+     "largest": 36
+    },
+    "final_modes": {
+     "stalled": 36,
+     "exited": 64
+    },
+    "blocked_reports": {
+     "blocked_by_nestmates": 64,
+     "way_ahead_free": 1
+    },
+    "contacts": 258,
+    "contact_ends_exact": 221,
+    "contact_ends_estimated": 20,
+    "stops_contact": 441,
+    "stops_conservative": 44,
+    "contact_end_check": {
+     "episodes": 258,
+     "exact": 221,
+     "estimated": 20,
+     "open": 17,
+     "violations": 0,
+     "problems": [],
+     "max_err_s": 2.3529709558545164e-7,
+     "median_err_s": 4.510241069510812e-10,
+     "max_dev_from_mid_s": 2.9414426450102837e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
@@ -2404,14 +2178,239 @@
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 44371,
-     "ternary_searches": 2697,
+     "pieces": 45713,
+     "ternary_searches": 4098,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 3469,
-    "cpu_ms": 10371.182
+    "events": 4370,
+    "cpu_ms": 8020.843
+   }
+  },
+  {
+   "variant": "K1_lattice_exit",
+   "policy": "C_sidestep",
+   "seed": 3,
+   "m": {
+    "agents": 100,
+    "horizon_s": 30,
+    "arrived": 53,
+    "arrival_s": {
+     "min": 5.515876823054314,
+     "p10": 5.927247438374171,
+     "median": 7.71454029205802,
+     "p90": 9.945821355744375,
+     "max": 10.926305599712615
+    },
+    "transit_s": {
+     "min": 4.801251296557382,
+     "median": 5.310657863681692,
+     "p90": 6.894056425646558,
+     "max": 9.707043834680736
+    },
+    "time_to_clear_s": null,
+    "exited": 53,
+    "never_entered": 0,
+    "entry_delay_s": null,
+    "stalled": 47,
+    "deadlock": {
+     "stalled": 47,
+     "clusters": 2,
+     "agents_in_clusters": 47,
+     "largest": 35
+    },
+    "final_modes": {
+     "stalled": 47,
+     "exited": 53
+    },
+    "blocked_reports": {
+     "blocked_by_nestmates": 65
+    },
+    "contacts": 218,
+    "contact_ends_exact": 187,
+    "contact_ends_estimated": 10,
+    "stops_contact": 368,
+    "stops_conservative": 81,
+    "contact_end_check": {
+     "episodes": 218,
+     "exact": 187,
+     "estimated": 10,
+     "open": 21,
+     "violations": 0,
+     "problems": [],
+     "max_err_s": 2.3529709558545164e-7,
+     "median_err_s": 4.5199932685591193e-10,
+     "max_dev_from_mid_s": 2.9418378844070503e-10,
+     "tol_mm": 1e-7,
+     "delta_g_mm": 1e-9,
+     "outside_bracket": 0
+    },
+    "verify": {
+     "min_pair_gap_mm": -4.7628567756419216e-14,
+     "pair_penetrations": 0,
+     "max_pair_penetration_mm": 0,
+     "min_static_gap_mm": -2.275957200481571e-14,
+     "static_penetrations": 0,
+     "max_static_penetration_mm": 0,
+     "pieces": 45233,
+     "ternary_searches": 3252,
+     "tol_mm": 1e-9
+    },
+    "fallback_intervals": 0,
+    "unresolved": 0,
+    "events": 4065,
+    "cpu_ms": 9465.99
+   }
+  },
+  {
+   "variant": "K1_lattice_exit",
+   "policy": "C_sidestep",
+   "seed": 4,
+   "m": {
+    "agents": 100,
+    "horizon_s": 30,
+    "arrived": 44,
+    "arrival_s": {
+     "min": 5.487477141305183,
+     "p10": 5.898810761161255,
+     "median": 7.274618721550941,
+     "p90": 10.595626666756516,
+     "max": 11.397007093060587
+    },
+    "transit_s": {
+     "min": 4.791221620573303,
+     "median": 5.5464124891487625,
+     "p90": 7.619458638741582,
+     "max": 9.542510327731122
+    },
+    "time_to_clear_s": null,
+    "exited": 44,
+    "never_entered": 0,
+    "entry_delay_s": null,
+    "stalled": 56,
+    "deadlock": {
+     "stalled": 56,
+     "clusters": 1,
+     "agents_in_clusters": 56,
+     "largest": 56
+    },
+    "final_modes": {
+     "stalled": 56,
+     "exited": 44
+    },
+    "blocked_reports": {
+     "blocked_by_nestmates": 85
+    },
+    "contacts": 208,
+    "contact_ends_exact": 172,
+    "contact_ends_estimated": 11,
+    "stops_contact": 355,
+    "stops_conservative": 15,
+    "contact_end_check": {
+     "episodes": 208,
+     "exact": 172,
+     "estimated": 11,
+     "open": 25,
+     "violations": 0,
+     "problems": [],
+     "max_err_s": 2.3529709558545164e-7,
+     "median_err_s": 2.885141014985493e-10,
+     "max_dev_from_mid_s": 2.9414337632260867e-10,
+     "tol_mm": 1e-7,
+     "delta_g_mm": 1e-9,
+     "outside_bracket": 0
+    },
+    "verify": {
+     "min_pair_gap_mm": -5.440092820663267e-14,
+     "pair_penetrations": 0,
+     "max_pair_penetration_mm": 0,
+     "min_static_gap_mm": -2.275957200481571e-14,
+     "static_penetrations": 0,
+     "max_static_penetration_mm": 0,
+     "pieces": 49322,
+     "ternary_searches": 3330,
+     "tol_mm": 1e-9
+    },
+    "fallback_intervals": 0,
+    "unresolved": 0,
+    "events": 3522,
+    "cpu_ms": 12137.901
+   }
+  },
+  {
+   "variant": "K1_lattice_exit",
+   "policy": "C_sidestep",
+   "seed": 5,
+   "m": {
+    "agents": 100,
+    "horizon_s": 30,
+    "arrived": 62,
+    "arrival_s": {
+     "min": 5.461842498434192,
+     "p10": 6.36022867819125,
+     "median": 8.596332192894488,
+     "p90": 12.643868856924746,
+     "max": 14.29699249389641
+    },
+    "transit_s": {
+     "min": 4.792809224327405,
+     "median": 5.835529780483586,
+     "p90": 9.797547269013645,
+     "max": 13.759787714627269
+    },
+    "time_to_clear_s": null,
+    "exited": 62,
+    "never_entered": 0,
+    "entry_delay_s": null,
+    "stalled": 38,
+    "deadlock": {
+     "stalled": 38,
+     "clusters": 1,
+     "agents_in_clusters": 38,
+     "largest": 38
+    },
+    "final_modes": {
+     "stalled": 38,
+     "exited": 62
+    },
+    "blocked_reports": {
+     "blocked_by_nestmates": 76
+    },
+    "contacts": 261,
+    "contact_ends_exact": 219,
+    "contact_ends_estimated": 23,
+    "stops_contact": 446,
+    "stops_conservative": 40,
+    "contact_end_check": {
+     "episodes": 261,
+     "exact": 219,
+     "estimated": 23,
+     "open": 19,
+     "violations": 0,
+     "problems": [],
+     "max_err_s": 2.3529709558545164e-7,
+     "median_err_s": 4.5163828232830383e-10,
+     "max_dev_from_mid_s": 2.9412650093263437e-10,
+     "tol_mm": 1e-7,
+     "delta_g_mm": 1e-9,
+     "outside_bracket": 0
+    },
+    "verify": {
+     "min_pair_gap_mm": -9.259260025373806e-14,
+     "pair_penetrations": 0,
+     "max_pair_penetration_mm": 0,
+     "min_static_gap_mm": -2.275957200481571e-14,
+     "static_penetrations": 0,
+     "max_static_penetration_mm": 0,
+     "pieces": 44957,
+     "ternary_searches": 3067,
+     "tol_mm": 1e-9
+    },
+    "fallback_intervals": 0,
+    "unresolved": 0,
+    "events": 3991,
+    "cpu_ms": 8240.862
    }
   },
   {
@@ -2442,50 +2441,50 @@
     "stalled": 100,
     "deadlock": {
      "stalled": 100,
-     "clusters": 9,
+     "clusters": 7,
      "agents_in_clusters": 100,
-     "largest": 41
+     "largest": 50
     },
     "final_modes": {
      "stalled": 100
     },
     "blocked_reports": {
-     "blocked_by_nestmates": 112
+     "blocked_by_nestmates": 113
     },
-    "contacts": 116,
+    "contacts": 119,
     "contact_ends_exact": 32,
     "contact_ends_estimated": 0,
-    "stops_contact": 1905,
-    "stops_conservative": 148,
+    "stops_contact": 1241,
+    "stops_conservative": 106,
     "contact_end_check": {
-     "episodes": 116,
+     "episodes": 119,
      "exact": 32,
      "estimated": 0,
-     "open": 84,
+     "open": 87,
      "violations": 0,
      "problems": [],
-     "max_err_s": 2.3529707826597246e-7,
+     "max_err_s": 2.352970800423293e-7,
      "median_err_s": 1.176481134734786e-10,
-     "max_dev_from_mid_s": 2.9413982360892987e-10,
+     "max_dev_from_mid_s": 2.9414426450102837e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
     },
     "verify": {
-     "min_pair_gap_mm": -5.937716984760755e-11,
+     "min_pair_gap_mm": -6.984923750508187e-11,
      "pair_penetrations": 0,
      "max_pair_penetration_mm": 0,
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 60906,
-     "ternary_searches": 582,
+     "pieces": 61175,
+     "ternary_searches": 533,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 4571,
-    "cpu_ms": 4464.022
+    "events": 3162,
+    "cpu_ms": 4039.735
    }
   },
   {
@@ -2563,7 +2562,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 3935,
-    "cpu_ms": 3734.778
+    "cpu_ms": 4070.488
    }
   },
   {
@@ -2641,7 +2640,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 3398,
-    "cpu_ms": 4775.563
+    "cpu_ms": 4039.008
    }
   },
   {
@@ -2719,7 +2718,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 3383,
-    "cpu_ms": 4325.76
+    "cpu_ms": 3513.429
    }
   },
   {
@@ -2797,7 +2796,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 2362,
-    "cpu_ms": 5677.755
+    "cpu_ms": 4395.929
    }
   },
   {
@@ -2875,7 +2874,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 3778,
-    "cpu_ms": 3934.305
+    "cpu_ms": 3250.394
    }
   },
   {
@@ -2956,7 +2955,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1186,
-    "cpu_ms": 1372.892
+    "cpu_ms": 1315.358
    }
   },
   {
@@ -3037,7 +3036,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1212,
-    "cpu_ms": 1696.663
+    "cpu_ms": 1495.268
    }
   },
   {
@@ -3118,7 +3117,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1243,
-    "cpu_ms": 1177.455
+    "cpu_ms": 1151.463
    }
   },
   {
@@ -3199,7 +3198,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1260,
-    "cpu_ms": 806.244
+    "cpu_ms": 949.598
    }
   },
   {
@@ -3279,7 +3278,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1102,
-    "cpu_ms": 961.872
+    "cpu_ms": 1010.207
    }
   },
   {
@@ -3357,7 +3356,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1936,
-    "cpu_ms": 1755.838
+    "cpu_ms": 1483.717
    }
   },
   {
@@ -3435,7 +3434,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1640,
-    "cpu_ms": 2330.275
+    "cpu_ms": 1751.796
    }
   },
   {
@@ -3514,7 +3513,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1861,
-    "cpu_ms": 1907.552
+    "cpu_ms": 1588.231
    }
   },
   {
@@ -3593,7 +3592,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1905,
-    "cpu_ms": 1828.053
+    "cpu_ms": 1612.463
    }
   },
   {
@@ -3672,7 +3671,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1910,
-    "cpu_ms": 1985.946
+    "cpu_ms": 2137.941
    }
   },
   {
@@ -3749,7 +3748,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 903,
-    "cpu_ms": 4834.547
+    "cpu_ms": 4159.447
    }
   },
   {
@@ -3824,7 +3823,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1365,
-    "cpu_ms": 379.558
+    "cpu_ms": 417.979
    }
   },
   {
@@ -3899,7 +3898,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1699,
-    "cpu_ms": 670.882
+    "cpu_ms": 660.087
    }
   },
   {
@@ -3974,7 +3973,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1709,
-    "cpu_ms": 794.181
+    "cpu_ms": 730.331
    }
   },
   {
@@ -4049,7 +4048,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1419,
-    "cpu_ms": 415.879
+    "cpu_ms": 393.526
    }
   },
   {
@@ -4124,7 +4123,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1596,
-    "cpu_ms": 431.966
+    "cpu_ms": 465.103
    }
   },
   {
@@ -4204,7 +4203,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1085,
-    "cpu_ms": 731.693
+    "cpu_ms": 741.462
    }
   },
   {
@@ -4283,7 +4282,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 993,
-    "cpu_ms": 1087.929
+    "cpu_ms": 981.366
    }
   },
   {
@@ -4363,7 +4362,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1140,
-    "cpu_ms": 1035.998
+    "cpu_ms": 874.684
    }
   },
   {
@@ -4443,7 +4442,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1034,
-    "cpu_ms": 662.561
+    "cpu_ms": 547.708
    }
   },
   {
@@ -4523,7 +4522,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1044,
-    "cpu_ms": 685.469
+    "cpu_ms": 664.468
    }
   },
   {
@@ -4600,7 +4599,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1881,
-    "cpu_ms": 449.794
+    "cpu_ms": 570.001
    }
   },
   {
@@ -4678,7 +4677,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1550,
-    "cpu_ms": 756.909
+    "cpu_ms": 968.721
    }
   },
   {
@@ -4755,7 +4754,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1873,
-    "cpu_ms": 455.63
+    "cpu_ms": 509.659
    }
   },
   {
@@ -4832,7 +4831,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1832,
-    "cpu_ms": 497.516
+    "cpu_ms": 482.4
    }
   },
   {
@@ -4910,7 +4909,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 1876,
-    "cpu_ms": 493.471
+    "cpu_ms": 565.68
    }
   },
   {
@@ -4987,7 +4986,7 @@
     "fallback_intervals": 0,
     "unresolved": 0,
     "events": 903,
-    "cpu_ms": 4313.657
+    "cpu_ms": 3887.47
    }
   }
  ]
