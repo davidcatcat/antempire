@@ -19,8 +19,7 @@ import path from 'node:path';
 import { REPO_ROOT } from '../cli/lib/load.ts';
 import { ExperimentWorld } from '../prototypes/continuous-world/worker/core.ts';
 import { Runtime } from '../prototypes/continuous-world/worker/runtime.ts';
-import { canonicalJson, sha256Hex, seedFromInput, parseImport, defaultMigrations, recordProblem, newCopyId, MAX_IMPORT_BYTES, MANUAL_KEEP_MAX, sweepable, type SnapshotRecord } from '../web/src/experimental/save-format.ts';
-import { summaryOf } from '../web/src/experimental/session.ts';
+import { canonicalJson, sha256Hex, seedFromInput, summaryOf, parseImport, defaultMigrations, recordProblem, newCopyId, MAX_IMPORT_BYTES, MANUAL_KEEP_MAX, sweepable, type SnapshotRecord } from '../web/src/experimental/save-format.ts';
 
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
 const H = 3600;

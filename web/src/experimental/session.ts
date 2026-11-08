@@ -9,16 +9,9 @@
  */
 import { ExperimentWorkerClient } from './worker-client.ts';
 import { ExperimentSaveStore, acquireWriterLock, type LoadResult, type SaveReceipt, type WorldListing, type WriterLock } from './save-store.ts';
-import { AutosaveController, errR, newWorldId, okR, seedFromInput, type Result, type RuntimeInfo, type SaveReason, type SaveUiState, type WorldSummary } from './save-format.ts';
+import { AutosaveController, errR, newWorldId, okR, seedFromInput, summaryOf, type Result, type RuntimeInfo, type SaveReason, type SaveUiState } from './save-format.ts';
 
 export interface SessionState { world_id: string; name: string; seed: number; writer: boolean; readOnlyReason: string | null; recoveredNotice: string | null; sim_world_id: string }
-
-/** Individuals in a Worker snapshot payload, for the save list. The synthetic world has no queen (null, not 0). */
-export function summaryOf(snapshot: unknown): WorldSummary {
-  const ants = (snapshot as { payload?: { ants?: unknown[] } })?.payload?.ants;
-  const n = Array.isArray(ants) ? ants.length : null;
-  return { queens: null, workers: null, individuals: n, note: '合成世界：沒有蟻后，個體不分階級' };
-}
 
 export class ExperimentSession {
   readonly client: ExperimentWorkerClient;

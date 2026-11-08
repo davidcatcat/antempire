@@ -248,6 +248,13 @@ export function simDayTime(t_sim: number | null): { day: number; clock: string }
   return { day, clock: `${p2(Math.floor(sec / 3600))}:${p2(Math.floor(sec / 60) % 60)}:${p2(sec % 60)}` };
 }
 
+/** Individuals in a Worker snapshot payload, for the save list. The synthetic world has no queen (null, not 0). */
+export function summaryOf(snapshot: unknown): WorldSummary {
+  const ants = (snapshot as { payload?: { ants?: unknown[] } })?.payload?.ants;
+  const n = Array.isArray(ants) ? ants.length : null;
+  return { queens: null, workers: null, individuals: n, note: '合成世界：沒有蟻后，個體不分階級' };
+}
+
 // ---------- autosave policy ----------
 
 export type SaveReason = 'interval' | 'pause' | 'menu' | 'hidden' | 'pagehide' | 'manual' | 'new_game';
