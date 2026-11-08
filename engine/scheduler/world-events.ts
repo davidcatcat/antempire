@@ -29,10 +29,14 @@
  */
 
 export const MINUTES_PER_DAY = 1440;
-/** time resolution: 1e-6 minute (60 µs), the engine's rounding grid (engine/math.ts round) — an engineering choice */
+/** time resolution of the world tick: 1e-6 minute (60 µs), the engine's rounding grid (engine/math.ts round) — an
+ *  engineering choice. The tick is a LABEL; under the layered contract the order also uses the exact native time. */
 export const TICKS_PER_MINUTE = 1_000_000;
 const TICKS_PER_DAY = MINUTES_PER_DAY * TICKS_PER_MINUTE;
-export const SCHEDULER_SNAPSHOT_SCHEMA = 'antempire.world-scheduler.v1';
+/** one tick in microseconds (1 minute = 6e7 µs) */
+export const TICK_US = 60;
+export const US_PER_DAY = 86_400_000_000;
+export const SCHEDULER_SNAPSHOT_SCHEMA = 'antempire.world-scheduler.v2';
 
 export interface WorldTime { day: number; minute: number }
 /** who: world always; colony / individual null when the event is not about one */
@@ -40,19 +44,49 @@ export interface EntityRef { world: string; colony: string | null; individual: s
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [k: string]: JsonValue };
 export type EventState = 'scheduled' | 'executed' | 'cancelled';
 
-/** what a producer asks for; the scheduler assigns id, cause, round and state */
+/*
+ * TIME CONTRACT (docs/p0a0-time-contract.md). Every event keeps the time its producer gave (NATIVE time: a named clock,
+ * its unit, the world instant its zero sits at, and the native value t) and the quantised world tick (`at`, a label).
+ * EXACT time = the native time as microseconds since 00:00 of a world day, held as an unevaluated sum us + us_lo of two
+ * doubles (error-free products and sums), so two distinct native values never become equal by conversion.
+ *  - order 'tick'   (#116 contract): order (day, tick, round, id). Distinct exact instants inside one tick are MERGED
+ *                   into one batch; every such merge, and every batch that truly happened before an event already
+ *                   executed (an inversion), is DETECTED and reported (timeReport(), ctx.distinct_instants) — or refused
+ *                   with on_conflict 'refuse'. Never silently merged.
+ *  - order 'layered': order (exact instant, round, id); the tick is only a label. A batch is the set of events at one
+ *                   exact instant: no two distinct native instants share a batch, no order is changed by rounding.
+ * Neither contract decides a contest between truly simultaneous events (same exact instant): that rule is open.
+ */
+export type TimeOrder = 'tick' | 'layered';
+export type ConflictPolicy = 'report' | 'refuse';
+export type NativeUnit = 'min' | 's';
+/** the producer's own time: `t` units of `unit` after `anchor` (a world instant on the tick grid) on clock `clock` */
+export interface NativeTime { clock: string; unit: NativeUnit; anchor: WorldTime; t: number }
+/** exact instant: day, and microseconds since its 00:00 as the unevaluated double-double us + us_lo (normalised) */
+export interface ExactTime { day: number; us: number; us_lo: number }
+
+/** what a producer asks for; the scheduler assigns id, cause, round and state. Give EITHER `at` (a world minute, kept
+ *  as native time on clock 'world') OR `native` (the producer's own clock), never both. */
 export interface EventSpec {
   kind: string;
   /** unique among the events of the same kind with the same cause; must come from entity ids, not array positions */
   key: string;
-  at: WorldTime;
+  at?: WorldTime;
+  native?: NativeTime;
   scope: EntityRef;
   source: EntityRef | null;
   target: EntityRef | null;
   payload?: JsonValue;
 }
 export interface WorldEvent {
-  id: string; kind: string; key: string; at: WorldTime; round: number;
+  id: string; kind: string; key: string;
+  /** quantised world tick (label) */
+  at: WorldTime;
+  /** the time as the producer gave it (provenance) */
+  native: NativeTime;
+  /** the native time as an exact world instant */
+  exact: ExactTime;
+  round: number;
   scope: EntityRef; source: EntityRef | null; target: EntityRef | null; payload: JsonValue;
   cause: string | null; state: EventState;
   cancelled_by: string | null; cancel_reason: string | null;
@@ -60,15 +94,44 @@ export interface WorldEvent {
 export interface Cancel { id: string; reason: string }
 /** what a step handler returns: children (each naming its cause in the batch) and cancellations of other pending events */
 export interface StepOutput { children?: { cause: string; spec: EventSpec }[]; cancel?: Cancel[] }
-export interface BatchContext { at: WorldTime; round: number }
+/** distinct_instants > 1 only under order 'tick': the batch merged that many distinct exact instants (reported) */
+export interface BatchContext { at: WorldTime; round: number; exact: ExactTime; distinct_instants: number }
 export type Handler = (batch: readonly Readonly<WorldEvent>[], ctx: BatchContext) => StepOutput | void;
-export interface LogEntry { seq: number; id: string; kind: string; at: WorldTime; round: number; cause: string | null; state: 'executed' | 'cancelled'; by: string | null; reason: string | null }
+export interface LogEntry { seq: number; id: string; kind: string; at: WorldTime; exact: ExactTime; round: number; cause: string | null; state: 'executed' | 'cancelled'; by: string | null; reason: string | null }
+/** a batch that merged distinct exact instants into one tick (order 'tick' only) */
+export interface MergeRecord { at: WorldTime; round: number; ids: string[]; distinct_instants: number; span_us: number }
+/** a batch with an event that truly happened before an event already executed (order changed by quantisation) */
+export interface InversionRecord { at: WorldTime; round: number; ids: string[]; earlier_than: string; by_us: number }
+export interface TimeReport { order: TimeOrder; on_conflict: ConflictPolicy; merges: MergeRecord[]; inversions: InversionRecord[] }
+export interface TimeOptions { order?: TimeOrder; on_conflict?: ConflictPolicy }
 
 export class SchedulerError extends Error { constructor(msg: string) { super(`WORLD_SCHEDULER: ${msg}`); this.name = 'SchedulerError'; } }
 const fail = (msg: string): never => { throw new SchedulerError(msg); };
 
+// ------------------------------------------------------------------ exact arithmetic (error-free transformations)
+const SPLITTER = 134_217_729; // 2^27 + 1 (Dekker)
+const twoSum = (a: number, b: number): [number, number] => { const s = a + b, bb = s - a; return [s, (a - (s - bb)) + (b - bb)]; };
+const splitD = (a: number): [number, number] => { const c = SPLITTER * a, hi = c - (c - a); return [hi, a - hi]; };
+/** a * b = p + e exactly (Dekker / Veltkamp; no overflow for the magnitudes used here) */
+const twoProd = (a: number, b: number): [number, number] => { const p = a * b, [ah, al] = splitD(a), [bh, bl] = splitD(b); return [p, ((ah * bh - p) + ah * bl + al * bh) + al * bl]; };
+const LIMIT = 2 ** 52;
+/**
+ * The integer nearest to (hi + lo) * n / d, ties upwards, for a normalised double-double hi + lo >= 0 and positive
+ * integers n, d (|hi * n| < 2^52). The residual hi*n - q*d is exact (Sterbenz), so the rounding is correct for the
+ * real value, not for its double approximation.
+ */
+export function nearestDiv(hi: number, lo: number, n: number, d: number): number {
+  let [a, b] = twoProd(hi, n); [a, b] = twoSum(a, b + lo * n);
+  if (!(Math.abs(a) < LIMIT)) fail(`time value ${hi} x ${n} outside the exactly representable range`);
+  const q0 = Math.round(a / d), s = a - q0 * d;
+  if (s > d / 2 || (s === d / 2 && b >= 0)) return q0 + 1;
+  if (s < -d / 2 || (s === -d / 2 && b < 0)) return q0 - 1;
+  return q0;
+}
+
 // ------------------------------------------------------------------ time
-const toTick = (minute: number) => Math.round(minute * TICKS_PER_MINUTE);
+/** the tick nearest to the exact real value minute * TICKS_PER_MINUTE (ties up): |tick - minute*1e6| <= 0.5 exactly */
+const toTick = (minute: number) => { const [p, e] = twoProd(minute, TICKS_PER_MINUTE); return nearestDiv(p, e, 1, 1); };
 /** refuses an illegal time; a legal one is returned on the tick grid (minute rounding to 1440 is refused, not wrapped) */
 export function checkTime(t: WorldTime, what = 'time'): WorldTime {
   if (t === null || typeof t !== 'object') fail(`${what} is not a world time`);
@@ -80,7 +143,11 @@ export function checkTime(t: WorldTime, what = 'time'): WorldTime {
 }
 const isCanonical = (t: WorldTime) => toTick(t.minute) / TICKS_PER_MINUTE === t.minute;
 export const compareTime = (a: WorldTime, b: WorldTime): number => a.day - b.day || toTick(a.minute) - toTick(b.minute);
-/** t + dm minutes (dm finite, >= 0, quantised to the tick grid), carrying across midnight */
+/**
+ * t + dm minutes (dm finite, >= 0, quantised to the tick grid), carrying across midnight. LEGACY HELPER: the delay is
+ * rounded on its own, so a chain of delays can land up to one tick away from its true time and before an event that
+ * truly came first (docs/p0a0-time-contract.md §4). Producers with a native clock use addNative instead.
+ */
 export function addMinutes(t: WorldTime, dm: number): WorldTime {
   const c = checkTime(t);
   if (typeof dm !== 'number' || !Number.isFinite(dm) || dm < 0) fail(`addMinutes: delay must be finite and >= 0 (got ${dm})`);
@@ -89,8 +156,68 @@ export function addMinutes(t: WorldTime, dm: number): WorldTime {
   return { day, minute: tick / TICKS_PER_MINUTE };
 }
 
+const NAME_RE = /^[A-Za-z0-9._:-]{1,128}$/;
+const UNIT_US: Record<NativeUnit, number> = { min: 60_000_000, s: 1_000_000 };
+/** refuses an illegal native time (exactly clock, unit, anchor, t; anchor on the tick grid; t finite and >= 0) */
+export function checkNative(n: NativeTime, what = 'native'): NativeTime {
+  if (n === null || typeof n !== 'object') fail(`${what} is not a native time`);
+  const keys = Object.keys(n).sort().join();
+  if (keys !== 'anchor,clock,t,unit') fail(`${what} must have exactly clock, unit, anchor, t (got ${keys})`);
+  if (!(typeof n.clock === 'string' && NAME_RE.test(n.clock))) fail(`${what}.clock must be a plain id`);
+  if (n.unit !== 'min' && n.unit !== 's') fail(`${what}.unit must be 'min' or 's'`);
+  const a = checkTime(n.anchor, `${what}.anchor`); if (a.minute !== n.anchor.minute) fail(`${what}.anchor must lie on the tick grid`);
+  if (typeof n.t !== 'number' || !Number.isFinite(n.t) || n.t < 0) fail(`${what}.t must be finite and >= 0 (got ${n.t})`);
+  if (!(n.t * UNIT_US[n.unit] < LIMIT / 2)) fail(`${what}.t too large to be held exactly`);
+  return { clock: n.clock, unit: n.unit, anchor: { day: a.day, minute: a.minute }, t: n.t + 0 };
+}
+/** the native time of a plain world minute: clock 'world', unit 'min', anchored at 00:00 of its day */
+export const nativeOfWorld = (t: WorldTime): NativeTime => ({ clock: 'world', unit: 'min', anchor: { day: t.day, minute: 0 }, t: t.minute + 0 });
+/** native t + dt in the producer's own clock (the producer's arithmetic; nothing is rounded to ticks) */
+export function addNative(n: NativeTime, dt: number): NativeTime {
+  const c = checkNative(n);
+  if (typeof dt !== 'number' || !Number.isFinite(dt) || dt < 0) fail(`addNative: delay must be finite and >= 0 (got ${dt})`);
+  return checkNative({ ...c, t: c.t + dt });
+}
+/** the exact instant of a (checked) native time: error-free, carried across midnight */
+export function exactOf(n: NativeTime): ExactTime {
+  const c = checkNative(n);
+  const [p, e] = twoProd(c.t, UNIT_US[c.unit]);
+  let [hi, lo] = twoSum(toTick(c.anchor.minute) * TICK_US, p); [hi, lo] = twoSum(hi, lo + e);
+  let day = c.anchor.day;
+  const k = Math.floor(hi / US_PER_DAY);
+  if (k !== 0) { const [h, x] = twoSum(hi, -k * US_PER_DAY); [hi, lo] = twoSum(h, lo + x); day += k; }
+  if (hi < 0) { const [h, x] = twoSum(hi, US_PER_DAY); [hi, lo] = twoSum(h, lo + x); day -= 1; }
+  else if (hi > US_PER_DAY || (hi === US_PER_DAY && lo >= 0)) { const [h, x] = twoSum(hi, -US_PER_DAY); [hi, lo] = twoSum(h, lo + x); day += 1; }
+  if (!Number.isSafeInteger(day)) fail('native time outside the representable range');
+  return { day, us: hi + 0, us_lo: lo + 0 };
+}
+export const exactOfWorld = (t: WorldTime): ExactTime => exactOf(nativeOfWorld(checkTime(t)));
+export const compareExact = (a: ExactTime, b: ExactTime): number => a.day - b.day || a.us - b.us || a.us_lo - b.us_lo;
+const sameExact = (a: ExactTime, b: ExactTime) => a.day === b.day && a.us === b.us && a.us_lo === b.us_lo;
+/**
+ * The world tick (label) of an exact instant: the nearest tick, ties up; |label - exact| <= 30 µs (half a tick).
+ * 'tick' refuses an instant that rounds to 24:00 (#116 rule); 'layered' keeps it in its own day on the last tick
+ * (error then < 60 µs) because its day is decided by the exact instant.
+ */
+export function labelOf(x: ExactTime, order: TimeOrder): WorldTime {
+  let q = nearestDiv(x.us, x.us_lo, 1, TICK_US);
+  if (q >= TICKS_PER_DAY) { if (order === 'tick') fail(`instant d${x.day}+${x.us}us rounds to 24:00 on the tick grid; give it as the next day's 0`); q = TICKS_PER_DAY - 1; }
+  return { day: x.day, minute: q / TICKS_PER_MINUTE };
+}
+/** label minus exact instant, in µs (a double: for reports) */
+export const quantisationErrorUs = (label: WorldTime, x: ExactTime): number => ((label.day - x.day) * US_PER_DAY + toTick(label.minute) * TICK_US - x.us) - x.us_lo;
+const spanUs = (a: ExactTime, b: ExactTime): number => ((b.day - a.day) * US_PER_DAY + (b.us - a.us)) + (b.us_lo - a.us_lo);
+/**
+ * Name of the random stream a PRODUCER should draw from for one event (the scheduler draws nothing): world, the event's
+ * canonical id and a purpose word. Derived from content, never from processing order or a shared sequential stream.
+ */
+export function rngStreamName(world: string, eventId: string, purpose: string): string {
+  if (!NAME_RE.test(world) || !/^[A-Za-z0-9._:/-]{1,4096}$/.test(eventId) || !/^[a-z][a-z0-9_]{0,63}$/.test(purpose)) fail('rngStreamName: world, event id and purpose must be plain ids');
+  return `rng/${world}/${eventId}#${purpose}`;
+}
+
 // ------------------------------------------------------------------ validation
-const KIND_RE = /^[a-z][a-z0-9_]{0,63}$/, KEY_RE = /^[A-Za-z0-9._:-]{1,128}$/, NAME_RE = /^[A-Za-z0-9._:-]{1,128}$/;
+const KIND_RE = /^[a-z][a-z0-9_]{0,63}$/, KEY_RE = /^[A-Za-z0-9._:-]{1,128}$/;
 function checkRef(r: EntityRef | null, what: string, world: string, nullable: boolean): void {
   if (r === null || r === undefined) { if (!nullable) fail(`${what} is required`); if (r === undefined) fail(`${what} must be an entity reference or null`); return; }
   if (typeof r !== 'object') fail(`${what} is not an entity reference`);
@@ -149,14 +276,31 @@ function copyRef(r: unknown, what: string): EntityRef | null {
   const o = r as Record<string, unknown>;
   return { world: o.world as string, colony: o.colony as string | null, individual: o.individual as string | null };
 }
+function copyNative(v: unknown): NativeTime {
+  if (!isPlain(v)) return fail('event spec native is not a native time');
+  const keys = ownKeys(v as object, 'native').sort().join();
+  if (keys !== 'anchor,clock,t,unit') fail(`native must have exactly clock, unit, anchor, t (got ${keys})`);
+  const o = v as Record<string, unknown>, an = o.anchor;
+  if (!isPlain(an)) fail('native anchor is not a world time');
+  const a = an as Record<string, unknown>;
+  return { clock: o.clock as string, unit: o.unit as NativeUnit, anchor: { day: a.day as number, minute: a.minute as number }, t: o.t as number };
+}
 function copySpec(spec: unknown): EventSpec {
   if (!isPlain(spec)) return fail('event spec must be a plain object');
-  const allowed = new Set(['kind', 'key', 'at', 'scope', 'source', 'target', 'payload']), keys = ownKeys(spec as object, 'event spec');
+  const allowed = new Set(['kind', 'key', 'at', 'native', 'scope', 'source', 'target', 'payload']), keys = ownKeys(spec as object, 'event spec');
   for (const k of keys) if (!allowed.has(k)) fail(`event spec has an unknown field ${k}`);
-  const o = spec as Record<string, unknown>, at = o.at;
-  if (!isPlain(at)) fail('event spec at is not a world time');
-  const a = at as Record<string, unknown>;
-  const out: EventSpec = { kind: o.kind as string, key: o.key as string, at: { day: a.day as number, minute: a.minute as number }, scope: copyRef(o.scope, 'scope') as EntityRef, source: copyRef(o.source, 'source'), target: copyRef(o.target, 'target') };
+  const o = spec as Record<string, unknown>;
+  const hasAt = keys.includes('at'), hasNative = keys.includes('native');
+  if (hasAt && hasNative) fail('event spec gives both at and native: give one (the tick label is derived from native)');
+  const out: EventSpec = { kind: o.kind as string, key: o.key as string, scope: undefined as unknown as EntityRef, source: null, target: null };
+  if (hasNative) out.native = copyNative(o.native);
+  else {
+    const at = o.at;
+    if (!isPlain(at)) fail('event spec at is not a world time');
+    const a = at as Record<string, unknown>;
+    out.at = { day: a.day as number, minute: a.minute as number };
+  }
+  out.scope = copyRef(o.scope, 'scope') as EntityRef; out.source = copyRef(o.source, 'source'); out.target = copyRef(o.target, 'target');
   if (keys.includes('payload')) { const pv = o.payload; out.payload = pv === undefined ? null : copyJson(pv, 'payload'); }   // explicit undefined = no payload (null)
   return out;
 }
@@ -190,24 +334,31 @@ const canonJson = (v: JsonValue): JsonValue => (Array.isArray(v) ? v.map(canonJs
 const deepFreeze = <T>(v: T): T => { if (v && typeof v === 'object') { for (const x of Object.values(v as object)) deepFreeze(x); Object.freeze(v); } return v; };
 /** a frozen deep copy for readers (internal objects never leave the scheduler) */
 const view = <T>(v: T): T => deepFreeze(JSON.parse(JSON.stringify(v)) as T);
-const EVENT_FIELDS = 'at,cancel_reason,cancelled_by,cause,id,key,kind,payload,round,scope,source,state,target';
+const EVENT_FIELDS = 'at,cancel_reason,cancelled_by,cause,exact,id,key,kind,native,payload,round,scope,source,state,target';
 
 // ------------------------------------------------------------------ ordering (binary heap)
-const orderKey = (a: WorldEvent, b: WorldEvent): number => compareTime(a.at, b.at) || a.round - b.round || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+const byId = (a: { id: string }, b: { id: string }) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+/** the instant used for ordering: the tick label ('tick') or the exact instant ('layered') */
+const slotCompare = (order: TimeOrder) => order === 'tick'
+  ? (a: WorldEvent, b: WorldEvent) => compareTime(a.at, b.at)
+  : (a: WorldEvent, b: WorldEvent) => compareExact(a.exact, b.exact);
 class Heap {
   private h: WorldEvent[] = [];
+  private readonly cmp: (a: WorldEvent, b: WorldEvent) => number;
+  constructor(cmp: (a: WorldEvent, b: WorldEvent) => number) { this.cmp = cmp; }
   get size() { return this.h.length; }
   peek(): WorldEvent | undefined { return this.h[0]; }
-  push(e: WorldEvent) { const h = this.h; h.push(e); let i = h.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (orderKey(h[i], h[p]) >= 0) break; [h[i], h[p]] = [h[p], h[i]]; i = p; } }
+  push(e: WorldEvent) { const h = this.h; h.push(e); let i = h.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (this.cmp(h[i], h[p]) >= 0) break; [h[i], h[p]] = [h[p], h[i]]; i = p; } }
   pop(): WorldEvent | undefined {
     const h = this.h; if (!h.length) return undefined; const top = h[0], last = h.pop()!;
-    if (h.length) { h[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < h.length && orderKey(h[l], h[m]) < 0) m = l; if (r < h.length && orderKey(h[r], h[m]) < 0) m = r; if (m === i) break; [h[i], h[m]] = [h[m], h[i]]; i = m; } }
+    if (h.length) { h[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < h.length && this.cmp(h[l], h[m]) < 0) m = l; if (r < h.length && this.cmp(h[r], h[m]) < 0) m = r; if (m === i) break; [h[i], h[m]] = [h[m], h[i]]; i = m; } }
     return top;
   }
 }
 
 export interface SchedulerSnapshot {
   schema: string; world: string;
+  time: { order: TimeOrder; on_conflict: ConflictPolicy };
   clock: { at: WorldTime; round: number; started: boolean; closed_day: number };
   log_seq: number;
   events: WorldEvent[];
@@ -215,10 +366,16 @@ export interface SchedulerSnapshot {
 
 export class WorldScheduler {
   readonly world: string;
+  readonly order: TimeOrder;
+  readonly onConflict: ConflictPolicy;
   private clockAt: WorldTime; private clockRound = -1; private started = false;
+  /** latest exact instant executed so far (and its event): the clock of 'layered', the inversion detector of 'tick' */
+  private maxExact: ExactTime | null = null; private maxExactId: string | null = null;
   private events = new Map<string, WorldEvent>();
-  private heap = new Heap();
+  private heap: Heap;
+  private readonly slot: (a: WorldEvent, b: WorldEvent) => number;
   private logEntries: LogEntry[] = [];
+  private merges: MergeRecord[] = []; private inversions: InversionRecord[] = [];
   private seq = 0;
   /** events already executed or cancelled when this instance was restored (their log entries belong to the earlier segment) */
   private finishedAtRestore = 0;
@@ -227,10 +384,16 @@ export class WorldScheduler {
   /** last day closed by runDay() (-1: none); nothing may be scheduled on or before it */
   private closedDay = -1;
 
-  /** start: the earliest instant anything may be scheduled at */
-  constructor(world: string, start: WorldTime = { day: 0, minute: 0 }) {
+  /** start: the earliest instant anything may be scheduled at. time.order: 'tick' (default, the #116 contract) or 'layered'. */
+  constructor(world: string, start: WorldTime = { day: 0, minute: 0 }, time: TimeOptions = {}) {
     if (!(typeof world === 'string' && NAME_RE.test(world))) fail('world id must be a plain id');
-    this.world = world; this.clockAt = checkTime(start, 'start');
+    if (time === null || typeof time !== 'object' || Object.keys(time).some((k) => k !== 'order' && k !== 'on_conflict')) fail('time options must be { order?, on_conflict? }');
+    const order = time.order ?? 'tick', oc = time.on_conflict ?? 'report';
+    if (order !== 'tick' && order !== 'layered') fail(`time order must be 'tick' or 'layered' (got ${order})`);
+    if (oc !== 'report' && oc !== 'refuse') fail(`on_conflict must be 'report' or 'refuse' (got ${oc})`);
+    this.world = world; this.order = order; this.onConflict = oc; this.clockAt = checkTime(start, 'start');
+    const cmp = slotCompare(order);
+    this.slot = cmp; this.heap = new Heap((a, b) => cmp(a, b) || a.round - b.round || byId(a, b));
   }
 
   private guard(op: string): void {
@@ -246,32 +409,38 @@ export class WorldScheduler {
   get clock(): { at: WorldTime; round: number } { return { at: { ...this.clockAt }, round: this.clockRound }; }
   /** a frozen copy of this instance's log (entries since construction or restore) */
   get log(): readonly LogEntry[] { return view(this.logEntries); }
+  /** quantisation merges and inversions detected by this instance (always empty under 'layered') */
+  timeReport(): TimeReport { return view({ order: this.order, on_conflict: this.onConflict, merges: this.merges, inversions: this.inversions }); }
   get(id: string): Readonly<WorldEvent> | undefined { const e = this.events.get(id); return e && view(e); }
-  pending(): Readonly<WorldEvent>[] { return view([...this.events.values()].filter((e) => e.state === 'scheduled').sort(orderKey)); }
+  pending(): Readonly<WorldEvent>[] { const c = this.slot; return view([...this.events.values()].filter((e) => e.state === 'scheduled').sort((a, b) => c(a, b) || a.round - b.round || byId(a, b))); }
 
   /** the canonical id: a root is "<kind>:<key>", a child "<cause id>/<kind>:<key>" */
   static idOf(cause: string | null, kind: string, key: string): string { return `${cause === null ? '' : cause + '/'}${kind}:${key}`; }
 
   /** spec must be a plain copy from copySpec() (read once); nothing here reads producer objects */
-  private build(spec: EventSpec, cause: WorldEvent | null, batchAt: { at: WorldTime; round: number } | null): WorldEvent {
+  private build(spec: EventSpec, cause: WorldEvent | null, batchAt: { at: WorldTime; round: number; exact: ExactTime } | null): WorldEvent {
     if (!(typeof spec.kind === 'string' && KIND_RE.test(spec.kind))) fail(`event kind ${spec.kind} must match ${KIND_RE}`);
     if (!(typeof spec.key === 'string' && KEY_RE.test(spec.key))) fail(`event key ${spec.key} must match ${KEY_RE}`);
-    const at = checkTime(spec.at, `${spec.kind}:${spec.key} at`);
+    const what = `${spec.kind}:${spec.key}`;
+    if ((spec.at === undefined) === (spec.native === undefined)) fail(`${what}: give exactly one of at, native`);
+    const native = spec.native !== undefined ? checkNative(spec.native, `${what} native`) : nativeOfWorld((checkTime(spec.at!, `${what} at`), spec.at!));
+    const exact = exactOf(native), at = labelOf(exact, this.order);
     checkRef(spec.scope, 'scope', this.world, false); checkRef(spec.source, 'source', this.world, true); checkRef(spec.target, 'target', this.world, true);
     const payload = spec.payload === undefined ? null : spec.payload; checkJson(payload, 'payload'); // already a plain copy
     const id = WorldScheduler.idOf(cause ? cause.id : null, spec.kind, spec.key);
+    const vs = (x: WorldTime, xe: ExactTime) => (this.order === 'tick' ? compareTime(at, x) : compareExact(exact, xe));
     let round = 0;
     if (cause && batchAt) {
-      if (compareTime(at, cause.at) < 0) fail(`${id}: scheduled before its cause ${cause.id} (${fmt(at)} < ${fmt(cause.at)})`);
-      if (compareTime(at, batchAt.at) === 0) round = batchAt.round + 1;
+      if (vs(cause.at, cause.exact) < 0) fail(`${id}: scheduled before its cause ${cause.id} (${fmt(at)} < ${fmt(cause.at)}${this.order === 'layered' ? ', exact instants' : ''})`);
+      if (vs(batchAt.at, batchAt.exact) === 0) round = batchAt.round + 1;
     } else {
       // a world input: strictly after the instant being processed, or (before any batch) at or after the start
-      const c = compareTime(at, this.clockAt);
+      const c = this.started ? vs(this.clockAt, this.maxExact!) : vs(this.clockAt, exactOfWorld(this.clockAt));
       if (at.day <= this.closedDay) fail(`${id}: day ${at.day} was already closed by runDay(${this.closedDay})`);
       if (this.started ? c <= 0 : c < 0) fail(`${id}: world input at ${fmt(at)} is not after the clock ${fmt(this.clockAt)}${this.started && c === 0 ? ' (that instant is already being processed)' : ''}`);
     }
     return {
-      id, kind: spec.kind, key: spec.key, at, round,
+      id, kind: spec.kind, key: spec.key, at, native, exact, round,
       scope: { ...spec.scope }, source: spec.source ? { ...spec.source } : null, target: spec.target ? { ...spec.target } : null,
       payload: deepFreeze(canonJson(payload)), cause: cause ? cause.id : null,
       state: 'scheduled', cancelled_by: null, cancel_reason: null,
@@ -305,22 +474,25 @@ export class WorldScheduler {
   }
   /** commit only: callers have validated cs with checkCancels on the same plain copy */
   private applyCancels(cs: Cancel[], by: string | null): void {
-    for (const c of [...cs].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))) {
+    for (const c of [...cs].sort(byId)) {
       const e = this.events.get(c.id)!; e.state = 'cancelled'; e.cancelled_by = by; e.cancel_reason = c.reason;
-      this.logEntries.push({ seq: this.seq++, id: e.id, kind: e.kind, at: { ...e.at }, round: e.round, cause: e.cause, state: 'cancelled', by, reason: c.reason });
+      this.logEntries.push({ seq: this.seq++, id: e.id, kind: e.kind, at: { ...e.at }, exact: { ...e.exact }, round: e.round, cause: e.cause, state: 'cancelled', by, reason: c.reason });
     }
   }
 
   private dropCancelledTop(): void { while (this.heap.size && this.heap.peek()!.state !== 'scheduled') this.heap.pop(); }
 
-  /** the instant and round of the next batch, or null when nothing is pending */
-  nextBatchAt(): { at: WorldTime; round: number } | null { this.dropCancelledTop(); const t = this.heap.peek(); return t ? { at: { ...t.at }, round: t.round } : null; }
+  /** the instant (label and exact) and round of the next batch, or null when nothing is pending */
+  nextBatchAt(): { at: WorldTime; round: number; exact: ExactTime } | null { this.dropCancelledTop(); const t = this.heap.peek(); return t ? { at: { ...t.at }, round: t.round, exact: { ...t.exact } } : null; }
 
   /**
-   * Process exactly one batch: every pending event with the earliest (instant, round). The handler receives the batch
-   * (frozen copies) and returns children — each naming its cause, an event of this batch — and cancellations of OTHER
-   * pending events. It may read the scheduler (frozen copies) but not call schedule / cancel / step. Output is validated
-   * in full before anything changes; on any error the batch stays pending and the state is unchanged.
+   * Process exactly one batch: every pending event with the earliest (instant, round) — the instant being the tick
+   * label ('tick') or the exact instant ('layered'). The handler receives the batch (frozen copies) and returns children
+   * — each naming its cause, an event of this batch — and cancellations of OTHER pending events. It may read the
+   * scheduler (frozen copies) but not call schedule / cancel / step. Output is validated in full before anything
+   * changes; on any error the batch stays pending and the state is unchanged. Under 'tick', a batch that merges distinct
+   * exact instants, or contains an instant earlier than one already executed, is recorded in timeReport() (or refused
+   * before the handler runs, with on_conflict 'refuse').
    */
   step(handler: Handler): Readonly<WorldEvent>[] {
     // the scheduler is held from before the batch is taken until after the commit: the handler, every read of its output
@@ -328,27 +500,42 @@ export class WorldScheduler {
     // goes back and nothing else has changed (the guard is released in finally, whatever happens)
     return this.exclusive('step', () => {
       const top = this.nextBatchAt(); if (!top) return [];
-      const batch: WorldEvent[] = [];
-      while (this.heap.size) { this.dropCancelledTop(); const t = this.heap.peek(); if (!t || compareTime(t.at, top.at) !== 0 || t.round !== top.round) break; batch.push(this.heap.pop()!); }
-      const inBatch = new Set(batch.map((e) => e.id));
+      const batch: WorldEvent[] = [], first = this.heap.peek()!;
+      while (this.heap.size) { this.dropCancelledTop(); const t = this.heap.peek(); if (!t || this.slot(t, first) !== 0 || t.round !== top.round) break; batch.push(this.heap.pop()!); }
+      const inBatch = new Set(batch.map((e) => e.id)), restore = () => { for (const e of batch) this.heap.push(e); };
+      // quantisation diagnostics (read-only, before the handler)
+      const byExact = [...batch].sort((a, b) => compareExact(a.exact, b.exact) || byId(a, b));
+      let distinct = 1; for (let i = 1; i < byExact.length; i++) if (!sameExact(byExact[i].exact, byExact[i - 1].exact)) distinct++;
+      const lo = byExact[0].exact, hi = byExact[byExact.length - 1].exact;
+      const inverted = this.maxExact !== null && compareExact(lo, this.maxExact) < 0;
+      if (this.order === 'layered' && (distinct > 1 || inverted)) { restore(); fail('internal: a layered batch merged instants or ran out of order'); }
+      if (this.onConflict === 'refuse' && (distinct > 1 || inverted)) {
+        restore();
+        fail(distinct > 1 ? `batch at ${fmt(top.at)}#${top.round} would merge ${distinct} distinct exact instants (span ${spanUs(lo, hi)} µs) into one tick` : `batch at ${fmt(top.at)}#${top.round} truly happened ${spanUs(lo, this.maxExact!)} µs before ${this.maxExactId}, already executed`);
+      }
+      const ctx: BatchContext = { at: { ...top.at }, round: top.round, exact: { ...lo }, distinct_instants: distinct };
       // read the output ONCE into plain data, validate that copy in full, and commit only that copy (atomic batch)
       let out: ReturnType<typeof copyOutput>;
       const children: WorldEvent[] = [], newIds = new Set<string>();
       try {
-        const raw = handler(view(batch), { at: { ...top.at }, round: top.round });
+        const raw = handler(view(batch), ctx);
         out = copyOutput(raw);
         for (const c of out.children) {
           if (typeof c.cause !== 'string' || !inBatch.has(c.cause)) fail(`a child must name a cause in the current batch (got ${c.cause})`);
-          const e = this.build(c.spec, this.events.get(c.cause)!, top);
+          const e = this.build(c.spec, this.events.get(c.cause)!, { at: top.at, round: top.round, exact: this.events.get(c.cause)!.exact });
           if (this.events.has(e.id) || newIds.has(e.id)) fail(`duplicate event id ${e.id}`);
           newIds.add(e.id); children.push(e);
         }
         this.checkCancels(out.cancel, inBatch);
-      } catch (err) { for (const e of batch) this.heap.push(e); throw err; }
+      } catch (err) { restore(); throw err; }
       // nothing below can fail: every value was validated above and is no longer read from the producer
       // commit: the batch executes, then its cancellations, then its children are queued
+      const ids = batch.map((e) => e.id).sort();
+      if (distinct > 1) this.merges.push({ at: { ...top.at }, round: top.round, ids, distinct_instants: distinct, span_us: spanUs(lo, hi) });
+      if (inverted) this.inversions.push({ at: { ...top.at }, round: top.round, ids, earlier_than: this.maxExactId!, by_us: spanUs(lo, this.maxExact!) });
       this.started = true; this.clockAt = { ...top.at }; this.clockRound = top.round;
-      for (const e of batch) { e.state = 'executed'; this.logEntries.push({ seq: this.seq++, id: e.id, kind: e.kind, at: { ...e.at }, round: e.round, cause: e.cause, state: 'executed', by: null, reason: null }); }
+      if (this.maxExact === null || compareExact(hi, this.maxExact) > 0) { this.maxExact = { ...hi }; this.maxExactId = byExact.filter((e) => sameExact(e.exact, hi))[0].id; }
+      for (const e of batch) { e.state = 'executed'; this.logEntries.push({ seq: this.seq++, id: e.id, kind: e.kind, at: { ...e.at }, exact: { ...e.exact }, round: e.round, cause: e.cause, state: 'executed', by: null, reason: null }); }
       this.applyCancels(out.cancel, batch.length === 1 ? batch[0].id : `batch@${fmt(top.at)}#${top.round}`);
       for (const e of children) { this.events.set(e.id, e); this.heap.push(e); }
       return view(batch);
@@ -356,14 +543,20 @@ export class WorldScheduler {
   }
 
   /**
-   * Process batches while the next one is strictly before `end` (exclusive). Each batch is atomic; the run as a whole
-   * is not: if maxBatches is exceeded it throws after the batches already done, leaving a consistent state.
+   * Process batches while the next one is strictly before `end` (exclusive; label under 'tick', exact instant under
+   * 'layered'). Each batch is atomic; the run as a whole is not: if maxBatches is exceeded it throws after the batches
+   * already done, leaving a consistent state.
    */
   runUntil(end: WorldTime, handler: Handler, maxBatches = 1_000_000): number {
     this.guard('runUntil');
-    const e = this.exclusive('runUntil', () => { const t = checkTime(end, 'runUntil end'); return { day: t.day, minute: t.minute }; });
+    const e = this.exclusive('runUntil', () => ({ ...checkTime(end, 'runUntil end') })), ex = exactOfWorld(e);
     let n = 0;
-    for (;;) { const nx = this.nextBatchAt(); if (!nx || compareTime(nx.at, e) >= 0) break; if (++n > maxBatches) fail(`more than ${maxBatches} batches before ${fmt(e)} (runaway schedule?)`); this.step(handler); }
+    for (;;) {
+      const nx = this.nextBatchAt(); if (!nx) break;
+      if ((this.order === 'tick' ? compareTime(nx.at, e) : compareExact(nx.exact, ex)) >= 0) break;
+      if (++n > maxBatches) fail(`more than ${maxBatches} batches before ${fmt(e)} (runaway schedule?)`);
+      this.step(handler);
+    }
     return n;
   }
   /** process every batch of world day `day` (00:00 to before 24:00); later events stay queued, nothing resets at 24:00 */
@@ -390,19 +583,31 @@ export class WorldScheduler {
   /** a JSON snapshot (events sorted by id) from which an identical scheduler can be restored, e.g. across a save */
   snapshot(): SchedulerSnapshot {
     this.guard('snapshot');
-    return JSON.parse(JSON.stringify({ schema: SCHEDULER_SNAPSHOT_SCHEMA, world: this.world, clock: { at: this.clockAt, round: this.clockRound, started: this.started, closed_day: this.closedDay }, log_seq: this.seq, events: [...this.events.values()].sort((a, b) => (a.id < b.id ? -1 : 1)) }));
+    return JSON.parse(JSON.stringify({ schema: SCHEDULER_SNAPSHOT_SCHEMA, world: this.world, time: { order: this.order, on_conflict: this.onConflict }, clock: { at: this.clockAt, round: this.clockRound, started: this.started, closed_day: this.closedDay }, log_seq: this.seq, events: [...this.events.values()].sort((a, b) => (a.id < b.id ? -1 : 1)) }));
   }
   /** restore from snapshot(); refuses anything inconsistent rather than repairing it */
   static restore(s: SchedulerSnapshot): WorldScheduler {
     if (!s || typeof s !== 'object' || s.schema !== SCHEDULER_SNAPSHOT_SCHEMA) fail(`snapshot schema ${s && s.schema} is not ${SCHEDULER_SNAPSHOT_SCHEMA}`);
-    if (Object.keys(s).sort().join() !== 'clock,events,log_seq,schema,world') fail('snapshot must have exactly schema, world, clock, log_seq, events');
+    if (Object.keys(s).sort().join() !== 'clock,events,log_seq,schema,time,world') fail('snapshot must have exactly schema, world, time, clock, log_seq, events');
     if (!Array.isArray(s.events)) fail('snapshot events must be an array');
+    if (!s.time || typeof s.time !== 'object' || Object.keys(s.time).sort().join() !== 'on_conflict,order') fail('snapshot time must be { order, on_conflict }');
     if (!s.clock || typeof s.clock !== 'object' || Object.keys(s.clock).sort().join() !== 'at,closed_day,round,started' || typeof s.clock.started !== 'boolean') fail('snapshot clock must be { at, round, started, closed_day }');
     if (!Number.isSafeInteger(s.clock.closed_day) || s.clock.closed_day < -1) fail('snapshot closed_day invalid');
-    const w = new WorldScheduler(s.world, { day: 0, minute: 0 });
+    const w = new WorldScheduler(s.world, { day: 0, minute: 0 }, { order: s.time.order, on_conflict: s.time.on_conflict });
+    const layered = w.order === 'layered';
     const at = checkTime(s.clock.at, 'snapshot clock'); if (!isCanonical(s.clock.at)) fail('snapshot clock is not on the tick grid');
     if (!Number.isSafeInteger(s.clock.round) || s.clock.round < -1 || (s.clock.started ? s.clock.round < 0 : s.clock.round !== -1)) fail('snapshot clock round invalid');
     w.clockAt = at; w.clockRound = s.clock.round; w.started = s.clock.started; w.closedDay = s.clock.closed_day;
+    const checkedExact = (e: WorldEvent): ExactTime => {
+      if (!e.exact || typeof e.exact !== 'object' || Object.keys(e.exact).sort().join() !== 'day,us,us_lo' || ![e.exact.day, e.exact.us, e.exact.us_lo].every((v) => typeof v === 'number' && Number.isFinite(v))) fail(`snapshot ${e.id}: exact must be { day, us, us_lo }`);
+      return e.exact;
+    };
+    // the clock's exact instant: the latest executed exact instant (layered order compares with it)
+    let maxEx: ExactTime | null = null, maxId: string | null = null;
+    for (const e of s.events) if (e && typeof e === 'object' && e.state === 'executed') { const x = checkedExact(e); if (maxEx === null || compareExact(x, maxEx) > 0 || (compareExact(x, maxEx) === 0 && e.id < maxId!)) { maxEx = x; maxId = e.id; } }
+    const clockEx = w.started ? maxEx : exactOfWorld(at);
+    if (w.started && clockEx === null) fail('snapshot: a started clock needs an executed event');
+    const vsClock = (e: WorldEvent) => (layered ? compareExact(e.exact, clockEx!) : compareTime(e.at, at)) || e.round - s.clock.round;
     let finished = 0;
     for (const e of s.events) {
       if (!e || typeof e !== 'object' || Object.keys(e).sort().join() !== EVENT_FIELDS) fail(`snapshot event must have exactly ${EVENT_FIELDS}`);
@@ -411,26 +616,33 @@ export class WorldScheduler {
       if (WorldScheduler.idOf(e.cause, e.kind, e.key) !== e.id) fail(`snapshot ${e.id}: id is not canonical`);
       if (w.events.has(e.id)) fail(`snapshot: duplicate id ${e.id}`);
       checkTime(e.at, `snapshot ${e.id}`); if (!isCanonical(e.at)) fail(`snapshot ${e.id}: time not on the tick grid`);
+      checkedExact(e);
       if (!Number.isSafeInteger(e.round) || e.round < 0) fail(`snapshot ${e.id}: round must be an integer >= 0`);
       if (!['scheduled', 'executed', 'cancelled'].includes(e.state)) fail(`snapshot ${e.id}: state ${e.state} unknown`);
       if (e.state === 'cancelled' ? !(typeof e.cancel_reason === 'string' && e.cancel_reason.length > 0) || !(e.cancelled_by === null || typeof e.cancelled_by === 'string') : e.cancelled_by !== null || e.cancel_reason !== null) fail(`snapshot ${e.id}: cancel fields inconsistent with state ${e.state}`);
       checkRef(e.scope, 'scope', s.world, false); checkRef(e.source, 'source', s.world, true); checkRef(e.target, 'target', s.world, true); checkJson(e.payload, 'payload');
-      const vsClock = compareTime(e.at, at) || e.round - s.clock.round;
-      if (e.state === 'scheduled' && (w.started ? vsClock <= 0 : compareTime(e.at, at) < 0)) fail(`snapshot ${e.id}: pending but not after the clock`);
+      const v = vsClock(e);
+      if (e.state === 'scheduled' && (w.started ? v <= 0 : (layered ? compareExact(e.exact, clockEx!) : compareTime(e.at, at)) < 0)) fail(`snapshot ${e.id}: pending but not after the clock`);
       if (e.state === 'scheduled' && e.at.day <= w.closedDay) fail(`snapshot ${e.id}: pending on a closed day`);
-      if (e.state === 'executed' && (!w.started || vsClock > 0)) fail(`snapshot ${e.id}: executed but after the clock (or the clock never started)`);
-      const ev: WorldEvent = { ...e, at: { ...e.at }, scope: { ...e.scope }, source: e.source && { ...e.source }, target: e.target && { ...e.target }, payload: deepFreeze(canonJson(e.payload)) };
+      if (e.state === 'executed' && (!w.started || v > 0)) fail(`snapshot ${e.id}: executed but after the clock (or the clock never started)`);
+      const ev: WorldEvent = { ...e, at: { ...e.at }, native: e.native && typeof e.native === 'object' ? { ...e.native, anchor: e.native.anchor && { ...e.native.anchor } } : e.native, exact: { ...e.exact }, scope: { ...e.scope }, source: e.source && { ...e.source }, target: e.target && { ...e.target }, payload: deepFreeze(canonJson(e.payload)) };
       w.events.set(e.id, ev); if (ev.state === 'scheduled') w.heap.push(ev); else finished++;
     }
     for (const e of w.events.values()) if (e.cause !== null) {
       const c = w.events.get(e.cause); if (!c) fail(`snapshot ${e.id}: cause ${e.cause} missing`);
       if (c!.state !== 'executed') fail(`snapshot ${e.id}: cause ${e.cause} was not executed`);
-      const t = compareTime(e.at, c!.at);
+      const t = layered ? compareExact(e.exact, c!.exact) : compareTime(e.at, c!.at);
       if (t < 0) fail(`snapshot ${e.id}: before its cause`);
       if (t === 0 ? e.round !== c!.round + 1 : e.round !== 0) fail(`snapshot ${e.id}: round ${e.round} inconsistent with its cause (${c!.round})`);
     } else if (e.round !== 0) fail(`snapshot ${e.id}: a world input must be in round 0`);
+    // provenance: the label and the exact instant must follow from the native time, bit for bit
+    for (const e of w.events.values()) {
+      const x = exactOf(checkNative(e.native, `snapshot ${e.id} native`));
+      if (!sameExact(x, e.exact)) fail(`snapshot ${e.id}: exact instant does not follow from its native time`);
+      const l = labelOf(x, w.order); if (l.day !== e.at.day || l.minute !== e.at.minute) fail(`snapshot ${e.id}: tick label does not follow from its native time`);
+    }
     if (s.log_seq !== finished) fail(`snapshot log_seq ${s.log_seq} must equal the ${finished} finished events (each is logged exactly once)`);
-    w.seq = s.log_seq; w.finishedAtRestore = finished;
+    w.seq = s.log_seq; w.finishedAtRestore = finished; w.maxExact = maxEx && { ...maxEx }; w.maxExactId = maxId;
     return w;
   }
 }
@@ -439,23 +651,27 @@ const fmt = (t: WorldTime) => `d${t.day}+${t.minute}min`;
 
 /**
  * Independent check of an execution log (does not trust the scheduler's internal state): each id at most once; the
- * executed sequence is non-decreasing in (instant, round, id); a child executes only after its cause executed and in a
- * later round when at the same instant; cancelled events never execute. `before` lists events finished before the
- * log starts (e.g. the executed events of the snapshot a scheduler was restored from), so a log recorded after a
- * restore can be checked on its own.
+ * executed sequence is non-decreasing in (instant, round, id) — the instant being the tick label ('tick', default) or
+ * the exact instant ('layered'); a child executes only after its cause executed and in a later round when at the same
+ * instant; cancelled events never execute. `before` lists events finished before the log starts (e.g. the executed
+ * events of the snapshot a scheduler was restored from), so a log recorded after a restore can be checked on its own.
  */
-export function verifyLog(log: readonly LogEntry[], before: readonly { id: string; at: WorldTime; round: number; state: EventState }[] = []): { ok: true } {
-  const seen = new Map<string, { at: WorldTime; round: number; state: string }>(); let prev: LogEntry | null = null;
+export function verifyLog(log: readonly (Omit<LogEntry, 'exact'> & { exact?: ExactTime })[], before: readonly { id: string; at: WorldTime; exact?: ExactTime; round: number; state: EventState }[] = [], opts: { order?: TimeOrder } = {}): { ok: true } {
+  const layered = (opts.order ?? 'tick') === 'layered';
+  type Seen = { at: WorldTime; exact?: ExactTime; round: number; state: string };
+  const inst = (a: Seen, b: Seen) => { if (!layered) return compareTime(a.at, b.at); if (!a.exact || !b.exact) fail('log: layered verification needs exact instants'); return compareExact(a.exact!, b.exact!); };
+  const seen = new Map<string, Seen>(); let prev: (typeof log)[number] | null = null;
   for (const b of before) if (b.state !== 'scheduled') seen.set(b.id, b);
   for (const l of log) {
     if (seen.has(l.id)) fail(`log: ${l.id} appears twice (${seen.get(l.id)!.state}, ${l.state})`);
     seen.set(l.id, l);
     if (l.state !== 'executed') continue;
-    if (prev) { const c = compareTime(l.at, prev.at) || l.round - prev.round || (l.id < prev.id ? -1 : l.id > prev.id ? 1 : 0); if (c < 0) fail(`log: ${l.id} executed out of order after ${prev.id}`); }
+    if (prev) { const c = inst(l, prev) || l.round - prev.round || (l.id < prev.id ? -1 : l.id > prev.id ? 1 : 0); if (c < 0) fail(`log: ${l.id} executed out of order after ${prev.id}`); }
     if (l.cause !== null) {
       const c = seen.get(l.cause);
       if (!c || c.state !== 'executed') fail(`log: ${l.id} executed before its cause ${l.cause}`);
-      if (compareTime(l.at, c!.at) < 0 || (compareTime(l.at, c!.at) === 0 && l.round <= c!.round)) fail(`log: ${l.id} not after its cause ${l.cause}`);
+      const t = inst(l, c!);
+      if (t < 0 || (t === 0 && l.round <= c!.round)) fail(`log: ${l.id} not after its cause ${l.cause}`);
     }
     prev = l;
   }

@@ -6,6 +6,8 @@
 > - 既有引擎輸出逐位元組不變，正式存檔、Day1～14、Day15 都沒有改動。
 > - 沒有生物參數、沒有行為、不抽亂數。
 >
+> **時間契約（Owner 審查 #116 後補充）**：見 [`p0a0-time-contract.md`](p0a0-time-contract.md)。每個事件現在保留原生時間與精確時刻；本文的 60 µs 格點規則是其中的 `tick` 契約（預設），同格合併一律偵測並回報，或用 `on_conflict: 'refuse'` 拒絕；另有 `layered` 契約依精確時刻排序。快照格式改為 v2。
+>
 > **程式**：`engine/scheduler/world-events.ts`
 > **測試**：`tests/p0a0-world-scheduler.test.ts`（208 項）、`tests/scheduler-isolation.test.ts`
 > **依據**：`docs/research-design-p0a-24h-clock.md` §2.1、§3；`docs/multi-colony-timeline.md`（A09、#9）；`docs/roadmap.md` 的 P0-A／A09。
