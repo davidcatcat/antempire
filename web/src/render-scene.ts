@@ -12,7 +12,7 @@
  * Nothing here creates an engine event or reads any engine module.
  */
 import { hash32, mulberry32 } from './game-model.ts';
-import { PIVOT_RAD_PER_CYCLE, selectGait, type Gait } from './art-ant.ts';
+import { ANT_EXTENT, PIVOT_RAD_PER_CYCLE, framesOf, selectGait, type Gait } from './art-ant.ts';
 import { LEAF_KINDS, type LeafKind } from './art-ground.ts';
 import type { Experiment, ExperimentDay, Place } from './model.ts';
 
@@ -230,3 +230,62 @@ export function nextQuality(level: number, recentFrameMs: readonly number[], bud
 }
 /** LOD 1 drops the smallest décor (debris, moss, small pebbles) — drawing only. */
 export const keepAtLod = (it: DecorItem, lod: 0 | 1) => lod === 0 || !(it.kind === 'debris' || it.kind === 'moss' || (it.kind === 'pebble' && it.sizeMm < 2.5));
+
+// ------------------------------------------------------------------ pre-rotated ant atlas plan (option B; drawing only)
+/** Candidate numbers of heading buckets, largest first; the renderer takes the largest that fits the memory budget. */
+export const ROT_BUCKET_CHOICES = [64, 48, 32, 24, 16, 12, 8] as const;
+/** Gaits baked pre-rotated (the turning gaits, shown only briefly at recorded heading changes, keep the live rotation). */
+export const PREROTATED_GAITS: readonly Gait[] = ['walk', 'idle'];
+/** Default texture budget for the pre-rotated sheets (bytes, RGBA) and sheet side (device px). Engineering limits, not
+ *  model values: in Chromium a blit from a source image is only cheap while the working set of source images stays in
+ *  the canvas image cache; measured (docs/render-comparison.md §3): 512² sheets and ≤ 16 MB stay fast, 1024²+ sheets
+ *  or 24 MB+ thrash and make B slower than the live rotation. */
+export const ROT_ATLAS_BUDGET = 16 * 1024 * 1024;
+export const ROT_SHEET_PX = 512;
+const TAU = Math.PI * 2;
+/** Heading bucket of a screen heading (radians): nearest of n equally spaced angles k·2π/n. */
+export function headingBucket(heading: number, n: number): number { const k = Math.round(heading / (TAU / n)); return ((k % n) + n) % n; }
+export const bucketAngle = (k: number, n: number) => (k * TAU) / n;
+/** |drawn − requested| heading (radians, wrapped) when a heading is drawn from its bucket; never above π/n. */
+export function bucketError(heading: number, n: number): number { const d = heading - bucketAngle(headingBucket(heading, n), n); return Math.abs(Math.atan2(Math.sin(d), Math.cos(d))); }
+export interface RotBox { w: number; h: number; ax: number; ay: number }
+/** Device-pixel box of the sprite extent rotated by theta at `scale` device px per local unit, with `pad` px on every
+ *  side; (ax, ay) = the image of the local origin (the engine anchor) inside the box. */
+export function rotatedBox(scale: number, theta: number, pad = 1): RotBox {
+  const c = Math.cos(theta), s = Math.sin(theta), e = ANT_EXTENT; let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const [x, y] of [[e.x0, e.y0], [e.x1, e.y0], [e.x0, e.y1], [e.x1, e.y1]]) { const X = (x * c - y * s) * scale, Y = (x * s + y * c) * scale; x0 = Math.min(x0, X); x1 = Math.max(x1, X); y0 = Math.min(y0, Y); y1 = Math.max(y1, Y); }
+  return { w: Math.ceil(x1 - x0) + 2 * pad, h: Math.ceil(y1 - y0) + 2 * pad, ax: pad - x0, ay: pad - y0 };
+}
+export interface RotCell extends RotBox { gait: Gait; frame: number; pose: number; bucket: number; sheet: number; x: number; y: number }
+/** `poses`: a pluggable extra per-frame sprite axis (e.g. future head-yaw / antenna display states); every pose
+ *  multiplies the cells, so it is part of the memory budget. The current art has one pose per frame. */
+export interface RotPlan { n: number; scale: number; gaits: readonly Gait[]; poses: number; cells: RotCell[]; sheets: { w: number; h: number }[]; bytesPerSet: number }
+/** Deterministic shelf packing of every (gait, frame, pose, bucket) cell into sheets at most sheetW × maxH device px. */
+export function planRotatedAtlas(lengthPx: number, dpr: number, n: number, gaits: readonly Gait[] = PREROTATED_GAITS, poses = 1, sheetW = ROT_SHEET_PX, maxH = ROT_SHEET_PX): RotPlan {
+  const scale = (lengthPx * dpr) / 100, cells: RotCell[] = [], sheets: { w: number; h: number }[] = [];
+  const boxes = Array.from({ length: n }, (_, k) => rotatedBox(scale, bucketAngle(k, n)));
+  let sheet = 0, x = 0, y = 0, shelf = 0, used = 0;
+  const close = () => { sheets[sheet] = { w: Math.max(1, used), h: Math.max(1, y + shelf) }; };
+  for (const gait of gaits) for (let frame = 0; frame < framesOf(gait); frame++) for (let pose = 0; pose < poses; pose++) for (let k = 0; k < n; k++) {
+    const b = boxes[k];
+    if (x + b.w > sheetW) { x = 0; y += shelf; shelf = 0; }
+    if (y + b.h > maxH) { close(); sheet++; x = 0; y = 0; shelf = 0; used = 0; }
+    cells.push({ ...b, gait, frame, pose, bucket: k, sheet, x, y }); x += b.w; shelf = Math.max(shelf, b.h); used = Math.max(used, x);
+  }
+  close();
+  return { n, scale, gaits, poses, cells, sheets, bytesPerSet: sheets.reduce((a, s) => a + s.w * s.h * 4, 0) };
+}
+/** Index of a cell in plan.cells. */
+export function rotCellIndex(plan: RotPlan, gait: Gait, frame: number, bucket: number, pose = 0): number {
+  let i = 0; for (const g of plan.gaits) { if (g === gait) return i + (frame * plan.poses + pose) * plan.n + bucket; i += framesOf(g) * plan.poses * plan.n; }
+  return -1;
+}
+/** Texture bytes of a full pre-rotated set: one body set per colour variant + one shared shadow set. */
+export const rotatedAtlasBytes = (plan: RotPlan, variants: number) => plan.bytesPerSet * (variants + 1);
+/** Largest bucket count whose full set fits the budget, or null (then the renderer keeps the live rotation). */
+export function chooseBuckets(lengthPx: number, dpr: number, variants: number, budget = ROT_ATLAS_BUDGET, gaits: readonly Gait[] = PREROTATED_GAITS, poses = 1): number | null {
+  for (const n of ROT_BUCKET_CHOICES) if (rotatedAtlasBytes(planRotatedAtlas(lengthPx, dpr, n, gaits, poses), variants) <= budget) return n;
+  return null;
+}
+/** Destination rectangle (CSS px) that puts the cell's anchor exactly on (sx, sy): an axis-aligned blit, no rotation. */
+export const rotDrawRect = (c: RotBox, dpr: number, sx: number, sy: number) => ({ dx: sx - c.ax / dpr, dy: sy - c.ay / dpr, dw: c.w / dpr, dh: c.h / dpr });
