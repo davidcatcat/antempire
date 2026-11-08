@@ -63,7 +63,7 @@ export function cite(file: string, needle: string): string {
 // ---------------------------------------------------------------------------------------------------------------------------
 // compartments of one colony-day (state → map key kind:id:food)
 const k = (kind: string, id: string, f: string) => `${kind}:${id}:${f}`;
-function holdings(c: Any): Map<string, number> {
+export function holdings(c: Any): Map<string, number> {
   const m = new Map<string, number>();
   let cropSugar = 0;
   for (const w of c.population.workers) {
@@ -79,7 +79,7 @@ function holdings(c: Any): Map<string, number> {
 
 interface Closure { compartment_days: number; individual_compartments: number; max_abs_residual: number; failures: string[] }
 /** opening + in − out − closing for every tracked compartment of the day, aggregate per kind and per individual. */
-function closeDay(start: Any, end: Any, ev: Any[], day: number, acc: Record<string, Closure & { opening: number; in: number; out: number; closing: number }>): void {
+export function closeDay(start: Any, end: Any, ev: Any[], day: number, acc: Record<string, Closure & { opening: number; in: number; out: number; closing: number }>): void {
   const open = holdings(start), close = holdings(end), flow = new Map<string, { in: number; out: number }>();
   const add = (key: string, side: 'in' | 'out', a: number) => { const x = flow.get(key) ?? { in: 0, out: 0 }; x[side] += a; flow.set(key, x); };
   for (const e of ev) {

@@ -707,3 +707,24 @@ R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-
 |---|---|---|---|---|
 | R388 | Way MJ (1963) Mutualism between ants and honeydew-producing Homoptera. *Annual Review of Entomology* 8:307–344 | 經引用文獻與摘要 | 沒有被螞蟻採走的蜜露會在葉面累積並養煤煙病菌；螞蟻採走蜜露可減少累積。用於蜜露超過容量時記為「已存在、沒有留在食源」（`capacity_runoff`） | 只支持「會累積」；離開食源的方式（滴落、被其他昆蟲取食、乾掉）與份量沒有依據；不提供本花園蜜露的留存量或容量；不是本種研究 |
 | R389 | Nepi M, Stpiczyńska M (2008) The complexity of nectar: secretion and resorption dynamically regulate nectar features. *Naturwissenschaften* 95:177–184. DOI 10.1007/s00114-007-0307-2 | 摘要 | 花蜜的存量是分泌與再吸收共同的結果，不是單向累積。用於花蜜超過容量時記為「被植物再吸收」（`capacity_resorbed`，這份花蜜曾經存在） | **不能**支持「超量部分從未存在」（Codex 對 #88 `290c440` 的 P3）；不提供本花園植物的分泌上限或再吸收速率；不同植物差異大 |
+
+## 2026-11-08 WP6 C4 幼蟲營養下一階段（R620；`docs/wp6-c4-next-stage.md`）
+
+> 編號從 R620 起，避開其他進行中工作包可能使用的編號。閱讀程度如實標記；他種只作候選機制。
+
+| ID | 文獻 | 閱讀程度 | 物種 | 支持的內容 | 不可外推之處 |
+|---|---|---|---|---|---|
+| R620 | Petralia RS, Vinson SB (1978) Feeding in the larvae of the imported fire ant, *Solenopsis invicta*: behavior and morphological adaptations. *Ann. Entomol. Soc. Am.* 71(4):643–648. DOI 10.1093/aesa/71.4.643 | 只讀摘要（經搜尋工具） | **非本種**：*S. invicta* | 液態食物餵所有齡期；固體蛋白只給四齡，工蟻把一定大小的固體放在四齡幼蟲腹前方，由特化的毛與刺固定 | 他屬；本種幼蟲三齡（R94），齡期對應不明；沒有份量或頻率 |
+
+**既有編號的附註**（新增，不改寫原有行）：
+- R210（Cassill & Tschinkel 1995）2026-11-08 以 pdftotext 讀取全文（作者網站 PDF）：28 °C 恆光、只測四齡、液態食物；每次交哺持續 11 ± 2 s、份量固定；幼蟲每小時被工蟻碰到 200～800 次、被餵 2～50 次；約 8 h 的餵食才飽；鄰近幼蟲的飢餓不影響被餵頻率。前言轉引：「Workers deliver proteinaceous food primarily to larvae and queens and sugars primarily to other workers」（Howard & Tschinkel 1980、1981 等，原文未讀）。全部**非本種**，不得作本種接觸頻率。
+
+## 2026-11-08 P0-A1 24 小時環境時鐘（R390–R392；`docs/p0a1-24h-clock.md`）
+
+> 三筆都是**一般方法**（天文、氣象物理），不是生物證據，不提供任何螞蟻參數。R247（Parton & Logan 1981）仍只核對書目，係數保持 `null`。
+
+| ID | 來源 | 讀到的程度 | 用途 | 限制 |
+|---|---|---|---|---|
+| R390 | NOAA Global Monitoring Laboratory, Solar Calculation Details. https://gml.noaa.gov/grad/solcalc/calcdetails.html（依 Meeus, *Astronomical Algorithms*） | 說明頁已讀（準確度、折射 0.833°、適用範圍）；方程式依 NOAA 試算表的公式實作，**試算表本身本次未下載核對**，改以 R392 獨立演算法交叉驗證（2027 全年最大差 0.2 分鐘） | 日出、日落、民用曙暮光（`engine/clock/solar.ts`） | NOAA：±72° 緯度內約 1 分鐘；實際觀測受大氣影響；NOAA 已不再維護；地形與建築未模擬 |
+| R391 | Allen RG, Pereira LS, Raes D, Smith M (1998) *Crop evapotranspiration*（FAO Irrigation and Drainage Paper 56），第 3 章 式 10、11。https://www.fao.org/4/x0490e/x0490e07.htm | 線上全文（第 3 章）；式 11 的常數由原文例題 3 確認（式本身是圖片） | 飽和水氣壓 e°(T) = 0.6108 exp(17.27T/(T+237.3)) kPa；RH = 實際／飽和水氣壓；RH 日變化（日出附近最高、午後最低）只作方向 | 一般物理；「日內實際水氣壓固定或內插」是本專案的遊戲假設，不是 FAO-56 的結論 |
+| R392 | Nautical Almanac Office, US Naval Observatory (1990) *Almanac for Computers*（日出日落簡化演算法） | **未讀原文**；演算法為廣泛流傳的轉載版本 | 只在測試中作為獨立的交叉驗證，不是引擎方法 | 精度約 1～2 分鐘；不用於任何輸出 |
