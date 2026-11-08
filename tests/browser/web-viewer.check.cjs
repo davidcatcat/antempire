@@ -31,7 +31,7 @@ const read = (f) => JSON.parse(fs.readFileSync(path.join(DATA, f), 'utf8'));
     const V = (fn, ...a) => page.evaluate(fn, ...a);
     const setDay = async (d, m) => { await page.$eval('#day', (el, v) => { el.value = String(v); el.dispatchEvent(new Event('input')); }, d); await page.$eval('#minute', (el, v) => { el.value = String(v); el.dispatchEvent(new Event('input')); }, m); };
     const drawn = async () => (await V(() => window.antempireViewer.antsOnScreen())).map((a) => a.id).sort();
-    await page.goto(base); await page.waitForFunction(() => document.getElementById('badge').textContent.includes('Day14'));
+    await page.goto(new URL('analysis.html', base).href); await page.waitForFunction(() => document.getElementById('badge').textContent.includes('Day14'));
     // official snapshot
     const aliveSaved = official.workers.filter((w) => w.status === 'alive').map((w) => w.id).sort();
     const off = await V(() => window.antempireViewer.antsOnScreen());
