@@ -111,8 +111,12 @@ export interface HistoricalSampleResult {
 export interface HistoricalSensingSource {
   readonly source: SensingSource; readonly synthetic: boolean; readonly id: string; readonly max_range_mm: number;
   latestCommitted(channel: string, layer: string): StateCommit | null;
-  commitCovering(channel: string, layer: string, at: SimTime): StateCommit | null;
-  readAt(q: HistoricalSampleQuery): number[] | null;
+  /** values at q.points of the committed state covering q.at, and that commit (CHEM: covered_by_commit) */
+  readAt(q: HistoricalSampleQuery): { values: number[]; covered_by_commit: StateCommit } | null;
+}
+/** time through which the reader's channel is committed (= CHEM-1b reader.latestCommitted()?.time) */
+export function committedThrough(reader: { latestCommitted(channel: string, layer: string): StateCommit | null }, channel: string, layer: string): SimTime | null {
+  const c = reader.latestCommitted(channel, layer); return c ? { t_s: c.time.t_s, round: c.time.round } : null;
 }
 
 /** antenna tips from the body pose (the expression the natural-walk controller has always used) */
@@ -200,8 +204,9 @@ export function sampleHistorical(src: HistoricalSensingSource, cap: DiagnosticCa
     else if (compareTime(q.at, h.time) > 0) e.push('FUTURE_SAMPLE');
   }
   if (e.length) throw new SensingRefused(e);
-  const h = src.latestCommitted(q.channel, q.layer) as StateCommit, cov = src.commitCovering(q.channel, q.layer, q.at), vals = src.readAt(q);
-  if (!cov || !vals || vals.length !== q.points.length || !vals.every(fin)) throw new SensingRefused([`MISSING_SIGNAL:${src.id}`]);
+  const h = src.latestCommitted(q.channel, q.layer) as StateCommit, rd = src.readAt(q);
+  if (!rd || !commitOk(rd.covered_by_commit) || rd.values.length !== q.points.length || !rd.values.every(fin)) throw new SensingRefused([`MISSING_SIGNAL:${src.id}`]);
+  const cov = rd.covered_by_commit, vals = rd.values;
   return { view: 'diagnostic_history', decision_use: 'forbidden', purpose: q.purpose, channel: q.channel, layer: q.layer, at: { ...q.at }, covered_by_commit: { seq: cov.seq, time: { ...cov.time } }, exact_commit_instant: compareTime(cov.time, q.at) === 0, queried_at_horizon: { ...h.time }, source: src.source, synthetic: src.synthetic, values: q.points.map((p, i) => ({ id: p.id, x_mm: p.x_mm, y_mm: p.y_mm, value: vals[i] })) };
 }
 
@@ -260,7 +265,7 @@ export class SyntheticChemicalField implements HistoricalSensingSource {
     const c = this.#commits.at(-1);
     return channel === this.#cfg.channel && layer === this.#cfg.layer && c ? { seq: c.seq, time: { ...c.time } } : null;
   }
-  commitCovering(channel: string, layer: string, at: SimTime): StateCommit | null {
+  #covering(channel: string, layer: string, at: SimTime): StateCommit | null {
     if (channel !== this.#cfg.channel || layer !== this.#cfg.layer) return null;
     const c = this.#commits.find((k) => compareTime(k.time, at) >= 0); return c ? { seq: c.seq, time: { ...c.time } } : null;
   }
@@ -279,9 +284,10 @@ export class SyntheticChemicalField implements HistoricalSensingSource {
     });
   }
   /** diagnostic history: point values of the committed state covering `at` (static field: the same values) */
-  readAt(q: HistoricalSampleQuery): number[] | null {
-    if (q.range_mm !== 0 || !this.commitCovering(q.channel, q.layer, q.at)) return null;
-    return q.points.map((p) => this.#value(p.x_mm, p.y_mm));
+  readAt(q: HistoricalSampleQuery): { values: number[]; covered_by_commit: StateCommit } | null {
+    const cov = this.#covering(q.channel, q.layer, q.at);
+    if (q.range_mm !== 0 || !cov) return null;
+    return { values: q.points.map((p) => this.#value(p.x_mm, p.y_mm)), covered_by_commit: cov };
   }
 }
 
@@ -292,7 +298,13 @@ export class SyntheticChemicalField implements HistoricalSensingSource {
 export interface ChemTimeLike { clock: string; unit: 's'; t_s: number; round: number }
 export interface ChemCommitLike { seq: number; time: ChemTimeLike }
 export interface ChemSampleQueryLike { signal_id: string; agent_id: string; layer: string; time: ChemTimeLike; phase: 'local_sensing'; sensor: { kind: 'disc'; x_mm: number; y_mm: number; radius_mm: number } }
-export interface ChemSampleResultLike { view: 'agent_local'; read_kind?: 'realtime_latest_committed'; exposure: number; detectable: boolean | null; state_commit?: ChemCommitLike }
+export interface ChemSampleResultLike { view: 'agent_local'; read_kind?: 'realtime_latest_committed'; exposure: number; mean_density_per_mm2?: number | null; detectable: boolean | null; state_commit?: ChemCommitLike; sensing_time?: ChemTimeLike }
+/** CHEM-1b sparse_2d reading of one sensor: a point sample (radius 0) has exposure 0 by definition (no area), so its value
+ *  is the r → 0 limit mean_density_per_mm2; a disc (radius > 0) uses exposure (amount inside the disc). */
+export function chemSensorValue(r: { exposure: number; mean_density_per_mm2?: number | null }, radius_mm: number): number | null {
+  if (radius_mm === 0) return typeof r.mean_density_per_mm2 === 'number' && Number.isFinite(r.mean_density_per_mm2) ? r.mean_density_per_mm2 : null;
+  return Number.isFinite(r.exposure) ? r.exposure : null;
+}
 /** CHEM-1b ChemRealtimeReader: latestCommitted() + sampleLocal(q). CHEM refuses any read not exactly at its latest commit
  *  (FUTURE_SAMPLE / STALE_SAMPLE); this adapter enforces the same rule before calling it and surfaces any CHEM refusal as
  *  MISSING_SIGNAL. CHEM's historical API (sampleHistorical with a ChemDiagnosticCapability) is NOT wrapped here: decision
@@ -314,10 +326,43 @@ export class ChemLocalFieldAdapter implements RealtimeSensingReader {
       return q.sensors.map((s) => {
         const r = this.#reader.sampleLocal({ signal_id: q.channel, agent_id: q.agent_id, layer: q.layer, time: { clock: this.#clock, unit: 's', t_s: q.t_s, round: q.round }, phase: 'local_sensing', sensor: { kind: 'disc', x_mm: s.x_mm, y_mm: s.y_mm, radius_mm: q.range_mm } });
         if (r.state_commit && r.state_commit.seq !== st.seq) throw new SensingRefused(['STATE_CHANGED_DURING_READ']);
-        return { sensor: s.id, x_mm: s.x_mm, y_mm: s.y_mm, value: r.exposure, detectable: r.detectable };
+        const v = chemSensorValue(r, q.range_mm);
+        if (v === null) throw new SensingRefused(['NO_POINT_DENSITY']);
+        return { sensor: s.id, x_mm: s.x_mm, y_mm: s.y_mm, value: v, detectable: r.detectable };
       });
     } catch (err) {
       // surfaced as an error with CHEM's own codes; never replaced by another source
+      const codes = (err as { codes?: unknown }).codes;
+      throw new SensingRefused([`MISSING_SIGNAL:${this.id}`, ...(Array.isArray(codes) ? codes.map(String) : [String((err as Error)?.message ?? err)])]);
+    }
+  }
+}
+
+/** CHEM-1b historical store (diagnostic side only): ChemStore.sampleHistorical(cap, q). The capability must come from
+ *  CHEM's own createDiagnosticCapability('diagnosis'); this module never fabricates one. */
+export interface ChemHistoricalQueryLike { signal_id: string; layer: string; at: ChemTimeLike; sensor: { kind: 'disc'; x_mm: number; y_mm: number; radius_mm: number }; purpose: DiagnosticPurpose }
+export interface ChemHistoricalResultLike { view: 'diagnostic_history'; decision_use: 'forbidden'; exposure: number; mean_density_per_mm2: number | null; covered_by_commit: ChemCommitLike }
+export interface ChemHistoryStoreLike { latestCommitted(): ChemCommitLike | null; sampleHistorical(cap: unknown, q: ChemHistoricalQueryLike): ChemHistoricalResultLike }
+/** DECLARATION ONLY (not integrated): exposes a CHEM store's history to sampleHistorical() for replay / diagnosis. Never
+ *  handed to decision code (decision code holds a RealtimeSensingReader). */
+export class ChemHistoryAdapter implements HistoricalSensingSource {
+  readonly source = 'chem_local_field' as const;
+  readonly synthetic = false;
+  static readonly integrated = false;
+  readonly id: string; readonly max_range_mm: number;
+  readonly #store: ChemHistoryStoreLike; readonly #chemCap: unknown; readonly #clock: string; readonly #channels: Set<string>;
+  constructor(id: string, store: ChemHistoryStoreLike, chemDiagnosticCap: unknown, clock: string, channels: string[], max_range_mm: number) { this.id = id; this.max_range_mm = max_range_mm; this.#store = store; this.#chemCap = chemDiagnosticCap; this.#clock = clock; this.#channels = new Set(channels); }
+  latestCommitted(channel: string): StateCommit | null { const c = this.#store.latestCommitted(); return this.#channels.has(channel) && c ? { seq: c.seq, time: { t_s: c.time.t_s, round: c.time.round } } : null; }
+  readAt(q: HistoricalSampleQuery): { values: number[]; covered_by_commit: StateCommit } | null {
+    try {
+      let cov: StateCommit | null = null;
+      const values = q.points.map((p) => {
+        const r = this.#store.sampleHistorical(this.#chemCap, { signal_id: q.channel, layer: q.layer, at: { clock: this.#clock, unit: 's', t_s: q.at.t_s, round: q.at.round }, sensor: { kind: 'disc', x_mm: p.x_mm, y_mm: p.y_mm, radius_mm: q.range_mm }, purpose: q.purpose });
+        cov = { seq: r.covered_by_commit.seq, time: { t_s: r.covered_by_commit.time.t_s, round: r.covered_by_commit.time.round } };
+        const v = chemSensorValue(r, q.range_mm); if (v === null) throw new SensingRefused(['NO_POINT_DENSITY']); return v;
+      });
+      return cov ? { values, covered_by_commit: cov } : null;
+    } catch (err) {
       const codes = (err as { codes?: unknown }).codes;
       throw new SensingRefused([`MISSING_SIGNAL:${this.id}`, ...(Array.isArray(codes) ? codes.map(String) : [String((err as Error)?.message ?? err)])]);
     }
