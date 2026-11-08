@@ -14,10 +14,11 @@
  *  4. DISPLAY time    what a viewer may print: the civil date and the local clock TRUNCATED to the event's resolution,
  *                     plus the interval the event may lie in. Display is derived only; it is never an input.
  * Every conversion into the scheduler goes through #117's exactOf() (error-free); ordering is decided by the scheduler's
- * contract ('tick' or 'layered', a parameter — the choice is the Owner's). Display truncation is a floor of the exact
+ * contract: 'layered' by default in this isolated clock (Owner 2026-11-08: the target for the next isolated phase), 'tick'
+ * kept as a compatibility mode; the official day loop is untouched. Display truncation is a floor of the exact
  * value, hence monotone: it can merge two instants into one printed time but can never reverse their order.
  */
-import { type ExactTime, type NativeTime, type TimeOrder, type WorldTime, checkNative, checkTime, exactOf, MINUTES_PER_DAY, US_PER_DAY } from '../scheduler/world-events.ts';
+import { type ExactTime, type NativeTime, type NativeUnit, type TimeOrder, type WorldTime, checkNative, checkTime, compareExact, exactOf, exactOfWorld, MINUTES_PER_DAY, US_PER_DAY } from '../scheduler/world-events.ts';
 
 export class ClockError extends Error { constructor(msg: string) { super(`CLOCK: ${msg}`); this.name = 'ClockError'; } }
 export const clockFail = (msg: string): never => { throw new ClockError(msg); };
@@ -26,9 +27,9 @@ export type TimeFrame = 'world' | 'ecological' | 'physics' | 'display';
 /** what a source really resolves: a value known only per day must never be drawn at a minute (AGENT-RULES, §8) */
 export type Resolution = 'day' | 'hour' | 'minute' | 'second' | 'exact';
 export const RESOLUTIONS: readonly Resolution[] = ['day', 'hour', 'minute', 'second', 'exact'];
-/** the scheduler contract is a parameter of every clock run; 'tick' is the scheduler default (#116), 'layered' is the
- *  #117 recommendation and is NOT adopted here (Owner decision pending) */
-export const DEFAULT_ORDER: TimeOrder = 'tick';
+/** the scheduler contract of the isolated clock: 'layered' (Owner 2026-11-08 target for the isolated phase); 'tick' (the
+ *  #116 scheduler default) stays a supported compatibility mode. The official engine does not use either yet. */
+export const DEFAULT_ORDER: TimeOrder = 'layered';
 
 // ------------------------------------------------------------------ civil calendar (pure integer arithmetic, no Date)
 /** days since 1970-01-01 of a proleptic Gregorian date (H. Hinnant's days_from_civil; exact for all safe integers) */
@@ -92,6 +93,48 @@ export function ecoNative(e: EcoTime): NativeTime {
 export function physicsNative(clock: string, anchor: WorldTime, seconds: number): NativeTime {
   return checkNative({ clock, unit: 's', anchor: checkTime(anchor), t: seconds }, `physics ${clock}`);
 }
+
+// ------------------------------------------------------------------ one instant, many clocks (canonical representation)
+/*
+ * SINGLE TIME SOURCE. The identity of an instant is its EXACT time (#117 ExactTime: day + µs since 00:00 as the
+ * unevaluated sum us + us_lo of two doubles). Every clock — world minutes, ecological minutes, physics seconds — is a VIEW
+ * of it through exactOf(), which is error-free. Two events are simultaneous iff their exact times are equal; nothing
+ * else (no tolerance, no tick, no display) decides it.
+ * A producer that must place an event at the SAME instant as an existing one, on its own clock, asks nativeOnClock()
+ * for the native value: it returns a value whose exact time is that instant, bit for bit, or refuses. It never returns a
+ * neighbouring instant, so a float conversion cannot create a fake order (e.g. 0.025 min and 1.5 s are different exact
+ * instants in binary; asking for 1.5 s's instant on a minute clock is refused rather than rounded).
+ */
+const UNIT_US: Record<NativeUnit, number> = { min: 60_000_000, s: 1_000_000 };
+const F64 = new Float64Array(1), I64 = new BigInt64Array(F64.buffer);
+const nextFloat = (x: number, n: number) => { F64[0] = x; if (x === 0 && n < 0) return -0; I64[0] += BigInt(n); return F64[0]; };
+export const sameInstant = (a: ExactTime, b: ExactTime): boolean => compareExact(a, b) === 0;
+/** the native value on (clock, unit, anchor) whose exact instant is exactly x, or null when no double t represents it */
+export function nativeOnClock(x: ExactTime, clock: string, unit: NativeUnit, anchor: WorldTime): NativeTime | null {
+  const a = exactOfWorld(anchor);
+  if (compareExact(x, a) < 0) return null;
+  // x − anchor as a double-double (error-free sums), so the estimate is within ~1 ulp of the true value
+  const two = (p: number, q: number): [number, number] => { const s = p + q, bb = s - p; return [s, (p - (s - bb)) + (q - bb)]; };
+  let [h, l] = two((x.day - a.day) * US_PER_DAY, x.us);
+  let [h2, l2] = two(h, -a.us); l += l2; h = h2;
+  [h2, l2] = two(h, x.us_lo - a.us_lo); l += l2; h = h2;
+  const t0 = (h + l) / UNIT_US[unit];
+  // exactOf is strictly increasing in t, so at most one candidate matches; search a few ulps around the estimate
+  for (const k of [0, -1, 1, -2, 2, -3, 3, -4, 4]) {
+    const t = nextFloat(t0, k); if (!(t >= 0)) continue;
+    const n = checkNative({ clock, unit, anchor, t }, `nativeOnClock ${clock}`);
+    if (sameInstant(exactOf(n), x)) return n;
+  }
+  return null;
+}
+/** like nativeOnClock, but refuses instead of returning null */
+export function requireNativeOnClock(x: ExactTime, clock: string, unit: NativeUnit, anchor: WorldTime): NativeTime {
+  return nativeOnClock(x, clock, unit, anchor) ?? clockFail(`instant d${x.day}+${x.us}+${x.us_lo}µs has no exact value on clock ${clock} (${unit}, anchor d${anchor.day}+${anchor.minute}min): refused, not rounded`);
+}
+/** views of an exact instant as plain numbers (for physics input or reports; NOT for ordering): minutes / seconds since
+ *  00:00 of its day. Error ≤ 1 ulp of the result (two roundings). */
+export const minutesOfDay = (x: ExactTime): number => (x.us + x.us_lo) / UNIT_US.min;
+export const secondsOfDay = (x: ExactTime): number => (x.us + x.us_lo) / UNIT_US.s;
 
 // ------------------------------------------------------------------ display time (derived, viewer only)
 const MS_PER_DAY = 86_400_000;

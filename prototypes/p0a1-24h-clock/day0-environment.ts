@@ -7,7 +7,7 @@
  * Day0 state is never read. Sub-daily temperature needs shape coefficients, which are null (R247 not read): pass
  * --shape a,b,c only as a labelled scenario. Rain timing likewise needs --rain-events K --rain-dur lo,hi (scenario).
  *
- *   node prototypes/p0a1-24h-clock/day0-environment.ts [--season summer] [--seed 1] [--days 4] [--order tick|layered]
+ *   node prototypes/p0a1-24h-clock/day0-environment.ts [--season summer] [--seed 1] [--days 4] [--order layered|tick]  (default layered)
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -19,6 +19,7 @@ import { buildDay0, seasonStart, type Season } from '../../cli/lib/day0.ts';
 import type { TimeOrder } from '../../engine/scheduler/world-events.ts';
 import { type ClockWorldConfig, ClockRun } from '../../engine/clock/environment.ts';
 import { type DailyWeatherInput, type RainTimingScenario, type TemperatureShape, fromSyntheticDaily } from '../../engine/clock/weather-input.ts';
+import { DEFAULT_ORDER } from '../../engine/clock/time-frames.ts';
 import { CIVIL_TWILIGHT_ALTITUDE_DEG, SUNRISE_ALTITUDE_DEG } from '../../engine/clock/solar.ts';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -49,7 +50,7 @@ export function day0Config(start: string, seed: number, firstDay: number, lastDa
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const arg = (k: string, d: string) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
-  const season = arg('season', 'summer') as Season, seed = Number(arg('seed', '1')), days = Number(arg('days', '4')), order = arg('order', 'tick') as TimeOrder;
+  const season = arg('season', 'summer') as Season, seed = Number(arg('seed', '1')), days = Number(arg('days', '4')), order = arg('order', DEFAULT_ORDER) as TimeOrder;
   const sh = arg('shape', ''), re = arg('rain-events', ''), rd = arg('rain-dur', '30,180').split(',').map(Number);
   const shape: TemperatureShape | null = sh ? (([a, b, c]) => ({ peak_lag_after_noon_h: a, night_decay_b: b, min_lag_after_sunrise_h: c }))(sh.split(',').map(Number)) : null;
   const rain: RainTimingScenario | null = re ? { events_per_rain_day: Number(re), duration_min: [rd[0], rd[1]], assumption: true, basis: '遊戲假設', label: 'command-line scenario' } : null;

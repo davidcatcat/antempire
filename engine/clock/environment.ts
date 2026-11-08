@@ -8,9 +8,13 @@
  * across midnight; a day close is a settlement point, not a reset.
  *
  * Status: ISOLATED (tests/clock-isolation.test.ts). No colony, worker or brood state is read or written; no behaviour;
- * no species parameter. The scheduler contract ('tick' | 'layered') is a parameter of the run (Owner decision pending).
+ * no species parameter. The scheduler contract is a parameter of the run: 'layered' by default (Owner 2026-11-08 target
+ * for the isolated phase), 'tick' as a compatibility mode.
+ * Events that are not environment events (e.g. an isolated resource model sharing the world axis) are handed to the
+ * `foreign` hook as ONE batch per scheduler batch — the set of everything at that instant — never one by one, and the
+ * clock picks no winner among them.
  */
-import { type EventSpec, type Handler, type SchedulerSnapshot, type TimeOrder, type WorldEvent, type WorldTime, WorldScheduler, compareExact, exactOf } from '../scheduler/world-events.ts';
+import { type BatchContext, type EventSpec, type Handler, type SchedulerSnapshot, type StepOutput, type TimeOrder, type WorldEvent, type WorldTime, WorldScheduler, compareExact, exactOf } from '../scheduler/world-events.ts';
 import { type CalendarAnchor, type Resolution, checkAnchor, clockFail, dateOfDay, displayOf, ecoNative } from './time-frames.ts';
 import { type LightState, type SolarSite, checkSite, lightStateAt } from './solar.ts';
 import { type DailyWeatherInput, type RainPlan, type RainTimingScenario, type TemperatureShape, WeatherSeries, planRain } from './weather-input.ts';
@@ -91,8 +95,9 @@ export interface DayRecord {
 export class ClockRun {
   readonly cfg: ClockWorldConfig; readonly series: WeatherSeries; readonly plan: RainPlan;
   scheduler: WorldScheduler; state: EnvState; days: DayRecord[] = [];
-  /** handler for non-environment events sharing the scheduler (tests / later integration); default: refuse them */
-  other: ((e: Readonly<WorldEvent>) => void) | null = null;
+  /** batch hook for non-environment events sharing the scheduler: receives all of them of one batch together (a set);
+   *  may return children / cancellations like any scheduler handler. Default null: such events are refused. */
+  foreign: ((batch: readonly Readonly<WorldEvent>[], ctx: BatchContext) => StepOutput | void) | null = null;
 
   constructor(cfg: ClockWorldConfig, inputs: readonly DailyWeatherInput[], restoreFrom?: ClockSnapshot) {
     this.cfg = checkConfig(cfg);
@@ -111,8 +116,8 @@ export class ClockRun {
   }
 
   /** the batch handler: applies a batch as a SET (order inside a batch never matters) and checks local invariants */
-  readonly handler: Handler = (batch) => {
-    const st = this.state, ends = new Set<string>(), starts: string[] = [];
+  readonly handler: Handler = (batch, ctx) => {
+    const st = this.state, ends = new Set<string>(), starts: string[] = [], others: Readonly<WorldEvent>[] = [];
     let light: LightState | null = null;
     const dc = (st.day_counts[String(batch[0].at.day)] ??= { batches: 0, by_kind: {} }); dc.batches++;
     for (const e of batch) {
@@ -126,7 +131,7 @@ export class ClockRun {
       } else if (e.kind === 'weather_sample') st.last_sample = { day: e.at.day, minute: p.minute_local as number, temp_c: p.temp_c as number | null, rh_percent: p.rh_percent as number | null };
       else if (e.kind === 'rain_start') { starts.push(p.rain_event as string); st.started_rain[p.rain_event as string] = (p.segments as EnvState['started_rain'][string]).map((s) => ({ ...s })); }
       else if (e.kind === 'rain_end') { if (!st.raining.includes(p.rain_event as string)) clockFail(`rain_end ${e.id} without an active rain event`); ends.add(p.rain_event as string); }
-      else if (this.other) this.other(e); else clockFail(`unknown event kind ${e.kind} on the environment clock`);
+      else if (this.foreign) others.push(e); else clockFail(`unknown event kind ${e.kind} on the environment clock`);
     }
     if (light) st.light = light;
     for (const s of starts) if (st.raining.includes(s)) clockFail(`rain ${s} started twice`);
@@ -134,6 +139,7 @@ export class ClockRun {
     st.raining = [...st.raining.filter((x) => !ends.has(x)), ...starts].sort();
     const hi = batch.reduce((m, e) => (compareExact(e.exact, m) > 0 ? e.exact : m), batch[0].exact);
     st.last_exact = { ...hi };
+    return others.length ? this.foreign!(others, ctx) : undefined;
   };
 
   /** raining at the current clock: null on a wet day whose timing is unknown (never shown as dry) */

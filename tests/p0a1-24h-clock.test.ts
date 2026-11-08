@@ -20,7 +20,7 @@ import path from 'node:path';
 import { REPO_ROOT } from '../cli/lib/load.ts';
 import { hash32, rng } from '../engine/rng.ts';
 import { type TimeOrder, type WorldEvent, WorldScheduler, compareExact, exactOf, labelOf, verifyLog, compareTime } from '../engine/scheduler/world-events.ts';
-import { ClockError, civilFromDays, dateOfDay, dayOfDate, dayOfYear, daysFromCivil, displayOf, ecoNative, formatDate, msFloor, parseDate, physicsNative, type CalendarAnchor } from '../engine/clock/time-frames.ts';
+import { ClockError, DEFAULT_ORDER, minutesOfDay, nativeOnClock, requireNativeOnClock, sameInstant, secondsOfDay, civilFromDays, dateOfDay, dayOfDate, dayOfYear, daysFromCivil, displayOf, ecoNative, formatDate, msFloor, parseDate, physicsNative, type CalendarAnchor } from '../engine/clock/time-frames.ts';
 import { CIVIL_TWILIGHT_ALTITUDE_DEG, SUNRISE_ALTITUDE_DEG, lightTimes, lightStateAt, solarAltitude, type SolarSite } from '../engine/clock/solar.ts';
 import { type DailyWeatherInput, type RainTimingScenario, type TemperatureShape, WeatherSeries, checkDailyInput, fromSyntheticDaily, planRain, saturationVapourKPa, splitInteger } from '../engine/clock/weather-input.ts';
 import { type ClockWorldConfig, ClockRun, environmentSpecs } from '../engine/clock/environment.ts';
@@ -47,7 +47,7 @@ function fixtureInputs(anchor: CalendarAnchor, n: number, seed: number, rain: (d
 const SHAPE_GRID: TemperatureShape[] = [];
 for (const a of [0, 1, 2.5]) for (const b of [0.5, 2, 4]) for (const c of [-0.5, 0, 1]) SHAPE_GRID.push({ peak_lag_after_noon_h: a, night_decay_b: b, min_lag_after_sunrise_h: c });
 const RAIN_FIXTURE = (k: number, lo: number, hi: number): RainTimingScenario => ({ events_per_rain_day: k, duration_min: [lo, hi], assumption: true, basis: '遊戲假設', label: 'test fixture' });
-const cfgOf = (o: Partial<ClockWorldConfig> = {}): ClockWorldConfig => ({ world: 'p0a1test', official: false, anchor: ANCHOR, site: SITE, order: 'tick', sample_step_min: 60, first_day: 1, last_day: 4, seed: 7, temperature_shape: SHAPE_GRID[13], rain_timing: RAIN_FIXTURE(3, 20, 600), ...o });
+const cfgOf = (o: Partial<ClockWorldConfig> = {}): ClockWorldConfig => ({ world: 'p0a1test', official: false, anchor: ANCHOR, site: SITE, order: DEFAULT_ORDER, sample_step_min: 60, first_day: 1, last_day: 4, seed: 7, temperature_shape: SHAPE_GRID[13], rain_timing: RAIN_FIXTURE(3, 20, 600), ...o });
 function fullRun(cfg: ClockWorldConfig, inputs: DailyWeatherInput[]) {
   const r = new ClockRun(cfg, inputs);
   for (let d = cfg.first_day; d <= cfg.last_day; d++) r.closeDay(d);
@@ -87,6 +87,31 @@ try {
     ok(inside, 'every display interval contains its true instant');
     ok(msFloor({ day: 0, us: 5000, us_lo: -1e-12 }) === 4 && msFloor({ day: 0, us: 5000, us_lo: 1e-12 }) === 5, 'display floor is exact for the real value us + us_lo (not the rounded double)');
     ok(displayOf(ANCHOR, exactOf(ecoNative({ clock: 'e', day: 1, minute: 0, resolution: 'day' })), 'day').clock_text === '—', 'a day-only value shows no clock time');
+    // one instant, many clocks: the exact time is the single source; clocks are views; no rounded neighbour is ever returned
+    ok(DEFAULT_ORDER === 'layered', 'the isolated clock defaults to the layered contract (Owner 2026-11-08); tick stays supported');
+    let same = 0, refused = 0, wrong = 0, ident = 0, crossBack = 0;
+    for (let i = 0; i < 6000; i++) {
+      const unit = i % 2 ? 's' : 'min', anchor = { day: Math.floor(g() * 2), minute: Math.floor(g() * 1440 * 8) / 8 };
+      const n = { clock: 'src', unit, anchor, t: unit === 's' ? g() * 90000 : g() * 1500 } as const, x = exactOf(n);
+      const back = nativeOnClock(x, 'src', unit, anchor);
+      if (back && back.t === n.t) ident++;
+      for (const [u2, a2] of [['s', { day: 0, minute: 0 }], ['min', { day: 0, minute: 0 }], ['s', { day: anchor.day, minute: 360 }]] as const) {
+        const m = nativeOnClock(x, `view.${u2}`, u2, a2);
+        if (m === null) { refused++; continue; }
+        if (sameInstant(exactOf(m), x)) same++; else wrong++;
+        const again = nativeOnClock(exactOf(m), 'src', unit, anchor); if (again && again.t === n.t) crossBack++;
+      }
+    }
+    ok(ident === 6000, 'native → exact → the same clock returns the identical native value, bit for bit (6000 random times)');
+    ok(wrong === 0 && same > 0, `a view on another clock is the SAME exact instant or refused — never a neighbour (${same} exact, ${refused} refused, ${wrong} wrong)`);
+    ok(crossBack === same, 'and converting the view back gives the original native value');
+    const half = exactOf({ clock: 'a', unit: 's', anchor: { day: 0, minute: 360 }, t: 30 }), viaMin = exactOf({ clock: 'b', unit: 'min', anchor: { day: 0, minute: 0 }, t: 360.5 });
+    ok(sameInstant(half, viaMin), '06:00 + 30 s on a seconds clock and 360.5 min on a minute clock are one instant');
+    const s15 = exactOf({ clock: 'a', unit: 's', anchor: { day: 0, minute: 0 }, t: 1.5 }), m025 = exactOf({ clock: 'b', unit: 'min', anchor: { day: 0, minute: 0 }, t: 0.025 });
+    ok(!sameInstant(s15, m025) && nativeOnClock(s15, 'b', 'min', { day: 0, minute: 0 }) === null, '1.5 s and 0.025 min are different binary instants; 1.5 s has no exact minute value → refused, not rounded');
+    refuses(() => requireNativeOnClock(s15, 'b', 'min', { day: 0, minute: 0 }), /refused, not rounded/, 'requireNativeOnClock refuses explicitly');
+    ok(nativeOnClock(half, 'c', 's', { day: 0, minute: 400 }) === null, 'an instant before a clock\'s anchor has no value on it');
+    ok(minutesOfDay(viaMin) === 360.5 && secondsOfDay(half) === 21630, 'plain-number views (not used for ordering)');
   }
 
   // ------------------------------------------------------------ 2. light (general astronomical method)
@@ -220,7 +245,7 @@ try {
   }
 
   // ------------------------------------------------------------ 6. the run
-  for (const order of ['tick', 'layered'] as TimeOrder[]) {
+  for (const order of ['layered', 'tick'] as TimeOrder[]) {
     const inputs = fixtureInputs(ANCHOR, 7, 21, (d) => [0, 30, 4, 0, 18, 0, 2][d]);
     const cfg = cfgOf({ order, first_day: 1, last_day: 5, rain_timing: RAIN_FIXTURE(2, 60, 900) });
     const r = fullRun(cfg, inputs);
@@ -268,7 +293,7 @@ try {
     ok(JSON.stringify(r2.plan.events.map((e) => e.start_min)) !== JSON.stringify(r.plan.events.map((e) => e.start_min)) && r2.days.every((d, i) => d.rain.from_events_nm === r.days[i].rain.from_events_nm), `${order}: another seed moves the synthetic rain but not the daily totals`);
     ok(logKey(fullRun(cfg, inputs)) === logKey(r), `${order}: replay is identical`);
     // four frames on one scheduler: physics seconds (anchored before midnight) interleave with ecological minutes by exact time
-    const q = new ClockRun(cfg, inputs); const seen: Readonly<WorldEvent>[] = []; q.other = (e) => { seen.push(e); };
+    const q = new ClockRun(cfg, inputs); const seen: Readonly<WorldEvent>[] = []; q.foreign = (b) => { seen.push(...b); };
     const g = rng(77), phys: number[] = [];
     for (let i = 0; i < 200; i++) phys.push(Math.round(g() * 7200 * 1000) / 1000 + 0.0005);
     phys.forEach((t, i) => q.scheduler.schedule({ kind: 'physics_probe', key: `p${i}`, native: physicsNative('ph.test', { day: 2, minute: 1380 }, t), scope: { world: cfg.world, colony: null, individual: null }, source: null, target: null }));
@@ -295,7 +320,7 @@ try {
     const { start, inputs } = day0DailyWeather(season, seed, 6);
     ok(inputs.every((i) => i.provenance.synthetic === true && i.provenance.kind === 'synthetic_climatology'), `${season}/${seed}: Day0 world weather is labelled synthetic`);
     for (const shape of [null, SHAPE_GRID[4]]) {
-      const r = new ClockRun(day0Config(start, seed, 1, 5, 'tick', shape, RAIN_FIXTURE(2, 30, 600)), inputs);
+      const r = new ClockRun(day0Config(start, seed, 1, 5, DEFAULT_ORDER, shape, RAIN_FIXTURE(2, 30, 600)), inputs);
       for (let d = 1; d <= 5; d++) r.closeDay(d);
       ok(r.days.every((d) => d.rain.conserved === true) && r.scheduler.audit().pending === 0, `${season}/${seed}/${shape ? 'shape' : 'null'}: rain conserved, all events executed`);
       ok(r.scheduler.log.filter((l) => l.kind === 'weather_sample').every((l) => { const p = r.scheduler.get(l.id)!.payload as Record<string, unknown>; return p.synthetic === true && (shape ? typeof p.temp_c === 'number' || (l.at.day === 1 && /previous and next day/.test(p.temp_reason as string)) : p.temp_c === null); }), 'every sample carries synthetic: true; temperature only with a shape scenario (null before the first sunrise: no previous-day input, with the reason)');
