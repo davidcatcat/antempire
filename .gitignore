@@ -5,3 +5,5 @@ saves/.advance.lock
 reports/phase2-sensitivity*/.work/
 web/dist/
 web/worker-dist/
+prototypes/art-preview/dist/
+prototypes/render-harness/dist/
