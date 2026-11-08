@@ -32,8 +32,9 @@
  * No global map, no other agent's intention, no colony quantity.
  *
  * Time contract (docs/wp4-local-avoidance.md §2b 時間契約): decision instants are the common grid g_k = k·decision_interval_s
- * evaluated EXACTLY on the decimal interval (exact-time.ts: g_3 = 0.3 for 0.1, never 3 * 0.1 = 0.30000000000000004), plus,
- * under the spawn rule, each agent's exact entry instant (its first decision; no other agent decides there). Control-time
+ * evaluated EXACTLY on the decimal interval (exact-time.ts: g_3 = 0.3 for 0.1, never 3 * 0.1 = 0.30000000000000004), plus
+ * each agent's exact start instant (under the spawn rule: its entry instant) — its first decision, with or without the
+ * spawn rule (Owner decision 23); no other agent decides there; later decisions are on the common grid. Control-time
  * sums (exit dwell, B wait / re-route limits, stall window) are exact on the decimals too. Scheduled inputs are never
  * snapped to the grid. The horizon H is an instant with no positive duration left (see below).
  * final_mode = the state at H after the events at H: 'started_at_horizon' = started exactly at H, not on its goal, zero
@@ -84,7 +85,7 @@ import { type AABB, broadphasePairs } from './broadphase.ts';
 import { hash32, rng } from '../rng.ts';
 import { gridTime, addTime, exactSum, cmpExact } from './exact-time.ts';
 
-/** RNG key of a decision: the grid index k, or `k|entry` for a first decision at an entry instant after grid instant k */
+/** RNG key of a decision: the grid index k, or `k|entry` for a first decision at an off-grid start / entry instant after grid instant k */
 type Epoch = number | string;
 
 export const STEER_POLICIES = ['none', 'A_free_direction', 'B_contact_decision', 'C_sidestep', 'N_no_yield'] as const;
@@ -434,7 +435,12 @@ function runPolicy(input: SteerInput): SteerResult {
   // every scheduled entry instant at its exact value, plus the horizon H as a final zero-length instant (PH-3b processes
   // every event with t <= H): at H the boundary rules, starts and zero-distance arrivals are applied; no decision, no motion.
   const grid = (k: number) => gridTime(k, DT);
-  const schedTimes = SPAWN ? [...new Set(A.map((a) => a.sched).filter((t) => t < H))].sort((x, y) => x - y) : [];
+  // Owner decision 23: every agent's FIRST decision is at its actual start instant (with the spawn rule: its scheduled
+  // entry instant; without it: its start_t_s), never at an earlier grid instant (which would be before it exists on its
+  // path) nor a later one. Off-grid start / entry instants are therefore instants of the time line; only the agents that
+  // start there decide there. After that first decision every agent decides on the common grid g_k (the next one after
+  // its start) — 遊戲假設: one shared grid for all agents, no per-agent phase.
+  const schedTimes = [...new Set(A.map((a) => (SPAWN ? a.sched : a.start)).filter((t) => t < H))].sort((x, y) => x - y);
   let kNext = 0, si = 0;   // next grid index to process; next entry instant
   for (let t0 = 0; ;) {
     const final = t0 >= H, isGrid = !final && t0 === grid(kNext);
@@ -490,10 +496,11 @@ function runPolicy(input: SteerInput): SteerResult {
     const pairs = broadphasePairs('grid', boxes, A.map((a) => a.layer), 8).filter((key) => A[Math.floor(key / N)].present && A[key % N].present);
     const nb: number[][] = A.map(() => []);
     for (const key of pairs) { const i = Math.floor(key / N), j = key % N; nb[i].push(j); nb[j].push(i); }
-    // decisions (read the state at t0 only): at a grid instant every agent on the road that starts before the next grid
-    // instant; at an entry instant only the agents that entered now (their first decision); everyone else keeps the
-    // decision in effect (a held agent stays stopped until its next decision instant)
-    const deciders = A.filter((a) => a.present && a.arrived === null && (isGrid ? a.start < gEnd : a.entered === t0));
+    // decisions (read the state at t0 only): at a grid instant every agent on the road that has started by t0; at an
+    // off-grid start / entry instant only the agents that start (enter) now — their first decision; everyone else keeps the
+    // decision in effect (a held agent stays stopped until its next decision instant). An agent that starts after t0 has
+    // not decided yet and does not move before its own start instant (Owner decision 23).
+    const deciders = A.filter((a) => a.present && a.arrived === null && (isGrid ? a.start <= t0 : a.start === t0));
     for (const a of deciders) {
       a.held = false;
       // zero remaining distance (only possible for an agent that starts on its goal: an arrival inside or at the end of an

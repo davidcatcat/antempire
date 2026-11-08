@@ -70,4 +70,75 @@ for (const p of STEER_POLICIES.filter((x) => x !== 'none')) {
   }
   ok(mid.stats.decision_instants === 5, `${p}: the entry instant is not counted as a grid decision instant (${mid.stats.decision_instants})`);
 }
+
+// ---- Owner decision 23: the first decision is at the agent's actual start instant, with or without the spawn rule; later
+// decisions on the common grid g_k after the start (遊戲假設). Policies that decide (all but 'none').
+{
+  const DEC = STEER_POLICIES.filter((x) => x !== 'none');
+  const BODY = { length_mm: 2, width_mm: 1 };
+  const twoLanes = [{ id: 'L', centerline_mm: [{ x: 0, y: 0 }, { x: 200, y: 0 }], width_mm: 10, layer: 'G' }, { id: 'R', centerline_mm: [{ x: 200, y: 0 }, { x: 0, y: 0 }], width_mm: 10, layer: 'G' }];
+  type Sp = { id: string; lane: string; s: number; start: number; goal: number; v: number; u?: number };
+  const mk = (x: Sp) => ({ id: x.id, lane: x.lane, s_mm: x.s, u_mm: x.u ?? 0, dir: 1 as const, start_t_s: x.start, goal_s_mm: x.goal, free_speed_mm_s: x.v, body: BODY });
+  const run = (p: SteerPolicyId, sp: Sp[], H: number, o: { dt?: number; spawn?: boolean; order?: number[] } = {}) => {
+    const ags = sp.map(mk), order = o.order ?? ags.map((_, i) => i);
+    return steer2D({ lanes: twoLanes, obstacles: [], agents: order.map((i) => ags[i]), horizon_s: H, policy: p, params: { ...params, decision_interval_s: o.dt ?? 0.1 }, seed: 3, control: o.spawn ? { spawn: true } : undefined });
+  };
+  const nDec = (r: SteerResult) => Object.values(r.stats.decisions).reduce((x, y) => x + y, 0);
+  const mEv = (r: SteerResult, id = 'M') => r.events.filter((e) => e.agents.includes(id));
+  /** up to its start an agent is at most a resting body at its start pose (without spawn, as in PH-3b) */
+  const restsUntil = (smp: SteerResult['agents'][string]['samples'], st: number, s0: number) => smp.filter((x) => x[0] <= st).every((x) => x[4] === s0);
+  // probe: M starts at 0.25 (dt 0.1); the oncoming O is 0.8 mm ahead of M's front at 0.2 (outside the 0.5 mm sensing
+  // radius) and 0.3 mm at 0.25 (inside). Deciding at 0.2 (the old rule without spawn) would read a state from before M
+  // exists on its path and walk M into O; deciding at 0.25 sees O.
+  const O: Sp = { id: 'O', lane: 'R', s: 200 - 14.8, start: 0, goal: 199, v: 10 }, M: Sp = { id: 'M', lane: 'L', s: 10, start: 0.25, goal: 100, v: 20 };
+  for (const p of DEC) for (const spawn of [false, true]) {
+    const tag = `${p}${spawn ? '/spawn' : ''}`;
+    const r = run(p, [O, M], 0.5, { spawn }), ev0 = mEv(r).filter((e) => e.class === 'behavioural_response')[0];
+    ok(mEv(r).every((e) => e.t_s >= 0.25) && restsUntil(r.agents.M.samples, 0.25, 10), `${tag}: nothing of M before its start 0.25`);
+    ok(Object.is(ev0.t_s, 0.25) && (p === 'N_no_yield' ? ev0.kind === 'go' : ev0.kind !== 'go'), `${tag}: first decision of M at exactly 0.25 and it sees O there (${ev0.kind}@${ev0.t_s})`);
+    // causality, past: O with a different history (resting at its 0.25 pose from 0, starting there at 0.25) -> same first decision
+    const rp = run(p, [{ ...O, s: 200 - 12.3, start: 0.25 }, M], 0.5, { spawn }), evp = mEv(rp).filter((e) => e.class === 'behavioural_response')[0];
+    ok(evp.kind === ev0.kind && evp.detail === ev0.detail && Object.is(evp.t_s, 0.25), `${tag}: M's first decision does not depend on O's history before 0.25 (${evp.kind} vs ${ev0.kind})`);
+    // causality, future: O's goal changes only what happens after 0.25 -> same first decision; a body entering at 0.26
+    // (spawn) right next to M is not seen at 0.25
+    const rf = run(p, [{ ...O, goal: 200 - 12 }, M], 0.5, { spawn }), evf = mEv(rf).filter((e) => e.class === 'behavioural_response')[0];
+    ok(evf.kind === ev0.kind && evf.detail === ev0.detail && Object.is(evf.t_s, 0.25), `${tag}: M's first decision does not depend on O's future (${evf.kind})`);
+    if (spawn) {
+      const rz = run(p, [O, M, { id: 'Z', lane: 'L', s: 7.6, start: 0.26, goal: 100, v: 20, u: 0 }], 0.5, { spawn }), evz = mEv(rz).filter((e) => e.class === 'behavioural_response' && e.agents[0] === 'M')[0];
+      ok(evz.kind === ev0.kind && evz.detail === ev0.detail, `${tag}: a body entering at 0.26 does not change M's decision at 0.25`);
+    }
+  }
+  // boundaries and the later schedule: a lone agent decides once at its start and then at every grid instant g_k with
+  // start < g_k < H; exact decimal starts (no snapping, no drift); start on the grid, one ulp after it, at H, after H
+  const lone = (st: number): Sp => ({ id: 'M', lane: 'L', s: 10, start: st, goal: 190, v: 1 });
+  const ulp03 = 0.1 + 0.2;   // 0.30000000000000004: one ulp after the grid instant 0.3, a different instant
+  for (const p of DEC) for (const spawn of [false, true]) for (const [dt, q] of [[0.1, 10], [0.05, 20]] as const) {
+    const H = 1, tag = `${p}${spawn ? '/spawn' : ''} dt ${dt}`;
+    for (const st of [0, 0.25, 0.3, ulp03, 0.31, 0.35, 0.45, 0.7, 0.95, 0.123, 0.999]) {
+      const r = run(p, [lone(st)], H, { dt, spawn }), a = r.agents.M;
+      const later = Array.from({ length: Math.round(H * q) }, (_, k) => k / q).filter((g) => g > st && g < H).length;
+      ok(restsUntil(a.samples, st, 10) && a.samples.some((x) => Object.is(x[0], st)) && (!spawn || Object.is(a.samples[0][0], st)) && Object.is(r.events.find((e) => e.kind === 'start')!.t_s, st), `${tag}: start ${st} recorded at exactly ${st}`);
+      ok(nDec(r) === 1 + later, `${tag}: start ${st}: first decision at the start + ${later} grid decisions after it (got ${nDec(r)})`);
+      ok(Object.is(mEv(r).find((e) => e.class === 'behavioural_response')!.t_s, st), `${tag}: start ${st}: first decision event at exactly ${st}`);
+      ok(r.stats.decision_instants === Math.round(H * q), `${tag}: start ${st}: grid decision instants unchanged by the start (${r.stats.decision_instants})`);
+      // first motion begins at the start: displacement at H = v · (H − start) (free lane), within float rounding
+      ok(Math.abs(a.samples.at(-1)![1] - (10 + (H - st))) <= 1e-9, `${tag}: start ${st}: displacement from the start instant`);
+    }
+    const rOn = run(p, [lone(0.3)], H, { dt, spawn }), rUlp = run(p, [lone(ulp03)], H, { dt, spawn });
+    ok(nDec(rUlp) === nDec(rOn) && rUlp.agents.M.samples.some((x) => Object.is(x[0], ulp03)) && !rOn.agents.M.samples.some((x) => Object.is(x[0], ulp03)), `${tag}: one ulp after the grid is its own instant (its first decision replaces the grid decision at 0.3, which is before it)`);
+    const rH = run(p, [lone(H)], H, { dt, spawn }), rA = run(p, [lone(1.05)], H, { dt, spawn });
+    ok(rH.agents.M.final_mode === 'started_at_horizon' && nDec(rH) === 0 && rH.agents.M.final_speed_mm_s === 0, `${tag}: start at H: started_at_horizon, no decision`);
+    ok(nDec(rA) === 0 && rA.events.length === 0 && rA.agents.M.final_mode === (spawn ? 'not_entered' : 'not_started'), `${tag}: start after H: no decision, no event (${rA.agents.M.final_mode})`);
+  }
+  // decision order / tie policy: several agents deciding at the same off-grid start instant (and one on the grid) close
+  // enough to perceive each other; every permutation of the input gives a bitwise-identical result
+  const tie: Sp[] = [{ id: 'P', lane: 'L', s: 10, start: 0.25, goal: 60, v: 20, u: 0 }, { id: 'Q', lane: 'L', s: 12.2, start: 0.25, goal: 60, v: 20, u: 0.4 }, { id: 'S', lane: 'L', s: 14.4, start: 0.25, goal: 60, v: 20, u: -0.4 }, { id: 'T', lane: 'R', s: 200 - 17, start: 0.3, goal: 199, v: 20, u: 0 }, { id: 'U', lane: 'L', s: 7.8, start: ulp03, goal: 60, v: 20, u: 0 }];
+  const perms = [[0, 1, 2, 3, 4], [4, 3, 2, 1, 0], [2, 0, 4, 1, 3], [1, 4, 0, 3, 2], [3, 2, 1, 4, 0]];
+  for (const p of DEC) for (const spawn of [false, true]) for (const dt of [0.1, 0.05]) {
+    const ref = JSON.stringify(run(p, tie, 1.5, { dt, spawn, order: perms[0] }));
+    for (const order of perms.slice(1)) ok(JSON.stringify(run(p, tie, 1.5, { dt, spawn, order })) === ref, `${p}${spawn ? '/spawn' : ''} dt ${dt}: same-instant decisions order-invariant (input order ${order.join('')})`);
+    const r = JSON.parse(ref) as SteerResult;
+    ok(['P', 'Q', 'S'].every((id) => Object.is(r.events.find((e) => e.agents[0] === id && e.class === 'behavioural_response')!.t_s, 0.25)), `${p}${spawn ? '/spawn' : ''} dt ${dt}: the three same-instant agents first decide at 0.25`);
+  }
+}
 console.log(JSON.stringify({ physics_time_contract_wp4: 'pass', checks, adapters: summaries.map((s) => `${s.adapter}: ${s.checks}${s.pending_pinned.length ? ` (pending pinned: ${s.pending_pinned.join(',')})` : ''}`) }, null, 2));
