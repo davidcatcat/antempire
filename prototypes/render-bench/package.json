@@ -1,0 +1,14 @@
+{
+  "name": "antempire-render-bench",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Issue #102 step 1: standalone Canvas 2D vs PixiJS draw benchmark (drawing sprites, not ants; not wired into web/)",
+  "scripts": {
+    "build": "node build.mjs",
+    "bench": "node build.mjs && node bench.cjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "pixi.js": "8.22.0"
+  }
+}
