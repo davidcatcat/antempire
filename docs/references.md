@@ -728,3 +728,17 @@ R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-
 | R390 | NOAA Global Monitoring Laboratory, Solar Calculation Details. https://gml.noaa.gov/grad/solcalc/calcdetails.html（依 Meeus, *Astronomical Algorithms*） | 說明頁已讀（準確度、折射 0.833°、適用範圍）；方程式依 NOAA 試算表的公式實作，**試算表本身本次未下載核對**，改以 R392 獨立演算法交叉驗證（2027 全年最大差 0.2 分鐘） | 日出、日落、民用曙暮光（`engine/clock/solar.ts`） | NOAA：±72° 緯度內約 1 分鐘；實際觀測受大氣影響；NOAA 已不再維護；地形與建築未模擬 |
 | R391 | Allen RG, Pereira LS, Raes D, Smith M (1998) *Crop evapotranspiration*（FAO Irrigation and Drainage Paper 56），第 3 章 式 10、11。https://www.fao.org/4/x0490e/x0490e07.htm | 線上全文（第 3 章）；式 11 的常數由原文例題 3 確認（式本身是圖片） | 飽和水氣壓 e°(T) = 0.6108 exp(17.27T/(T+237.3)) kPa；RH = 實際／飽和水氣壓；RH 日變化（日出附近最高、午後最低）只作方向 | 一般物理；「日內實際水氣壓固定或內插」是本專案的遊戲假設，不是 FAO-56 的結論 |
 | R392 | Nautical Almanac Office, US Naval Observatory (1990) *Almanac for Computers*（日出日落簡化演算法） | **未讀原文**；演算法為廣泛流傳的轉載版本 | 只在測試中作為獨立的交叉驗證，不是引擎方法 | 精度約 1～2 分鐘；不用於任何輸出 |
+
+## 2026-11-08 CHEM-4 警戒與 CHC 接觸辨識（R720–R721；Issue #135，`docs/chem4-alarm-chc-literature.md`）
+
+> 編號從 R720 起，避開 CHEM-0（R700–R701）。只新增，不改寫既有行。閱讀程度如實標記。
+
+| ID | 文獻 | 閱讀程度 | 物種、地點 | 支持的內容 | 不可外推之處 |
+|---|---|---|---|---|---|
+| R720 | Chiu Y-C, Wang C-C, Nai Y-S, Peng M-H, Hsu J, Neoh K-B (2026) Genetics, cuticular hydrocarbon profiles, and bacterial endosymbionts are associated with the nestmate recognition in the invasive African big-headed ant, *Pheidole megacephala*, in Taiwan. *Myrmecological News* 36:59–72. DOI 10.25849/myrmecol.news_036:059（CC BY 4.0） | 全文文字（期刊 PDF）；圖與附表 S1–S4 未看 | **本種，臺中市**都市 8 群、森林 6 群（取樣點相距 ≥ 1 km），實驗室成對試驗 | 91 組群對各 5 次（5 cm 皿、5 分鐘），攻擊中位數 2.6～3（1–4 分）；作者推論臺中無超級群落；群平均 CHC 65 峰（C25–C40）；二甲基烷距離最能解釋攻擊（r² 0.40）；F_ST > 0.25 組較具攻擊性；攻擊與地理距離無關 | 50 隻合併萃取＝群平均，無個體變異；相關分析，無操作試驗；正文無同群對照；群間 ≥ 1 km，不代表花園尺度鄰巢；中位數不是「異巢必攻擊」；峰值不是本花園 profile |
+| R721 | Dejean A, Kenne M, Moreau CS (2007) Predatory abilities favour the success of the invasive ant *Pheidole megacephala* in an introduced area. *J. Appl. Entomol.* 131(9–10):625–629. DOI 10.1111/j.1439-0418.2007.01223.x | 全文文字（作者網站 PDF）；圖未看 | **本種**入侵族群，墨西哥 Quintana Roo（Puerto Morelos 附近海岸） | 偵察蟻未接觸白蟻即回巢做長距招募；空白蟻巢片（觸角探觸後）即可引發招募；大型白蟻兵蟻由 2～4 隻共同搬回 | 沒有短距警戒資料；入侵地海岸生境；招募數不可搬用 |
+
+**既有編號的附註**（新增，不改寫原有行）：
+- R98／R107（Dejean et al. 2007 *C R Biol*）2026-11-08 再讀全文文字：「警戒費洛蒙」只見於摘要與作者假設，**沒有化學分析**；方法句寫「第二隻工蟻從腹部末端釋放」，依上下文應為第一隻（原文筆誤，照錄）。
+- R141（Liu et al. 2022）：「相距 > 100 m 的群會攻擊」是正文一句初步結果，沒有方法或數據（2026-11-08 重讀）。
+- R113（Fournier et al. 2009）：Unpaywall 列的 Wiley PDF 回 403、ULB 典藏無檔案，仍**只讀摘要**。
