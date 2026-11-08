@@ -47,7 +47,7 @@ const listed = (e) => e.type !== 'worker_activity' && e.type !== 'route_step';
       await page.waitForTimeout(150); const f = `${out}/${name}-v5-${tag}.png`; await page.screenshot({ path: f }); shots.push(path.basename(f));
     };
     const chip = async (cat) => press(`#evCats button[data-cat="${cat}"]`);
-    await page.goto(base); await page.waitForFunction(() => document.getElementById('badge').textContent.includes('Day14'));
+    await page.goto(new URL('analysis.html', base).href); await page.waitForFunction(() => document.getElementById('badge').textContent.includes('Day14'));
 
     // ── 6. official snapshot: world mark on the canvas; no filter chips, no route, no series ──
     check((await V(() => window.antempireViewer.worldMark())) === '正式 Day14・唯讀快照', `${name}: the official canvas carries 「正式 Day14・唯讀快照」`);
