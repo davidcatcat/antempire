@@ -29,7 +29,15 @@
   section h2 { font-size: 14px; margin: 0 0 6px; }
   #info h3 { margin: 0 0 4px; }
   #info p, #nest { margin: 4px 0; font-size: 13px; line-height: 1.5; }
-  #events { max-height: 220px; overflow: auto; font-size: 12px; line-height: 1.6; }
+  #events { max-height: 260px; overflow: auto; font-size: 12px; line-height: 1.5; display: grid; gap: 2px; margin-top: 4px; }
+  #events button.ev { all: unset; cursor: pointer; padding: 3px 4px; border-radius: 4px; display: block; }
+  #events button.ev:hover, #events button.ev:focus-visible { background: var(--line); outline: none; }
+  #events button.ev.future { color: var(--muted); }
+  #events button.ev.current { background: var(--exp-bg); color: var(--exp-fg); }
+  .followbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
+  .followbar button, .jump button { min-height: 32px; padding: 0 10px; }
+  .jump { font-size: 12px; line-height: 1.6; padding: 6px 8px; border-radius: 6px; background: var(--exp-bg); color: var(--exp-fg); display: grid; gap: 4px; }
+  .jump .chips { display: flex; gap: 6px; flex-wrap: wrap; }
   .note { color: var(--muted); font-size: 12px; }
   .tag { margin-left: 6px; padding: 1px 6px; border-radius: 4px; background: var(--line); color: var(--ink); font-size: 11px; }
   .legend { display: grid; gap: 4px; font-size: 12px; }
@@ -37,6 +45,8 @@
   .sw { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: middle; margin-right: 4px; }
   .bar { display: inline-block; height: 0; vertical-align: middle; margin-right: 4px; width: 22px; border-top-style: solid; }
   .overlays label { margin-right: 10px; font-size: 13px; white-space: nowrap; }
+  /* phone: the map and the time controls stay on screen while the panels below scroll (follow + play stay visible) */
+  @media (max-width: 899px) { #stage { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--panel); box-shadow: 0 2px 6px rgba(0,0,0,0.15); } #mapwrap { height: 42vh; min-height: 240px; } #timeline { padding-block: 6px; } }
   @media (min-width: 900px) { main { grid-template-columns: 1fr 380px; } #mapwrap { height: calc(100vh - 170px); } aside { grid-row: span 2; max-height: calc(100vh - 110px); overflow: auto; } }
 </style>
 </head>
@@ -49,20 +59,20 @@
   <div id="badge" class="badge">載入中…</div>
 </header>
 <main>
-  <div>
+  <div id="stage">
     <div id="mapwrap"><canvas id="map"></canvas><div id="weather"></div></div>
     <div id="timeline" hidden>
       <div class="row"><label for="day">日</label><input type="range" id="day" min="1" max="1" step="1" value="1"></div>
-      <div class="row"><label for="minute">分鐘</label><input type="range" id="minute" min="0" max="360" step="0.5" value="0"><button id="play">播放</button>
-        <select id="speed" aria-label="速度"><option value="5">5 分／秒</option><option value="20" selected>20 分／秒</option><option value="60">60 分／秒</option></select></div>
+      <div class="row"><label for="minute">分鐘</label><input type="range" id="minute" min="0" max="360" step="any" value="0"><button id="play">播放</button>
+        <select id="speed" aria-label="速度"><option value="1">1 分／秒</option><option value="5">5 分／秒</option><option value="20" selected>20 分／秒</option><option value="60">60 分／秒</option></select></div>
       <div id="timeLabel" class="note"></div>
     </div>
   </div>
   <aside>
     <section><h2>圖例</h2><div id="legend" class="legend"></div></section>
-    <section><h2>個體</h2><div id="info"></div></section>
+    <section><h2>個體</h2><div class="followbar"><select id="who" aria-label="選擇個體"></select><button id="follow" type="button" disabled>追蹤個體</button><span id="followMsg" class="note" aria-live="polite"></span></div><div id="info"></div></section>
     <section><h2>蟻群</h2><div id="nest"></div></section>
-    <section><h2>事件（引擎紀錄）</h2><div id="events"></div></section>
+    <section><h2>事件時間軸（引擎紀錄，點選跳轉）</h2><div id="jump" class="jump" hidden></div><label class="note"><input type="checkbox" id="evMine">只看所選個體</label><div id="events"></div></section>
     <section class="note">觀察者視角：玩家可看到全地圖、費洛蒙與統計；螞蟻自己只知道親身感知與記憶的資訊。地圖座標由「方位＋約距離」推得，非測量。兩個紀錄點之間的移動是畫面插值，不是模擬事件。</section>
   </aside>
 </main>

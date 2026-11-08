@@ -142,9 +142,88 @@ export const ACTION_LABEL: Record<string, string> = { foraging_depart: '出巢�
 export const TASK_LABEL: Record<string, string> = { forage: '覓食', nurse: '照護', rest: '休息', repair: '修繕', guard: '守衛' };
 export const REASON_LABEL: Record<string, string> = { gave_up_after_unsuccessful_trip: '空手而回後放棄', own_motivation_after_unloading: '卸貨後不再出去', no_time_left_in_activity_window: '時間不足', activity_window_closed: '活動時段結束', no_known_route_and_no_exploration: '不知道路也沒去探索', starvation_or_natural_competing_hazards_scenario: '飢餓與自然風險', natural_or_injury_assumed: '自然或傷害', chronic_protein_shortage_game_scenario: '長期蛋白不足', unattended_brood_no_worker_care_game_assumption: '無人照護', no_workers: '沒有工蟻', chronic_sugar_deficit: '長期缺糖', chronic_protein_deficit: '長期缺蛋白', chronic_sugar_and_protein_deficit: '長期缺糖與蛋白', failed_capture: '捕捉失敗', escaped_while_recruiting: '招募時逃走' };
 export function describeEvent(e: SimEvent): string {
-  const who = e.worker ?? (e.by ? `${e.by}→${e.to}` : e.id ?? '');
-  const where = e.site ?? e.node ?? e.location ?? '';
+  const who = e.worker ?? (e.by ? `${e.by}→${e.to}` : e.type === 'trophallaxis' ? `${e.from}→${e.to}` : e.type === 'eclosion' ? `${e.source_brood_id}→${e.new_worker_id}` : e.id ?? '');
+  // "@X" is only the place the event HAPPENED (EVENT_PLACE_FIELD); a food source or recruitment target is named as such
+  const pf = EVENT_PLACE_FIELD[e.type], at = pf ? e[pf] : undefined, src = typeof e.site === 'string' && e.site !== at ? e.site : '';
+  const where = (typeof at === 'string' ? at : '') + (src ? `${at ? ' ' : ''}${e.type === 'food_delivered' ? '來自' : '目標'} ${src}` : '');
   const reason = typeof e.reason === 'string' ? ` ${REASON_LABEL[e.reason] ?? e.reason}` : '';
   const extra = e.type === 'food_collected' || e.type === 'food_delivered' ? ` ${e.macro === 'sugar' ? '糖' : '蛋白'} ${Number(e.portions).toFixed(2)} 份` : reason;
-  return `${EVENT_LABEL[e.type] ?? e.type}${who ? ' ' + who : ''}${where ? ' @' + where : ''}${extra}`;
+  return `${EVENT_LABEL[e.type] ?? e.type}${who ? ' ' + who : ''}${where ? (typeof at === 'string' ? ' @' : ' ') + where : ''}${extra}`;
+}
+
+// ───────────────────────── V3: event jump and individual follow (Issue #99) ─────────────────────────
+// Everything below only READS recorded fields. No minute, place or worker is ever inferred from neighbouring events.
+
+/**
+ * The field that records WHERE an event happened, per event type, as the engine writes it (engine/activity.ts,
+ * foraging.ts, ecology). Types not listed have no place field (local_recruitment's `site` is the food site being
+ * recruited TO, not where the contact happened; food_delivered's `site` is the food's source): their place is unknown
+ * to the viewer and it says so instead of guessing.
+ */
+export const EVENT_PLACE_FIELD: Record<string, 'location' | 'site' | 'node' | 'to'> = {
+  food_collected: 'location', food_delivered: 'location', trophallaxis: 'location',
+  discovery: 'site', scouted_empty: 'site', live_prey_encounter: 'site', insect_predation: 'site', prey_escaped: 'site', joint_prey_transport: 'site', insect_natural_death: 'site', host_plant_death: 'site', hemipteran_colony_change: 'site',
+  exploration_found_nothing: 'node',
+  exploration_step: 'to', // the engine emits it on arrival at `to` (activity.ts: trip.kind === 'explore' on arrive)
+};
+/** Fields that hold worker IDs, per event type (never a node: exploration_step's `to` is a node, trophallaxis' is a worker). */
+const EVENT_WORKER_FIELDS: Record<string, string[]> = {
+  local_recruitment: ['by', 'to'], hunt_recruitment: ['by', 'to'], trophallaxis: ['from', 'to'], worker_death: ['id'], eclosion: ['new_worker_id'],
+  insect_predation: ['team'], live_prey_encounter: ['worker', 'co_located_team'], prey_escaped: ['worker', 'participants'], joint_prey_transport: ['worker', 'team', 'participants'],
+};
+
+/** Worker IDs an event names (first = the actor), from the recorded fields only, without duplicates. */
+export function eventWorkers(e: SimEvent): string[] {
+  const out: string[] = [];
+  for (const f of EVENT_WORKER_FIELDS[e.type] ?? ['worker']) {
+    const v = e[f];
+    for (const id of Array.isArray(v) ? v : [v]) if (typeof id === 'string' && !out.includes(id)) out.push(id);
+  }
+  return out;
+}
+
+export interface EventPlace { place: string | null; known: boolean; field: string | null }
+/** Where an event happened: the recorded place ID, and whether that place has a (schematic) map position. A place
+ *  with no recorded bearing+distance, or no place field at all, is unknown — the camera does not move. */
+export function eventPlace(e: SimEvent, pos: Record<string, { known: boolean }>): EventPlace {
+  const field = EVENT_PLACE_FIELD[e.type] ?? null, v = field ? e[field] : undefined;
+  if (typeof v !== 'string') return { place: null, known: false, field: null };
+  return { place: v, known: pos[v]?.known === true, field };
+}
+
+export interface EventJump { day: number; t: number; timed: boolean; minute: number | null; place: EventPlace; workers: string[] }
+/** Where the timeline goes when an event is clicked: its recorded minute (exactly), or — for an event the engine
+ *  applied at the end of the day without a clock time — the settlement step of that day. Never an invented minute. */
+export function eventJump(d: ExperimentDay, e: SimEvent, pos: Record<string, { known: boolean }>): EventJump {
+  const minute = typeof e.minute === 'number' ? e.minute : typeof e.start === 'number' ? e.start : null;
+  return { day: d.day, t: minute ?? windowOf(d) + SETTLEMENT_STEP, timed: minute !== null, minute, place: eventPlace(e, pos), workers: eventWorkers(e) };
+}
+
+/** All listed (non-segment) events of a day in timeline order: timed events by minute (stable), then the end-of-day
+ *  settlement events in their recorded order. The index in d.events is kept so a click names one exact record. */
+export function dayTimeline(d: ExperimentDay): { e: SimEvent; i: number; t: number }[] {
+  const out = d.events.map((e, i) => ({ e, i, t: isTimed(e) ? ((typeof e.minute === 'number' ? e.minute : e.start) as number) : Infinity })).filter((x) => x.e.type !== 'worker_activity' && x.e.type !== 'route_step');
+  return out.sort((a, b) => a.t - b.t || a.i - b.i);
+}
+
+export type FollowStatus =
+  | { kind: 'visible'; x: number; y: number; place: string; interpolated: boolean; known: true }
+  | { kind: 'unknown_position'; place: string }      // at (or walking to/from) a place with no recorded position
+  | { kind: 'dead'; day: number }                     // died at the settlement of `day` (no clock time recorded)
+  | { kind: 'not_present'; eclosion_day: number | null }; // not in the colony at this moment (not eclosed yet, or never)
+/**
+ * What the follow camera can show for worker `id` at (day, t). A worker exists while it is in the drawn colony
+ * (stateAt). Dead workers are reported with the day of their recorded death; workers that eclose later with the day of
+ * their recorded eclosion. Positions are the same display pose as the map (poseAt), flagged when interpolated.
+ */
+export function followStatus(exp: Experiment, day: number, t: number, id: string, pos: Record<string, { x: number; y: number; known: boolean }>): FollowStatus {
+  const d = exp.days[day - 1], s = stateAt(exp, day, t);
+  if (!s.workers.some((w) => w.id === id)) {
+    for (let k = 1; k <= day; k++) if (exp.days[k - 1].events.some((e) => e.type === 'worker_death' && e.id === id) && (k < day || isSettled(d, t))) return { kind: 'dead', day: k };
+    const ecl = exp.days.find((x) => x.events.some((e) => e.type === 'eclosion' && e.new_worker_id === id));
+    return { kind: 'not_present', eclosion_day: ecl ? ecl.day : null };
+  }
+  const p = poseAt(d, id, t, pos), ends = p.place.split('>');
+  if (ends.some((x) => pos[x]?.known === false)) return { kind: 'unknown_position', place: p.place };
+  return { kind: 'visible', x: p.x, y: p.y, place: p.place, interpolated: p.interpolated, known: true };
 }
