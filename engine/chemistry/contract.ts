@@ -155,6 +155,10 @@ export type Sensor =
 
 /** `phase` must be 'local_sensing': a sample declared in phases 1-3 of its instant is SAMPLE_BEFORE_COMMIT, one in
  *  phase 5 is SAMPLE_OUTSIDE_SENSING_PHASE (behaviour uses the phase-4 reading, it does not re-read the field). */
+/*  `time` is the individual's SENSING time; a real-time read (ChemStore.sampleLocal / ChemRealtimeReader, CHEM-1b) must
+ *  sense exactly at the latest committed state, and the result records that state's commit separately (state_commit).
+ *  Reading an older committed state is only possible through the separate historical API (ChemStore.sampleHistorical,
+ *  diagnostic capability required; never a decision input). */
 export interface SampleQuery { signal_id: string; agent_id: string; layer: string; time: ChemTime; phase: ChemPhase; sensor: Sensor }
 
 export interface EdgeDomain { backend: 'surface_edge'; edges: { id: string; length_mm: number; layer: string }[] }
