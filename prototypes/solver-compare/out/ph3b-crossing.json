@@ -3,18 +3,18 @@
  "agents": 2,
  "horizon_s": 10,
  "cost": {
-  "wall_ms": 6.911448000000007,
-  "cpu_user_ms": 7.484,
-  "cpu_system_ms": 0,
-  "heap_used_delta_mb": 1.18505859375,
-  "rss_mb": 90.3203125
+  "wall_ms": 9.398421999999982,
+  "cpu_user_ms": 5.824,
+  "cpu_system_ms": 4.036,
+  "heap_used_delta_mb": 1.640289306640625,
+  "rss_mb": 95.11328125
  },
- "peak_rss_mb": 94.16015625,
+ "peak_rss_mb": 96.0390625,
  "stats": {
   "batches": 2,
   "events_processed": 3,
-  "queue_pushes": 5,
-  "stale_pops": 2,
+  "queue_pushes": 11,
+  "stale_pops": 3,
   "pair_hit_evals": 1,
   "windows": 41,
   "candidate_pairs_total": 30,
@@ -24,6 +24,13 @@
   "max_same_instant_batches": 1,
   "contacts": 1,
   "releases": 0,
+  "contact_episodes": 1,
+  "contact_episode_ends": 0,
+  "sub_resolution_excursions": 0,
+  "episode_events": 5,
+  "episodes_open_at_horizon": 1,
+  "ends_unconfirmed_at_horizon": 0,
+  "constraint_outside_contact": 0,
   "passes": 0,
   "turns": 0,
   "turn_blocked": 0,
@@ -50,15 +57,15 @@
   "stopped_by_contact": 2
  },
  "replay": {
-  "hash": "f21a34b6333aeb5f",
+  "hash": "4084830888e729b5",
   "input_order_reversed_identical": true,
   "variants_identical": true,
   "variants": {
-   "grid": "f21a34b6333aeb5f",
-   "sap": "f21a34b6333aeb5f",
-   "brute": "f21a34b6333aeb5f",
-   "window_0.05": "f21a34b6333aeb5f",
-   "window_1": "f21a34b6333aeb5f"
+   "grid": "4084830888e729b5",
+   "sap": "4084830888e729b5",
+   "brute": "4084830888e729b5",
+   "window_0.05": "4084830888e729b5",
+   "window_1": "4084830888e729b5"
   }
  },
  "broadphase": {
@@ -66,19 +73,19 @@
   "identical_candidate_sets": true,
   "cost": {
    "brute": {
-    "ms": 0.10770399999995561,
+    "ms": 0.21230800000000727,
     "pairs": 30
    },
    "grid_8mm": {
-    "ms": 0.22807000000000244,
+    "ms": 0.23659500000002254,
     "pairs": 30
    },
    "grid_2mm": {
-    "ms": 6.251490999999987,
+    "ms": 2.977314999999976,
     "pairs": 30
    },
    "sap": {
-    "ms": 0.15065999999995938,
+    "ms": 0.1293590000000222,
     "pairs": 30
    }
   },
@@ -109,6 +116,6 @@
    "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
   },
   "instants": 3,
-  "judge_wall_ms": 11.572746999999993
+  "judge_wall_ms": 7.625309000000016
  }
 }

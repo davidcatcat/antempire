@@ -3,18 +3,18 @@
  "agents": 1000,
  "horizon_s": 20,
  "cost": {
-  "wall_ms": 6253.493375,
-  "cpu_user_ms": 3492.375,
-  "cpu_system_ms": 121.818,
-  "heap_used_delta_mb": 73.54737091064453,
-  "rss_mb": 201.76953125
+  "wall_ms": 10667.349139999998,
+  "cpu_user_ms": 7213.552,
+  "cpu_system_ms": 223.203,
+  "heap_used_delta_mb": 91.52149963378906,
+  "rss_mb": 221.26953125
  },
- "peak_rss_mb": 573.98046875,
+ "peak_rss_mb": 515.4765625,
  "stats": {
   "batches": 37945,
   "events_processed": 44021,
-  "queue_pushes": 231069,
-  "stale_pops": 173913,
+  "queue_pushes": 405822,
+  "stale_pops": 253519,
   "pair_hit_evals": 442070,
   "windows": 81,
   "candidate_pairs_total": 895722,
@@ -24,6 +24,13 @@
   "max_same_instant_batches": 1,
   "contacts": 17355,
   "releases": 16370,
+  "contact_episodes": 1001,
+  "contact_episode_ends": 16,
+  "sub_resolution_excursions": 16362,
+  "episode_events": 95147,
+  "episodes_open_at_horizon": 985,
+  "ends_unconfirmed_at_horizon": 0,
+  "constraint_outside_contact": 0,
   "passes": 9296,
   "turns": 0,
   "turn_blocked": 0,
@@ -35,18 +42,18 @@
  },
  "events_by_kind": {
   "start": 1000,
-  "contact_start": 17355,
+  "contact_start": 1001,
   "stop": 2439,
   "resume": 1439,
   "pass": 9296,
-  "contact_end": 16370,
   "follow": 30562,
   "free": 28210,
+  "contact_end": 16,
   "stalled": 1000
  },
  "events_by_class": {
   "motion": 10296,
-  "physical_contact": 33725,
+  "physical_contact": 1017,
   "physical_constraint": 62650,
   "solver_status": 1000
  },
@@ -55,14 +62,14 @@
   "stopped_by_contact": 1000
  },
  "replay": {
-  "hash": "d772a522d23b0ef5",
+  "hash": "bd3870e60f4854f6",
   "input_order_reversed_identical": true,
   "variants_identical": true,
   "variants": {
-   "grid": "d772a522d23b0ef5",
-   "sap": "d772a522d23b0ef5",
-   "window_0.05": "d772a522d23b0ef5",
-   "window_1": "d772a522d23b0ef5"
+   "grid": "bd3870e60f4854f6",
+   "sap": "bd3870e60f4854f6",
+   "window_0.05": "bd3870e60f4854f6",
+   "window_1": "bd3870e60f4854f6"
   }
  },
  "broadphase": {
@@ -70,19 +77,19 @@
   "identical_candidate_sets": true,
   "cost": {
    "brute": {
-    "ms": 309.7051710000014,
+    "ms": 290.57731200000853,
     "pairs": 895722
    },
    "grid_8mm": {
-    "ms": 245.23990100000083,
+    "ms": 324.70971100000315,
     "pairs": 895722
    },
    "grid_2mm": {
-    "ms": 572.8697549999997,
+    "ms": 308.1584270000021,
     "pairs": 895722
    },
    "sap": {
-    "ms": 508.4514710000003,
+    "ms": 316.24423700000625,
     "pairs": 895722
    }
   },
@@ -108,5 +115,6 @@
   "occupancy2d": null,
   "instants": 34716,
   "judge_wall_ms": 1203391.148408
- }
+ },
+ "judge_note": "judge not re-run (--no-judge-1000, ~20 min): carried over from the 6864974 run. The judge grades trajectories only, and the trajectories are bit-identical to 6864974 (sha256 of all samples 14f818d87140…, of all non-contact events f6a9cc499726…, tests/ph3b-contact-time.test.ts and the 2026-11-08 PH-3b contact-time change); only contact events changed."
 }

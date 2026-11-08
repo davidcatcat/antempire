@@ -3,13 +3,13 @@
  "agents": 2,
  "horizon_s": 40,
  "cost": {
-  "wall_ms": 16.270714999999996,
-  "cpu_user_ms": 11.399,
+  "wall_ms": 16.26698600000003,
+  "cpu_user_ms": 10.632,
   "cpu_system_ms": 0,
-  "heap_used_delta_mb": 0.49774932861328125,
-  "rss_mb": 93.8125
+  "heap_used_delta_mb": 0.5441360473632812,
+  "rss_mb": 93.984375
  },
- "peak_rss_mb": 95.65234375,
+ "peak_rss_mb": 95.91015625,
  "stats": {
   "batches": 3,
   "events_processed": 4,
@@ -24,6 +24,13 @@
   "max_same_instant_batches": 1,
   "contacts": 0,
   "releases": 0,
+  "contact_episodes": 0,
+  "contact_episode_ends": 0,
+  "sub_resolution_excursions": 0,
+  "episode_events": 0,
+  "episodes_open_at_horizon": 0,
+  "ends_unconfirmed_at_horizon": 0,
+  "constraint_outside_contact": 0,
   "passes": 0,
   "turns": 0,
   "turn_blocked": 0,
@@ -64,19 +71,19 @@
   "identical_candidate_sets": true,
   "cost": {
    "brute": {
-    "ms": 0.1443970000000263,
+    "ms": 1.6401890000000208,
     "pairs": 0
    },
    "grid_8mm": {
-    "ms": 0.33859300000000303,
+    "ms": 0.47108700000001136,
     "pairs": 0
    },
    "grid_2mm": {
-    "ms": 0.524091999999996,
+    "ms": 0.31524899999999434,
     "pairs": 0
    },
    "sap": {
-    "ms": 0.2033620000000269,
+    "ms": 0.19554099999999153,
     "pairs": 0
    }
   },
@@ -107,6 +114,6 @@
    "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
   },
   "instants": 4,
-  "judge_wall_ms": 6.31402300000002
+  "judge_wall_ms": 1.5833969999999908
  }
 }

@@ -3,18 +3,18 @@
  "agents": 100,
  "horizon_s": 20,
  "cost": {
-  "wall_ms": 2426.8284790000002,
-  "cpu_user_ms": 1403.133,
-  "cpu_system_ms": 86.16,
-  "heap_used_delta_mb": 27.459503173828125,
-  "rss_mb": 156.390625
+  "wall_ms": 3915.186862,
+  "cpu_user_ms": 2627.51,
+  "cpu_system_ms": 75.086,
+  "heap_used_delta_mb": 42.245323181152344,
+  "rss_mb": 159.73828125
  },
- "peak_rss_mb": 359.19140625,
+ "peak_rss_mb": 287.30078125,
  "stats": {
   "batches": 20656,
   "events_processed": 20694,
-  "queue_pushes": 93234,
-  "stale_pops": 68370,
+  "queue_pushes": 198836,
+  "stale_pops": 117596,
   "pair_hit_evals": 100611,
   "windows": 81,
   "candidate_pairs_total": 55169,
@@ -24,6 +24,13 @@
   "max_same_instant_batches": 1,
   "contacts": 10261,
   "releases": 10172,
+  "contact_episodes": 97,
+  "contact_episode_ends": 8,
+  "sub_resolution_excursions": 10169,
+  "episode_events": 56376,
+  "episodes_open_at_horizon": 89,
+  "ends_unconfirmed_at_horizon": 0,
+  "constraint_outside_contact": 0,
   "passes": 163,
   "turns": 0,
   "turn_blocked": 0,
@@ -35,18 +42,18 @@
  },
  "events_by_kind": {
   "start": 100,
-  "contact_start": 10261,
+  "contact_start": 97,
   "stop": 126,
   "pass": 163,
   "resume": 26,
-  "contact_end": 10172,
   "follow": 12306,
   "free": 11730,
+  "contact_end": 8,
   "stalled": 100
  },
  "events_by_class": {
   "motion": 263,
-  "physical_contact": 20433,
+  "physical_contact": 105,
   "physical_constraint": 24188,
   "solver_status": 100
  },
@@ -55,15 +62,15 @@
   "stopped_by_contact": 100
  },
  "replay": {
-  "hash": "d4c755b966c63304",
+  "hash": "1ebbbfb0864ec6ae",
   "input_order_reversed_identical": true,
   "variants_identical": true,
   "variants": {
-   "grid": "d4c755b966c63304",
-   "sap": "d4c755b966c63304",
-   "brute": "d4c755b966c63304",
-   "window_0.05": "d4c755b966c63304",
-   "window_1": "d4c755b966c63304"
+   "grid": "1ebbbfb0864ec6ae",
+   "sap": "1ebbbfb0864ec6ae",
+   "brute": "1ebbbfb0864ec6ae",
+   "window_0.05": "1ebbbfb0864ec6ae",
+   "window_1": "1ebbbfb0864ec6ae"
   }
  },
  "broadphase": {
@@ -71,19 +78,19 @@
   "identical_candidate_sets": true,
   "cost": {
    "brute": {
-    "ms": 34.77603199999794,
+    "ms": 16.112757000002603,
     "pairs": 55169
    },
    "grid_8mm": {
-    "ms": 30.32347999999911,
+    "ms": 8.668830000002345,
     "pairs": 55169
    },
    "grid_2mm": {
-    "ms": 54.30637399999978,
+    "ms": 27.165023000001383,
     "pairs": 55169
    },
    "sap": {
-    "ms": 44.268152000000555,
+    "ms": 24.909155000001192,
     "pairs": 55169
    }
   },
@@ -108,6 +115,6 @@
   "body_contacts_only_between_instants": 0,
   "occupancy2d": null,
   "instants": 20530,
-  "judge_wall_ms": 32361.18801
+  "judge_wall_ms": 23753.209282000003
  }
 }
