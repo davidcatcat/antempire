@@ -27,6 +27,10 @@ import { ph3bInput } from '../prototypes/solver-compare/lib/ph3b.ts';
 import { judge } from '../prototypes/solver-compare/lib/judge.ts';
 import { steerInput, runSteer, verify, runHash, toTrajectory } from '../prototypes/local-steer/lib.ts';
 import { scenarioById } from '../prototypes/local-steer/compare.ts';
+import { checkContacts, motionFromSamples, type CkMotion } from '../prototypes/local-steer/contact-check.ts';
+import { controlScenario, runControl, CONTROL_POLICIES } from '../prototypes/local-steer/controls.ts';
+import { CONV_DT } from '../prototypes/local-steer/convergence.ts';
+import { DATA_DIR } from '../prototypes/physics-playback/export.ts';
 
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
 const timing = { arrivals: 0, contacts: 0 };
@@ -50,7 +54,7 @@ function timingInvariants(inp: SteerInput, res: SteerResult, label: string) {
       timing.arrivals++;
       ok(arr.length === 1 && arr[0].t_s === a.arrival_t_s && a.arrival_t_s <= inp.horizon_s, `${label}/${id}: arrival event = arrival_t_s ≤ horizon`);
       const at = a.samples.filter((s) => s[0] === a.arrival_t_s).at(-1)!;
-      ok(at && Math.abs((at[4] - sp.goal_s_mm) * sp.dir) <= 1e-9 && a.final_mode === 'arrived', `${label}/${id}: at the goal on arrival`);
+      ok(at && Math.abs((at[4] - sp.goal_s_mm) * sp.dir) <= 1e-9 && (a.final_mode === 'arrived' || (a.final_mode === 'exited' && a.removed_t_s! >= a.arrival_t_s!)), `${label}/${id}: at the goal on arrival (then arrived or left by the exit)`);
       ok(a.samples.every((s) => s[0] <= a.arrival_t_s! || (s[1] === at[1] && s[2] === at[2])), `${label}/${id}: no motion after arrival`);
     } else {
       ok(arr.length === 0 && (sp.start_t_s > inp.horizon_s || a.samples.every((s) => (sp.goal_s_mm - s[4]) * sp.dir > 1e-12)), `${label}/${id}: not arrived → not started by the horizon, or never at its goal (no missed arrival)`);
@@ -69,10 +73,15 @@ function timingInvariants(inp: SteerInput, res: SteerResult, label: string) {
     }
   };
   for (const e of res.events) {
-    if (e.kind !== 'contact_start' && e.kind !== 'contact_end') continue;
+    if (e.kind !== 'contact_start' && e.kind !== 'contact_end' && e.kind !== 'contact_end_estimated') continue;
     const key = e.agents.join('|');
     if (e.kind === 'contact_start') { ok(!open.has(key), `${label}/${key}: no nested contact_start`); open.set(key, e.t_s); }
-    else { ok(open.has(key), `${label}/${key}: contact_end has a start`); episode(e.agents[0], e.agents[1], open.get(key)!, e.t_s); open.delete(key); }
+    else if (e.kind === 'contact_end_estimated') {
+      // a body left the road (control exit): not a physical separation, flagged, at that body's removal instant
+      ok(open.has(key) && e.usable_as_cause === false && e.agents.some((id) => res.agents[id].removed_t_s === e.t_s), `${label}/${key}: contact_end_estimated is flagged and at a removal instant`);
+      open.delete(key);
+    }
+    else { ok(open.has(key), `${label}/${key}: contact_end has a start`); ok(Array.isArray(e.bracket_s) && e.bracket_s[1] === e.t_s && e.bracket_s[0] <= e.t_s, `${label}/${key}: contact_end carries its bisection bracket`); episode(e.agents[0], e.agents[1], open.get(key)!, e.t_s); open.delete(key); }
   }
   for (const [key, ts] of open) { const [i, j] = key.split('|'); episode(i, j, ts, null); }
 }
@@ -246,5 +255,140 @@ for (const id of ['corridor-8', 'stone', 'crossing']) for (const p of STEER_POLI
   const others = fs.readdirSync(path.join(REPO_ROOT, 'engine/physics')).filter((f) => f.endsWith('.ts') && f !== 'local-steer.ts');
   for (const f of others) ok(!/local-steer/.test(fs.readFileSync(path.join(REPO_ROOT, 'engine/physics', f), 'utf8')), `engine/physics/${f} does not depend on local-steer (PH-3b unchanged)`);
 }
+// 9 (R14-A): the INDEPENDENT contact_end checker (prototypes/local-steer/contact-check.ts: no engine import, own geometry)
+//   over every candidate and the no-yield control in every scenario: each recorded contact_end lies inside the bracket of
+//   the physical separation instant computed from the motion segments, the bracket width (error bound) is finite and small,
+//   open contacts never separate, and the checker catches planted errors.
+const motionOf = (sc: ReturnType<typeof scenarioById>, res: SteerResult) => motionFromSamples(res.agents, res.events, { length_mm: sc.body.length_mm.value, width_mm: sc.body.width_mm.value }, sc.horizon_s);
+const bracketStats = { episodes: 0, exact: 0, max_err_s: 0 };
+{
+  const src = fs.readFileSync(path.join(REPO_ROOT, 'prototypes/local-steer/contact-check.ts'), 'utf8');
+  ok(!/from\s+['"][^'"]*engine\//.test(src) && !/from\s+['"]\.\/lib/.test(src), 'contact-check imports nothing from engine/ or the runner (independent code)');
+  for (const id of [...SMALL, 'crossing-traffic-100']) for (const p of STEER_POLICIES.filter((x) => x !== 'none')) {
+    const sc = scenarioById(id), res = runSteer(sc, p).res, c = checkContacts(motionOf(sc, res));
+    ok(c.violations === 0, `${id}/${p}: independent check finds no contact_end outside its bracket (${c.problems.slice(0, 2).join('; ')})`);
+    ok(c.list.every((e) => e.end_kind !== 'contact_end' || (e.inside === true && e.err_s !== null && e.err_s >= 0 && e.err_s < 1e-6)), `${id}/${p}: every exact contact_end bracketed, error bound < 1 µs`);
+    ok(c.estimated === 0 && !res.events.some((e) => e.kind === 'contact_end_estimated'), `${id}/${p}: no estimated ends without a control exit`);
+    ok(c.episodes === res.stats.contacts && c.exact === res.stats.contact_ends_exact, `${id}/${p}: checker sees every contact episode`);
+    bracketStats.episodes += c.episodes; bracketStats.exact += c.exact; bracketStats.max_err_s = Math.max(bracketStats.max_err_s, c.max_err_s ?? 0);
+    // every stop called a contact stop really touches; a conservative stop does not (left open in R13, fixed here)
+    for (const e of res.events.filter((x) => x.kind === 'stop' && /^contact with |^conservative stop/.test(x.detail ?? ''))) {
+      const other = /^contact with (\S+)/.exec(e.detail!)?.[1] ?? /planned path of (\S+)/.exec(e.detail!)![1], m = motionOf(sc, res);
+      const one = checkContacts({ ...m, events: [{ t: e.t_s, kind: 'contact_start', agents: [e.agents[0], other] }, { t: e.t_s, kind: 'contact_end', agents: [e.agents[0], other] }] });
+      const touching = !/gap \S+ mm at contact_start/.test(one.problems.join(' '));
+      ok(/^contact with/.test(e.detail!) ? touching : !touching, `${id}/${p}: stop at ${e.t_s} (${e.detail!.slice(0, 40)}…) ${/^contact/.test(e.detail!) ? 'touches' : 'does not touch'}`);
+    }
+  }
+  // the exported playback files (the segments the page draws) pass the same check
+  for (const f of fs.readdirSync(DATA_DIR).filter((n) => /--steer-/.test(n))) {
+    const run = JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf8'));
+    const c = checkContacts({ horizon_s: run.horizon_s, body: run.body, agents: run.agents.map((a: { id: string; segments: CkMotion['agents'][number]['segments']; final: { x: number; y: number; heading: number } }) => ({ id: a.id, segments: a.segments, final: a.final, present_from: 0, present_until: null })), events: run.events });
+    ok(c.violations === 0 && run.contact_end_check?.violations === 0 && run.events.filter((e: { kind: string; check_s?: number[] }) => e.kind === 'contact_end').every((e: { t: number; check_s?: number[] }) => e.check_s && e.check_s[0] <= e.t && e.t <= e.check_s[1]), `playback ${f}: every contact_end inside the recorded independent bracket`);
+  }
+  // positive controls: a contact_end moved by 1 ms, a deleted contact_end (the contact claimed open), a removed flag
+  const sc = scenarioById('corridor-8'), res = runSteer(sc, 'C_sidestep').res, m = motionOf(sc, res);
+  const k = m.events.findIndex((e) => e.kind === 'contact_end');
+  ok(k >= 0, 'corridor-8/C has a contact_end to perturb');
+  ok(checkContacts({ ...m, events: m.events.map((e, i) => (i === k ? { ...e, t: e.t + 1e-3, bracket_s: undefined } : e)) }).violations > 0, 'positive control: a contact_end shifted by 1 ms is caught');
+  ok(checkContacts({ ...m, events: m.events.filter((_, i) => i !== k) }).violations > 0, 'positive control: a missing contact_end (claimed still in contact) is caught');
+  ok(checkContacts({ ...m, events: m.events.map((e, i) => (i === k ? { ...e, kind: 'contact_end_estimated' } : e)) }).violations > 0, 'positive control: an exact end relabelled as estimated (no removal, flag missing) is caught');
+}
+
+// 10 (R14-A): contact_end_estimated — a contact that ends because a body LEAVES the road (control exit) is flagged, never
+//   presented as a physical separation; the checker accepts it only at that body's removal instant
+{
+  const params = { sensing_radius_mm: 0.5, decision_interval_s: 0.1, probe_angles_deg: [0, 90], same_heading_max_deg: 20, stall_window_s: 1, stall_progress_mm: 0.01, p_wait: 0.5, p_back: 0.25, p_reroute: 0.25, wait_s: 0.5, back_distance_mm: 0.5, reroute_max_s: 0.5 };
+  const lanes = [{ id: 'L', centerline_mm: [{ x: 0, y: 0 }, { x: 100, y: 0 }], width_mm: 10, layer: 'G' }], body = { length_mm: 2.5, width_mm: 0.8 };
+  const ag = (id: string, s: number, goal: number) => ({ id, lane: 'L', s_mm: s, u_mm: 0, dir: 1 as const, start_t_s: 0, goal_s_mm: goal, free_speed_mm_s: 10, body });
+  for (const p of ['B_contact_decision', 'C_sidestep', 'N_no_yield'] as const) for (const [cap, dwell] of [[1, 0.35], [1, 1], [2, 0.5]] as const) {
+    // C (beside, u = 3) reaches the goal line at 0.05 s and B at 0.1 s; at the decision instant 0.1 s C takes the exit
+    // first (earlier arrival); B waits at its goal as an obstacle until a slot frees; A (behind) touches B at 0.75 s
+    const inp: SteerInput = { lanes, obstacles: [], agents: [ag('A', 10, 20), ag('B', 19, 20), ag('C', 30, 40)], horizon_s: 2, policy: p, params, seed: 1, control: { exit: { capacity: cap, dwell_s: dwell } } };
+    inp.agents[2] = { ...inp.agents[2], s_mm: 19.5, goal_s_mm: 20, u_mm: 3 };     // another arrival on the same exit, beside
+    const res = steer2D(inp), lbl = `${p}: exit capacity ${cap}, dwell ${dwell}`;
+    const est = res.events.filter((e) => e.kind === 'contact_end_estimated');
+    ok(res.agents.B.removed_t_s !== null && res.agents.B.removed_t_s! >= res.agents.B.arrival_t_s!, `${lbl}: B leaves the road after arriving`);
+    ok(est.every((e) => e.usable_as_cause === false && /not a physical separation/.test(e.detail ?? '')), `${lbl}: estimated ends are flagged not usable as a cause`);
+    const c = checkContacts(motionFromSamples(res.agents, res.events, body, 2));
+    ok(c.violations === 0 && c.estimated === est.length && c.list.filter((x) => x.end_kind === 'contact_end_estimated').every((x) => x.usable_as_cause === false), `${lbl}: checker accepts the estimated ends as estimated (${c.problems.join('; ')})`);
+    // exit occupancy never exceeds the capacity
+    const rem = Object.values(res.agents).map((a) => a.removed_t_s).filter((t): t is number => typeof t === 'number').sort((x, y) => x - y);
+    ok(rem.every((t) => rem.filter((u) => u <= t && u + dwell > t).length <= cap), `${lbl}: exit occupancy ≤ capacity`);
+    timingInvariants(inp, res, lbl);
+    if (p !== 'N_no_yield' || cap !== 1 || dwell !== 1) continue;
+    ok(est.length === 1 && est[0].agents.join('|') === 'A|B' && est[0].t_s === res.agents.B.removed_t_s, `${lbl}: the A–B contact ends (estimated) exactly when B leaves (${JSON.stringify(est)})`);
+    ok(!res.events.some((e) => e.kind === 'contact_end' && e.agents.join('|') === 'A|B'), `${lbl}: no exact contact_end is invented for A–B`);
+  }
+  // a refusal: 'none' (PH-3b itself) has no control boundaries
+  const sc = scenarioById('head-on-2');
+  let refused = false; try { steer2D({ ...steerInput(sc, 'none'), control: { spawn: true } }); } catch (e) { refused = e instanceof SteerRefused; }
+  ok(refused, "'none' refuses control boundaries");
+}
+
+// 11 (R14-B): control scenarios — finite exit, time-staggered inflow, no-yield control: zero penetration, independent
+//   contact check clean, spawn / exit semantics, determinism. Arrivals are NOT asserted (one column, never a target).
+{
+  const base = scenarioById('crossing-traffic-100');
+  for (const variant of ['K0_lattice_stay', 'K1_lattice_exit', 'K2_inflow_stay', 'K3_inflow_exit']) {
+    const { sc, control } = controlScenario(base, variant);
+    for (const p of CONTROL_POLICIES) {
+      const { input, res } = runControl(sc, control, p, 1), v = verify(sc, res), lbl = `${variant}/${p}`;
+      ok(v.pair_penetrations === 0 && v.static_penetrations === 0 && v.min_pair_gap_mm >= -1e-9, `${lbl}: no penetration (min pair gap ${v.min_pair_gap_mm} mm)`);
+      ok(res.stats.unresolved === 0 && res.stats.fallback_intervals === 0, `${lbl}: nothing unresolved`);
+      const c = checkContacts(motionOf(sc, res));
+      ok(c.violations === 0 && c.estimated === res.stats.contact_ends_estimated, `${lbl}: independent contact check clean (${c.problems.slice(0, 2).join('; ')})`);
+      ok(control.exit ? true : res.stats.contact_ends_estimated === 0, `${lbl}: estimated ends only with an exit`);
+      timingInvariants(input, res, lbl);
+      for (const [id, a] of Object.entries(res.agents)) {
+        if (control.spawn) {
+          const from = a.present_from_t_s;
+          ok(from === null ? a.samples.length === 0 : from! >= a.scheduled_start_t_s! && a.samples[0][0] === from, `${lbl}/${id}: absent before entry, enters at/after its schedule`);
+        }
+        if (control.exit && a.removed_t_s !== null && a.removed_t_s !== undefined) ok(a.arrival_t_s !== null && a.removed_t_s >= a.arrival_t_s && a.samples.at(-1)![0] <= a.removed_t_s, `${lbl}/${id}: leaves only after arriving; no motion record after leaving`);
+      }
+      if (control.spawn) {
+        // the entry pose was free at entry: no present body within CONTACT_TOL_MM (checked from the records)
+        const m = motionOf(sc, res), entries = Object.entries(res.agents).filter(([, a]) => typeof a.present_from_t_s === 'number');
+        let bad = 0;
+        for (const [id, a] of entries) for (const [jd, b] of Object.entries(res.agents)) {
+          // b is on the road when a enters: entered earlier, or at the same instant but processed first (schedule, then id);
+          // exits are processed before entries at a decision instant
+          const first = b.present_from_t_s! < a.present_from_t_s! || (b.present_from_t_s === a.present_from_t_s && (b.scheduled_start_t_s! < a.scheduled_start_t_s! || (b.scheduled_start_t_s === a.scheduled_start_t_s && jd < id)));
+          if (jd === id || typeof b.present_from_t_s !== 'number' || !first || (b.removed_t_s ?? Infinity) <= a.present_from_t_s!) continue;
+          const one = checkContacts({ ...m, events: [{ t: a.present_from_t_s!, kind: 'contact_start', agents: [id, jd] }] });
+          if (!/gap \S+ mm at contact_start/.test(one.problems.join(' '))) bad++;
+        }
+        ok(bad === 0, `${lbl}: every entry pose was free when the agent entered (${bad} violations)`);
+      }
+      if (p === 'N_no_yield') {
+        ok(Object.values(res.agents).every((a) => a.samples.every((s) => Math.abs(s[5] - a.samples[0][5]) <= 1e-9)), `${lbl}: N never moves sideways`);
+        ok(res.events.filter((e) => e.class === 'behavioural_response').every((e) => e.kind === 'go'), `${lbl}: N only goes straight`);
+      }
+    }
+    // determinism and permutation invariance of the control rules (K3 has both)
+    if (variant === 'K3_inflow_exit') for (const p of CONTROL_POLICIES) {
+      const h = runHash(runControl(sc, control, p, 1).res);
+      const rev = { ...sc, agents: [...sc.agents].reverse() };
+      ok(runHash(runControl(sc, control, p, 1).res) === h && runHash(runControl(rev, control, p, 1).res) === h, `${variant}/${p}: rerun and reversed input identical`);
+    }
+  }
+}
+
+// 12 (R14-A convergence sanity): the decision interval halved / doubled — every run stays penetration-free and its
+//   contact ends stay inside the independent brackets; a separation driven by motion alone (the other body starting
+//   late) has the SAME physical end time on every decision grid
+{
+  for (const id of ['head-on-2', 'corridor-8', 'stone']) for (const p of STEER_POLICIES.filter((x) => x !== 'none')) for (const dt of CONV_DT) {
+    const sc = scenarioById(id), res = runSteer(sc, p, { over: { decision_interval_s: dt } }).res, v = verify(sc, res), c = checkContacts(motionOf(sc, res));
+    ok(v.pair_penetrations === 0 && v.static_penetrations === 0 && c.violations === 0, `${id}/${p}/dt ${dt}: no penetration, contact ends bracketed`);
+  }
+  const params = { sensing_radius_mm: 0.5, decision_interval_s: 0.1, probe_angles_deg: [0, 90], same_heading_max_deg: 20, stall_window_s: 1, stall_progress_mm: 0.01, p_wait: 0.5, p_back: 0.25, p_reroute: 0.25, wait_s: 0.5, back_distance_mm: 0.5, reroute_max_s: 0.5 };
+  const lanes = [{ id: 'L', centerline_mm: [{ x: 0, y: 0 }, { x: 100, y: 0 }], width_mm: 10, layer: 'G' }], body = { length_mm: 2.5, width_mm: 0.8 };
+  const ag = (id: string, s: number, start: number) => ({ id, lane: 'L', s_mm: s, u_mm: 0, dir: 1 as const, start_t_s: start, goal_s_mm: 90, free_speed_mm_s: 10, body });
+  for (const p of ['C_sidestep', 'N_no_yield'] as const) {
+    const ends = [0.0125, 0.025, 0.05].map((dt) => steer2D({ lanes, obstacles: [], agents: [ag('A', 10, 0), ag('B', 13.1, 0.33)], horizon_s: 0.5, policy: p, params: { ...params, decision_interval_s: dt }, seed: 1 }).events.filter((e) => e.kind === 'contact_end').map((e) => e.t_s));
+    ok(ends.every((e) => e.length === 1) && Math.max(...ends.map((e) => e[0])) - Math.min(...ends.map((e) => e[0])) <= 1e-12, `${p}: motion-driven separation instant independent of the decision interval (${ends.join(' / ')})`);
+  }
+}
 ok(timing.arrivals > 0 && timing.contacts > 0, `timing invariants exercised (${timing.arrivals} arrivals, ${timing.contacts} contact episodes)`);
-console.log(JSON.stringify({ wp4_local_steer: 'pass', checks, timing }, null, 2));
+console.log(JSON.stringify({ wp4_local_steer: 'pass', checks, timing, independent_contact_check: bracketStats }, null, 2));
