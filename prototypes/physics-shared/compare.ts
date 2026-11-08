@@ -5,7 +5,8 @@
  * cannot express are listed, not approximated. CPU time and heap are measured only when run as a script (they are
  * machine-dependent and never part of the verbatim tables).
  */
-import { runBoth, sharedPoseAt, ACCELERATION_RESERVED, ERROR_BOUNDS, CAPABILITIES, type SharedScenario, type SharedAgentSpec, type SharedRunRecord, type SharedLane } from '../../engine/physics/shared-contract.ts';
+import { runBoth, sharedPoseAt, toKin2DInput, fromKin2DProjected, ACCELERATION_RESERVED, ERROR_BOUNDS, CAPABILITIES, type SharedScenario, type SharedAgentSpec, type SharedRunRecord, type SharedLane } from '../../engine/physics/shared-contract.ts';
+import { runKinematicsWithContactMode } from '../../engine/physics/kinematics2d-contact.ts';
 
 const BODY = { shape: 'capsule' as const, length_mm: 2.5, width_mm: 0.8 }; // R94 length; width = candidate (game assumption), as in KIN-2D
 const lane = (id: string, x0: number, y0: number, x1: number, y1: number, w: number): SharedLane => ({ id, layer: 'ground', centerline: [{ x_mm: x0, y_mm: y0 }, { x_mm: x1, y_mm: y1 }], width_mm: w });
@@ -85,8 +86,35 @@ export function capabilityTable(): string {
   return [row(['能力', 'KIN-2D', 'PH-3b']), row(['---', '---', '---']), ...keys.map((k) => row([k, CAPABILITIES.kin2d[k] ? '有' : '無', CAPABILITIES.ph3b[k] ? '有' : '無']))].join('\n');
 }
 
+// ---------------------------------------------------------------- Owner decision 42: contact-response comparison
+/** KIN-2D in the opt-in 'project' contact mode (shared physical constraint contract), as a shared record */
+export function runKin2DProjected(s: SharedScenario): SharedRunRecord { const ki = toKin2DInput(s); return fromKin2DProjected(s, ki, runKinematicsWithContactMode(ki, 'project')); }
+export interface ContactModeEntry { id: string; title: string; scenario: SharedScenario; expect_projected: 'agree' | 'differ_by_model'; why: string }
+export function contactModeScenarios(): ContactModeEntry[] {
+  const base = scenarios(), get = (id: string) => base.find((x) => x.id === id)!.scenario as SharedScenario;
+  return [
+    { id: 'rear-end', title: '追撞（快跟慢；終點 100 mm）', scenario: get('rear-end'), expect_projected: 'differ_by_model', why: 'KIN-2D 計畫是「依時間」的指令（直線段在原定時刻結束），被減速的跟隨者不會補回距離；PH-3b 依終點行走' },
+    { id: 'rear-end-far', title: '追撞（終點在時限外）', scenario: scn('rear-end-far', 10, [lane('L', 0, 0, 400, 0, 4)], [ag('lead', 'L', 1, 20, 400, 10), ag('follow', 'L', 1, 0, 400, 18.5)]), expect_projected: 'agree', why: '兩者都在時限內行走：跟隨者的速度被約束成前者的速度（同一個物理約束）' },
+    { id: 'two-ant-meeting', title: '兩隻對向相遇', scenario: get('two-ant-meeting'), expect_projected: 'agree', why: '兩者都在接近：各自移除自己的接近分量 → 都停' },
+    { id: 'stone', title: '路線上的石頭（圓）', scenario: get('stone'), expect_projected: 'differ_by_model', why: 'KIN-2D 可沿圓周側滑（2-D 約束）；PH-3b 的橫向偏移固定（1-D），只能停' },
+    { id: 'mass-traffic', title: '大量交通（40 隻）', scenario: get('mass-traffic'), expect_projected: 'agree', why: '同中線對向相遇都停；錯身不接觸' },
+  ];
+}
+export function contactModeTable(): string {
+  const row = (c: (string | number)[]) => `| ${c.join(' | ')} |`;
+  const out = [row(['情境', 'KIN-2D 凍結（基準）vs PH-3b', 'KIN-2D 投影約束（新，選用）vs PH-3b', '預期（投影）', '投影：接觸數／停止數／側滑段', '說明']), row(Array(6).fill('---'))];
+  for (const x of contactModeScenarios()) {
+    const both = runBoth(x.scenario), proj = runKin2DProjected(x.scenario);
+    const cf = compare(x.scenario, both), cp = compare(x.scenario, { kin2d: proj, ph3b: both.ph3b });
+    const verdict = (c: Agreement) => (c.ok ? '一致（在誤差界內）' : `不同：${c.notes.slice(0, 2).join('；')}`);
+    const nC = proj.contact_events.filter((e) => e.kind === 'contact_start').length, nS = proj.contact_events.filter((e) => e.kind === 'stop_on_contact').length, nF = proj.motion_events.filter((e) => e.kind === 'follow').length;
+    out.push(row([x.title, verdict(cf), verdict(cp), x.expect_projected === 'agree' ? '一致' : '模型不同', `${nC}／${nS}／${nF}`, x.why]));
+  }
+  return out.join('\n');
+}
+
 if (import.meta.url === `file://${process.argv[1]}`) {
-  console.log(capabilityTable() + '\n\n' + comparisonTable());
+  console.log(capabilityTable() + '\n\n' + comparisonTable() + '\n\n' + contactModeTable());
   // machine-dependent cost (not in the verbatim tables)
   const mt = scenarios().find((x) => x.id === 'mass-traffic')!.scenario!;
   const g = globalThis as unknown as { gc?: () => void };
