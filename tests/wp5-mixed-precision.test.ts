@@ -11,6 +11,10 @@
  *   G. deliberately BROKEN variants (fraction-dropping demote, vanishing/zeroing/killing emigration, promotion from nothing,
  *      unsourced transport, order-dependent runner, expiry deletion, independent rounding) -> every one is caught;
  *   H. isolation: the official pipeline (engine/, cli/, web/src) does not reference the prototype; the prototype is pure.
+ *   R. the audit REPLAYS records (Codex R13-03, R13-04): balance identities are necessary, not sufficient. Region swaps
+ *      without a crossing record, crossings whose record names the wrong region or the wrong organism, physiology changed
+ *      at a representation change, and production by an unknown / retired / earlier-dead producer are all caught although
+ *      every total closes.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -298,6 +302,98 @@ const rec0 = (over: Partial<LedgerRecord>): LedgerRecord => ({
   ok(roundNext !== good.next && decayClosure('stock:X', inp.stock, roundNext, good.flows).length > 0, 'BROKEN independent rounding caught');
   const frac = { flows: good.flows.map((f) => ({ ...f, amount: f.amount + 0.5 })), next: good.next };
   ok(decayClosure('stock:X', inp.stock, frac.next, frac.flows).length > 0, 'BROKEN fractional flow caught');
+}
+
+// ---------------------------------------------------------------- R. replay audit: location, representation, physiology, sources
+{
+  const noCount = (v: string[]) => v.every((x) => !x.startsWith('count ') && !x.startsWith('food ') && !x.startsWith('global mass'));
+  // R1 (Codex R13-03 probe): two focal workers swap regions in the final state; no record; every total closes
+  const p0: WorldState = { schema: 'antempire.wp5-mixed-precision.v1', seed: 'fixture', day: 0, regions: [{ id: 'G', resolution: 'fine', in_garden: true }, { id: 'P', resolution: 'coarse', in_garden: false }], individuals: [{ id: 'W1', taxon: 'ant', stage: 'worker', colony_id: 'C', region: 'G', physio: { age: 1 }, comp: { sugar: 100 } }, { id: 'W2', taxon: 'ant', stage: 'worker', colony_id: 'C', region: 'P', physio: { age: 2 }, comp: { sugar: 200 } }], cohorts: [], stocks: [], sinks: {}, producers: {}, retired: [], scenario_records: [], used_scenario_records: [], policy: { non_demotable_colonies: ['C'] } };
+  const legit = runDay(p0, []);
+  closed(p0, legit.records, legit.state, 'R13 probe: legitimate day');
+  const swapped = structuredClone(legit.state); swapped.individuals[0].region = 'P'; swapped.individuals[1].region = 'G';
+  const vs = caught(p0, [], swapped, 'R13-03: region swap without migration records');
+  ok(noCount(vs) && vs.some((x) => x.startsWith('id W1: replay puts it in G, state has P')) && vs.some((x) => x.startsWith('id W2: replay puts it in P, state has G')), 'R13-03: only the per-ID replay sees the swap (counts and food still close)');
+  // R2 (Codex R13-04 probe): a well-formed produce record from a producer that does not exist, balanced by a negative account
+  const ghost = structuredClone(legit.state); ghost.producers.ghost = -100; ghost.stocks.push({ stock_id: 'S', region: 'G', amount: 100, origin_event_id: '0.fake' });
+  const fake: LedgerRecord = { event_id: '0.fake', kind: 'produce', t: { day: 0, minute: 1, time_resolution: 'minute' }, source_region: null, destination_region: 'G', identity: { action: 'none', ids: [], anonymous: 0 }, ledger_effects: [], food_moves: [{ from: 'producer:ghost', to: 'stock:S', amount: 100, cause: 'production' }], cause: { kind: 'produce', driver_event_ids: [], rule_id: 'wp5.produce', rng_stream: null, roll: null }, resolution_change: null, scenario_source: null };
+  const vg = caught(p0, [fake], ghost, 'R13-04: ghost producer');
+  ok(noCount(vg) && vg.some((x) => x.includes('producer ghost is not a modeled organism')), 'R13-04: the audit independently refuses an unknown producer (balances alone close)');
+  refused(() => runDay(p0, [{ day: 0, minute: 1, key: 'fake', kind: 'produce', producer: 'ghost', stock: 'S', region: 'G', amount: 100 }]), 'NO_PRODUCER', 'runDay refuses the same ghost production');
+  const live = runDay(p0, [{ day: 0, minute: 1, key: 'live', kind: 'produce', producer: 'W1', stock: 'liveS', region: 'G', amount: 100 }]);
+  closed(p0, live.records, live.state, 'R13-04 control: production by a living modeled producer still closes');
+  // R3: an individual crossing whose record names the wrong source region; a second unrecorded move rebalances the counts
+  {
+    const s = world(), f = structuredClone(s);
+    f.individuals.find((i) => i.id === 'W1')!.region = 'Pwall'; f.individuals.find((i) => i.id === 'W3')!.region = 'G1';
+    const r: LedgerRecord = { ...rec0({ event_id: '1.wrongreg', kind: 'migration', source_region: 'G2', destination_region: 'Pwall', identity: { action: 'kept', ids: ['W1'], anonymous: 0 }, resolution_change: { from: 'fine', to: 'coarse' } }), ledger_effects: [{ region: 'G2', taxon: 'ant', stage: 'worker', colony_id: FOCAL, ledger: 'E', delta: 1 }, { region: 'Pwall', taxon: 'ant', stage: 'worker', colony_id: FOCAL, ledger: 'I', delta: 1 }], cause: { kind: 'foraging_trip', driver_event_ids: ['x'], rule_id: 'wp5.move', rng_stream: null, roll: null } };
+    const v = caught(s, [r], f, 'individual moved with a wrong-region migration record');
+    ok(noCount(v) && v.some((x) => x.includes("W1 is in G1, not in the record's source G2")) && v.some((x) => x.startsWith('id W3: replay puts it in G2, state has G1')), 'wrong source region and the unrecorded compensating move are both caught per ID');
+  }
+  // R4: a migration record whose identity is a different (same-kind, same-region) worker than the one that actually moved
+  {
+    const s = world(), f = structuredClone(s);
+    f.individuals.find((i) => i.id === 'W4')!.region = 'Pwall';
+    const r: LedgerRecord = { ...rec0({ event_id: '1.wrongid', kind: 'migration', source_region: 'G2', destination_region: 'Pwall', identity: { action: 'kept', ids: ['W3'], anonymous: 0 }, resolution_change: { from: 'fine', to: 'coarse' } }), ledger_effects: [{ region: 'G2', taxon: 'ant', stage: 'worker', colony_id: FOCAL, ledger: 'E', delta: 1 }, { region: 'Pwall', taxon: 'ant', stage: 'worker', colony_id: FOCAL, ledger: 'I', delta: 1 }], cause: { kind: 'foraging_trip', driver_event_ids: ['x'], rule_id: 'wp5.move', rng_stream: null, roll: null } };
+    const v = caught(s, [r], f, 'migration with mismatched identity');
+    ok(noCount(v) && v.some((x) => x.startsWith('id W3: replay puts it in Pwall, state has G2')) && v.some((x) => x.startsWith('id W4: replay puts it in G2, state has Pwall')), 'the recorded identity, not just the count, must be the organism that moved');
+    // a cohort crossing that claims a roster ID the source cohort does not hold
+    const moth = cohortId('Pnbr', 'moth', 'adult', null), ok1 = runDay(s, [{ ...t('mm', 700), kind: 'cohort_move', cohort: moth, n: 2, to: 'G2', cause: trig('dispersal_stage_reached') }]);
+    closed(s, ok1.records, ok1.state, 'cohort crossing control');
+    const forged = structuredClone(ok1.records); forged[0].identity = { action: 'kept', ids: ['X-beetle-1'], anonymous: 1 };
+    ok(caught(s, forged, ok1.state, 'cohort crossing with a foreign roster ID').some((x) => x.includes('X-beetle-1 crossed from')), 'a cohort crossing may only carry IDs on the source roster');
+  }
+  // R5: producer that died earlier the same day (individual) / whose cohort was emptied earlier the same day
+  {
+    const s = world();
+    const a = runDay(s, [{ ...t('pW6', 1), kind: 'produce', producer: 'W6', stock: 'synthW6', region: 'G1', amount: 3 }, { ...t('dW6', 100), kind: 'death', subject: { individual: 'W6' }, cause: 'senescence' }]);
+    closed(s, a.records, a.state, 'producer alive at production time (control)');
+    const late = structuredClone(a.records); late.find((x) => x.event_id === '1.pW6')!.t.minute = 200;
+    ok(caught(s, late, a.state, 'producer that died earlier the same day').some((x) => x.includes('producer W6 is retired (dead) at day 1 minute 200')), 'production after the producer\'s death the same day is caught');
+    refused(() => runDay(s, [{ ...t('pW6', 200), kind: 'produce', producer: 'W6', stock: 'synthW6', region: 'G1', amount: 3 }, { ...t('dW6', 100), kind: 'death', subject: { individual: 'W6' }, cause: 'senescence' }]), 'NO_PRODUCER', 'runDay refuses the same order');
+    const bee = cohortId('Pnbr', 'beetle', 'adult', null);
+    const b = runDay(s, [{ ...t('pB', 1), kind: 'produce', producer: bee, stock: 'synthB', region: 'Pnbr', amount: 3 }, { ...t('dB', 100), kind: 'death', subject: { cohort: bee }, cause: 'cohort_hazard' }]);
+    closed(s, b.records, b.state, 'cohort producer alive at production time (control)');
+    const lateB = structuredClone(b.records); lateB.find((x) => x.event_id === '1.pB')!.t.minute = 200;
+    ok(caught(s, lateB, b.state, 'cohort producer emptied earlier the same day').some((x) => x.includes('has no living member at day 1 minute 200')), 'production by an emptied cohort is caught');
+  }
+  // R6: retired producer (died on an earlier day)
+  {
+    const s = { ...world(), retired: ['OLD1'] }, f = structuredClone(s);
+    f.producers.OLD1 = -5; f.stocks[0].amount += 5;
+    const r: LedgerRecord = { ...rec0({ event_id: '1.old', kind: 'produce', destination_region: 'G2', food_moves: [{ from: 'producer:OLD1', to: 'stock:honeydew.G2', amount: 5, cause: 'production' }] }), cause: { kind: 'produce', driver_event_ids: [], rule_id: 'wp5.produce', rng_stream: null, roll: null } };
+    const v = caught(s, [r], f, 'retired producer');
+    ok(noCount(v) && v.some((x) => x.includes('producer OLD1 is retired (dead)')), 'a retired producer cannot produce');
+    // production is local: a producer in G2 cannot fill a stock in G1
+    const aph = cohortId('G2', 'aphid', 'adult', null);
+    refused(() => runDay(world(), [{ ...t('far', 1), kind: 'produce', producer: aph, stock: 'far.G1', region: 'G1', amount: 5 }]), 'PRODUCER_REGION_MISMATCH', 'runDay refuses remote production');
+    const g = structuredClone(world()); g.producers[aph] = -5; g.stocks.push({ stock_id: 'far.G1', region: 'G1', amount: 5, origin_event_id: '1.far' });
+    const rf: LedgerRecord = { ...r, event_id: '1.far', destination_region: 'G1', food_moves: [{ from: `producer:${aph}`, to: 'stock:far.G1', amount: 5, cause: 'production' }] };
+    ok(caught(world(), [rf], g, 'remote production').some((x) => x.includes('but the produce record puts the food in G1')), 'the audit catches remote production');
+  }
+  // R7: a birth needs a parent that is alive at the event time
+  {
+    const s = world();
+    const a = runDay(s, [{ ...t('egg', 300), kind: 'birth', parent: { individual: 'Q1' }, taxon: 'ant', stage: 'egg', colony_id: FOCAL, as: 'individual', endowment: [{ from: 'org:Q1:body_protein', comp: 'body_protein', amount: 1 }] }, { ...t('dQ', 900), kind: 'death', subject: { individual: 'Q1' }, cause: 'senescence' }]);
+    closed(s, a.records, a.state, 'birth by a living parent (control)');
+    const late = structuredClone(a.records); late.find((x) => x.event_id === '1.egg')!.t.minute = 1000;
+    ok(caught(s, late, a.state, 'birth after the parent died').some((x) => x.includes('parent Q1 is not a living modeled organism at day 1 minute 1000 (retired)')), 'a birth from a dead parent is caught');
+    const orphan = structuredClone(a.records); orphan.find((x) => x.event_id === '1.egg')!.parent = null;
+    ok(caught(s, orphan, a.state, 'birth without a parent').some((x) => x.includes('birth without a recorded parent')), 'a birth record must name its parent');
+  }
+  // R8: physiology at a representation change: a roster member keeps its snapshot; altering it is caught
+  {
+    const s = world(), bee = cohortId('Pnbr', 'beetle', 'adult', null);
+    const a = runDay(s, [{ ...t('pb', 10), kind: 'promote', cohort: bee, trigger: trig('contact_with_focal') }]);
+    const f = structuredClone(a.state); f.individuals.find((i) => i.id === 'X-beetle-1')!.physio = { age_d: 0 };
+    ok(caught(s, a.records, f, 'promotion that resets physiology').some((x) => x.startsWith('id X-beetle-1: physiology')), 'promotion must restore the roster snapshot, not a fresh physiology');
+    const d = runDay(a.state, [{ day: a.state.day, minute: 20, key: 'db', kind: 'demote', individual: 'X-beetle-1', trigger: trig('no_contact_left_fine_grid') }]);
+    const g = structuredClone(d.state); g.cohorts.find((c) => c.cohort_id === bee)!.roster[0].physio = {};
+    ok(caught(a.state, d.records, g, 'demotion that drops physiology').some((x) => x.includes('roster physiology of X-beetle-1')), 'demotion must write the individual\'s physiology into the roster');
+    const m = runDay(s, [{ ...t('mm', 700), kind: 'cohort_move', cohort: cohortId('Pnbr', 'moth', 'adult', null), n: 10, to: 'G2', cause: trig('dispersal_stage_reached') }]);
+    const h = structuredClone(m.state); const r7 = h.cohorts.find((c) => c.roster.some((x) => x.id === 'X-moth-7'))!.roster.find((x) => x.id === 'X-moth-7')!; r7.physio = { age_d: 9 };
+    ok(caught(s, m.records, h, 'cohort crossing that swaps roster physiology').some((x) => x.includes('roster physiology of X-moth-7')), 'roster snapshots travel unchanged with a cohort crossing');
+  }
 }
 
 // ---------------------------------------------------------------- H. isolation

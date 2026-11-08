@@ -67,6 +67,10 @@ export interface LedgerRecord {
   cause: { kind: string; driver_event_ids: string[]; rule_id: string; rng_stream: string | null; roll: number | null };
   resolution_change: { from: Resolution; to: Resolution } | null;
   scenario_source: { scenario_id: string; record_id: string; source_ref: string } | null;
+  /** birth: the living parent (I6), so the independent audit can check it existed, was alive and in the same region */
+  parent?: { individual: string } | { cohort: string } | null;
+  /** promote/demote: the cohort whose representation changed (the audit replays roster membership from it) */
+  cohort_id?: string | null;
 }
 export class LedgerRefusal extends Error {
   code: string;
@@ -166,7 +170,7 @@ function rec(cmd: Command, kind: LedgerRecord['kind'], over: Partial<LedgerRecor
     event_id: `${cmd.day}.${cmd.key}`, kind, t: { day: cmd.day, minute: cmd.minute, time_resolution: cmd.minute === null ? 'day' : 'minute' },
     source_region: null, destination_region: null, identity: { action: 'none', ids: [], anonymous: 0 },
     ledger_effects: [], food_moves: [], cause: { kind: kind, driver_event_ids: [], rule_id: `wp5.${cmd.kind}`, rng_stream: null, roll: null },
-    resolution_change: null, scenario_source: null, ...over,
+    resolution_change: null, scenario_source: null, parent: null, cohort_id: null, ...over,
   };
 }
 
@@ -184,7 +188,7 @@ function moveIndividual(ix: Ix, cmd: Command, i: Individual, to: string, cause: 
   return out;
 }
 function moveCohortMembers(ix: Ix, cmd: Command, c: Cohort, n: number, to: string, cause: { kind: string; driver_event_ids: string[] }, kind: LedgerRecord['kind'], scen: LedgerRecord['scenario_source']): LedgerRecord {
-  region(ix, to);
+  const from = region(ix, c.region), dest = region(ix, to);
   if (c.region === to) refuse('NO_OP_MOVE', c.cohort_id);
   if (!isInt(n) || n < 1) refuse('BAD_COUNT', `${n}`);
   if (c.count < n) refuse('INSUFFICIENT_COUNT', `${c.cohort_id} has ${c.count} < ${n}`);
@@ -198,7 +202,8 @@ function moveCohortMembers(ix: Ix, cmd: Command, c: Cohort, n: number, to: strin
   return rec(cmd, kind, {
     source_region: c.region, destination_region: to, identity: { action: 'kept', ids: ids.sort(byStr), anonymous: anon },
     ledger_effects: [eff(c, 'E', n), eff(d, 'I', n)], food_moves: moves,
-    cause: { kind: cause.kind, driver_event_ids: [...cause.driver_event_ids], rule_id: `wp5.${cmd.kind}`, rng_stream: kind, roll: null }, scenario_source: scen,
+    cause: { kind: cause.kind, driver_event_ids: [...cause.driver_event_ids], rule_id: `wp5.${cmd.kind}`, rng_stream: kind, roll: null },
+    resolution_change: from.resolution !== dest.resolution ? { from: from.resolution, to: dest.resolution } : null, scenario_source: scen,
   });
 }
 
@@ -215,6 +220,10 @@ export function applyCommand(ix: Ix, cmd: Command): LedgerRecord {
       if (!alive) refuse('NO_PRODUCER', `${pid} is not a living modeled producer`);
       if (!isInt(cmd.amount) || cmd.amount <= 0) refuse('BAD_AMOUNT', `${cmd.amount}`);
       region(ix, cmd.region);
+      // production is local: the producer and the stock it feeds are in the stated region (model rule, not a number)
+      const preg = ix.ind.get(pid)?.region ?? ix.coh.get(pid)!.region;
+      if (preg !== cmd.region) refuse('PRODUCER_REGION_MISMATCH', `${pid} is in ${preg}, not ${cmd.region}`);
+      if (ix.stk.has(cmd.stock) && ix.stk.get(cmd.stock)!.region !== cmd.region) refuse('STOCK_REGION_MISMATCH', `${cmd.stock} is not in ${cmd.region}`);
       if (!ix.stk.has(cmd.stock)) ix.stk.set(cmd.stock, { stock_id: cmd.stock, region: cmd.region, amount: 0, origin_event_id: `${cmd.day}.${cmd.key}` });
       st.producers[pid] = (st.producers[pid] ?? 0) - cmd.amount;
       ix.stk.get(cmd.stock)!.amount += cmd.amount;
@@ -242,7 +251,7 @@ export function applyCommand(ix: Ix, cmd: Command): LedgerRecord {
       }
       for (const e of cmd.endowment) move(ix, moves, e.from, dest(e.comp), e.amount, 'birth_endowment');
       return rec(cmd, 'birth', {
-        destination_region: reg, identity: { action: 'born', ids: id ? [id] : [], anonymous: id ? 0 : 1 },
+        destination_region: reg, identity: { action: 'born', ids: id ? [id] : [], anonymous: id ? 0 : 1 }, parent: structuredClone(cmd.parent),
         ledger_effects: [eff({ region: reg, taxon: cmd.taxon, stage: cmd.stage, colony_id: cmd.colony_id }, 'B')], food_moves: moves,
         cause: { kind: 'birth', driver_event_ids: [], rule_id: 'wp5.birth', rng_stream: null, roll: null },
       });
@@ -304,7 +313,7 @@ export function applyCommand(ix: Ix, cmd: Command): LedgerRecord {
       if (ix.ind.has(id) || ix.retired.has(id)) refuse('DUPLICATE_ID', id);
       ix.ind.set(id, { id, taxon: c.taxon, stage: c.stage, colony_id: c.colony_id, region: c.region, physio: member ? member.physio : {}, comp: {} });
       releaseShare(ix, c, moves, (comp) => `org:${id}:${comp}`, 'promotion_share');
-      return rec(cmd, 'promote', { source_region: c.region, destination_region: c.region, identity: { action: member ? 'promoted' : 'minted', ids: [id], anonymous: 0 }, food_moves: moves, cause: { kind: tr.kind, driver_event_ids: [...tr.driver_event_ids], rule_id: 'wp5.promote', rng_stream: 'promote', roll } });
+      return rec(cmd, 'promote', { source_region: c.region, destination_region: c.region, identity: { action: member ? 'promoted' : 'minted', ids: [id], anonymous: 0 }, cohort_id: c.cohort_id, food_moves: moves, cause: { kind: tr.kind, driver_event_ids: [...tr.driver_event_ids], rule_id: 'wp5.promote', rng_stream: 'promote', roll } });
     }
     case 'demote': {
       const tr = needTrigger(cmd.trigger, 'demote');
@@ -314,7 +323,7 @@ export function applyCommand(ix: Ix, cmd: Command): LedgerRecord {
       for (const comp of Object.keys(i.comp).sort(byStr)) move(ix, moves, `org:${i.id}:${comp}`, `cohort:${c.cohort_id}:${comp}`, i.comp[comp], 'demotion_pool');
       c.count += 1; c.roster.push({ id: i.id, physio: structuredClone(i.physio) });
       ix.ind.delete(i.id);
-      return rec(cmd, 'demote', { source_region: i.region, destination_region: i.region, identity: { action: 'demoted', ids: [i.id], anonymous: 0 }, food_moves: moves, cause: { kind: tr.kind, driver_event_ids: [...tr.driver_event_ids], rule_id: 'wp5.demote', rng_stream: null, roll: null } });
+      return rec(cmd, 'demote', { source_region: i.region, destination_region: i.region, identity: { action: 'demoted', ids: [i.id], anonymous: 0 }, cohort_id: c.cohort_id, food_moves: moves, cause: { kind: tr.kind, driver_event_ids: [...tr.driver_event_ids], rule_id: 'wp5.demote', rng_stream: null, roll: null } });
     }
     case 'decay': {
       const s = ix.stk.get(cmd.stock) ?? refuse('UNKNOWN_STOCK', cmd.stock);
