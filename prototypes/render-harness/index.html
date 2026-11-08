@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>分層繪圖器測試頁（PR B）</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #1d1712; color: #f1e6d4; font: 13px/1.4 system-ui, "Noto Sans TC", sans-serif; overflow: hidden; }
+  #scene { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; touch-action: none; }
+  #hud { position: fixed; left: 8px; top: 8px; right: 8px; padding: 6px 10px; border-radius: 8px; background: rgba(20,12,6,.72); pointer-events: none; }
+  #hud b { color: #e3b46b; }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="hud">載入中…</div>
+<script type="module" src="dist/prototypes/render-harness/harness.js"></script>
+</body>
+</html>

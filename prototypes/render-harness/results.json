@@ -1,0 +1,149 @@
+{
+ "meta": {
+  "measured": "headless Chromium via Playwright; frame intervals over 6 s after 6 s warm-up; not a real device",
+  "node": "v22.23.4"
+ },
+ "rows": [
+  {
+   "profile": "desktop",
+   "mode": "replay",
+   "cpu_throttle": 1,
+   "canvas_px": [
+    1280,
+    800
+   ],
+   "quality_level": 0,
+   "samples": 357,
+   "fps_mean": 59.17454002983592,
+   "p50_ms": 16.69999999999891,
+   "p95_ms": 16.700000000000728,
+   "chunk_bakes": 24,
+   "positions_checked": 1104,
+   "frames_checked": 704
+  },
+  {
+   "profile": "desktop",
+   "mode": "stress100",
+   "cpu_throttle": 1,
+   "canvas_px": [
+    1280,
+    800
+   ],
+   "quality_level": 1,
+   "samples": 326,
+   "fps_mean": 54.184326435635334,
+   "p50_ms": 16.69999999999891,
+   "p95_ms": 33.399999999999636,
+   "chunk_bakes": 28
+  },
+  {
+   "profile": "desktop",
+   "mode": "stress1000",
+   "cpu_throttle": 1,
+   "canvas_px": [
+    1280,
+    800
+   ],
+   "quality_level": 3,
+   "samples": 83,
+   "fps_mean": 13.719461800390093,
+   "p50_ms": 66.70000000000073,
+   "p95_ms": 99.89999999999964,
+   "chunk_bakes": 28
+  },
+  {
+   "profile": "pixel7",
+   "mode": "replay",
+   "cpu_throttle": 1,
+   "canvas_px": [
+    412,
+    839
+   ],
+   "quality_level": 2,
+   "samples": 306,
+   "fps_mean": 50.72019359864746,
+   "p50_ms": 16.69999999999891,
+   "p95_ms": 33.399999999999636,
+   "chunk_bakes": 40,
+   "positions_checked": 997,
+   "frames_checked": 648
+  },
+  {
+   "profile": "pixel7",
+   "mode": "stress100",
+   "cpu_throttle": 1,
+   "canvas_px": [
+    412,
+    839
+   ],
+   "quality_level": 2,
+   "samples": 360,
+   "fps_mean": 60.00200006666889,
+   "p50_ms": 16.69999999999891,
+   "p95_ms": 16.700000000000728,
+   "chunk_bakes": 40
+  },
+  {
+   "profile": "pixel7",
+   "mode": "stress1000",
+   "cpu_throttle": 1,
+   "canvas_px": [
+    412,
+    839
+   ],
+   "quality_level": 2,
+   "samples": 57,
+   "fps_mean": 9.396017407358569,
+   "p50_ms": 100.10000000000036,
+   "p95_ms": 150,
+   "chunk_bakes": 40
+  },
+  {
+   "profile": "pixel7-cpu4x",
+   "mode": "replay",
+   "cpu_throttle": 4,
+   "canvas_px": [
+    412,
+    839
+   ],
+   "quality_level": 3,
+   "samples": 151,
+   "fps_mean": 24.82327798783495,
+   "p50_ms": 16.700000000000728,
+   "p95_ms": 200,
+   "chunk_bakes": 40,
+   "positions_checked": 364,
+   "frames_checked": 265
+  },
+  {
+   "profile": "pixel7-cpu4x",
+   "mode": "stress100",
+   "cpu_throttle": 4,
+   "canvas_px": [
+    412,
+    839
+   ],
+   "quality_level": 2,
+   "samples": 44,
+   "fps_mean": 7.2330352446081,
+   "p50_ms": 133.29999999999927,
+   "p95_ms": 200,
+   "chunk_bakes": 40
+  },
+  {
+   "profile": "pixel7-cpu4x",
+   "mode": "stress1000",
+   "cpu_throttle": 4,
+   "canvas_px": [
+    824,
+    1678
+   ],
+   "quality_level": 0,
+   "samples": 12,
+   "fps_mean": 1.96727761565953,
+   "p50_ms": 483.2999999999993,
+   "p95_ms": 733.4000000000015,
+   "chunk_bakes": 32
+  }
+ ]
+}
