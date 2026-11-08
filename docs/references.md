@@ -728,3 +728,17 @@ R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-
 | R390 | NOAA Global Monitoring Laboratory, Solar Calculation Details. https://gml.noaa.gov/grad/solcalc/calcdetails.html（依 Meeus, *Astronomical Algorithms*） | 說明頁已讀（準確度、折射 0.833°、適用範圍）；方程式依 NOAA 試算表的公式實作，**試算表本身本次未下載核對**，改以 R392 獨立演算法交叉驗證（2027 全年最大差 0.2 分鐘） | 日出、日落、民用曙暮光（`engine/clock/solar.ts`） | NOAA：±72° 緯度內約 1 分鐘；實際觀測受大氣影響；NOAA 已不再維護；地形與建築未模擬 |
 | R391 | Allen RG, Pereira LS, Raes D, Smith M (1998) *Crop evapotranspiration*（FAO Irrigation and Drainage Paper 56），第 3 章 式 10、11。https://www.fao.org/4/x0490e/x0490e07.htm | 線上全文（第 3 章）；式 11 的常數由原文例題 3 確認（式本身是圖片） | 飽和水氣壓 e°(T) = 0.6108 exp(17.27T/(T+237.3)) kPa；RH = 實際／飽和水氣壓；RH 日變化（日出附近最高、午後最低）只作方向 | 一般物理；「日內實際水氣壓固定或內插」是本專案的遊戲假設，不是 FAO-56 的結論 |
 | R392 | Nautical Almanac Office, US Naval Observatory (1990) *Almanac for Computers*（日出日落簡化演算法） | **未讀原文**；演算法為廣泛流傳的轉載版本 | 只在測試中作為獨立的交叉驗證，不是引擎方法 | 精度約 1～2 分鐘；不用於任何輸出 |
+
+## 2026-11-08 臺中花園植物、半翅目與寄主關係（R780–R786；Issue #149，`docs/research-taichung-plants-hemiptera.md`）
+
+> 研究文件，未改規則或世界檔。本次**沒有一篇讀到全文**；閱讀程度如實標記。分類欄位仍為 `unknown`，不從地點名稱推斷。
+
+| ID | 來源 | 讀到的程度 | 可支持 | 不可外推 |
+|---|---|---|---|---|
+| R780 | 沈秀美、吳懷慧、張念台 (2007) 屏東地區桑粉介殼蟲（*Maconellicoccus hirsutus*）族群消長及共生螞蟻調查。台灣昆蟲 *Formosan Entomologist* 27(3):245–260. DOI 10.6661/TESFE.2007019 | 摘要（經摘要工具，Airiti） | **本種**在屏東朱槿上是照護桑粉介殼蟲的螞蟻之一；有蟻築巢的枝條若蟲、成蟲、天敵、寄生蜂較多；6～11 月高峰、大雨後下降 | 屏東非臺中；各蟻種份量不明；每枝蟲數不能當花園群數 |
+| R781 | 張念台 (2007) The association of pink hibiscus mealybug, *Maconellicoccus hirsutus* (Green) with bighead ant, *Pheidole megacephala* (Fabricius) on hibiscus. *Formosan Entomologist* 27(3):229–243 | **只核對書目與題名**（屏科大學術資料頁，無摘要） | 題名顯示本種與桑粉介殼蟲在朱槿上的關係為研究主題 | 內容未讀，不得引用任何結果；DOI 未核對 |
+| R782 | Tsai M-Y (2012) *Mealybugs (Hemiptera: Pseudococcidae) of Taiwan*. 國立臺灣大學昆蟲學系學位論文。http://ntur.lib.ntu.edu.tw//handle/246246/247883 | 摘要（經摘要工具與搜尋轉述；學位類別未核對） | 臺灣 57 種粉介殼蟲；寄主 398 種植物／90 科；27 種螞蟻相伴，本種是野外最常同時採到的 5 種之一 | 沒有蟲種—植物—蟻種的逐筆對應；全文未讀 |
+| R783 | 陳淑佩、翁振宇、吳文哲 (2011) 台灣新發現的木瓜秀粉介殼蟲為害初報。台灣農業研究 60(1):72–76. DOI 10.6156/JTAR.201103.0007 | 摘要（經摘要工具，Airiti） | *Paracoccus marginatus* 在臺灣為害木瓜的首次報告 | 摘要無螞蟻資訊；首次發現地點與日期未載於摘要 |
+| R784 | Navarrete B, McAuslane H, Deyrup M, Peña JE (2013) Ants (Hymenoptera: Formicidae) associated with *Diaphorina citri* (Hemiptera: Liviidae) and their role in its biological control. *Florida Entomologist* 96(2):590–597. DOI 10.1653/024.096.0225 | 摘要（經搜尋工具與 AGRIS；BioOne 頁面未能讀取） | **本種**在佛州月橘上與柑橘木蝨相伴，排除螞蟻後 *Tamarixia radiata* 寄生率上升 | **非臺灣**；*Brachymyrmex* 種名在各來源不一致 |
+| R785 | Win AT, Kinoshita T, Tsuji K (2018) The presence of an alternative food source changes the tending behavior of the big-headed ant, *Pheidole megacephala*, on *Dysmicoccus brevipes*. *Applied Entomology and Zoology* 53:253–258. DOI 10.1007/s13355-018-0553-0 | 摘要（ScaleNet 摘錄） | **本種**有替代糖或蛋白時照護頻率下降；未見攻擊或捕食粉介殼蟲 | 研究地點頁面未載明；實驗條件，非花園 |
+| R786 | Pacific Pests, Pathogens & Weeds fact sheet: Citrus aphids（lucidcentral.org） | 說明頁 | *Toxoptera aurantii* 寄主含柑橘、朱槿、茶等 | **非臺灣**、非同儕審查；兩種橘蚜的俗名在不同來源互相顛倒 |
