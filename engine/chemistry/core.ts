@@ -14,6 +14,11 @@
  *    canonical order (t_s, round, layer, where, amount, deposit_id) — input order and agent ids do not matter.
  *  - sampleLocal only at the closed horizon (no future, no stale read), only on the sensor's own layer, only cells that
  *    intersect a radius bounded by the channel (edge: the interval on the same edge; plane: the disc).
+ *  - layered phases of one instant (contract CHEM_PHASES): deposit() submits phase-1 source events; advance(to) is
+ *    phases 2+3 of `to` (commit every due deposit together, canonically; update the state); sampleLocal() is phase 4
+ *    and must declare phase 'local_sensing' at exactly the committed instant. A committed instant is closed: later
+ *    deposits into it are LATE_DEPOSIT, a reused deposit_id / origin event is a duplicate, and no API exposes or edits
+ *    a stored event (accepted events are copied).
  */
 import {
   compareChemTime, validateChannel, validateDeposit, validateSampleQuery,

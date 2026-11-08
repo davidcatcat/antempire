@@ -48,7 +48,7 @@ export function yMaze(lambda_per_s: number, n = 10, readAt = 600) {
     evs.push(dep(`a${k}-left`, 'trail', `ant${k}`, T(t0 + 8), { kind: 'edge_segment', edge_id: 'left', s0_mm: 0, s1_mm: 60 }));
   }
   s.deposit(evs); s.advance(T(readAt));
-  const read = (edge_id: string) => s.sampleLocal({ signal_id: 'trail', agent_id: 'reader', layer: 'surface', time: T(readAt), sensor: { kind: 'edge', edge_id, s_mm: 1, radius_mm: 3 } }).exposure;
+  const read = (edge_id: string) => s.sampleLocal({ signal_id: 'trail', agent_id: 'reader', layer: 'surface', time: T(readAt), phase: 'local_sensing', sensor: { kind: 'edge', edge_id, s_mm: 1, radius_mm: 3 } }).exposure;
   return { lambda_per_s, n, read_at_s: readAt, left: read('left'), right: read('right'), stem: read('stem'), ledger: s.ledger('trail') };
 }
 
@@ -62,7 +62,7 @@ export function twoAnts(gap_mm: number, lambda_per_s = 0, seconds = 10) {
       dep(`B${t}`, 'trail2d', 'B', T(t), { kind: 'segment2d', x0_mm: 10 * (t - 1), y0_mm: 50 + gap_mm, x1_mm: 10 * t, y1_mm: 50 + gap_mm }),
     ]);
     s.advance(T(t));
-    const read = (y: number, who: string) => s.sampleLocal({ signal_id: 'trail2d', agent_id: who, layer: 'surface', time: T(t), sensor: { kind: 'disc', x_mm: 10 * t, y_mm: y, radius_mm: 3 } }).exposure;
+    const read = (y: number, who: string) => s.sampleLocal({ signal_id: 'trail2d', agent_id: who, layer: 'surface', time: T(t), phase: 'local_sensing', sensor: { kind: 'disc', x_mm: 10 * t, y_mm: y, radius_mm: 3 } }).exposure;
     out.push({ t, a: read(50, 'A'), b: read(50 + gap_mm, 'B') });
   }
   return { gap_mm, readings: out, ledger: s.ledger('trail2d') };

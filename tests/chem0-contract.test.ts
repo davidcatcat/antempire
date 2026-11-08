@@ -44,7 +44,7 @@ const dep: DepositEvent = {
   time: { clock: 'chem.test', unit: 's', t_s: 12.5, round: 0 }, layer: 'surface', substrate: null,
   where: { kind: 'edge_segment', edge_id: 'E1', s0_mm: 10, s1_mm: 30 }, amount: 1, cause: 'laden_return', units: { quantity: 'normalized_activity', length: 'mm', time: 's' },
 };
-const q: SampleQuery = { signal_id: 'trail.M1', agent_id: 'w2', layer: 'surface', time: { clock: 'chem.test', unit: 's', t_s: 20, round: 0 }, sensor: { kind: 'edge', edge_id: 'E1', s_mm: 20, radius_mm: 2 } };
+const q: SampleQuery = { signal_id: 'trail.M1', agent_id: 'w2', layer: 'surface', time: { clock: 'chem.test', unit: 's', t_s: 20, round: 0 }, phase: 'local_sensing', sensor: { kind: 'edge', edge_id: 'E1', s_mm: 20, radius_mm: 2 } };
 
 // ---- the correct cases pass
 ok(CHEM_CONTRACT_VERSION === 'antempire.chem-contract.v1', 'contract version');
@@ -120,6 +120,11 @@ ok(has(validateDeposit({ ...clone(dep), signal_id: 'chc.profile' }, chc, clock, 
 // ---- each sampling defect is rejected (no global read, no other layer, no unbounded radius)
 const qCases: [string, (x: SampleQuery) => void, string][] = [
   ['radius above the bound', (x) => { x.sensor.radius_mm = 4; }, 'RADIUS_ABOVE_BOUND'],
+  ['sample in the physics/source phase', (x) => { x.phase = 'physics_and_sources'; }, 'SAMPLE_BEFORE_COMMIT'],
+  ['sample during the chemistry commit', (x) => { x.phase = 'chemistry_commit'; }, 'SAMPLE_BEFORE_COMMIT'],
+  ['sample during the chemistry update', (x) => { x.phase = 'chemistry_update'; }, 'SAMPLE_BEFORE_COMMIT'],
+  ['sample in the behaviour phase', (x) => { x.phase = 'behaviour_decision'; }, 'SAMPLE_OUTSIDE_SENSING_PHASE'],
+  ['sample without a phase', (x) => { delete (x as Partial<SampleQuery>).phase; }, 'MISSING:phase'],
   ['global read (infinite radius)', (x) => { x.sensor.radius_mm = Infinity; }, 'UNBOUNDED_RADIUS'],
   ['NaN radius', (x) => { x.sensor.radius_mm = NaN; }, 'UNBOUNDED_RADIUS'],
   ['no agent', (x) => { x.agent_id = ''; }, 'MISSING:agent_id'],

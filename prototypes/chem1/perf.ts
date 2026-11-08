@@ -41,7 +41,7 @@ export function runPerf(backend: 'sparse_2d' | 'surface_edge', agents: number, s
     c0 = performance.now(); s.advance(T(t)); tAdv += performance.now() - c0;
     c0 = performance.now();
     st.forEach((a, i) => {
-      s.sampleLocal({ signal_id: 'c', agent_id: `w${i}`, layer: 'surface', time: T(t), sensor: backend === 'sparse_2d' ? { kind: 'disc', x_mm: a.x, y_mm: a.y, radius_mm: 3 } : { kind: 'edge', edge_id: `e${a.e}`, s_mm: a.s, radius_mm: 3 } });
+      s.sampleLocal({ signal_id: 'c', agent_id: `w${i}`, layer: 'surface', time: T(t), phase: 'local_sensing', sensor: backend === 'sparse_2d' ? { kind: 'disc', x_mm: a.x, y_mm: a.y, radius_mm: 3 } : { kind: 'edge', edge_id: `e${a.e}`, s_mm: a.s, radius_mm: 3 } });
       nSam++;
     });
     tSam += performance.now() - c0;

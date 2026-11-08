@@ -10,7 +10,10 @@
 import assert from 'node:assert/strict';
 import { ChemRefused, ChemStore, canonicalCompare, replayChem, type ChemOp, type StoreConfig } from '../engine/chemistry/core.ts';
 import type { DepositEvent, SampleQuery } from '../engine/chemistry/contract.ts';
+import { CHEM_PHASES } from '../engine/chemistry/contract.ts';
 import { CLOCK, PLANE, T, Y_EDGES, dep, rng, shuffle, sparseSpace, synthChannel, twoAnts, yMaze } from '../prototypes/chem1/scenarios.ts';
+import { GRID_CELLS_MM, gridSensitivity, gridTableRows } from '../prototypes/chem1/grid-sensitivity.ts';
+import fs from 'node:fs';
 
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
 const refused = (f: () => unknown, code: string, why: string) => {
@@ -20,7 +23,7 @@ const refused = (f: () => unknown, code: string, why: string) => {
 const close = (a: number, b: number, rel = 1e-12) => Math.abs(a - b) <= rel * Math.max(1, Math.abs(a), Math.abs(b));
 const edgeCfg = (lambda = 0): StoreConfig => ({ clock: CLOCK, channels: [{ spec: synthChannel('trail', 'surface_edge', { lambda_per_s: lambda }), domain: Y_EDGES }] });
 const planeCfg = (lambda = 0, layers = ['surface', 'underground']): StoreConfig => ({ clock: CLOCK, channels: [{ spec: synthChannel('p', 'sparse_2d', { lambda_per_s: lambda }), domain: PLANE(200, layers) }] });
-const eq = (q: Partial<SampleQuery> & { s_mm?: number; edge?: string; t?: number; r?: number } = {}): SampleQuery => ({ signal_id: 'trail', agent_id: 'w', layer: q.layer ?? 'surface', time: T(q.t ?? 10), sensor: { kind: 'edge', edge_id: q.edge ?? 'stem', s_mm: q.s_mm ?? 10, radius_mm: q.r ?? 2 } });
+const eq = (q: Partial<SampleQuery> & { s_mm?: number; edge?: string; t?: number; r?: number } = {}): SampleQuery => ({ signal_id: 'trail', agent_id: 'w', layer: q.layer ?? 'surface', time: T(q.t ?? 10), phase: 'local_sensing', sensor: { kind: 'edge', edge_id: q.edge ?? 'stem', s_mm: q.s_mm ?? 10, radius_mm: q.r ?? 2 } });
 
 // ======================= (1) counterexamples
 { // correct case
@@ -56,7 +59,7 @@ const eq = (q: Partial<SampleQuery> & { s_mm?: number; edge?: string; t?: number
   const s = new ChemStore(planeCfg());
   s.deposit([dep('u', 'p', 'w1', T(1), { kind: 'point2d', x_mm: 50, y_mm: 50 }, 1, 'underground')]);
   s.advance(T(1));
-  const q: SampleQuery = { signal_id: 'p', agent_id: 'w2', layer: 'surface', time: T(1), sensor: { kind: 'disc', x_mm: 50, y_mm: 50, radius_mm: 3 } };
+  const q: SampleQuery = { signal_id: 'p', agent_id: 'w2', layer: 'surface', time: T(1), phase: 'local_sensing', sensor: { kind: 'disc', x_mm: 50, y_mm: 50, radius_mm: 3 } };
   ok(s.sampleLocal(q).exposure === 0 && s.sampleLocal({ ...q, layer: 'underground' }).exposure === 1, 'a surface sensor does not read the underground layer at the same x,y');
   refused(() => s.sampleLocal({ ...q, layer: 'canopy' }), 'CROSS_LAYER_SAMPLE', 'sampling a layer the domain does not have');
   refused(() => s.deposit([dep('c', 'p', 'w1', T(2), { kind: 'point2d', x_mm: 1, y_mm: 1 }, 1, 'canopy')]), 'CROSS_LAYER_DEPOSIT', 'depositing into a missing layer');
@@ -80,7 +83,7 @@ const eq = (q: Partial<SampleQuery> & { s_mm?: number; edge?: string; t?: number
   const p = new ChemStore(planeCfg());
   p.deposit([dep('in', 'p', 'w', T(1), { kind: 'point2d', x_mm: 51, y_mm: 52.5 }), dep('corner', 'p', 'w', T(1), { kind: 'point2d', x_mm: 55, y_mm: 55 }, 7)]);
   p.advance(T(1));
-  const pr = p.sampleLocal({ signal_id: 'p', agent_id: 'w', layer: 'surface', time: T(1), sensor: { kind: 'disc', x_mm: 51, y_mm: 51, radius_mm: 3 } });
+  const pr = p.sampleLocal({ signal_id: 'p', agent_id: 'w', layer: 'surface', time: T(1), phase: 'local_sensing', sensor: { kind: 'disc', x_mm: 51, y_mm: 51, radius_mm: 3 } });
   ok(pr.exposure === 1 && pr.cells.length === 1, 'the disc excludes a diagonal cell 4.2 mm away (bounding-square read would include it)');
 }
 { // duplicate deposits of the same source event
@@ -182,9 +185,115 @@ for (let seed = 1; seed <= 20; seed++) {
 }
 { // replay is pure and refusals are recorded
   const g = rng(5), evs = randomOps(g, 40, true);
-  const ops: ChemOp[] = [{ op: 'deposit', events: evs }, { op: 'advance', to: T(5) }, { op: 'sample', query: { signal_id: 'p', agent_id: 'w', layer: 'surface', time: T(6), sensor: { kind: 'disc', x_mm: 20, y_mm: 20, radius_mm: 3 } } }, { op: 'advance', to: T(10) }, { op: 'sample', query: { signal_id: 'p', agent_id: 'w', layer: 'surface', time: T(10), sensor: { kind: 'disc', x_mm: 20, y_mm: 20, radius_mm: 3 } } }];
+  const ops: ChemOp[] = [{ op: 'deposit', events: evs }, { op: 'advance', to: T(5) }, { op: 'sample', query: { signal_id: 'p', agent_id: 'w', layer: 'surface', time: T(6), phase: 'local_sensing', sensor: { kind: 'disc', x_mm: 20, y_mm: 20, radius_mm: 3 } } }, { op: 'advance', to: T(10) }, { op: 'sample', query: { signal_id: 'p', agent_id: 'w', layer: 'surface', time: T(10), phase: 'local_sensing', sensor: { kind: 'disc', x_mm: 20, y_mm: 20, radius_mm: 3 } } }];
   const a = JSON.stringify(replayChem(planeCfg(LAMBDA), ops)), b = JSON.stringify(replayChem(planeCfg(LAMBDA), ops));
   ok(a === b && a.includes('FUTURE_SAMPLE'), 'replay deterministic; a future sample is recorded as refused');
+}
+
+// ======================= (2b) layered same-instant contract (Owner decision): sources -> commit -> update -> sense -> behave
+const at = (sv: ChemStore, t: number, round = 0, phase: SampleQuery['phase'] = 'local_sensing', s_mm = 10, r = 3) =>
+  sv.sampleLocal({ signal_id: 'trail', agent_id: 'w', layer: 'surface', time: T(t, round), phase, sensor: { kind: 'edge', edge_id: 'stem', s_mm, radius_mm: r } });
+const P = (id: string, t: number, round = 0, s_mm = 10, amount = 1, agent = 'w1') => dep(id, 'trail', agent, T(t, round), { kind: 'edge_point', edge_id: 'stem', s_mm }, amount);
+{ // causality
+  ok(CHEM_PHASES.join() === 'physics_and_sources,chemistry_commit,chemistry_update,local_sensing,behaviour_decision', 'contract fixes the five phases in order');
+  const s = new ChemStore(edgeCfg(0.05));
+  s.deposit([P('a', 4), P('b', 4, 0, 11)]); s.advance(T(4));
+  // phase 1 of t=5: sources submitted, not yet committed
+  s.deposit([P('c', 5, 0, 10, 2), P('d', 5, 0, 9, 3)]);
+  refused(() => at(s, 5), 'FUTURE_SAMPLE', 'phase-4 sample at t=5 before the t=5 commit (horizon still 4)');
+  for (const ph of ['physics_and_sources', 'chemistry_commit', 'chemistry_update'] as const) refused(() => at(s, 5, 0, ph), 'SAMPLE_BEFORE_COMMIT', `sample declared in phase ${ph}`);
+  const before = at(s, 4);
+  ok(close(before.exposure, 2) && before.cells.every((c) => !s.provenance('trail', c.key).some((x) => x === 'c' || x === 'd')), 'the last committed instant does not see the pending t=5 sources');
+  s.advance(T(5)); // phases 2+3 of t=5
+  const now = at(s, 5);
+  ok(now.exposure === 2 * Math.exp(-0.05) + 2 + 3, 'phase-4 sample at t=5 sees the deposits committed in phase 2 of the same instant');
+  for (const ph of ['physics_and_sources', 'chemistry_commit', 'chemistry_update'] as const) refused(() => at(s, 5, 0, ph), 'SAMPLE_BEFORE_COMMIT', `even after the commit, a sample declared in ${ph} is refused`);
+  refused(() => at(s, 5, 0, 'behaviour_decision'), 'SAMPLE_OUTSIDE_SENSING_PHASE', 'phase 5 does not re-read the field');
+  { const { phase: _drop, ...noPhase } = { ...eq({ t: 5 }) }; refused(() => s.sampleLocal(noPhase as SampleQuery), 'MISSING:phase', 'a sample without a phase'); }
+  refused(() => at(s, 5, 0, 'whenever' as never), 'BAD:phase', 'an unknown phase');
+  // future deposits never visible: later round of the same t, later t, an epsilon later
+  s.deposit([P('r1', 5, 1, 10, 7), P('t6', 6, 0, 10, 11), P('eps', 5 + 1e-9, 0, 10, 13)]);
+  ok(Object.is(at(s, 5).exposure, now.exposure) && s.ledger('trail').pending_count === 3, 'pending future deposits (round+1, t+ε, t+1) do not change the phase-4 reading');
+  // behaviour (phase 5) at t=5 emits a deposit: it must carry a later (t, round)
+  ok(s.deposit([P('beh', 5, 0, 10, 1, 'w2')])[0].reason === 'LATE_DEPOSIT', 'a phase-5 deposit stamped with the committed instant is late (no same-instant feedback)');
+  s.advance(T(5, 1));
+  ok(at(s, 5, 1).exposure === now.exposure + 7 && Object.is(at(s, 5, 1).exposure, at(s, 5, 1).exposure), 'the round-1 deposit becomes visible in round 1 of the same t only after its own commit');
+}
+{ // committed events are immutable
+  const s = new ChemStore(edgeCfg(0.02));
+  const orig = P('k', 3, 0, 10, 2, 'w9');
+  s.deposit([orig]); s.advance(T(3));
+  const ref = JSON.stringify(at(s, 3)), prov = s.provenance('trail', 'stem#2');
+  ok(s.deposit([{ ...orig, amount: 50 }])[0].reason === 'LATE_DEPOSIT', 'replacing a committed deposit at its own instant is refused (LATE_DEPOSIT)');
+  ok(s.deposit([{ ...orig, time: T(4), amount: 50 }])[0].reason === 'DUPLICATE_DEPOSIT_ID', 're-sending a committed deposit_id at a later time is refused (DUPLICATE_DEPOSIT_ID)');
+  ok(s.deposit([{ ...orig, deposit_id: 'k2', time: T(4), amount: 50 }])[0].reason === 'DUPLICATE_ORIGIN_EVENT', 're-deriving a deposit from the same origin event is refused (DUPLICATE_ORIGIN_EVENT)');
+  (orig as { amount: number }).amount = 1e6; (orig.where as { s_mm: number }).s_mm = 40; orig.time.t_s = 0;
+  prov.push('forged'); s.snapshot().channels[0].cells.forEach((c) => { c.value = 1e9; });
+  s.advance(T(4)); s.advance(T(4));
+  const later = at(s, 4);
+  ok(JSON.stringify(at(s, 3 + 1)) === JSON.stringify(later) && close(later.exposure, JSON.parse(ref).exposure * Math.exp(-0.02)) && s.provenance('trail', 'stem#2').join() === 'k', 'mutating the caller event, a provenance copy or a snapshot copy edits nothing that was committed');
+  ok(s.ledger('trail').rejected.LATE_DEPOSIT.count === 1 && s.ledger('trail').rejected.DUPLICATE_DEPOSIT_ID.count === 1 && s.ledger('trail').rejected.DUPLICATE_ORIGIN_EVENT.count === 1, 'every edit attempt is counted in the ledger');
+}
+{ // permutation invariance at one instant: deposit order, agent / deposit ids, batch splits -> bitwise identical samples
+  for (let seed = 1; seed <= 20; seed++) for (const plane of [false, true]) {
+    const g = rng(7000 + seed * 2 + (plane ? 1 : 0)), id = plane ? 'p' : 'trail', cfg = plane ? planeCfg(LAMBDA) : edgeCfg(LAMBDA);
+    const W = (): DepositEvent['where'] => plane
+      ? (g() < 0.5 ? { kind: 'point2d', x_mm: 10 + 10 * g(), y_mm: 10 + 10 * g() } : { kind: 'segment2d', x0_mm: 10 + 10 * g(), y0_mm: 10 + 10 * g(), x1_mm: 10 + 10 * g(), y1_mm: 10 + 10 * g() })
+      : (g() < 0.5 ? { kind: 'edge_point', edge_id: 'stem', s_mm: 5 + 15 * g() } : { kind: 'edge_segment', edge_id: 'stem', s0_mm: 5 + 15 * g(), s1_mm: 5 + 15 * g() });
+    const prior = Array.from({ length: 15 }, (_, i) => dep(`p${i}`, id, `w${i % 4}`, T(2), W(), [0.1, 0.3, 1 / 3][i % 3]));
+    const now: DepositEvent[] = [];
+    for (let i = 0; i < 40; i++) {
+      const w = W(), amount = [0.1, 0.2, 1 / 3, 0.7][Math.floor(g() * 4)];
+      now.push(dep(`n${i}`, id, `w${Math.floor(g() * 9)}`, T(7), w, amount));
+      if (i % 5 === 0) now.push(dep(`n${i}tie`, id, `w${Math.floor(g() * 9)}`, T(7), { ...w }, amount)); // exact ties: only ids differ
+    }
+    const valid = (d: DepositEvent) => !(d.where.kind === 'segment2d' && d.where.x0_mm === d.where.x1_mm && d.where.y0_mm === d.where.y1_mm) && !(d.where.kind === 'edge_segment' && d.where.s0_mm === d.where.s1_mm);
+    const sensors = Array.from({ length: 6 }, () => plane ? { kind: 'disc' as const, x_mm: 10 + 10 * g(), y_mm: 10 + 10 * g(), radius_mm: 3 } : { kind: 'edge' as const, edge_id: 'stem', s_mm: 5 + 15 * g(), radius_mm: 3 });
+    const run = (batches: DepositEvent[][]) => {
+      const s = new ChemStore(cfg); s.deposit(prior.filter(valid)); s.advance(T(2));
+      for (const b of batches) s.deposit(b.filter(valid));
+      s.advance(T(7));
+      return JSON.stringify(sensors.map((sensor) => s.sampleLocal({ signal_id: id, agent_id: 'reader', layer: 'surface', time: T(7), phase: 'local_sensing', sensor })));
+    };
+    const base = run([now]);
+    ok(base === run([shuffle(now, g)]), `seed ${seed} ${plane ? '2d' : 'edge'}: shuffled same-instant deposits -> bitwise identical samples`);
+    const perm = shuffle(now.map((_, i) => i), g);
+    const renamed = now.map((d, i) => ({ ...d, deposit_id: `q${perm[i]}`, origin_agent: `ant${(perm[i] * 7) % 13}`, origin_event_id: `e${perm[i]}` }));
+    ok(base === run([renamed]), `seed ${seed} ${plane ? '2d' : 'edge'}: permuted agent and deposit ids -> bitwise identical samples`);
+    const sh = shuffle(now, g), cuts = [...new Set([0, Math.floor(g() * sh.length), Math.floor(g() * sh.length), Math.floor(g() * sh.length), sh.length])].sort((a, b) => a - b);
+    const batches = cuts.slice(1).map((e, k) => sh.slice(cuts[k], e));
+    ok(batches.reduce((n, b) => n + b.length, 0) === sh.length && base === run(batches), `seed ${seed} ${plane ? '2d' : 'edge'}: same instant split into ${batches.length} batches -> bitwise identical samples`);
+  }
+}
+{ // no global propagation: a same-instant deposit outside the effective sensing range contributes exactly 0
+  for (const amount of [1, 1e9]) {
+    const e = new ChemStore(edgeCfg()), e0 = new ChemStore(edgeCfg());
+    // edge bins of 5 mm, sensor at 10 +/- 3 -> bins [7, 13] -> cells 1..2 (5..15 mm); 15.0 lands in bin 3 (outside)
+    for (const st of [e, e0]) st.deposit([P('near', 9, 0, 12)]);
+    e.deposit([P('far1', 9, 0, 15, amount), P('far2', 9, 0, 59, amount), dep('other', 'trail', 'w', T(9), { kind: 'edge_point', edge_id: 'left', s_mm: 0 }, amount)]);
+    e.advance(T(9)); e0.advance(T(9));
+    ok(Object.is(at(e, 9).exposure, at(e0, 9).exposure) && at(e, 9).exposure === 1, `edge: same-instant deposits beyond the bins of the interval (same edge, other edge) add exactly 0 (amount ${amount})`);
+    const p = new ChemStore(planeCfg()), p0 = new ChemStore(planeCfg());
+    for (const st of [p, p0]) st.deposit([dep('near', 'p', 'w', T(9), { kind: 'point2d', x_mm: 51, y_mm: 51 })]);
+    // sensor (51, 51) r = 3 with 2 mm cells: cell [54,56)x[50,52) is 3 mm away (touches) -> read; [56,58) is 5 mm -> not;
+    // diagonal cell [54,56)x[54,56) is 3*sqrt2 mm away -> not; another layer and the far corner -> not
+    p.deposit([dep('ring', 'p', 'w', T(9), { kind: 'point2d', x_mm: 56.5, y_mm: 51 }, amount), dep('diag', 'p', 'w', T(9), { kind: 'point2d', x_mm: 54.5, y_mm: 54.5 }, amount),
+      dep('corner', 'p', 'w', T(9), { kind: 'point2d', x_mm: 199, y_mm: 199 }, amount), dep('under', 'p', 'w', T(9), { kind: 'point2d', x_mm: 51, y_mm: 51 }, amount, 'underground')]);
+    p.advance(T(9)); p0.advance(T(9));
+    const q = (st: ChemStore) => st.sampleLocal({ signal_id: 'p', agent_id: 'r', layer: 'surface', time: T(9), phase: 'local_sensing', sensor: { kind: 'disc', x_mm: 51, y_mm: 51, radius_mm: 3 } });
+    ok(Object.is(q(p).exposure, q(p0).exposure) && q(p).exposure === 1, `2d: same-instant deposits outside every cell that intersects the disc add exactly 0 (amount ${amount})`);
+    const touch = new ChemStore(planeCfg()); touch.deposit([dep('t', 'p', 'w', T(9), { kind: 'point2d', x_mm: 55.9, y_mm: 51 }, amount)]); touch.advance(T(9));
+    ok(q(touch).exposure === amount, `2d: a deposit 4.9 mm away in a cell touching the 3 mm disc IS read (effective range = intersecting cells; cell-resolution assumption D)`);
+  }
+}
+{ // grid / cell-size sensitivity and convergence of sparse_2d sampling (Owner decision 4: report, do not tune)
+  const rows = gridSensitivity();
+  ok(JSON.stringify(rows) === JSON.stringify(gridSensitivity()), 'grid sensitivity is deterministic');
+  ok(rows.every((r) => r.bound_violations === 0), 'every sample (aligned and half-cell-shifted grid) lies in [exact(r), exact(r + cell·√2)]');
+  ok(rows.every((r, i) => i === 0 || r.mean_band < rows[i - 1].mean_band) && rows.every((r) => r.mean_abs_err <= r.mean_band + 1e-12), 'the provable error band shrinks with the cell and bounds the mean error (convergence to the continuous reference)');
+  ok(rows.every((r) => r.rel_bias >= 0), 'cell-resolution reading never under-counts (bias >= 0)');
+  const doc = fs.readFileSync(new URL('../docs/chemical-ecology-engine.md', import.meta.url), 'utf8');
+  ok(gridTableRows(rows).every((row) => doc.includes(row)) && GRID_CELLS_MM.length === rows.length, 'docs §14.5 records the computed grid table verbatim');
 }
 
 // ======================= (3) synthetic examples
