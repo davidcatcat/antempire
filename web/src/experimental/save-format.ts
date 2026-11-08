@@ -16,6 +16,11 @@ export const RETAIN_VERIFIED = 3;
 /** Autosave check period in real seconds (product assumption, to be confirmed by measured write cost). */
 export const AUTOSAVE_INTERVAL_S = 30;
 export const LOCK_PREFIX = 'antempire-experiment-world:';
+/** Manual saves kept per world, separate from the rotating autosave recovery points (Owner decision 55; product
+ *  assumption: a cap so storage cannot grow without bound — the 21st manual save is refused, never rotated out). */
+export const MANUAL_KEEP_MAX = 20;
+/** Largest import file accepted (Owner decision 57: bounded resource use). Product assumption. */
+export const MAX_IMPORT_BYTES = 16 * 1024 * 1024;
 /** Same pattern as the Worker runtime (prototypes/continuous-world/worker/core.ts). */
 const WORLD_ID = /^exp-[A-Za-z0-9._-]{1,60}$/;
 const isSeed = (x: unknown) => Number.isInteger(x) && (x as number) >= 0 && (x as number) <= 0xffffffff;
@@ -32,7 +37,7 @@ export interface RuntimeInfo { rules_fingerprint: string; engine_version: string
 
 export type SaveErrorCode = 'quota_exceeded' | 'aborted' | 'verify_failed' | 'conflict' | 'not_writer' | 'write_failed' | 'world_exists'
   | 'unknown_world' | 'invalid_snapshot' | 'no_valid_snapshot' | 'unknown_schema' | 'newer_schema' | 'rules_mismatch' | 'migration_failed'
-  | 'unsupported' | 'invalid_import' | 'confirmation_required';
+  | 'unsupported' | 'invalid_import' | 'confirmation_required' | 'manual_limit' | 'import_too_large';
 export type Result<T> = { ok: true; value: T } | { ok: false; code: SaveErrorCode; message: string };
 export const okR = <T>(value: T): Result<T> => ({ ok: true, value });
 export const errR = <T = never>(code: SaveErrorCode, message: string): Result<T> => ({ ok: false, code, message });
@@ -142,13 +147,27 @@ export function compatibility(h: Pick<SnapshotHeader, 'schema' | 'rules_fingerpr
 
 // ---------- world records, retention, load order ----------
 
-export interface WorldSummary { queens?: number | null; workers?: number | null }
+export interface WorldSummary { queens?: number | null; workers?: number | null; individuals?: number | null; note?: string | null }
+/** Where an imported copy came from (Owner decision 54). The copy's stored snapshots are the source's verified bytes. */
+export interface Provenance {
+  kind: 'import_copy'; source_world_id: string; source_name: string; source_exported_at: string; source_export_sha256: string;
+  source_payload_sha256: string; source_t_sim: number; source_seq: number; imported_at: string;
+  /** what was checked at import (SHA-256 detects accidental corruption only; it is not an authenticity proof — decision 57) */
+  verification: string;
+}
+export type SaveKind = 'auto' | 'manual';
+export interface ManualSave { gen: number; saved_at: string; t_sim: number; seq: number }
+export interface LastSave { kind: SaveKind; bytes: number; ms: number; saved_at: string }
 export interface WorldRecord {
   world_id: string; name: string; seed: number; created_at: string; official: false; label: typeof LABEL;
   next_gen: number; slots: number[]; quarantined: { gen: number; reason: string }[];
   last_saved_at: string | null; t_sim: number | null; seq: number | null;
   rules_fingerprint: string; engine_version: string; schema_version: number; summary: WorldSummary;
+  /** world id INSIDE the snapshots when it differs from the record key (an imported copy keeps the source's id) */
+  sim_world_id?: string; provenance?: Provenance | null; manual?: ManualSave[]; last_save?: LastSave | null;
 }
+/** The world id the stored snapshots carry (the record key unless the record is an imported copy). */
+export const simIdOf = (w: Pick<WorldRecord, 'world_id' | 'sim_world_id'>) => w.sim_world_id ?? w.world_id;
 export interface SnapshotRecord { world_id: string; gen: number; status: 'pending' | 'verified'; written_at: string; header: SnapshotHeader; payload_json: string; payload_sha256: string }
 
 /** Slots after promoting `gen`: newest first, quarantined generations excluded, at most `retain`. */
@@ -160,7 +179,7 @@ export function planPromote(slots: number[], quarantined: number[], gen: number,
 export const sweepable = (allGens: number[], keep: number[], quarantined: number[], gen: number) => allGens.filter((g) => g < gen && !keep.includes(g) && !quarantined.includes(g));
 
 /** Check a stored record (re-read hash, header fields, identity). Returns the reason it is unusable, or null. */
-export async function recordProblem(rec: SnapshotRecord | undefined, world_id: string, gen: number): Promise<string | null> {
+export async function recordProblem(rec: SnapshotRecord | undefined, world_id: string, gen: number, sim_world_id = world_id): Promise<string | null> {
   if (!rec) return 'missing';
   if (rec.world_id !== world_id || rec.gen !== gen) return 'identity mismatch';
   if (typeof rec.payload_json !== 'string') return 'payload missing';
@@ -168,7 +187,7 @@ export async function recordProblem(rec: SnapshotRecord | undefined, world_id: s
   let payload: unknown; try { payload = JSON.parse(rec.payload_json); } catch { return 'payload is not JSON'; }
   const e = envelopeErrors({ ...rec.header, payload });
   if (e.length) return `envelope invalid: ${e.join('; ')}`;
-  if (rec.header.world_id !== world_id) return 'world_id mismatch';
+  if (rec.header.world_id !== sim_world_id) return 'world_id mismatch';
   return null;
 }
 
@@ -183,6 +202,9 @@ export async function buildExport(w: Pick<WorldRecord, 'world_id' | 'name' | 'se
 
 /** Validate an import file: format, non-official, integrity (file and payload hashes), and report rules compatibility. */
 export async function parseImport(text: string, rt: RuntimeInfo, reg: MigrationRegistry): Promise<Result<{ file: ExportFile; compat: Compatibility }>> {
+  // Bounded resource use: refuse oversized text before parsing. Data is only JSON-parsed and validated, never executed.
+  if (typeof text !== 'string') return errR('invalid_import', 'not text');
+  if (text.length > MAX_IMPORT_BYTES) return errR('import_too_large', `file larger than ${MAX_IMPORT_BYTES} characters`);
   let f: unknown; try { f = JSON.parse(text); } catch { return errR('invalid_import', 'not JSON'); }
   if (!isObj(f)) return errR('invalid_import', 'not an object');
   if (f.schema !== EXPORT_SCHEMA) return errR('invalid_import', 'not an experiment-world export');
@@ -203,6 +225,20 @@ export async function parseImport(text: string, rt: RuntimeInfo, reg: MigrationR
 // ---------- new game helpers, display ----------
 
 export const newWorldId = () => `exp-${crypto.randomUUID()}`;
+/** Record key of an imported copy (a new local world; the snapshots inside keep the source world id). */
+export const newCopyId = () => `exp-copy-${crypto.randomUUID()}`;
+/**
+ * Seed of a new world from the player's input (SAVE-0 §2): empty → a fresh random seed; a decimal integer in
+ * [0, 2^32) → that integer; any other text → the first 4 bytes (big-endian) of SHA-256(UTF-8(text)). The page shows
+ * the resulting integer. Returns null for an integer outside the range.
+ */
+export async function seedFromInput(input: string): Promise<{ seed: number; how: 'random' | 'integer' | 'text' } | null> {
+  const t = input.trim();
+  if (t === '') return { seed: newSeed(), how: 'random' };
+  if (/^\d+$/.test(t)) { const n = Number(t); return Number.isSafeInteger(n) && n <= 0xffffffff ? { seed: n, how: 'integer' } : null; }
+  const d = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)));
+  return { seed: ((d[0] << 24) | (d[1] << 16) | (d[2] << 8) | d[3]) >>> 0, how: 'text' };
+}
 /** A fresh 32-bit seed for a new experiment world (not used by the simulation itself; the Worker receives it). */
 export const newSeed = () => crypto.getRandomValues(new Uint32Array(1))[0];
 /** t_sim is SECONDS since experiment Day0 00:00 (contract §2, same as the Worker runtime). Display only. */

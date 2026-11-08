@@ -4,7 +4,7 @@
 
 ## 1. 入口與分離
 
-- 網址：`web/experiment.html`（`npm run web` 後開 `http://localhost:8780/experiment.html`，可加 `?seed=N`；`&autostart=0` 只建立世界、不開始）。頂列固定顯示「非正式」標籤與「非正式實驗世界／不屬於正式遊戲歷史」。
+- 網址：`web/experiment.html`（`npm run web` 後開 `http://localhost:8780/experiment.html`：先顯示選單，見 SAVE-2；加 `?seed=N` 是不存檔的臨時實驗，`&autostart=0` 只建立世界、不開始）。頂列固定顯示「非正式」標籤與「非正式實驗世界／不屬於正式遊戲歷史」。
 - 正式模式（`index.html`→`game.ts`、`analysis.html`→`main.ts`）的匯入圖**不包含** Worker client 或實驗頁；瀏覽器測試確認兩頁都不建立 Worker、不載入 `worker-dist/`。
 - 實驗頁的匯入圖沒有 `fetch`、XHR、儲存 API，也不含 `data/`、`saves/`、`journal/` 路徑；瀏覽器測試確認它不請求這些路徑。
 - 模擬只在 Worker 內執行（`experimental/worker-client.ts` 是唯一可建立 Worker 的檔）。主執行緒只送排程／觀察指令並畫圖，不匯入 `engine/`、`prototypes/`、`cli/`（`tests/worker-boundary.test.ts`、`tests/web-v62-experiment.test.ts`）。
@@ -40,4 +40,4 @@
 - 合成世界不是科學模型；P0-A2 個體行為尚未接入。
 - 畫面光源固定（示意），沒有依 Worker 的光照狀態畫日夜；光照狀態以文字顯示。
 - 跨環境（Node 與 Chromium）逐位元組相同的限制見 [`experimental-worker-runtime.md`](experimental-worker-runtime.md) §6；本頁的「UI 操作不改結果」比較都在同一個瀏覽器內進行。
-- 本 PR 不存檔；本地存檔與選單是 SAVE-1／SAVE-2。
+- 選單、自動存檔與接續（SAVE-2）見 [`experimental-save-system.md`](experimental-save-system.md) §12c；`experiment.html` 不帶參數時先顯示選單，`?seed=N` 是不存檔的臨時實驗。

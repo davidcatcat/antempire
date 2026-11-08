@@ -71,6 +71,10 @@ jobs:
           node tests/browser/v62-experiment.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/ | tee "$RUNNER_TEMP/viewer-shots/v62-experiment-results.json"
       - name: SAVE-1 experiment-world save store in Chromium (synthetic payloads; atomicity, recovery, kill, locks, isolation, browser restart, migrations, export/import, save cost)
         run: node tests/browser/save-store.check.cjs "$RUNNER_TEMP/viewer-shots"
+      - name: SAVE-2 menu, autosave and resume acceptance (real Chromium, persistent profiles; Owner flow 1-10, tests A-E, hard kill, multi-tab, rules mismatch, import as copy; desktop + Pixel 7 screens)
+        run: |
+          set -o pipefail
+          node tests/browser/save2-acceptance.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/ | tee "$RUNNER_TEMP/viewer-shots/save2-acceptance-results.json"
       - name: Assemble the static preview (page + compiled script + data + screenshots + test results + instructions)
         if: always()
         run: |
