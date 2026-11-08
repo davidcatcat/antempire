@@ -736,3 +736,12 @@ R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-
 | ID | 文獻 | 閱讀程度 | 物種 | 支持的內容 | 不可外推之處 |
 |---|---|---|---|---|---|
 | R810 | Draft RW, McGill MR, Kapoor V, Murthy VN (2018) Carpenter ants use diverse antennae sampling strategies to track odor trails. *J. Exp. Biol.* 221: jeb185124. DOI 10.1242/jeb.185124，PMID 30266788 | **只讀摘要** | **非本種**：*Camponotus pennsylvanicus* | 觸角探測有多種模式；左右觸角不是單純同步；觸角取樣方式與沿跡追蹤有關 | **不支持**本種的任何觸角角度、擺動頻率、頭部擺幅或運動參數；不支持把左右反相或特定取樣模式套到 *P. megacephala*；沒有本種的觸角量測 |
+
+## 2026-11-08 ANTENNA-GEO：觸角幾何的形態約束（R870、R871；`docs/antenna-geometry.md`）
+
+> 編號 R870、R871 已在 origin 所有分支（`git show <branch>:docs/references.md`）與本機所有工作樹確認未被使用。只用來**約束候選幾何**（柄節長度範圍、觸角窩必須在頭寬之內、頭部位置），不提供觸角總長、鞭節長度、活動範圍或擺動參數。R99（Sarnat et al. 2015）同時被引用：其 *P. megacephala* 條目列出 Fischer & Fisher 2013 的小工蟻 HW 0.50–0.61、HL 0.57–0.68、SL 0.61–0.72 mm、SI 114–122（n = 20）與大工蟻 HW 1.10–1.54、HL 1.04–1.59、SL 0.59–0.76 mm、SI 47–58（n = 19）（Plazi 條目全文，二手引用 Fischer & Fisher 2013）。
+
+| ID | 文獻 | 閱讀程度 | 物種 | 支持的內容 | 不可外推之處 |
+|---|---|---|---|---|---|
+| R870 | Eguchi K (2008) A revision of Northern Vietnamese species of the ant genus *Pheidole* (Insecta: Hymenoptera: Formicidae: Myrmicinae). *Zootaxa* 1902: 1–118（*P. megacephala* 條目 pp. 55–59）。DOI 10.11646/zootaxa.1902.1.1 | 條目全文（Plazi 處理本 treatment.plazi.org/id/039687A9-FFE8-A413-FF67-6051FAECFD46） | **本種**，越南北部標本 | 小工蟻（n = 5）HL 0.62–0.72、HW 0.55–0.65、SL 0.67–0.73 mm、SI 111–121；大工蟻（n = 5）HL 1.28–1.45、HW 1.25–1.45、SL 0.71–0.76 mm、SI 52–57；觸角 3 節棒；柄節超出頭後側緣 | 標本範圍、n 很小、地理族群不同；**FL 是後腿股節長，不是鞭節長**；沒有鞭節長度、觸角窩位置、活動範圍 |
+| R871 | Warner J, Scheffrahn RH (2007) Bigheaded ant, *Pheidole megacephala* (Fabricius). UF/IFAS Featured Creatures **EENY-369**（2007 年 1 月發布；EDIS 存檔 PDF） | 全文 | **本種**，佛羅里達 | 小工蟻約 2 mm、大工蟻 3–4 mm；觸角 12 節、3 節棒；工蟻二型 | 推廣刊物的約略體長；沒有觸角各節長度或運動資料 |
