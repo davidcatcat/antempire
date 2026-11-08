@@ -118,7 +118,7 @@ export function rawFromStream(s: PoseStream, a: PoseAgent, t: number) {
 }
 /** The four comparison scenes the Owner asked for and the scenario_id keyword that selects a file for each. */
 export const SCENES = [
-  { slot: 'straight', match: /straight|直線/i, title: '① 同一隻螞蟻：僵直 vs 自然', note: '同一條身體軌跡畫兩次：上＝無顯示微動作，下＝有頭部、觸角與步態過渡。' },
+  { slot: 'straight', match: /straight|直線/i, title: '① 直線基準（A） vs 自然行走候選（B）', note: '同一條身體軌跡畫兩次：上＝無顯示微動作，下＝有頭部、觸角與步態過渡。' },
   { slot: 'trail', match: /trail|pheromone|費洛蒙/i, title: '② 沿化學路徑前進（小幅修正）', note: '身體的修正來自物理資料（沿化學場）；頭與觸角是顯示動畫。' },
   { slot: 'explore', match: /explor|search|探索/i, title: '③ 探索未知區域（觸角、頭部較活躍）', note: '探索情境：觸角較多掃動與點地、頭部較多轉看（示意）。' },
   { slot: 'obstacle', match: /obstacle|障礙/i, title: '④ 接近障礙物、真的轉向再繼續', note: '轉向是物理資料的 θ／ω；靠近障礙時觸角較多前探與點地（示意）。' },

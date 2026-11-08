@@ -2,9 +2,9 @@
  "page": {
   "desktop": {
    "fps": {
-    "samples": 237,
-    "mean_ms": 16.94683544303797,
-    "fps_mean": 59.008066925605036
+    "samples": 191,
+    "mean_ms": 21.116230366492147,
+    "fps_mean": 47.35693741941883
    },
    "sources": [
     "straight:physics",
@@ -15,9 +15,9 @@
   },
   "pixel7": {
    "fps": {
-    "samples": 221,
-    "mean_ms": 18.17420814479637,
-    "fps_mean": 55.02303000124489
+    "samples": 182,
+    "mean_ms": 22.160439560439563,
+    "fps_mean": 45.12545869284934
    },
    "sources": [
     "straight:physics",
@@ -30,20 +30,20 @@
  "game": {
   "desktop": {
    "fps_default": {
-    "frames": 333,
-    "samples": 333,
-    "mean_ms": 18.067267267267265,
-    "p50_ms": 16.69999999999891,
-    "p95_ms": 33.29999999999927,
-    "fps_mean": 55.34871351638854
+    "frames": 308,
+    "samples": 308,
+    "mean_ms": 19.47987012987013,
+    "p50_ms": 16.699999999999818,
+    "p95_ms": 33.399999999999636,
+    "fps_mean": 51.33504450148339
    },
    "fps_closeup": {
-    "frames": 233,
-    "samples": 233,
-    "mean_ms": 17.595708154506436,
+    "frames": 214,
+    "samples": 214,
+    "mean_ms": 18.84672897196262,
     "p50_ms": 16.700000000000728,
-    "p95_ms": 16.799999999999272,
-    "fps_mean": 56.83204058734573
+    "p95_ms": 33.39999999999782,
+    "fps_mean": 53.05960527620747
    },
    "detail_path_in_closeup": true,
    "followed": "W004",
@@ -51,20 +51,20 @@
   },
   "pixel7": {
    "fps_default": {
-    "frames": 336,
-    "samples": 336,
-    "mean_ms": 17.90595238095238,
+    "frames": 353,
+    "samples": 353,
+    "mean_ms": 16.99660056657224,
     "p50_ms": 16.69999999999891,
-    "p95_ms": 33.30000000000018,
-    "fps_mean": 55.84735057509474
+    "p95_ms": 16.799999999999272,
+    "fps_mean": 58.83529450981698
    },
    "fps_closeup": {
-    "frames": 215,
-    "samples": 215,
-    "mean_ms": 18.603720930232573,
-    "p50_ms": 16.69999999999709,
-    "p95_ms": 33.29999999999927,
-    "fps_mean": 53.75268763438168
+    "frames": 228,
+    "samples": 228,
+    "mean_ms": 17.61622807017544,
+    "p50_ms": 16.700000000000728,
+    "p95_ms": 16.80000000000291,
+    "fps_mean": 56.76584090626167
    },
    "detail_path_in_closeup": true,
    "followed": "W004",
@@ -74,7 +74,7 @@
  "meta": {
   "measured": "headless Chromium via Playwright (software rendering); not a real device",
   "node": "v22.23.4",
-  "passed": 16,
+  "passed": 24,
   "failed": 0
  }
 }

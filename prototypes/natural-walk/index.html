@@ -18,7 +18,7 @@
   .scene { background: var(--panel); border-radius: 8px; padding: 8px; min-width: 0; }
   .scene header { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px; }
   .tag { font-size: 11px; border-radius: 4px; padding: 1px 6px; }
-  .tag.ph { background: #7a4a12; } .tag.phys { background: #24506b; } .tag.disp { background: #4b3a5e; } .tag.bad { background: #7a1f1f; }
+  .tag.cand { background: #8a3b1c; } .tag.ph { background: #7a4a12; } .tag.phys { background: #24506b; } .tag.disp { background: #4b3a5e; } .tag.bad { background: #7a1f1f; }
   .wrap { position: relative; }
   canvas { width: 100%; height: 300px; display: block; border-radius: 6px; touch-action: none; }
   .scene[data-slot="straight"] canvas { height: 360px; }
@@ -30,12 +30,14 @@
 </head>
 <body>
 <main>
-<h1>自然行走顯示：頭部、觸角與步態（顯示動畫・示意）</h1>
+<h1>自然行走：模型 A／B／C 並排比較＋頭部、觸角與步態（美術插值）</h1>
 <div id="bar"><button id="play">暫停</button><button id="restart">從頭</button>
   <select id="speed" aria-label="播放速度"><option value="0.25">0.25× 實際速度</option><option value="0.5" selected>0.5× 實際速度</option><option value="1">1× 實際速度</option></select>
+  <label><input type="checkbox" id="art" checked> 美術插值（頭・觸角・連續步態）</label>
+  <select id="set" aria-label="資料組"><option value="compare">模型並排比較（A／B／C）</option><option value="original">PR A 原始四情境</option></select>
   <span id="clock" class="muted"></span></div>
 <div id="status">載入中…</div>
-<p class="legend"><b>兩種資料分開標示：</b>藍色虛線與身體的位置、方向、速度、轉向（θ、ω）＝<b>物理資料</b>（PR A 匯出 <code>antempire.pose-stream.v1</code>；兩筆紀錄之間為線性插值）。
+<p class="legend"><b>三種標示：</b><span class="tag phys">物理資料</span>＝PR A 物理輸出（身體位置、方向、實際轉向、速度、事件、模型 C 合成感測點）；<span class="tag disp">美術插值</span>＝顯示動畫（頭部轉動、左右觸角、六足步態與走停過渡；只畫在身體上，不改變軌跡，<b>不是引擎的感覺</b>）；<span class="tag cand">未驗證候選模型</span>＝模型 C（尚未通過與 R133 的生物驗證）。左右觸角各自獨立運動的設計只以 R810（Draft et al. 2018，木匠蟻，非本種，只讀摘要）為候選機制，不採用它的角度或頻率。<br><b>細節：</b>藍色虛線與身體的位置、方向、速度、轉向（θ、ω）＝<b>物理資料</b>（PR A 匯出 <code>antempire.pose-stream.v1</code>；兩筆紀錄之間為線性插值）。
 頭部轉動、左右觸角動作、腳的擺動與走停過渡＝<b>顯示動畫（示意）</b>：依螞蟻 ID 種子與資料時間決定、可重播，不改變身體軌跡，<b>不是感覺事件</b>（不代表螞蟻聞到或碰到什麼）。黃色帶＝資料中的化學場（PR A 目前是合成濃度場 <code>synthetic: true</code>，不是費洛蒙模型）、藍圈＝模型 C 的合成感測點（物理輸出），與格線同屬玩家視角。</p>
 <div id="scenes"></div>
 </main>

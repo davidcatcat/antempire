@@ -46,6 +46,16 @@ server.listen(0, async () => {
       await page.evaluate(() => window.__nw.setTime(1.0)); await page.waitForTimeout(150);
       await page.evaluate(() => window.__nw.setTime(4.37)); await page.waitForTimeout(150); const b = await page.evaluate(() => JSON.stringify(window.__nw.info().map((p) => p.last)));
       check(a === b, `${tag}: same time → identical body pose and display state (any frame history)`);
+      // model comparison: lanes per model, C labelled as an unvalidated candidate, art toggle never moves a body
+      const lanes = await page.evaluate(() => window.__nw.info().map((p) => (p.last?.lanes ?? []).map((l) => l.model).join('')));
+      check(lanes.join() === 'AB,ABC,AB,AB', `${tag}: side-by-side models per scene (${lanes.join()})`);
+      check(/未驗證候選模型/.test(text) && /美術插值/.test(text) && /R810/.test(text), `${tag}: 物理資料／美術插值／未驗證候選模型 labelled, R810 cited`);
+      const pos = (on) => page.evaluate(async (o) => { window.__nw.setArt(o); window.__nw.setTime(4.37); await new Promise((r) => setTimeout(r, 200)); return window.__nw.info().map((p) => p.last.lanes.map((l) => [l.x, l.y, l.theta, l.micro ? 1 : 0])); }, on);
+      const pOn = await pos(true), pOff = await pos(false);
+      check(JSON.stringify(pOn.map((p) => p.map((l) => l.slice(0, 3)))) === JSON.stringify(pOff.map((p) => p.map((l) => l.slice(0, 3)))) && pOn.flat().every((l) => l[3] === 1) && pOff.flat().every((l) => l[3] === 0), `${tag}: 美術插值 on/off changes no body pose (physics data identical)`);
+      await page.evaluate(() => window.__nw.setTime(3.6)); await page.waitForTimeout(200);
+      await page.screenshot({ path: path.join(OUT, `${tag}-page-overview-art-off.png`), fullPage: true });
+      await page.evaluate(() => window.__nw.setArt(true));
       await page.evaluate(() => window.__nw.setTime(3.2)); await page.waitForTimeout(200);
       await page.screenshot({ path: path.join(OUT, `${tag}-page-overview.png`), fullPage: true });
       // close-ups: each scene zoomed on its ant at a moment of interest
@@ -53,6 +63,12 @@ server.listen(0, async () => {
         await page.evaluate(([s, x, zz]) => { window.__nw.setZoom(s, zz); window.__nw.setTime(x); }, [slot, tt, z]); await page.waitForTimeout(250);
         const el = await page.$(`section[data-slot="${slot}"]`); await el.scrollIntoViewIfNeeded(); await el.screenshot({ path: path.join(OUT, `${tag}-page-${slot}-closeup.png`) });
       }
+      // PR A's original four scenes stay viewable
+      await page.goto(base + '?set=original'); await page.waitForFunction(() => window.__nw && window.__nw.ready(), null, { timeout: 30000 }); await page.waitForTimeout(800);
+      const orig = await page.evaluate(() => window.__nw.info().map((p) => p.file));
+      check(orig.every((f) => f && !/compare|placeholder/.test(f)), `${tag}: ?set=original loads PR A's own exports (${orig.join(', ')})`);
+      await page.evaluate(() => { window.__nw.pause(); window.__nw.setTime(3.2); }); await page.waitForTimeout(200);
+      await page.screenshot({ path: path.join(OUT, `${tag}-page-original-overview.png`), fullPage: true });
       await ctx.close();
     }
     // ---------------------------------------------------------------- part 2: game view

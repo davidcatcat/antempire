@@ -180,11 +180,21 @@ const maxAutocorr = (x: number[], lo: number, hi: number) => { const n = x.lengt
   const slots = new Set<string>();
   for (const f of idx.files) { const s = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'prototypes', 'natural-walk', 'data', f), 'utf8')) as PoseStream; ok(validatePoseStream(s).length === 0 && s.params.placeholder !== true, `PR A ${f}: valid ${POSE_SCHEMA}, not a placeholder`); slots.add(String(slotOf(s))); }
   ok(SCENES.every((x) => slots.has(x.slot)), 'PR A data fills all four scenes');
+  // side-by-side model comparison (Owner decision on #163 item 8): same scene per model, produced by PR A's code
+  for (const sc of SCENES) {
+    const s = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'prototypes', 'natural-walk', 'data', 'compare', `${sc.slot}.json`), 'utf8')) as PoseStream & { notes: string[] };
+    const models = s.agents.map((a) => a.model);
+    ok(validatePoseStream(s).length === 0 && slotOf(s) === sc.slot && s.model === 'mixed', `compare ${sc.slot}: valid, maps to its scene`);
+    ok(models[0] === 'A' && models[1] === 'B' && (sc.slot === 'trail' ? models[2] === 'C' && models.length === 3 : models.length === 2), `compare ${sc.slot}: models ${models.join('/')} (C only where a chemical field exists)`);
+    ok(s.notes.some((x) => /6fe6f26/.test(x)) && (sc.slot === 'trail' || s.notes.some((x) => /拒絕執行 C/.test(x))), `compare ${sc.slot}: provenance and the missing-C reason recorded`);
+    ok(new Set(s.agents.map((a) => a.samples[0].x_mm + ',' + a.samples[0].y_mm)).size <= 2, `compare ${sc.slot}: models start from the same place`);
+  }
   const page = fs.readFileSync(path.join(REPO_ROOT, 'prototypes', 'natural-walk', 'index.html'), 'utf8') + fs.readFileSync(path.join(REPO_ROOT, 'prototypes', 'natural-walk', 'natural-walk.ts'), 'utf8');
-  ok(/物理資料/.test(page) && /顯示動畫（示意）/.test(page) && /示意・待 PR A 物理資料/.test(page) && /不是感覺事件/.test(page), 'page labels physics vs display animation, placeholder and non-perception');
+  ok(/物理資料/.test(page) && /美術插值/.test(page) && /未驗證候選模型/.test(page) && /R810/.test(page) && /R133/.test(page), 'page labels the three element classes (物理資料／美術插值／未驗證候選模型) and cites R810 / R133');
+  ok(/物理資料/.test(page) && /顯示動畫/.test(page) && /示意・待 PR A 物理資料/.test(page) && /不是感覺事件/.test(page), 'page labels physics vs display animation, placeholder and non-perception');
   ok(!/Math\.random/.test(page), 'page: no unseeded randomness');
   const doc = fs.readFileSync(path.join(REPO_ROOT, 'docs', 'game-art-style.md'), 'utf8'), sec = doc.slice(doc.indexOf('## 5b'), doc.indexOf('## 6'));
-  ok(sec.length > 200 && /示意/.test(sec) && /R133/.test(sec) && /非本種/.test(sec) && ['EPOCH_S', 'BLEND_S', 'glanceSlotS', 'turnGain', 'sweep', 'probe', 'tap', 'rest', 'WALK_BLEND_S', 'playbackDamp'].every((k) => sec.includes(k)), 'docs §5b: display micro-motion parameters listed as 示意／假設, R133 body-path stats, carpenter-ant study 非本種');
+  ok(sec.length > 200 && /示意/.test(sec) && /R133/.test(sec) && /R810/.test(sec) && /非本種/.test(sec) && /未驗證候選模型/.test(sec) && ['EPOCH_S', 'BLEND_S', 'glanceSlotS', 'turnGain', 'sweep', 'probe', 'tap', 'rest', 'WALK_BLEND_S', 'playbackDamp'].every((k) => sec.includes(k)), 'docs §5b: display micro-motion parameters listed as 示意／假設, R133 body-path stats, carpenter-ant study 非本種');
 }
 
 console.log(JSON.stringify({ test: 'display-motion', passed: true, checks, metrics }));
