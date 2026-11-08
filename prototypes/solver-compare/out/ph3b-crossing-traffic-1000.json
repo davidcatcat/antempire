@@ -3,13 +3,13 @@
  "agents": 1000,
  "horizon_s": 20,
  "cost": {
-  "wall_ms": 10667.349139999998,
-  "cpu_user_ms": 7213.552,
-  "cpu_system_ms": 223.203,
-  "heap_used_delta_mb": 91.52149963378906,
-  "rss_mb": 221.26953125
+  "wall_ms": 13323.690058,
+  "cpu_user_ms": 7244.42,
+  "cpu_system_ms": 170.766,
+  "heap_used_delta_mb": 94.10559844970703,
+  "rss_mb": 220.27734375
  },
- "peak_rss_mb": 515.4765625,
+ "peak_rss_mb": 656.734375,
  "stats": {
   "batches": 37945,
   "events_processed": 44021,
@@ -31,6 +31,8 @@
   "episodes_open_at_horizon": 985,
   "ends_unconfirmed_at_horizon": 0,
   "constraint_outside_contact": 0,
+  "constraint_intervals": 17355,
+  "constraint_intervals_binding": 17355,
   "passes": 9296,
   "turns": 0,
   "turn_blocked": 0,
@@ -77,19 +79,19 @@
   "identical_candidate_sets": true,
   "cost": {
    "brute": {
-    "ms": 290.57731200000853,
+    "ms": 497.6331960000098,
     "pairs": 895722
    },
    "grid_8mm": {
-    "ms": 324.70971100000315,
+    "ms": 301.9950950000202,
     "pairs": 895722
    },
    "grid_2mm": {
-    "ms": 308.1584270000021,
+    "ms": 516.1864739999874,
     "pairs": 895722
    },
    "sap": {
-    "ms": 316.24423700000625,
+    "ms": 623.2636580000108,
     "pairs": 895722
    }
   },
@@ -101,6 +103,55 @@
   "packing_feasible_given_u_blocks": 9,
   "packing_unknown": 0
  },
+ "test_version": {
+  "git_head": "7ef8a61514041ff8aa1012cef576e9047e7197a8",
+  "worktree_clean": true,
+  "node": "v22.23.4"
+ },
+ "trajectory": {
+  "sha256": "d5f18bfca5ab902178795ba12aab822938116a5c8d5d93aa94c1b1d561c09d9b",
+  "ref_83397c5": "d5f18bfca5ab902178795ba12aab822938116a5c8d5d93aa94c1b1d561c09d9b",
+  "bit_identical_to_83397c5": true
+ },
+ "contact_kinds": {
+  "geometric_contact": {
+   "episodes": 1001,
+   "ends_exact": 16,
+   "open_at_horizon": 985,
+   "unconfirmed": 0,
+   "checker_violations": 0,
+   "missed": 0,
+   "penetrations": 0,
+   "pairs_scanned": 24857,
+   "max_end_err_s": 5.07474107180883e-9,
+   "median_end_err_s": 1.8359953557478548e-9,
+   "max_start_err_s": 2.62501131942372e-12,
+   "max_dev_from_mid_s": 9.91804860461798e-10,
+   "problems": []
+  },
+  "constraint_active": {
+   "intervals": 17355,
+   "binding": 17355,
+   "inside_geometric_episode": 17355,
+   "below_resolution": 0,
+   "open_at_horizon": 985,
+   "checker_violations": 0,
+   "problems": []
+  },
+  "antenna_contact": {
+   "supported": false,
+   "value": null,
+   "emitted": 0
+  },
+  "motion_records": {
+   "teleports": 0,
+   "speed_mismatch": 0,
+   "problems": []
+  },
+  "checker_cpu_ms": 4266.862,
+  "checker_wall_ms": 4289.9361619998235
+ },
+ "judge_cpu_ms": 818423.864,
  "judge": {
   "overlap_pair_instants": 0,
   "overlap_between_instants": 0,
@@ -114,7 +165,6 @@
   "body_contacts_only_between_instants": 0,
   "occupancy2d": null,
   "instants": 34716,
-  "judge_wall_ms": 1203391.148408
- },
- "judge_note": "judge not re-run (--no-judge-1000, ~20 min): carried over from the 6864974 run. The judge grades trajectories only, and the trajectories are bit-identical to 6864974 (sha256 of all samples 14f818d87140…, of all non-contact events f6a9cc499726…, tests/ph3b-contact-time.test.ts and the 2026-11-08 PH-3b contact-time change); only contact events changed."
+  "judge_wall_ms": 1475279.539746
+ }
 }

@@ -3,13 +3,13 @@
  "agents": 2,
  "horizon_s": 20,
  "cost": {
-  "wall_ms": 29.51255500000002,
-  "cpu_user_ms": 30.359,
-  "cpu_system_ms": 0,
-  "heap_used_delta_mb": 0.6180648803710938,
-  "rss_mb": 95.9375
+  "wall_ms": 29.662999000000013,
+  "cpu_user_ms": 10.719,
+  "cpu_system_ms": 3.158,
+  "heap_used_delta_mb": 0.493194580078125,
+  "rss_mb": 91.0859375
  },
- "peak_rss_mb": 96.86328125,
+ "peak_rss_mb": 95.63671875,
  "stats": {
   "batches": 2,
   "events_processed": 3,
@@ -31,6 +31,8 @@
   "episodes_open_at_horizon": 1,
   "ends_unconfirmed_at_horizon": 0,
   "constraint_outside_contact": 0,
+  "constraint_intervals": 1,
+  "constraint_intervals_binding": 1,
   "passes": 0,
   "turns": 0,
   "turn_blocked": 0,
@@ -73,19 +75,19 @@
   "identical_candidate_sets": true,
   "cost": {
    "brute": {
-    "ms": 0.1942730000000097,
+    "ms": 0.11259200000006331,
     "pairs": 71
    },
    "grid_8mm": {
-    "ms": 0.3139980000000264,
+    "ms": 0.3379660000000513,
     "pairs": 71
    },
    "grid_2mm": {
-    "ms": 0.31221599999997807,
+    "ms": 3.0883039999999937,
     "pairs": 71
    },
    "sap": {
-    "ms": 0.402074999999968,
+    "ms": 0.15248699999995097,
     "pairs": 71
    }
   },
@@ -97,6 +99,55 @@
   "packing_feasible_given_u_blocks": 0,
   "packing_unknown": 0
  },
+ "test_version": {
+  "git_head": "7ef8a61514041ff8aa1012cef576e9047e7197a8",
+  "worktree_clean": true,
+  "node": "v22.23.4"
+ },
+ "trajectory": {
+  "sha256": "18a2c31e8629945b48931a9cf57b9b59a84462a5208d31c3d42a1fdc3114c274",
+  "ref_83397c5": "18a2c31e8629945b48931a9cf57b9b59a84462a5208d31c3d42a1fdc3114c274",
+  "bit_identical_to_83397c5": true
+ },
+ "contact_kinds": {
+  "geometric_contact": {
+   "episodes": 1,
+   "ends_exact": 0,
+   "open_at_horizon": 1,
+   "unconfirmed": 0,
+   "checker_violations": 0,
+   "missed": 0,
+   "penetrations": 0,
+   "pairs_scanned": 1,
+   "max_end_err_s": null,
+   "median_end_err_s": null,
+   "max_start_err_s": 5.88862292261183e-13,
+   "max_dev_from_mid_s": null,
+   "problems": []
+  },
+  "constraint_active": {
+   "intervals": 1,
+   "binding": 1,
+   "inside_geometric_episode": 1,
+   "below_resolution": 0,
+   "open_at_horizon": 1,
+   "checker_violations": 0,
+   "problems": []
+  },
+  "antenna_contact": {
+   "supported": false,
+   "value": null,
+   "emitted": 0
+  },
+  "motion_records": {
+   "teleports": 0,
+   "speed_mismatch": 0,
+   "problems": []
+  },
+  "checker_cpu_ms": 2.034,
+  "checker_wall_ms": 2.039164000000028
+ },
+ "judge_cpu_ms": 5.854,
  "judge": {
   "overlap_pair_instants": 0,
   "overlap_between_instants": 0,
@@ -116,6 +167,6 @@
    "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
   },
   "instants": 3,
-  "judge_wall_ms": 6.939639999999997
+  "judge_wall_ms": 5.349287000000004
  }
 }
