@@ -16,11 +16,11 @@ export function segmentIndex(agent, t) {
 export function poseAt(agent, t) {
   const S = agent.segments, i = segmentIndex(agent, t);
   if (i < 0) { const g = S[0]; return { x: g.x0, y: g.y0, heading: g.heading, speed: 0, s: g.s0, u: g.u, moving: false }; }
-  if (i >= S.length) { const f = agent.final, g = S[S.length - 1]; return { x: f.x, y: f.y, heading: f.heading, speed: 0, s: g.s1, u: g.u, moving: false }; }
+  if (i >= S.length) { const f = agent.final, g = S[S.length - 1]; return { x: f.x, y: f.y, heading: f.heading, speed: 0, s: g.s1, u: g.u1 === undefined ? g.u : g.u1, moving: false }; }
   const g = S[i], f = (t - g.t0) / (g.t1 - g.t0);
   // the end pose at t = t1 exactly is taken from the record itself (no rounding from the fraction)
-  if (t === g.t1) return { x: g.x1, y: g.y1, heading: g.heading, speed: g.speed_mm_s, s: g.s1, u: g.u, moving: g.speed_mm_s > 0 };
-  return { x: g.x0 + (g.x1 - g.x0) * f, y: g.y0 + (g.y1 - g.y0) * f, heading: g.heading, speed: g.speed_mm_s, s: g.s0 + (g.s1 - g.s0) * f, u: g.u, moving: g.speed_mm_s > 0 };
+  if (t === g.t1) return { x: g.x1, y: g.y1, heading: g.heading, speed: g.speed_mm_s, s: g.s1, u: g.u1 === undefined ? g.u : g.u1, moving: g.speed_mm_s > 0 };
+  return { x: g.x0 + (g.x1 - g.x0) * f, y: g.y0 + (g.y1 - g.y0) * f, heading: g.heading, speed: g.speed_mm_s, s: g.s0 + (g.s1 - g.s0) * f, u: g.u1 === undefined ? g.u : g.u + (g.u1 - g.u) * f, moving: g.speed_mm_s > 0 };
 }
 
 /** sorted distinct event times of a run */

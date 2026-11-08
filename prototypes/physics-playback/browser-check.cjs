@@ -42,6 +42,8 @@ function exactPose(a, t) { // independent of the page: the segment that holds t 
     const page = await ctx.newPage(); page.on('pageerror', (e) => errors.push(`${name}: ${e.message}`));
     await page.goto(base); await page.evaluate(() => window.playback.ready);
     check((await page.textContent('#badge')).includes('非正式'), `${name}: 非正式 label`);
+    // a WP4 candidate run carries its own badge
+    { const c = index.runs.find((r) => r.solver === 'steer'); if (c) { await page.evaluate((id) => window.playback.load(id), c.run_id); check((await page.textContent('#badge')).includes('隔離物理實驗・候選行為規則（非本種/假設）'), `${name}: candidate badge`); } }
     const noHScroll = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
     check(noHScroll, `${name}: no horizontal page scroll`);
     for (const meta of index.runs) {
@@ -65,7 +67,7 @@ function exactPose(a, t) { // independent of the page: the segment that holds t 
       for (const d of s2.drawn) { const p = exactPose(run.agents.find((x) => x.id === d.id), mid); check(Math.abs(p.x - d.x) <= 1e-9 && Math.abs(p.y - d.y) <= 1e-9, `${name} ${meta.run_id} mid: drawn pose = exact motion`); }
     }
     // click a row: jumps to its exact time; screenshots of chosen moments
-    const shots = [['head-on-2--ph3b', 'contact_start'], ['pass-clear--ph3b', 'pass'], ['offset-block--ph3b', 'stop'], ['crossing-flank--ph3b', 'contact_start'], ['crossing-flank--ph3b', 'arrive'], ['stone--ph3b', 'stop'], ['corridor-8--ph3b', 'resume'], ['head-on-2--native', 'yield_start']];
+    const shots = [['head-on-2--ph3b', 'contact_start'], ['pass-clear--ph3b', 'pass'], ['offset-block--ph3b', 'stop'], ['crossing-flank--ph3b', 'contact_start'], ['crossing-flank--ph3b', 'arrive'], ['stone--ph3b', 'stop'], ['corridor-8--ph3b', 'resume'], ['head-on-2--native', 'yield_start'], ['head-on-2--steer-B', 'back_off'], ['offset-block--steer-C', 'sidestep'], ['stone--steer-A', 'sidestep'], ['crossing-traffic-100--steer-A', 'blocked_report']];
     for (const [id, kind] of shots) {
       const run = read(`data/${id}.json`), i = run.events.findIndex((e) => e.kind === kind); if (i < 0) { failures.push(`${id}: no ${kind}`); continue; }
       await page.evaluate((x) => window.playback.load(x), id);

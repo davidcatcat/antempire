@@ -111,7 +111,7 @@
       <span class="dot" style="background:var(--c-constraint)"></span>約束（停／跟隨／恢復）
       <span class="dot" style="background:var(--c-motion)"></span>運動（出發／錯身／抵達）
       <span class="dot" style="background:var(--c-status)"></span>解算器狀態
-      <span class="dot" style="background:var(--c-behaviour)"></span>原生的候選規則（非本種）
+      <span class="dot" style="background:var(--c-behaviour)"></span>候選行為規則（原生 PH-2 或 WP4；非本種／假設）
       <span class="dot" style="background:var(--c-record)"></span>原生運動紀錄
     </div>
   </section>
@@ -129,6 +129,7 @@
         <li>讓路、側移、掉頭、交叉口誰先走：生物決策，本種依據未知（null），PH-3b 不做。走不動就等；沒有東西讓它走，就在時間終點回報「卡住」。</li>
         <li>橫向位置 u 整段固定為情境給定值。能不能錯身取決於給定的 u 與通道寬度。</li>
         <li>沒有推擠、摩擦、質量、加速度；身體不含觸角與腳。</li>
+        <li>「候選 A／B／C」（WP4）：隔離物理實驗・候選行為規則（非本種/假設）。決策只用局部感知（觸角可及半徑內的身體與牆）；所有行為參數都是遊戲假設，大頭家蟻沒有讓路或側移研究。身體軸維持與通道平行（幾何約定），側移是平移。</li>
         <li>側面滑過的接觸以分段等速近似（每次間距打開 1e-7 mm 就重解），所以滑過時會有很多細碎事件——這是解算器的真實輸出。</li>
       </ul>
     </details>
