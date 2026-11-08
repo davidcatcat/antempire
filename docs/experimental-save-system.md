@@ -33,17 +33,19 @@ Worker runtime 與儲存模組共用此信封，欄位不得增減（新增欄�
 | `schema` | 常數 `antempire.experiment-world-snapshot.v1` | 信封格式 |
 | `label` | 常數 `非正式實驗世界／不屬於正式遊戲歷史` | 必要標示 |
 | `official` | 常數 `false` | 永遠不是正式世界 |
-| `world_id` | 字串 | 實驗世界 ID（新遊戲時產生，不重複使用） |
-| `seed` | 整數或字串 | 世界種子（新種子或使用者指定） |
+| `world_id` | 字串 `^exp-[A-Za-z0-9._-]{1,60}$` | 實驗世界 ID（新遊戲時產生，不重複使用；格式與 Worker runtime 相同） |
+| `seed` | 整數 0～2³²−1 | 世界種子（新種子或使用者指定；Worker runtime 只接受此範圍的整數，使用者輸入的文字種子由選單先轉成整數並顯示） |
 | `rules_fingerprint` | 字串 | 引擎＋參數指紋；不同指紋表示規則不同，不能接續 |
 | `engine_version` | 字串 | Worker runtime 版本 |
 | `schema_version` | 正整數 | **payload** 結構版本（目前 1）；遷移以此為準 |
-| `t_sim` | 非負數 | 模擬時間：實驗 Day0 00:00 起算的世界分鐘（P0-A 世界時鐘，單位 `min`；與 Worker runtime 協調確認，見 §13） |
+| `t_sim` | 非負數 | 模擬時間：實驗 Day0 00:00 起算的**秒數**（與 Worker runtime 事件的 `t_sim` 相同；畫面顯示第 ⌊t/86400⌋ 日與當日時刻） |
 | `seq` | 非負整數 | Worker 事件序號；快照位於第 `seq` 個事件提交之後 |
 | `payload` | JSON 物件 | 世界完整狀態（§3），對儲存模組不透明 |
 | `payload_sha256` | 64 位小寫十六進位 | `SHA-256(UTF-8(canonicalJSON(payload)))` |
 
-**canonicalJSON**：物件鍵依 UTF-16 碼元排序、無空白、數字用 ECMAScript `JSON.stringify` 的最短往返表示；`NaN`、`±Infinity`、`undefined`、函式、`BigInt`、typed array 不得出現（typed array 由 Worker 轉為一般陣列或 base64 字串）。`-0` 會寫成 `0`：若 Worker 狀態依賴 `-0` 與 `0` 的差異，驗收 A（§12）會失敗並揭露。儲存模組保存的就是 canonical 文字，回讀時重算雜湊。
+**canonicalJSON**：物件鍵依 UTF-16 碼元排序、無空白、數字用 ECMAScript `JSON.stringify` 的最短往返表示；`NaN`、`±Infinity`、`undefined`、函式、`BigInt`、typed array 不得出現（typed array 由 Worker 轉為一般陣列或 base64 字串）。`-0` 會寫成 `0`：若 Worker 狀態依賴 `-0` 與 `0` 的差異，驗收 A（§12）會失敗並揭露。儲存模組保存的就是 canonical 文字，回讀時重算雜湊。Worker runtime 的 `canonicalJson`／`hashJson` 與 [`canonical-vectors.v1.json`](../prototypes/continuous-world/save/canonical-vectors.v1.json) 的向量逐一相同。
+
+**對未來 payload 的要求**：所有新加入 payload 的狀態都必須是 canonical JSON 資料。特別是化學場（費洛蒙格點）、物理狀態等目前可能以 typed array 實作的資料，必須序列化成一般數字陣列（或明確定義、可逆的編碼），且不得依賴 `-0`、`NaN`、`Infinity`；加入時要在驗收 A 證明還原後逐位元組相同，並量測快照大小與存檔時間。
 
 ## 3. 必須保存的內容（payload）
 
@@ -155,6 +157,6 @@ SAVE-1 只用**合成 payload**（Worker runtime 尚未合併），不得宣稱�
 
 ## 13. 待協調事項
 
-- `t_sim` 單位（本文件假設世界分鐘）與 `seed` 型別需與 Worker runtime 確認。
-- payload 是否需要 typed array（化學場）；若需要，決定以 base64 或一般陣列編碼，並在驗收 A 量測大小與寫入時間。
+- `t_sim`（秒）、`seed`（0～2³²−1 整數）、`world_id`（`exp-` 開頭）已與 Worker runtime（`docs/experimental-worker-runtime.md` §4、`prototypes/continuous-world/worker/core.ts`）對齊。
+- 化學場等大型狀態整合時的編碼與大小（見 §2「對未來 payload 的要求」）。
 - 30 秒週期與保留 3 份是產品候選值，依 SAVE-1 的寫入成本量測再定。

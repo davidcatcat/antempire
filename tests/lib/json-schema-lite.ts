@@ -1,10 +1,10 @@
 /**
  * Minimal JSON Schema (2020-12 subset) validator for the SAVE contract schemas: type, const, required, properties,
- * additionalProperties:false, pattern, minLength, maxLength, minimum, $ref by $id. Returns a list of error paths.
+ * additionalProperties:false, pattern, minLength, maxLength, minimum, maximum, $ref by $id. Returns a list of error paths.
  * Deliberately small: it only needs to cover the keywords the SAVE schemas use (the test fails on any other keyword).
  */
 export type Schema = Record<string, unknown>;
-const KNOWN = new Set(['$schema', '$id', 'title', 'description', 'type', 'const', 'required', 'properties', 'additionalProperties', 'pattern', 'minLength', 'maxLength', 'minimum', '$ref']);
+const KNOWN = new Set(['$schema', '$id', 'title', 'description', 'type', 'const', 'required', 'properties', 'additionalProperties', 'pattern', 'minLength', 'maxLength', 'minimum', 'maximum', '$ref']);
 
 const typeOk = (t: string, v: unknown) => t === 'integer' ? Number.isInteger(v) : t === 'number' ? typeof v === 'number' && Number.isFinite(v)
   : t === 'object' ? typeof v === 'object' && v !== null && !Array.isArray(v) : t === 'array' ? Array.isArray(v) : t === 'null' ? v === null : typeof v === t;
@@ -26,6 +26,7 @@ export function validate(s: Schema, v: unknown, refs: Record<string, Schema> = {
     if (typeof s.maxLength === 'number' && [...v].length > s.maxLength) e.push(`${at}: maxLength`);
   }
   if (typeof v === 'number' && typeof s.minimum === 'number' && v < s.minimum) e.push(`${at}: minimum`);
+  if (typeof v === 'number' && typeof s.maximum === 'number' && v > s.maximum) e.push(`${at}: maximum`);
   if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
     const o = v as Record<string, unknown>, props = (s.properties ?? {}) as Record<string, Schema>;
     for (const k of (s.required ?? []) as string[]) if (!(k in o)) e.push(`${at}.${k}: required`);

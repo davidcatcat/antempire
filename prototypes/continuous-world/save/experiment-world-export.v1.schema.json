@@ -16,9 +16,9 @@
       "additionalProperties": false,
       "required": ["world_id", "name", "seed", "created_at"],
       "properties": {
-        "world_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+        "world_id": { "type": "string", "pattern": "^exp-[A-Za-z0-9._-]{1,60}$" },
         "name": { "type": "string", "maxLength": 200 },
-        "seed": { "type": ["integer", "string"] },
+        "seed": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
         "created_at": { "type": "string", "minLength": 1 },
         "summary": { "type": "object" }
       }
