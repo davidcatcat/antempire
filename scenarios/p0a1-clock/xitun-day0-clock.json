@@ -1,0 +1,27 @@
+{
+  "schema": "antempire.p0a1-clock-scenario.v1",
+  "status": "非正式：只供 Day0 實驗世界的 24 小時時鐘隔離測試與原型使用；不是正式世界參數，不在規則指紋內，不接入每日模擬。",
+  "world": "day0-clock-experiment",
+  "official": false,
+  "calendar": {
+    "utc_offset_minutes": { "value": 480, "assumption": false, "basis": "定義", "note": "臺灣標準時間 UTC+08:00，無日光節約時間（docs/weather-data-policy.md §1）" },
+    "zone": "Asia/Taipei"
+  },
+  "representative_point": {
+    "latitude_deg": { "value": 24.17, "assumption": true, "basis": "一般方法", "note": "西屯區代表點（約略值，示意）；花園是虛構的，沒有量測座標（data/taichung-climatology-1991-2020.json coordinates: null）" },
+    "longitude_deg": { "value": 120.64, "assumption": true, "basis": "一般方法", "note": "同上；經緯度各差 0.1° 對日出日落的影響約 0.4 分鐘以內（由測試計算）" }
+  },
+  "light": {
+    "sunrise_altitude_deg": { "value": -0.833, "assumption": true, "basis": "一般方法", "source": "R390 NOAA 太陽計算式（標準大氣折射＋太陽半徑）" },
+    "civil_twilight_altitude_deg": { "value": -6, "assumption": false, "basis": "定義", "source": "民用曙暮光的定義" }
+  },
+  "weather_sample_step_min": { "value": 60, "assumption": true, "basis": "遊戲假設", "note": "取樣間隔（工程選擇）；可設任何整除 1440 的分鐘數" },
+  "temperature_shape": {
+    "value": null, "assumption": true, "basis": "一般方法（形狀）；係數未知",
+    "note": "Parton–Logan 型日內氣溫（R247 只核對書目）。係數未讀原文前為 null：不產生逐時氣溫。測試以多組係數檢查不變量，那些係數不是參數值。"
+  },
+  "rain_timing": {
+    "value": null, "assumption": true, "basis": "遊戲假設",
+    "note": "只有日雨量時，事件數與長度分布未知（docs/research-design-p0a-24h-clock.md §8 為 null）：不產生降雨事件，該日 raining 為 null（未知），不當作無雨。"
+  }
+}
