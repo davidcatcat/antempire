@@ -37,8 +37,8 @@
  * sums (exit dwell, B wait / re-route limits, stall window) are exact on the decimals too. Scheduled inputs are never
  * snapped to the grid. The horizon H is an instant with no positive duration left (see below).
  * final_mode = the state at H after the events at H: 'started_at_horizon' = started exactly at H, not on its goal, zero
- * elapsed time (speed 0, no displacement); 'moving' = moved over a positive-length interval ending at H, speed > 0 at H.
- * (PH-3b still reports 'moving' for a start at H: a known pending difference, pinned in tests/physics-time-contract-wp4.test.ts.)
+ * elapsed time, no displacement (its reported speed is 0: no decision at H); 'moving' = started before H, not arrived, free to move at H.
+ * (PH-3b on this branch still reports 'moving' for a start at H — fixed by PR #139 — pinned in tests/physics-time-contract-wp4.test.ts.)
  *
  * Motion and physics (between decision instants — the grid, entry instants, plus each agent's start time):
  *  - the body axis stays parallel to its lane in its travel direction (geometric convention: no body-rotation model);

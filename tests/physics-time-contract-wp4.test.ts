@@ -14,7 +14,7 @@ import { checkPhysicsTimeContract, TC_BODY, type PhysicsTimeAdapter, type TCRun 
 
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
 const params = { sensing_radius_mm: 0.5, decision_interval_s: 0.1, probe_angles_deg: [0, 90], same_heading_max_deg: 20, stall_window_s: 1, stall_progress_mm: 0.01, p_wait: 0.5, p_back: 0.25, p_reroute: 0.25, wait_s: 0.5, back_distance_mm: 0.5, reroute_max_s: 0.5 };
-const PH3B_PENDING = { startedAtHorizon: { final_mode: 'moving', final_speed_mm_s: 10 } };
+const PH3B_PENDING = { startedAtHorizon: { final_mode: 'moving' } };   // fixed by PR #139: remove when merged
 
 const fromSteer = (r: SteerResult): TCRun => ({
   events: r.events.map((e) => ({ t_s: e.t_s, kind: e.kind, agents: e.agents, class: e.class })),
@@ -61,6 +61,13 @@ for (const p of STEER_POLICIES.filter((x) => x !== 'none')) {
   const mid = steer2D({ lanes, obstacles: [], agents: [ag('M', 10, 0.25, 100)], horizon_s: 0.5, policy: p, params, seed: 1, control: { spawn: true } });
   const mev = mid.events.filter((e) => e.agents[0] === 'M').map((e) => `${e.kind}@${e.t_s}`);
   ok(mev[0] === 'start@0.25' && mev[1] === 'go@0.25' && mid.agents.M.samples[0][0] === 0.25 && Math.abs(mid.agents.M.samples.at(-1)![4] - 12.5) <= 1e-12, `${p}: entered at 0.25, first decision there, 2.5 mm by H (${mev.join(',')})`);
+  // #139 drift cases (docs/physics-time-contract.md §2.5 on that branch): an exact arrival at H is processed (a derived
+  // motion time, so #139's tolerance TIME_TOL(H) = 8·ε·max(1, H) applies; scheduled times above are checked bit-exact)
+  const BODY_S = { length_mm: 0.05, width_mm: 0.02 }, dlane = [{ id: 'P', centerline_mm: [{ x: -1, y: 0 }, { x: 11, y: 0 }], width_mm: 2, layer: 'z' }];
+  for (const [label, s0, goal, v, st, H] of [['0.1 + 0.2', 1, 1.2, 1, 0.1, 0.3], ['3 × 0.1', 1, 1.3, 0.1, 0, 3], ['0.4 + 0.3', 1, 1.3, 1, 0.4, 0.7], ['reverse 0.1 + 0.2', 1.3, 1.1, 1, 0.1, 0.3]] as const) for (const spawn of [false, true]) {
+    const r = steer2D({ lanes: dlane, obstacles: [], horizon_s: H, agents: [{ id: 'A', lane: 'P', s_mm: s0, u_mm: 0, dir: goal >= s0 ? 1 : -1, start_t_s: st, goal_s_mm: goal, free_speed_mm_s: v, body: BODY_S }], policy: p, params, seed: 1, control: spawn ? { spawn: true } : undefined });
+    ok(r.agents.A.arrival_t_s !== null && r.agents.A.arrival_t_s <= H && H - r.agents.A.arrival_t_s <= 8 * Number.EPSILON * Math.max(1, H) && r.agents.A.final_mode === 'arrived' && r.events.filter((e) => e.kind === 'arrive').length === 1, `${p}${spawn ? '/spawn' : ''}: drift case ${label}: exact arrival at H = ${H} processed, within #139's TIME_TOL(H) and ≤ H (${r.agents.A.arrival_t_s}, ${r.agents.A.final_mode})`);
+  }
   ok(mid.stats.decision_instants === 5, `${p}: the entry instant is not counted as a grid decision instant (${mid.stats.decision_instants})`);
 }
 console.log(JSON.stringify({ physics_time_contract_wp4: 'pass', checks, adapters: summaries.map((s) => `${s.adapter}: ${s.checks}${s.pending_pinned.length ? ` (pending pinned: ${s.pending_pinned.join(',')})` : ''}`) }, null, 2));

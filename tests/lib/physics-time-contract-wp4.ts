@@ -3,8 +3,11 @@
  *
  * The checks take a solver ADAPTER (run one input, return normalised events / agents), so the same contract is applied to
  * PH-3b (engine/physics/solver2d.ts, the reference) and to every WP4 local-steer policy (engine/physics/local-steer.ts).
- * NOTE: a parallel branch off main adds tests/lib/physics-time-contract.ts for PH-3b. This file is named -wp4 only to
- * avoid a merge conflict; both expose an adapter-based check and must be UNIFIED into one helper when both are merged.
+ * NOTE: PR #139 (PH-3b fix) adds tests/lib/physics-time-contract.ts (single-agent TIME_CASES, checkTimeContract) and
+ * docs/physics-time-contract.md. This file is named -wp4 only to avoid a merge conflict. Semantics are aligned with #139
+ * (C1–C5 there = T1/T3/T4 here); this file adds the multi-agent, decision-grid, spawn and permutation checks. When both
+ * are merged: run #139's checkTimeContract on local-steer too (verified locally: 0 failures for A/B/C/N × dt
+ * 0.1/0.05/0.03 × with/without spawn), drop the PH-3b pending pin below, and fold this file into that helper.
  *
  * Contract (the clauses checked here):
  *  T1  scheduled inputs keep their exact time: an agent scheduled to start (or, with a spawn rule, to enter) at t starts at
@@ -16,9 +19,10 @@
  *  T3  the horizon H is an instant: events at exactly H are processed (start, arrival on the goal, arrival reached exactly
  *      at H), but no positive duration remains: an agent starting at H records its start once and is NOT displaced.
  *      Nothing is recorded after H.
- *  T4  final_mode describes the state at H after the events at H. Cross-module definition: 'started_at_horizon' = the agent
- *      started exactly at H, is not on its goal, and has had zero elapsed time (final speed 0: no motion has happened).
- *      'moving' = it moved over a positive-length interval ending at H and its speed at H is > 0.
+ *  T4  final_mode describes the state at H after the events at H. Cross-module definition (same as #139 C2/C4):
+ *      'started_at_horizon' = started exactly at H, not on its goal, zero elapsed time, NO displacement; 'moving' =
+ *      started before H, not arrived, free to move at H. final_speed_mm_s for 'started_at_horizon' is informational only
+ *      (local-steer: 0, no decision taken; PH-3b after #139: the solved free speed) and is not part of the contract.
  *  T5  determinism (rerun identical) and order / permutation invariance (reversed and shuffled agent arrays identical).
  *
  * Known pending differences are declared by the adapter (`pending`) and PINNED: the check asserts the current (deviating)
@@ -39,7 +43,7 @@ export interface PhysicsTimeAdapter {
   /** true: an agent is absent until its scheduled start (spawn rule) */
   spawn: boolean;
   /** pinned known differences from the contract (each must flip when the solver is fixed) */
-  pending?: { startedAtHorizon?: { final_mode: string; final_speed_mm_s: number } };
+  pending?: { startedAtHorizon?: { final_mode: string } };
 }
 export interface TCSummary { adapter: string; checks: number; pending_pinned: string[] }
 
@@ -111,9 +115,9 @@ export function checkPhysicsTimeContract(ad: PhysicsTimeAdapter, ok: (c: unknown
         chk(arrivesOf(id).length === 0 && a.samples.every((s) => s[4] === s0), `${lbl}: started at H, no displacement, no arrival`);
         const pend = ad.pending?.startedAtHorizon;
         if (pend) {
-          chk(a.final_mode === pend.final_mode && a.final_speed_mm_s === pend.final_speed_mm_s && pend.final_mode !== 'started_at_horizon', `${lbl}: KNOWN PENDING — final state is still '${pend.final_mode}' at ${pend.final_speed_mm_s} mm/s (contract: 'started_at_horizon', 0). Remove the pending entry when the solver is fixed (got '${a.final_mode}', ${a.final_speed_mm_s})`);
+          chk(a.final_mode === pend.final_mode && pend.final_mode !== 'started_at_horizon', `${lbl}: KNOWN PENDING (fixed by #139) — final state is still '${pend.final_mode}' (contract: 'started_at_horizon'). Remove the pending entry when the solver is fixed (got '${a.final_mode}')`);
           if (!pinned.includes('started_at_horizon')) pinned.push('started_at_horizon');
-        } else chk(a.final_mode === 'started_at_horizon' && a.final_speed_mm_s === 0, `${lbl}: final state 'started_at_horizon', speed 0 (got '${a.final_mode}', ${a.final_speed_mm_s})`);
+        } else chk(a.final_mode === 'started_at_horizon', `${lbl}: final state 'started_at_horizon' (got '${a.final_mode}')`);
       }
     }
     // T1: one-ulp-apart schedules stay distinct instants; equal schedules share one instant
