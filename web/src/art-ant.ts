@@ -16,10 +16,10 @@ import { P, ellipse, light, smoothClosed, smoothstep, type DrawList, type Shape 
 export const WALK_FRAMES = 12;
 export const IDLE_FRAMES = 8;
 /** foot travel during one stance, in body-length/100 units (遊戲假設) */
-export const STRIDE = 14;
+export const STRIDE = 10;
 export const CYCLE_ADVANCE = 2 * STRIDE;
 /** sprite bounds in local units (legs and antennae included) */
-export const ANT_EXTENT = { x0: -66, x1: 84, y0: -48, y1: 48 } as const;
+export const ANT_EXTENT = { x0: -56, x1: 74, y0: -38, y1: 38 } as const;
 /** body height above the ground in local units (the renderer offsets the shadow in SCREEN space by light().shadow) */
 export const ANT_BODY_HEIGHT = 5;
 
@@ -42,9 +42,9 @@ export const ANT_PALETTE = {
 interface Leg { id: LegId; side: -1 | 1; base: [number, number]; coxa: number; femur: number; tibia: number; tarsus: number; foot: [number, number]; tarsDir: [number, number]; w: number }
 /** coxal insertions on the mesosoma (fore, mid, hind) and neutral foot placement (right side; left mirrors y) */
 const LEG_DEF: Omit<Leg, 'id' | 'side'>[] = [
-  { base: [15.5, 3.6], coxa: 4.2, femur: 15, tibia: 13, tarsus: 12, foot: [37, 29], tarsDir: [0.78, 0.62], w: 2.7 },
-  { base: [6.5, 3.4], coxa: 3.4, femur: 15.5, tibia: 14.5, tarsus: 12.5, foot: [5, 35], tarsDir: [-0.05, 1], w: 2.5 },
-  { base: [0.5, 3.0], coxa: 3.8, femur: 19, tibia: 18, tarsus: 15, foot: [-33, 31], tarsDir: [-0.82, 0.57], w: 2.5 },
+  { base: [15.5, 3.6], coxa: 3.8, femur: 11, tibia: 10, tarsus: 8, foot: [31, 22], tarsDir: [0.78, 0.62], w: 3.3 },
+  { base: [6.5, 3.4], coxa: 3.0, femur: 11, tibia: 10.5, tarsus: 8.5, foot: [4, 27], tarsDir: [-0.05, 1], w: 3.1 },
+  { base: [0.5, 3.0], coxa: 3.4, femur: 13.5, tibia: 12.5, tarsus: 10, foot: [-26, 23], tarsDir: [-0.82, 0.57], w: 3.1 },
 ];
 export const LEGS: Leg[] = (['L', 'R'] as const).flatMap((s) => LEG_DEF.map((d, i) => {
   const side = s === 'L' ? -1 : 1 as -1 | 1;
@@ -109,17 +109,17 @@ export interface LegPose { id: LegId; set: 'A' | 'B'; stance: boolean; lift: num
 export interface AntPose { legs: LegPose[]; ant: { L: [number, number][]; R: [number, number][] }; headYaw: number; gasterYaw: number }
 
 /** Antenna: scape from the torulus, elbow, then 11 funicular segments ending in a 3-segment club (12 segments). */
-const FUNICULUS = [1.6, 1.25, 1.25, 1.25, 1.3, 1.35, 1.4, 1.5, 2.7, 3.0, 4.3]; // segment lengths, units (示意)
+const FUNICULUS = [1.4, 1.05, 1.05, 1.05, 1.1, 1.15, 1.2, 1.3, 2.3, 2.6, 3.7]; // segment lengths, units (示意)
 const FUN_W = [1.7, 1.5, 1.5, 1.5, 1.55, 1.6, 1.7, 1.85, 2.6, 2.95, 3.1];
 /** the funiculus is angled down toward the substrate, so from above it reads shorter (foreshortening, 示意) */
 const FUN_FORESHORTEN = 0.8;
 export const ANTENNA_SEGMENTS = 1 + FUNICULUS.length; // scape + 11 = 12
 export const ANTENNA_CLUB = 3;
 function antenna(side: number, scapeAng: number, funAng: number): [number, number][] {
-  const root: [number, number] = [40.5, 3.6 * side], scape = 21;
+  const root: [number, number] = [40, 3.4 * side], scape = 18; // scape ≈ head length (reaches the back of the head when laid back)
   const elbow: [number, number] = [root[0] + Math.cos(scapeAng) * scape, root[1] + Math.sin(scapeAng) * scape * side];
   const pts: [number, number][] = [root, elbow]; let a = funAng, x = elbow[0], y = elbow[1];
-  for (let i = 0; i < FUNICULUS.length; i++) { a += -0.065; const l = FUNICULUS[i] * FUN_FORESHORTEN; x += Math.cos(a) * l; y += Math.sin(a) * l * side; pts.push([x, y]); }
+  for (let i = 0; i < FUNICULUS.length; i++) { a += -0.075; const l = FUNICULUS[i] * FUN_FORESHORTEN; x += Math.cos(a) * l; y += Math.sin(a) * l * side; pts.push([x, y]); }
   return pts;
 }
 
@@ -143,7 +143,7 @@ export function antPose(kind: Gait, frame: number): AntPose {
   const sw = (side: number) => stepping ? Math.sin(w + (side > 0 ? 0 : Math.PI)) : Math.sin(w + side) * 0.6 + Math.sin(2 * w + side * 2) * 0.5;
   // angles are measured from the body axis toward the OUTSIDE: the scape points antero-laterally, the funiculus forward
   const lean = (side: number) => turn * side * 0.18;
-  const ant = { L: antenna(-1, 0.66 + sw(-1) * 0.09 + lean(-1), 0.42 + sw(-1) * 0.15 + lean(-1)), R: antenna(1, 0.66 + sw(1) * 0.09 + lean(1), 0.42 + sw(1) * 0.15 + lean(1)) };
+  const ant = { L: antenna(-1, 0.98 + sw(-1) * 0.08 + lean(-1), 0.3 + sw(-1) * 0.14 + lean(-1)), R: antenna(1, 0.98 + sw(1) * 0.08 + lean(1), 0.3 + sw(1) * 0.14 + lean(1)) };
   const sway = stepping && !kind.startsWith('pivot') ? 1 : 0.3;
   return { legs, ant, headYaw: stepping ? Math.sin(w) * 0.035 * sway + turn * 0.07 : 0, gasterYaw: stepping ? -Math.sin(w) * 0.05 * sway - turn * 0.06 : 0 };
 }
@@ -172,11 +172,11 @@ function legShapes(lp: LegPose): DrawList {
   out.push(OUT(taper(b[0], b[1], ce[0], ce[1], lg.w + 1.4, lg.w + 0.8), cyl(b[0], b[1], ce[0], ce[1], lg.w + 1.4, '#a5672f', '#c98c52')));
   // femur: clubbed in its distal half
   const fm: [number, number] = [ce[0] + (k[0] - ce[0]) * 0.55, ce[1] + (k[1] - ce[1]) * 0.55];
-  seg(ce, fm, lg.w * 0.85, lg.w * 1.18); seg(fm, k, lg.w * 1.18, lg.w * 0.82);
-  seg(k, t, lg.w * 0.72, lg.w * 0.6);                                                    // tibia
+  seg(ce, fm, lg.w * 0.85, lg.w * 1.3); seg(fm, k, lg.w * 1.3, lg.w * 0.8);
+  seg(k, t, lg.w * 0.6, lg.w * 0.48);                                                    // tibia
   // tarsus: basitarsus + distal tarsomeres, then the pretarsal claw
   const mx = t[0] + (f[0] - t[0]) * 0.52, my = t[1] + (f[1] - t[1]) * 0.52;
-  seg(t, [mx, my], lg.w * 0.5, lg.w * 0.42, 0.42); seg([mx, my], f, lg.w * 0.42, lg.w * 0.3, 0.42);
+  seg(t, [mx, my], lg.w * 0.42, lg.w * 0.34, 0.42); seg([mx, my], f, lg.w * 0.34, lg.w * 0.26, 0.42);
   const dl = Math.hypot(f[0] - t[0], f[1] - t[1]) || 1, ux = (f[0] - t[0]) / dl, uy = (f[1] - t[1]) / dl;
   for (let i = 1; i <= 3; i++) { const q = 0.52 + i * 0.12, bx = t[0] + (f[0] - t[0]) * q, by = t[1] + (f[1] - t[1]) * q; out.push({ d: ellipse(bx, by, 0.32, 0.32), fill: 'rgba(60,30,10,0.55)' }); } // tarsomere joints
   out.push({ d: new P().M(f[0] - uy * 0.45, f[1] + ux * 0.45).L(f[0] + ux * 0.7, f[1] + uy * 0.7).L(f[0] + uy * 0.45, f[1] - ux * 0.45).toString(), stroke: 'rgba(38,18,6,0.7)', lw: 0.22, cap: 'round' });
@@ -199,19 +199,19 @@ function bodyShapes(pose: AntPose, silhouette = false): DrawList {
   const P_ = ANT_PALETTE, out: DrawList = [];
   const S = (d: string, fill: Shape['fill'], lw?: number) => out.push(silhouette ? { d, fill: '#000' } : OUT(d, fill, lw));
   // gaster (pivot at the postpetiole), smooth and shiny
-  const gpts = rotAbout(Array.from({ length: 18 }, (_, i) => { const a = (i / 18) * Math.PI * 2, rx = 14.6, ry = 10.6; const k = Math.cos(a) > 0 ? 1 - 0.18 * Math.cos(a) ** 3 : 1; return [-36 + Math.cos(a) * rx, Math.sin(a) * ry * k] as [number, number]; }), -21, 0, pose.gasterYaw);
-  S(smoothClosed(gpts), dorsal(-36, 0, 14.6, 10.6, P_.gaster), 0.6);
+  const gpts = rotAbout(Array.from({ length: 18 }, (_, i) => { const a = (i / 18) * Math.PI * 2, rx = 13.4, ry = 9.2; const k = Math.cos(a) > 0 ? 1 - 0.16 * Math.cos(a) ** 3 : 1; return [-34 + Math.cos(a) * rx, Math.sin(a) * ry * k] as [number, number]; }), -21, 0, pose.gasterYaw);
+  S(smoothClosed(gpts), dorsal(-34, 0, 13.4, 9.2, P_.gaster), 0.6);
   // postpetiole (broader than the petiole) and petiole node with its anterior peduncle
-  const pp = rotAbout([[-18.6, 0]], -21, 0, pose.gasterYaw * 0.5)[0];
-  S(ellipse(pp[0], pp[1], 3.5, 3.6), dorsal(pp[0], pp[1], 3.5, 3.6, P_.waist), 0.45);
+  const pp = rotAbout([[-17.4, 0]], -21, 0, pose.gasterYaw * 0.5)[0];
+  S(ellipse(pp[0], pp[1], 2.7, 2.9), dorsal(pp[0], pp[1], 2.7, 2.9, P_.waist), 0.45);
   S(taper(-7.6, 0, -11, 0, 1.6, 1.8), P_.waist[1], 0.4);
-  S(ellipse(-12.7, 0, 2.4, 2.5), dorsal(-12.7, 0, 2.4, 2.5, P_.waist), 0.45);
+  S(ellipse(-12.4, 0, 1.9, 2.0), dorsal(-12.4, 0, 1.9, 2.0, P_.waist), 0.45);
   // mesosoma: domed pronotum, narrower mesonotum, metanotal groove, propodeum with two short spines
-  const half: [number, number][] = [[21.2, 0], [20.3, 4.2], [17.6, 6.6], [13.8, 6.8], [10.4, 5.2], [7.6, 3.6], [5.2, 3.2], [3.0, 2.4], [1.6, 2.5], [-1.4, 3.3], [-4.4, 3.4], [-7.0, 2.3]];
+  const half: [number, number][] = [[21.4, 0], [20.6, 4.9], [18.0, 7.3], [14.4, 7.1], [11.2, 5.0], [8.2, 3.3], [5.6, 2.9], [3.0, 2.0], [1.6, 2.3], [-1.4, 3.1], [-4.4, 3.2], [-7.0, 2.1]];
   const mpts: [number, number][] = [...half, [-8.0, 0], ...half.slice(1).reverse().map(([x, y]) => [x, -y] as [number, number])];
   for (const sd of [-1, 1]) S(new P().M(-3.4, 2.9 * sd).Q(-7.2, 4.4 * sd, -9.6, 5.6 * sd).Q(-7.6, 3.4 * sd, -6.4, 1.8 * sd).Z().toString(), P_.meso[1], 0.35); // propodeal spines
   S(smoothClosed(mpts, 0.85), dorsal(11, 0, 12, 6.5, P_.meso), 0.55);
-  if (!silhouette) out.push({ d: ellipse(15.5, 0, 4.6, 4.2), fill: { rad: [15.5, 0, 0, 15.5, 0, 5], stops: [[0, 'rgba(255,225,180,0.35)'], [1, 'rgba(255,225,180,0)']] }, blend: 'screen' }); // pronotal dome
+  if (!silhouette) out.push({ d: ellipse(15.8, 0, 5, 4.8), fill: { rad: [15.8, 0, 0, 15.8, 0, 5.4], stops: [[0, 'rgba(255,225,180,0.35)'], [1, 'rgba(255,225,180,0)']] }, blend: 'screen' }); // pronotal dome
   if (!silhouette) {
     out.push({ d: new P().M(9.6, -4.6).Q(8.4, 0, 9.6, 4.6).toString(), stroke: 'rgba(60,28,10,0.4)', lw: 0.4 }); // promesonotal suture
     out.push({ d: new P().M(2.4, -2.4).Q(1.6, 0, 2.4, 2.4).toString(), stroke: 'rgba(60,28,10,0.65)', lw: 0.55 });   // metanotal groove
@@ -225,18 +225,18 @@ function bodyShapes(pose: AntPose, silhouette = false): DrawList {
     if (!silhouette) for (let i = 0; i < 3; i++) { const q = hp([[46.6 + i * 0.95, (1.0 - i * 0.55) * sd]])[0]; out.push({ d: ellipse(q[0], q[1], 0.32, 0.28), fill: 'rgba(40,18,6,0.85)' }); } // teeth
   }
   // Pheidole minor head: about as long as broad, sides convex, posterior margin rounded, clypeus narrowing to the front
-  const hpts = hp(Array.from({ length: 22 }, (_, i) => { const a = (i / 22) * Math.PI * 2, c = Math.cos(a), s = Math.sin(a); const rx = 12, ry = 10.6 * (c > 0 ? 1 - 0.22 * c * c : 1 - 0.06 * c * c); return [33 + c * rx, s * ry] as [number, number]; }));
+  const hpts = hp(Array.from({ length: 22 }, (_, i) => { const a = (i / 22) * Math.PI * 2, c = Math.cos(a), s = Math.sin(a); const rx = 11, ry = 10.2 * (c > 0 ? 1 - 0.22 * c * c : 1 - 0.06 * c * c); return [33 + c * rx, s * ry] as [number, number]; }));
   const hc = hp([[33, 0]])[0];
-  S(smoothClosed(hpts), dorsal(hc[0], hc[1], 12, 10.6, P_.head), 0.6);
+  S(smoothClosed(hpts), dorsal(hc[0], hc[1], 11, 10.2, P_.head), 0.6);
   if (silhouette) return out;
   // frontal carinae, clypeal margin, eyes (moderately small, set at the sides forward of mid-length)
   for (const sd of [-1, 1]) { const c = hp([[37.5, 2.3 * sd], [41.5, 3.5 * sd]]); out.push({ d: new P().M(c[0][0], c[0][1]).L(c[1][0], c[1][1]).toString(), stroke: 'rgba(70,32,10,0.55)', lw: 0.4 }); }
   { const c = hp([[42.3, -4], [44.6, 0], [42.3, 4]]); out.push({ d: new P().M(c[0][0], c[0][1]).Q(c[1][0], c[1][1], c[2][0], c[2][1]).toString(), stroke: 'rgba(70,32,10,0.5)', lw: 0.4 }); }
-  for (const sd of [-1, 1]) { const e = hp([[35.2, 8.9 * sd]])[0]; out.push({ d: ellipse(e[0], e[1], 1.75, 1.25, 0.2 * sd), fill: { rad: [e[0] - 0.3, e[1] - 0.2, 0.1, e[0], e[1], 1.9], stops: [[0, '#6b5747'], [0.45, '#2c1d13'], [1, '#120a05']] }, stroke: 'rgba(20,8,2,0.8)', lw: 0.25 }); }
+  for (const sd of [-1, 1]) { const e = hp([[35.0, 8.6 * sd]])[0]; out.push({ d: ellipse(e[0], e[1], 1.75, 1.25, 0.2 * sd), fill: { rad: [e[0] - 0.3, e[1] - 0.2, 0.1, e[0], e[1], 1.9], stops: [[0, '#6b5747'], [0.45, '#2c1d13'], [1, '#120a05']] }, stroke: 'rgba(20,8,2,0.8)', lw: 0.25 }); }
   // posterior gastral tergites (the first tergite covers most of the gaster)
-  { const g = rotAbout([[-44.5, -8.4], [-47.8, 0], [-44.5, 8.4]], -21, 0, pose.gasterYaw); out.push({ d: new P().M(g[0][0], g[0][1]).Q(g[1][0], g[1][1], g[2][0], g[2][1]).toString(), stroke: 'rgba(10,4,0,0.45)', lw: 0.45 }); }
+  { const g = rotAbout([[-42.4, -7.3], [-45.4, 0], [-42.4, 7.3]], -21, 0, pose.gasterYaw); out.push({ d: new P().M(g[0][0], g[0][1]).Q(g[1][0], g[1][1], g[2][0], g[2][1]).toString(), stroke: 'rgba(10,4,0,0.45)', lw: 0.45 }); }
   // a few pale erect setae (示意)
-  for (const [x, y] of [[30, -3], [30, 3], [26, -5.5], [26, 5.5], [-32, -4], [-36, 3], [-42, -2], [14, -2], [14, 2]] as [number, number][]) {
+  for (const [x, y] of [[30, -3], [30, 3], [26, -5.5], [26, 5.5], [-30, -4], [-34, 3], [-40, -2], [14, -2], [14, 2]] as [number, number][]) {
     const q = hp([[x, y]])[0], [sx, sy] = x < 0 ? rotAbout([[x, y]], -21, 0, pose.gasterYaw)[0] : x > 21 ? q : [x, y];
     out.push({ d: new P().M(sx, sy).L(sx - 0.6, sy + (y > 0 ? 0.45 : -0.45)).toString(), stroke: 'rgba(255,236,200,0.45)', lw: 0.2, cap: 'round' });
   }
@@ -262,8 +262,8 @@ export function antGlints(heading: number): DrawList {
   // direction toward the active key light, rotated into the ant's local frame (no glint when the sun is down)
   const L = light(); if (L.intensity <= 0) return []; const lx = -L.dir.x, ly = -L.dir.y, c = Math.cos(-heading), s = Math.sin(-heading), x = lx * c - ly * s, y = lx * s + ly * c;
   return [
-    { d: ellipse(-36 + x * 5.5, y * 4.6, 4.6, 2.6, Math.atan2(y, x) + Math.PI / 2), fill: { rad: [-36 + x * 6, y * 5, 0, -36 + x * 6, y * 5, 4.8], stops: [[0, 'rgba(255,246,232,0.75)'], [0.35, 'rgba(255,236,210,0.28)'], [1, 'rgba(255,236,210,0)']] }, blend: 'screen' },
-    { d: ellipse(-36 - x * 7, -y * 6, 6, 3, Math.atan2(y, x) + Math.PI / 2), fill: 'rgba(0,0,0,0.12)', blend: 'multiply' },
+    { d: ellipse(-34 + x * 5, y * 4, 4.2, 2.4, Math.atan2(y, x) + Math.PI / 2), fill: { rad: [-34 + x * 5.5, y * 4.4, 0, -34 + x * 5.5, y * 4.4, 4.4], stops: [[0, 'rgba(255,246,232,0.75)'], [0.35, 'rgba(255,236,210,0.28)'], [1, 'rgba(255,236,210,0)']] }, blend: 'screen' },
+    { d: ellipse(-34 - x * 6.4, -y * 5.2, 5.4, 2.7, Math.atan2(y, x) + Math.PI / 2), fill: 'rgba(0,0,0,0.12)', blend: 'multiply' },
     { d: ellipse(32 + x * 4, y * 3.8, 3.2, 1.9, Math.atan2(y, x) + Math.PI / 2), fill: { rad: [32 + x * 4, y * 3.8, 0, 32 + x * 4, y * 3.8, 3.4], stops: [[0, 'rgba(255,240,215,0.5)'], [1, 'rgba(255,240,215,0)']] }, blend: 'screen' },
     { d: ellipse(14 + x * 2.5, y * 2.4, 3.2, 1.6, Math.atan2(y, x) + Math.PI / 2), fill: { rad: [14 + x * 2.5, y * 2.4, 0, 14 + x * 2.5, y * 2.4, 3.4], stops: [[0, 'rgba(255,240,215,0.38)'], [1, 'rgba(255,240,215,0)']] }, blend: 'screen' },
   ];

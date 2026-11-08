@@ -86,6 +86,10 @@ export function hostPlant(seed: number, x: number, y: number, o: HostPlantOption
     const mid = T(size * 0.08 + L * 0.5, 0), dst = tier ? high : body, dsh = tier ? highShadow : shadow;
     dsh.push({ d: smoothClosed(shift(pts, sh(hgt))), fill: 'rgba(24,18,6,0.3)', blend: 'multiply' });
     dst.push({ d: smoothClosed(pts, 0.8), fill: litRadial(mid[0], mid[1], L * 0.55, [[0, hsl(hu, sa_, li + 12)], [0.6, hsl(hu, sa_, li)], [1, hsl(hu, sa_ + 4, li - 10)]]), stroke: hsl(hu, sa_, li - 16, 0.8), lw: 0.18 });
+    // leaf folded slightly along the midrib: the half facing the key light is brighter, the other half darker
+    const half = [...pts.slice(0, 17), T(size * 0.08, 0)], lx = Math.sin(a), ly = -Math.cos(a), facing = -(lx * light().dir.x + ly * light().dir.y) > 0;
+    dst.push({ d: smoothClosed(half, 0.8), fill: facing ? 'rgba(255,255,230,0.10)' : 'rgba(10,30,0,0.16)', blend: facing ? 'screen' : 'multiply' });
+    dst.push({ d: smoothClosed(pts, 0.8), stroke: o.alive ? 'rgba(20,40,8,0.35)' : 'rgba(40,24,8,0.35)', lw: L * 0.035, blend: 'multiply' }); // darker, thinner margin
     dst.push({ d: smoothOpen([T(size * 0.02, 0), T(size * 0.08 + L * 0.5, 0), T(size * 0.08 + L * 0.95, 0)]), stroke: hsl(hu, sa_ - 10, li + 18, 0.75), lw: L * 0.022, cap: 'round' });
     let v = ''; for (let k = 1; k < 7; k++) { const u = size * 0.08 + (k / 7.5) * L, w = W * Math.sin(Math.PI * Math.pow(k / 7.5, 0.75)); for (const sd of [-1, 1]) { if (!o.alive && sd > 0) continue; v += smoothOpen([T(u, 0), T(u + w * 0.4, sd * w * 0.55), T(u + w * 0.7, sd * w * 0.85)]); } }
     dst.push({ d: v, stroke: hsl(hu, sa_ - 10, li + 14, 0.45), lw: L * 0.01, cap: 'round' });
