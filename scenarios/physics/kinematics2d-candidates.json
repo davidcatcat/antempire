@@ -1,0 +1,258 @@
+{
+  "schema": "antempire.physics-kinematics2d-candidates.v1",
+  "status": "KIN-2D（Issue #157）隔離實驗的候選值；不是物種參數檔（species/*.json），不進正式模擬。本種沒有任何轉向運動學量測（docs/research-encounter-behaviour-pmegacephala.md §1，2026-11-08 重查），所以以下所有限制都是遊戲假設，物種值一律 null。",
+  "body": {
+    "length_mm": {
+      "ref": "pheidole-megacephala.body-candidates.json#castes.minor.body_length_mm",
+      "value": 2.5,
+      "assumption": true,
+      "basis": "文獻支持",
+      "source": "R94"
+    },
+    "width_mm_candidates": {
+      "ref": "pheidole-megacephala.body-candidates.json#castes.minor.effective_collision_width_mm.candidate_range",
+      "values": [
+        0.5,
+        0.8
+      ],
+      "assumption": true,
+      "basis": "遊戲假設",
+      "note": "候選範圍的兩端，只做敏感度"
+    },
+    "pivot_point": {
+      "value": "body_centre",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "note": "原地轉身繞身體中心（與 PH-3b 轉折點的姿態慣例相同）；真實轉軸未知"
+    }
+  },
+  "limits": {
+    "max_turn_rate_rad_s": {
+      "species_value": null,
+      "scenario_candidates": [
+        1,
+        3,
+        10
+      ],
+      "assumption": true,
+      "basis": "遊戲假設",
+      "evidence": "本種、本屬皆無資料。R740 只有行軍蟻（Eciton burchelli，體長約 8 mm，非本種）且轉向率數值在圖中未讀；只描述『非常快』。候選值只用於敏感度，不得當成本種值。"
+    },
+    "max_curvature_per_mm": {
+      "species_value": null,
+      "scenario_candidates": [
+        0.4,
+        0.8,
+        2.0
+      ],
+      "assumption": true,
+      "basis": "遊戲假設",
+      "evidence": "沒有轉彎半徑資料（研究文件 §6 參數表）；候選曲率對應半徑 2.5、1.25、0.5 mm（1、0.5、0.2 體長），只是幾何上的範圍。"
+    },
+    "pivot_allowed": {
+      "species_value": null,
+      "scenario_candidates": [
+        true,
+        false
+      ],
+      "assumption": true,
+      "basis": "遊戲假設",
+      "evidence": "原地轉身是否可能、要多久，本種無資料；情境分別測試。"
+    },
+    "max_accel_mm_s2": {
+      "species_value": null,
+      "scenario_candidates": [],
+      "assumption": true,
+      "basis": "遊戲假設",
+      "evidence": "R740 的 50 cm/s² 是行軍蟻模型校準值（非本種），不採用。KIN-2D 的速度是分段常數（瞬間改變），所以加速度『未建模』，checkLimits 回報 unchecked。"
+    },
+    "max_ang_accel_rad_s2": {
+      "species_value": null,
+      "scenario_candidates": [],
+      "assumption": true,
+      "basis": "遊戲假設",
+      "evidence": "無資料；角速度瞬間改變，未建模（unchecked）。"
+    },
+    "max_speed_mm_s": {
+      "species_value": null,
+      "scenario_value": 17.0,
+      "assumption": true,
+      "basis": "文獻支持（只作情境速度與驗證目標）",
+      "evidence": "R133 實驗室人工路線沿跡速度 17.0 mm/s（95% CI ±0.39，不是個體 SD）。只用來設定情境速度，不是速度上限，也不是野外速度。"
+    }
+  },
+  "validation_targets_R133": {
+    "note": "只作『近直線沿跡』的比對目標，不得用來擬合轉向參數（CLAUDE.md §7）。條件：實驗室木橋、同種腹部萃取物沾筆畫線、15×4 cm 測試段以 5×5 mm 鉛筆格點標記、錄影後轉描到方格紙、每物種 5 次試驗、每次最多計 15 隻（只計起點離中線 ≤ 5 mm 者）。2026-11-08 讀 PMC7022549 全文文字（圖中數值未讀）。",
+    "trail_speed_mm_s": {
+      "overall": 17.0,
+      "outbound": 18.5,
+      "return": 15.5,
+      "stat": "mean ± 95% CI（Fig. 2）；以完成 150 mm 的時間計算"
+    },
+    "amplitude_mm": {
+      "overall": 1.4,
+      "outbound": 1.1,
+      "return": 1.7,
+      "stat": "mean ± 95% CI（Fig. 3）；定義：螞蟻偏離中線的垂直距離（每隻取幾點、取平均或最大，原文未說明）"
+    },
+    "turns_per_150mm": {
+      "value": 12.8,
+      "stat": "mean ± sem（Fig. 4）；定義：修正動作（向左或向右轉離或轉向中線）的總次數；原文該句寫『big-headed ants』，未直接寫學名",
+      "per_direction": "去回程無顯著差異（紅火蟻除外）"
+    },
+    "fidelity": {
+      "definition": "在中線 1 mm 內行走的距離占總距離的百分比",
+      "value": null,
+      "note": "本種去程高於回程；數值只在圖中，未讀"
+    },
+    "caveats": [
+      "實驗室人工路線 ≠ 自然地面",
+      "偏離幅度 ≠ 頭部擺動幅度",
+      "轉向次數 ≠ 固定轉向頻率",
+      "平均值不得變成每隻固定規則"
+    ]
+  },
+  "natural_walk": {
+    "status": "自然步行候選模型 A／B／C 的參數（Owner 補充指示，PR A）。全部是遊戲假設，在看結果之前一次選定，不依 R133 擬合；物種值一律 null。",
+    "fixed_before_validation": true,
+    "baseline": {
+      "control_dt_s": {
+        "value": 0.02,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "evidence": "控制更新間隔；數值方法參數，敏感度測 0.01／0.02／0.05／0.1 s"
+      },
+      "max_turn_rate_rad_s": {
+        "value": 3,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "evidence": "limits.max_turn_rate_rad_s 候選中間值"
+      },
+      "max_curvature_per_mm": {
+        "value": 0.8,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "evidence": "limits.max_curvature_per_mm 候選中間值（半徑 1.25 mm）"
+      },
+      "ou_tau_s": {
+        "value": 0.3,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "evidence": "角速度雜訊的相關時間；無資料。R133 只有『修正轉向』次數，沒有時間結構"
+      },
+      "ou_sigma_rad_s": {
+        "value": 1.5,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "evidence": "角速度雜訊的穩態標準差；無資料"
+      },
+      "heading_gain_per_s": {
+        "value": 2,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "evidence": "朝自己記得的行進方向回正的增益；機制假設（自身方向記憶），數值無資料"
+      },
+      "antenna_len_mm": {
+        "value": 1.0,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "evidence": "觸角尖端到頭前緣的距離；本種小工蟻觸角長度與擺動範圍未查到（研究文件 §6），只作感測點位置"
+      },
+      "antenna_half_angle_rad": {
+        "value": 0.5,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "evidence": "兩觸角尖端相對身體軸的半角；無資料"
+      },
+      "chem_gain_rad_s": {
+        "value": 3,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "evidence": "左右濃度差的轉向增益（模型 C）；機制：雙側比較（tropotaxis）只有他種證據（Camponotus pennsylvanicus，Draft et al. 2018，非本種）；數值無資料"
+      },
+      "chem_floor": {
+        "value": 0.01,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "evidence": "正規化分母的下限（數值）"
+      },
+      "avoid_turn_rate_rad_s": {
+        "value": 3,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "evidence": "觸角碰到障礙時原地轉身的角速度；反應方式本身也是候選"
+      }
+    },
+    "exploration": {
+      "ou_tau_s": {
+        "value": 0.5,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "evidence": "探索情境（場景 3）：較寬的相關轉向；候選"
+      },
+      "ou_sigma_rad_s": {
+        "value": 2.5,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "evidence": "探索情境：較大的角速度雜訊；候選"
+      },
+      "heading_gain_per_s": {
+        "value": 0,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "evidence": "探索時不朝固定方向回正；候選"
+      }
+    },
+    "synthetic_field": {
+      "synthetic": true,
+      "kind": "gaussian_ridge",
+      "sigma_mm": {
+        "value": 1.0,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "evidence": "合成濃度脊的寬度；R133 以沾筆畫線，線寬與揮發分布未報告；不是費洛蒙模型（CHEM 未接入）"
+      },
+      "peak": {
+        "value": 1.0,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "evidence": "任意單位"
+      }
+    },
+    "trail_scenario": {
+      "speed_outbound_mm_s": {
+        "value": 18.5,
+        "assumption": true,
+        "basis": "文獻支持（實驗室條件）",
+        "evidence": "R133 去程速度；作為情境輸入，不是結果"
+      },
+      "speed_return_mm_s": {
+        "value": 15.5,
+        "assumption": true,
+        "basis": "文獻支持（實驗室條件）",
+        "evidence": "R133 回程速度；作為情境輸入"
+      },
+      "start_offset_mm": {
+        "value": 1.0,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "evidence": "起點橫向偏移 ~U(−1, 1) mm；R133 只計入起點離中線 ≤ 5 mm 的個體；另做 ±5 mm 敏感度"
+      },
+      "start_heading_rad": {
+        "value": 0.2,
+        "assumption": true,
+        "basis": "遊戲假設",
+        "evidence": "起始方向 ~U(−0.2, 0.2) rad；無資料"
+      },
+      "seeds": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "ants_per_seed": 15,
+      "seeds_note": "仿 R133 的 5 次試驗、每次最多 15 隻；不是重現其抽樣"
+    }
+  }
+}
