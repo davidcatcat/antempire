@@ -63,6 +63,8 @@ jobs:
         run: node tests/browser/web-v5.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/
       - name: V6 game view E2E + frame-rate measurement (desktop 1280x800; Android Pixel 7 touch; Android with 4x CPU throttling)
         run: node tests/browser/web-game.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/
+      - name: SAVE-1 experiment-world save store in Chromium (synthetic payloads; atomicity, recovery, kill, locks, isolation, browser restart, migrations, export/import, save cost)
+        run: node tests/browser/save-store.check.cjs "$RUNNER_TEMP/viewer-shots"
       - name: Assemble the static preview (page + compiled script + data + screenshots + test results + instructions)
         if: always()
         run: |
