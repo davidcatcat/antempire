@@ -1,0 +1,19 @@
+{
+  "schema": "antempire.local-steer-controls.v1",
+  "status": "WP4 對照情境（隔離物理實驗・非正式）。不是物種參數、不是花園量測；每一個數值都是遊戲假設，在跑任何結果之前選定，沒有為抵達率調整。用途：檢查密集基準（crossing-traffic-*）的結論有多少來自情境設計（密集格狀起點、抵達者永久擋路），而不是候選規則本身。",
+  "base_scenario": "crossing-traffic-100（1000 隻版本用 crossing-traffic-1000）：同一交叉口幾何、同一身體、同一自由速度、同一目標（交叉點後 60 mm）。",
+  "variants": {
+    "K0_lattice_stay": { "inflow": false, "exit": false, "why": "密集基準本身（格狀起點、抵達者留在路上），時間終點延長到與其他對照相同，作為對照的參照。" },
+    "K1_lattice_exit": { "inflow": false, "exit": true, "why": "(i) 有限容量出口：抵達者離開道路進入出口；出口滿了就在目標處等（仍是障礙物）。" },
+    "K2_inflow_stay": { "inflow": true, "exit": false, "why": "(ii) 依時間流入：個體在入口依時間表進場（入口被占就在路外等），不是一開始就排成密集格狀；抵達者留在路上。" },
+    "K3_inflow_exit": { "inflow": true, "exit": true, "why": "(i)+(ii) 同時。" }
+  },
+  "params": {
+    "inflow_rate_per_arm_per_s": { "value": 2, "assumption": true, "basis": "遊戲假設", "why": "每個方向每秒進場 2 隻（四個方向共 8 隻/s）。大頭家蟻的蟻道流量沒有本種資料；只用於讓密度隨時間建立。" },
+    "entry_gap_mm": { "value": 50, "assumption": true, "basis": "遊戲假設", "why": "入口在交叉點前 50 mm（身體中心再退半個體長），橫向位置沿用格狀基準的同一欄位（k mod 欄數），只改變時間。" },
+    "exit_capacity": { "value": 2, "assumption": true, "basis": "遊戲假設", "why": "每個目標端（通道×方向）的出口同時最多容納 2 隻。" },
+    "exit_dwell_s": { "value": 1.0, "assumption": true, "basis": "遊戲假設", "why": "每隻進入出口後占用 1 s 才離開出口區。出口最大通量＝容量/停留＝2 隻/s，與流入率相同（刻意讓出口接近飽和而非無限）。" },
+    "horizon_s": { "value": { "100": 30, "1000": 140 }, "assumption": true, "basis": "遊戲假設（量測窗）", "why": "100 隻：流入最後一隻在約 12.5 s 進場，加上約 5 s 行程與餘裕。1000 隻：最後一隻約 125 s 進場。" }
+  },
+  "no_yield_control": "N_no_yield（engine/physics/local-steer.ts）：大頭家蟻沒有任何讓路文獻，所以對照組是『永遠直走、碰到就停到下一個決策時刻』；與 A–C 共用決策網格、物理與規則 D，對照情境的入口／出口規則也同樣套用。"
+}
