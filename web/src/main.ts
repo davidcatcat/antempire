@@ -3,20 +3,21 @@
  * Day14 snapshot (static) and engine-generated experimental Day0 replays. It never runs the simulation, never
  * writes anything, and every position between two recorded points is a display interpolation (model.poseAt).
  */
-import { ACTION_LABEL, NEST, assertKind, REASON_LABEL, TASK_LABEL, describeEvent, displayPositions, eventsUntil, exploredEdges, poseAt, segmentsOf, stateAtStart, taskOf, trailScale, type Experiment, type Official, type Place, type Link, stateAt, isSettled, windowOf, SETTLEMENT_STEP, dayTimeline, eventJump, eventWorkers, followStatus, type EventJump } from './model.ts';
+import { CHARTS, panelHtml, tableHtml, readout, dayAtX } from './charts.ts';
+import { dailySeries, walkSpeedAt, type DayPoint, ACTION_LABEL, NEST, assertKind, REASON_LABEL, TASK_LABEL, describeEvent, displayPositions, eventsUntil, exploredEdges, poseAt, segmentsOf, stateAtStart, taskOf, trailScale, type Experiment, type Official, type Place, type Link, stateAt, isSettled, windowOf, SETTLEMENT_STEP, dayTimeline, eventJump, eventWorkers, followStatus, type EventJump } from './model.ts';
 
 type Pos = Record<string, { x: number; y: number; known: boolean }>;
 interface Index { official: string; experiments: { id: string; file: string; title: string }[] }
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const canvas = $<HTMLCanvasElement>('map'), ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-const ui = { mode: $<HTMLSelectElement>('mode'), day: $<HTMLInputElement>('day'), minute: $<HTMLInputElement>('minute'), play: $<HTMLButtonElement>('play'), speed: $<HTMLSelectElement>('speed'), time: $('timeLabel'), badge: $('badge'), info: $('info'), events: $('events'), nest: $('nest'), weather: $('weather'), view: $<HTMLSelectElement>('view'), ovTrail: $<HTMLInputElement>('ovTrail'), ovExplored: $<HTMLInputElement>('ovExplored'), ovFood: $<HTMLInputElement>('ovFood'), ovLabels: $<HTMLInputElement>('ovLabels'), ovTask: $<HTMLInputElement>('ovTask'), legend: $('legend'), timeline: $('timeline'), follow: $<HTMLButtonElement>('follow'), who: $<HTMLSelectElement>('who'), followMsg: $('followMsg'), jump: $('jump'), evMine: $<HTMLInputElement>('evMine') };
+const ui = { mode: $<HTMLSelectElement>('mode'), day: $<HTMLInputElement>('day'), minute: $<HTMLInputElement>('minute'), play: $<HTMLButtonElement>('play'), speed: $<HTMLSelectElement>('speed'), time: $('timeLabel'), badge: $('badge'), info: $('info'), events: $('events'), nest: $('nest'), weather: $('weather'), view: $<HTMLSelectElement>('view'), ovTrail: $<HTMLInputElement>('ovTrail'), ovExplored: $<HTMLInputElement>('ovExplored'), ovFood: $<HTMLInputElement>('ovFood'), ovLabels: $<HTMLInputElement>('ovLabels'), ovTask: $<HTMLInputElement>('ovTask'), legend: $('legend'), timeline: $('timeline'), follow: $<HTMLButtonElement>('follow'), who: $<HTMLSelectElement>('who'), followMsg: $('followMsg'), jump: $('jump'), evMine: $<HTMLInputElement>('evMine'), stats: $('stats'), statsChart: $<HTMLButtonElement>('statsChart'), statsTable: $<HTMLButtonElement>('statsTable') };
 
 /** Canvas colours come from the page's CSS tokens so both light and dark themes stay readable. */
 const tok = (name: string, fallback: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
 let index: Index, official: Official | null = null, exp: Experiment | null = null, pos: Pos = {}, places: Place[] = [], links: Link[] = [];
 let selected: string | null = null, playing = false, last = 0, modeRequest = 0;
 /** V3 follow camera: the followed worker (null = free camera), and the last event jump (shown until the next one). */
-let whoKey = '', following: string | null = null, followNote = '', lastJump: (EventJump & { event: string; type: string }) | null = null, eventsKey = '';
+let series: DayPoint[] = [], statsKey = '', statsView: 'chart' | 'table' = 'chart', whoKey = '', following: string | null = null, followNote = '', lastJump: (EventJump & { event: string; type: string }) | null = null, eventsKey = '';
 const cam = { x: 0, y: 0, scale: 3 };
 
 async function load<T>(file: string): Promise<T> { const r = await fetch('data/' + file); if (!r.ok) throw Error('cannot load ' + file); return r.json() as Promise<T>; }
@@ -28,6 +29,11 @@ async function init() {
   ui.day.oninput = () => { ui.minute.value = '0'; draw(); };
   ui.follow.onclick = () => { if (following) stopFollow('已取消追蹤'); else if (selected && exp) { following = selected; followNote = ''; draw(); } };
   ui.evMine.onchange = () => draw();
+  // V4 charts: hover reads the values of that day, a click moves the map to that day (minute 0)
+  ui.statsChart.onclick = () => { statsView = 'chart'; statsKey = ''; draw(); };
+  ui.statsTable.onclick = () => { statsView = 'table'; statsKey = ''; draw(); };
+  ui.stats.onpointermove = (e) => { const svg = (e.target as Element).closest('svg[data-chart]') as SVGSVGElement | null; if (!svg || !series.length) return; const d = dayAtX(svg, e.clientX), p = series.find((x) => x.day === d), spec = CHARTS.find((c) => c.id === svg.dataset.chart); const out = svg.parentElement?.querySelector('.readout'); if (p && spec && out) out.textContent = readout(spec, p); };
+  ui.stats.onclick = (e) => { const svg = (e.target as Element).closest('svg[data-chart]') as SVGSVGElement | null; if (!svg || !exp) return; const d = Math.max(1, dayAtX(svg, e.clientX)); ui.day.value = String(Math.min(d, exp.days.length)); ui.minute.value = '0'; draw(); const p = series.find((x) => x.day === d), spec = CHARTS.find((c) => c.id === svg.dataset.chart), out = ui.stats.querySelector(`figure[data-chart="${svg.dataset.chart}"] .readout`); if (p && spec && out) out.textContent = readout(spec, p); };
   // picker: on a phone the ants gathered at the nest are too close together to tap one by one
   ui.who.onchange = () => { selected = ui.who.value || null; draw(); };
   // the event list and the jump panel are re-rendered only when their content changes, so a click is never lost
@@ -47,7 +53,7 @@ async function switchMode(id: string) {
   if (id === 'official') {
     const o = official ?? assertKind(await load<Official>(index.official), 'official', index.official);
     if (req !== modeRequest) return;
-    official = o; exp = null;
+    official = o; exp = null; series = []; statsKey = '';
     places = official.map.places; links = official.map.links;
     ui.badge.className = 'badge official'; ui.badge.textContent = `正式遊戲 Day${official.day}（${official.calendar_date}）唯讀快照：沒有逐分鐘紀錄，因此不播放動畫`;
     ui.timeline.hidden = true;
@@ -55,7 +61,7 @@ async function switchMode(id: string) {
     const meta = index.experiments.find((e) => e.id === id) as Index['experiments'][number];
     const e = assertKind(await load<Experiment>(meta.file), 'experiment', meta.file);
     if (req !== modeRequest) return;
-    exp = e; places = exp.map.places; links = exp.map.links;
+    exp = e; places = exp.map.places; links = exp.map.links; series = dailySeries(exp); statsKey = '';
     ui.badge.className = 'badge experiment'; ui.badge.textContent = `${meta.title}｜非正式、不寫入存檔｜引擎 ${exp.engine_version}`;
     ui.timeline.hidden = false; ui.day.min = '1'; ui.day.max = String(exp.days.length); ui.day.value = '1'; ui.minute.value = '0';
   }
@@ -222,6 +228,7 @@ function renderPanels() {
     const w = official.workers.find((x) => x.id === selected);
     ui.info.innerHTML = w ? `<h3>${w.id}</h3><p>狀態：${w.status}${w.injured_preexisting ? '｜帶有舊傷' : ''}</p><p>Day${w.last_recorded_day} 經過地點：${w.site_sequence.join(' → ') || '—'}；日終在 ${w.location_at_day_end ?? '—'}</p><p>紀錄的活動：${w.activity.join('；')}</p><p class="note">正式歷史只有日終狀態與敘述，沒有逐分鐘位置。</p>` : '<p class="note">點選地圖上的工蟻查看資料。</p>';
     updateWho(alive.map((x) => x.id));
+    setStats('official', '<p class="note">正式 Day14 是唯讀快照，沒有每日序列。</p>');
     setEvents('official', '<p class="note">正式 Day1～14 沒有引擎事件時間軸，所以沒有可跳轉的事件。</p>');
     ui.follow.disabled = true; ui.follow.textContent = '追蹤個體'; ui.followMsg.textContent = w ? '正式快照沒有逐分鐘位置，無法追蹤' : '';
     return;
@@ -241,6 +248,7 @@ function renderPanels() {
       <p>今日紀錄任務（日摘要，不是逐分鐘的目前任務）：${TASK_LABEL[task?.task ?? w.task] ?? task?.task ?? w.task}；出巢 ${task?.trips ?? 0} 趟、成功 ${task?.successes ?? 0}${task?.stop_reason && (p.action === 'in_nest' || t >= wmin) ? `；停止原因 ${REASON_LABEL[task.stop_reason] ?? task.stop_reason}` : ''}</p>
       <p>現在：${ACTION_LABEL[p.action] ?? p.action} @ ${p.place}${seg ? `（${(seg.start as number).toFixed(1)}–${(seg.end as number).toFixed(1)} 分）` : ''}${p.interpolated ? '<span class="tag">位置為顯示插值</span>' : ''}</p>
       <p>位置：${placeText(p.place, p.x, p.y, p.interpolated)}</p>
+      <p>速度：${speedText(walkSpeedAt(d, w.id, t, links))}</p>
       <p>嗉囊糖（一日開始）：${w.crop_sugar.toFixed(2)} 份｜記得的地點：${w.known_sources.join('、') || '無'}｜走過的路段：${w.route_edges.join('、') || '無'}</p>
       <p>今日到目前為止的行動：${segs.length ? segs.map((x) => `${(x.start as number).toFixed(0)}′ ${ACTION_LABEL[x.action as string] ?? x.action}`).join(' → ') : '在巢內（沒有外出紀錄）'}</p>
       <p>最近事件：${mine.map(describeEvent).join('；') || '—'}</p>`;
@@ -258,6 +266,7 @@ function renderPanels() {
     return `<button type="button" class="ev${past ? '' : ' future'}${cur ? ' current' : ''}" data-ev="${r.i}">${r.t === Infinity ? '日終（無時刻）' : r.t.toFixed(1) + '′'} ${describeEvent(r.e)}</button>`;
   }).join('') || '<p class="note">這一天沒有符合的事件。</p>');
   updateFollowUI(day, t);
+  setStats(`${exp.spec.id}|${day}|${statsView}`, statsView === 'chart' ? panelHtml(series, day) : tableHtml(series));
   updateWho(s.workers.map((x) => x.id));
 }
 
@@ -275,6 +284,15 @@ function placeText(place: string, x: number, y: number, interpolated: boolean) {
   const ends = place.split('>');
   if (ends.some((id) => pos[id]?.known === false)) return `${place}｜位置未知（${ends.filter((id) => pos[id]?.known === false).join('、')} 沒有記錄方位與距離，不在地圖比例上）`;
   return `${place}｜示意座標 東 ${x.toFixed(1)}、北 ${y.toFixed(1)} cm（方位＋約距離推得，非測量）${interpolated ? '；兩個紀錄點之間的顯示插值，不是實際量到的位置' : ''}`;
+}
+
+function setStats(key: string, html: string) { if (key !== statsKey) { statsKey = key; ui.stats.innerHTML = html; ui.statsChart.setAttribute('aria-pressed', String(statsView === 'chart')); ui.statsTable.setAttribute('aria-pressed', String(statsView === 'table')); } }
+
+/** Walking speed in words: derived from engine records only, or 「不在行走」／「速度未知」. */
+function speedText(s: ReturnType<typeof walkSpeedAt>) {
+  if (!s) return '不在行走（在巢內、在地點或停留）';
+  if (s.mm_s === null) return `${s.edge}：速度未知（路段長度未記錄，不推算）`;
+  return `${s.edge} 平均約 ${s.mm_s.toFixed(2)} mm/s（${s.length_cm} cm ÷ ${(s.t1 - s.t0).toFixed(2)} 分；長度為世界設定的約距離，是路徑長度下限，非量測；整段平均，不是瞬時速度）`;
 }
 
 function setEvents(key: string, html: string) { if (key !== eventsKey) { eventsKey = key; ui.events.innerHTML = html; } }
@@ -347,6 +365,8 @@ function tick(now: number) {
   followNote: () => followNote,
   camera: () => ({ ...cam }),
   lastJump: () => lastJump,
+  series: () => series,
+  speed: (id: string) => exp ? walkSpeedAt(exp.days[Number(ui.day.value) - 1], id, Number(ui.minute.value), links) : null,
   placeOnScreen: (id: string) => { const dpr = window.devicePixelRatio || 1, r = canvas.getBoundingClientRect(); if (!pos[id]) return null; const S = screenOf(id); return { x: r.left + S.sx / dpr, y: r.top + S.sy / dpr, known: pos[id].known }; },
   canvasCentre: () => { const r = canvas.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; },
   state: () => ({ mode: exp ? exp.spec.id : 'official', official: !exp, day: exp ? Number(ui.day.value) : null, minute: exp ? Number(ui.minute.value) : null, workers: exp ? stateAt(exp, Number(ui.day.value), Number(ui.minute.value)).workers.map((w) => w.id) : (official?.workers.filter((w) => w.status === 'alive').map((w) => w.id) ?? []), info: ui.info.textContent ?? '' }),

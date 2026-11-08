@@ -57,6 +57,8 @@ jobs:
           node tests/browser/web-viewer.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/ | tee "$RUNNER_TEMP/viewer-shots/web-viewer-results.json"
       - name: V3 follow camera + event jump E2E (desktop 1280x800 mouse; Android Pixel 7 profile, touch)
         run: node tests/browser/web-follow.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/
+      - name: V4 daily ecology charts + derived walking speed E2E (desktop; Android Pixel 7 profile, touch)
+        run: node tests/browser/web-stats.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/
       - name: Assemble the static preview (page + compiled script + data + screenshots + test results + instructions)
         if: always()
         run: |
@@ -67,6 +69,7 @@ jobs:
           cp "$RUNNER_TEMP"/viewer-shots/*.png "$P/screenshots/" 2>/dev/null || true
           cp "$RUNNER_TEMP"/viewer-shots/*.json "$P/test-results/" 2>/dev/null || true
           node tests/web-v3-follow.test.ts > "$P/test-results/web-v3-follow-node.json" 2>&1 || true
+          node tests/web-v4-stats.test.ts > "$P/test-results/web-v4-stats-node.json" 2>&1 || true
           echo "commit ${GITHUB_SHA}" > "$P/BUILD.txt"; date -u >> "$P/BUILD.txt"; ls -R "$P" | head -60
       - name: Upload screenshots
         if: always()

@@ -227,3 +227,43 @@ export function followStatus(exp: Experiment, day: number, t: number, id: string
   if (ends.some((x) => pos[x]?.known === false)) return { kind: 'unknown_position', place: p.place };
   return { kind: 'visible', x: p.x, y: p.y, place: p.place, interpolated: p.interpolated, known: true };
 }
+
+// ───────────────────────── V4: derived walking speed and daily ecology series (Issue #99 follow-up) ─────────────────────────
+
+export interface WalkSpeed { edge: string; from: string; to: string; length_cm: number | null; t0: number; t1: number; mm_s: number | null; basis: string }
+/**
+ * The walking speed on the edge a worker is walking at minute t, DERIVED from engine records only: the recorded edge
+ * length (world setting "約距離" — a game assumption and a lower bound of the real path) divided by the engine-recorded time
+ * between the two recorded points of that edge (segment start / route_step arrival minutes). An average over the edge,
+ * not an instantaneous speed. null when the worker is not walking or the edge has no recorded length (never estimated).
+ */
+export function walkSpeedAt(d: ExperimentDay, workerId: string, t: number, links: Link[]): WalkSpeed | null {
+  for (const s of segmentsOf(d, workerId)) {
+    const start = s.start as number, end = s.end as number, place = s.place as string;
+    if (t < start || t > end || !place.includes('>')) continue;
+    const route = place.split('>');
+    const steps = d.events.filter((e) => e.type === 'route_step' && e.worker === workerId && (e.minute as number) > start - 1e-9 && (e.minute as number) <= end + 1e-9);
+    const times = [start];
+    for (let i = 1; i < route.length; i++) { const st = steps.find((e) => e.from === route[i - 1] && e.to === route[i] && (e.minute as number) >= times[i - 1] - 1e-9); if (!st) return null; times.push(st.minute as number); }
+    for (let i = 1; i < route.length; i++) if (t <= times[i] + 1e-9) {
+      const a = route[i - 1], b = route[i], l = links.find((x) => (x.from === a && x.to === b) || (x.from === b && x.to === a));
+      const len = typeof l?.length_cm === 'number' ? l.length_cm : null, dt = times[i] - times[i - 1];
+      return { edge: `${a}>${b}`, from: a, to: b, length_cm: len, t0: times[i - 1], t1: times[i], mm_s: len !== null && dt > 0 ? (len * 10) / (dt * 60) : null, basis: len === null ? '路段長度未記錄：速度未知（不推算）' : '路段長度（世界設定的約距離，遊戲假設，實際路徑長度的下限）÷ 引擎記錄的走完時間；整段平均，不是瞬時速度' };
+    }
+  }
+  return null;
+}
+
+export interface DayPoint { day: number; date: string; workers: number; eggs: number; larvae: number; pupae: number; store_sugar: number; store_protein: number; garden_sugar: number; garden_protein: number; income_sugar: number | null; income_protein: number | null; air_c: number | null; nest_c: number | null; rain_mm: number | null; deaths: number | null; eclosions: number | null; eggs_laid: number | null }
+/** One point per recorded state: Day0 (the initial state; no daily flows) and the END of every simulated day. Values are
+ *  copied from the export (engine end-of-day state and day summary); nothing is smoothed or interpolated. */
+export function dailySeries(exp: Experiment): DayPoint[] {
+  const pt = (day: number, date: string, s: ColonySnap, d: ExperimentDay | null): DayPoint => {
+    const src = Object.values(s.sources), n = (st: string) => s.brood.filter((b) => b.stage === st).length;
+    return { day, date, workers: s.workers.length, eggs: n('egg'), larvae: n('larva'), pupae: n('pupa'), store_sugar: s.stores.sugar, store_protein: s.stores.protein,
+      garden_sugar: src.reduce((q, x) => q + x.sugar, 0), garden_protein: src.reduce((q, x) => q + x.protein, 0),
+      income_sugar: d ? d.income.sugar : null, income_protein: d ? d.income.protein : null, air_c: d ? d.weather.air_temp_c : null, nest_c: d ? d.weather.nest_temp_c : null, rain_mm: d ? d.weather.rain_mm : null,
+      deaths: d ? d.worker_deaths : null, eclosions: d ? d.eclosions : null, eggs_laid: d ? d.eggs_laid : null };
+  };
+  return [pt(0, exp.day0.date, exp.day0.state, null), ...exp.days.map((d) => pt(d.day, d.date, d.end_state, d))];
+}
