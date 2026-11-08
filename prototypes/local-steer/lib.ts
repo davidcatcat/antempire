@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { steer2D, type SteerInput, type SteerParams, type SteerPolicyId, type SteerResult } from '../../engine/physics/local-steer.ts';
+import { steer2D, type DecisionClock, type SteerInput, type SteerParams, type SteerPolicyId, type SteerResult } from '../../engine/physics/local-steer.ts';
 import { capsuleGap, laneBoundary, OCC_TOL_MM, type Capsule } from '../../engine/physics/body2d.ts';
 import { gridPairs2D, type AABB } from '../../engine/physics/broadphase.ts';
 import { ph3bInput } from '../solver-compare/lib/ph3b.ts';
@@ -46,13 +46,14 @@ export function steerParams(sc: Scenario, over: Partial<SteerParams> = {}): { pa
   return { params: params as unknown as SteerParams, provenance };
 }
 
-export interface RunOpts { order?: 'canonical' | 'reversed' | 'shuffled'; seed?: number; over?: Partial<SteerParams> }
+/** clock: the decision clock (omitted = the solver default, the common-grid baseline; 'individual' is experimental, docs/wp4-individual-time.md) */
+export interface RunOpts { order?: 'canonical' | 'reversed' | 'shuffled'; seed?: number; over?: Partial<SteerParams>; clock?: DecisionClock }
 export function steerInput(sc: Scenario, policy: SteerPolicyId, o: RunOpts = {}): SteerInput {
   const base = ph3bInput(sc);
   let agents = base.agents;
   if (o.order === 'reversed') agents = [...agents].reverse();
   if (o.order === 'shuffled') { agents = [...agents]; let x = 0x9e3779b9; for (let i = agents.length - 1; i > 0; i--) { x = (Math.imul(x ^ (x >>> 15), 0x2c1b3c6d) + 0x6d2b79f5) >>> 0; const j = x % (i + 1); [agents[i], agents[j]] = [agents[j], agents[i]]; } }
-  return { ...base, agents, policy, params: steerParams(sc, o.over).params, seed: o.seed ?? sc.seed };
+  return { ...base, agents, policy, params: steerParams(sc, o.over).params, seed: o.seed ?? sc.seed, ...(o.clock ? { decision_clock: o.clock } : {}) };
 }
 export function runSteer(sc: Scenario, policy: SteerPolicyId, o: RunOpts = {}) {
   const input = steerInput(sc, policy, o);

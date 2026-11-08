@@ -76,6 +76,16 @@
  *    it stays at its goal as an obstacle. Order: arrival time, then id.
  * Determinism: agents in id order; decisions read only the state at the decision instant and named RNG streams keyed by
  * (seed, stream, agent id, decision index) — independent of input order. Units: mm, s, mm/s.
+ *
+ * EXPERIMENTAL individual decision clock (input.decision_clock = 'individual'; Owner decision 40; docs/wp4-individual-time.md).
+ * Opt-in, isolated, default off: without it the code path and the output are the common-grid baseline above, bit for bit.
+ * With it every agent has its own clock: it decides ONLY at start_t_s + k·dt (k = 0, 1, …; exact on the decimals; with the
+ * spawn rule a blocked entry is retried, and an arrived agent tries the exit, at these own instants too). The time line is
+ * the union of all own instants plus H; between two of its instants every agent keeps the decision in effect (motion and
+ * the exact contact physics are the same code as the baseline). RNG key of a decision: (seed, stream, agent id, own index
+ * k), so an agent's draws do not depend on the other agents' clocks (when every agent starts at 0 the own index equals the
+ * grid index: both clocks then give the same run, tested). Rule D's stall window counts the agent's own periods.
+ * dt remains a model assumption (遊戲假設), not a measured decision interval of a real ant.
  */
 import type { Vec2 } from './vec.ts';
 import { segmentSegment2D } from './vec.ts';
@@ -85,7 +95,7 @@ import { type AABB, broadphasePairs } from './broadphase.ts';
 import { hash32, rng } from '../rng.ts';
 import { gridTime, addTime, exactSum, cmpExact } from './exact-time.ts';
 
-/** RNG key of a decision: the grid index k, or `k|entry` for a first decision at an off-grid start / entry instant after grid instant k */
+/** RNG key of a decision: the grid index k, or `k|entry` for a first decision at an off-grid start / entry instant after grid instant k; individual clock: the agent's own instant index k */
 type Epoch = number | string;
 
 export const STEER_POLICIES = ['none', 'A_free_direction', 'B_contact_decision', 'C_sidestep', 'N_no_yield'] as const;
@@ -107,7 +117,16 @@ export interface SteerParams {
 }
 /** control-scenario boundary rules (scenario assumptions, not behaviour); omitted = off */
 export interface SteerControl { spawn?: boolean; exit?: { capacity: number; dwell_s: number } | null }
-export interface SteerInput extends Solver2DInput { policy: SteerPolicyId; params: SteerParams; seed: number; control?: SteerControl }
+/**
+ * Decision clock (Owner decision 40; docs/wp4-individual-time.md). 'common_grid' (default, the baseline of PR #142): first
+ * decision at the agent's own start, later decisions on the shared grid g_k = k·dt. 'individual' (ISOLATED EXPERIMENTAL
+ * mode, opt-in, not integrated anywhere): every agent decides only at its own instants start_t_s + k·dt (k = 0, 1, …,
+ * exact on the decimals), no shared grid. In both modes dt is a MODEL ASSUMPTION (a discretisation of a continuous
+ * behaviour), not a measured decision interval of a real ant.
+ */
+export type DecisionClock = 'common_grid' | 'individual';
+export const DECISION_CLOCKS: readonly DecisionClock[] = ['common_grid', 'individual'];
+export interface SteerInput extends Solver2DInput { policy: SteerPolicyId; params: SteerParams; seed: number; control?: SteerControl; decision_clock?: DecisionClock }
 
 export type SteerEventClass = 'physical_contact' | 'physical_constraint' | 'motion' | 'solver_status' | 'behavioural_response';
 export interface SteerEvent {
@@ -134,9 +153,13 @@ export interface SteerResult {
     /** stops against another body's planned path that did not touch; contact ends exact / estimated (body removed);
      *  control: agents entered / removed, decision instants an entry was blocked */
     stops_conservative: number; contact_ends_exact: number; contact_ends_estimated: number; entered: number; exited: number; entry_blocked_instants: number;
+    /** individual decision clock only: instants of the time line before H (union of all own instants); absent otherwise */
+    timeline_instants?: number;
   };
   /** 'none' only: the untouched PH-3b result */
   ph3b?: Solver2DResult;
+  /** present only for the experimental individual decision clock (absent = the common-grid baseline, unchanged output) */
+  decision_clock?: 'individual';
 }
 
 /** contact membership tolerance: a contact ends when the capsule gap first exceeds this (the PH-3b value) */
@@ -209,6 +232,8 @@ interface Ag {
   present: boolean; sched: number; entered: number | null; removed: number | null; entryBlocked: boolean;
   /** started exactly at the horizon (no decision, no motion by the horizon) */
   atHorizonStart: boolean;
+  /** individual decision clock only: own instant index k, the next own instant sched + k·dt, the RNG key of this instant */
+  dk: number; nextT: number; ep: Epoch;
   /** the decision in effect until the agent's next decision instant ('goal': it starts on its goal); held = stopped by a
    *  contact / static piece since that decision (inelastic: it waits for its next decision instant) */
   cur: Decision | 'goal' | null; held: boolean;
@@ -225,6 +250,7 @@ const NEEDS: Record<Exclude<SteerPolicyId, 'none'>, (keyof SteerParams)[]> = {
 export function steer2D(input: SteerInput): SteerResult {
   if (!(STEER_POLICIES as readonly string[]).includes(input.policy)) throw new SteerRefused(`unknown policy ${input.policy}`);
   if (input.policy === 'none') {
+    if (input.decision_clock === 'individual') throw new SteerRefused("'none' is the PH-3b solver itself: it takes no decisions, so it has no decision clock");
     if (input.control && (input.control.spawn || input.control.exit)) throw new SteerRefused("'none' is the PH-3b solver itself: it has no spawn / exit control rules (use N_no_yield as the no-yield control)");
     // the baseline IS PH-3b: no decision layer, nothing re-implemented
     const res = solve2D(input);
@@ -251,6 +277,8 @@ function runPolicy(input: SteerInput): SteerResult {
   }
   const STALL_K = Math.max(1, Math.round(P.stall_window_s! / DT)), STALL_MM = P.stall_progress_mm!;
   const CTL = input.control ?? {}, SPAWN = CTL.spawn === true, EXIT = CTL.exit ?? null;
+  if (input.decision_clock !== undefined && !DECISION_CLOCKS.includes(input.decision_clock)) throw new SteerRefused(`unknown decision clock ${String(input.decision_clock)}`);
+  const IND = input.decision_clock === 'individual';
   if (EXIT && (!Number.isInteger(EXIT.capacity) || EXIT.capacity < 1 || !(EXIT.dwell_s > 0) || !Number.isFinite(EXIT.dwell_s))) throw new SteerRefused('exit control: capacity must be an integer >= 1 and dwell_s a positive finite number');
   const draw = (stream: string, id: string, epoch: Epoch, extra = '') => rng(hash32(`${input.seed}|steer.${policy}.${stream}|${id}|${epoch}|${extra}`))();
 
@@ -296,6 +324,7 @@ function runPolicy(input: SteerInput): SteerResult {
       c, started: false, arrived: null, eff: ZERO, lastKey: '', samples: [], stopCause: null, halted: false,
       mode: 'go', until: 0, backLeft: 0, side: 0, sideSince: 0, progress: [], stalledSince: null, reported: false, reports: 0,
       present: !SPAWN, sched: sp.start_t_s, entered: SPAWN ? null : 0, removed: null, entryBlocked: false, atHorizonStart: false, cur: null, held: false,
+      dk: 0, nextT: sp.start_t_s, ep: 0,
     };
   });
   const capOf = (a: Ag, c = a.c): Capsule => ({ a: add(c, a.f, -a.hw), b: add(c, a.f, a.hw), r: a.r });
@@ -443,18 +472,24 @@ function runPolicy(input: SteerInput): SteerResult {
   const schedTimes = [...new Set(A.map((a) => (SPAWN ? a.sched : a.start)).filter((t) => t < H))].sort((x, y) => x - y);
   let kNext = 0, si = 0;   // next grid index to process; next entry instant
   for (let t0 = 0; ;) {
-    const final = t0 >= H, isGrid = !final && t0 === grid(kNext);
+    const final = t0 >= H, isGrid = !IND && !final && t0 === grid(kNext);
+    // individual decision clock: the agents whose own instant sched + k·dt is t0 act now (decide / enter / try the exit);
+    // their clock advances to k + 1. Only agents that still need instants count (not removed; not arrived unless an exit
+    // rule may remove them).
+    const needs = (a: Ag) => a.removed === null && (a.arrived === null || (EXIT !== null && a.present));
+    const mine: boolean[] = IND ? A.map((a) => !final && needs(a) && a.nextT === t0) : [];
+    if (IND) for (const a of A) if (mine[a.k]) { a.ep = a.dk; a.dk++; a.nextT = exactSum([1, a.sched], [a.dk, DT]); }
     // RNG key of decisions at this instant: the grid index, or (first decision at an entry instant) the preceding one + 'entry'
     const epoch: Epoch = isGrid ? kNext : `${kNext - 1}|entry`;
     if (isGrid) { kNext++; stats.decision_instants++; }
     while (si < schedTimes.length && schedTimes[si] <= t0) si++;
-    const gEnd = Math.min(H, grid(kNext));   // end of the current decision period
-    const t1 = final ? H : Math.min(gEnd, si < schedTimes.length ? schedTimes[si] : Infinity), span = t1 - t0;
+    const gEnd = IND ? NaN : Math.min(H, grid(kNext));   // end of the current decision period (common grid)
+    const t1 = final ? H : IND ? A.reduce((m, a) => (needs(a) && a.nextT < m ? a.nextT : m), H) : Math.min(gEnd, si < schedTimes.length ? schedTimes[si] : Infinity), span = t1 - t0;
     if (!final && !(t1 > t0)) throw new SteerRefused(`decision interval ${DT} s is below the time resolution at t = ${t0} s`);
     // control boundaries: exits at decision-grid instants and at H (they free road space), then entries — each agent tries
     // at its own exact scheduled instant; one whose entry pose is occupied retries at the following grid instants and at H
-    if (EXIT && (isGrid || final)) {
-      const out = A.filter((a) => a.present && a.arrived !== null).sort((p, q) => p.arrived! - q.arrived! || (p.id < q.id ? -1 : p.id > q.id ? 1 : 0));
+    if (EXIT && (IND || isGrid || final)) {
+      const out = A.filter((a) => a.present && a.arrived !== null && (!IND || final || mine[a.k])).sort((p, q) => p.arrived! - q.arrived! || (p.id < q.id ? -1 : p.id > q.id ? 1 : 0));
       for (const a of out) {
         const xk = `${a.lane}|${a.dir}`, held = exitLog.get(xk) ?? []; exitLog.set(xk, held);
         // a slot taken at t is occupied while t + dwell_s > t0 (exact on the decimals: 0.1 + 0.2 frees the slot at 0.3)
@@ -470,7 +505,7 @@ function runPolicy(input: SteerInput): SteerResult {
       }
     }
     if (SPAWN) {
-      const due = A.filter((a) => !a.present && a.entered === null && (a.sched === t0 || (a.sched < t0 && (isGrid || final)))).sort((p, q) => p.sched - q.sched || (p.id < q.id ? -1 : p.id > q.id ? 1 : 0));
+      const due = A.filter((a) => !a.present && a.entered === null && (IND ? mine[a.k] || (final && a.sched <= t0) : a.sched === t0 || (a.sched < t0 && (isGrid || final)))).sort((p, q) => p.sched - q.sched || (p.id < q.id ? -1 : p.id > q.id ? 1 : 0));
       const tried = new Set<string>();
       for (const a of due) {
         const pk = `${a.layer}|${a.c.x}|${a.c.y}`, me = capOf(a);
@@ -500,13 +535,15 @@ function runPolicy(input: SteerInput): SteerResult {
     // off-grid start / entry instant only the agents that start (enter) now — their first decision; everyone else keeps the
     // decision in effect (a held agent stays stopped until its next decision instant). An agent that starts after t0 has
     // not decided yet and does not move before its own start instant (Owner decision 23).
-    const deciders = A.filter((a) => a.present && a.arrived === null && (isGrid ? a.start <= t0 : a.start === t0));
+    const deciders = A.filter((a) => a.present && a.arrived === null && (IND ? mine[a.k] && a.start <= t0 : isGrid ? a.start <= t0 : a.start === t0));
+    if (IND && deciders.length) stats.decision_instants++;
+    if (IND) stats.timeline_instants = (stats.timeline_instants ?? 0) + 1;
     for (const a of deciders) {
       a.held = false;
       // zero remaining distance (only possible for an agent that starts on its goal: an arrival inside or at the end of an
       // interval is recorded there): it arrives at its start instant, without a decision
       if (a.goal * a.dir - fwdOf(a) <= 0) { a.cur = 'goal'; continue; }
-      const d = decide(a, perceive(a, nb[a.k]), t0, epoch);
+      const d = decide(a, perceive(a, nb[a.k]), t0, IND ? a.ep : epoch);
       a.cur = d; stats.decisions[d.kind] = (stats.decisions[d.kind] ?? 0) + 1;
     }
     // agents that move (or arrive) in this interval: on the road, a decision in effect, started (or starting before t1)
@@ -647,7 +684,9 @@ function runPolicy(input: SteerInput): SteerResult {
     // 3) contacts started in this interval that already separate in it
     for (const key of fresh.sort((p, q) => p - q)) endContact(key, activeContacts.get(key)!);
     // rule D (at the end of each decision period): progress over the stall window, local diagnosis, report once per episode
-    if (t1 === gEnd) for (const a of A) {
+    // individual clock: at the end of the agent's own decision period (its next own instant) or at H
+    if (IND || t1 === gEnd) for (const a of A) {
+      if (IND && !(a.nextT === t1 || t1 === H)) continue;
       if (!a.present || a.arrived !== null || !a.started) continue;
       a.progress.push(fwdOf(a)); if (a.progress.length > STALL_K + 1) a.progress.shift();
       if (a.progress.length <= STALL_K) continue;
@@ -674,7 +713,7 @@ function runPolicy(input: SteerInput): SteerResult {
     if (SPAWN) Object.assign(agents[a.id], { scheduled_start_t_s: a.sched, present_from_t_s: a.entered });
     if (EXIT) agents[a.id].removed_t_s = a.removed;
   }
-  return { policy, agents, events, stats };
+  return IND ? { policy, agents, events, stats, decision_clock: 'individual' } : { policy, agents, events, stats };
 }
 
 /** re-export so callers can tell refusals apart */
