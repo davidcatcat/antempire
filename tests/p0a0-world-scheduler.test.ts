@@ -18,7 +18,7 @@
  *     log on its own given the snapshot; a runaway run stops in a consistent state.
  */
 import assert from 'node:assert/strict';
-import { WorldScheduler, SchedulerError, verifyLog, addMinutes, compareTime, checkTime, MINUTES_PER_DAY, TICKS_PER_MINUTE, type EventSpec, type WorldEvent, type StepOutput, type EntityRef } from '../engine/scheduler/world-events.ts';
+import { CommitCell, WorldScheduler, SchedulerError, verifyLog, addMinutes, compareTime, checkTime, MINUTES_PER_DAY, TICKS_PER_MINUTE, type EventSpec, type WorldEvent, type StepOutput, type EntityRef } from '../engine/scheduler/world-events.ts';
 import { rng, hash32 } from '../engine/rng.ts';
 
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
@@ -422,6 +422,101 @@ const split3 = harness(42, world(3, 12), 3, { split: true });
   }
   // (6) the guard is always released: after every refusal above the scheduler works normally
   { const s = mk(); try { s.step(() => { throw new Error('x'); }); } catch { /* */ } s.runUntil({ day: 1, minute: 0 }, () => {}); ok(s.audit().executed === 2 && verifyLog(s.log).ok, 'guard released in finally: later steps run'); }
+}
+
+// ------------------------------------------------------------ commit cells (two-phase; R13-02, Owner review of #125)
+// The former generic setCommitHook ran caller code BEFORE the scheduler commit; on ccd9aad a hook that wrote external
+// state and then threw left that state written while the batch went back (CE1–CE4 below were all BROKEN there; record in
+// docs/p0a1-24h-clock.md §7a). The hook is gone. A CommitCell commits only its own value, by a swap the scheduler performs
+// after its own commit; caller code runs only in prepare (phase 1), before anything changes.
+{
+  const mk = () => { const s = new WorldScheduler(W); for (const k of ['q', 'p']) s.schedule({ kind: 'a', key: k, at: { day: 0, minute: 1 }, scope: ref(null, null), source: null, target: null }); s.schedule({ kind: 'a', key: 'z', at: { day: 0, minute: 2 }, scope: ref(null, null), source: null, target: null }); return s; };
+  ok(!('setCommitHook' in WorldScheduler.prototype), 'no generic commit hook API remains');
+  const h = () => {};
+  // basic contract: prepare sees the batch (sorted, frozen) and the handler once; the value is swapped in after the commit
+  {
+    const s = mk(), seen: string[][] = [];
+    const c = new CommitCell<number>(0, (batch, handler) => { seen.push(batch.map((e) => e.id)); ok(handler === h && Object.isFrozen(batch), 'prepare receives the handler and a frozen batch'); ok(c.value === 0 && s.get('a:p')!.state === 'scheduled', 'during prepare nothing is committed yet'); return { value: seen.length }; });
+    s.attachCell(c as CommitCell<unknown>); s.step(h);
+    ok(JSON.stringify(seen) === JSON.stringify([['a:p', 'a:q']]) && c.value === 1 && s.get('a:p')!.state === 'executed', 'batch and cell commit together');
+    const snap = JSON.stringify(s.snapshot());
+    assert.throws(() => s.step(() => ({ cancel: [{ id: 'a:nope', reason: 'x' }] }) as unknown as StepOutput));
+    ok(seen.length === 1 && c.value === 1 && JSON.stringify(s.snapshot()) === snap, 'invalid output: prepare not called, cell and scheduler unchanged');
+    ok(!('cells' in s.snapshot()) && JSON.stringify(WorldScheduler.restore(s.snapshot()).snapshot()) === snap, 'cells are not part of a snapshot');
+  }
+  // CE1 (BROKEN on ccd9aad): a prepare that writes external state and then throws. The cell and the scheduler are
+  // unchanged; the external write is NOT rolled back — the documented limitation, pinned here.
+  {
+    const s = mk(), ext = { v: 0 }, snap = JSON.stringify(s.snapshot());
+    const c = new CommitCell<number>(0, () => { ext.v = 1; throw new Error('late'); });
+    s.attachCell(c as CommitCell<unknown>);
+    assert.throws(() => s.step(h), /late/);
+    ok(c.value === 0 && JSON.stringify(s.snapshot()) === snap, 'CE1: throwing prepare → cell and scheduler unchanged');
+    ok(ext.v === 1, 'CE1 (documented limitation): a write OUTSIDE the cell made by prepare before it threw is not rolled back');
+  }
+  // CE2 (BROKEN on ccd9aad): two external states in one batch, the second read throws (getter). As two cells: neither changes.
+  {
+    const s = mk(), staged = { a: 1, get b(): number { throw new Error('getter'); } }, snap = JSON.stringify(s.snapshot());
+    const A = new CommitCell<number>(0, () => ({ value: staged.a })), B = new CommitCell<number>(0, () => ({ value: staged.b }));
+    s.attachCell(A as CommitCell<unknown>); s.attachCell(B as CommitCell<unknown>);
+    assert.throws(() => s.step(h), /getter/);
+    ok(A.value === 0 && B.value === 0 && JSON.stringify(s.snapshot()) === snap, 'CE2: second cell throws in prepare → the first cell is not swapped either');
+    let ok2 = true; const A2 = new CommitCell<number>(0, () => ({ value: 7 })), B2 = new CommitCell<number>(0, () => { if (ok2) throw new Error('t'); return { value: 8 }; });
+    const s2 = mk(); s2.attachCell(A2 as CommitCell<unknown>); s2.attachCell(B2 as CommitCell<unknown>);
+    for (let k = 0; k < 3; k++) assert.throws(() => s2.step(h));
+    ok(A2.value === 0 && B2.value === 0, 'CE2: three failed attempts, no cell changed'); ok2 = false; s2.step(h);
+    ok(A2.value === 7 && B2.value === 8 && s2.get('a:p')!.state === 'executed', 'CE2: the retry commits both cells and the batch');
+  }
+  // CE3 (BROKEN on ccd9aad): getter / Proxy tricks on the prepare RESULT are refused or read once, inside phase 1
+  {
+    const s = mk(), snap = JSON.stringify(s.snapshot()); let reads = 0;
+    const g = new CommitCell<number>(0, () => ({ get value() { reads++; return 5; } }) as unknown as { value: number });
+    s.attachCell(g as CommitCell<unknown>);
+    refuses(() => s.step(h), /data property/, 'CE3: a getter as the prepared value is refused');
+    ok(reads === 0 && g.value === 0 && JSON.stringify(s.snapshot()) === snap, 'CE3: … without running the getter; nothing changed');
+    s.detachCell(g as CommitCell<unknown>);
+    const p = new CommitCell<number>(0, () => new Proxy({ value: 9 }, { getOwnPropertyDescriptor() { throw new Error('trap'); } }) as { value: number });
+    s.attachCell(p as CommitCell<unknown>);
+    assert.throws(() => s.step(h), /trap|plain/);
+    ok(p.value === 0 && JSON.stringify(s.snapshot()) === snap, 'CE3: a Proxy result whose trap throws: nothing changed');
+    s.detachCell(p as CommitCell<unknown>);
+    for (const bad of [{ value: 1, extra: 2 }, 42, [1], Object.create(null)]) {
+      const q = new CommitCell<number>(0, () => bad as { value: number }); s.attachCell(q as CommitCell<unknown>);
+      refuses(() => s.step(h), /plain \{ value \}/, `CE3: prepare result ${JSON.stringify(bad)} refused`); s.detachCell(q as CommitCell<unknown>);
+    }
+    // a stored Proxy value is stored by reference: no trap runs during the swap
+    let trapRuns = 0; const pv = new Proxy({}, { get() { trapRuns++; return 1; }, ownKeys() { trapRuns++; return []; } });
+    const r = new CommitCell<unknown>(null, () => ({ value: pv })); s.attachCell(r); s.step(h);
+    ok(r.value === pv && trapRuns === 0, 'CE3: the swap itself evaluates nothing of the value (no getter, no trap)');
+  }
+  // CE4 (BROKEN on ccd9aad): snapshot / failed attempt / restore / retry: the cell holds one logical batch's value
+  {
+    const s = mk(); let fail = true, prepares = 0;
+    const c = new CommitCell<number>(0, () => { prepares++; if (fail) throw new Error('x'); return { value: 1 }; });
+    s.attachCell(c as CommitCell<unknown>);
+    const snap = s.snapshot(); assert.throws(() => s.step(h));
+    const r = WorldScheduler.restore(snap); r.attachCell(c as CommitCell<unknown>); fail = false; r.step(h);
+    ok(c.value === 1 && prepares === 2 && r.get('a:p')!.state === 'executed', 'CE4: after a failed attempt, restore and retry the cell holds exactly the batch value');
+    ok(s.get('a:p')!.state === 'scheduled', 'CE4: the failed scheduler kept its batch pending');
+    s.step(() => {}); ok(c.value === 1, 'CE4: the cell moved to the restored scheduler; the old one no longer commits it');
+  }
+  // re-entry and ownership
+  {
+    const s = mk(), c = new CommitCell<number>(0, () => { s.schedule({ kind: 'b', key: 'r', at: { day: 0, minute: 3 }, scope: ref(null, null), source: null, target: null }); return { value: 1 }; });
+    s.attachCell(c as CommitCell<unknown>); const snap = JSON.stringify(s.snapshot());
+    refuses(() => s.step(h), /inside a batch handler/, 'prepare cannot re-enter the scheduler');
+    ok(c.value === 0 && JSON.stringify(s.snapshot()) === snap, 'refused re-entry from prepare: nothing changed');
+    const s3 = mk(), d = new CommitCell<number>(0, () => null);
+    refuses(() => s3.step(() => { s3.attachCell(d as CommitCell<unknown>); }), /inside a batch handler/, 'a handler cannot attach a cell');
+    s3.attachCell(d as CommitCell<unknown>);
+    refuses(() => s3.step(() => { d.replace(3); }), /inside a batch handler/, 'replace() is refused while the owning scheduler holds a batch');
+    const other = mk();
+    refuses(() => s3.step(() => { other.attachCell(d as CommitCell<unknown>); }), /attachCell \(moving a cell off its scheduler\)/, 'a cell cannot be moved off a scheduler that holds a batch');
+    ok(d.value === 0, 'refused replace / move: the cell is unchanged');
+    other.attachCell(d as CommitCell<unknown>); s3.step(h); other.step(h); ok(d.value === 0, 'prepare returning null: no change');
+    refuses(() => s3.attachCell({} as CommitCell<unknown>), /needs a CommitCell/, 'only a CommitCell can be attached');
+    refuses(() => new CommitCell(0, 42 as unknown as () => null), /prepare function/, 'a cell needs a prepare function');
+  }
 }
 
 console.log(JSON.stringify({ test: 'p0a0-world-scheduler', passed: true, checks, harness: base.s.audit() }));

@@ -718,3 +718,13 @@ R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-
 
 **既有編號的附註**（新增，不改寫原有行）：
 - R210（Cassill & Tschinkel 1995）2026-11-08 以 pdftotext 讀取全文（作者網站 PDF）：28 °C 恆光、只測四齡、液態食物；每次交哺持續 11 ± 2 s、份量固定；幼蟲每小時被工蟻碰到 200～800 次、被餵 2～50 次；約 8 h 的餵食才飽；鄰近幼蟲的飢餓不影響被餵頻率。前言轉引：「Workers deliver proteinaceous food primarily to larvae and queens and sugars primarily to other workers」（Howard & Tschinkel 1980、1981 等，原文未讀）。全部**非本種**，不得作本種接觸頻率。
+
+## 2026-11-08 P0-A1 24 小時環境時鐘（R390–R392；`docs/p0a1-24h-clock.md`）
+
+> 三筆都是**一般方法**（天文、氣象物理），不是生物證據，不提供任何螞蟻參數。R247（Parton & Logan 1981）仍只核對書目，係數保持 `null`。
+
+| ID | 來源 | 讀到的程度 | 用途 | 限制 |
+|---|---|---|---|---|
+| R390 | NOAA Global Monitoring Laboratory, Solar Calculation Details. https://gml.noaa.gov/grad/solcalc/calcdetails.html（依 Meeus, *Astronomical Algorithms*） | 說明頁已讀（準確度、折射 0.833°、適用範圍）；方程式依 NOAA 試算表的公式實作，**試算表本身本次未下載核對**，改以 R392 獨立演算法交叉驗證（2027 全年最大差 0.2 分鐘） | 日出、日落、民用曙暮光（`engine/clock/solar.ts`） | NOAA：±72° 緯度內約 1 分鐘；實際觀測受大氣影響；NOAA 已不再維護；地形與建築未模擬 |
+| R391 | Allen RG, Pereira LS, Raes D, Smith M (1998) *Crop evapotranspiration*（FAO Irrigation and Drainage Paper 56），第 3 章 式 10、11。https://www.fao.org/4/x0490e/x0490e07.htm | 線上全文（第 3 章）；式 11 的常數由原文例題 3 確認（式本身是圖片） | 飽和水氣壓 e°(T) = 0.6108 exp(17.27T/(T+237.3)) kPa；RH = 實際／飽和水氣壓；RH 日變化（日出附近最高、午後最低）只作方向 | 一般物理；「日內實際水氣壓固定或內插」是本專案的遊戲假設，不是 FAO-56 的結論 |
+| R392 | Nautical Almanac Office, US Naval Observatory (1990) *Almanac for Computers*（日出日落簡化演算法） | **未讀原文**；演算法為廣泛流傳的轉載版本 | 只在測試中作為獨立的交叉驗證，不是引擎方法 | 精度約 1～2 分鐘；不用於任何輸出 |
