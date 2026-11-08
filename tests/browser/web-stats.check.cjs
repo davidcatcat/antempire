@@ -25,7 +25,7 @@ const read = (f) => JSON.parse(fs.readFileSync(path.join(DATA, f), 'utf8'));
     page.on('pageerror', (e) => errors.push(`${name}: ${e.message}`));
     const V = (fn, ...a) => page.evaluate(fn, ...a);
     const setDay = async (d, m) => { await page.$eval('#day', (el, v) => { el.value = String(v); el.dispatchEvent(new Event('input')); }, d); await page.$eval('#minute', (el, v) => { el.value = String(v); el.dispatchEvent(new Event('input')); }, m); };
-    await page.goto(base); await page.waitForFunction(() => document.getElementById('badge').textContent.includes('Day14'));
+    await page.goto(new URL('analysis.html', base).href); await page.waitForFunction(() => document.getElementById('badge').textContent.includes('Day14'));
     check((await page.$eval('#stats', (e) => e.textContent)).includes('沒有每日序列') && (await page.$$('#stats svg')).length === 0, `${name}: the official snapshot shows no daily series`);
     await page.selectOption('#mode', meta.id); await page.waitForFunction((id) => window.antempireViewer.state().mode === id, meta.id);
     await setDay(12, 0);

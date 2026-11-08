@@ -64,7 +64,7 @@ const KNOWN = (exp) => new Set(exp.map.places.filter((p) => p.layout).map((p) =>
     const choose = async (id, at) => { if (at) await tap(at.x, at.y); if ((await V(() => window.antempireViewer.selected())) === id) return 'tap'; await page.selectOption('#who', id); return (await V(() => window.antempireViewer.selected())) === id ? 'picker' : 'failed'; };
     const play = async (ms) => { await press('#play'); await page.waitForTimeout(ms); await press('#play'); };
     const st = () => V(() => ({ ...window.antempireViewer.state(), following: window.antempireViewer.following(), note: window.antempireViewer.followNote(), cam: window.antempireViewer.camera(), jump: window.antempireViewer.lastJump(), selected: window.antempireViewer.selected() }));
-    await page.goto(base); await page.waitForFunction(() => document.getElementById('badge').textContent.includes('Day14'));
+    await page.goto(new URL('analysis.html', base).href); await page.waitForFunction(() => document.getElementById('badge').textContent.includes('Day14'));
 
     // official snapshot: can be selected, cannot be followed, has no event timeline
     const off = await V(() => window.antempireViewer.antsOnScreen());
