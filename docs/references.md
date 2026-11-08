@@ -728,3 +728,18 @@ R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-
 | R390 | NOAA Global Monitoring Laboratory, Solar Calculation Details. https://gml.noaa.gov/grad/solcalc/calcdetails.html（依 Meeus, *Astronomical Algorithms*） | 說明頁已讀（準確度、折射 0.833°、適用範圍）；方程式依 NOAA 試算表的公式實作，**試算表本身本次未下載核對**，改以 R392 獨立演算法交叉驗證（2027 全年最大差 0.2 分鐘） | 日出、日落、民用曙暮光（`engine/clock/solar.ts`） | NOAA：±72° 緯度內約 1 分鐘；實際觀測受大氣影響；NOAA 已不再維護；地形與建築未模擬 |
 | R391 | Allen RG, Pereira LS, Raes D, Smith M (1998) *Crop evapotranspiration*（FAO Irrigation and Drainage Paper 56），第 3 章 式 10、11。https://www.fao.org/4/x0490e/x0490e07.htm | 線上全文（第 3 章）；式 11 的常數由原文例題 3 確認（式本身是圖片） | 飽和水氣壓 e°(T) = 0.6108 exp(17.27T/(T+237.3)) kPa；RH = 實際／飽和水氣壓；RH 日變化（日出附近最高、午後最低）只作方向 | 一般物理；「日內實際水氣壓固定或內插」是本專案的遊戲假設，不是 FAO-56 的結論 |
 | R392 | Nautical Almanac Office, US Naval Observatory (1990) *Almanac for Computers*（日出日落簡化演算法） | **未讀原文**；演算法為廣泛流傳的轉載版本 | 只在測試中作為獨立的交叉驗證，不是引擎方法 | 精度約 1～2 分鐘；不用於任何輸出 |
+
+## 2026-11-08 P0-A2 24 小時個體行為（R760–R763；`docs/p0a2-24h-behaviour-design.md`，Issue #156）
+
+> 編號從 R760 起，避開其他進行中工作包。閱讀程度如實標記；他種只作候選機制（非本種）。
+
+| ID | 文獻 | 閱讀程度 | 物種 | 支持的內容 | 不可外推之處 |
+|---|---|---|---|---|---|
+| R760 | Leong CM, Tsang TPN, Guénard B (2022) Testing the reliability and ecological implications of ramping rates in the measurement of Critical Thermal maximum. *PLoS ONE* 17(3):e0265361. DOI 10.1371/journal.pone.0265361（PMC8920270） | 全文（Europe PMC XML）；圖 4 的 CTmax、FTmax 絕對值**未讀數**；補充資料未讀 | 27 種，**含本種**（香港、澳門） | 升溫 0.2／0.5／1.0°C/min 得到不同 CTmax；1°C/min 最接近野外最高覓食地表溫度（FTmax）。本種 \|FTmax−CTmax\| 約 7.7／6.3／3°C（表 2 第一區塊）。FTmax 來自 2015～2018 年 10:00～16:00 的香腸餌（>11 817 個），紅外線量地表溫度 | 表 2 第二區塊（1% top FT）的列序與第一區塊不一致，疑似排版錯位，數值只引用第一區塊並待核；餌只在白天，**沒有日夜資料**；FTmax 受競爭影響，不是生理門檻 |
+| R761 | Kaspari M, Clay NA, Lucas J, Yanoviak SP, Kay A (2015) Thermal adaptation generates a diversity of thermal limits in a rainforest ant community. *Global Change Biology* 21:1092–1102. DOI 10.1111/gcb.12750 | 摘要（Europe PMC） | **非本種**：巴拿馬 88 種 | 同一森林內曬到太陽的表面比落葉層高約 8°C；樹冠種 CTmax 比林下高 3.5～5°C；小型螞蟻 <10 s 達熱平衡 → 個體應讀微地點地表溫度 | 熱帶雨林；無本種；數值不用 |
+| R762 | Bujan J, Kaspari M (2017) Nutrition modifies critical thermal maximum of a dominant canopy ant. *J. Insect Physiol.* 102:1–6. DOI 10.1016/j.jinsphys.2017.08.007 | 摘要（Europe PMC） | **非本種**：*Azteca chartifex* | 只給水 10 h 後兩組差異消失；10% 蔗糖任食使 CTmax 升高約 5°C → 個體營養狀態影響熱耐受的候選機制 | 樹棲種；短期效應；數值不得套用本種 |
+| R763 | Martin RA, Chick LD, Yilmaz AR, Diamond SE (2019) Evolution, not transgenerational plasticity, explains the adaptive divergence of acorn ant thermal tolerance across an urban-rural temperature cline. *Evolutionary Applications*（卷頁未核）. DOI 10.1111/eva.12826（PMC6708418） | 摘要（Europe PMC） | **非本種**：*Temnothorax curvispinosus* | 都市族群耐熱較高、耐寒較低，以演化差異為主 | 與 R145 本種都市 CTmax 較低（1 群）方向相反 → 族群間差異的方向不可假設；不提供本種數值 |
+
+**既有編號的補充**（新增，不改寫原有行）：
+- R145（Chen & Neoh 2023）2026-11-08 再讀正文（Frontiers 網頁全文，圖 2 未重新量）：CTmax 方法為 25°C 起、每 2 分升 1°C 至 35°C、之後每 5 分升 1°C（約 0.5 → 0.2°C/min，屬 R760 所稱的慢速升溫）；以翻身後無法翻正判定；未量 CTmin。原文**沒有**本種日夜活動的統計檢定，第四角分析是性狀對環境；都市「人類廚餘時段」本次讀到約 11～18 時（舊筆記記 09～18 時，待核）。森林 CTmax 的「24 隻」是否為每群數量，原文表述不明確。
+- R146（Asfiya et al. 2016）2026-11-08 以 pdftotext 核對：餌站調查為上午 07:30～10:30 與下午 12:30～15:30，沒有夜間取樣。
