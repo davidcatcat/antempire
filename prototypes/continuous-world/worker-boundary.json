@@ -25,7 +25,8 @@
     "prototypes/continuous-world/worker/",
     "engine/clock/",
     "engine/scheduler/",
-    "engine/rng.ts"
+    "engine/rng.ts",
+    "engine/sha256.ts"
   ],
   "denied_import_prefixes": [
     "cli/",

@@ -41,7 +41,7 @@ V6-2 UI ──► Worker Client (web/src/experimental/worker-client.ts)
 
 ## 4. 匯入白名單（`prototypes/continuous-world/worker-boundary.json`）
 
-- 允許：`prototypes/continuous-world/worker/`、`engine/clock/`、`engine/scheduler/`、`engine/rng.ts`。
+- 允許：`prototypes/continuous-world/worker/`、`engine/clock/`、`engine/scheduler/`、`engine/rng.ts`、`engine/sha256.ts`（rng 的相依）。白名單必須對匯入封閉：白名單模組的遞移相依也必須在白名單內（測試檢查）。
 - 禁止：`cli/`、`saves/`、`journal/`、`tests/`、`web/`、`sim/`、`engine/index.ts`、`engine/day.ts`（正式日循環）、`engine/legacy.ts`、`engine/migration.ts`。
 - 禁止任何 `node:` 或外部套件匯入、非字面的動態 `import()`、巢狀 Worker。
 - 禁止在 Worker 匯入圖中使用：IndexedDB、Cache API、localStorage／sessionStorage、`fetch`、XHR、WebSocket、EventSource、`navigator`（含 `navigator.storage` 檔案系統）、`importScripts`、BroadcastChannel、檔案選擇器 API、`require`、`process`、`Buffer`；以 `self.x`、`globalThis['x']` 形式出現也算。
