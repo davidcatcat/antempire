@@ -1,5 +1,5 @@
 /**
- * Physics event time-boundary contract (Owner's unified contract; docs/wp4-local-avoidance.md §時間契約), BLOCKING.
+ * Physics event time-boundary contract (Owner's unified contract; docs/wp4-local-avoidance.md §2b 時間契約), BLOCKING.
  * The solver-agnostic checks (tests/lib/physics-time-contract-wp4.ts) are applied to PH-3b (solve2D, the reference) and to
  * every WP4 local-steer policy, without and with the spawn control rule, on two decision intervals. PH-3b's one known
  * difference ('moving' for an agent that starts exactly at the horizon) is PINNED as pending: it flips — and the pending

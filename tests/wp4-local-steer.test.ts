@@ -276,15 +276,17 @@ for (const id of ['corridor-8', 'stone', 'crossing']) for (const p of STEER_POLI
       timingInvariants(inp, res, lbl);
     }
   }
-  // control spawn (scenario rule, no PH-3b counterpart): entry at the first grid instant >= schedule, the horizon included;
-  // on the goal → arrives exactly once at the entry instant; a schedule after the horizon never enters
+  // control spawn (scenario rule, no PH-3b counterpart): entry at exactly the scheduled instant (time contract: never
+  // snapped to the decision grid), the horizon included; on the goal → arrives exactly once at the entry instant; a
+  // schedule after the horizon never enters
   for (const p of STEER_POLICIES.filter((x) => x !== 'none')) for (const control of [{ spawn: true }, { spawn: true, exit: { capacity: 1, dwell_s: 0.5 } }]) {
-    for (const [label, st, goal, H, entry] of [['scheduled = horizon, on goal', 0.4, 10, 0.4, 0.4], ['scheduled = horizon (off grid), on goal', 0.35, 10, 0.35, 0.35], ['scheduled = horizon, not on goal', 0.4, 14, 0.4, 0.4], ['scheduled between the last grid instant and the horizon, on goal', 0.37, 10, 0.4, 0.4], ['scheduled after the horizon', 0.5, 10, 0.4, null]] as const) {
+    for (const [label, st, goal, H, entry] of [['scheduled = horizon, on goal', 0.4, 10, 0.4, 0.4], ['scheduled = horizon (off grid), on goal', 0.35, 10, 0.35, 0.35], ['scheduled = horizon, not on goal', 0.4, 14, 0.4, 0.4], ['scheduled between the last grid instant and the horizon, on goal', 0.37, 10, 0.4, 0.37], ['scheduled after the horizon', 0.5, 10, 0.4, null]] as const) {
       const inp: SteerInput = { lanes, obstacles: [], agents: [ag('A', 10, st, goal)], horizon_s: H, policy: p, params, seed: 1, control }, res = steer2D(inp), a = res.agents.A, lbl = `horizon spawn: ${label}/${p}${control.exit ? '/exit' : ''}`;
       ok(a.present_from_t_s === entry, `${lbl}: entered at ${entry} (${a.present_from_t_s})`);
+      // an agent that entered (and arrived) before H leaves by the exit rule at the horizon instant (exits are processed at H)
       const atGoal = goal === 10 && entry !== null;
       ok(se(res.events) === (entry === null ? '' : `start:A@${entry}${atGoal ? `,arrive:A@${entry}` : ''}`), `${lbl}: events ${se(res.events)}`);
-      ok(a.arrival_t_s === (atGoal ? entry : null) && a.final_mode === (entry === null ? 'not_entered' : atGoal ? 'arrived' : 'started_at_horizon'), `${lbl}: arrival ${a.arrival_t_s}, mode ${a.final_mode}`);
+      ok(a.arrival_t_s === (atGoal ? entry : null) && a.final_mode === (entry === null ? 'not_entered' : atGoal ? (control.exit && entry < H ? 'exited' : 'arrived') : 'started_at_horizon'), `${lbl}: arrival ${a.arrival_t_s}, mode ${a.final_mode}`);
       timingInvariants(inp, res, lbl);
     }
   }

@@ -1,5 +1,5 @@
 /**
- * Solver-agnostic PHYSICS EVENT TIME-BOUNDARY CONTRACT checks (Owner, unified contract; docs/wp4-local-avoidance.md §時間契約).
+ * Solver-agnostic PHYSICS EVENT TIME-BOUNDARY CONTRACT checks (Owner, unified contract; docs/wp4-local-avoidance.md §2b 時間契約).
  *
  * The checks take a solver ADAPTER (run one input, return normalised events / agents), so the same contract is applied to
  * PH-3b (engine/physics/solver2d.ts, the reference) and to every WP4 local-steer policy (engine/physics/local-steer.ts).

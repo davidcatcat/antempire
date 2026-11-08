@@ -1,6 +1,6 @@
 /**
- * Exact control-time arithmetic for the WP4 decision layer (docs/wp4-local-avoidance.md §時間契約). ISOLATED (only
- * engine/physics/local-steer.ts uses it; not in the official pipeline).
+ * Exact control-time arithmetic for the WP4 decision layer (docs/wp4-local-avoidance.md §2b 時間契約). ISOLATED (only
+ * the WP4 decision layer uses it; not in the official pipeline).
  *
  * Rule: a control time given as a double (a schedule, the decision interval, a dwell or wait duration, the horizon) means
  * its SHORTEST ROUND-TRIP DECIMAL — the number written in the JSON input. Sums and integer multiples of such times are
