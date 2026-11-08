@@ -16,12 +16,14 @@ export const RETAIN_VERIFIED = 3;
 /** Autosave check period in real seconds (product assumption, to be confirmed by measured write cost). */
 export const AUTOSAVE_INTERVAL_S = 30;
 export const LOCK_PREFIX = 'antempire-experiment-world:';
-const WORLD_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+/** Same pattern as the Worker runtime (prototypes/continuous-world/worker/core.ts). */
+const WORLD_ID = /^exp-[A-Za-z0-9._-]{1,60}$/;
+const isSeed = (x: unknown) => Number.isInteger(x) && (x as number) >= 0 && (x as number) <= 0xffffffff;
 const HEX64 = /^[0-9a-f]{64}$/;
 
 export interface SnapshotEnvelope {
   schema: typeof SNAPSHOT_SCHEMA; label: typeof LABEL; official: false;
-  world_id: string; seed: number | string; rules_fingerprint: string; engine_version: string; schema_version: number;
+  world_id: string; seed: number; rules_fingerprint: string; engine_version: string; schema_version: number;
   t_sim: number; seq: number; payload: Record<string, unknown>; payload_sha256: string;
 }
 export type SnapshotHeader = Omit<SnapshotEnvelope, 'payload'>;
@@ -70,7 +72,7 @@ export function envelopeErrors(x: unknown): string[] {
   if ('label' in x && x.label !== LABEL) e.push('label: must be the non-official label');
   if ('official' in x && x.official !== false) e.push('official: must be false');
   if ('world_id' in x && !(typeof x.world_id === 'string' && WORLD_ID.test(x.world_id))) e.push('world_id: invalid');
-  if ('seed' in x && !(Number.isInteger(x.seed) || typeof x.seed === 'string')) e.push('seed: integer or string');
+  if ('seed' in x && !isSeed(x.seed)) e.push('seed: integer in [0, 2^32)');
   for (const k of ['rules_fingerprint', 'engine_version'] as const) if (k in x && !(typeof x[k] === 'string' && (x[k] as string).length > 0)) e.push(`${k}: non-empty string`);
   if ('schema_version' in x && !(Number.isInteger(x.schema_version) && (x.schema_version as number) >= 1)) e.push('schema_version: integer >= 1');
   if ('t_sim' in x && !(typeof x.t_sim === 'number' && Number.isFinite(x.t_sim) && x.t_sim >= 0)) e.push('t_sim: finite >= 0');
@@ -142,7 +144,7 @@ export function compatibility(h: Pick<SnapshotHeader, 'schema' | 'rules_fingerpr
 
 export interface WorldSummary { queens?: number | null; workers?: number | null }
 export interface WorldRecord {
-  world_id: string; name: string; seed: number | string; created_at: string; official: false; label: typeof LABEL;
+  world_id: string; name: string; seed: number; created_at: string; official: false; label: typeof LABEL;
   next_gen: number; slots: number[]; quarantined: { gen: number; reason: string }[];
   last_saved_at: string | null; t_sim: number | null; seq: number | null;
   rules_fingerprint: string; engine_version: string; schema_version: number; summary: WorldSummary;
@@ -172,7 +174,7 @@ export async function recordProblem(rec: SnapshotRecord | undefined, world_id: s
 
 // ---------- export / import ----------
 
-export interface ExportFile { schema: typeof EXPORT_SCHEMA; label: typeof LABEL; official: false; exported_at: string; world: { world_id: string; name: string; seed: number | string; created_at: string; summary?: WorldSummary }; snapshot: SnapshotEnvelope; export_sha256: string }
+export interface ExportFile { schema: typeof EXPORT_SCHEMA; label: typeof LABEL; official: false; exported_at: string; world: { world_id: string; name: string; seed: number; created_at: string; summary?: WorldSummary }; snapshot: SnapshotEnvelope; export_sha256: string }
 
 export async function buildExport(w: Pick<WorldRecord, 'world_id' | 'name' | 'seed' | 'created_at' | 'summary'>, snapshot: SnapshotEnvelope, exported_at: string): Promise<ExportFile> {
   const body: Omit<ExportFile, 'export_sha256'> = { schema: EXPORT_SCHEMA, label: LABEL, official: false, exported_at, world: { world_id: w.world_id, name: w.name, seed: w.seed, created_at: w.created_at, summary: { ...w.summary } }, snapshot };
@@ -203,11 +205,11 @@ export async function parseImport(text: string, rt: RuntimeInfo, reg: MigrationR
 export const newWorldId = () => `exp-${crypto.randomUUID()}`;
 /** A fresh 32-bit seed for a new experiment world (not used by the simulation itself; the Worker receives it). */
 export const newSeed = () => crypto.getRandomValues(new Uint32Array(1))[0];
-/** t_sim is world minutes since experiment Day0 00:00 (contract §2; to be confirmed with the Worker runtime). */
+/** t_sim is SECONDS since experiment Day0 00:00 (contract §2, same as the Worker runtime). Display only. */
 export function simDayTime(t_sim: number | null): { day: number; clock: string } | null {
-  if (t_sim === null || !Number.isFinite(t_sim)) return null;
-  const day = Math.floor(t_sim / 1440), m = Math.floor(t_sim - day * 1440);
-  return { day, clock: `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}` };
+  if (t_sim === null || !Number.isFinite(t_sim) || t_sim < 0) return null;
+  const day = Math.floor(t_sim / 86400), sec = Math.floor(t_sim - day * 86400), p2 = (n: number) => String(n).padStart(2, '0');
+  return { day, clock: `${p2(Math.floor(sec / 3600))}:${p2(Math.floor(sec / 60) % 60)}:${p2(sec % 60)}` };
 }
 
 // ---------- autosave policy ----------

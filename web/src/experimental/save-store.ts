@@ -91,7 +91,7 @@ export function acquireWriterLock(world_id: string, opts: { steal?: boolean; onL
 export interface SaveReceipt { world_id: string; gen: number; seq: number; t_sim: number; saved_at: string; bytes: number; ms: { hash: number; write: number; verify: number; promote: number } }
 export interface LoadResult { envelope: SnapshotEnvelope; gen: number; recovered: boolean; skipped: { gen: number; reason: string }[]; migrated_from: number | null; notice: string | null }
 export interface WorldListing {
-  world_id: string; name: string; seed: number | string; t_sim: number | null; sim_day: number | null; sim_clock: string | null;
+  world_id: string; name: string; seed: number; t_sim: number | null; sim_day: number | null; sim_clock: string | null;
   last_saved_at: string | null; queens: number | null; workers: number | null; compat: Compatibility | 'no_snapshot';
   verified_snapshots: number; quarantined: number; official: false; label: typeof LABEL;
 }

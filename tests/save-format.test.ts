@@ -38,7 +38,7 @@ ok(envelopeErrors(e0).length === 0 && validate(SNAP, e0).length === 0, 'sealed e
 const muts: [string, (e: Record<string, unknown>) => void][] = [
   ['official', (e) => { e.official = true; }], ['label', (e) => { e.label = 'x'; }], ['schema', (e) => { e.schema = 'x'; }], ['extra', (e) => { e.more = 1; }],
   ['t_sim', (e) => { e.t_sim = -1; }], ['seq', (e) => { e.seq = 0.5; }], ['schema_version', (e) => { e.schema_version = 0; }], ['payload', (e) => { e.payload = [1]; }],
-  ['hash', (e) => { e.payload_sha256 = 'zz'; }], ['world_id', (e) => { e.world_id = 'a/b'; }], ['seed', (e) => { e.seed = 1.5; }], ['engine_version', (e) => { e.engine_version = ''; }],
+  ['hash', (e) => { e.payload_sha256 = 'zz'; }], ['world_id', (e) => { e.world_id = 'a/b'; }], ['world_id prefix', (e) => { e.world_id = 'world-1'; }], ['seed', (e) => { e.seed = 1.5; }], ['seed string', (e) => { e.seed = 'abc'; }], ['seed 2^32', (e) => { e.seed = 2 ** 32; }], ['engine_version', (e) => { e.engine_version = ''; }],
   ['missing seq', (e) => { delete e.seq; }],
 ];
 for (const [n, m] of muts) { const x = structuredClone(e0) as unknown as Record<string, unknown>; m(x); ok(envelopeErrors(x).length > 0 && validate(SNAP, x).length > 0, `store check and JSON Schema both reject: ${n}`); }
@@ -144,6 +144,6 @@ const store = fs.readFileSync(path.join(REPO_ROOT, 'web/src/experimental/save-st
 ok(store.includes(`indexedDB.open('${DB.database_name}'`) && store.includes(`DB_NAME = '${DB.database_name}'`), 'store opens exactly the contract database name');
 ok(/^exp-[0-9a-f-]{36}$/.test(newWorldId()) && newWorldId() !== newWorldId(), 'new world ids are fresh');
 ok(Number.isInteger(newSeed()) && newSeed() >= 0, 'new seeds are 32-bit integers');
-ok(JSON.stringify(simDayTime(1440 * 2 + 75.9)) === '{"day":2,"clock":"01:15"}' && simDayTime(null) === null, 'sim day/time display');
+ok(JSON.stringify(simDayTime(86400 * 2 + 4559.9)) === '{"day":2,"clock":"01:15:59"}' && JSON.stringify(simDayTime(0)) === '{"day":0,"clock":"00:00:00"}' && simDayTime(null) === null, 'sim day/time display from t_sim in seconds');
 
 console.log(JSON.stringify({ test: 'save-format', checks, payloads: 'synthetic (Worker runtime not merged)' }));
