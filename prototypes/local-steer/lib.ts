@@ -23,7 +23,12 @@ export const POLICY_LABEL: Record<SteerPolicyId, string> = {
   A_free_direction: 'A：選擇可通行方向（候選，假設）',
   B_contact_decision: 'B：接觸後等／退／繞（候選，假設）',
   C_sidestep: 'C：有空間就側移錯身（候選，假設）',
+  N_no_yield: 'N：不讓路對照（永遠直走、碰到就停；對照，非候選）',
 };
+
+/** what the dense crossing benchmark (crossing-traffic-100 / -1000) is and is NOT valid for (docs §4.1); shown on the page */
+export const DENSE_BENCHMARK_SCOPE = '適用範圍（密集基準，非生物情境）：格狀密集起點（橫向 1.2 mm、縱向 3.0 mm，四個方向同時湧向交叉口）、抵達者永久留在路上當障礙物、身體只平移不轉向。只適用於：CPU 成本、高密度下 0 穿透與事件時刻的驗證、找出結構性互卡。不適用於：推論交通流量、抵達率、清空時間或任何候選規則的生物合理性；1000 隻 0/1000 抵達是情境設計（沒有出口、密集起點）的結果，不是生物學結論。對照情境（有限容量出口、依時間流入、不讓路對照 N）見 docs/wp4-local-avoidance.md §5b。';
+export const isDenseBenchmark = (scenarioId: string) => /^crossing-traffic-/.test(scenarioId);
 
 interface CandEntry { value: unknown; assumption: boolean; basis: string; why: string; from_scenario?: string }
 export interface Candidates { schema: string; status: string; params: Record<keyof SteerParams, CandEntry>; conventions: string[] }
@@ -75,10 +80,13 @@ export const runHash = (res: SteerResult) => createHash('sha256').update(JSON.st
  * skipped when the Lipschitz lower bound (g0 + g1 − relative displacement)/2 cannot beat the running minimum and cannot
  * cross −OCC_TOL_MM. Statics: the lane's SIDE edges (end edges are not walls in PH-3b) and the obstacles on the layer.
  * Pairs by a uniform grid over per-window motion boxes (numerical; complete because each box covers the window's motion).
+ * Control runs: an agent is checked only while it is on the road ([present_from_t_s, removed_t_s]; never entered = absent).
  */
 export function verify(sc: Scenario, res: SteerResult, window_s = 0.25) {
   const L = sc.body.length_mm.value, w = sc.body.width_mm.value, r = w / 2, hw = Math.max(0, L - w) / 2, H = sc.horizon_s;
   const ids = Object.keys(res.agents).sort(), S = ids.map((id) => res.agents[id].samples);
+  const PF = ids.map((id) => { const a = res.agents[id]; return a.present_from_t_s === undefined ? 0 : a.present_from_t_s === null || !a.samples.length ? Infinity : a.present_from_t_s; });
+  const PU = ids.map((id) => res.agents[id].removed_t_s ?? H);
   const cap = (x: number, y: number, h: number): Capsule => ({ a: { x: x - Math.cos(h) * hw, y: y - Math.sin(h) * hw }, b: { x: x + Math.cos(h) * hw, y: y + Math.sin(h) * hw }, r });
   const at = (k: number, t: number) => {                      // pose at t (the later record at a shared time)
     const s = S[k]; let lo = 0, hi = s.length - 1;
@@ -106,8 +114,8 @@ export function verify(sc: Scenario, res: SteerResult, window_s = 0.25) {
   };
   for (let wk = 0; wk * window_s < H; wk++) {
     const ws = wk * window_s, we = Math.min(H, (wk + 1) * window_s);
-    const times = ids.map((_, k) => { const T = new Set([ws, we]); for (const s of S[k]) if (s[0] > ws && s[0] < we) T.add(s[0]); return [...T].sort((a, b) => a - b); });
-    const boxes: AABB[] = ids.map((_, k) => { let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; for (const t of times[k]) { const p = at(k, t); x0 = Math.min(x0, p[1]); y0 = Math.min(y0, p[2]); x1 = Math.max(x1, p[1]); y1 = Math.max(y1, p[2]); } const m = L / 2 + 1e-6; return { minX: x0 - m, minY: y0 - m, maxX: x1 + m, maxY: y1 + m }; });
+    const times = ids.map((_, k) => { const a = Math.max(ws, PF[k]), b = Math.min(we, PU[k]); if (!(a <= b)) return [] as number[]; const T = new Set([a, b]); for (const s of S[k]) if (s[0] > a && s[0] < b) T.add(s[0]); return [...T].sort((p, q) => p - q); });
+    const boxes: AABB[] = ids.map((_, k) => { if (!times[k].length) return { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }; let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; for (const t of times[k]) { const p = at(k, t); x0 = Math.min(x0, p[1]); y0 = Math.min(y0, p[2]); x1 = Math.max(x1, p[1]); y1 = Math.max(y1, p[2]); } const m = L / 2 + 1e-6; return { minX: x0 - m, minY: y0 - m, maxX: x1 + m, maxY: y1 + m }; });
     // statics, per agent
     for (let k = 0; k < ids.length; k++) {
       const st = statics.get(res.agents[ids[k]].lane) ?? [], T = times[k];
@@ -126,7 +134,10 @@ export function verify(sc: Scenario, res: SteerResult, window_s = 0.25) {
     const keys = ids.map((id) => sc.lanes.findIndex((l) => l.layer === res.agents[id].layer));
     for (const key of gridPairs2D(boxes, keys, 8)) {
       const i = Math.floor(key / ids.length), j = key % ids.length;
-      const T = [...new Set([...times[i], ...times[j]])].sort((a, b) => a - b);
+      if (!times[i].length || !times[j].length) continue;
+      const lo = Math.max(times[i][0], times[j][0]), hi = Math.min(times[i].at(-1)!, times[j].at(-1)!);
+      if (!(lo <= hi)) continue;
+      const T = [...new Set([lo, hi, ...times[i], ...times[j]])].filter((t) => t >= lo && t <= hi).sort((a, b) => a - b);
       for (let q = 0; q + 1 < T.length; q++) {
         out.pieces++;
         const ta = T[q], tb = T[q + 1], span = tb - ta;
