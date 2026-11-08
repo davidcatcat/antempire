@@ -56,6 +56,20 @@ export type Command =
   | (T & { kind: 'decay'; stock: string; decomposition: Rational; clear_below: number });
 
 export type LedgerKind = 'B' | 'D' | 'I' | 'E';
+/**
+ * How a record's food amounts were allocated (Codex: a legitimate 50/50 split must not be forgeable into 1/99).
+ * Rule-determined allocations are re-derived by the audit from the replayed balances; 'free_input' amounts are command
+ * inputs that no rule in this prototype determines, and the audit reports them as unverifiable (it does not pretend).
+ */
+export type Allocation =
+  /** n members leave a cohort one by one; each takes floor(pool/count) of every compartment, the last member the rest */
+  | { rule: 'cohort_share.floor_last_takes_rest'; cohort_id: string; members: number }
+  /** every compartment of one organism moves whole, to the recipient compartment of the SAME name */
+  | { rule: 'whole_compartments.same_name'; owner: string }
+  /** decay of one stock: floor(stock x num/den) to sink:decomposition, then an explicit clearing of a remainder < clear_below */
+  | { rule: 'decay.rational_floor'; stock: string; decomposition: Rational; clear_below: number }
+  /** amounts are command inputs (production, transfer, birth endowment): no allocation rule to check */
+  | { rule: 'free_input'; basis: string };
 export interface LedgerEffect { region: string; taxon: string; stage: string; colony_id: string | null; ledger: LedgerKind; delta: number }
 export interface FoodMove { from: string; to: string; amount: number; cause: string }
 export interface LedgerRecord {
@@ -71,6 +85,8 @@ export interface LedgerRecord {
   parent?: { individual: string } | { cohort: string } | null;
   /** promote/demote: the cohort whose representation changed (the audit replays roster membership from it) */
   cohort_id?: string | null;
+  /** the allocation rule (and its inputs) that produced food_moves; null when the record moves no food by rule */
+  allocation?: Allocation | null;
 }
 export class LedgerRefusal extends Error {
   code: string;
@@ -170,7 +186,7 @@ function rec(cmd: Command, kind: LedgerRecord['kind'], over: Partial<LedgerRecor
     event_id: `${cmd.day}.${cmd.key}`, kind, t: { day: cmd.day, minute: cmd.minute, time_resolution: cmd.minute === null ? 'day' : 'minute' },
     source_region: null, destination_region: null, identity: { action: 'none', ids: [], anonymous: 0 },
     ledger_effects: [], food_moves: [], cause: { kind: kind, driver_event_ids: [], rule_id: `wp5.${cmd.kind}`, rng_stream: null, roll: null },
-    resolution_change: null, scenario_source: null, parent: null, cohort_id: null, ...over,
+    resolution_change: null, scenario_source: null, parent: null, cohort_id: null, allocation: null, ...over,
   };
 }
 
@@ -201,7 +217,7 @@ function moveCohortMembers(ix: Ix, cmd: Command, c: Cohort, n: number, to: strin
   }
   return rec(cmd, kind, {
     source_region: c.region, destination_region: to, identity: { action: 'kept', ids: ids.sort(byStr), anonymous: anon },
-    ledger_effects: [eff(c, 'E', n), eff(d, 'I', n)], food_moves: moves,
+    ledger_effects: [eff(c, 'E', n), eff(d, 'I', n)], food_moves: moves, allocation: { rule: 'cohort_share.floor_last_takes_rest', cohort_id: c.cohort_id, members: n },
     cause: { kind: cause.kind, driver_event_ids: [...cause.driver_event_ids], rule_id: `wp5.${cmd.kind}`, rng_stream: kind, roll: null },
     resolution_change: from.resolution !== dest.resolution ? { from: from.resolution, to: dest.resolution } : null, scenario_source: scen,
   });
@@ -227,12 +243,12 @@ export function applyCommand(ix: Ix, cmd: Command): LedgerRecord {
       if (!ix.stk.has(cmd.stock)) ix.stk.set(cmd.stock, { stock_id: cmd.stock, region: cmd.region, amount: 0, origin_event_id: `${cmd.day}.${cmd.key}` });
       st.producers[pid] = (st.producers[pid] ?? 0) - cmd.amount;
       ix.stk.get(cmd.stock)!.amount += cmd.amount;
-      return rec(cmd, 'produce', { destination_region: cmd.region, food_moves: [{ from: `producer:${pid}`, to: `stock:${cmd.stock}`, amount: cmd.amount, cause: 'production' }] });
+      return rec(cmd, 'produce', { destination_region: cmd.region, allocation: { rule: 'free_input', basis: 'production amount is a command input (producer submodel not in the prototype)' }, food_moves: [{ from: `producer:${pid}`, to: `stock:${cmd.stock}`, amount: cmd.amount, cause: 'production' }] });
     }
     case 'food_transfer': {
       const moves: FoodMove[] = [];
       move(ix, moves, cmd.from, cmd.to, cmd.amount, cmd.cause);
-      return rec(cmd, 'food_transfer', { food_moves: moves });
+      return rec(cmd, 'food_transfer', { food_moves: moves, allocation: { rule: 'free_input', basis: `transfer amount is a command input (cause ${cmd.cause})` } });
     }
     case 'birth': {
       // I6: a birth needs a living parent in the same region; the newborn's food comes only from recorded compartments
@@ -253,6 +269,7 @@ export function applyCommand(ix: Ix, cmd: Command): LedgerRecord {
       return rec(cmd, 'birth', {
         destination_region: reg, identity: { action: 'born', ids: id ? [id] : [], anonymous: id ? 0 : 1 }, parent: structuredClone(cmd.parent),
         ledger_effects: [eff({ region: reg, taxon: cmd.taxon, stage: cmd.stage, colony_id: cmd.colony_id }, 'B')], food_moves: moves,
+        allocation: { rule: 'free_input', basis: 'birth endowment amounts are command inputs (no provisioning rule in the prototype)' },
         cause: { kind: 'birth', driver_event_ids: [], rule_id: 'wp5.birth', rng_stream: null, roll: null },
       });
     }
@@ -269,12 +286,12 @@ export function applyCommand(ix: Ix, cmd: Command): LedgerRecord {
         const to = corpse(i.region);
         for (const comp of Object.keys(i.comp).sort(byStr)) move(ix, moves, `org:${i.id}:${comp}`, to(comp), i.comp[comp], 'death_body_to_corpse');
         ix.ind.delete(i.id); ix.retired.add(i.id);
-        return rec(cmd, 'death', { source_region: i.region, identity: { action: 'retired', ids: [i.id], anonymous: 0 }, ledger_effects: [eff(i, 'D')], food_moves: moves, cause: { kind: cmd.cause, driver_event_ids: [], rule_id: 'wp5.death', rng_stream: null, roll: null } });
+        return rec(cmd, 'death', { source_region: i.region, identity: { action: 'retired', ids: [i.id], anonymous: 0 }, ledger_effects: [eff(i, 'D')], food_moves: moves, allocation: { rule: 'whole_compartments.same_name', owner: `org:${i.id}` }, cause: { kind: cmd.cause, driver_event_ids: [], rule_id: 'wp5.death', rng_stream: null, roll: null } });
       }
       const c = ix.coh.get(cmd.subject.cohort) ?? refuse('UNKNOWN_COHORT', cmd.subject.cohort);
       const m = takeMember(ix, c, 'cohort_death', cmd.key, moves, corpse(c.region), 'death_body_to_corpse');
       if (m.id) ix.retired.add(m.id);
-      return rec(cmd, 'death', { source_region: c.region, identity: { action: 'retired', ids: m.id ? [m.id] : [], anonymous: m.id ? 0 : 1 }, ledger_effects: [eff(c, 'D')], food_moves: moves, cause: { kind: cmd.cause, driver_event_ids: [], rule_id: 'wp5.death.cohort', rng_stream: 'cohort_death', roll: m.roll } });
+      return rec(cmd, 'death', { source_region: c.region, identity: { action: 'retired', ids: m.id ? [m.id] : [], anonymous: m.id ? 0 : 1 }, ledger_effects: [eff(c, 'D')], food_moves: moves, allocation: { rule: 'cohort_share.floor_last_takes_rest', cohort_id: c.cohort_id, members: 1 }, cause: { kind: cmd.cause, driver_event_ids: [], rule_id: 'wp5.death.cohort', rng_stream: 'cohort_death', roll: m.roll } });
     }
     case 'move': {
       const i = ix.ind.get(cmd.individual) ?? refuse('UNKNOWN_INDIVIDUAL', cmd.individual);
@@ -313,7 +330,7 @@ export function applyCommand(ix: Ix, cmd: Command): LedgerRecord {
       if (ix.ind.has(id) || ix.retired.has(id)) refuse('DUPLICATE_ID', id);
       ix.ind.set(id, { id, taxon: c.taxon, stage: c.stage, colony_id: c.colony_id, region: c.region, physio: member ? member.physio : {}, comp: {} });
       releaseShare(ix, c, moves, (comp) => `org:${id}:${comp}`, 'promotion_share');
-      return rec(cmd, 'promote', { source_region: c.region, destination_region: c.region, identity: { action: member ? 'promoted' : 'minted', ids: [id], anonymous: 0 }, cohort_id: c.cohort_id, food_moves: moves, cause: { kind: tr.kind, driver_event_ids: [...tr.driver_event_ids], rule_id: 'wp5.promote', rng_stream: 'promote', roll } });
+      return rec(cmd, 'promote', { source_region: c.region, destination_region: c.region, identity: { action: member ? 'promoted' : 'minted', ids: [id], anonymous: 0 }, cohort_id: c.cohort_id, food_moves: moves, allocation: { rule: 'cohort_share.floor_last_takes_rest', cohort_id: c.cohort_id, members: 1 }, cause: { kind: tr.kind, driver_event_ids: [...tr.driver_event_ids], rule_id: 'wp5.promote', rng_stream: 'promote', roll } });
     }
     case 'demote': {
       const tr = needTrigger(cmd.trigger, 'demote');
@@ -323,14 +340,18 @@ export function applyCommand(ix: Ix, cmd: Command): LedgerRecord {
       for (const comp of Object.keys(i.comp).sort(byStr)) move(ix, moves, `org:${i.id}:${comp}`, `cohort:${c.cohort_id}:${comp}`, i.comp[comp], 'demotion_pool');
       c.count += 1; c.roster.push({ id: i.id, physio: structuredClone(i.physio) });
       ix.ind.delete(i.id);
-      return rec(cmd, 'demote', { source_region: i.region, destination_region: i.region, identity: { action: 'demoted', ids: [i.id], anonymous: 0 }, cohort_id: c.cohort_id, food_moves: moves, cause: { kind: tr.kind, driver_event_ids: [...tr.driver_event_ids], rule_id: 'wp5.demote', rng_stream: null, roll: null } });
+      return rec(cmd, 'demote', { source_region: i.region, destination_region: i.region, identity: { action: 'demoted', ids: [i.id], anonymous: 0 }, cohort_id: c.cohort_id, food_moves: moves, allocation: { rule: 'whole_compartments.same_name', owner: `org:${i.id}` }, cause: { kind: tr.kind, driver_event_ids: [...tr.driver_event_ids], rule_id: 'wp5.demote', rng_stream: null, roll: null } });
     }
     case 'decay': {
       const s = ix.stk.get(cmd.stock) ?? refuse('UNKNOWN_STOCK', cmd.stock);
+      // the split inputs travel with the command: refuse them here (not as a generic Error) so no inconsistent split is booked
+      const q = cmd.decomposition;
+      if (!q || !isInt(q.num) || !isInt(q.den) || q.den <= 0 || q.num < 0 || q.num > q.den) refuse('BAD_RATE', `${cmd.key}: decomposition ${q?.num}/${q?.den}`);
+      if (!isInt(cmd.clear_below) || cmd.clear_below < 0) refuse('BAD_RATE', `${cmd.key}: clear_below ${cmd.clear_below}`);
       const { flows } = decayStep(`stock:${s.stock_id}`, { stock: s.amount, inflows: [], decomposition: cmd.decomposition, other_sinks: [], clear_below: cmd.clear_below });
       const moves: FoodMove[] = [];
       for (const f of flows) move(ix, moves, f.from, f.to, f.amount, f.cause);
-      return rec(cmd, 'decay', { source_region: s.region, food_moves: moves });
+      return rec(cmd, 'decay', { source_region: s.region, food_moves: moves, allocation: { rule: 'decay.rational_floor', stock: s.stock_id, decomposition: { num: q.num, den: q.den }, clear_below: cmd.clear_below } });
     }
   }
 }

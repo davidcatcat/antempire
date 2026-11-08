@@ -10,8 +10,15 @@
  * is an individual or a roster member of which cohort, and its physiology snapshot; every crossing must be explained by a
  * migration/transport record whose source, destination, identity and food moves match the replayed state, and every
  * produce/birth must come from a modeled organism that is alive (not retired, not absent) at that event time.
+ *
+ * Totals also cannot tell a legitimate 50/50 split from a forged 1/99 one (Codex, on 692ba7d). So the replay also tracks
+ * every compartment balance and, for every rule-determined allocation (a cohort member's share, a whole body / whole
+ * individual pooled, a decay step), RE-DERIVES the amounts from the replayed balances and the rule's inputs and requires
+ * each (source -> recipient) amount to equal the rule result exactly (integer units; floor, last member takes the rest).
+ * Amounts that are command inputs (production, food_transfer, birth endowment) have no rule here: the audit lists them in
+ * `unverified_shares` instead of claiming to have checked them.
  */
-import type { WorldState, LedgerRecord, LedgerEffect } from './ledger.ts';
+import type { WorldState, LedgerRecord, LedgerEffect, Allocation } from './ledger.ts';
 
 const ckey = (r: string, t: string, s: string, c: string | null) => `${r}|${t}|${s}|${c ?? '-'}`;
 const isPosInt = (x: number) => Number.isSafeInteger(x) && x > 0;
@@ -44,7 +51,11 @@ export const totalMass = (st: WorldState) => [...balancesOf(st).values()].reduce
 export const totalCount = (st: WorldState) => [...countsOf(st).values()].reduce((a, b) => a + b, 0);
 
 export function auditDay(initial: WorldState, records: LedgerRecord[], final: WorldState): string[] {
-  const v: string[] = [];
+  return auditDayDetailed(initial, records, final).violations;
+}
+/** violations (empty = closed) plus the records whose food amounts are free inputs the audit cannot verify */
+export function auditDayDetailed(initial: WorldState, records: LedgerRecord[], final: WorldState): { violations: string[]; unverified_shares: string[] } {
+  const v: string[] = [], u: string[] = [];
   const seen = new Set<string>();
   // ---- per-record shape rules
   const usedRecords = new Set(initial.used_scenario_records);
@@ -124,8 +135,8 @@ export function auditDay(initial: WorldState, records: LedgerRecord[], final: Wo
   const retired1 = new Set(final.retired);
   for (const id of [...retired0, ...died]) if (!retired1.has(id)) v.push(`id ${id}: retirement lost`);
   for (const id of retired1) if (p1.has(id)) v.push(`id ${id}: retired but alive`);
-  replay(initial, records, final, v);
-  return v;
+  replay(initial, records, final, v, u);
+  return { violations: v, unverified_shares: u };
 }
 
 // ---------------------------------------------------------------- replay (location, representation, physiology, sources)
@@ -145,7 +156,11 @@ interface RCoh { region: string; taxon: string; stage: string; colony_id: string
 const sameKind = (a: { taxon: string; stage: string; colony_id: string | null }, b: { taxon: string; stage: string; colony_id: string | null }) =>
   a.taxon === b.taxon && a.stage === b.stage && a.colony_id === b.colony_id;
 
-function replay(initial: WorldState, records: LedgerRecord[], final: WorldState, v: string[]): void {
+// allocation rules (contract duplicated from the ledger's documented format, not imported)
+const R_SHARE = 'cohort_share.floor_last_takes_rest', R_WHOLE = 'whole_compartments.same_name', R_DECAY = 'decay.rational_floor', R_FREE = 'free_input';
+interface Mv { from: string; to: string; amount: number }
+
+function replay(initial: WorldState, records: LedgerRecord[], final: WorldState, v: string[], u: string[]): void {
   const regions = new Map(initial.regions.map((r) => [r.id, r]));
   const ind = new Map<string, RInd>(), coh = new Map<string, RCoh>(), retired = new Set(initial.retired);
   const stk = new Map<string, { region: string; origin: string | null }>();
@@ -166,6 +181,28 @@ function replay(initial: WorldState, records: LedgerRecord[], final: WorldState,
     if (kind === 'stock') return stk.has(rest);
     return kind === 'sink';
   };
+  // ---- balances (for re-deriving allocations): owner ('org:ID' / 'cohort:ID') -> compartment names ever seen
+  const bal = balancesOf(initial), compIdx = new Map<string, Set<string>>();
+  const touch = (a: string) => {
+    if (!a.startsWith('org:') && !a.startsWith('cohort:')) return;
+    const q = a.lastIndexOf(':'), o = a.slice(0, q);
+    let s = compIdx.get(o); if (!s) { s = new Set(); compIdx.set(o, s); } s.add(a.slice(q + 1));
+  };
+  for (const k of bal.keys()) touch(k);
+  const b = (a: string) => bal.get(a) ?? 0;
+  const compsOf = (owner: string) => [...(compIdx.get(owner) ?? [])].filter((c) => b(`${owner}:${c}`) > 0).sort(byStr);
+  /** n members leave cohort `cid0` (count before = `count`): floor(pool/count) each, the last member takes the rest */
+  const shareMoves = (cid0: string, count: number, n: number, dest: (comp: string) => string): Mv[] => {
+    const owner = `cohort:${cid0}`, comps = compsOf(owner), left = new Map(comps.map((c) => [c, b(`${owner}:${c}`)])), out: Mv[] = [];
+    let cnt = count;
+    for (let j = 0; j < n; j++, cnt--) for (const c of comps) {
+      const tot = left.get(c)!, sh = cnt <= 1 ? tot : Math.floor(tot / cnt);
+      if (sh > 0) { out.push({ from: `${owner}:${c}`, to: dest(c), amount: sh }); left.set(c, tot - sh); }
+    }
+    return out;
+  };
+  const wholeMoves = (owner: string, dest: (comp: string) => string): Mv[] => compsOf(owner).map((c) => ({ from: `${owner}:${c}`, to: dest(c), amount: b(`${owner}:${c}`) }));
+  const isRate = (q: { num: number; den: number } | undefined) => !!q && Number.isSafeInteger(q.num) && Number.isSafeInteger(q.den) && q.den > 0 && q.num >= 0 && q.num <= q.den;
   const resOf = (r: string | null) => (r === null ? undefined : regions.get(r)?.resolution);
   const sorted = records.map((r, n) => ({ r, n })).sort((a, b) =>
     a.r.t.day - b.r.t.day || (a.r.t.minute ?? -1) - (b.r.t.minute ?? -1) || (KIND_RANK[cmdKind(a.r)] ?? 99) - (KIND_RANK[cmdKind(b.r)] ?? 99) || byStr(keyOf(a.r), keyOf(b.r)) || a.n - b.n).map((x) => x.r);
@@ -179,10 +216,26 @@ function replay(initial: WorldState, records: LedgerRecord[], final: WorldState,
     // every food source must exist BEFORE the event (producers are checked by the produce rule below)
     for (const m of fm) if (!m.from.startsWith('producer:') && !exists(m.from)) err(`food taken from ${m.from}, which does not exist at ${when}`);
     const only = (from: (a: string) => boolean, to: (a: string) => boolean, what: string) => { for (const m of fm) if (!from(m.from) || !to(m.to)) err(`${what}; saw ${m.from}->${m.to}`); };
+    /** the record must name `rule` (with inputs matching the replay) and its moves must equal the re-derived ones, per (source -> recipient) */
+    const alloc = (rule: string, same: (a: Allocation) => string | null, expected: Mv[]) => {
+      const a = r.allocation;
+      if (!a || a.rule !== rule) { err(`allocation rule ${a?.rule ?? '(none)'}, but this record is governed by ${rule}`); }
+      else { const why = same(a); if (why) err(`allocation inputs ${why}`); }
+      const agg = (ms: Mv[]) => { const m = new Map<string, number>(); for (const x of ms) m.set(`${x.from} -> ${x.to}`, (m.get(`${x.from} -> ${x.to}`) ?? 0) + x.amount); return m; };
+      const got = agg(fm), want = agg(expected);
+      for (const k of [...new Set([...got.keys(), ...want.keys()])].sort(byStr)) if ((got.get(k) ?? 0) !== (want.get(k) ?? 0)) err(`allocation ${k}: record moves ${got.get(k) ?? 0}, rule ${rule} on the replayed balances gives ${want.get(k) ?? 0}`);
+    };
+    const free = (what: string) => {
+      if (r.allocation?.rule !== R_FREE || !r.allocation.basis) err(`a ${what} record must declare its amounts as free_input with a basis`);
+      if (fm.length > 0) u.push(`${r.event_id}: ${what} amounts (${fm.map((m) => `${m.from} -> ${m.to} ${m.amount}`).join('; ')}) are command inputs; no rule to re-derive them, only existence, locality and balances are checked`);
+    };
+    const shareSame = (cid0: string, n: number) => (a: Allocation) => a.rule === R_SHARE && (a.cohort_id !== cid0 || a.members !== n) ? `name ${a.cohort_id} x${a.members}, replay ${cid0} x${n}` : null;
+    const wholeSame = (owner: string) => (a: Allocation) => a.rule === R_WHOLE && a.owner !== owner ? `name owner ${a.owner}, replay ${owner}` : null;
     switch (cmdKind(r)) {
       case 'produce': {
         if (fm.length !== 1 || !fm[0].from.startsWith('producer:') || !fm[0].to.startsWith('stock:')) { err('a produce record must be exactly one producer -> stock move'); break; }
         if (r.identity.action !== 'none' || ids.length > 0) err('a produce record creates no organism');
+        free('produce');
         const pid = fm[0].from.slice('producer:'.length), sid = fm[0].to.slice('stock:'.length);
         const pi = ind.get(pid), pc = coh.get(pid);
         let preg: string | null = null;
@@ -200,6 +253,7 @@ function replay(initial: WorldState, records: LedgerRecord[], final: WorldState,
       }
       case 'birth': {
         const b = r.ledger_effects[0], p = r.parent;
+        free('birth endowment');
         if (!b) break; // shape rule already reported
         if (b.region !== r.destination_region) err(`birth effect in ${b.region} but destination ${r.destination_region}`);
         if (!p) err('birth without a recorded parent (I6)');
@@ -228,10 +282,12 @@ function replay(initial: WorldState, records: LedgerRecord[], final: WorldState,
           const i = ind.get(ids[0])!;
           if (i.region !== d.region || !sameKind(i, d)) err(`death of ${ids[0]} booked in ${d.region}|${d.taxon}|${d.stage}|${d.colony_id}, but it is ${i.region}|${i.taxon}|${i.stage}|${i.colony_id}`);
           only((a) => a.startsWith(`org:${ids[0]}:`), () => true, 'an individual death moves only its own compartments');
+          alloc(R_WHOLE, wholeSame(`org:${ids[0]}`), wholeMoves(`org:${ids[0]}`, (c) => `stock:corpse.${r.event_id}.${c}`));
           ind.delete(ids[0]); retired.add(ids[0]);
         } else {
           const id = cid(d.region, d.taxon, d.stage, d.colony_id), c = coh.get(id);
           if (!c || c.count < 1) { err(`death in ${id}, which has no living member at ${when}`); break; }
+          alloc(R_SHARE, shareSame(id, 1), shareMoves(id, c.count, 1, (cc) => `stock:corpse.${r.event_id}.${cc}`));
           if (ids.length === 1) { if (!c.roster.delete(ids[0])) err(`dead ${ids[0]} is not a living individual or a roster member of ${id}`); retired.add(ids[0]); }
           else if (!(ids.length === 0 && r.identity.anonymous === 1 && c.count - c.roster.size >= 1)) err(`cohort death must take one roster ID or one anonymous member of ${id}`);
           c.count -= 1;
@@ -262,6 +318,7 @@ function replay(initial: WorldState, records: LedgerRecord[], final: WorldState,
           if (o.region !== src) err(`${ids[0]} is in ${o.region}, not in the record's source ${src}`);
           if (!sameKind(o, e)) err(`${ids[0]} is ${o.taxon}|${o.stage}|${o.colony_id}, the effects book ${e.taxon}|${e.stage}|${e.colony_id}`);
           if (fm.length > 0) err('an individual crossing must not move food (compartments travel with the organism)');
+          if (r.allocation) err(`an individual crossing allocates no food, but names ${r.allocation.rule}`);
           if (scen && !(scen.subject.kind === 'individual' && scen.subject.id === ids[0])) err(`transport moved ${ids[0]}, the scenario record names another subject`);
           o.region = dst ?? o.region;
         } else {
@@ -270,6 +327,7 @@ function replay(initial: WorldState, records: LedgerRecord[], final: WorldState,
           if (ids.length + r.identity.anonymous !== n) err(`identity lists ${ids.length} IDs + ${r.identity.anonymous} anonymous, but ${n} crossed`);
           if (r.identity.anonymous > sc.count - sc.roster.size) err(`${r.identity.anonymous} anonymous members crossed, ${sId} has only ${sc.count - sc.roster.size}`);
           const { id: dId, c: dc } = getCoh(i);
+          alloc(R_SHARE, shareSame(sId, n), shareMoves(sId, sc.count, n, (cc) => `cohort:${dId}:${cc}`));
           for (const id of ids) {
             const ph = sc.roster.get(id);
             if (ph === undefined) { err(`${id} crossed from ${sId} but is not on its roster${ind.has(id) ? ' (it is an individual)' : ''}`); continue; }
@@ -292,6 +350,7 @@ function replay(initial: WorldState, records: LedgerRecord[], final: WorldState,
         if (r.identity.action === 'promoted') { const ph = c.roster.get(id); if (ph === undefined) err(`${id} is not on ${id0}'s roster`); else { physio = ph; c.roster.delete(id); } }
         else if (r.identity.action === 'minted') { if (known(id)) err(`minted ${id} already exists or existed`); if (c.count - c.roster.size < 1) err(`no anonymous member of ${id0} to mint`); }
         else err(`promote identity action ${r.identity.action}`);
+        alloc(R_SHARE, shareSame(id0, 1), shareMoves(id0, c.count, 1, (cc) => `org:${id}:${cc}`));
         c.count -= 1;
         ind.set(id, { region: c.region, taxon: c.taxon, stage: c.stage, colony_id: c.colony_id, physio });
         only((a) => a.startsWith(`cohort:${id0}:`), (a) => a.startsWith(`org:${id}:`), `promotion moves only ${id0}'s share into ${id}`);
@@ -304,15 +363,33 @@ function replay(initial: WorldState, records: LedgerRecord[], final: WorldState,
         if (o.colony_id !== null && initial.policy.non_demotable_colonies.includes(o.colony_id)) err(`${id} belongs to non-demotable colony ${o.colony_id} (Q2)`);
         const { id: dId, c } = getCoh(o);
         if (r.cohort_id !== dId) err(`demote names cohort ${r.cohort_id}, ${id} belongs in ${dId}`);
+        alloc(R_WHOLE, wholeSame(`org:${id}`), wholeMoves(`org:${id}`, (cc) => `cohort:${dId}:${cc}`));
         c.roster.set(id, o.physio); c.count += 1; ind.delete(id);
         only((a) => a.startsWith(`org:${id}:`), (a) => a.startsWith(`cohort:${dId}:`), `demotion pools only ${id} into ${dId}`);
         break;
       }
-      default:
+      case 'food_transfer':
         if (ids.length > 0 || r.identity.action !== 'none') err(`${r.kind} must not touch identity`);
+        free('food_transfer');
+        break;
+      case 'decay': {
+        if (ids.length > 0 || r.identity.action !== 'none') err(`${r.kind} must not touch identity`);
+        const a = r.allocation;
+        if (!a || a.rule !== R_DECAY) { err(`allocation rule ${a?.rule ?? '(none)'}, but a decay record must carry ${R_DECAY} with its rate inputs (amounts cannot be verified without them)`); break; }
+        if (!isRate(a.decomposition) || !Number.isSafeInteger(a.clear_below) || a.clear_below < 0) { err(`decay inputs ${stable(a)} are not a valid rate / threshold`); break; }
+        const sa = `stock:${a.stock}`, s0 = b(sa), exp: Mv[] = [];
+        if (!stk.has(a.stock)) err(`decay of ${a.stock}, which does not exist at ${when}`);
+        else if (stk.get(a.stock)!.region !== r.source_region) err(`decay of ${a.stock} booked in ${r.source_region}`);
+        const dec = Number((BigInt(s0) * BigInt(a.decomposition.num)) / BigInt(a.decomposition.den)), next = s0 - dec;
+        if (dec > 0) exp.push({ from: sa, to: 'sink:decomposition', amount: dec });
+        if (a.clear_below > 0 && next > 0 && next < a.clear_below) exp.push({ from: sa, to: 'sink:decomposition', amount: next });
+        alloc(R_DECAY, () => null, exp);
+        break;
+      }
     }
     // every food destination must exist AFTER the event (new stocks only from produce / death, recorded above)
     for (const m of fm) if (!exists(m.to)) err(`food put into ${m.to}, which does not exist after ${when}`);
+    for (const m of fm) { bal.set(m.from, b(m.from) - m.amount); bal.set(m.to, b(m.to) + m.amount); touch(m.to); }
   }
 
   // ---- compare the replayed world with the final state, ID by ID

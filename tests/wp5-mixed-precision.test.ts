@@ -15,6 +15,11 @@
  *      without a crossing record, crossings whose record names the wrong region or the wrong organism, physiology changed
  *      at a representation change, and production by an unknown / retired / earlier-dead producer are all caught although
  *      every total closes.
+ *   S. allocations are re-derived, not just summed (Codex, on 692ba7d: a legitimate 50/50 split forged into 1/99 passed):
+ *      for every rule-determined split site (promotion share, cohort death share, cohort_move / transport share, individual
+ *      death body -> corpse compartments, demotion pooling, decay stock vs sink) the forged 1/99 is caught while every total
+ *      still closes; legitimate controls pass; free-input amounts (produce, food_transfer, birth endowment) are reported as
+ *      unverifiable rather than claimed checked; runDay refuses invalid split inputs.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -24,7 +29,7 @@ import {
   runDay, indexState, exportState, applyCommand, canonicalJson, cohortId, draw, LedgerRefusal,
   type WorldState, type Command, type LedgerRecord,
 } from '../prototypes/mixed-precision/ledger.ts';
-import { auditDay, totalCount, totalMass, placesOf } from '../prototypes/mixed-precision/audit.ts';
+import { auditDay, auditDayDetailed, totalCount, totalMass, placesOf } from '../prototypes/mixed-precision/audit.ts';
 import { decayStep, decayClosure, type DecayInput } from '../prototypes/mixed-precision/decay.ts';
 
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
@@ -394,6 +399,87 @@ const rec0 = (over: Partial<LedgerRecord>): LedgerRecord => ({
     const h = structuredClone(m.state); const r7 = h.cohorts.find((c) => c.roster.some((x) => x.id === 'X-moth-7'))!.roster.find((x) => x.id === 'X-moth-7')!; r7.physio = { age_d: 9 };
     ok(caught(s, m.records, h, 'cohort crossing that swaps roster physiology').some((x) => x.includes('roster physiology of X-moth-7')), 'roster snapshots travel unchanged with a cohort crossing');
   }
+}
+
+// ---------------------------------------------------------------- S. allocations re-derived (forged 1/99 of a legitimate 50/50)
+{
+  const noTotals = (v: string[]) => v.every((x) => !x.startsWith('count ') && !x.startsWith('food ') && !x.startsWith('global mass'));
+  const aph2 = cohortId('G2', 'aphid', 'adult', null), bee = cohortId('Pnbr', 'beetle', 'adult', null);
+  // a 50/50 world: a 2-member cohort holding 100, a non-focal individual with 100+100, a stock of 100
+  const w50 = (): WorldState => {
+    const s = world();
+    const a = s.cohorts.find((c) => c.cohort_id === aph2)!; a.count = 2; a.comp = { body: 100 };
+    s.individuals.push({ id: 'X1', taxon: 'beetle', stage: 'adult', colony_id: null, region: 'Pnbr', physio: {}, comp: { body: 100, gut: 100 } });
+    s.individuals.find((i) => i.id === 'W4')!.comp = { crop_sugar: 100, body_protein: 100 };
+    s.stocks[0].amount = 100;
+    s.scenario_records = [{ ...s.scenario_records[0], from_region: 'G2', to_region: 'R0', subject: { kind: 'cohort', taxon: 'aphid', stage: 'adult', colony_id: null, count: 1 } }];
+    return s;
+  };
+  const bump = (st: WorldState, a: string, d: number) => {
+    const p = a.indexOf(':'), k = a.slice(0, p), rest = a.slice(p + 1);
+    if (k === 'stock') { st.stocks.find((x) => x.stock_id === rest)!.amount += d; return; }
+    if (k === 'sink') { st.sinks[rest] = (st.sinks[rest] ?? 0) + d; return; }
+    const q = rest.lastIndexOf(':'), id = rest.slice(0, q), c = rest.slice(q + 1);
+    const o = k === 'org' ? st.individuals.find((x) => x.id === id)! : st.cohorts.find((x) => x.cohort_id === id)!;
+    o.comp[c] = (o.comp[c] ?? 0) + d;
+  };
+  // the recipient of move i gets `amt` instead; the source keeps the difference (every total still closes)
+  const reamount = (r: LedgerRecord[], f: WorldState, ev: string, i: number, amt: number) => { const m = r.find((x) => x.event_id === ev)!.food_moves[i], d = amt - m.amount; m.amount = amt; bump(f, m.to, d); bump(f, m.from, -d); };
+  // move i keeps `amt` for its recipient, the rest goes to another existing recipient
+  const redirect = (r: LedgerRecord[], f: WorldState, ev: string, i: number, amt: number, other: string) => { const x = r.find((y) => y.event_id === ev)!, m = x.food_moves[i], rest = m.amount - amt; m.amount = amt; x.food_moves.push({ ...m, to: other, amount: rest }); bump(f, m.to, -rest); bump(f, other, rest); };
+  const sites: [string, Command, (r: LedgerRecord[], f: WorldState) => void, number][] = [
+    ['promotion share', { ...t('sp', 1), kind: 'promote', cohort: aph2, trigger: trig('contact_with_focal') }, (r, f) => reamount(r, f, '1.sp', 0, 1), 50],
+    ['cohort death share', { ...t('sd', 1), kind: 'death', subject: { cohort: aph2 }, cause: 'cohort_hazard' }, (r, f) => reamount(r, f, '1.sd', 0, 1), 50],
+    ['cohort_move share', { ...t('sm', 1), kind: 'cohort_move', cohort: aph2, n: 1, to: 'G1', cause: trig('dispersal_stage_reached') }, (r, f) => reamount(r, f, '1.sm', 0, 1), 50],
+    ['transport share', { ...t('st', 1), kind: 'transport', record_id: 'TR1' }, (r, f) => reamount(r, f, '1.st', 0, 1), 50],
+    ['individual death body -> corpse compartments', { ...t('sdi', 1), kind: 'death', subject: { individual: 'W4' }, cause: 'senescence' }, (r, f) => redirect(r, f, '1.sdi', 0, 1, 'stock:corpse.1.sdi.crop_sugar'), 100],
+    ['demotion pooling', { ...t('sdm', 1), kind: 'demote', individual: 'X1', trigger: trig('no_contact_left_fine_grid') }, (r, f) => redirect(r, f, '1.sdm', 0, 1, `cohort:${bee}:gut`), 100],
+    ['decay stock vs sink', { ...t('sk', 1), kind: 'decay', stock: 'honeydew.G2', decomposition: { num: 1, den: 2 }, clear_below: 0 }, (r, f) => reamount(r, f, '1.sk', 0, 99), 50],
+  ];
+  for (const [name, cmd, forge, legit] of sites) {
+    const s = w50(), d = runDay(s, [cmd]);
+    closed(s, d.records, d.state, `${name}: legitimate control`);
+    ok(d.records[0].food_moves[0].amount === legit, `${name}: the legitimate split gives ${legit}`);
+    const r = structuredClone(d.records), f = structuredClone(d.state); forge(r, f);
+    const v = auditDay(s, r, f);
+    ok(v.length > 0 && noTotals(v) && v.some((x) => x.includes(': allocation ') && x.includes('on the replayed balances gives')), `${name}: forged 1/99 caught by the re-derived allocation although every total closes (${v[0] ?? 'ACCEPTED'})`);
+  }
+  // multi-member crossing: 3 members leave a 40-member pool; the group carries too little (rest stays behind) -> caught
+  {
+    const s = world(), d = runDay(s, [{ ...t('m3', 1), kind: 'cohort_move', cohort: aph2, n: 3, to: 'G1', cause: trig('dispersal_stage_reached') }]);
+    closed(s, d.records, d.state, 'multi-member crossing control');
+    const r = structuredClone(d.records), f = structuredClone(d.state); reamount(r, f, '1.m3', 2, 1);
+    ok(auditDay(s, r, f).some((x) => x.includes('allocation cohort:C|G2|aphid|adult|-:body -> cohort:C|G1|aphid|adult|-:body')), 'multi-member crossing: a shifted share is caught');
+  }
+  // a rule-determined record that drops or changes its allocation declaration is caught
+  {
+    const s = w50(), d = runDay(s, [{ ...t('sp', 1), kind: 'promote', cohort: aph2, trigger: trig('contact_with_focal') }]);
+    const r = structuredClone(d.records); r[0].allocation = null;
+    ok(auditDay(s, r, d.state).some((x) => x.includes('allocation rule (none)')), 'a promotion without its allocation rule is caught');
+    const r2 = structuredClone(d.records); r2[0].allocation = { rule: 'free_input', basis: 'forged' };
+    ok(auditDay(s, r2, d.state).some((x) => x.includes('allocation rule free_input')), 'a rule-determined split cannot be relabelled as a free input');
+    const k = runDay(s, [{ ...t('sk', 1), kind: 'decay', stock: 'honeydew.G2', decomposition: { num: 1, den: 2 }, clear_below: 0 }]);
+    const r3 = structuredClone(k.records); r3[0].allocation = null;
+    ok(auditDay(s, r3, k.state).some((x) => x.includes('a decay record must carry')), 'a decay record without its rate inputs is caught (amounts unverifiable without them)');
+    const c = runDay(s, [{ ...t('sc', 1), kind: 'decay', stock: 'honeydew.G2', decomposition: { num: 1, den: 10 }, clear_below: 1000 }]);
+    closed(s, c.records, c.state, 'decay with remainder clearing (control)');
+    ok(c.state.sinks.decomposition === 100 && c.records[0].food_moves.length === 2, 'decay control: floor(100/10)=10 decomposed, remainder 90 < 1000 cleared by an explicit flow (no deletion: all 100 in sink:decomposition)');
+  }
+  // free-input amounts: reported as unverifiable, never claimed checked; the legitimate mixed day lists exactly them
+  {
+    const det = auditDayDetailed(s0, day.records, day.state);
+    assert.deepEqual(det.violations, [], 'mixed day still closes'); checks++;
+    const freeIds = day.records.filter((r) => r.allocation?.rule === 'free_input' && r.food_moves.length > 0).map((r) => r.event_id).sort();
+    ok(freeIds.join() === ['1.aphb1', '1.col1', '1.egg1', '1.prod1', '1.tro1'].join() && det.unverified_shares.map((x) => x.split(':')[0]).sort().join() === freeIds.join(), `free-input records (${freeIds.join(', ')}) are listed as unverifiable shares, and only they`);
+    const f = structuredClone(day.state), r = structuredClone(day.records); reamount(r, f, '1.tro1', 0, 1);
+    const fv = auditDayDetailed(s0, r, f);
+    ok(fv.violations.length === 0 && fv.unverified_shares.some((x) => x.startsWith('1.tro1:') && x.includes(' 1')), 'honest limit: a re-amounted food_transfer (a command input, no rule) is NOT caught; the audit says so in unverified_shares');
+  }
+  // runDay refuses invalid split inputs instead of booking them
+  refused(() => runDay(world(), [{ ...t('bk', 1), kind: 'decay', stock: 'honeydew.G2', decomposition: { num: 3, den: 2 }, clear_below: 0 }]), 'BAD_RATE', 'decomposition > 1 refused');
+  refused(() => runDay(world(), [{ ...t('bk', 1), kind: 'decay', stock: 'honeydew.G2', decomposition: { num: 1, den: 0 }, clear_below: 0 }]), 'BAD_RATE', 'zero denominator refused');
+  refused(() => runDay(world(), [{ ...t('bk', 1), kind: 'decay', stock: 'honeydew.G2', decomposition: { num: 1, den: 2 }, clear_below: -1 }]), 'BAD_RATE', 'negative clear_below refused');
+  refused(() => runDay(world(), [{ ...t('be', 1), kind: 'birth', parent: { individual: 'Q1' }, taxon: 'ant', stage: 'egg', colony_id: FOCAL, as: 'individual', endowment: [{ from: 'org:Q1:body_protein', comp: 'body_protein', amount: 1.5 }] }]), 'BAD_AMOUNT', 'a fractional endowment is refused');
 }
 
 // ---------------------------------------------------------------- H. isolation
