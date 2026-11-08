@@ -32,7 +32,7 @@ export function drawList(g: Ctx, list: DrawList, pxPerUnit: number) {
   g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
 }
 
-export interface AntAtlas { canvas: HTMLCanvasElement; shadow: HTMLCanvasElement; cellW: number; cellH: number; scale: number; walk: number; idle: number; ox: number; oy: number; rows: Gait[] }
+export interface AntAtlas { canvas: HTMLCanvasElement | ImageBitmap; shadow: HTMLCanvasElement | ImageBitmap; cellW: number; cellH: number; scale: number; walk: number; idle: number; ox: number; oy: number; rows: Gait[] }
 /** Bake every gait (one row each, GAITS order) for an ant drawn `lengthPx` long (CSS px) at device ratio `dpr`.
  *  The body sprite carries no directional light (rotation-safe); shadow offset and glints follow the active light. */
 export function bakeAntAtlas(lengthPx: number, dpr: number, rows: Gait[] = GAITS): AntAtlas {
@@ -50,18 +50,23 @@ export function bakeAntAtlas(lengthPx: number, dpr: number, rows: Gait[] = GAITS
     }
   });
   g.setTransform(1, 0, 0, 1, 0, 0); gs.setTransform(1, 0, 0, 1, 0, 0);
-  return { canvas, shadow, cellW, cellH, scale, walk: WALK_FRAMES, idle: IDLE_FRAMES, ox: 1 - e.x0 * scale, oy: 1 - e.y0 * scale, rows };
+  const atlas: AntAtlas = { canvas, shadow, cellW, cellH, scale, walk: WALK_FRAMES, idle: IDLE_FRAMES, ox: 1 - e.x0 * scale, oy: 1 - e.y0 * scale, rows };
+  // swap to ImageBitmaps when ready (much cheaper to blit in software-rendered browsers); same pixels
+  if (typeof createImageBitmap === 'function') { void createImageBitmap(canvas).then((b) => { atlas.canvas = b; }); void createImageBitmap(shadow).then((b) => { atlas.shadow = b; }); }
+  return atlas;
 }
 
 /** Draw one ant from an atlas at CSS position (x,y), heading (radians, screen frame), frame of gait `kind`.
  *  The caller's context must have the DPR transform set (CSS px units). Shadow offset is applied in screen space. */
-export function drawAntSprite(g: CanvasRenderingContext2D, a: AntAtlas, dpr: number, x: number, y: number, heading: number, kind: Gait, frame: number, opts: { glints?: boolean; shadowAlpha?: number } = {}) {
+export function drawAntSprite(g: CanvasRenderingContext2D, a: AntAtlas, dpr: number, x: number, y: number, heading: number, kind: Gait, frame: number, opts: { glints?: boolean; shadowAlpha?: number; part?: 'both' | 'shadow' | 'body' } = {}) {
+  const part = opts.part ?? 'both';
   const row = Math.max(0, a.rows.indexOf(kind)), sx = (frame % framesOf(kind)) * a.cellW, sy = row * a.cellH, k = 1 / dpr, u = a.scale / dpr; // u = CSS px per unit
   const h = ANT_BODY_HEIGHT * u, L = light();
-  if (L.intensity > 0) {
+  if (L.intensity > 0 && part !== 'body') {
     g.save(); g.globalAlpha = (opts.shadowAlpha ?? 1) * Math.min(1, 0.35 + L.intensity); g.translate(x + L.shadow.x * h, y + L.shadow.y * h); g.rotate(heading);
     g.drawImage(a.shadow, sx, sy, a.cellW, a.cellH, -a.ox * k, -a.oy * k, a.cellW * k, a.cellH * k); g.restore();
   }
+  if (part === 'shadow') return;
   g.save(); g.translate(x, y); g.rotate(heading);
   g.drawImage(a.canvas, sx, sy, a.cellW, a.cellH, -a.ox * k, -a.oy * k, a.cellW * k, a.cellH * k);
   if (opts.glints !== false) { g.scale(u, u); drawList(g, antGlints(heading), u * dpr); }

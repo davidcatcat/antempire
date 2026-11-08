@@ -15,7 +15,10 @@ import { light, type LightState, P, blobPoints, clamp, ellipse, h01, hash32, hsl
 function lat(seed: number, oct: number, i: number, j: number): number { return h01(seed, oct * 7919 + i, j, oct); }
 const fade = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
 
-export interface SoilOptions { size: number; seed: number; wet?: boolean; /** defaults to the active light */ light?: LightState }
+export interface SoilOptions { size: number; seed: number; wet?: boolean; /** defaults to the active light */ light?: LightState;
+  /** 0..1: weaken the two lowest octaves (for small on-screen tiles, where they would read as a repeating grid; the
+   *  renderer's large-scale macro tint supplies that variation instead). Default 0 = unchanged. */
+  flatten?: number }
 /** Soil palette (示意: a warm brown garden soil; not a measured soil colour). */
 export const SOIL = { dry: [[52, 36, 24], [88, 63, 42], [122, 93, 64]], wetMul: 0.62 } as const;
 
@@ -23,7 +26,7 @@ export const SOIL = { dry: [[52, 36, 24], [88, 63, 42], [122, 93, 64]], wetMul: 
 export function soilTile(o: SoilOptions): Uint8ClampedArray {
   const N = o.size, seed = o.seed >>> 0, H = new Float32Array(N * N), M = new Float32Array(N * N);
   // multi-octave periodic value noise: periods 2..64 lattice cells across the tile (wraps exactly at the edges)
-  const periods = [2, 4, 8, 16, 32, 64], amps = [0.9, 0.7, 0.45, 0.3, 0.2, 0.12];
+  const periods = [2, 4, 8, 16, 32, 64], fl = 1 - (o.flatten ?? 0), amps = [0.9 * fl, 0.7 * fl, 0.45, 0.3, 0.2, 0.12], mMean = o.flatten ? 0.5 * (amps[0] + amps[1] + amps[2] + amps[3]) : 1.175;
   const tables = periods.map((p, oi) => { const t = new Float32Array(p * p); for (let j = 0; j < p; j++) for (let i = 0; i < p; i++) t[j * p + i] = lat(seed, oi, i, j); return t; });
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     let h = 0, m = 0;
@@ -58,7 +61,7 @@ export function soilTile(o: SoilOptions): Uint8ClampedArray {
     const q = y * N + x, xl = y * N + ((x - 1 + N) % N), xr = y * N + ((x + 1) % N), yu = ((y - 1 + N) % N) * N + x, yd = ((y + 1) % N) * N + x;
     const gx = (H[xr] - H[xl]) * 6, gy = (H[yd] - H[yu]) * 6, nz = 1 / Math.hypot(gx, gy, 1);
     const lam = clamp(((-gx * L.x - gy * L.y + L.z) * nz) / ln, 0, 1), shade = night ? 0.8 : 0.62 + 0.52 * lam;
-    const tone = clamp((M[q] - 1.175) / 0.9 + 0.5, 0, 1), moist = clamp((1.0 - M[q]) * 1.6, 0, 1); // tone from low frequencies; moist hollows
+    const tone = clamp((M[q] - mMean) / 0.9 + 0.5, 0, 1), moist = clamp((mMean - 0.175 - M[q]) * 1.6, 0, 1); // tone from low frequencies; moist hollows
     const lo = tone < 0.5 ? c0 : c1, hi = tone < 0.5 ? c1 : c2, t = tone < 0.5 ? tone * 2 : (tone - 0.5) * 2;
     let R = lerp(lo[0], hi[0], t), G = lerp(lo[1], hi[1], t), B = lerp(lo[2], hi[2], t);
     const dm = 1 - moist * 0.12; R *= dm; G *= dm * 0.97; B *= dm * 0.92;
