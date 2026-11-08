@@ -112,6 +112,17 @@ ok(!isClear(0, 0, 0.1, { places: [{ x: 0, y: 0, radiusCm: 1 }], routes: [] }) &&
   ok(sizes.length > 30 && sizes[Math.floor(sizes.length / 2)] < (sizes[0] + sizes[sizes.length - 1]) / 2, 'leaf sizes are skewed small (median below mid-range)');
 }
 
+// display turning frames: positions identical with and without; a turning frame only while the drawn heading eases
+// toward a heading the record changed to; never with zero heading change
+{
+  const c: Camera = { cx: 0, cy: 0, s: 10, w: 400, h: 400 }, A = (h: number): AntInput[] => [{ id: 'T', x: 1, y: 2, vis: 'walking', moving: true, heading: h }];
+  const prev = new Map([['T', { h: 0, phase: 0.2, sx: 205, sy: 180 }]]);
+  const same = planAnts(c, A(0), prev, 0.016, walkCycles, 26, true), turn = planAnts(c, A(-Math.PI / 2), prev, 0.016, walkCycles, 26, true), off = planAnts(c, A(-Math.PI / 2), prev, 0.016, walkCycles, 26, false);
+  ok(same.draws[0].gait === 'walk' && !same.draws[0].turnDisplay, 'no recorded heading change → no turning frame');
+  ok(turn.draws[0].turnDisplay && turn.draws[0].gait === 'curveR' && off.draws[0].gait === 'walk', 'a recorded heading change → display turning frame (clockwise on screen = R); off by default');
+  ok(turn.draws[0].sx === off.draws[0].sx && turn.draws[0].sy === off.draws[0].sy && turn.draws[0].ex === off.draws[0].ex && turn.draws[0].heading === off.draws[0].heading, 'turning frames change no position and no heading');
+}
+
 // 6. weather and quality
 for (const w of [{ air_temp_c: 25, nest_temp_c: 25, rain_mm: 0, wet: false }, { air_temp_c: 25, nest_temp_c: 25, rain_mm: 5.2, wet: true }]) { const s = weatherState(w); ok(s.rainStreaks === false && /日值/.test(s.label) && s.wet === w.wet && s.overcast === w.rain_mm > 0, 'weather = labelled daily state, never rain streaks'); }
 ok(nextQuality(0, Array(60).fill(30)) === 1 && nextQuality(1, Array(60).fill(10)) === 1 && nextQuality(3, Array(60).fill(90)) === 3, 'quality steps down on sustained slowness and never up');
@@ -120,7 +131,7 @@ ok(keepAtLod({ kind: 'debris', x: 0, y: 0, rot: 0, sizeMm: 10, seed: 1, schemati
 
 // 7. not wired yet; harness present
 const game = fs.readFileSync(path.join(SRC, 'game.ts'), 'utf8');
-ok(!/from '\.\/render-/.test(game), 'the game view is not wired to the renderer yet (PR C)');
+ok(/from '\.\/render-canvas\.ts'/.test(game) && /R\.frame\(/.test(game) && !/omega/.test(game), 'the game view draws through the renderer and supplies no ω (replay: walk / idle only)');
 const H = path.join(REPO_ROOT, 'prototypes', 'render-harness');
 ok(fs.existsSync(path.join(H, 'harness.ts')) && fs.existsSync(path.join(H, 'bench.cjs')), 'standalone harness exists');
 const res = JSON.parse(fs.readFileSync(path.join(H, 'results.json'), 'utf8'));

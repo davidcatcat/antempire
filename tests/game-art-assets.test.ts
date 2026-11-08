@@ -39,7 +39,7 @@ for (const f of artFiles) {
   ok(!/export\s+(const|function|interface|type)\s+\w*(major|soldier)/i.test(code), `${f}: exports no major-worker / soldier asset`);
 }
 const game = fs.readFileSync(path.join(SRC, 'game.ts'), 'utf8');
-ok(!/from '\.\/art-/.test(game), 'PR A does not wire the art kit into the game view yet (PR B/C)');
+ok(/from '\.\/render-canvas\.ts'/.test(game) && /SCHEMATIC_LIGHT/.test(game), 'the game view draws through the layered renderer with the fixed schematic light (PR C)');
 
 // 2. determinism + path syntax
 const PATH_OK = /^(?:[MLQCZ](?:-?\d+(?:\.\d+)?(?:e-?\d+)?(?:\s-?\d+(?:\.\d+)?(?:e-?\d+)?)*)?)*$/;
@@ -127,6 +127,15 @@ ok(ANT.ANTENNA_SEGMENTS === 12 && ANT.ANTENNA_CLUB === 3 && idle0.ant.L.length =
 const antSrc = fs.readFileSync(path.join(SRC, 'art-ant.ts'), 'utf8');
 ok(/petiole/.test(antSrc) && /postpetiole/.test(antSrc) && /propodeal spines/.test(antSrc) && /mandible/.test(antSrc) && /eyes?/.test(antSrc), 'ant: petiole + postpetiole, propodeal spines, mandibles and eyes are drawn');
 ok(!Object.keys(ANT).some((k) => /major|soldier|carry/i.test(k)) && !ANT.GAITS.some((g) => /carry/i.test(g)), 'ant module exposes no major / soldier / carrying variant');
+
+// colour variants: deterministic, within the documented light-to-dark-brown range (variant 0 lightest)
+{
+  const lum = (h: string) => { const n = parseInt(h.slice(1), 16); return 0.3 * (n >> 16 & 255) + 0.59 * (n >> 8 & 255) + 0.11 * (n & 255); };
+  const v = Array.from({ length: ANT.PALETTE_VARIANTS }, (_, i) => ANT.antPalette(i));
+  ok(ANT.PALETTE_VARIANTS >= 3 && JSON.stringify(ANT.antPalette(2)) === JSON.stringify(ANT.antPalette(2)), 'palette variants are deterministic');
+  ok(v.every((p, i) => i === 0 || lum(p.head[1]) < lum(v[i - 1].head[1])) && v.every((p) => { const n = parseInt(p.head[1].slice(1), 16), r = n >> 16 & 255, g = n >> 8 & 255, b = n & 255; return r >= g && g >= b; }), 'variants run light → dark and stay brown (R ≥ G ≥ B)');
+  ok(digest(ANT.antFrameDrawList('walk', 3, v[0]).body) !== digest(ANT.antFrameDrawList('walk', 3, v[4]).body) && JSON.stringify(ANT.antFrameDrawList('walk', 3, v[0]).shadow) === JSON.stringify(ANT.antFrameDrawList('walk', 3, v[4]).shadow), 'variants change colours only (same silhouette)');
+}
 
 // 6. engine-driven variants
 for (let c = 0; c <= 6; c++) { const p = hostPlant(77, 0, 0, { alive: true, colonies: c, insect: 'aphid' }); ok(p.colonySites.length === c, `host plant draws exactly ${c} hemipteran cluster(s)`); }

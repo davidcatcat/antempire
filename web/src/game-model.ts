@@ -118,3 +118,18 @@ export function rosterAtStart(exp: Experiment, day: number): string[] {
   const s = day === 1 ? exp.day0.state : exp.days[day - 2].end_state;
   return s.workers.map((w) => w.id).sort();
 }
+
+/** Opening moment of a day, computed from the engine record only: the start of the window (default 3 simulated
+ *  minutes) in which the most recorded walks are under way (earliest on ties), and the food site those walks go to
+ *  most. Used to open the game where ants are actually walking; null when the day has no walk between known places. */
+export function openingMoment(d: ExperimentDay, pos: Pos, windowMin = 3): { t: number; walkStart: number; focus: string } | null {
+  const walks = d.events.filter((e) => e.type === 'worker_activity' && typeof e.place === 'string' && e.place.includes('>') && (e.place as string).split('>').every((p) => pos[p]?.known))
+    .map((e) => ({ start: e.start as number, end: e.end as number, place: e.place as string })).sort((a, b) => a.start - b.start);
+  if (!walks.length) return null;
+  let best = walks[0].start, bestN = -1;
+  for (const w of walks) { const n = walks.filter((v) => v.start < w.start + windowMin && v.end > w.start).length; if (n > bestN) { bestN = n; best = w.start; } }
+  const far = new Map<string, number>();
+  for (const v of walks) if (v.start < best + windowMin && v.end > best) for (const p of v.place.split('>')) if (p !== NEST) far.set(p, (far.get(p) ?? 0) + 1);
+  const focus = [...far].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))[0]?.[0] ?? NEST;
+  return { t: Math.max(0, best - 3 / 60), walkStart: best, focus };
+}
