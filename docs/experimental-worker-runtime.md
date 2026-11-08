@@ -90,4 +90,5 @@ Worker 匯入的引擎模組只有白名單內的 `engine/scheduler/world-events
 - **跨環境**：見 §6；光照時刻 1 ulp 差異未消除。
 - 規則指紋只涵蓋 engine_version 與參數，不含程式碼雜湊；改核心行為時必須提高 `ENGINE_VERSION`。
 - 執行中 Worker 只保留待處理事件；已送出的事件不留在 Worker 記憶體中（畫面端自行保存需要的事件）。
-- 尚未做：#144（鏡頭不改命運）的完整畫面測試、#145 單一帳本、手機效能、V6-2 整合（PR 3）、本地存檔（SAVE-1）。
+- V6-2 畫面整合（PR 3）已完成：`web/experiment.html`，見 [`v62-experiment-mode.md`](v62-experiment-mode.md)（含鏡頭／縮放／追蹤／速度／幀率不改結果的瀏覽器測試與無頭量測）。
+- 尚未做：#145 單一帳本、實機手機效能、本地存檔接線（SAVE-2）。
