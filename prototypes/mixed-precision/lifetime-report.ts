@@ -1,11 +1,11 @@
 /**
  * WP5b comparison report (NOT a test, NOT engine): prints the individual vs cohort vs mixed table used in
- * docs/od1b-cohort-life-time.md §6. Usage: node prototypes/mixed-precision/lifetime-report.ts [seeds=20]
+ * docs/od1b-cohort-life-time.md §6. Usage: node prototypes/mixed-precision/lifetime-report.ts (20 fixed seeds)
  * Every input is a synthetic game assumption (lifetime-compare.ts SYNTH); the table is model output, not biology.
  */
 import { compare, SCENARIOS, MODES } from './lifetime-compare.ts';
 
-const n = Number(globalThis.process?.argv?.[2] ?? 20);
+const n = 20;
 const seeds = Array.from({ length: n }, (_, i) => `wp5b-seed-${i + 1}`);
 const rows = compare(SCENARIOS, seeds);
 const f = (x: number | null, d = 1) => (x === null ? '—' : x.toFixed(d));

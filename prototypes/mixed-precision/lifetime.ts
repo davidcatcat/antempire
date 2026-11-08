@@ -232,7 +232,11 @@ function demote(cx: Cx, ws: W[], c: Extract<LifeCommand, { kind: 'demote' }>): W
   if (cx.res.age_bin_days !== 1) refuse('ROSTER_NEEDS_DAILY_AGE_BINS', 'known IDs are kept only in daily age bins');
   const bin: W = { region: i.region, stage: i.stage, sub: i.sub, age: i.age, id: null, n: 1, reserve: i.reserve, rkey: cx.res.reserve === 'exact' ? i.reserve : null, age_sum: i.age, roster: [{ id: i.id!, age: i.age }], path: `#${i.id}>bin`, hungry: false };
   rec(cx, 'demote', c.key, { region: i.region, stage: i.stage, count: 1, ids: [i.id!], demoted: { id: i.id!, stage: i.stage, sub: i.sub, age: i.age, reserve: i.reserve }, cause });
-  return [...ws.filter((u) => u !== i), bin];
+  // aggregate exactly into the matching bin now, so later commands of the same day see one pooled bin
+  const same = ws.find((u) => u.id === null && unitKey(u) === unitKey(bin));
+  if (!same) return [...ws.filter((u) => u !== i), bin];
+  same.n += 1; same.reserve += bin.reserve; same.age_sum += bin.age_sum; same.roster = [...same.roster, ...bin.roster];
+  return ws.filter((u) => u !== i);
 }
 function migrate(cx: Cx, ws: W[], c: Extract<LifeCommand, { kind: 'migrate' }>): W[] {
   const cause = needCause(c.cause, 'migrate');
