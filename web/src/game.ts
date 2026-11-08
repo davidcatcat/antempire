@@ -33,7 +33,8 @@ async function init() {
   ui.world.innerHTML = index.experiments.map((e) => `<option value="${e.file}">${e.title.replace('實驗世界：', '')}</option>`).join('');
   for (const m of SPEEDS) ui.speed.insertAdjacentHTML('beforeend', `<option value="${m}"${m === speed ? ' selected' : ''}>${m}× 實際速度</option>`);
   ui.world.onchange = () => void openWorld(ui.world.value);
-  ui.play.onclick = () => { if (ended) { day = 1; t = 0; ended = false; jumped(); } playing = !playing; syncButtons(); };
+  // restarting after the end goes through gotoDay(1) so the day's roster, route index and walks are rebuilt (R13-01)
+  ui.play.onclick = () => { if (ended) gotoDay(1); playing = !playing; syncButtons(); };
   ui.speed.onchange = () => { speed = Number(ui.speed.value); };
   ui.skip.onchange = () => { skip = ui.skip.checked; };
   ui.clock.oninput = () => { t = Number(ui.clock.value); settleUntil = 0; ended = false; jumped(); };
