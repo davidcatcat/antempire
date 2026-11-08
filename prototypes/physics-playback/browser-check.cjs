@@ -44,6 +44,12 @@ function exactPose(a, t) { // independent of the page: the segment that holds t 
     check((await page.textContent('#badge')).includes('非正式'), `${name}: 非正式 label`);
     // a WP4 candidate run carries its own badge
     { const c = index.runs.find((r) => r.solver === 'steer'); if (c) { await page.evaluate((id) => window.playback.load(id), c.run_id); check((await page.textContent('#badge')).includes('隔離物理實驗・候選行為規則（非本種/假設）'), `${name}: candidate badge`); } }
+    // the dense benchmark carries its applicability note; other runs do not show one
+    { const c = index.runs.find((r) => r.scenario === 'crossing-traffic-100'); if (c) { await page.evaluate((id) => window.playback.load(id), c.run_id); const sc = await page.evaluate(() => { const e = document.getElementById('scope'); return { hidden: e.hidden, text: e.textContent }; }); check(!sc.hidden && sc.text.includes('適用範圍') && sc.text.includes('不適用於'), `${name}: dense benchmark applicability shown`); } }
+    { const c = index.runs.find((r) => r.scenario === 'head-on-2' && r.solver === 'ph3b'); await page.evaluate((id) => window.playback.load(id), c.run_id); check(await page.evaluate(() => document.getElementById('scope').hidden), `${name}: no applicability note on a small scenario`); }
+    // a contact_end row shows the independent checker's bracket and error bound
+    { const id = 'head-on-2--steer-B', run = read(`data/${id}.json`), i = run.events.findIndex((e) => e.kind === 'contact_end');
+      if (i >= 0) { await page.evaluate((x) => window.playback.load(x), id); await page.evaluate((x) => window.playback.selectEvent(x), i); const t = await page.evaluate(() => document.getElementById('now').textContent); check(t.includes('獨立檢查') && t.includes('誤差界'), `${name}: contact_end shows the independent bracket`); } else failures.push(`${id}: no contact_end`); }
     const noHScroll = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
     check(noHScroll, `${name}: no horizontal page scroll`);
     for (const meta of index.runs) {

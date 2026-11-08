@@ -31,6 +31,7 @@
   h1 { font-size: 17px; margin: 0 0 4px; }
   .badge { display: inline-block; background: var(--warn-bg); color: var(--warn-ink); border: 1px solid currentColor; border-radius: 4px; padding: 2px 8px; font-weight: 600; font-size: 13px; }
   .sub { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
+  .scope { background: var(--warn-bg); color: var(--warn-ink); border-left: 4px solid currentColor; padding: 4px 8px; font-size: 12.5px; margin-top: 6px; }
   main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 12px; padding: 12px 16px 16px; }
   @media (max-width: 900px) { main { grid-template-columns: minmax(0, 1fr); } }
   .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; min-width: 0; }
@@ -72,6 +73,7 @@
 <header>
   <h1>物理接觸播放（PH-3b 解算器＋WP4 候選行為規則）</h1>
   <span class="badge" id="badge">隔離物理實驗・非正式・不是生物行為（讓路／側移決策尚未建模）</span>
+  <div class="scope" id="scope" hidden></div>
   <div class="sub">合成情境（synthetic），不是臺中西屯花園。畫面上每一個運動變化都對應一個解算器事件；播放只讀取匯出的 JSON，不執行模擬。</div>
 </header>
 <main>

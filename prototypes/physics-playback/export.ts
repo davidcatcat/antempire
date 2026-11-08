@@ -26,7 +26,8 @@ import { laneFrames, poseOn } from '../solver-compare/lib/traj.ts';
 import { solve2D, type Solver2DResult } from '../../engine/physics/solver2d.ts';
 import { simulate } from '../../engine/physics/collision.ts';
 import { STEER_POLICIES, type SteerPolicyId, type SteerResult } from '../../engine/physics/local-steer.ts';
-import { runSteer, steerParams, loadCandidates, CANDIDATE_LABEL, POLICY_LABEL } from '../local-steer/lib.ts';
+import { runSteer, steerParams, loadCandidates, CANDIDATE_LABEL, POLICY_LABEL, DENSE_BENCHMARK_SCOPE, isDenseBenchmark } from '../local-steer/lib.ts';
+import { checkContacts, DELTA_G_MM } from '../local-steer/contact-check.ts';
 
 export const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const DATA_DIR = path.join(HERE, 'data');
@@ -46,11 +47,19 @@ export const SCENARIOS: { id: string; from: 'solver-compare' | 'playback'; nativ
 /** WP4 candidate behaviour runs (engine/physics/local-steer.ts, seed 1): every playback scenario plus the 100-agent crossing
  *  (whose PH-3b run, 45k events, is too large for the page; its baseline is in the WP4 comparison table) */
 export const STEER_SCENARIOS: { id: string; from: 'solver-compare' | 'playback' }[] = [...SCENARIOS.map((s) => ({ id: s.id, from: s.from })), { id: 'crossing-traffic-100', from: 'solver-compare' }];
-export const STEER_RUN_POLICIES = STEER_POLICIES.filter((p) => p !== 'none') as Exclude<SteerPolicyId, 'none'>[];
+/** the candidate behaviours A–C (the no-yield control N is in the comparison tables only, not on the page) */
+export const STEER_RUN_POLICIES = STEER_POLICIES.filter((p) => p === 'A_free_direction' || p === 'B_contact_decision' || p === 'C_sidestep') as Exclude<SteerPolicyId, 'none' | 'N_no_yield'>[];
 export const steerRunId = (scenario: string, p: SteerPolicyId) => `${scenario}--steer-${p.split('_')[0]}`;
 
 export interface Segment { t0: number; t1: number; x0: number; y0: number; x1: number; y1: number; heading: number; speed_mm_s: number; s0: number; s1: number; u: number; /** steer runs: u at t1 (u changes along a side step) */ u1?: number }
-export interface PbEvent { t: number; kind: string; class: string; agents: string[]; detail: string | null }
+export interface PbEvent {
+  t: number; kind: string; class: string; agents: string[]; detail: string | null;
+  /** steer contact_end: the solver's bisection bracket, and the INDEPENDENT checker's bracket of the physical separation
+   *  instant with its error bound (prototypes/local-steer/contact-check.ts, from the segments in this file) */
+  bracket_s?: [number, number]; check_s?: [number, number]; err_s?: number;
+  /** contact_end_estimated: not usable as a biological cause */
+  usable_as_cause?: false;
+}
 export interface PbAgent {
   id: string; lane: string; layer: string; dir: 1 | -1; u_mm: number; start_t_s: number; goal_s_mm: number; free_speed_mm_s: number; speed_source: string;
   segments: Segment[]; final: { t: number; x: number; y: number; heading: number }; arrival_t_s: number | null; final_mode: string; stop_cause: string | null;
@@ -59,6 +68,10 @@ export interface PbRun {
   schema: string; run_id: string; solver: 'ph3b' | 'native' | 'steer'; solver_label: string; solver_notes: string[];
   /** steer runs: the candidate policy and the page badge for this run */
   policy?: SteerPolicyId; label?: string; seed?: number;
+  /** what this scenario is and is not valid for (dense benchmark) */
+  scope_note?: string;
+  /** steer runs: independent contact_end check over this file's segments */
+  contact_end_check?: { checker: string; episodes: number; exact: number; estimated: number; open: number; violations: number; max_err_s: number | null; delta_g_mm: number };
   scenario: { id: string; title: string; synthetic: true; source_file: string; provenance: ScenarioFile['provenance'] };
   status: string; horizon_s: number;
   body: { length_mm: number; width_mm: number; length_source: string; width_source: string; shape: string };
@@ -152,7 +165,7 @@ export function nativeRun(sc: Scenario, file: string): PbRun {
 }
 
 /** WP4 candidate policy (seed 1): segments between consecutive motion records; each boundary checked against the events */
-export function steerRun(sc: Scenario, file: string, policy: Exclude<SteerPolicyId, 'none'>): { run: PbRun; res: SteerResult } {
+export function steerRun(sc: Scenario, file: string, policy: Exclude<SteerPolicyId, 'none' | 'N_no_yield'>): { run: PbRun; res: SteerResult } {
   const res = runSteer(sc, policy, { seed: 1 }).res, H = res.stats.t_end_s;
   const evTimes = new Map<string, Set<number>>();
   for (const e of res.events) for (const id of e.agents) { if (!evTimes.has(id)) evTimes.set(id, new Set()); evTimes.get(id)!.add(e.t_s); }
@@ -181,9 +194,16 @@ export function steerRun(sc: Scenario, file: string, policy: Exclude<SteerPolicy
       `解算狀態：fallback ${res.stats.fallback_intervals}、unresolved ${res.stats.unresolved}；受阻回報 ${JSON.stringify(res.stats.blocked_reports)}`,
     ],
     ...common(sc, file), status: res.stats.fallback_intervals || res.stats.unresolved ? `completed with fallback ${res.stats.fallback_intervals} / unresolved ${res.stats.unresolved}` : 'completed',
-    agents, events: res.events.map((e) => ({ t: e.t_s, kind: e.kind, class: e.class, agents: e.agents, detail: e.detail })),
+    ...(isDenseBenchmark(sc.id) ? { scope_note: DENSE_BENCHMARK_SCOPE } : {}),
+    agents, events: res.events.map((e) => ({ t: e.t_s, kind: e.kind, class: e.class, agents: e.agents, detail: e.detail, ...(e.bracket_s ? { bracket_s: e.bracket_s } : {}), ...(e.usable_as_cause === false ? { usable_as_cause: false as const } : {}) })),
     motion_note: '每一段是候選規則選定的方向在兩個事件之間的直線等速平移（兩端是解算紀錄的精確姿態）；身體軸維持與通道平行（幾何約定）。畫面上的位置就是這個運動，不是插值，沒有平滑。',
   };
+  // independent check of every contact_end from the exported segments themselves (not from the solver's internals)
+  const ck = checkContacts({ horizon_s: H, body: { length_mm: run.body.length_mm, width_mm: run.body.width_mm }, agents: run.agents.map((a) => ({ id: a.id, segments: a.segments, final: a.final, present_from: 0, present_until: null })), events: run.events });
+  const byEnd = new Map(ck.list.filter((e) => e.end_kind === 'contact_end').map((e) => [`${e.pair.join('|')}@${e.t_end}`, e]));
+  for (const e of run.events) if (e.kind === 'contact_end') { const c = byEnd.get(`${[...e.agents].sort().join('|')}@${e.t}`); if (c && c.lo !== null && c.hi !== null) { e.check_s = [c.lo, c.hi]; e.err_s = c.err_s!; } }
+  run.contact_end_check = { checker: 'prototypes/local-steer/contact-check.ts（獨立程式：自己的膠囊距離、分段凸性、二分法；只讀本檔的分段運動）', episodes: ck.episodes, exact: ck.exact, estimated: ck.estimated, open: ck.open, violations: ck.violations, max_err_s: ck.max_err_s, delta_g_mm: DELTA_G_MM };
+  if (ck.violations) throw Error(`PLAYBACK: ${sc.id}/${policy}: independent contact_end check failed: ${ck.problems.slice(0, 3).join('; ')}`);
   return { run, res };
 }
 
@@ -205,7 +225,7 @@ export function buildAll(): Map<string, string> {
     for (const p of STEER_RUN_POLICIES) {
       const r = steerRun(sc, file, p).run;
       files.set(`${r.run_id}.json`, stable(r));
-      index.push({ run_id: r.run_id, file: `data/${r.run_id}.json`, scenario: r.scenario.id, title: r.scenario.title, solver: r.solver, solver_label: r.solver_label, label: r.label, agents: r.agents.length, events: r.events.length, arrived: r.agents.filter((a) => a.arrival_t_s !== null).length, synthetic: true });
+      index.push({ run_id: r.run_id, file: `data/${r.run_id}.json`, scenario: r.scenario.id, title: r.scenario.title, solver: r.solver, solver_label: r.solver_label, label: r.label, ...(r.scope_note ? { scope_note: r.scope_note } : {}), agents: r.agents.length, events: r.events.length, arrived: r.agents.filter((a) => a.arrival_t_s !== null).length, synthetic: true });
     }
   }
   files.set('index.json', stable({ schema: PLAYBACK_SCHEMA, label: '隔離物理實驗・非正式・不是生物行為（讓路／側移決策尚未建模）', candidate_label: CANDIDATE_LABEL, runs: index }));

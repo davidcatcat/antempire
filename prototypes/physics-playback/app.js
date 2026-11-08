@@ -11,6 +11,14 @@ const KIND = {
   yield_resume: '讓路後恢復（候選規則）', cross_wait: '交叉等待（候選規則）', cross_resume: '交叉後恢復（候選規則）',
   go: '前進（候選規則）', follow: '跟隨同向同伴（候選規則）', sidestep: '側移（候選規則）', wait: '等待（候選規則）', back_off: '後退（候選規則）',
   reroute: '繞行（候選規則）', halt_geometry: '幾何封閉而停（規則 D）', blocked_report: '回報受阻（規則 D）', not_started: '尚未出發',
+  contact_end_estimated: '接觸結束（估計：個體離開道路，非物理分離）', exit: '離開道路（對照情境出口）', entry_blocked: '入口被占（對照情境）',
+};
+/** event detail as shown: the engine's own text, plus (contact_end) the independent checker's bracket and error bound */
+const evDetail = (e) => {
+  let d = e.detail ?? '';
+  if (e.check_s) d += `［獨立檢查：實際分離時刻在 [${e.check_s[0]}, ${e.check_s[1]}] s 內，誤差界 ${e.err_s.toExponential(2)} s］`;
+  if (e.usable_as_cause === false) d += '［估計值：不能當生物原因］';
+  return d;
 };
 const CLASS_VAR = { physical_contact: '--c-contact', physical_constraint: '--c-constraint', motion: '--c-motion', solver_status: '--c-status', behavioural_response: '--c-behaviour', native_motion_record: '--c-record' };
 const PALETTE = ['#2f7d4f', '#1b5fae', '#b0452f', '#8a5a00', '#6d3fa0', '#0f7c86', '#a03a6c', '#4f6b00'];
@@ -42,7 +50,8 @@ const currentRunId = () => $('solver').value;
 async function loadRun(id) {
   const meta = st.index.runs.find((r) => r.run_id === id);
   if (!st.runs.has(id)) st.runs.set(id, await getJson(meta.file));
-  st.run = st.runs.get(id); $('badge').textContent = st.run.label || st.index.label; st.t = 0; st.playing = false; st.sel = -1; st.selPinned = false; st.times = eventTimes(st.run);
+  st.run = st.runs.get(id); $('badge').textContent = st.run.label || st.index.label;
+  $('scope').textContent = st.run.scope_note || ''; $('scope').hidden = !st.run.scope_note; st.t = 0; st.playing = false; st.sel = -1; st.selPinned = false; st.times = eventTimes(st.run);
   $('play').textContent = '播放';
   $('lenTxt').textContent = `${st.run.body.length_mm} mm`; $('widTxt').textContent = `${st.run.body.width_mm} mm`;
   fitAll(); renderAbout(); buildList(); syncSel(); draw();
@@ -174,12 +183,12 @@ function renderRows() {
     if (old) { old.classList.toggle('sel', i === st.sel); continue; }
     const e = E[i], d = document.createElement('div');
     d.className = `ev${i === st.sel ? ' sel' : ''}`; d.style.top = `${i * ROW_H}px`; d.dataset.i = String(i);
-    d.title = `${fmtT(e.t)} ${e.kind} ${e.agents.join(', ')}${e.detail ? ` — ${e.detail}` : ''}`;
+    d.title = `${fmtT(e.t)} ${e.kind} ${e.agents.join(', ')}${evDetail(e) ? ` — ${evDetail(e)}` : ''}`;
     d.innerHTML = `<span class="t"></span><span class="kd"></span> <span class="ag"></span> <span class="dt"></span>`;
     d.querySelector('.t').textContent = e.t.toFixed(6);
     const kd = d.querySelector('.kd'); kd.textContent = KIND[e.kind] ?? e.kind; kd.style.color = css(CLASS_VAR[e.class] ?? '--c-status');
     d.querySelector('.ag').textContent = e.agents.join('・');
-    const dt = d.querySelector('.dt'); dt.textContent = e.detail ?? ''; dt.style.color = css('--muted');
+    const dt = d.querySelector('.dt'); dt.textContent = evDetail(e); dt.style.color = css('--muted');
     d.addEventListener('click', () => selectEvent(i));
     list.appendChild(d);
   }
@@ -257,7 +266,7 @@ function updateNow() {
   $('now').innerHTML = '';
   const p = document.createElement('div');
   p.innerHTML = e ? `<span class="k"></span> <span class="d"></span>` : '<span class="d"></span>';
-  if (e) { p.querySelector('.k').textContent = `目前事件 #${st.sel + 1}（${fmtT(e.t)}）：${KIND[e.kind] ?? e.kind}・${e.agents.join('・')}`; p.querySelector('.d').textContent = e.detail ? `— ${e.detail}` : ''; }
+  if (e) { p.querySelector('.k').textContent = `目前事件 #${st.sel + 1}（${fmtT(e.t)}）：${KIND[e.kind] ?? e.kind}・${e.agents.join('・')}`; p.querySelector('.d').textContent = evDetail(e) ? `— ${evDetail(e)}` : ''; }
   else p.querySelector('.d').textContent = '尚未有事件';
   const q = document.createElement('div'); q.className = 'sub';
   q.textContent = nextT === undefined ? '之後沒有事件：每隻都依最後一段運動（或靜止）到時間終點。' : `下一個事件在 ${fmtT(nextT)}（再 ${nextT - st.t >= 1e-6 ? (nextT - st.t).toFixed(6) : (nextT - st.t).toExponential(3)} s）；在那之前每隻都是直線等速或靜止。`;
@@ -273,6 +282,8 @@ function updateNow() {
 function renderAbout() {
   const r = st.run, box = $('about'); box.innerHTML = '';
   const add = (tag, text) => { const el = document.createElement(tag); el.textContent = text; box.appendChild(el); return el; };
+  if (r.scope_note) add('p', r.scope_note).style.fontWeight = '600';
+  if (r.contact_end_check) { const c = r.contact_end_check; add('p', `接觸結束時刻的獨立檢查（${c.checker}）：${c.episodes} 段接觸，${c.exact} 個精確結束全部落在解析區間內（違規 ${c.violations}），最大誤差界 ${c.max_err_s === null ? '—' : c.max_err_s.toExponential(2)} s（間距評估容差 ${c.delta_g_mm} mm），${c.open} 段到時間終點仍接觸。`); }
   add('p', `${r.scenario.title}（${r.scenario.id}，合成情境；檔案 ${r.scenario.source_file}）`);
   add('p', `情境值：${r.scenario.provenance.scenario_values}`);
   if (r.scenario.provenance.note) add('p', `說明：${r.scenario.provenance.note}`);

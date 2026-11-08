@@ -83,6 +83,9 @@ for (const meta of index.runs) {
     }
     const evT = new Set(run.events.map((e) => e.t));
     for (const t of boundaryTimes(run)) ok(t === 0 || t === H || evT.has(t), `${meta.run_id}: drawn boundary ${t} is listed in the event list`);
+    // R14: the dense benchmark says what it is (not) valid for; every contact_end carries the independent bracket
+    ok(/^crossing-traffic-/.test(run.scenario.id) === Boolean(run.scope_note && /不適用於/.test(run.scope_note) && meta.scope_note === run.scope_note), `${meta.run_id}: applicability note exactly on the dense benchmark`);
+    ok(run.contact_end_check?.violations === 0 && run.events.filter((e) => e.kind === 'contact_end').every((e) => e.check_s && e.check_s[0] <= e.t && e.t <= e.check_s[1] && e.err_s === e.check_s[1] - e.check_s[0] && e.bracket_s && e.bracket_s[1] === e.t), `${meta.run_id}: contact_end inside the independent bracket, error bound recorded`);
   } else {
     nativeRuns++;
     const res = simulate(nativeConfig(sc));
