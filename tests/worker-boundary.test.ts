@@ -95,5 +95,15 @@ for (const d of ['engine', 'cli', 'web/src', B.worker_entry_dir, 'saves', 'journ
 const r = checkBoundary(real, B);
 ok(r.violations.length === 0, `real repository respects the Worker boundary (${JSON.stringify(r.violations.slice(0, 5))})`);
 checks += r.checks;
+// 4. the allowlist is closed: every allowlisted engine module's own transitive imports stay inside the allowlist
+//    (otherwise an allowlisted module would be unusable or would smuggle in a denied one).
+const allowedEngine = [...real.keys()].filter((f) => f.startsWith('engine/') && f.endsWith('.ts') && B.allowed_import_prefixes.some((p) => p.endsWith('/') ? f.startsWith(p) : f === p));
+ok(allowedEngine.includes('engine/rng.ts'), 'allowlisted engine modules found');
+const probe = new Map(real);
+probe.set(`${B.worker_entry_dir}/__allowlist_closure_probe__.ts`, allowedEngine.map((f) => `import '${path.posix.relative(B.worker_entry_dir, f)}';`).join('\n'));
+const closure = checkBoundary(probe, B);
+ok(closure.violations.length === 0, `allowlist is closed under imports (${JSON.stringify(closure.violations.slice(0, 5))})`);
+ok(allowedEngine.every((f) => closure.reached.includes(f)), 'closure probe reached every allowlisted engine module');
+checks += closure.checks;
 const workerExists = fs.existsSync(path.join(REPO_ROOT, B.worker_entry_dir));
 console.log(JSON.stringify({ test: 'worker-boundary', checks, worker_present: workerExists, reached: r.reached.length }));
