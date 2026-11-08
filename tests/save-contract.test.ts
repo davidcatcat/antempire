@@ -40,20 +40,23 @@ const P = SNAP.properties as Record<string, Schema>;
 ok(P.schema.const === 'antempire.experiment-world-snapshot.v1' && SNAP.$id === P.schema.const, 'schema id');
 ok(P.label.const === LABEL && P.label.const === B.label_zh, 'label equals the boundary file label');
 ok(P.official.const === false, 'official is the constant false');
+ok(P.seed.type === 'integer' && P.seed.minimum === 0 && P.seed.maximum === 2 ** 32 - 1, 'seed is an integer in [0, 2^32) as in the Worker runtime');
+ok(/秒數/.test(read('docs/experimental-save-system.md')) && /seconds/.test(String(SNAP.description)), 't_sim is documented as seconds since experiment Day0 00:00');
 for (const s of [SNAP, EXP]) ok(unknownKeywords(s).length === 0, `${s.$id} uses only keywords the validator understands`);
 
 // 2. positive and negative envelopes
 const payload = { world: { t_sim: 0 }, colony: {}, continuity: { rng: { streams: {} } } };
 const good = () => ({ schema: 'antempire.experiment-world-snapshot.v1', label: LABEL, official: false, world_id: 'exp-0001', seed: 42, rules_fingerprint: 'r1', engine_version: 'w0', schema_version: 1, t_sim: 0, seq: 0, payload, payload_sha256: crypto.createHash('sha256').update(canonicalJson(payload)).digest('hex') });
 ok(validate(SNAP, good()).length === 0, `well-formed envelope validates (${validate(SNAP, good()).join('; ')})`);
-ok(validate(SNAP, { ...good(), seed: 'user-seed' }).length === 0, 'string seed is allowed');
+ok(validate(SNAP, { ...good(), seed: 4294967295 }).length === 0, 'largest 32-bit seed is allowed');
 const bad: [string, (e: Record<string, unknown>) => void][] = [
   ['official true', (e) => { e.official = true; }], ['missing label', (e) => { delete e.label; }], ['wrong label', (e) => { e.label = '正式'; }],
   ['wrong schema', (e) => { e.schema = 'antempire.experiment-world-snapshot.v2'; }], ['extra field', (e) => { e.extra = 1; }],
   ['negative t_sim', (e) => { e.t_sim = -1; }], ['fractional seq', (e) => { e.seq = 1.5; }], ['schema_version 0', (e) => { e.schema_version = 0; }],
   ['payload array', (e) => { e.payload = []; }], ['short hash', (e) => { e.payload_sha256 = 'abc'; }], ['upper-case hash', (e) => { e.payload_sha256 = 'A'.repeat(64); }],
   ['world_id with slash', (e) => { e.world_id = '../saves'; }], ['empty fingerprint', (e) => { e.rules_fingerprint = ''; }], ['missing payload', (e) => { delete e.payload; }],
-  ['seed float', (e) => { e.seed = 0.5; }], ['t_sim NaN', (e) => { e.t_sim = Number.NaN; }],
+  ['seed float', (e) => { e.seed = 0.5; }], ['seed string', (e) => { e.seed = 'user-seed'; }], ['seed 2^32', (e) => { e.seed = 4294967296; }], ['seed negative', (e) => { e.seed = -1; }],
+  ['world_id without exp- prefix', (e) => { e.world_id = 'world-1'; }], ['t_sim NaN', (e) => { e.t_sim = Number.NaN; }],
 ];
 for (const [name, mutate] of bad) { const e = good() as Record<string, unknown>; mutate(e); ok(validate(SNAP, e).length > 0, `malformed envelope rejected: ${name}`); }
 
@@ -99,7 +102,7 @@ for (const [name, x] of [['NaN', { a: Number.NaN }], ['Infinity', { a: Infinity 
 // 7. design document and roadmap
 const doc = read('docs/experimental-save-system.md');
 for (const f of ['experiment-world-snapshot.v1.schema.json', 'experiment-world-export.v1.schema.json', 'snapshot-content.v1.json']) ok(doc.includes(f) && fs.existsSync(path.join(REPO_ROOT, DIR, f)), `doc links ${f}`);
-for (const s of ['antempire-experiment-worlds', 'pending', 'verified', '樂觀並行', '不會默默建立新世界', '絕不重新抽樣', '一致事件邊界', '正在儲存', '已儲存', '上次成功儲存時間', '儲存失敗', '`complete`', 'visibilitychange', 'pagehide', '不能是唯一機制', '立即存檔', '離線時間不模擬', 'Web Lock', '唯讀', 'persist()', '不保證', '兩步確認', '`confirm()`', '繼續遊戲', '開始新遊戲', '讀取存檔', '存檔管理', 'migration_failed', '原快照不變', 'rules_mismatch', LABEL]) ok(doc.includes(s), `doc states: ${s}`);
+for (const s of ['對未來 payload 的要求', '一般數字陣列', 'antempire-experiment-worlds', 'pending', 'verified', '樂觀並行', '不會默默建立新世界', '絕不重新抽樣', '一致事件邊界', '正在儲存', '已儲存', '上次成功儲存時間', '儲存失敗', '`complete`', 'visibilitychange', 'pagehide', '不能是唯一機制', '立即存檔', '離線時間不模擬', 'Web Lock', '唯讀', 'persist()', '不保證', '兩步確認', '`confirm()`', '繼續遊戲', '開始新遊戲', '讀取存檔', '存檔管理', 'migration_failed', '原快照不變', 'rules_mismatch', LABEL]) ok(doc.includes(s), `doc states: ${s}`);
 for (const a of ['| A |', '| B |', '| C |', '| D |', '| E |']) ok(doc.includes(a), `doc lists acceptance test ${a}`);
 const road = read('docs/roadmap.md');
 ok(/SAVE-0/.test(road) && /SAVE-1/.test(road) && /SAVE-2/.test(road) && /SAVE-3/.test(road), 'roadmap lists SAVE-0..3');
