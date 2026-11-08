@@ -106,8 +106,9 @@ export interface Decal { shadow: DrawList; body: DrawList; high?: DrawList; high
 // ------------------------------------------------------------------ leaves
 export type LeafKind = 'lanceolate' | 'ovate' | 'decayed' | 'curled' | 'skeleton';
 export const LEAF_KINDS: LeafKind[] = ['lanceolate', 'ovate', 'decayed', 'curled', 'skeleton'];
-/** A fallen leaf, length `len` mm, placed at (x,y) with rotation rot. */
-export function leaf(seed: number, kind: LeafKind, x: number, y: number, rot: number, len: number): Decal {
+/** A fallen leaf, length `len` mm, placed at (x,y) with rotation rot. detail 0 = far-zoom variant (no surface
+ *  mottling / blotches / secondary veins: invisible at that size and the costliest part to draw). */
+export function leaf(seed: number, kind: LeafKind, x: number, y: number, rot: number, len: number, detail: 0 | 1 = 1): Decal {
   const r = rng(seed), tr = T(x, y, rot), W = len * (kind === 'lanceolate' ? 0.2 : kind === 'curled' ? 0.24 : 0.34), n = 26, bend = (r() - 0.5) * 0.18 * len;
   const asym = 0.85 + r() * 0.3, curl = kind === 'curled';
   const mid = (t: number): XY => [-len / 2 + t * len, Math.sin(t * Math.PI) * bend];
@@ -135,15 +136,15 @@ export function leaf(seed: number, kind: LeafKind, x: number, y: number, rot: nu
   if (kind === 'decayed') for (let i = 0, k = 2 + Math.floor(r() * 4); i < k; i++) { const t = 0.2 + r() * 0.6, m = mid(t), o = (r() - 0.5) * hw(t) * 1.1; holes += smoothClosed(blobPoints(r, m[0] + r() * 2, m[1] + o, len * (0.03 + r() * 0.05), len * (0.02 + r() * 0.04), 8, 0.35).map(tr)); }
   body.push({ d: d + holes, evenodd: true, fill: litRadial(cx, cy, len * 0.55, [[0, c(8)], [0.55, c(0)], [0.85, c(-6)], [1, c(-12)]]), stroke: c(-16, 0.9), lw: Math.max(0.15, len * 0.006) });
   // blade texture: a few soft blotches, darker near the margin
-  for (let i = 0; i < 5; i++) { const t = 0.15 + r() * 0.7, m = mid(t); const p = tr([m[0], m[1] + (r() - 0.5) * hw(t)]); body.push({ d: ellipse(p[0], p[1], len * (0.04 + r() * 0.06), len * (0.03 + r() * 0.04), rot + r()), fill: c(r() < 0.5 ? -8 : 7, 0.35) }); }
-  { let dk = '', lt = ''; for (let i = 0; i < len * 1.6; i++) { const t = 0.06 + r() * 0.88, m = mid(t), w = hw(t) * 0.85, p = tr([m[0] + (r() - 0.5) * 1.5, m[1] + (r() * 2 - 1) * w]), z = len * (0.004 + r() * 0.01); if (r() < 0.55) dk += ellipse(p[0], p[1], z, z * 0.8); else lt += ellipse(p[0], p[1], z, z * 0.8); }
+  if (detail) for (let i = 0; i < 5; i++) { const t = 0.15 + r() * 0.7, m = mid(t); const p = tr([m[0], m[1] + (r() - 0.5) * hw(t)]); body.push({ d: ellipse(p[0], p[1], len * (0.04 + r() * 0.06), len * (0.03 + r() * 0.04), rot + r()), fill: c(r() < 0.5 ? -8 : 7, 0.35) }); }
+  if (detail) { let dk = '', lt = ''; for (let i = 0; i < len * 1.6; i++) { const t = 0.06 + r() * 0.88, m = mid(t), w = hw(t) * 0.85, p = tr([m[0] + (r() - 0.5) * 1.5, m[1] + (r() * 2 - 1) * w]), z = len * (0.004 + r() * 0.01); if (r() < 0.55) dk += ellipse(p[0], p[1], z, z * 0.8); else lt += ellipse(p[0], p[1], z, z * 0.8); }
     body.push({ d: dk, fill: c(-12, 0.45) }, { d: lt, fill: c(12, 0.4) }); } // fine mottling of a dead leaf
-  if (kind === 'decayed') for (let i = 0; i < 4; i++) { const t = 0.1 + r() * 0.8, m = mid(t), p = tr([m[0], m[1] + (r() - 0.5) * hw(t) * 1.2]); body.push({ d: ellipse(p[0], p[1], len * 0.035, len * 0.028, r() * 3), fill: 'rgba(40,24,12,0.45)', blend: 'multiply' }); }
+  if (detail && kind === 'decayed') for (let i = 0; i < 4; i++) { const t = 0.1 + r() * 0.8, m = mid(t), p = tr([m[0], m[1] + (r() - 0.5) * hw(t) * 1.2]); body.push({ d: ellipse(p[0], p[1], len * 0.035, len * 0.028, r() * 3), fill: 'rgba(40,24,12,0.45)', blend: 'multiply' }); }
   // veins: midrib + paired secondary veins toward the tip
   const midrib = smoothOpen([0, 0.25, 0.5, 0.75, 1].map((t) => tr(mid(t))));
   body.push({ d: midrib, stroke: c(16, 0.8), lw: Math.max(0.2, len * 0.014), cap: 'round' });
-  let sec = ''; for (let i = 1; i < 8; i++) { const t = i / 8.5, m = mid(t); for (const sd of [-1, 1]) { if (curl && sd > 0) continue; const w = hw(t) * (sd < 0 ? asym : 1); sec += smoothOpen([tr(m), tr([m[0] + w * 0.45, m[1] + sd * w * 0.5]), tr([m[0] + w * 0.75, m[1] + sd * w * 0.85])]); } }
-  body.push({ d: sec, stroke: c(12, 0.45), lw: Math.max(0.12, len * 0.006), cap: 'round' });
+  let sec = ''; if (detail) for (let i = 1; i < 8; i++) { const t = i / 8.5, m = mid(t); for (const sd of [-1, 1]) { if (curl && sd > 0) continue; const w = hw(t) * (sd < 0 ? asym : 1); sec += smoothOpen([tr(m), tr([m[0] + w * 0.45, m[1] + sd * w * 0.5]), tr([m[0] + w * 0.75, m[1] + sd * w * 0.85])]); } }
+  if (detail) body.push({ d: sec, stroke: c(12, 0.45), lw: Math.max(0.12, len * 0.006), cap: 'round' });
   // petiole stub
   body.push({ d: smoothOpen([tr(mid(0)), tr([-len / 2 - len * 0.08, bend * 0.2])]), stroke: c(-4), lw: Math.max(0.25, len * 0.018), cap: 'round' });
   if (curl) { // rolled margin catching the light, with the rolled-under shadow inside

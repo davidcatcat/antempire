@@ -15,7 +15,7 @@ const server = http.createServer((req, res) => {
   res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream' }); fs.createReadStream(f).pipe(res);
 });
 server.listen(0, async () => {
-  const base = `http://localhost:${server.address().port}/prototypes/render-harness/index.html`, failures = [], rows = [];
+  const base = `http://localhost:${server.address().port}/prototypes/render-harness/index.html`, failures = [], rows = [], seams = [];
   const browser = await chromium.launch();
   const profiles = [['desktop', { viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 }, 1], ['pixel7', { ...devices['Pixel 7'] }, 1], ['pixel7-cpu4x', { ...devices['Pixel 7'] }, 4]];
   const modes = [['replay', '?mode=replay'], ['stress100', '?mode=stress&n=100'], ['stress1000', '?mode=stress&n=1000']];
@@ -37,13 +37,24 @@ server.listen(0, async () => {
       if (!info.engineObjects.every((o) => o.source === 'engine')) failures.push(`${tag}: registry has non-engine objects`);
     }
     if (throttle === 1 && m !== 'stress1000') await page.screenshot({ path: path.join(OUT, `${tag}-${m}.png`) });
-    if (tag === 'desktop' && m === 'replay') { await page.goto(base + q + '&highlight&labels&routes'); await page.waitForFunction(() => window.__harness.ready()); await page.waitForTimeout(800); await page.screenshot({ path: path.join(OUT, 'desktop-replay-overlay.png') }); }
+    if (throttle === 1 && m === 'replay') {
+      // extra views: 全景 and the engine-object overlay; then the seam / periodicity check on the ground alone
+      for (const [suffix, extra] of [['full', '&view=full'], ['overlay', '&highlight&labels&routes']]) { await page.goto(base + q + extra); await page.waitForFunction(() => window.__harness.ready()); await page.waitForTimeout(1500); await page.screenshot({ path: path.join(OUT, `${tag}-replay-${suffix}.png`) }); }
+      for (const [view, extra] of [['default', ''], ['full', '&view=full']]) {
+        await page.goto(base + q + '&groundonly' + extra); await page.waitForFunction(() => window.__harness.ready()); await page.waitForTimeout(1500);
+        const sc = await page.evaluate(() => window.__harness.seamCheck()); seams.push({ profile: tag, view, max_seam_ratio: sc.max_seam_ratio, ordinary_column_p99_ratio: sc.ordinary_column_p99_ratio, periodic_amp: sc.periodic_amp, seams: sc.seams_x.length + sc.seams_y.length });
+        if (!(sc.seams_x.length + sc.seams_y.length > 0)) failures.push(`${tag}/${view}: no chunk boundary in view to check`);
+        if (sc.max_seam_ratio > 1.6 || sc.max_seam_ratio > sc.ordinary_column_p99_ratio + 0.2) failures.push(`${tag}/${view}: luminance step at a chunk boundary ${sc.max_seam_ratio.toFixed(2)} vs ordinary p99 ${sc.ordinary_column_p99_ratio.toFixed(2)}`);
+        if (sc.periodic_amp > 0.04) failures.push(`${tag}/${view}: visible periodic repetition (relative amplitude ${sc.periodic_amp.toFixed(4)})`);
+      }
+    }
     if (tag === 'desktop' && m === 'stress1000') await page.screenshot({ path: path.join(OUT, 'desktop-stress1000.png') });
     await ctx.close();
   }
   await browser.close(); server.close();
   const meta = { measured: 'headless Chromium via Playwright; frame intervals over ' + SECS + ' s after 6 s warm-up; not a real device', node: process.version };
-  fs.writeFileSync(path.join(__dirname, 'results.json'), JSON.stringify({ meta, rows }, null, 1) + '\n');
+  fs.writeFileSync(path.join(__dirname, 'results.json'), JSON.stringify({ meta, rows, seams }, null, 1) + '\n');
+  for (const x of seams) console.log(`seam ${x.profile} ${x.view}: boundary ${x.max_seam_ratio.toFixed(2)} vs ordinary p99 ${x.ordinary_column_p99_ratio.toFixed(2)}, periodic amp ${x.periodic_amp.toFixed(4)}`);
   for (const r of rows) console.log(`${r.profile.padEnd(13)} ${r.mode.padEnd(11)} fps ${r.fps_mean?.toFixed(1).padStart(5)} p50 ${r.p50_ms?.toFixed(1)} p95 ${r.p95_ms?.toFixed(1)} q${r.quality_level} canvas ${r.canvas_px}`);
   if (failures.length) { console.error('FAILURES\n' + failures.join('\n')); process.exit(1); }
 });

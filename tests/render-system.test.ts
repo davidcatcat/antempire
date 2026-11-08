@@ -17,7 +17,7 @@ import path from 'node:path';
 import { REPO_ROOT } from '../cli/lib/load.ts';
 import { displayPositions, poseAt, windowOf, type Experiment } from '../web/src/model.ts';
 import { antFrame, buildDayIndex, rosterAtStart, gardenBounds, walkIntervals } from '../web/src/game-model.ts';
-import { LAYERS, CLEAR_PLACE_CM, CLEAR_ROUTE_CM, DECOR_CELL_CM, MAX_TURN_RATE, decorCell, decorRadiusCm, distToSegment, engineRegistry, isClear, keepAtLod, nextQuality, planAnts, recordedRoutes, screenToWorld, weatherState, worldToScreen, type AntInput, type AntLook, type Camera } from '../web/src/render-scene.ts';
+import { groundField, valueNoise, LAYERS, CLEAR_PLACE_CM, CLEAR_ROUTE_CM, DECOR_CELL_CM, MAX_TURN_RATE, decorCell, decorRadiusCm, distToSegment, engineRegistry, isClear, keepAtLod, nextQuality, planAnts, recordedRoutes, screenToWorld, weatherState, worldToScreen, type AntInput, type AntLook, type Camera } from '../web/src/render-scene.ts';
 import { walkCycles } from '../web/src/art-ant.ts';
 
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
@@ -99,6 +99,19 @@ ok(!isClear(0, 0, 0.1, { places: [{ x: 0, y: 0, radiusCm: 1 }], routes: [] }) &&
   ok(planAnts(c, [{ ...a(1.2)[0], moving: false, vis: 'at_site' }], new Map([['X', { h: 0, phase: 0, sx: 200, sy: 200 }]]), 0.016, walkCycles).draws[0].gait === 'pivotR', 'authoritative ω while stationary → pivot');
 }
 
+// ground continuity: the world-space ground field is continuous (bounded slope, so no step at any chunk edge) and
+// non-periodic (no repeat at the old tile / chunk scales), and décor density varies strongly across the garden
+{
+  let maxSlope = 0; for (let k = 0; k < 4000; k++) { const x = (k * 37.3) % 700 - 350, y = (k * 91.7) % 700 - 350, a = groundField(7, x, y), b = groundField(7, x + 0.01, y); maxSlope = Math.max(maxSlope, Math.abs(a.tone - b.tone) / 0.01); }
+  ok(maxSlope < 0.1, `ground field is continuous (max |d tone / dx| ${maxSlope.toFixed(4)} per cm)`);
+  for (const P of [8, 16, 32, 36, 64, 128]) { let d = 0, n = 0; for (let k = 0; k < 400; k++) { const x = k * 3.1, y = k * 1.7; d += Math.abs(valueNoise(3, x, y, 60) - valueNoise(3, x + P, y, 60)); n++; } ok(d / n > 0.01, `no repeat at a ${P} cm period (mean |f(x) − f(x+${P})| ${(d / n).toFixed(3)})`); }
+  const ob = { places: [], routes: [] }, counts: number[] = []; for (let i = -25; i < 25; i++) for (let j = -25; j < 25; j++) counts.push(decorCell(99, i, j, ob).filter((x) => x.kind === 'leaf').length);
+  const bare = counts.filter((c) => c === 0).length / counts.length, dense = counts.filter((c) => c >= 12).length / counts.length;
+  ok(bare > 0.2 && dense > 0.05, `leaf litter is clustered: ${(bare * 100).toFixed(0)}% bare cells, ${(dense * 100).toFixed(0)}% cells with ≥ 12 leaves`);
+  const sizes = Array.from({ length: 40 }, (_, i) => decorCell(5, i, 3, ob)).flat().filter((x) => x.kind === 'leaf').map((x) => x.sizeMm).sort((a, b) => a - b);
+  ok(sizes.length > 30 && sizes[Math.floor(sizes.length / 2)] < (sizes[0] + sizes[sizes.length - 1]) / 2, 'leaf sizes are skewed small (median below mid-range)');
+}
+
 // 6. weather and quality
 for (const w of [{ air_temp_c: 25, nest_temp_c: 25, rain_mm: 0, wet: false }, { air_temp_c: 25, nest_temp_c: 25, rain_mm: 5.2, wet: true }]) { const s = weatherState(w); ok(s.rainStreaks === false && /日值/.test(s.label) && s.wet === w.wet && s.overcast === w.rain_mm > 0, 'weather = labelled daily state, never rain streaks'); }
 ok(nextQuality(0, Array(60).fill(30)) === 1 && nextQuality(1, Array(60).fill(10)) === 1 && nextQuality(3, Array(60).fill(90)) === 3, 'quality steps down on sustained slowness and never up');
@@ -112,6 +125,7 @@ const H = path.join(REPO_ROOT, 'prototypes', 'render-harness');
 ok(fs.existsSync(path.join(H, 'harness.ts')) && fs.existsSync(path.join(H, 'bench.cjs')), 'standalone harness exists');
 const res = JSON.parse(fs.readFileSync(path.join(H, 'results.json'), 'utf8'));
 ok(['desktop', 'pixel7', 'pixel7-cpu4x'].every((p) => ['replay', 'stress100', 'stress1000'].every((m) => res.rows.some((r: { profile: string; mode: string; fps_mean: number }) => r.profile === p && r.mode === m && r.fps_mean > 0))), 'measured results for 3 profiles × 3 modes are committed');
+ok(Array.isArray(res.seams) && res.seams.length >= 4 && res.seams.every((x: { max_seam_ratio: number; ordinary_column_p99_ratio: number; periodic_amp: number; seams: number }) => x.seams > 0 && x.max_seam_ratio <= 1.6 && x.max_seam_ratio <= x.ordinary_column_p99_ratio + 0.2 && x.periodic_amp <= 0.04), 'browser seam check: chunk boundaries are no steeper than ordinary columns and no visible periodic repeat');
 ok(res.rows.filter((r: { mode: string; positions_checked?: number }) => r.mode === 'replay').every((r: { positions_checked?: number }) => (r.positions_checked ?? 0) > 0), 'browser replay runs checked drawn positions against poseAt');
 
 console.log(JSON.stringify({ test: 'render-system', passed: true, checks, anchors, decorItems }));
