@@ -12,6 +12,7 @@ import { antFrame, anyWalking, walkIntervals, buildDayIndex, gardenBounds, hash3
 import { LayeredRenderer } from './render-canvas.ts';
 import { antLengthPx, recordedRoutes, type AntInput, type Camera } from './render-scene.ts';
 import { SCHEMATIC_LIGHT } from './art-core.ts';
+import { playbackDamp, smoothedContext, type ContextSampler, type RawSample } from './display-motion.ts';
 
 interface Index { official: string; experiments: { id: string; file: string; title: string }[] }
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -80,9 +81,29 @@ function gotoDay(n: number) {
   if (!exp) return;
   day = Math.max(1, Math.min(exp.days.length, n)); t = 0; settleUntil = 0; ended = false;
   const d = exp.days[day - 1]; idx = buildDayIndex(d); walks = walkIntervals(d); roster = rosterAtStart(exp, day);
-  R.setEngineState(stateAt(exp, day, 0).sources, d.weather);
+  R.setEngineState(stateAt(exp, day, 0).sources, d.weather); resetMicro();
   ui.clock.max = String(windowOf(d)); jumped();
 }
+// ------------------------------------------------------------------ display micro-motion context (engine data only)
+/** actions whose record says the ant is searching / exploring (no known route) */
+const EXPLORING = new Set(['search', 'explore_depart', 'explore_return']);
+/** distance (cm) within which a recorded place counts as "near" for antenna probing (示意) */
+const NEAR_CM = 2.5;
+let ctxCache = new Map<string, ContextSampler>();
+/** Context of one ant at display time τ (simulated seconds of the current day), from the engine record only: moving
+ *  (model.poseAt), the recorded edge / site heading, nearness to the recorded places of its edge, searching action. */
+function rawSample(id: string, tauS: number): RawSample {
+  const d = exp.days[day - 1], f = antFrame(idx, d, id, Math.max(0, Math.min(windowOf(d), tauS / 60)), pos);
+  const heading = f.vis === 'walking' && f.heading !== null ? -f.heading : siteSlot(id).heading;
+  let near = 0;
+  if (f.vis === 'at_site') near = 1;
+  else if (f.vis === 'walking') { const dist = Math.min(...f.place.split('>').map((p) => pos[p]?.known ? Math.hypot(pos[p].x - f.x, pos[p].y - f.y) : Infinity)); near = Math.max(0, Math.min(1, 1 - dist / NEAR_CM)); }
+  return { moving: f.moving ? 1 : 0, heading, near, explore: EXPLORING.has(f.action) ? 1 : 0 };
+}
+const contextOf = (id: string): ContextSampler => { let c = ctxCache.get(id); if (!c) { c = smoothedContext((tau) => rawSample(id, tau)); ctxCache.set(id, c); } return c; };
+/** new day / world: the context data changed, so drop the samplers and the micro-motion memo */
+function resetMicro() { ctxCache = new Map(); R.resetMicro(); }
+
 /** a time jump resets the drawing-only motion state (heading ease, leg phase) so nothing is animated across it */
 const jumped = () => R.resetMotion();
 
@@ -135,7 +156,8 @@ function drawFrame(dtReal: number, frameMs: number | null) {
     else { const s = siteSlot(f.id), k = Math.min(1.4, L / 26); off = { dx: s.dx * k, dy: s.dy * k, heading: s.heading }; }
     return { id: f.id, x: f.x, y: f.y, vis: f.vis, moving: f.moving, heading: f.heading, displayOffset: off }; // no ω: the replay records none
   });
-  const draws = R.frame(c, inputs, dtReal, frameMs, { uiBottom: bottomBarPx + 6, displayTurns: true, colourVariants: true, highlightEngine: ui.lEngine.checked, labels: ui.lLabels.checked, showRoutes: ui.lRoutes.checked, minAntPx: minAntPx() });
+  const draws = R.frame(c, inputs, dtReal, frameMs, { uiBottom: bottomBarPx + 6, displayTurns: true, colourVariants: true, highlightEngine: ui.lEngine.checked, labels: ui.lLabels.checked, showRoutes: ui.lRoutes.checked, minAntPx: minAntPx(),
+    micro: { tauS: t * 60, damp: playbackDamp(speed), context: contextOf } });
   const at = new Map(draws.map((x) => [x.id, x]));
   // screen position of ants the player can actually see (inside the canvas, not under the top / bottom bars)
   const onScreen = (x: number, y: number) => x >= 0 && x <= c.w && y >= topBarPx && y <= c.h - bottomBarPx;
@@ -180,6 +202,7 @@ function renderAbout() {
   ui.about.innerHTML = `<h2>畫面上的東西從哪裡來</h2><ul>
 <li><b>引擎紀錄</b>：每隻螞蟻在每個時刻的所在地點、出發與抵達的分鐘、行動（出巢、搜尋、採集、回巢、卸貨、休息）與當日任務，來自 <code>web/data/${ui.world.value}</code>（引擎 ${exp.engine_version}）。食源上的半翅目群數（每群畫一簇）、寄主是否存活、天氣日值也是引擎紀錄。開場的日子與時刻取自紀錄中行走最密集的時段。</li>
 <li><b>顯示插值</b>：螞蟻在兩個紀錄點之間沿直線前進的位置；同一路段同時出發的螞蟻左右錯開；停在同一地點的螞蟻圍成一圈排列；轉身與腳的擺動（步伐由移動距離驅動；轉向動作只在紀錄的路段方向改變時出現，是顯示插值，不是物理結果）。這些只為畫面，不寫回、不產生事件。</li>
+<li><b>顯示動畫（示意）</b>：頭部小幅左右轉動、左右觸角各自的探索動作（掃動、向前探、點地、休息）與走↔停的步態過渡，依螞蟻 ID 的種子與模擬時間決定（可重播），只參考引擎紀錄的「是否在走、路段方向、是否接近紀錄地點、是否在搜尋」。<b>不是感覺事件</b>：畫面上的觸角位置不代表螞蟻聞到或碰到什麼，也不改變任何位置、方向、時間或事件；身體路徑仍是紀錄點之間的直線。播放倍速越高，微動作越弱（避免閃爍）。</li>
 <li><b>示意場景</b>：土壤、落葉、石子、草、苔、植物與花的外觀與分布是以種子產生的裝飾（避開地點與紀錄路段），不是任何實際花園的測量。地點位置由「方位＋約距離」推得，非測量。光源是固定的示意光源（重播資料沒有時刻，不畫日夜）；天氣只顯示當日狀態（地面潮濕、陰天），不畫雨滴。螞蟻外形依物種鑑定特徵（12 節膝狀觸角含 3 節棍棒、兩節腹柄、並胸腹節刺；頭與柄節比例取自 Sarnat et al. 2015）；體色在文獻記載的淺褐至深褐範圍內依個體 ID 取固定變化（示意，不是個體實測）；不畫大工蟻（引擎未記錄階級），也不畫搬運姿勢（引擎沒有搬運紀錄）。螞蟻<b>放大顯示</b>（畫面左下角的 ×N；小工蟻約 2.5 mm）。</li>
 <li><b>沒有畫出的</b>：巢內的活動（只計數）；位置未記錄地點的螞蟻；沒有時刻的日終結算（死亡、羽化、產卵只在橫幅顯示）。不會出現引擎沒有記錄的覓食、交哺、攻擊或死亡。</li>
 <li><b>圖層</b>：「圖層」選單可打開引擎物件標示、地點代號、紀錄路段、螞蟻 ID、狀態列（玩家視角，螞蟻不知道這些）。</li>
@@ -236,6 +259,8 @@ function loop(now: number) {
   ants: () => frames.map((f) => ({ id: f.id, vis: f.vis, moving: f.moving, x: f.x, y: f.y, sx: f.sx ?? null, sy: f.sy ?? null, place: f.place, action: f.action })),
   engineObjects: () => R.engineObjects().map((o) => ({ id: o.id, kind: o.kind, x: o.x, y: o.y, source: o.source })),
   layers: () => [...R.trace],
+  /** display micro-motion of the last frame (示意 display animation; read only) */
+  micro: () => ({ detail: R.detailUsed(), ants: [...R.lastMicro()].map(([id, m]) => ({ id, headYaw: m.headYaw, L: { ...m.L }, R: { ...m.R } })) }),
   fps: () => { const iv = [...stats.intervals].sort((a, b) => a - b), n = iv.length; return { frames: stats.frames, samples: n, mean_ms: n ? iv.reduce((s, x) => s + x, 0) / n : null, p50_ms: n ? iv[Math.floor(n * 0.5)] : null, p95_ms: n ? iv[Math.floor(n * 0.95)] : null, fps_mean: n ? 1000 / (iv.reduce((s, x) => s + x, 0) / n) : null }; },
   resetFps: () => { stats.intervals = []; stats.frames = 0; },
   gotoDay: (n: number) => gotoDay(n),

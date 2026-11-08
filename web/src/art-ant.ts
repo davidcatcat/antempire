@@ -127,13 +127,17 @@ const FUN_W = [1.7, 1.5, 1.5, 1.5, 1.55, 1.6, 1.7, 1.85, 2.6, 2.95, 3.1];
 const FUN_FORESHORTEN = 0.8;
 export const ANTENNA_SEGMENTS = 1 + FUNICULUS.length; // scape + 11 = 12
 export const ANTENNA_CLUB = 3;
-function antenna(side: number, scapeAng: number, funAng: number): [number, number][] {
+function antenna(side: number, scapeAng: number, funAng: number, reach = 1): [number, number][] {
   const root: [number, number] = [40, 3.4 * side], scape = 25.5; // SL ≈ 1.06 × HL (R99 minor: SL 0.61–0.72 mm, HL 0.57–0.68 mm; scapes surpass the head margin)
   const elbow: [number, number] = [root[0] + Math.cos(scapeAng) * scape, root[1] + Math.sin(scapeAng) * scape * side];
   const pts: [number, number][] = [root, elbow]; let a = funAng, x = elbow[0], y = elbow[1];
-  for (let i = 0; i < FUNICULUS.length; i++) { a += -0.075; const l = FUNICULUS[i] * FUN_FORESHORTEN; x += Math.cos(a) * l; y += Math.sin(a) * l * side; pts.push([x, y]); }
+  for (let i = 0; i < FUNICULUS.length; i++) { a += -0.075; const l = FUNICULUS[i] * FUN_FORESHORTEN * reach; x += Math.cos(a) * l; y += Math.sin(a) * l * side; pts.push([x, y]); }
   return pts;
 }
+/** neck pivot of the head (local units): head yaw rotates the head, mandibles and antenna roots about it */
+export const NECK: readonly [number, number] = [21, 0];
+/** Antenna polyline (13 points: torulus, elbow, 11 funicular joints) in the local frame at head yaw 0. side −1 = left. */
+export const antennaPoints = (side: -1 | 1, scape: number, fun: number, reach = 1) => antenna(side, scape, fun, reach);
 
 /** Pose for frame `frame` of a gait (walk/curve/pivot: WALK_FRAMES frames; idle: IDLE_FRAMES). */
 export function antPose(kind: Gait, frame: number): AntPose {
@@ -159,6 +163,37 @@ export function antPose(kind: Gait, frame: number): AntPose {
   const sway = stepping && !kind.startsWith('pivot') ? 1 : 0.3;
   return { legs, ant, headYaw: stepping ? Math.sin(w) * 0.035 * sway + turn * 0.07 : 0, gasterYaw: stepping ? -Math.sin(w) * 0.05 * sway - turn * 0.06 : 0 };
 }
+
+/** Display micro-pose input (display-motion.ts MicroState shape): head yaw + per-side antenna joint angles. */
+export interface MicroPose { headYaw: number; L: { scape: number; fun: number; reach: number }; R: { scape: number; fun: number; reach: number } }
+export const NEUTRAL_POSE: MicroPose = { headYaw: 0, L: { scape: 0.98, fun: 0.3, reach: 0.85 }, R: { scape: 0.98, fun: 0.3, reach: 0.85 } };
+/**
+ * Continuous pose (detail drawing, not baked): gait phase φ (cycles, continuous, driven by distance travelled), walk
+ * weight w ∈ [0,1] (display blend walk ↔ stand: stride and foot lift scale with w, so starting and stopping ease
+ * instead of popping; w = 0 → all six feet planted at the neutral posture), and an optional micro-pose (head yaw and
+ * independent antennae). The gaster follows the stance phase slightly (gait-coupled, scaled by w); no free-running
+ * periodic sway. A turning gait only comes from the caller (authoritative ω or the display ease toward a recorded
+ * heading), never chosen here.
+ */
+export function antPoseAt(kind: Gait, phi: number, o: { walkW?: number; micro?: MicroPose } = {}): AntPose {
+  const w = Math.max(0, Math.min(1, o.walkW ?? (kind === 'idle' ? 0 : 1))), p = ((phi % 1) + 1) % 1, stepKind: Gait = kind === 'idle' ? 'walk' : kind;
+  const legs: LegPose[] = LEGS.map((lg) => {
+    const st0 = legState(lg.id, p), st = { stance: w < 0.02 ? true : st0.stance, lift: st0.lift * w, s: st0.s * w }, v = strideVector(stepKind, lg.id);
+    const pull = st.lift * 3.2;
+    const foot: [number, number] = [lg.foot[0] + v[0] * st.s, lg.foot[1] + v[1] * st.s - lg.side * pull];
+    const tr = lg.tarsus * (1 - st.lift * 0.12), ta = -v[0] * st.s * 0.012 * lg.side;
+    const td: [number, number] = [lg.tarsDir[0] * Math.cos(ta) - lg.tarsDir[1] * Math.sin(ta), lg.tarsDir[0] * Math.sin(ta) + lg.tarsDir[1] * Math.cos(ta)];
+    const tib: [number, number] = [foot[0] - td[0] * tr, foot[1] - td[1] * tr];
+    const cx = lg.base[0] + (lg.id.endsWith('1') ? 1.2 : lg.id.endsWith('3') ? -1.4 : 0), ce: [number, number] = [cx, lg.base[1] + lg.side * lg.coxa];
+    const kn = knee(ce[0], ce[1], tib[0], tib[1], lg.femur, lg.side);
+    return { id: lg.id, set: tripodSet(lg.id), stance: st.stance, lift: st.lift, pts: [lg.base, ce, kn, tib, foot] };
+  });
+  const m = o.micro ?? NEUTRAL_POSE;
+  return { legs, ant: { L: antenna(-1, m.L.scape, m.L.fun, m.L.reach), R: antenna(1, m.R.scape, m.R.fun, m.R.reach) }, headYaw: m.headYaw, gasterYaw: -Math.sin(Math.PI * 2 * p) * 0.035 * w };
+}
+/** Which pieces to draw: everything, the trunk (legs + body without head and antennae; the shadow keeps the head
+ *  silhouette at yaw 0), or the head alone (yaw 0; rotated about NECK at draw time). */
+export type AntParts = 'all' | 'trunk' | 'head';
 
 const rotAbout = (pts: [number, number][], px: number, py: number, a: number): [number, number][] => pts.map(([x, y]) => [px + (x - px) * Math.cos(a) - (y - py) * Math.sin(a), py + (x - px) * Math.sin(a) + (y - py) * Math.cos(a)]);
 /** tapered capsule between two points */
@@ -207,8 +242,9 @@ function antennaShapes(pts: [number, number][]): DrawList {
 }
 
 /** Body outline pieces (head, mesosoma etc.) for a pose; `yaw` rotations sway head and gaster. */
-function bodyShapes(pose: AntPose, silhouette = false): DrawList {
+function bodyShapes(pose: AntPose, silhouette = false, parts: AntParts = 'all'): DrawList {
   const P_ = PAL, out: DrawList = [];
+  if (parts === 'head') return headShapes(pose, silhouette);
   const S = (d: string, fill: Shape['fill'], lw?: number) => out.push(silhouette ? { d, fill: '#000' } : OUT(d, fill, lw));
   // gaster (pivot at the postpetiole), smooth and shiny
   const gpts = rotAbout(Array.from({ length: 18 }, (_, i) => { const a = (i / 18) * Math.PI * 2, rx = 13.4, ry = 9.2; const k = Math.cos(a) > 0 ? 1 - 0.16 * Math.cos(a) ** 3 : 1; return [-34 + Math.cos(a) * rx, Math.sin(a) * ry * k] as [number, number]; }), -21, 0, pose.gasterYaw);
@@ -228,6 +264,24 @@ function bodyShapes(pose: AntPose, silhouette = false): DrawList {
     out.push({ d: new P().M(9.6, -4.6).Q(8.4, 0, 9.6, 4.6).toString(), stroke: 'rgba(60,28,10,0.4)', lw: 0.4 }); // promesonotal suture
     out.push({ d: new P().M(2.4, -2.4).Q(1.6, 0, 2.4, 2.4).toString(), stroke: 'rgba(60,28,10,0.65)', lw: 0.55 });   // metanotal groove
   }
+  if (parts === 'trunk' && !silhouette) { trunkSetae(out, pose); return out; }
+  out.push(...headShapes(pose, silhouette, true));
+  return out;
+}
+/** pale erect setae (示意) on mesosoma and gaster (the head's are drawn with the head) */
+function trunkSetae(out: DrawList, pose: AntPose) {
+  { const g = rotAbout([[-42.4, -7.3], [-45.4, 0], [-42.4, 7.3]], -21, 0, pose.gasterYaw); out.push({ d: new P().M(g[0][0], g[0][1]).Q(g[1][0], g[1][1], g[2][0], g[2][1]).toString(), stroke: 'rgba(10,4,0,0.45)', lw: 0.45 }); }
+  for (const [x, y] of SETAE) if (x <= 21) {
+    const [sx, sy] = x < 0 ? rotAbout([[x, y]], -21, 0, pose.gasterYaw)[0] : [x, y];
+    out.push({ d: new P().M(sx, sy).L(sx - 0.6, sy + (y > 0 ? 0.45 : -0.45)).toString(), stroke: 'rgba(255,236,200,0.45)', lw: 0.2, cap: 'round' });
+  }
+}
+const SETAE: [number, number][] = [[30, -3], [30, 3], [26, -5.5], [26, 5.5], [-30, -4], [-34, 3], [-40, -2], [14, -2], [14, 2]];
+/** Head, mandibles, eyes and head setae, rotated by pose.headYaw about NECK; `withTrunkSetae` also draws the trunk
+ *  setae (the 'all' drawing keeps its original order). */
+function headShapes(pose: AntPose, silhouette: boolean, withTrunkSetae = false): DrawList {
+  const P_ = PAL, out: DrawList = [];
+  const S = (d: string, fill: Shape['fill'], lw?: number) => out.push(silhouette ? { d, fill: '#000' } : OUT(d, fill, lw));
   // head (pivot at the neck), mandibles first so the head edge overlaps their bases
   const hp = (pts: [number, number][]) => rotAbout(pts, 21, 0, pose.headYaw);
   for (const sd of [-1, 1]) {
@@ -245,10 +299,10 @@ function bodyShapes(pose: AntPose, silhouette = false): DrawList {
   for (const sd of [-1, 1]) { const c = hp([[37.5, 2.3 * sd], [41.5, 3.5 * sd]]); out.push({ d: new P().M(c[0][0], c[0][1]).L(c[1][0], c[1][1]).toString(), stroke: 'rgba(70,32,10,0.55)', lw: 0.4 }); }
   { const c = hp([[42.3, -4], [44.6, 0], [42.3, 4]]); out.push({ d: new P().M(c[0][0], c[0][1]).Q(c[1][0], c[1][1], c[2][0], c[2][1]).toString(), stroke: 'rgba(70,32,10,0.5)', lw: 0.4 }); }
   for (const sd of [-1, 1]) { const e = hp([[35.0, 8.6 * sd]])[0]; out.push({ d: ellipse(e[0], e[1], 1.75, 1.25, 0.2 * sd), fill: { rad: [e[0] - 0.3, e[1] - 0.2, 0.1, e[0], e[1], 1.9], stops: [[0, '#6b5747'], [0.45, '#2c1d13'], [1, '#120a05']] }, stroke: 'rgba(20,8,2,0.8)', lw: 0.25 }); }
-  // posterior gastral tergites (the first tergite covers most of the gaster)
-  { const g = rotAbout([[-42.4, -7.3], [-45.4, 0], [-42.4, 7.3]], -21, 0, pose.gasterYaw); out.push({ d: new P().M(g[0][0], g[0][1]).Q(g[1][0], g[1][1], g[2][0], g[2][1]).toString(), stroke: 'rgba(10,4,0,0.45)', lw: 0.45 }); }
+  if (withTrunkSetae) { const g = rotAbout([[-42.4, -7.3], [-45.4, 0], [-42.4, 7.3]], -21, 0, pose.gasterYaw); out.push({ d: new P().M(g[0][0], g[0][1]).Q(g[1][0], g[1][1], g[2][0], g[2][1]).toString(), stroke: 'rgba(10,4,0,0.45)', lw: 0.45 }); }
   // a few pale erect setae (示意)
-  for (const [x, y] of [[30, -3], [30, 3], [26, -5.5], [26, 5.5], [-30, -4], [-34, 3], [-40, -2], [14, -2], [14, 2]] as [number, number][]) {
+  for (const [x, y] of SETAE) {
+    if (!withTrunkSetae && x <= 21) continue;
     const q = hp([[x, y]])[0], [sx, sy] = x < 0 ? rotAbout([[x, y]], -21, 0, pose.gasterYaw)[0] : x > 21 ? q : [x, y];
     out.push({ d: new P().M(sx, sy).L(sx - 0.6, sy + (y > 0 ? 0.45 : -0.45)).toString(), stroke: 'rgba(255,236,200,0.45)', lw: 0.2, cap: 'round' });
   }
@@ -256,17 +310,22 @@ function bodyShapes(pose: AntPose, silhouette = false): DrawList {
 }
 
 /** Draw list for one frame: { shadow, body }. The shadow is the silhouette; draw it offset in screen space. */
-export function antFrameDrawList(kind: Gait, frame: number, palette: AntPalette = ANT_PALETTE): { shadow: DrawList; body: DrawList } {
-  const prev = PAL; PAL = palette; try { return frameList(kind, frame); } finally { PAL = prev; }
+export function antFrameDrawList(kind: Gait, frame: number, palette: AntPalette = ANT_PALETTE, parts: AntParts = 'all'): { shadow: DrawList; body: DrawList } {
+  const prev = PAL; PAL = palette; try { return poseList(antPose(kind, frame), parts); } finally { PAL = prev; }
 }
-function frameList(kind: Gait, frame: number): { shadow: DrawList; body: DrawList } {
-  const pose = antPose(kind, frame), body: DrawList = [], shadow: DrawList = [];
+/** Draw list of a continuous pose (antPoseAt): the detail path, drawn live instead of from a baked atlas. */
+export function antDrawListAt(pose: AntPose, palette: AntPalette = ANT_PALETTE, parts: AntParts = 'all'): { shadow: DrawList; body: DrawList } {
+  const prev = PAL; PAL = palette; try { return poseList(pose, parts); } finally { PAL = prev; }
+}
+function poseList(pose: AntPose, parts: AntParts): { shadow: DrawList; body: DrawList } {
+  const body: DrawList = [], shadow: DrawList = [];
+  if (parts === 'head') return { body: bodyShapes(pose, false, 'head'), shadow: [] };
   // legs under the body; far tripod first (draw order is fixed so frames do not flicker)
   for (const lp of pose.legs) body.push(...legShapes(lp));
-  body.push(...bodyShapes(pose));
-  for (const sd of ['L', 'R'] as const) body.push(...antennaShapes(pose.ant[sd]));
+  body.push(...bodyShapes(pose, false, parts));
+  if (parts === 'all') for (const sd of ['L', 'R'] as const) body.push(...antennaShapes(pose.ant[sd]));
   // shadow silhouette: body pieces + thin limbs (feet in stance touch their shadow; lifted feet do not)
-  shadow.push(...bodyShapes(pose, true).map((s) => ({ ...s, fill: 'rgba(24,14,6,0.42)', blend: 'multiply' as const })));
+  shadow.push(...bodyShapes(pose, true, parts).map((s) => ({ ...s, fill: 'rgba(24,14,6,0.42)', blend: 'multiply' as const })));
   for (const lp of pose.legs) { const [b, , k, t, f] = lp.pts; shadow.push({ d: new P().M(b[0], b[1]).L(k[0], k[1]).L(t[0], t[1]).L(f[0], f[1]).toString(), stroke: 'rgba(24,14,6,0.3)', lw: 1.6, cap: 'round', blend: 'multiply' }); }
   return { shadow, body };
 }

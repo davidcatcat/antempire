@@ -1,0 +1,80 @@
+{
+ "page": {
+  "desktop": {
+   "fps": {
+    "samples": 237,
+    "mean_ms": 16.94683544303797,
+    "fps_mean": 59.008066925605036
+   },
+   "sources": [
+    "straight:physics",
+    "trail:physics",
+    "explore:physics",
+    "obstacle:physics"
+   ]
+  },
+  "pixel7": {
+   "fps": {
+    "samples": 221,
+    "mean_ms": 18.17420814479637,
+    "fps_mean": 55.02303000124489
+   },
+   "sources": [
+    "straight:physics",
+    "trail:physics",
+    "explore:physics",
+    "obstacle:physics"
+   ]
+  }
+ },
+ "game": {
+  "desktop": {
+   "fps_default": {
+    "frames": 333,
+    "samples": 333,
+    "mean_ms": 18.067267267267265,
+    "p50_ms": 16.69999999999891,
+    "p95_ms": 33.29999999999927,
+    "fps_mean": 55.34871351638854
+   },
+   "fps_closeup": {
+    "frames": 233,
+    "samples": 233,
+    "mean_ms": 17.595708154506436,
+    "p50_ms": 16.700000000000728,
+    "p95_ms": 16.799999999999272,
+    "fps_mean": 56.83204058734573
+   },
+   "detail_path_in_closeup": true,
+   "followed": "W004",
+   "micro_ants_checked": 1
+  },
+  "pixel7": {
+   "fps_default": {
+    "frames": 336,
+    "samples": 336,
+    "mean_ms": 17.90595238095238,
+    "p50_ms": 16.69999999999891,
+    "p95_ms": 33.30000000000018,
+    "fps_mean": 55.84735057509474
+   },
+   "fps_closeup": {
+    "frames": 215,
+    "samples": 215,
+    "mean_ms": 18.603720930232573,
+    "p50_ms": 16.69999999999709,
+    "p95_ms": 33.29999999999927,
+    "fps_mean": 53.75268763438168
+   },
+   "detail_path_in_closeup": true,
+   "followed": "W004",
+   "micro_ants_checked": 1
+  }
+ },
+ "meta": {
+  "measured": "headless Chromium via Playwright (software rendering); not a real device",
+  "node": "v22.23.4",
+  "passed": 16,
+  "failed": 0
+ }
+}

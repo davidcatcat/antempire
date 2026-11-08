@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>自然行走顯示（頭、觸角、步態）</title>
+<style>
+  :root { --bg: #1d1712; --fg: #f1e6d4; --muted: #c9b79d; --panel: #2a2119; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); font: 13px/1.45 system-ui, "Noto Sans TC", sans-serif; }
+  main { max-width: 1280px; margin: 0 auto; padding: 10px 16px 24px; box-sizing: border-box; }
+  h1 { font-size: 17px; margin: 4px 0 6px; } h2 { font-size: 14px; margin: 0; }
+  #bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0; }
+  button, select { font: inherit; background: #4a3a2a; color: var(--fg); border: 1px solid #6b5640; border-radius: 6px; padding: 4px 10px; min-height: 32px; }
+  #status { background: #3b2a16; border: 1px solid #7a5a2a; border-radius: 6px; padding: 6px 10px; margin: 6px 0; }
+  .legend { color: var(--muted); margin: 4px 0 8px; }
+  #scenes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 760px) { #scenes { grid-template-columns: minmax(0, 1fr); } }
+  .scene { background: var(--panel); border-radius: 8px; padding: 8px; min-width: 0; }
+  .scene header { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px; }
+  .tag { font-size: 11px; border-radius: 4px; padding: 1px 6px; }
+  .tag.ph { background: #7a4a12; } .tag.phys { background: #24506b; } .tag.disp { background: #4b3a5e; } .tag.bad { background: #7a1f1f; }
+  .wrap { position: relative; }
+  canvas { width: 100%; height: 300px; display: block; border-radius: 6px; touch-action: none; }
+  .scene[data-slot="straight"] canvas { height: 360px; }
+  .zoom { position: absolute; right: 6px; top: 6px; display: flex; gap: 4px; }
+  .zoom button { min-width: 36px; }
+  .note { margin: 6px 0 2px; } .muted { color: var(--muted); } .hud { font-size: 12px; min-height: 2.9em; }
+  code { background: #3a2d22; padding: 0 4px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<main>
+<h1>自然行走顯示：頭部、觸角與步態（顯示動畫・示意）</h1>
+<div id="bar"><button id="play">暫停</button><button id="restart">從頭</button>
+  <select id="speed" aria-label="播放速度"><option value="0.25">0.25× 實際速度</option><option value="0.5" selected>0.5× 實際速度</option><option value="1">1× 實際速度</option></select>
+  <span id="clock" class="muted"></span></div>
+<div id="status">載入中…</div>
+<p class="legend"><b>兩種資料分開標示：</b>藍色虛線與身體的位置、方向、速度、轉向（θ、ω）＝<b>物理資料</b>（PR A 匯出 <code>antempire.pose-stream.v1</code>；兩筆紀錄之間為線性插值）。
+頭部轉動、左右觸角動作、腳的擺動與走停過渡＝<b>顯示動畫（示意）</b>：依螞蟻 ID 種子與資料時間決定、可重播，不改變身體軌跡，<b>不是感覺事件</b>（不代表螞蟻聞到或碰到什麼）。黃色帶＝資料中的化學場（PR A 目前是合成濃度場 <code>synthetic: true</code>，不是費洛蒙模型）、藍圈＝模型 C 的合成感測點（物理輸出），與格線同屬玩家視角。</p>
+<div id="scenes"></div>
+</main>
+<script type="module" src="dist/prototypes/natural-walk/natural-walk.js"></script>
+</body>
+</html>

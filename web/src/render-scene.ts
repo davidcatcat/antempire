@@ -165,12 +165,19 @@ export interface AntInput {
   /** DISPLAY arrangement offset in CSS px (lane / site slot) and the heading to use when not on an edge */
   displayOffset?: { dx: number; dy: number; heading?: number };
 }
-export interface AntLook { h: number; phase: number; sx: number; sy: number }
+export interface AntLook { h: number; phase: number; sx: number; sy: number;
+  /** display walk weight 0 (standing) … 1 (walking): eases with time constant WALK_BLEND_S (exponential, so the value
+   *  after a given elapsed time does not depend on how it was split into frames) */
+  w?: number }
 export interface AntDraw { id: string; sx: number; sy: number; ex: number; ey: number; heading: number; gait: Gait; cycles: number;
   /** the turning frames show the display ease toward a RECORDED heading change (顯示插值), not a physics result */
-  turnDisplay: boolean }
+  turnDisplay: boolean;
+  /** display walk weight (see AntLook.w): the detail drawing blends stride and foot lift with it */
+  walkW: number }
 /** heading difference (rad) above which the display ease uses the turning frames */
 export const TURN_DISPLAY_MIN = 0.08;
+/** time constant (s, display time) of the walk ↔ stand blend (示意) */
+export const WALK_BLEND_S = 0.12;
 export const MIN_ANT_PX = 26, MINOR_LEN_CM = 0.25, MAX_TURN_RATE = 8;
 /** drawn ant length: true length (2.5 mm) at this zoom, magnified to at least `minPx` (labelled 放大顯示 ×N) */
 export const antLengthPx = (s: number, minPx = MIN_ANT_PX) => Math.max(minPx, MINOR_LEN_CM * s);
@@ -198,8 +205,9 @@ export function planAnts(cam: Camera, ants: readonly AntInput[], prev: ReadonlyM
         if (!a.moving) phase += Math.abs(turned) / PIVOT_RAD_PER_CYCLE;
       }
     }
-    look.set(a.id, { h, phase, sx, sy });
-    draws.push({ id: a.id, sx, sy, ex, ey, heading: h, gait, cycles: phase, turnDisplay });
+    const w0 = p?.w ?? (a.moving ? 1 : 0), walkW = w0 + ((a.moving ? 1 : 0) - w0) * (1 - Math.exp(-Math.max(0, dt) / WALK_BLEND_S));
+    look.set(a.id, { h, phase, sx, sy, w: walkW });
+    draws.push({ id: a.id, sx, sy, ex, ey, heading: h, gait, cycles: phase, turnDisplay, walkW });
   }
   return { draws, look };
 }
