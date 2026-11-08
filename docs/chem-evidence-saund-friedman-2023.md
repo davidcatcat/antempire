@@ -1,52 +1,125 @@
-# 證據查核：Saund & Friedman 2023（R102）全文取得紀錄（2026-11-08）
+# 證據查核：Saund & Friedman 2023（R102）全文核讀（2026-11-08）
 
-> 目的：依 #130 要求，以**合法途徑**取得 Saund E, Friedman DA (2023) *A single-pheromone model accounts for empirical patterns of ant colony foraging previously modeled using two pheromones*. *Cognitive Systems Research* 80:81–89（DOI 10.1016/j.cogsys.2023.02.005；ScienceDirect PII S1389041723000207；出版社版本 CC BY）的全文，核對方程式、假設、涵蓋的實驗，以及是否處理 Dussutour et al. 2009 *J Exp Biol* 的實驗 3。
+> 目的：依 #130 與 Owner 決定 35，以**合法途徑**取得並讀完 Saund E, Friedman DA (2023) *A single-pheromone model accounts for empirical patterns of ant colony foraging previously modeled using two pheromones*. *Cognitive Systems Research* 80:81–89（DOI 10.1016/j.cogsys.2023.02.005；ScienceDirect PII S1389041723000207；出版社版本 CC BY 4.0）的全文，核對數學模型、假設、沉積與衰退、模型比較、未處理的實驗 3，以及可外推與不可外推之處。
 >
-> **結論先講**：本次**仍未讀到全文**。方程式、假設、擬合方法、圖與「未處理實驗 3」的原文句子**全部未核對**。能確認的只有書目、授權狀態與摘要。舊文件（`docs/research-pheromone-models-2026-11.md` §1、§10.2、§11）的證據狀態維持「只讀摘要」；本文件只新增，不改寫它們。
+> **結論先講**：本次已讀到**出版社排版版全文**（9 頁，含圖 1～8 與參數表）。本文件先前的「未核對」項目全部改為下面 §3～§7 的原文核對結果，每一項附節／方程式／圖號。舊文件（`docs/research-pheromone-models-2026-11.md` §1、§10.2、§11、`docs/literature-verification-2026-11-07.md`）不改寫；其中「只讀摘要」的狀態以本文件為準更新。
+>
+> **最重要的一句**：這篇論文證明的是「**單一費洛蒙模型也能擬合** Dussutour et al. 2009 的實驗 1、2、4 時間曲線」，**不是**「雙費洛蒙假說被推翻」。作者在 §5 明言不反對雙費洛蒙模型與資料「一致」，也同意本種路徑可能含多種揮發性不同的成分。
 
-## 1. 嘗試的途徑與結果
+## 1. 取得途徑與結果
 
 | 途徑 | 結果 |
 |---|---|
-| DOI 解析 `doi.org/10.1016/j.cogsys.2023.02.005` | 302 → `linkinghub.elsevier.com/retrieve/pii/S1389041723000207`（確認 PII） |
-| ScienceDirect 文章頁、`/abs/` 頁、`/pdfft` 下載（curl 與網頁擷取工具） | 403（機器人防護） |
-| `reader.elsevier.com` | TLS 交握失敗 |
-| `ars.els-cdn.com` 主 PDF 位置 | 400 |
-| Elsevier Article API（Crossref 提供的 `api.elsevier.com` 連結） | 無金鑰時 `text/xml` 只回約 2 KB 書目；`text/plain` 與 `view=FULL` 回 400／401（需要 API key）。未申請或使用任何金鑰 |
-| Unpaywall API（通用客戶端，未使用使用者信箱） | `is_oa: true`、`oa_status: hybrid`、`license: cc-by`，唯一位置是出版社頁，`url_for_pdf: null`，`has_repository_copy: false` |
-| OpenAlex | 同上；`has_fulltext: false`；無典藏副本 |
-| Semantic Scholar Graph API | 取得摘要與 TLDR；`openAccessPdf` 只指回 DOI；`pdfs.semanticscholar.org` 轉址到論文頁、沒有 PDF |
-| Semantic Scholar snippet 搜尋 API（論文內文片段） | 見 §3 |
-| Europe PMC | 0 筆（不是生醫期刊，未收錄） |
-| CORE API | 0 筆 |
-| scholar.archive.org | 200，但沒有此 DOI 的檔案 |
-| Wayback Machine（`archive.org`） | 被本環境的對外網路政策擋下 |
-| AntWiki 開放 PDF（#130 所附網址；curl 與網頁擷取工具） | 403（Cloudflare 驗證頁），與 CHEM-0 §11.1 相同 |
-| 作者程式 `github.com/docxology/ant-pheromone` | 本 session 未開放該 repo 的 GitHub 存取；未重讀（先前讀過，見研究文件 §1） |
-| Google Scholar 快取 | 依指示**未使用** |
+| DOI 解析、ScienceDirect、`reader.elsevier.com`、`ars.els-cdn.com`、Elsevier API（無金鑰）、Unpaywall、OpenAlex、Semantic Scholar、Europe PMC、CORE、scholar.archive.org、AntWiki | 2026-11-08 稍早已試，全部取不到全文（403、TLS 失敗、400、需金鑰、無典藏副本）；細節保留於本文件 git 歷史（commit 0392e14） |
+| Eric Saund 個人網站論文頁 `https://www.saund.org/papers.html` | 有本篇條目，但「pdf」連結指回 ScienceDirect，沒有自存檔 |
+| **Daniel Ari Friedman 個人網站**（通訊作者）作品頁 `https://danielarifriedman.com/works/Friedman2023SinglePheromoneModelAccounts046.html` | 200；連到作者自存的 PDF 與文字抽取檔 |
+| 作者自存 PDF `https://danielarifriedman.com/papers/2023_SinglePheromone/2023_SinglePheromone.pdf` | **200，取得**。3,934,724 bytes；SHA-256 `44fc9b1a3bce8a628be84545e2fb548da97bd4f558652038223118ba3a1ed70c`；PDF 中繼資料 Creator＝Elsevier、Subject＝「Cognitive Systems Research, 80 (2023) 81-89. doi:10.1016/j.cogsys.2023.02.005」，9 頁，即出版社排版版（CC BY，作者自存合法） |
+| 作者網站文字抽取 `…/2023_SinglePheromone/full_text.md` | 200；只當交叉對照，**引用一律以 PDF 為準** |
 
-## 2. 能確認的內容
+- 閱讀方式：`pdftotext` 讀全部正文、圖說、參數表；圖 3～7 以 110 dpi 轉成圖片**實際看過**（式子 M(ph) 只印在圖 3 內，不在正文）。圖 1（翻印 Dussutour 圖 1、2）、圖 2、圖 8 只讀圖說。
+- PDF 存在 repo 外的工作區，**未提交進 repo**。
 
-- **書目**：作者 Eric Saund（Saund Laboratories）、Daniel Ari Friedman（Active Inference Institute；UC Davis 昆蟲與線蟲系，通訊作者）；2023-02-16 線上；*Cognitive Systems Research* 80:81–89；41 篇參考文獻（Semantic Scholar 計數）。
-- **授權**：出版社版本 CC BY（Unpaywall、OpenAlex 一致），所以若 Owner 在可通過驗證的瀏覽器下載，可合法存放於 repo 外工作區供查核。
-- **摘要（Semantic Scholar API 原文要點）**：Dussutour et al. 2009 提出本種覓食使用探索與取食兩種吸引費洛蒙，並建立雙費洛蒙模型；本文「顯示主要報告的實驗觀察可以用單一費洛蒙模型解釋」；假設兩種費洛蒙「合理但不必要」，因此該研究「不足以作為雙費洛蒙模型的決定性證據」；更廣泛地，行為型態對感覺與認知機制可能是模糊的，呼籲對不同結構的模型做正式比較。
+## 2. 書目與性質
 
-## 3. Semantic Scholar 片段搜尋
+- 作者：Eric Saund（Saund Laboratories）、Daniel Ari Friedman（UC Davis 昆蟲與線蟲系；Active Inference Institute；通訊作者）。收稿 2022-06-27，修訂 2022-12-06，接受 2023-02-13，線上 2023-02-17。
+- 性質：**理論再分析**。沒有新的螞蟻實驗；資料全部是從 Dussutour et al. 2009（R21／R96）**圖 2 與圖 10 讀出的數值**（§4.2 圖 2 圖說、「Numerical Method」節）。
+- 程式：Python，`github.com/docxology/ant-pheromone`（「Numerical Method, Code & Data Availability」節）。
 
-以三組查詢（「Experiment 3」、沉積／衰退／選擇函數、流量）限定本論文，各重試最多 9 次、間隔逐步加長到 75 秒，**全部回 429（無金鑰的速率限制）**，沒有取得任何內文片段。未申請金鑰。
+## 3. 數學模型（§4.2，式 1～4、圖 3、圖 5）
 
-## 4. 未核對（不得引用為論文內容）
+1PM 分兩階段：**量測（感知放大）階段** → **偏好（選擇）階段**。
 
-- 模型方程式（沉積、衰退、感知／選擇函數）：**未核對**。專案文件中「冪次放大再乘 sigmoid」「有食物的分支沉積較多」只來自作者公開程式，程式可能和發表版不同。
-- 假設清單、擬合方法、擬合品質、模型比較準則：**未核對**。
-- 涵蓋哪些實驗：摘要只說「主要報告的實驗觀察」與「兩個主要結果」，沒有列出實驗編號。
-- **實驗 3（流量）是否處理**：#130 轉述「正文 §3 指明未處理 Experiment 3」。Claude 本次**沒有讀到該句**，無法引用原文，也無法確認或否認；只能記為「依 Owner 轉述與作者程式一致：未處理」。
-- 所有圖：**未核對**。
+1. **整體形式（式 1）**：`pA = f(phA, phB)`。`pA`＝選 A 支的機率，用「該時段在 A 支上的螞蟻比例」估計；`phA`、`phB`＝兩支上**實際存在**的費洛蒙量。
+2. **感知放大（圖 3，式子只在圖內）**：`ph′ = M(ph) = A·(ph − B)^C`。冪次放大、減去小的基底雜訊 `B`；曲線下凹，低濃度時放大較強（§4 假設 3）。作者的理由：生物感測器動態範圍大，可能部分「反轉」指數衰減造成的訊號流失（§4.2）。
+3. **偏好函數（式 2）**：`f(ph′A, ph′B) = [σ′m(dm) × σ′r(dr) + 1] / 2`，值域 0.5～1。
+4. **σ′m（式 3）**：`σ′m(x) = 1/(1+exp(−sm(x−d0m))) − 1/(1+exp(sm·d0m))`，`dm`＝到中線 `ph′A = ph′B` 的距離；`d0m` 設定「兩支相近到不偏好」的通道寬度（§4.2、圖 5）。
+5. **σ′r（式 4）**：`σ′r(x) = s0 + (1−s0)/(1+exp(−sr(x−d0r)))`，`dr`＝到原點的距離（總訊號強度）；低於 `d0r` 時偏好被 `s0` 限住，作者說「典型值約把偏好上限設在 0.8」（§4.2）。
+6. 解讀（§4.2）：強烈偏好需要兩個條件**同時**成立——(r) 放大後的總訊號夠強、能可靠比較；(m) 兩支差異夠大。
+7. **選擇依「放大後的絕對差」而非比值**（§4 假設 4）；總訊號弱時「不確定、兩支都分配一些」（作者用語 hedge their bets）。
 
-## 5. 使用限制（不論日後是否讀到全文）
+## 4. 模型假設（§4 列出的四條，原文編號）
 
-- 單一費洛蒙模型能擬合同一批資料，**只表示這批資料不足以區分** M1 與 M2；**不能**說雙費洛蒙模型被推翻，也不能說本種只有一種費洛蒙。原作者（Dussutour 2009）的反方論點（兩實驗中 E＋F 選擇頻率約 15 分後分歧）仍然保留。
-- CHEM-2 中 O3（JEB 實驗 3）**不得**當成 M1 已重現的型態。
+1. 探索與取食時**沉積同一種**吸引費洛蒙；從找到資源處返回時沉積**較多**（§4 假設 1，這是 1PM 與 2PM 的關鍵差異）。
+2. 費洛蒙濃度**指數衰減**（與 2PM 相同；§4 假設 2）。
+3. 感知是**非線性放大**，低濃度放大較強（§4 假設 3；引 Billock & Havig 2018、昆蟲嗅覺文獻；並提 von Thienen et al. 2015 用於阿根廷蟻）。
+4. 分支偏好取決於感知後的**絕對差**，並受訊號強度調節（§4 假設 4）。
 
-## 6. 需要 Owner 的事
-- 若要完成逐頁查核，需要 Owner 在可通過驗證的瀏覽器取得 PDF（CC BY，可合法保存），放在 repo 外的工作區；或授權使用 Elsevier API 金鑰（金鑰須經環境的憑證機制，不得寫入 repo）。
+另有作者在 §5 自承的隱含假設：
+- 交通量主要由**腳下實際存在的費洛蒙**決定；
+- 測試階段費洛蒙**不受個體影響**（被刷走的螞蟻在去程沒有沉積）——作者指出若去程就有沉積，此假設不成立；理想上應以物理感測器獨立量測。
+- 是**群體層級的聚合模型**，不是個體模型；作者說若延伸到三支以上、改長度、溫度等，需改成個體為本模型（§5）。
+
+## 5. 沉積與衰退機制（§4.2、§4.3、參數表）
+
+- **沉積量是任意單位**：圖 2 把實驗 2 的初始量**任意設定**為 E＋F＝10、E＝1；作者明言「精確值不影響論證結構，重要的是 E 少於 E＋F」（§4.2、圖 2 圖說「Lacking empirical data, we choose plausible relative initial values」）。
+- **衰退率**只用一個示例推算：「若初始 F＋E 在 90 分鐘衰退到 1/500 的雜訊水準，衰退率約 −0.069／分」（§4.2）。這是**由行為曲線反推的假設值**，沒有化學量測；**參數表中沒有列出衰退率**。
+- **動態環境（實驗 4）沉積率**：正文寫有食物分支每隻 0.01、無食物分支每隻 0.001（10 倍差），總交通量「約 50 隻／分」取自 Dussutour 的報告（§4.3）。
+- 作者指出 Dussutour 2009 對兩種費洛蒙的衰退時間是**由模型估計**，該研究沒有化學量測，作者也查不到後續的本種路徑化學量測（§2）。
+
+### 參數表（原文「Table of Parameter Values」，照錄）
+
+| 參數 | 圖 6、7a（手動調整） | 圖 7b（數值最佳化） | 圖 8（數值最佳化，實驗 1、2、4 共用） |
+|---|---|---|---|
+| A | 5.5 | 2.27 | 4.92 |
+| B（雜訊水準） | 0.02 | 0.02 | 0.02 |
+| C | 0.25 | 0.264 | 0.298 |
+| phA0 | 10.0 | 10.0 | 10.0 |
+| phB0 | 1.0 | 1.0 | 1.55 |
+| sm | 4.0 | 0.687 | 1.58 |
+| d0m | 2.0 | 2.1 | 1.61 |
+| s0 | 0.6 | 0.261 | 0.617 |
+| sr | 0.8 | 1.93 | 1.81 |
+| d0r | 8.0 | 9.4 | 7.71 |
+| dexploit | 0.011 | 1.0 | 0.0082 |
+| dexplore | 0.0011 | 0.001 | 0.001 |
+
+**原文內部不一致（照記，不修正）**：
+- §4.3 正文寫沉積率 0.01／0.001，表中圖 6、7a 欄是 0.011／0.0011。
+- 圖 7b 的 `dexploit`＝1.0，與其他兩欄（0.011、0.0082）差兩個數量級，原文沒有解釋。
+- 圖 6a 圖說把「放大後的 E 支量測」標為上方洋紅線，同時下方洋紅線是 N 支實際量；顏色描述與圖例需對照圖片才能分辨。
+
+## 6. 模型比較與擬合（§4.2、§4.3、§5、Numerical Method 節）
+
+- **擬合目標**：Dussutour 圖 2（實驗 1：E＋F vs N；實驗 2：E＋F vs E）與圖 10（實驗 4：動態環境）的**讀圖數值**。
+- **方法**：圖 6、7a 為**手動調整**；圖 7b、8 用 SciPy `optimize.minimize` 的 L-BFGS-B，目標是模型與讀圖數值的**平方誤差和**，雜訊水準固定 0.02，起點為手動值（Numerical Method 節）。
+- **結果（作者的描述）**：
+  - 圖 6b：1PM 曲線疊在 Dussutour 圖 2 上「close fit」；可重現「兩實驗初始選擇頻率相同、約 15 分後分歧」（§4.2）——這正是 Dussutour 認為「難以用單一費洛蒙解釋」的型態。
+  - 圖 7a：用實驗 1、2 的參數模擬實驗 4，偏好**會**隨食物位置翻轉，但出現原資料沒有的「不偏好平台」（§4.3）。
+  - 圖 7b：另行最佳化後較貼近實驗 4。
+  - 圖 8：找到**一組共用參數**合理擬合實驗 1、2、4（§4.3）。
+- **擬合品質**：**沒有報告**任何數值指標（R²、殘差、AIC、信賴區間、參數不確定性）；只有疊圖。作者說參數可彼此權衡調整 50% 以上仍擬合良好，「好參數」形成較低維的流形（§4.3）——這表示**參數不可辨識**，不能當作量測值。
+- **與 2PM 的比較**：**沒有正式比較**。作者明言 Dussutour 2009 沒有發表 2PM 對圖 2、圖 10 時間曲線的預測，所以「不可能在這基礎上比較」（§5）。作者也自承「任何經驗曲線在足夠參數下都能擬合」（§4.3）。
+- **可區分兩模型的建議實驗**（§5）：兩支都有食物時，2PM 在某些條件下預測費洛蒙**振盪**，1PM 預測**平衡、不振盪**；三支以上分支；改變分支長度、溫度、光照、表面；量測 phA–phB 平面上其他區域；用物理感測器量路徑上的費洛蒙；高速錄影分析分岔點的個體決策。
+
+## 7. 實驗 3（未處理）
+
+- 原文（§3，第 82 頁）：「The authors conducted four experiments, numbered 1–4. The 2PM is introduced through the first two experiments, then shown to be consistent with the fourth. **Their Experiment 3 is tightly coupled to assumptions of their model hypothesis and we do not address it here.**」
+- 所以：本論文**明確不處理** Dussutour 2009 實驗 3；作者給的理由只有「與其模型假設緊密耦合」，沒有進一步說明，也沒有說 1PM 能或不能解釋它。
+- 先前紀錄「依 Owner 轉述與作者程式一致：未處理」現已由原文確認，出處位置與 #130 轉述的「§3」相符。
+
+## 8. 可外推與不可外推
+
+**可以引用的（有原文出處）**
+- 單一費洛蒙＋非線性感知＋依差異選擇的聚合模型，**能**擬合本種 Y 型迷宮實驗 1、2、4 的群體選擇時間曲線（§4.2、§4.3、圖 6b、7、8）。
+- 因此 Dussutour 2009 的這三個實驗**不足以**作為雙費洛蒙的決定性證據（摘要、§5）。
+- 本種路徑費洛蒙**沒有**化學量測的衰退率（§2，作者文獻搜尋結果）。
+- 候選機制（只到「機制方向」）：返回時沉積較多、指數衰減、下凹的感知放大、弱訊號下偏好上限、依差異而非比值選擇。
+
+**不可外推的**
+- **不可**寫成「雙費洛蒙假說被推翻」或「本種只有一種費洛蒙」；作者在 §5 明言不反對 2PM 與資料一致，並同意路徑可能含多成分（引 Czaczkes et al. 2015；本種 Dufour 腺有多種成分，引 Ali et al. 2007）。
+- 參數表任何數值都**不是**量測值：單位任意、初值任意、衰退率是示例反推、參數可互相權衡（不可辨識）、擬合對象是讀圖數值、無不確定性。**不得**直接搬進物種參數檔；若當作候選，一律 `assumption: true`（機制：理論模型提出、未經本種實測；數值：遊戲假設）。
+- 不是個體模型：沒有個體如何在分岔點取樣兩支的機制（作者自己提出這是未解問題，§5）。本引擎若採 1PM 形式，個體層級的感測與決策仍是模型假設。
+- Y 型迷宮、實驗室、刷走測試蟻的條件；不能推到開放空間或花園多分岔路網。
+- 實驗 3 不在本文範圍，**不得**說 1PM 已重現實驗 3（CHEM-2 的 O3 維持「M1 未重現」）。
+- 原文內部數值不一致（§5 本文件）未經作者確認。
+
+## 9. 對專案文件的影響（只記錄，不改寫舊文件）
+
+- `research-pheromone-models-2026-11.md` §1／C-c 寫「冪次放大加 sigmoid（形式來自程式，論文全文未讀）」：論文式 2～4 與圖 3 已確認此形式**確實在發表版中**；式子為 `A(ph−B)^C` 與兩個 logistic 之積（見 §3）。
+- `references.md` R102「僅查核摘要」：現為「全文已讀（作者自存出版社版 PDF）」，附註見 `references.md` CHEM-4 段末。
+- CHEM-2 的 O3（實驗 3）：維持「M1 未重現」，理由改為「原文 §3 明言不處理」。
+- 本次**沒有**讀 Dodoková et al. 2024（*Swarm Intelligence*）全文，不引用其結論。
+
+## 10. 需要 Owner 的事
+
+- 無存取上的阻礙。是否要依 §6 的「兩支皆有食物時振盪與否」設計 Day0 實驗世界的 M1／M2 對照（只當模型比較，不當校準），請 Owner 決定。
