@@ -16,7 +16,11 @@
  *                         Re-route is excluded when the local geometry is too narrow for two bodies (rule D).
  *  - 'C_sidestep'         go forward; when blocked and there is room, step aside on one side (chosen once per encounter
  *                         by a named RNG draw, switched only when that side closes) until the way ahead is free.
- *  Rule D (all of A–C): when an agent makes no forward progress for stall_window_s it REPORTS a blockage with a local
+ *  - 'N_no_yield'         CONTROL, not a candidate behaviour: always straight ahead, never waits, yields, backs off or
+ *                         steps aside (Pheidole has no yielding literature); a body ahead stops it inelastically
+ *                         until the next decision instant (PH-3b stop-on-contact on the same decision grid as A–C, so
+ *                         the control scenarios below apply to it as well). No random draws.
+ *  Rule D (all of A–C and N): when an agent makes no forward progress for stall_window_s it REPORTS a blockage with a local
  *  diagnosis (static geometry closes every direction / passage too narrow for two bodies / blocked by nestmates / static
  *  piece ahead / way ahead free — the stall is the agent's own waiting or backing off); when the
  *  static geometry alone closes every direction it stops for good (geometry never changes).
@@ -44,7 +48,18 @@
  *  - contact: a contact starts when an agent is stopped by a body (inelastic stop) and ends at the first instant the
  *    capsule gap exceeds CONTACT_TOL_MM (= PH-3b ACTIVE_TOL_MM), solved exactly on the piecewise-constant-velocity motion
  *    of both bodies within the interval (the gap is convex in time on each piece; bisection), never at a time before the
- *    motion that opens the gap.
+ *    motion that opens the gap. The event carries the final bisection bracket `bracket_s` [lo, hi] (gap ≤ tol at lo,
+ *    > tol at hi; recorded time = hi). A contact that ends because a body LEAVES the road (control exit below) is not a
+ *    physical separation: it is emitted as `contact_end_estimated` with usable_as_cause = false.
+ *  - a stop computed against another body's planned path that turns out not to touch (that body stopped earlier) is a
+ *    `conservative stop` (stats.stops_conservative), never a contact stop.
+ * Control scenario boundaries (input.control, scenario rules, NOT ant behaviour; default off):
+ *  - spawn: an agent is absent from the road until it enters at its entry pose (s_mm, u_mm) at the first decision
+ *    instant ≥ its scheduled start_t_s at which that pose is free (gap > CONTACT_TOL_MM to every present body; ties by
+ *    id); absent agents are not perceived and are no obstacle.
+ *  - exit: an arrived agent leaves the road (removed) at the first decision instant at which the exit of its goal end
+ *    (lane, direction) holds fewer than `capacity` agents; each removed agent occupies the exit for `dwell_s`; until then
+ *    it stays at its goal as an obstacle. Order: arrival time, then id.
  * Determinism: agents in id order; decisions read only the state at the decision instant and named RNG streams keyed by
  * (seed, stream, agent id, decision index) — independent of input order. Units: mm, s, mm/s.
  */
@@ -55,7 +70,7 @@ import { solve2D, pairFirstHit, Solver2DRefused, HIT_TOL_MM, ACTIVE_TOL_MM, type
 import { type AABB, broadphasePairs } from './broadphase.ts';
 import { hash32, rng } from '../rng.ts';
 
-export const STEER_POLICIES = ['none', 'A_free_direction', 'B_contact_decision', 'C_sidestep'] as const;
+export const STEER_POLICIES = ['none', 'A_free_direction', 'B_contact_decision', 'C_sidestep', 'N_no_yield'] as const;
 export type SteerPolicyId = (typeof STEER_POLICIES)[number];
 
 /** behavioural candidate parameters; null = unknown (a policy that needs it is refused). Provenance lives with the caller. */
@@ -72,13 +87,25 @@ export interface SteerParams {
   p_wait: number | null; p_back: number | null; p_reroute: number | null;
   wait_s: number | null; back_distance_mm: number | null; reroute_max_s: number | null;
 }
-export interface SteerInput extends Solver2DInput { policy: SteerPolicyId; params: SteerParams; seed: number }
+/** control-scenario boundary rules (scenario assumptions, not behaviour); omitted = off */
+export interface SteerControl { spawn?: boolean; exit?: { capacity: number; dwell_s: number } | null }
+export interface SteerInput extends Solver2DInput { policy: SteerPolicyId; params: SteerParams; seed: number; control?: SteerControl }
 
 export type SteerEventClass = 'physical_contact' | 'physical_constraint' | 'motion' | 'solver_status' | 'behavioural_response';
-export interface SteerEvent { t_s: number; kind: string; agents: string[]; class: SteerEventClass; detail: string | null }
+export interface SteerEvent {
+  t_s: number; kind: string; agents: string[]; class: SteerEventClass; detail: string | null;
+  /** contact_end: final bisection bracket [lo, hi] (gap ≤ CONTACT_TOL_MM at lo, > at hi; t_s = hi) */
+  bracket_s?: [number, number];
+  /** contact_end_estimated: false — the end is a boundary rule (a body left the road), not a physical separation */
+  usable_as_cause?: false;
+}
 export interface SteerAgentOut {
   lane: string; layer: string; samples: Sample[]; arrival_t_s: number | null; final_mode: string; final_speed_mm_s: number;
   stop_cause: string | null; geometry_stop_s_mm: number | null; blocked_reports: number;
+  /** control spawn: scheduled start and the instant it entered the road (null = never entered) */
+  scheduled_start_t_s?: number; present_from_t_s?: number | null;
+  /** control exit: the instant it left the road (null = still on the road at the horizon) */
+  removed_t_s?: number | null;
 }
 export interface SteerResult {
   policy: SteerPolicyId; agents: Record<string, SteerAgentOut>; events: SteerEvent[];
@@ -86,6 +113,9 @@ export interface SteerResult {
     decision_instants: number; decisions: Record<string, number>; probes: number; pair_hit_evals: number; physics_rounds_max: number;
     fallback_intervals: number; stops_contact: number; stops_static: number; contacts: number; arrived: number; stalled: number;
     blocked_reports: Record<string, number>; geometry_halts: number; unresolved: number; t_end_s: number;
+    /** stops against another body's planned path that did not touch; contact ends exact / estimated (body removed);
+     *  control: agents entered / removed, decision instants an entry was blocked */
+    stops_conservative: number; contact_ends_exact: number; contact_ends_estimated: number; entered: number; exited: number; entry_blocked_instants: number;
   };
   /** 'none' only: the untouched PH-3b result */
   ph3b?: Solver2DResult;
@@ -157,6 +187,8 @@ interface Ag {
   mode: 'go' | 'wait' | 'back' | 'side'; until: number; backLeft: number; side: 1 | -1 | 0; sideSince: number;
   // rule D
   progress: number[]; stalledSince: number | null; reported: boolean; reports: number;
+  // control boundaries: on the road now; scheduled start; entry and removal instants
+  present: boolean; sched: number; entered: number | null; removed: number | null; entryBlocked: boolean;
 }
 
 /** policy params the policy needs (null → refused) */
@@ -164,17 +196,19 @@ const NEEDS: Record<Exclude<SteerPolicyId, 'none'>, (keyof SteerParams)[]> = {
   A_free_direction: ['sensing_radius_mm', 'decision_interval_s', 'probe_angles_deg', 'stall_window_s', 'stall_progress_mm'],
   B_contact_decision: ['sensing_radius_mm', 'decision_interval_s', 'probe_angles_deg', 'same_heading_max_deg', 'stall_window_s', 'stall_progress_mm', 'p_wait', 'p_back', 'p_reroute', 'wait_s', 'back_distance_mm', 'reroute_max_s'],
   C_sidestep: ['sensing_radius_mm', 'decision_interval_s', 'probe_angles_deg', 'same_heading_max_deg', 'stall_window_s', 'stall_progress_mm'],
+  N_no_yield: ['sensing_radius_mm', 'decision_interval_s', 'probe_angles_deg', 'stall_window_s', 'stall_progress_mm'],
 };
 
 export function steer2D(input: SteerInput): SteerResult {
   if (!(STEER_POLICIES as readonly string[]).includes(input.policy)) throw new SteerRefused(`unknown policy ${input.policy}`);
   if (input.policy === 'none') {
+    if (input.control && (input.control.spawn || input.control.exit)) throw new SteerRefused("'none' is the PH-3b solver itself: it has no spawn / exit control rules (use N_no_yield as the no-yield control)");
     // the baseline IS PH-3b: no decision layer, nothing re-implemented
     const res = solve2D(input);
     const agents: Record<string, SteerAgentOut> = {};
     for (const id of Object.keys(res.agents).sort()) { const a = res.agents[id]; agents[id] = { ...a, blocked_reports: 0 }; }
     const stalled = res.stats.stalled;
-    return { policy: 'none', agents, events: res.events.map((e) => ({ ...e })), ph3b: res, stats: { decision_instants: 0, decisions: {}, probes: 0, pair_hit_evals: res.stats.pair_hit_evals, physics_rounds_max: 0, fallback_intervals: 0, stops_contact: res.events.filter((e) => e.kind === 'stop' && /^contact/.test(e.detail ?? '')).length, stops_static: res.events.filter((e) => e.kind === 'stop' && /static geometry/.test(e.detail ?? '')).length, contacts: res.stats.contacts, arrived: res.stats.arrived, stalled, blocked_reports: {}, geometry_halts: 0, unresolved: res.stats.unresolved, t_end_s: res.stats.t_end_s } };
+    return { policy: 'none', agents, events: res.events.map((e) => ({ ...e })), ph3b: res, stats: { decision_instants: 0, decisions: {}, probes: 0, pair_hit_evals: res.stats.pair_hit_evals, physics_rounds_max: 0, fallback_intervals: 0, stops_contact: res.events.filter((e) => e.kind === 'stop' && /^contact/.test(e.detail ?? '')).length, stops_static: res.events.filter((e) => e.kind === 'stop' && /static geometry/.test(e.detail ?? '')).length, contacts: res.stats.contacts, arrived: res.stats.arrived, stalled, blocked_reports: {}, geometry_halts: 0, unresolved: res.stats.unresolved, t_end_s: res.stats.t_end_s, stops_conservative: 0, contact_ends_exact: res.events.filter((e) => e.kind === 'contact_end').length, contact_ends_estimated: 0, entered: 0, exited: 0, entry_blocked_instants: 0 } };
   }
   return runPolicy(input);
 }
@@ -193,6 +227,8 @@ function runPolicy(input: SteerInput): SteerResult {
     if (![P.p_wait!, P.p_back!, P.p_reroute!].every((p) => p >= 0) || Math.abs(s - 1) > 1e-12) throw new SteerRefused('B: p_wait + p_back + p_reroute must be probabilities summing to 1');
   }
   const STALL_K = Math.max(1, Math.round(P.stall_window_s! / DT)), STALL_MM = P.stall_progress_mm!;
+  const CTL = input.control ?? {}, SPAWN = CTL.spawn === true, EXIT = CTL.exit ?? null;
+  if (EXIT && (!Number.isInteger(EXIT.capacity) || EXIT.capacity < 1 || !(EXIT.dwell_s > 0) || !Number.isFinite(EXIT.dwell_s))) throw new SteerRefused('exit control: capacity must be an integer >= 1 and dwell_s a positive finite number');
   const draw = (stream: string, id: string, epoch: number, extra = '') => rng(hash32(`${input.seed}|steer.${policy}.${stream}|${id}|${epoch}|${extra}`))();
 
   // ---- lanes (straight only) and layers
@@ -236,6 +272,7 @@ function runPolicy(input: SteerInput): SteerResult {
       hw: Math.max(0, L - w) / 2, r: w / 2, half: L / 2, statics: [...ln.bnd, ...(obsByLayer.get(ln.layer) ?? [])],
       c, started: false, arrived: null, eff: ZERO, lastKey: '', samples: [], stopCause: null, halted: false,
       mode: 'go', until: 0, backLeft: 0, side: 0, sideSince: 0, progress: [], stalledSince: null, reported: false, reports: 0,
+      present: !SPAWN, sched: sp.start_t_s, entered: SPAWN ? null : 0, removed: null, entryBlocked: false,
     };
   });
   const capOf = (a: Ag, c = a.c): Capsule => ({ a: add(c, a.f, -a.hw), b: add(c, a.f, a.hw), r: a.r });
@@ -251,14 +288,15 @@ function runPolicy(input: SteerInput): SteerResult {
     const c0 = capOf(a);
     for (const p of a.statics) { const g = capsuleGap(c0, p.c); if (g < -OCC_TOL_MM) throw new SteerRefused(`${a.id}: start pose penetrates ${p.id} by ${-g} mm`); }
     for (const q of polys) if (q.layer === a.layer && insidePoly(a.c, q.pts)) throw new SteerRefused(`${a.id}: starts inside obstacle ${q.id}`);
-    sample(a, 0);
+    if (a.present) sample(a, 0);
   }
-  for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) if (A[i].layer === A[j].layer && Math.abs(A[i].c.x - A[j].c.x) <= A[i].half + A[j].half && Math.abs(A[i].c.y - A[j].c.y) <= A[i].half + A[j].half) {
+  for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) if (A[i].present && A[j].present && A[i].layer === A[j].layer && Math.abs(A[i].c.x - A[j].c.x) <= A[i].half + A[j].half && Math.abs(A[i].c.y - A[j].c.y) <= A[i].half + A[j].half) {
     const g = capsuleGap(capOf(A[i]), capOf(A[j])); if (g < -OCC_TOL_MM) throw new SteerRefused(`${A[i].id} and ${A[j].id} overlap at t = 0 by ${-g} mm`);
   }
 
   const events: SteerEvent[] = [];
-  const stats: SteerResult['stats'] = { decision_instants: 0, decisions: {}, probes: 0, pair_hit_evals: 0, physics_rounds_max: 0, fallback_intervals: 0, stops_contact: 0, stops_static: 0, contacts: 0, arrived: 0, stalled: 0, blocked_reports: {}, geometry_halts: 0, unresolved: 0, t_end_s: H };
+  const stats: SteerResult['stats'] = { decision_instants: 0, decisions: {}, probes: 0, pair_hit_evals: 0, physics_rounds_max: 0, fallback_intervals: 0, stops_contact: 0, stops_static: 0, contacts: 0, arrived: 0, stalled: 0, blocked_reports: {}, geometry_halts: 0, unresolved: 0, t_end_s: H, stops_conservative: 0, contact_ends_exact: 0, contact_ends_estimated: 0, entered: 0, exited: 0, entry_blocked_instants: 0 };
+  const exitLog = new Map<string, number[]>();   // exit (lane|dir) → removal instants
   const ev = (t: number, kind: string, ids: number[], cls: SteerEventClass, detail: string | null = null) => events.push({ t_s: t, kind, agents: ids.map((i) => A[i].id), class: cls, detail });
   const activeContacts = new Map<number, number>();   // pair key → contact start time
   const pkey = (i: number, j: number) => (i < j ? i * N + j : j * N + i);
@@ -315,6 +353,7 @@ function runPolicy(input: SteerInput): SteerResult {
     if (a.halted) return { kind: 'halt_geometry', w: ZERO, detail: 'static geometry closes every direction within the sensing radius (rule D)' };
     const ahead = probe(a, pc, a.f, RHO);
     const sameHeading = (j: number) => SAME !== null && dot(A[j].f, a.f) >= SAME;
+    if (policy === 'N_no_yield') return { kind: 'go', w: wv(a.f), detail: 'no-yield control: straight ahead, never yields or steps aside' };
     if (policy === 'A_free_direction') {
       const fd = freeDir(a, pc, epoch, 0, 0, 'tie');
       if (!fd) return { kind: 'wait', w: ZERO, detail: `no free direction within ${RHO} mm (${ahead ? `${ahead.what} ${ahead.id} ahead` : 'sides closed'})` };
@@ -372,11 +411,39 @@ function runPolicy(input: SteerInput): SteerResult {
   for (let t0 = 0; t0 < H; epoch++) {
     const t1 = Math.min(H, (epoch + 1) * DT), span = t1 - t0;
     stats.decision_instants++;
-    // agents that exist as moving deciders in this interval: started (or starting before t1), not arrived
-    const live = A.filter((a) => a.arrived === null && a.start < t1);
+    // control boundaries at the decision instant t0: exits first (they free road space), then entries
+    if (EXIT) {
+      const out = A.filter((a) => a.present && a.arrived !== null).sort((p, q) => p.arrived! - q.arrived! || (p.id < q.id ? -1 : p.id > q.id ? 1 : 0));
+      for (const a of out) {
+        const xk = `${a.lane}|${a.dir}`, held = exitLog.get(xk) ?? []; exitLog.set(xk, held);
+        const occ = held.filter((t) => t + EXIT.dwell_s > t0).length;
+        if (occ >= EXIT.capacity) continue;
+        held.push(t0); a.present = false; a.removed = t0; stats.exited++;
+        ev(t0, 'exit', [a.k], 'motion', `left the road into the exit ${xk} (occupancy ${occ + 1}/${EXIT.capacity}, dwell ${EXIT.dwell_s} s; control scenario boundary, assumption)`);
+        for (const [ck] of [...activeContacts].sort((p, q) => p[0] - q[0])) {
+          const i = Math.floor(ck / N), j = ck % N; if (i !== a.k && j !== a.k) continue;
+          activeContacts.delete(ck); stats.contact_ends_estimated++;
+          events.push({ t_s: t0, kind: 'contact_end_estimated', agents: [A[i].id, A[j].id], class: 'physical_contact', detail: `${a.id} left the road by the exit rule at this decision instant: not a physical separation (control boundary; not usable as a biological cause)`, usable_as_cause: false });
+        }
+      }
+    }
+    if (SPAWN) {
+      const due = A.filter((a) => !a.present && a.entered === null && a.sched <= t0).sort((p, q) => p.sched - q.sched || (p.id < q.id ? -1 : p.id > q.id ? 1 : 0));
+      const tried = new Set<string>();
+      for (const a of due) {
+        const pk = `${a.layer}|${a.c.x}|${a.c.y}`, me = capOf(a);
+        let free = !tried.has(pk);
+        tried.add(pk);
+        if (free) for (const b of A) if (b !== a && b.present && b.layer === a.layer && Math.abs(b.c.x - a.c.x) <= a.half + b.half + 1 && Math.abs(b.c.y - a.c.y) <= a.half + b.half + 1 && capsuleGap(me, capOf(b)) <= CONTACT_TOL_MM) { free = false; break; }
+        if (!free) { stats.entry_blocked_instants++; if (!a.entryBlocked) { a.entryBlocked = true; ev(t0, 'entry_blocked', [a.k], 'solver_status', 'entry pose occupied: waits off the road (control scenario boundary)'); } continue; }
+        a.present = true; a.entered = t0; a.start = t0; stats.entered++; sample(a, t0);
+      }
+    }
+    // agents that exist as moving deciders in this interval: on the road, started (or starting before t1), not arrived
+    const live = A.filter((a) => a.present && a.arrived === null && a.start < t1);
     // neighbour candidates: boxes covering perception and the largest possible motion in this interval
     const boxes: AABB[] = A.map((a) => { const m = a.half + RHO + (a.arrived === null ? a.v0 * span : 0); return { minX: a.c.x - m, minY: a.c.y - m, maxX: a.c.x + m, maxY: a.c.y + m }; });
-    const pairs = broadphasePairs('grid', boxes, A.map((a) => a.layer), 8);
+    const pairs = broadphasePairs('grid', boxes, A.map((a) => a.layer), 8).filter((key) => A[Math.floor(key / N)].present && A[key % N].present);
     const nb: number[][] = A.map(() => []);
     for (const key of pairs) { const i = Math.floor(key / N), j = key % N; nb[i].push(j); nb[j].push(i); }
     // decisions (read the state at t0 only)
@@ -432,10 +499,18 @@ function runPolicy(input: SteerInput): SteerResult {
     if (fallback) { stats.fallback_intervals++; stats.unresolved++; ev(t0, 'unresolved', live.map((a) => a.k).slice(0, 5), 'solver_status', 'contact stop times did not settle: nobody moves in this interval (safe fallback)'); for (const a of live) { bT[a.k] = aT[a.k]; cause[a.k] = 'physics fallback (nobody moves)'; causeKind[a.k] = 'body'; } }
 
     // apply motion, records and events
+    const posAt = (x: number, t: number) => add(c0[x], w[x], Math.min(Math.max(t - t0, aT[x]), bT[x]) - aT[x]);
+    /** the stop cause as recorded: a body stop that does not touch (the other body stopped earlier than its planned path) is conservative */
+    const stopWhy = (x: number, t: number): { why: string | null; conservative: boolean } => {
+      const j = causeJ[x];
+      if (causeKind[x] !== 'body' || j < 0) return { why: cause[x], conservative: false };
+      const g = capsuleGap(capOf(A[x], posAt(x, t)), capOf(A[j], posAt(j, t)));
+      return g > CONTACT_TOL_MM ? { why: `conservative stop: the planned path of ${A[j].id} would be hit, but ${A[j].id} stopped earlier (gap ${g} mm at this instant; no contact)`, conservative: true } : { why: cause[x], conservative: false };
+    };
     const bodyStops: [number, number, number][] = [];   // (agent, other body, stop time) of this interval
     for (const a of live) {
       const x = a.k, tA = t0 + aT[x];
-      if (!a.started) { a.started = true; ev(a.start, 'start', [x], 'motion'); }
+      if (!a.started) { a.started = true; ev(a.start, 'start', [x], 'motion', SPAWN ? `entered the road at its entry pose (scheduled ${a.sched} s; control scenario boundary)` : null); }
       if (atGoal[x]) { sample(a, tA); a.eff = ZERO; a.arrived = tA; stats.arrived++; ev(tA, 'arrive', [x], 'motion'); continue; }
       const d = dec[x]!, moved = bT[x] > aT[x];
       const key = `${d.kind}|${d.w.x}|${d.w.y}`;
@@ -446,8 +521,8 @@ function runPolicy(input: SteerInput): SteerResult {
         sample(a, tA);
         if (!named) {
           if (moved) ev(tA, 'resume', [x], 'physical_constraint', `${d.kind}: way free again at this decision instant`);
-          else { ev(tA, 'stop', [x], 'physical_constraint', cause[x] ?? 'no motion'); a.stopCause = cause[x]; }
-        } else if (!moved && cause[x]) a.stopCause = cause[x];
+          else { const sw = stopWhy(x, tA).why; ev(tA, 'stop', [x], 'physical_constraint', sw ?? 'no motion'); a.stopCause = sw; }
+        } else if (!moved && cause[x]) a.stopCause = stopWhy(x, tA).why;
       }
       a.eff = vStart;
       if (moved) {
@@ -457,36 +532,37 @@ function runPolicy(input: SteerInput): SteerResult {
         if (causeKind[x] === 'goal') { sample(a, tb); a.eff = ZERO; a.arrived = tb; stats.arrived++; ev(tb, 'arrive', [x], 'motion'); }
         else if (bT[x] < span) {
           sample(a, tb); a.eff = ZERO;
-          ev(tb, 'stop', [x], 'physical_constraint', cause[x]); a.stopCause = cause[x];
-          if (causeKind[x] === 'static') stats.stops_static++; else stats.stops_contact++;
-          if (causeKind[x] === 'body' && causeJ[x] >= 0) bodyStops.push([x, causeJ[x], tb]);
+          const sw = stopWhy(x, tb);
+          ev(tb, 'stop', [x], 'physical_constraint', sw.why); a.stopCause = sw.why;
+          if (causeKind[x] === 'static') stats.stops_static++; else if (sw.conservative) stats.stops_conservative++; else stats.stops_contact++;
+          if (causeKind[x] === 'body' && causeJ[x] >= 0 && !sw.conservative) bodyStops.push([x, causeJ[x], tb]);
         }
       } else if (causeKind[x] === 'goal') { sample(a, tA); a.eff = ZERO; a.arrived = tA; stats.arrived++; ev(tA, 'arrive', [x], 'motion'); }
     }
     // contacts: the exact first separation time from the piecewise motion of both bodies in this interval
-    const posAt = (x: number, t: number) => add(c0[x], w[x], Math.min(Math.max(t - t0, aT[x]), bT[x]) - aT[x]);
-    /** first t in [from, t1] at which the gap of i and j exceeds CONTACT_TOL_MM; null if it never does in this interval */
-    const firstSeparation = (i: number, j: number, from: number): number | null => {
+    /** first t in [from, t1] at which the gap of i and j exceeds CONTACT_TOL_MM, with its bisection bracket [lo, hi]
+     *  (gap <= tol at lo, > tol at hi; t = hi); null if it never does in this interval */
+    const firstSeparation = (i: number, j: number, from: number): { t: number; lo: number; hi: number } | null => {
       const gapAt = (t: number) => capsuleGap(capOf(A[i], posAt(i, t)), capOf(A[j], posAt(j, t)));
       const pts = [...new Set([from, t1, ...[i, j].flatMap((x) => [t0 + aT[x], t0 + bT[x]]).filter((p) => p > from && p < t1)])].sort((p, q) => p - q);
       for (let k = 0; k + 1 < pts.length; k++) {
         const p = pts[k], q = pts[k + 1], mid = (p + q) / 2;
         const still = (x: number) => !(mid - t0 > aT[x] && mid - t0 < bT[x]);
         if (still(i) && still(j)) continue;                // gap constant on this piece
-        if (gapAt(p) > CONTACT_TOL_MM) return p;          // (only at `from` for a contact that did not start touching)
+        if (gapAt(p) > CONTACT_TOL_MM) return { t: p, lo: p, hi: p };   // (only at `from` for a contact that did not start touching)
         if (!(gapAt(q) > CONTACT_TOL_MM)) continue;       // convex on the piece: <= tol at both ends -> <= tol throughout
         let lo = p, hi = q;
         for (let n = 0; n < 200 && hi - lo > 1e-15 * Math.max(1, hi); n++) { const m = (lo + hi) / 2; if (gapAt(m) > CONTACT_TOL_MM) hi = m; else lo = m; }
-        return hi;
+        return { t: hi, lo, hi };
       }
       return null;
     };
     const endContact = (key: number, ts: number) => {
-      const i = Math.floor(key / N), j = key % N, te = firstSeparation(i, j, Math.max(t0, ts));
-      if (te === null) return null;
-      activeContacts.delete(key);
-      ev(te, 'contact_end', [i, j], 'physical_contact', `gap first exceeds ${CONTACT_TOL_MM} mm (exact, from the piecewise motion of both bodies)`);
-      return te;
+      const i = Math.floor(key / N), j = key % N, sep = firstSeparation(i, j, Math.max(t0, ts));
+      if (sep === null) return null;
+      activeContacts.delete(key); stats.contact_ends_exact++;
+      events.push({ t_s: sep.t, kind: 'contact_end', agents: [A[i].id, A[j].id], class: 'physical_contact', detail: `gap first exceeds ${CONTACT_TOL_MM} mm (exact, from the piecewise motion of both bodies)`, bracket_s: [sep.lo, sep.hi] });
+      return sep.t;
     };
     // 1) contacts already open at t0 (a separation before a new stop of the same pair ends the old contact)
     const endedAt = new Map<number, number>();
@@ -524,11 +600,13 @@ function runPolicy(input: SteerInput): SteerResult {
   events.sort((p, q) => p.t_s - q.t_s);   // stable: same-time events keep their generation order
   const agents: Record<string, SteerAgentOut> = {};
   for (const a of A) {
-    sample(a, H);
+    if (a.present) sample(a, H);
     const moving = !sameVec(a.eff, ZERO);
-    const mode = a.arrived !== null ? 'arrived' : !a.started ? 'not_started' : a.halted ? 'halted_geometry' : a.stalledSince !== null ? 'stalled' : moving ? 'moving' : 'waiting_or_stopped';
+    const mode = a.removed !== null ? 'exited' : a.arrived !== null ? 'arrived' : SPAWN && a.entered === null ? 'not_entered' : !a.started ? 'not_started' : a.halted ? 'halted_geometry' : a.stalledSince !== null ? 'stalled' : moving ? 'moving' : 'waiting_or_stopped';
     if (mode === 'stalled' || mode === 'halted_geometry') { stats.stalled++; events.push({ t_s: H, kind: 'stalled', agents: [a.id], class: 'solver_status', detail: `${mode} since ${a.stalledSince} s${a.stopCause ? `; last stop: ${a.stopCause}` : ''}` }); }
     agents[a.id] = { lane: a.lane, layer: a.layerName, samples: a.samples, arrival_t_s: a.arrived, final_mode: mode, final_speed_mm_s: Math.hypot(a.eff.x, a.eff.y), stop_cause: a.stopCause, geometry_stop_s_mm: null, blocked_reports: a.reports };
+    if (SPAWN) Object.assign(agents[a.id], { scheduled_start_t_s: a.sched, present_from_t_s: a.entered });
+    if (EXIT) agents[a.id].removed_t_s = a.removed;
   }
   return { policy, agents, events, stats };
 }

@@ -124,7 +124,9 @@ for (const id of SMALL) {
     ok(runHash(runSteer(sc, p).res) === h, `crossing-traffic-100/${p}: rerun identical`);
     ok(runHash(runSteer(sc, p, { order: 'reversed' }).res) === h, `crossing-traffic-100/${p}: reversed input identical`);
     ok(runHash(runSteer(sc, p, { order: 'shuffled' }).res) === h, `crossing-traffic-100/${p}: shuffled input identical`);
-    ok(runHash(runSteer(sc, p, { seed: 2 }).res) !== h, `crossing-traffic-100/${p}: the seed is used (seed 2 differs)`);
+    // A–C draw from named streams (the seed must matter); the no-yield control N has no draws (the seed must not matter)
+    if (p === 'N_no_yield') ok(runHash(runSteer(sc, p, { seed: 2 }).res) === h, `crossing-traffic-100/${p}: no random draws (seed 2 identical)`);
+    else ok(runHash(runSteer(sc, p, { seed: 2 }).res) !== h, `crossing-traffic-100/${p}: the seed is used (seed 2 differs)`);
     ok(r1.stats.stalled + r1.stats.arrived <= 100 && r1.stats.decision_instants === 400, `crossing-traffic-100/${p}: bookkeeping`);
     timingInvariants(steerInput(sc, p), r1, `crossing-traffic-100/${p}`);
   }
