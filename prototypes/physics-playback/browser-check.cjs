@@ -65,7 +65,7 @@ function exactPose(a, t) { // independent of the page: the segment that holds t 
       for (const d of s2.drawn) { const p = exactPose(run.agents.find((x) => x.id === d.id), mid); check(Math.abs(p.x - d.x) <= 1e-9 && Math.abs(p.y - d.y) <= 1e-9, `${name} ${meta.run_id} mid: drawn pose = exact motion`); }
     }
     // click a row: jumps to its exact time; screenshots of chosen moments
-    const shots = [['head-on-2--ph3b', 'contact_start'], ['pass-clear--ph3b', 'pass'], ['offset-block--ph3b', 'stop'], ['crossing-flank--ph3b', 'contact_start'], ['crossing-flank--ph3b', 'arrive'], ['stone--ph3b', 'stop'], ['corridor-8--ph3b', 'resume'], ['head-on-2--native', 'yield_start']];
+    const shots = [['head-on-2--ph3b', 'contact_start'], ['pass-clear--ph3b', 'pass'], ['offset-block--ph3b', 'stop'], ['crossing-flank--ph3b', 'contact_start'], ['crossing-flank--ph3b', 'contact_end'], ['pass-graze--ph3b', 'contact_end'], ['crossing-flank--ph3b', 'arrive'], ['stone--ph3b', 'stop'], ['corridor-8--ph3b', 'resume'], ['head-on-2--native', 'yield_start']];
     for (const [id, kind] of shots) {
       const run = read(`data/${id}.json`), i = run.events.findIndex((e) => e.kind === kind); if (i < 0) { failures.push(`${id}: no ${kind}`); continue; }
       await page.evaluate((x) => window.playback.load(x), id);

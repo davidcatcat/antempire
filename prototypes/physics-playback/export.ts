@@ -25,6 +25,7 @@ import { nativeConfig, toTrajectory as nativeTraj } from '../solver-compare/lib/
 import { laneFrames, poseOn } from '../solver-compare/lib/traj.ts';
 import { solve2D, type Solver2DResult } from '../../engine/physics/solver2d.ts';
 import { simulate } from '../../engine/physics/collision.ts';
+import { checkContacts, checkMotion, CONTRACT } from '../physics-check/contact-check.ts';
 
 export const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const DATA_DIR = path.join(HERE, 'data');
@@ -43,7 +44,12 @@ export const SCENARIOS: { id: string; from: 'solver-compare' | 'playback'; nativ
 ];
 
 export interface Segment { t0: number; t1: number; x0: number; y0: number; x1: number; y1: number; heading: number; speed_mm_s: number; s0: number; s1: number; u: number }
-export interface PbEvent { t: number; kind: string; class: string; agents: string[]; detail: string | null }
+export interface PbEvent {
+  t: number; kind: string; class: string; agents: string[]; detail: string | null;
+  /** PH-3b contact events: the solver's root bracket and error bound, and the INDEPENDENT checker's interval (check_s,
+   *  check_err_s = its width) computed from this file's own segments (prototypes/physics-check/contact-check.ts) */
+  bracket_s?: [number, number]; err_s?: number; confirmed_t_s?: number; exact?: boolean; usable_as_cause?: boolean; check_s?: [number, number]; check_err_s?: number;
+}
 export interface PbAgent {
   id: string; lane: string; layer: string; dir: 1 | -1; u_mm: number; start_t_s: number; goal_s_mm: number; free_speed_mm_s: number; speed_source: string;
   segments: Segment[]; final: { t: number; x: number; y: number; heading: number }; arrival_t_s: number | null; final_mode: string; stop_cause: string | null;
@@ -103,9 +109,21 @@ export function ph3bRun(sc: Scenario, file: string): { run: PbRun; res: Solver2D
     schema: PLAYBACK_SCHEMA, run_id: `${sc.id}--ph3b`, solver: 'ph3b', solver_label: 'PH-3b 事件驅動二維解算器',
     solver_notes: ['只有物理約束：碰到就停、追上就跟、側面可滑過；沒有讓路、側移、掉頭（生物決策未建模）', '橫向偏移 u 整段固定為情境給定值（橫向轉向模型未知，null）', `解算器狀態：${res.stats.aborted ? `中止（${res.stats.aborted}）` : '正常結束'}；unresolved ${res.stats.unresolved}`],
     ...common(sc, file), status: res.stats.aborted ? `aborted: ${res.stats.aborted}` : 'completed',
-    agents, events: res.events.map((e) => ({ t: e.t_s, kind: e.kind, class: e.class, agents: e.agents, detail: e.detail })),
+    agents, events: res.events.map((e) => ({ t: e.t_s, kind: e.kind, class: e.class, agents: e.agents, detail: e.detail, ...(e.bracket_s ? { bracket_s: e.bracket_s, err_s: e.err_s, confirmed_t_s: e.confirmed_t_s } : {}), ...(e.exact !== undefined ? { exact: e.exact, usable_as_cause: e.usable_as_cause } : {}) })),
     motion_note: '每一段是解算器在兩個事件之間的直線等速平移（兩端是解算器紀錄的精確姿態）；畫面上的位置就是這個運動，不是取樣點的插值，沒有平滑。',
   };
+  // independent check of every contact event against THIS file's segments; refuse to write a file that fails it
+  const ck = checkContacts({ horizon_s: H, body: { length_mm: run.body.length_mm, width_mm: run.body.width_mm }, agents: agents.map((a) => ({ id: a.id, segments: a.segments, final: a.final, present_from: 0, present_until: null, layer: a.layer })), events: run.events });
+  const mc = checkMotion({ horizon_s: H, body: run.body, agents: agents.map((a) => ({ id: a.id, segments: a.segments, final: a.final, present_from: 0, present_until: null })), events: [] });
+  if (ck.violations || mc.problems.length) throw Error(`PLAYBACK: ${sc.id}: independent contact/motion check failed: ${[...ck.problems, ...mc.problems].slice(0, 3).join(' | ')}`);
+  for (const ep of ck.list) {
+    const key = [...ep.pair].sort().join('|'), same = (e: PbEvent) => [...e.agents].sort().join('|') === key;
+    const st = run.events.find((e) => e.kind === 'contact_start' && e.t === ep.t_start && same(e));
+    if (st && ep.start_lo !== null) { st.check_s = [ep.start_lo, ep.start_hi!]; st.check_err_s = ep.start_hi! - ep.start_lo; }
+    const en = ep.t_end === null ? undefined : run.events.find((e) => e.kind === 'contact_end' && e.t === ep.t_end && same(e));
+    if (en && ep.lo !== null) { en.check_s = [ep.lo, ep.hi!]; en.check_err_s = ep.err_s!; }
+  }
+  run.solver_notes.push(`接觸事件＝間距 ≤ ${CONTRACT.tol_mm} mm 的連續區段（分離解析度 ${CONTRACT.resolution_mm} mm）；每個 contact_start／contact_end 附解算器的根區間與誤差界，以及獨立檢查器的區間（check_s）`);
   return { run, res };
 }
 

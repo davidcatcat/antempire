@@ -6,7 +6,7 @@ import { poseAt, eventTimes, lastEventAt } from './motion.js';
 const $ = (id) => document.getElementById(id);
 const KIND = {
   start: '出發', arrive: '抵達', contact_start: '接觸開始', contact_end: '接觸結束', stop: '停止', resume: '恢復', follow: '跟隨（減速）',
-  free: '恢復自由速度', pass: '錯身', turn: '轉向', turn_blocked: '轉向受阻', stalled: '卡住（時間終點）', unresolved: '未解', record: '原生運動紀錄',
+  free: '恢復自由速度', pass: '錯身', turn: '轉向', turn_blocked: '轉向受阻', stalled: '卡住（時間終點）', contact_end_unconfirmed: '接觸結束未確認（時間終點；不能當原因）', unresolved: '未解', record: '原生運動紀錄',
   obstruction: '受阻', follow_start: '跟隨開始', follow_end: '跟隨結束', blocked: '受阻', yield_start: '讓路（候選規則）', yield_hold: '讓路等待（候選規則）',
   yield_resume: '讓路後恢復（候選規則）', cross_wait: '交叉等待（候選規則）', cross_resume: '交叉後恢復（候選規則）',
 };
@@ -17,6 +17,8 @@ const ROW_H = 26;
 const st = { index: null, runs: new Map(), run: null, t: 0, playing: false, rate: 1, sel: -1, selPinned: false, cam: null, times: [], drawn: [], hi: new Set(), lastFrame: 0 };
 const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const fmtT = (t) => `${t.toFixed(6)} s`;  // display rounding only; the exact time is in the data
+/** contact events: the solver's error bound and the independent checker's interval (both from the data file) */
+const detailOf = (e) => [e.detail ?? '', e.err_s !== undefined ? `誤差界 ${e.err_s.toExponential(1)} s` : '', e.check_s ? `獨立檢查 [${e.check_s[0].toFixed(9)}, ${e.check_s[1].toFixed(9)}] s` : '', e.usable_as_cause === false ? '不能當原因' : ''].filter(Boolean).join('・');
 
 async function getJson(url) { const r = await fetch(url); if (!r.ok) throw new Error(`${url}: ${r.status}`); return r.json(); }
 
@@ -172,12 +174,12 @@ function renderRows() {
     if (old) { old.classList.toggle('sel', i === st.sel); continue; }
     const e = E[i], d = document.createElement('div');
     d.className = `ev${i === st.sel ? ' sel' : ''}`; d.style.top = `${i * ROW_H}px`; d.dataset.i = String(i);
-    d.title = `${fmtT(e.t)} ${e.kind} ${e.agents.join(', ')}${e.detail ? ` — ${e.detail}` : ''}`;
+    d.title = `${fmtT(e.t)} ${e.kind} ${e.agents.join(', ')}${detailOf(e) ? ` — ${detailOf(e)}` : ''}`;
     d.innerHTML = `<span class="t"></span><span class="kd"></span> <span class="ag"></span> <span class="dt"></span>`;
     d.querySelector('.t').textContent = e.t.toFixed(6);
     const kd = d.querySelector('.kd'); kd.textContent = KIND[e.kind] ?? e.kind; kd.style.color = css(CLASS_VAR[e.class] ?? '--c-status');
     d.querySelector('.ag').textContent = e.agents.join('・');
-    const dt = d.querySelector('.dt'); dt.textContent = e.detail ?? ''; dt.style.color = css('--muted');
+    const dt = d.querySelector('.dt'); dt.textContent = detailOf(e); dt.style.color = css('--muted');
     d.addEventListener('click', () => selectEvent(i));
     list.appendChild(d);
   }
@@ -255,7 +257,7 @@ function updateNow() {
   $('now').innerHTML = '';
   const p = document.createElement('div');
   p.innerHTML = e ? `<span class="k"></span> <span class="d"></span>` : '<span class="d"></span>';
-  if (e) { p.querySelector('.k').textContent = `目前事件 #${st.sel + 1}（${fmtT(e.t)}）：${KIND[e.kind] ?? e.kind}・${e.agents.join('・')}`; p.querySelector('.d').textContent = e.detail ? `— ${e.detail}` : ''; }
+  if (e) { p.querySelector('.k').textContent = `目前事件 #${st.sel + 1}（${fmtT(e.t)}）：${KIND[e.kind] ?? e.kind}・${e.agents.join('・')}`; p.querySelector('.d').textContent = detailOf(e) ? `— ${detailOf(e)}` : ''; }
   else p.querySelector('.d').textContent = '尚未有事件';
   const q = document.createElement('div'); q.className = 'sub';
   q.textContent = nextT === undefined ? '之後沒有事件：每隻都依最後一段運動（或靜止）到時間終點。' : `下一個事件在 ${fmtT(nextT)}（再 ${nextT - st.t >= 1e-6 ? (nextT - st.t).toFixed(6) : (nextT - st.t).toExponential(3)} s）；在那之前每隻都是直線等速或靜止。`;
