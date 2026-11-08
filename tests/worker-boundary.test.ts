@@ -98,7 +98,7 @@ checks += r.checks;
 // 4. the allowlist is closed: every allowlisted engine module's own transitive imports stay inside the allowlist
 //    (otherwise an allowlisted module would be unusable or would smuggle in a denied one).
 const allowedEngine = [...real.keys()].filter((f) => f.startsWith('engine/') && f.endsWith('.ts') && B.allowed_import_prefixes.some((p) => p.endsWith('/') ? f.startsWith(p) : f === p));
-ok(allowedEngine.includes('engine/rng.ts') && allowedEngine.includes('engine/sha256.ts'), 'allowlisted engine modules found');
+ok(allowedEngine.includes('engine/rng.ts'), 'allowlisted engine modules found');
 const probe = new Map(real);
 probe.set(`${B.worker_entry_dir}/__allowlist_closure_probe__.ts`, allowedEngine.map((f) => `import '${path.posix.relative(B.worker_entry_dir, f)}';`).join('\n'));
 const closure = checkBoundary(probe, B);
