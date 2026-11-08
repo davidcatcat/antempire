@@ -21,6 +21,7 @@
  */
 import { advancePose, capGap, capsuleAt, dimsOf, staticCaps, Kin2DRefused, type BodyDims, type Pose, type Seg, type Static, type Track, type Twist, type P2 } from './kinematics2d.ts';
 import { hash32, rng } from '../rng.ts';
+import { antennaTipPoints, antennaSensors, ridgeValue, sampleLocal, SyntheticChemicalField, type AntennaGeometry, type AssumptionTag, type LocalChemSampler, type SensingSource, type SyntheticRidge } from './local-sensing.ts';
 
 export type WalkModel = 'A' | 'B' | 'C';
 export interface WalkParams {
@@ -41,7 +42,7 @@ export interface WalkParams {
   avoid_turn_rate_rad_s: number;
 }
 /** SYNTHETIC chemical field: Gaussian ridge around a polyline (no diffusion, no decay; NOT a pheromone model) */
-export interface SyntheticField { synthetic: true; kind: 'gaussian_ridge'; polyline: P2[]; sigma_mm: number; peak: number }
+export type SyntheticField = SyntheticRidge;
 export interface WalkSpec {
   id: string; body: BodyDims; start: Pose; t0_s: number; seed: number; params: WalkParams;
   /** heading the ant remembers as its travel direction (local memory) */
@@ -49,26 +50,29 @@ export interface WalkSpec {
   /** stop the plan when the centre first reaches x ≥ end_x_mm (trail end), or at t0 + max_duration_s */
   end_x_mm: number | null; max_duration_s: number;
   statics: Static[]; field: SyntheticField | null; layer?: string;
+  /** C: the local chemical sampler (docs/kin2d-local-sensing.md). Omitted: a SyntheticChemicalField built from `field`.
+   *  Model C reads chemistry ONLY through sampleLocal() of this contract. */
+  sampler?: LocalChemSampler; chem_channel?: string;
 }
-export interface SensorSample { t: number; left: { x_mm: number; y_mm: number; c: number }; right: { x_mm: number; y_mm: number; c: number }; synthetic: true }
+export interface SensorSample { t: number; left: { x_mm: number; y_mm: number; c: number }; right: { x_mm: number; y_mm: number; c: number }; synthetic: boolean; source: SensingSource }
 export interface WalkEvent { t: number; kind: string; detail: string }
-export interface WalkPlan { track: Track; sensor_samples: SensorSample[]; events: WalkEvent[]; clamps: { turn_rate: number; curvature: number }; arrival_t_s: number | null }
+export interface WalkPlan {
+  track: Track; sensor_samples: SensorSample[]; events: WalkEvent[]; clamps: { turn_rate: number; curvature: number }; arrival_t_s: number | null;
+  /** where the chemical values came from (model C); null for A/B */
+  sensing: { source: SensingSource; sampler_id: string; channel: string; layer: string; synthetic: boolean } | null;
+}
+/** assumption tags sent with every model-C sensing request */
+export const MODEL_C_SENSING_TAGS: readonly AssumptionTag[] = [
+  { name: 'antenna_geometry', assumption: true, basis: '遊戲假設', note: '觸角長度與半角是候選值；本種無資料' },
+  { name: 'point_sensing', assumption: true, basis: '遊戲假設', note: '在觸角尖端點取樣（範圍 0 mm）' },
+  { name: 'bilateral_comparison', assumption: true, basis: '遊戲假設', note: '機制方向只有非本種證據（R810，Camponotus pennsylvanicus）；數值無資料' },
+];
 
-export function fieldValue(f: SyntheticField, p: P2): number {
-  let d = Infinity;
-  for (let i = 0; i + 1 < f.polyline.length; i++) {
-    const a = f.polyline[i], b = f.polyline[i + 1], dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy;
-    const u = L2 === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / L2));
-    d = Math.min(d, Math.hypot(p.x - a.x - u * dx, p.y - a.y - u * dy));
-  }
-  return f.peak * Math.exp(-(d * d) / (2 * f.sigma_mm * f.sigma_mm));
-}
+/** synthetic ridge value (observer / test use; the controller reads chemistry only through sampleLocal) */
+export function fieldValue(f: SyntheticField, p: P2): number { return ridgeValue(f, p); }
 const wrapPi = (x: number) => { let y = x % (2 * Math.PI); if (y <= -Math.PI) y += 2 * Math.PI; if (y > Math.PI) y -= 2 * Math.PI; return y; };
-export function antennaTips(pose: Pose, body: BodyDims, p: WalkParams): { left: P2; right: P2 } {
-  const L = body.length_mm as number, hx = pose.x + Math.cos(pose.th) * (L / 2), hy = pose.y + Math.sin(pose.th) * (L / 2);
-  const tip = (s: number) => ({ x: hx + Math.cos(pose.th + s * p.antenna_half_angle_rad) * p.antenna_len_mm, y: hy + Math.sin(pose.th + s * p.antenna_half_angle_rad) * p.antenna_len_mm });
-  return { left: tip(1), right: tip(-1) };
-}
+export const antennaGeometry = (body: BodyDims, p: WalkParams): AntennaGeometry => ({ body_length_mm: body.length_mm as number, antenna_len_mm: p.antenna_len_mm, antenna_half_angle_rad: p.antenna_half_angle_rad });
+export function antennaTips(pose: Pose, body: BodyDims, p: WalkParams): { left: P2; right: P2 } { return antennaTipPoints(pose, antennaGeometry(body, p)); }
 function pointInStatic(q: P2, s: Static): boolean {
   if (s.kind === 'polygon') {
     let inside = false;
@@ -92,7 +96,9 @@ function normal(r: () => number): number { const u1 = 1 - r(), u2 = r(); return 
 /** Build the plan of one walking agent (closed-loop local controller). */
 export function planWalk(spec: WalkSpec): WalkPlan {
   const p = spec.params; validateParams(p); dimsOf(spec.body, spec.id);
-  if (spec.params.model === 'C' && !spec.field) throw new Kin2DRefused(`${spec.id}: model C needs a (synthetic) field`);
+  if (spec.params.model === 'C' && !spec.field && !spec.sampler) throw new Kin2DRefused(`${spec.id}: model C needs a (synthetic) field`);
+  const geom = antennaGeometry(spec.body, p), layer = spec.layer ?? 'default', channel = spec.chem_channel ?? 'synthetic_trail';
+  const sampler: LocalChemSampler | null = p.model !== 'C' ? null : spec.sampler ?? new SyntheticChemicalField({ id: `${spec.id}:synthetic-ridge`, channel, layer, field: spec.field as SyntheticField, committed_through_s: spec.t0_s + spec.max_duration_s, max_range_mm: 0 });
   const R = rng(hash32(`${spec.seed}|kin2d.walk|${spec.id}`));
   const segs: Seg[] = [], sensor: SensorSample[] = [], events: WalkEvent[] = [];
   const clamps = { turn_rate: 0, curvature: 0 };
@@ -117,9 +123,10 @@ export function planWalk(spec: WalkSpec): WalkPlan {
       if (p.model !== 'A') {
         w = zeta - p.heading_gain_per_s * wrapPi(pose.th - spec.goal_heading_rad);
         if (p.model === 'C') {
-          const f = spec.field as SyntheticField, cL = fieldValue(f, tips.left), cR = fieldValue(f, tips.right);
+          const r = sampleLocal(sampler as LocalChemSampler, { agent_id: spec.id, t_s: t, round: 0, pose, geometry: geom, sensors: antennaSensors(pose, geom), layer, channel, range_mm: 0, source: (sampler as LocalChemSampler).source, tags: [...MODEL_C_SENSING_TAGS] });
+          const cL = r.values[0].value, cR = r.values[1].value;
           w += (p.chem_gain_rad_s * (cL - cR)) / (cL + cR + p.chem_floor);
-          sensor.push({ t, left: { x_mm: tips.left.x, y_mm: tips.left.y, c: cL }, right: { x_mm: tips.right.x, y_mm: tips.right.y, c: cR }, synthetic: true });
+          sensor.push({ t, left: { x_mm: r.values[0].x_mm, y_mm: r.values[0].y_mm, c: cL }, right: { x_mm: r.values[1].x_mm, y_mm: r.values[1].y_mm, c: cR }, synthetic: r.synthetic, source: r.source });
         }
       }
       const cap = Math.min(p.max_turn_rate_rad_s, p.max_curvature_per_mm * v);
@@ -142,5 +149,5 @@ export function planWalk(spec: WalkSpec): WalkPlan {
   }
   const tLast = segs.length ? segs[segs.length - 1].t1 : spec.t0_s;
   segs.push({ t0: tLast, t1: Infinity, p0: pose, tw: { v: 0, vl: 0, w: 0 }, label: 'hold' });
-  return { track: { id: spec.id, body: spec.body, layer: spec.layer, segs }, sensor_samples: sensor, events, clamps, arrival_t_s: arrival };
+  return { track: { id: spec.id, body: spec.body, layer: spec.layer, segs }, sensor_samples: sensor, events, clamps, arrival_t_s: arrival, sensing: sampler ? { source: sampler.source, sampler_id: sampler.id, channel, layer, synthetic: sampler.synthetic } : null };
 }

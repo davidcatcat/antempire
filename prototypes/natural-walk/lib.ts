@@ -103,7 +103,7 @@ export function streamAgent(plan: WalkPlan, res: KinResult, model: WalkModel, dt
     ...plan.events.filter((e) => ex.stopped_at_s === null || e.t <= ex.stopped_at_s).map((e) => ({ t: r9(e.t), kind: e.kind, detail: e.detail })),
     ...res.events.filter((e) => e.class !== 'motion').map((e) => ({ t: r9(e.t_s), kind: e.kind, detail: `${e.ids.join('|')}${e.detail ? ' ' + e.detail : ''}` })),
   ].sort((a, b) => a.t - b.t || (a.kind < b.kind ? -1 : 1));
-  const sensor = model === 'C' ? plan.sensor_samples.filter((s) => s.t <= tEnd).map((s) => ({ t: r9(s.t), left: { x_mm: r9(s.left.x_mm), y_mm: r9(s.left.y_mm), c: r9(s.left.c) }, right: { x_mm: r9(s.right.x_mm), y_mm: r9(s.right.y_mm), c: r9(s.right.c) }, synthetic: true })) : undefined;
+  const sensor = model === 'C' ? plan.sensor_samples.filter((s) => s.t <= tEnd).map((s) => ({ t: r9(s.t), left: { x_mm: r9(s.left.x_mm), y_mm: r9(s.left.y_mm), c: r9(s.left.c) }, right: { x_mm: r9(s.right.x_mm), y_mm: r9(s.right.y_mm), c: r9(s.right.c) }, synthetic: s.synthetic })) : undefined;
   return { id, model, samples, events, ...(sensor ? { sensor_samples: sensor } : {}) };
 }
 
