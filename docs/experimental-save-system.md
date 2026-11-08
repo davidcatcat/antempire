@@ -1,0 +1,160 @@
+# 非正式實驗世界存檔系統（SAVE-0 契約）
+
+> 狀態：契約與保護測試（SAVE-0）。儲存模組（SAVE-1）、Worker 整合（SAVE-2）、畫面與選單（SAVE-3）依 §12 分階段實作。
+> 依據：Owner SAVE 需求（2026-11-08，P0）與 CLAUDE.md §9「實驗世界本地存檔」最小例外；邊界見 [`experimental-worker-boundary.md`](experimental-worker-boundary.md) §4b。若本文件與 CLAUDE.md 不一致，以較嚴格者為準。
+
+本系統**只**保存非正式實驗世界。正式 Day14 存檔、`saves/`、`journal/` 與 Node 正式推進流程完全不受影響，也不能被本系統讀寫。
+
+## 1. 架構與責任
+
+```
+UI（選單／存檔狀態）──► Worker Client ──postMessage──► Experimental Web Worker（權威狀態）
+        ▲                    │  ▲                               │ 只在一致事件邊界產生快照
+        │ 儲存狀態            │  └──────── 快照（envelope）◄──────┘
+        │                    ▼
+        └──────────── save-store.ts（唯一寫入 IndexedDB 的模組；資料庫名稱 antempire-experiment-*）
+```
+
+| 角色 | 可以 | 不可以 |
+|---|---|---|
+| Worker | 擁有權威世界狀態；在事件邊界序列化快照；從快照還原 | 使用任何持久化 API；因存檔改變行為、時間或隨機串流 |
+| Worker Client | 轉送快照與還原指令 | 修改 payload |
+| `web/src/experimental/save-store.ts` | IndexedDB、`navigator.storage.persist/estimate/persisted`、`navigator.locks` | 開啟非 `antempire-experiment-` 開頭的資料庫；localStorage、Cache API、網路、檔案選擇器；讀取或解析 payload 內容 |
+| Renderer | 讀取最新狀態並繪製 | 修改世界；觸發存檔以外的狀態改變 |
+
+payload 對儲存模組是**不透明**的：儲存模組只計算雜湊、檢查信封欄位、保存與取回。
+
+## 2. 快照信封（`antempire.experiment-world-snapshot.v1`）
+
+Worker runtime 與儲存模組共用此信封，欄位不得增減（新增欄位要升 `schema` 版本並寫遷移）。JSON Schema：[`prototypes/continuous-world/save/experiment-world-snapshot.v1.schema.json`](../prototypes/continuous-world/save/experiment-world-snapshot.v1.schema.json)。
+
+| 欄位 | 型別 | 意義 |
+|---|---|---|
+| `schema` | 常數 `antempire.experiment-world-snapshot.v1` | 信封格式 |
+| `label` | 常數 `非正式實驗世界／不屬於正式遊戲歷史` | 必要標示 |
+| `official` | 常數 `false` | 永遠不是正式世界 |
+| `world_id` | 字串 | 實驗世界 ID（新遊戲時產生，不重複使用） |
+| `seed` | 整數或字串 | 世界種子（新種子或使用者指定） |
+| `rules_fingerprint` | 字串 | 引擎＋參數指紋；不同指紋表示規則不同，不能接續 |
+| `engine_version` | 字串 | Worker runtime 版本 |
+| `schema_version` | 正整數 | **payload** 結構版本（目前 1）；遷移以此為準 |
+| `t_sim` | 非負數 | 模擬時間：實驗 Day0 00:00 起算的世界分鐘（P0-A 世界時鐘，單位 `min`；與 Worker runtime 協調確認，見 §13） |
+| `seq` | 非負整數 | Worker 事件序號；快照位於第 `seq` 個事件提交之後 |
+| `payload` | JSON 物件 | 世界完整狀態（§3），對儲存模組不透明 |
+| `payload_sha256` | 64 位小寫十六進位 | `SHA-256(UTF-8(canonicalJSON(payload)))` |
+
+**canonicalJSON**：物件鍵依 UTF-16 碼元排序、無空白、數字用 ECMAScript `JSON.stringify` 的最短往返表示；`NaN`、`±Infinity`、`undefined`、函式、`BigInt`、typed array 不得出現（typed array 由 Worker 轉為一般陣列或 base64 字串）。`-0` 會寫成 `0`：若 Worker 狀態依賴 `-0` 與 `0` 的差異，驗收 A（§12）會失敗並揭露。儲存模組保存的就是 canonical 文字，回讀時重算雜湊。
+
+## 3. 必須保存的內容（payload）
+
+原則：**任何會影響未來的狀態都要保存**。只有能由已保存資料確定性重建、且有測試證明重建後完全相同的資料可以省略（列入 `rebuildable`）。載入時**絕不重新抽樣命運**（死亡、出生、發育時間、天氣等已決定的結果都從快照讀回）。
+
+完整清單：[`prototypes/continuous-world/save/snapshot-content.v1.json`](../prototypes/continuous-world/save/snapshot-content.v1.json)（測試檢查四大類都在）。
+
+1. **世界**：世界 ID、種子、世界與物種設定（或其指紋＋可解析的版本）、規則版本與指紋、模擬時間、天氣與環境狀態、生態資源（植物、半翅目、昆蟲族群、自然食源與來源 ID）、生產／消耗／遷移／食物帳本。
+2. **蟻群與個體**：穩定 ID、生死狀態、年齡與發育階段、飢餓／營養／嗉囊與負載、受傷、位置與朝向、當前活動、個體記憶（路線、食源）、巢與巢內資源。
+3. **物理與化學（整合後才要求）**：身體狀態、速度、待處理物理事件、化學場與衰減狀態、個體局部感知狀態。整合前此類標 `required_when: "integrated"`，Worker 若尚未模擬就不輸出，也不得捏造。
+4. **連續性**：PRNG 種子、具名亂數串流與各自的抽取進度、事件佇列（含排程時間與次序鍵）、待執行的行為與計時器，以及其他任何影響未來的狀態。
+
+## 4. 一致事件邊界
+
+快照只在**一致事件邊界**產生：所有已開始的事件都已提交，沒有半途的交哺、捕食、搬運或未結算的食物轉移；帳本守恆在此刻成立。Worker 在輸出快照前自行檢查（開放中的轉移數為 0、帳本收支平衡），失敗就不輸出並回報，不得輸出「差不多」的狀態。儲存模組無法檢查 payload 內容，因此這是 Worker 的責任（SAVE-2 測試）。
+
+存檔只**讀取**狀態：不得推進時間、不得抽取亂數、不得改變事件順序。驗收 E 檢查有存檔與無存檔的結果完全相同。
+
+## 5. 原子寫入與回復點
+
+IndexedDB 資料庫 `antempire-experiment-worlds`（版本 1）：
+
+| 物件庫 | 鍵 | 內容 |
+|---|---|---|
+| `worlds` | `world_id` | 名稱、種子、建立時間、`next_gen`、`slots`（已驗證快照的代號，新到舊）、`quarantined`、最後儲存時間、摘要（蟻后／工蟻數，由 client 提供） |
+| `snapshots` | `[world_id, gen]` | 信封欄位、canonical payload 文字、雜湊、狀態 `pending`／`verified`、寫入時間 |
+
+`gen` 是儲存模組自己的遞增代號，與 Worker 的 `seq` 無關（從較早的快照回復後，確定性重跑可能再產生相同 `seq`）。
+
+**寫入步驟**（每步一個交易，只有收到交易 `complete` 才算完成）：
+
+1. **寫入**：分配 `gen = next_gen`，以 `pending` 寫入新快照；`slots`（最新指標）不變。
+2. **驗證**：另一個交易回讀，重算 SHA-256，比對信封欄位與 `world_id`、`gen`。
+3. **提升**：確認 `slots[0]` 仍是本分頁預期的值（樂觀並行檢查），把新 `gen` 放到 `slots` 最前面，標 `verified`，刪除超出保留數與殘留的 `pending` 紀錄。
+4. 交易 `complete` 後，UI 才能顯示「已儲存」。
+
+任一步失敗：最新指標仍指向上一個已驗證快照；回報型別化錯誤（`quota_exceeded`、`aborted`、`verify_failed`、`conflict`、`not_writer`、`write_failed`）。
+
+**保留**：至少 2 個、預設 3 個已驗證快照（產品候選值，不是生物參數）。
+
+**載入**：依 `slots` 由新到舊讀取，第一個通過檢查（雜湊、信封、`official === false`、標示、版本）的快照就是結果。若跳過了較新的快照，回傳 `recovered: true` 與原因，UI **必須**告知使用者。所有快照都失敗時回傳 `no_valid_snapshot`；**任何情況都不會默默建立新世界**。損壞的快照移入 `quarantined`（保留供診斷，不再當作回復點）。
+
+## 6. 版本與遷移
+
+- 載入時比較信封與目前 runtime：`schema` 不認得 → `unknown_schema`；`schema_version` 比目前新 → `newer_schema`（不可載入，不修改）；較舊 → 依遷移登錄表逐版遷移；`rules_fingerprint` 不同 → `rules_mismatch`（不能接續，只能匯出或刪除，因為接續會用不同規則改寫歷史）。
+- 遷移是明確、逐版的純函式（`n → n+1`）。v1 是恆等。遷移在副本上執行，結果重新計算雜湊；**原快照不變**。遷移失敗時原始資料完整保留，回報 `migration_failed`。遷移後的世界在下一次存檔時才以新 `gen` 寫入。
+
+## 7. 自動存檔
+
+| 觸發 | 規則 |
+|---|---|
+| 每 30 秒真實時間檢查 | 若上次成功儲存後世界有變化就存檔（產品候選值；SAVE-1 量測寫入成本後再定） |
+| 暫停 | 存檔 |
+| 回到選單前 | 存檔完成（或失敗並告知）後才離開 |
+| `visibilitychange → hidden`、`pagehide` | 額外嘗試；手機可能在完成前終止頁面，**不能是唯一機制** |
+| 「立即存檔」按鈕 | 手動存檔 |
+
+同時只進行一次存檔；進行中又有觸發時合併為一次後續存檔。UI 狀態：「正在儲存」「已儲存」「上次成功儲存時間」「儲存失敗」。「已儲存」只在 IndexedDB 提升交易的 `complete` 事件後顯示。
+
+**離線時間不模擬**：關閉瀏覽器期間世界不推進；回來時從已儲存的 `t_sim` 繼續。
+
+## 8. 多分頁
+
+每個世界一個 Web Lock（`antempire-experiment-world:<world_id>`）。取得鎖的分頁是唯一寫入者；第二個分頁為**唯讀**，或提示使用者「切換到此分頁」（`steal`，原分頁收到通知後轉為唯讀，之後的寫入被拒絕）。不支援 Web Locks 的瀏覽器只靠 §5 的樂觀並行檢查，並在 UI 標示。
+
+## 9. 風險與告知
+
+| 風險 | 處理 |
+|---|---|
+| 寫入失敗、配額不足 | 型別化錯誤；顯示「儲存失敗」與原因；舊存檔不受影響 |
+| 手機背景終止 | 30 秒週期＋暫停＋隱藏時嘗試；最多損失最後一個週期 |
+| 私密模式、清除網站資料 | 存檔可能消失；首頁說明，建議匯出備份 |
+| 版本更新 | §6；不相容的存檔不會被修改或刪除 |
+| 分頁衝突 | §8 |
+| 永久性 | 請求 `navigator.storage.persist()`，但**不保證**永久保存，UI 不得宣稱永久 |
+
+## 10. 匯出／匯入
+
+匯出檔 `antempire.experiment-world-export.v1`（[`schema`](../prototypes/continuous-world/save/experiment-world-export.v1.schema.json)）：世界中繼資料＋最新已驗證快照信封＋整體 SHA-256。下載由畫面以 Blob 產生（部分沙箱環境擋下載，真實觀察器可用）。匯入時檢查：格式、`official === false`、標示、payload 雜湊、整體雜湊、規則相容性；已存在相同 `world_id` 時拒絕（不覆寫）。匯入不得產生正式存檔。
+
+## 11. 選單
+
+「繼續遊戲」（最近儲存的世界）／「開始新遊戲」／「讀取存檔」／「存檔管理」。
+
+- **新遊戲**：新的 `world_id`；新種子或使用者指定；合法的實驗 Day0（依本種研究依據，不是選存活率最高的實驗組）；立即寫入初始快照；不覆寫任何世界；世界之間不共用資料。
+- **存檔清單**：名稱、種子、模擬日與時間、上次儲存時間、蟻后／工蟻數、版本相容性、「非正式」標示。
+- **改名**；**刪除**需頁面內兩步確認（不用 `confirm()`），且只能由持有寫入鎖的分頁執行。
+
+## 12. 驗收測試
+
+| 代號 | 內容 | 階段 |
+|---|---|---|
+| A | 連續跑 48 小時 vs. 跑 24 小時 → 存檔 → 終止 Worker → 新 Worker 載入 → 再跑 24 小時；比較完整狀態、位置、事件、資源、化學場、帳本與亂數串流 | SAVE-2（需 Worker runtime） |
+| B | 執行中強制終止 → 回到最後一個已提交快照，絕無半寫狀態 | SAVE-1（合成 payload）、SAVE-2（真實 Worker） |
+| C | 新遊戲隔離：建立、推進世界 B 不改變世界 A 的任何紀錄 | SAVE-1（合成）、SAVE-3 |
+| D | 損壞最新快照 → 偵測、告知、回復上一個 | SAVE-1 |
+| E | FPS、縮放、追蹤、播放速度與存檔本身都不改變結果 | SAVE-2／SAVE-3（需 Worker 與畫面） |
+
+SAVE-1 只用**合成 payload**（Worker runtime 尚未合併），不得宣稱已與 Worker 整合。
+
+**階段**：
+
+| 階段 | 內容 | 依賴 |
+|---|---|---|
+| SAVE-0 | 本文件、schema、契約測試 | 3080e24（#39 例外） |
+| SAVE-1 | `save-store.ts`：原子寫入、回復、遷移、鎖、匯出入、清單；Node 純邏輯測試＋Chromium 實機測試 | SAVE-0 |
+| SAVE-2 | Worker 快照產生與還原、一致事件邊界、驗收 A／B／E | Worker runtime（PR 2）、SAVE-1 |
+| SAVE-3 | 選單、存檔狀態 UI、自動存檔接線、驗收 C／E 的畫面部分 | V6-2 畫面整合（PR 3）、SAVE-2 |
+
+## 13. 待協調事項
+
+- `t_sim` 單位（本文件假設世界分鐘）與 `seed` 型別需與 Worker runtime 確認。
+- payload 是否需要 typed array（化學場）；若需要，決定以 base64 或一般陣列編碼，並在驗收 A 量測大小與寫入時間。
+- 30 秒週期與保留 3 份是產品候選值，依 SAVE-1 的寫入成本量測再定。

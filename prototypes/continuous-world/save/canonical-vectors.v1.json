@@ -1,0 +1,10 @@
+{
+  "schema": "antempire.experiment-canonical-json-vectors.v1",
+  "rule": "payload_sha256 = hex(SHA-256(UTF-8(canonicalJSON(payload)))); keys sorted by UTF-16 code units, no whitespace, numbers as JSON.stringify; -0 is written as 0; NaN/Infinity/undefined/bigint/typed arrays are rejected",
+  "vectors": [
+    { "input": {}, "canonical": "{}", "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a" },
+    { "input": { "b": 1, "a": [1, 2, { "d": null, "c": true }] }, "canonical": "{\"a\":[1,2,{\"c\":true,\"d\":null}],\"b\":1}", "sha256": "a06efa1296746038e65b4c06eddffdeff5009838cc5bb977fac2695f82fd1ebe" },
+    { "input": { "é": "螞蟻", "Z": -0, "a": 1e21, "b": 0.1 }, "canonical": "{\"Z\":0,\"a\":1e+21,\"b\":0.1,\"é\":\"螞蟻\"}", "sha256": "5e20ba50f10f13578bca45439cd5ba54dc6b8086bb36f81fd2420da200259707" },
+    { "input": { "t_sim": 1440.5, "rng": { "streams": { "weather": [1, 2, 3] } } }, "canonical": "{\"rng\":{\"streams\":{\"weather\":[1,2,3]}},\"t_sim\":1440.5}", "sha256": "8383c3d58ba9625097bc25e907bb6b4b7beb03b79b25a9083de51b305f4cbb31" }
+  ]
+}
