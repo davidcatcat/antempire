@@ -59,6 +59,8 @@ jobs:
         run: node tests/browser/web-follow.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/
       - name: V4 daily ecology charts + derived walking speed E2E (desktop; Android Pixel 7 profile, touch)
         run: node tests/browser/web-stats.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/
+      - name: V5 event filter, event map, recorded routes, nest highlights, daily flows, world mark E2E + feature screenshots (desktop 1280x800; Pixel-like phone 412x915 touch; DPR 2)
+        run: node tests/browser/web-v5.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/
       - name: Assemble the static preview (page + compiled script + data + screenshots + test results + instructions)
         if: always()
         run: |
@@ -70,16 +72,18 @@ jobs:
           cp "$RUNNER_TEMP"/viewer-shots/*.json "$P/test-results/" 2>/dev/null || true
           node tests/web-v3-follow.test.ts > "$P/test-results/web-v3-follow-node.json" 2>&1 || true
           node tests/web-v4-stats.test.ts > "$P/test-results/web-v4-stats-node.json" 2>&1 || true
+          node tests/web-v5-observer.test.ts > "$P/test-results/web-v5-observer-node.json" 2>&1 || true
+          cp docs/viewer-v5.md "$P/" 2>/dev/null || true
           echo "commit ${GITHUB_SHA}" > "$P/BUILD.txt"; date -u >> "$P/BUILD.txt"; ls -R "$P" | head -60
       - name: Upload screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: viewer-screenshots
           path: ${{ runner.temp }}/viewer-shots
       - name: Upload the static preview (open site/index.html through any static server; see README.md)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: antempire-viewer-preview
           path: ${{ runner.temp }}/antempire-viewer-preview
