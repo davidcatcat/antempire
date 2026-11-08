@@ -22,23 +22,44 @@ const clone = (x) => structuredClone(x);
  * opts.rulesVersion: registered name of `fingerprint` (rules/registry.json), recorded at Day15 activation.
  * opts.adopt: an Owner-requested switch (#11) from the frozen version to the next approved one, effective from
  *   the day being created; it is applied only if the save is frozen exactly at adopt.from.
+ * opts.freezeFormat: 'v2' freezes fingerprint.v2 at Day15 activation (only when the running registered version
+ *   records a v2 fingerprint); default 'v1' ({engine, params}, unchanged behaviour).
+ * Rules fingerprint v2 (docs/rules-fingerprint-v2.md): a frozen record with schema antempire.rules-fingerprint.v2
+ *   is compared with fingerprint.v2; a record without schema is a v1 record and is compared with engine/params.
+ *   Adopting a version with fingerprint_v2 freezes v2 from the adopted day on; earlier days keep their record.
  */
 export function projectDaily(main, world, climatology, bundle, fingerprint, refs = DEFAULT_REFS, now = new Date().toISOString(), opts = {}) {
  const engineHash = fingerprint.engine, paramsHash = fingerprint.params;
+ const V2='antempire.rules-fingerprint.v2',isV2=(f)=>!!f&&f.schema===V2;
+ const rec2=(f)=>({schema:V2,engine_version:f.engine_version,source:f.source,params:f.params,data:f.data,digest:f.digest});
+ const same2=(a,b)=>isV2(a)&&isV2(b)&&a.digest===b.digest&&a.engine_version===b.engine_version&&a.source===b.source&&a.params===b.params&&a.data===b.data;
+ const cur2=isV2(fingerprint.v2)?rec2(fingerprint.v2):null;
  if(main.simulation.latest_completed_day!==world.time.scientific_clock.day)throw Error('main/world day mismatch');
  const m=clone(main),w=clone(world);
  let s=w.sim_engine_v2;
  if(!s){if(m.simulation.latest_completed_day!==14)throw Error('Day15 migration only allowed from Day14');s=migrationState(m,w,climatology,bundle);
   const mm=metadataPreview(m,{engine_ref:refs.engine_ref,rules_ref:refs.rules_ref,params_ref:refs.params_ref},now);m.continuity=mm.continuity;m.simulation=mm.simulation;m.migration_log=mm.migration_log;
+  if(opts.freezeFormat==='v2'){if(!cur2)throw Error('RULES ACTIVATION REFUSED: v2 fingerprint of the running checkout missing');
+   s.rules_fingerprint={...cur2,activated_from_day:15};
+   s.rules_history=[{event:'activated',rules_version:opts.rulesVersion??null,fingerprint:cur2,effective_from_day:15,at:now}];
+  }else{
   s.rules_fingerprint={engine:engineHash,params:paramsHash,activated_from_day:15};
   s.rules_history=[{event:'activated',rules_version:opts.rulesVersion??null,fingerprint:{engine:engineHash,params:paramsHash},effective_from_day:15,at:now}];
+  }
  }else if(opts.adopt){
   const a=opts.adopt,day=m.simulation.latest_completed_day+1;
-  if(s.rules_fingerprint.engine!==a.from.fingerprint.engine||s.rules_fingerprint.params!==a.from.fingerprint.params)throw Error('RULES ADOPTION REFUSED: the save is not frozen at '+a.from.rules_version);
-  if(engineHash!==a.to.fingerprint.engine||paramsHash!==a.to.fingerprint.params)throw Error('RULES ADOPTION REFUSED: the running engine/params are not '+a.to.rules_version);
+  const frozenV2=isV2(s.rules_fingerprint);
+  if(frozenV2?!same2(s.rules_fingerprint,a.from.fingerprint_v2):(s.rules_fingerprint.engine!==a.from.fingerprint.engine||s.rules_fingerprint.params!==a.from.fingerprint.params))throw Error('RULES ADOPTION REFUSED: the save is not frozen at '+a.from.rules_version);
+  if(engineHash!==a.to.fingerprint.engine||paramsHash!==a.to.fingerprint.params||(a.to.fingerprint_v2&&!same2(a.to.fingerprint_v2,cur2)))throw Error('RULES ADOPTION REFUSED: the running engine/params are not '+a.to.rules_version);
+  if(frozenV2&&!a.to.fingerprint_v2)throw Error('RULES ADOPTION REFUSED: '+a.to.rules_version+' has no v2 fingerprint (no return to v1)');
+  if(a.to.fingerprint_v2){
+   s.rules_history=[...(s.rules_history??[]),{event:'adopted',from_version:a.from.rules_version,to_version:a.to.rules_version,from_fingerprint:frozenV2?rec2(s.rules_fingerprint):{engine:s.rules_fingerprint.engine,params:s.rules_fingerprint.params},to_fingerprint:cur2,effective_from_day:day,approved_in:a.to.approved_in,at:now}];
+   s.rules_fingerprint={...cur2,activated_from_day:day};
+  }else{
   s.rules_history=[...(s.rules_history??[]),{event:'adopted',from_version:a.from.rules_version,to_version:a.to.rules_version,from_fingerprint:{engine:s.rules_fingerprint.engine,params:s.rules_fingerprint.params},to_fingerprint:{engine:engineHash,params:paramsHash},effective_from_day:day,approved_in:a.to.approved_in,at:now}];
   s.rules_fingerprint={engine:engineHash,params:paramsHash,activated_from_day:day};
- }else if(s.rules_fingerprint.engine!==engineHash||s.rules_fingerprint.params!==paramsHash)throw Error('RULES FROZEN: engine/params modified. Use separate rules-update review, not a daily tick.'+(opts.frozenHint?' '+opts.frozenHint:''));
+  }
+ }else if(isV2(s.rules_fingerprint)?!same2(s.rules_fingerprint,cur2):(s.rules_fingerprint.engine!==engineHash||s.rules_fingerprint.params!==paramsHash))throw Error('RULES FROZEN: engine/params modified. Use separate rules-update review, not a daily tick.'+(opts.frozenHint?' '+opts.frozenHint:''));
  // rules_history is save bookkeeping (#11), not engine input: the engine never sees it.
  const {rules_history:_history,...engineInput}=s;
  const report=simulateDay(engineInput,bundle),r=report.summary,beforeDay=m.simulation.latest_completed_day;
@@ -76,7 +97,7 @@ export function projectDaily(main, world, climatology, bundle, fingerprint, refs
  w.climate_engine.last_generated_synthetic_day=report.day;w.climate_engine.last_generated_synthetic_date=r.date;w.climate_engine.generated_day_count=report.day-8;w.climate_engine.last_synthetic_condition={wet_or_dry:r.weather.wet?'wet':'dry',synthetic_temp_anomaly_c:r.weather.temperature_anomaly_c,model_surface_wetness_index:r.weather.soil_index,model_shaded_soil_memory_index:r.weather.shade_index};
  w.day_log_latest={day:report.day,calendar_date:r.date,elapsed_hours_start:24*(report.day-1),elapsed_hours_end:24*report.day,model:'v2_executable_portion_engine',weather:r.weather,food:r.mass_ledger,demography:r.population,events:report.events,rules_frozen_sha256:s.rules_fingerprint};
  w.time.last_transition={from_day:beforeDay,to_day:report.day,advance_hours:24,journal:m.simulation.latest_journal,program_ref:refs.engine_ref,params_ref:refs.params_ref};
- const md=`# 🐜《螞蟻帝國》Day ${report.day}｜${r.date}\n\n**遊戲假設引擎 v2**，不是實際野外觀測。Day ${report.day-1}→Day ${report.day}，24模擬小時；天氣由臺中歷史月氣候生成。所有「份」都是遊戲單位，不是mg或生物學精確需求。\n\n## 天氣與蟻群\n\n模型雨量${r.weather.rain_mm} mm，模型外氣${r.weather.air_temp_c.toFixed(2)}°C、模型巢溫${r.weather.nest_temp_model_c.toFixed(2)}°C；土表濕潤記憶${r.weather.soil_index}（非實測土壤含水率）。\n\n| 群體 | Day${report.day}數量 |\n|---|---:|\n| 蟻后 | ${r.population.queen} |\n| 工蟻 | ${r.population.workers}（羽化+${r.eclosions}，死亡-${r.worker_deaths}） |\n| 卵 | ${r.population.eggs} |\n| 幼蟲 | ${r.population.larvae} |\n| 蛹 | ${r.population.pupae} |\n\n## 食物份數（非科學實測）\n\n| 營養維度 | 成功採入 | 消耗 | 結餘 |\n|---|---:|---:|---:|\n| 糖 | ${r.income.sugar} | ${r.consumed.sugar} | ${r.stock.sugar} |\n| 蛋白 | ${r.income.protein} | ${r.consumed.protein} | ${r.stock.protein} |\n\n累計糖缺口${r.starvation.sugar_gap_days}日、蛋白缺口${r.starvation.protein_gap_days}日。當日卵孵化${r.hatchings}、化蛹${r.pupations}、羽化${r.eclosions}、產卵${r.eggs_laid}、工蟻死亡${r.worker_deaths}、幼體死亡${r.brood_deaths}。\n\n## 事件紀錄\n\n${report.events.map(e=>'- '+JSON.stringify(e)).join('\n')||'今日無獨立特殊事件。'}\n\n*引擎規則/參數凍結sha256：${s.rules_fingerprint.engine.slice(0,12)} / ${s.rules_fingerprint.params.slice(0,12)}。舊Day1–14歷史沒有改寫。*\n`;
+ const md=`# 🐜《螞蟻帝國》Day ${report.day}｜${r.date}\n\n**遊戲假設引擎 v2**，不是實際野外觀測。Day ${report.day-1}→Day ${report.day}，24模擬小時；天氣由臺中歷史月氣候生成。所有「份」都是遊戲單位，不是mg或生物學精確需求。\n\n## 天氣與蟻群\n\n模型雨量${r.weather.rain_mm} mm，模型外氣${r.weather.air_temp_c.toFixed(2)}°C、模型巢溫${r.weather.nest_temp_model_c.toFixed(2)}°C；土表濕潤記憶${r.weather.soil_index}（非實測土壤含水率）。\n\n| 群體 | Day${report.day}數量 |\n|---|---:|\n| 蟻后 | ${r.population.queen} |\n| 工蟻 | ${r.population.workers}（羽化+${r.eclosions}，死亡-${r.worker_deaths}） |\n| 卵 | ${r.population.eggs} |\n| 幼蟲 | ${r.population.larvae} |\n| 蛹 | ${r.population.pupae} |\n\n## 食物份數（非科學實測）\n\n| 營養維度 | 成功採入 | 消耗 | 結餘 |\n|---|---:|---:|---:|\n| 糖 | ${r.income.sugar} | ${r.consumed.sugar} | ${r.stock.sugar} |\n| 蛋白 | ${r.income.protein} | ${r.consumed.protein} | ${r.stock.protein} |\n\n累計糖缺口${r.starvation.sugar_gap_days}日、蛋白缺口${r.starvation.protein_gap_days}日。當日卵孵化${r.hatchings}、化蛹${r.pupations}、羽化${r.eclosions}、產卵${r.eggs_laid}、工蟻死亡${r.worker_deaths}、幼體死亡${r.brood_deaths}。\n\n## 事件紀錄\n\n${report.events.map(e=>'- '+JSON.stringify(e)).join('\n')||'今日無獨立特殊事件。'}\n\n*引擎規則/參數凍結sha256：${isV2(s.rules_fingerprint)?'v2 '+s.rules_fingerprint.digest.slice(0,12)+'（程式 '+s.rules_fingerprint.source.slice(0,12)+' / 參數 '+s.rules_fingerprint.params.slice(0,12)+'）':s.rules_fingerprint.engine.slice(0,12)+' / '+s.rules_fingerprint.params.slice(0,12)}。舊Day1–14歷史沒有改寫。*\n`;
  if(w.time.scientific_clock.day!==m.simulation.latest_completed_day||m.colony.workers.current_alive!==report.state.population.workers.length)throw Error('save sync failed');
  return {main:m,world:w,journal:md,report};
 }
