@@ -14,7 +14,7 @@
  * `foreign` hook as ONE batch per scheduler batch — the set of everything at that instant — never one by one, and the
  * clock picks no winner among them.
  */
-import { type BatchContext, type EventSpec, type Handler, type SchedulerSnapshot, type StepOutput, type TimeOrder, type WorldEvent, type WorldTime, WorldScheduler, compareExact, exactOf } from '../scheduler/world-events.ts';
+import { type BatchContext, type CellPrepare, CommitCell, type EventSpec, type Handler, type SchedulerSnapshot, type StepOutput, type TimeOrder, type WorldEvent, type WorldTime, WorldScheduler, compareExact, exactOf } from '../scheduler/world-events.ts';
 import { type CalendarAnchor, type Resolution, checkAnchor, clockFail, dateOfDay, displayOf, ecoNative } from './time-frames.ts';
 import { type LightState, type SolarSite, checkSite, lightStateAt } from './solar.ts';
 import { type DailyWeatherInput, type RainPlan, type RainTimingScenario, type TemperatureShape, WeatherSeries, planRain } from './weather-input.ts';
@@ -92,22 +92,38 @@ export interface DayRecord {
   light_times: { civil_dawn: string; sunrise: string; sunset: string; civil_dusk: string };
 }
 
+/** freeze plain JSON data (the environment state and day records only; never caller objects) */
+const freezeData = <T>(v: T): T => { if (v && typeof v === 'object') { for (const x of Object.values(v as object)) freezeData(x); Object.freeze(v); } return v; };
+
 export class ClockRun {
   readonly cfg: ClockWorldConfig; readonly series: WeatherSeries; readonly plan: RainPlan;
-  state: EnvState; days: DayRecord[] = [];
-  private sched!: WorldScheduler;
-  /** the scheduler of this run; assigning one (e.g. a restored or re-filled scheduler) moves the environment's commit
-   *  hook to it, so the environment always commits in the same atomic step as that scheduler's batch */
-  get scheduler(): WorldScheduler { return this.sched; }
-  set scheduler(s: WorldScheduler) {
-    if (!(s instanceof WorldScheduler)) clockFail('scheduler must be a WorldScheduler');
-    s.setCommitHook(this.commitStaged);
-    if (this.sched && this.sched !== s) this.sched.setCommitHook(null);
-    this.sched = s; this.staged = null;
-  }
   /** batch hook for non-environment events sharing the scheduler: receives all of them of one batch together (a set);
    *  may return children / cancellations like any scheduler handler. Default null: such events are refused. */
   foreign: ((batch: readonly Readonly<WorldEvent>[], ctx: BatchContext) => StepOutput | void) | null = null;
+
+  // Atomicity contract (R13-02; Owner review of #125). ClockRun owns exactly two things: the environment state (a
+  // CommitCell attached to the scheduler) and the closed-day records. A batch commits the scheduler and the environment
+  // together or neither: the handler builds the next state on a COPY and freezes it; the cell's prepare only checks and
+  // returns that frozen value; the scheduler swaps it in after its own commit. The state is deep-frozen, so no foreign
+  // hook, getter or caller can change it in place. NOT covered: whatever the foreign hook writes elsewhere.
+  #cell: CommitCell<EnvState>;
+  #days: readonly DayRecord[] = Object.freeze([]);
+  #sched!: WorldScheduler;
+  /** the environment state a batch would produce (frozen), staged by the handler for the cell's prepare */
+  #staged: { ids: string; next: EnvState } | null = null;
+
+  /** the committed environment state (deep-frozen; replaced, never mutated) */
+  get state(): EnvState { return this.#cell.value; }
+  /** the closed days (frozen) */
+  get days(): readonly DayRecord[] { return this.#days; }
+  /** the scheduler of this run; assigning one (e.g. a restored or re-filled scheduler) moves the environment cell to it
+   *  — all checks first, so a refused assignment (e.g. from inside a batch) changes nothing */
+  get scheduler(): WorldScheduler { return this.#sched; }
+  set scheduler(s: WorldScheduler) {
+    if (!(s instanceof WorldScheduler)) clockFail('scheduler must be a WorldScheduler');
+    s.attachCell(this.#cell as CommitCell<unknown>);
+    this.#sched = s; this.#staged = null;
+  }
 
   constructor(cfg: ClockWorldConfig, inputs: readonly DailyWeatherInput[], restoreFrom?: ClockSnapshot) {
     this.cfg = checkConfig(cfg);
@@ -115,34 +131,39 @@ export class ClockRun {
     this.plan = planRain(this.series, cfg.first_day, cfg.last_day, cfg.seed, cfg.rain_timing);
     if (restoreFrom) {
       if (restoreFrom.schema !== CLOCK_SNAPSHOT_SCHEMA) clockFail('clock snapshot schema mismatch');
-      this.scheduler = WorldScheduler.restore(restoreFrom.scheduler);
-      if (this.scheduler.order !== cfg.order || this.scheduler.world !== cfg.world) clockFail('snapshot was taken under another world or time contract');
-      this.state = JSON.parse(JSON.stringify(restoreFrom.env)); this.days = JSON.parse(JSON.stringify(restoreFrom.days));
+      const sch = WorldScheduler.restore(restoreFrom.scheduler);
+      if (sch.order !== cfg.order || sch.world !== cfg.world) clockFail('snapshot was taken under another world or time contract');
+      this.#cell = new CommitCell<EnvState>(freezeData(JSON.parse(JSON.stringify(restoreFrom.env))), this.#prepare);
+      this.#days = freezeData(JSON.parse(JSON.stringify(restoreFrom.days)));
+      this.scheduler = sch;
       return;
     }
+    this.#cell = new CommitCell<EnvState>(freezeData({ light: lightStateAt(this.series.light(cfg.first_day)!, 0), raining: [], started_rain: {}, last_sample: null, day_counts: {}, last_exact: null }), this.#prepare);
     this.scheduler = new WorldScheduler(cfg.world, { day: cfg.first_day, minute: 0 }, { order: cfg.order });
     for (const s of environmentSpecs(cfg, this.series, this.plan)) this.scheduler.schedule(s);
-    this.state = { light: lightStateAt(this.series.light(cfg.first_day)!, 0), raining: [], started_rain: {}, last_sample: null, day_counts: {}, last_exact: null };
   }
 
-  /** the environment state a batch would produce, staged by the handler until the scheduler accepts that batch */
-  private staged: { ids: string; next: EnvState } | null = null;
-  /** scheduler commit hook: runs after the foreign hook returned and the scheduler validated the batch output, right
-   *  before the scheduler commits; the environment and the scheduler therefore commit together or not at all. A staged
-   *  state is used only for the same batch run with this clock's handler (never a stale one from a failed attempt). */
-  private readonly commitStaged = (ids: readonly string[], handler: Handler): void => {
-    const st = this.staged; this.staged = null;
-    if (handler !== this.handler) return;
-    if (!st || st.ids !== ids.join('\n')) clockFail('internal: the environment batch to commit is not the batch the scheduler accepted');
-    this.state = st!.next;
+  /** phase 1 of the environment cell: checks only, no mutation. Environment events may be executed only through this
+   *  clock's handler (otherwise the scheduler would advance and the environment would not follow); a batch without
+   *  environment events run by another handler leaves the environment unchanged. */
+  readonly #prepare: CellPrepare<EnvState> = (batch, handler) => {
+    if (handler !== this.#handler) {
+      const env = batch.find((e) => ENV_KINDS.has(e.kind));
+      if (env) clockFail(`environment event ${env.id} can be executed only by ClockRun.handler (the environment would not follow the scheduler)`);
+      return null;
+    }
+    const st = this.#staged;
+    if (!st || st.ids !== batch.map((e) => e.id).join('\n')) clockFail('internal: the environment batch to commit is not the batch the scheduler accepted');
+    return { value: st!.next };
   };
 
   /** the batch handler: applies a batch as a SET (order inside a batch never matters) and checks local invariants.
-   *  It works on a COPY of the environment state; the copy is committed by commitStaged() only once the foreign hook
-   *  returned and the scheduler accepted the output. On any failure (a check here, the foreign hook throwing or returning
-   *  invalid output, a refused re-entry) neither the environment nor the scheduler changes, and the batch can be retried. */
-  readonly handler: Handler = (batch, ctx) => {
-    this.staged = null;
+   *  It works on a COPY of the environment state and stages it frozen; the scheduler commits it (via the cell) only once
+   *  the foreign hook returned and the output was accepted. On any failure neither the environment nor the scheduler
+   *  changes, and the batch can be retried. */
+  get handler(): Handler { return this.#handler; }
+  readonly #handler: Handler = (batch, ctx) => {
+    this.#staged = null;
     const st: EnvState = JSON.parse(JSON.stringify(this.state)), ends = new Set<string>(), starts: string[] = [], others: Readonly<WorldEvent>[] = [];
     let light: LightState | null = null;
     const dc = (st.day_counts[String(batch[0].at.day)] ??= { batches: 0, by_kind: {} }); dc.batches++;
@@ -167,7 +188,7 @@ export class ClockRun {
     st.last_exact = { ...hi };
     // the foreign hook sees the environment as it was before this batch (the batch is a set; nothing is committed yet)
     const out = others.length ? this.foreign!(others, ctx) : undefined;
-    this.staged = { ids: batch.map((e) => e.id).sort().join('\n'), next: st };
+    this.#staged = { ids: batch.map((e) => e.id).sort().join('\n'), next: freezeData(st) };
     return out;
   };
 
@@ -177,11 +198,11 @@ export class ClockRun {
     if (d && d.timing === 'unknown' && d.input_nm !== 0) return null;
     return this.state.raining.length > 0;
   }
-  runUntil(t: WorldTime): number { return this.scheduler.runUntil(t, this.handler); }
+  runUntil(t: WorldTime): number { return this.#sched.runUntil(t, this.#handler); }
 
   /** close world day `day` (runs what is left of it) and settle: conservation and ordering checks; returns the record */
   closeDay(day: number): DayRecord {
-    this.scheduler.runDay(day, this.handler);
+    this.#sched.runDay(day, this.#handler);
     const counts = this.state.day_counts[String(day)] ?? { batches: 0, by_kind: {} }, batches = counts.batches;
     const executed_by_kind = Object.fromEntries(Object.entries(counts.by_kind).sort(([a], [b]) => (a < b ? -1 : 1)));
     const pd = this.plan.days.find((x) => x.day === day)!, L = this.series.light(day)!;
@@ -197,10 +218,14 @@ export class ClockRun {
       light_at_close: this.state.light, raining_at_close: this.rainingAt(day), pending_after_close: this.scheduler.pending().length,
       light_times: { civil_dawn: disp(L.civil_dawn), sunrise: disp(L.sunrise), sunset: disp(L.sunset), civil_dusk: disp(L.civil_dusk) },
     };
-    delete this.state.day_counts[String(day)];
+    // the settled state is built on a copy; then two assignments (replace() is the only one that can refuse, and it
+    // runs first), so a refused close changes nothing
+    const next: EnvState = JSON.parse(JSON.stringify(this.state));
+    delete next.day_counts[String(day)];
     // forget segments that can no longer be settled (their last day is closed)
-    for (const [id, segs] of Object.entries(this.state.started_rain)) if (segs.every((s) => s.day <= day) && !this.state.raining.includes(id)) delete this.state.started_rain[id];
-    this.days.push(rec);
+    for (const [id, segs] of Object.entries(next.started_rain)) if (segs.every((s) => s.day <= day) && !next.raining.includes(id)) delete next.started_rain[id];
+    this.#cell.replace(freezeData(next));
+    this.#days = Object.freeze([...this.#days, freezeData(rec)]);
     return rec;
   }
   snapshot(): ClockSnapshot { return JSON.parse(JSON.stringify({ schema: CLOCK_SNAPSHOT_SCHEMA, scheduler: this.scheduler.snapshot(), env: this.state, days: this.days })); }

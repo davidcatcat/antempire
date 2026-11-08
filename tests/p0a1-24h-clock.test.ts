@@ -19,10 +19,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { REPO_ROOT } from '../cli/lib/load.ts';
 import { hash32, rng } from '../engine/rng.ts';
-import { type StepOutput, type TimeOrder, type WorldEvent, WorldScheduler, compareExact, exactOf, labelOf, verifyLog, compareTime } from '../engine/scheduler/world-events.ts';
+import { CommitCell, type StepOutput, type TimeOrder, type WorldEvent, WorldScheduler, compareExact, exactOf, labelOf, verifyLog, compareTime } from '../engine/scheduler/world-events.ts';
 import { ClockError, DEFAULT_ORDER, minutesOfDay, nativeOnClock, requireNativeOnClock, sameInstant, secondsOfDay, civilFromDays, dateOfDay, dayOfDate, dayOfYear, daysFromCivil, displayOf, ecoNative, formatDate, msFloor, parseDate, physicsNative, type CalendarAnchor } from '../engine/clock/time-frames.ts';
 import { CIVIL_TWILIGHT_ALTITUDE_DEG, SUNRISE_ALTITUDE_DEG, lightTimes, lightStateAt, solarAltitude, type SolarSite } from '../engine/clock/solar.ts';
-import { type DailyWeatherInput, type RainTimingScenario, type TemperatureShape, WeatherSeries, checkDailyInput, fromSyntheticDaily, planRain, saturationVapourKPa, splitInteger } from '../engine/clock/weather-input.ts';
+import { type DailyWeatherInput, type RainTimingScenario, TEMPERATURE_SHAPE_DEFAULT, type TemperatureShape, WeatherSeries, checkDailyInput, fromSyntheticDaily, planRain, saturationVapourKPa, splitInteger } from '../engine/clock/weather-input.ts';
 import { type ClockWorldConfig, ClockRun, environmentSpecs } from '../engine/clock/environment.ts';
 import { allocateRain } from '../reports/p0a-24h-clock/rain-allocation.ts';
 import { SCENARIO, day0Config, day0DailyWeather } from '../prototypes/p0a1-24h-clock/day0-environment.ts';
@@ -386,6 +386,57 @@ try {
       refuses(() => r.scheduler.step(r.handler), /rain_end .* without an active rain event/, `${order}: an illegal environment event mid-batch is refused`);
       ok(JSON.stringify(r.snapshot()) === snap0 && r.state.light === 'night' && r.state.raining.length === 0 && r.state.last_sample?.minute !== dawn.at.minute, `${order}: … and no part of the batch (light, rain start, sample) was applied`);
     }
+    // ---- 6c. counterexamples against the clock itself (Owner review of #125; all BROKEN on ccd9aad, see doc §7a).
+    // ClockRun owns the environment state (a CommitCell swapped by the scheduler) and its day records; both are frozen
+    // and private, so the only way to change them is a committed batch or a completed closeDay.
+    const clean = finish(mkA(true).r), cleanKey = fullKey(clean);
+    /** run one attack at the dawn batch: it must fail with nothing changed, and the retried run must equal clean */
+    const attack = (what: string, setup: (r: ClockRun) => () => unknown, re: RegExp) => {
+      const { r } = mkA(true), snap0 = JSON.stringify(r.snapshot()), sched0 = r.scheduler, act = setup(r);
+      for (let k = 0; k < 2; k++) { let msg = ''; try { act(); } catch (e) { msg = String(e); } ok(re.test(msg), `${order}: ${what} (${k + 1}) is refused: ${msg.slice(0, 80)}`); }
+      ok(JSON.stringify(r.snapshot()) === snap0 && r.scheduler === sched0 && r.state.light === 'night', `${order}: ${what}: environment, scheduler and clock snapshot unchanged`);
+      r.foreign = () => {}; ok(fullKey(finish(r)) === cleanKey, `${order}: ${what}: the retried run equals the never-failing run byte for byte`);
+    };
+    // CE5: a third party cannot detach or replace the clock's commit (no generic hook; the cell is private)
+    {
+      const { r } = mkA(true); let third = 0;
+      r.scheduler.attachCell(new CommitCell<number>(0, () => { third++; return null; }) as CommitCell<unknown>);
+      ok(!('setCommitHook' in r.scheduler) && fullKey(finish(r)) === cleanKey && third > 0, `${order}: CE5 another cell on the same scheduler does not displace the clock's commit`);
+    }
+    // CE6: stepping the clock's scheduler with another handler cannot execute environment events behind its back
+    attack('CE6 the scheduler stepped with a foreign handler', (r) => () => r.scheduler.step(() => {}), /can be executed only by ClockRun\.handler/);
+    attack('CE6b a wrapper handler that calls ClockRun.handler', (r) => () => r.scheduler.step((b, c) => r.handler(b, c)), /can be executed only by ClockRun\.handler/);
+    // CE7: the foreign hook mutating the clock's state (frozen) fails the batch; nothing changes
+    attack('CE7 foreign writes ClockRun.state then throws', (r) => { r.foreign = () => { (r.state as { light: string }).light = 'day'; }; return () => r.scheduler.step(r.handler); }, /read only|read-only|Cannot assign/);
+    attack('CE7b foreign pushes into ClockRun.state.raining', (r) => { r.foreign = () => { (r.state.raining as string[]).push('x'); }; return () => r.scheduler.step(r.handler); }, /not extensible|Cannot add/);
+    // CE8: the foreign hook reassigning ClockRun.scheduler mid-batch: refused before anything moves
+    {
+      const other = new WorldScheduler(acfg.world, { day: 0, minute: 0 }, { order });
+      attack('CE8 foreign reassigns ClockRun.scheduler', (r) => { r.foreign = () => { r.scheduler = other; }; return () => r.scheduler.step(r.handler); }, /moving a cell off its scheduler|inside a batch handler/);
+      const { r } = mkA(false), before = JSON.stringify(r.state);
+      other.schedule({ kind: 'light_civil_dawn', key: 'z', at: { day: 1, minute: 1 }, scope: ref0(acfg.world), source: null, target: null });
+      other.step(r.handler);
+      ok(JSON.stringify(r.state) === before, `${order}: CE8 the other scheduler did not get the clock's cell (stepping it changes nothing in the clock)`);
+    }
+    // CE9: handler, state, days and staging are not writable from outside
+    {
+      const { r } = mkA(false);
+      for (const [what, f] of [['handler', () => { (r as unknown as { handler: unknown }).handler = () => {}; }], ['state', () => { (r as unknown as { state: unknown }).state = {}; }], ['days', () => { (r.days as unknown[]).push({}); }]] as const) {
+        let threw = false; try { f(); } catch { threw = true; } ok(threw, `${order}: CE9 ClockRun.${what} cannot be replaced or mutated from outside`);
+      }
+      ok(!('staged' in r) && !('commitStaged' in r) && Object.isFrozen(r.state) && Object.isFrozen(r.state.day_counts), `${order}: CE9 no staging field is reachable; the committed state is deep-frozen`);
+    }
+    // several states in one batch: a second cell whose prepare throws → the clock's environment is not committed either
+    {
+      const { r } = mkA(true), snap0 = JSON.stringify(r.snapshot()); let fail = 2, other = 0;
+      const cell = new CommitCell<number>(0, () => { if (fail-- > 0) throw new Error('second state not ready'); return { value: ++other }; });
+      r.scheduler.attachCell(cell as CommitCell<unknown>);
+      for (let k = 0; k < 2; k++) { let threw = false; try { r.scheduler.step(r.handler); } catch { threw = true; } ok(threw && JSON.stringify(r.snapshot()) === snap0 && cell.value === 0, `${order}: two cells, the second fails (${k + 1}): neither the environment nor the other cell nor the scheduler changed`); }
+      r.scheduler.step(r.handler); ok(cell.value === 1 && r.state.light === 'civil_twilight', `${order}: the retry commits the environment and the other cell together`);
+      ok(fullKey(finish(r)) === cleanKey, `${order}: … and the run equals the never-failing run`);
+    }
+    // closeDay refused from inside a batch: no day record, no state change
+    attack('closeDay from the foreign hook', (r) => { r.foreign = () => { r.closeDay(0); }; return () => r.scheduler.step(r.handler); }, /inside a batch handler/);
   }
 
   // ------------------------------------------------------------ 7. Day0 experiment world (synthetic climatology)
@@ -400,6 +451,20 @@ try {
     }
   }
   ok(SCENARIO.official === false && SCENARIO.temperature_shape.value === null && SCENARIO.rain_timing.value === null, 'the scenario file keeps unknown coefficients null and is non-official');
+  // Parton–Logan coefficients are unknown (R247 not read): nothing may fill them silently
+  {
+    ok(TEMPERATURE_SHAPE_DEFAULT === null, 'Parton–Logan: the default temperature shape is null (no built-in coefficients)');
+    for (const k of ['peak_lag_after_noon_h', 'night_decay_b', 'min_lag_after_sunrise_h'] as const) {
+      const partial = { ...SHAPE_GRID[13], [k]: null } as unknown as TemperatureShape;
+      refuses(() => new WeatherSeries(ANCHOR, SITE, fixtureInputs(ANCHOR, 3, 1, () => 0), partial), /three finite coefficients/, `Parton–Logan: a shape with ${k} null is refused, not completed with a default`);
+    }
+    const { start, inputs } = day0DailyWeather('summer', 1, 4);
+    const r = new ClockRun(day0Config(start, 1, 1, 3, DEFAULT_ORDER, null, null), inputs);
+    for (let d = 1; d <= 3; d++) r.closeDay(d);
+    const samples = r.scheduler.log.filter((l) => l.kind === 'weather_sample').map((l) => r.scheduler.get(l.id)!.payload as Record<string, unknown>);
+    ok(r.series.shape === null && samples.length === 72 && samples.every((p) => p.temp_c === null && p.temp_source === 'unavailable' && /coefficients are null/.test(p.temp_reason as string) && p.rh_percent === null && p.rh_source === 'unavailable'), 'Parton–Logan null: every sample has temp_c null (source unavailable, reason given) and RH null — never a default curve');
+    ok(r.state.last_sample !== null && r.state.last_sample.temp_c === null && r.state.last_sample.rh_percent === null, 'Parton–Logan null: the environment state carries null temperature and RH, not a number');
+  }
 
   for (const [f, h] of guarded) ok(sha(path.join(REPO_ROOT, f)) === h, `${f} untouched`);
   ok(fs.readdirSync(path.join(REPO_ROOT, 'journal')).sort().join() === journalBefore, 'journal/ untouched');
