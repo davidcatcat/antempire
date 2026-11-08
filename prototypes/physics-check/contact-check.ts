@@ -287,6 +287,55 @@ export function checkContacts(m: CkMotion, opt: CkOptions | number = {}): CkRepo
   };
 }
 
+/**
+ * constraint_active intervals (issue #146): the solver's own record of when a pair's non-penetration constraint was in its
+ * velocity solve. Checked against THIS checker's gap: (1) at the start g ≤ θ + ε (a constraint is added only for touching
+ * bodies); (2) during the interval g never exceeds θ + ε before its end (it is released when g leaves θ); (3) at a
+ * recorded end g ≥ θ − ε, and an end bracket, if given, holds the end; (4) constraint_active ⊆ geometric_contact: the
+ * interval lies inside a recorded geometric episode of the same pair ([start_lo, end hi], open episodes to the horizon,
+ * tolerance tol_s), or — when no episode holds it — the gap stays above θ − ρ − ε over the whole interval (a constraint
+ * at θ − ρ < g ≤ θ that never became a confirmed episode: below the resolution, counted, not a violation). Needs the
+ * report of checkContacts on the same motion (its episodes and brackets).
+ */
+export interface CkConstraint { agents: [string, string] | string[]; start_t_s: number; end_t_s: number | null; end_bracket_s?: [number, number] | null }
+export interface ConstraintReport { intervals: number; inside_episode: number; below_resolution: number; open_at_horizon: number; violations: number; problems: string[]; max_outside_s: number }
+export function checkConstraints(m: CkMotion, ivs: CkConstraint[], rep: CkReport, opt: CkOptions & { tol_s?: number } = {}): ConstraintReport {
+  const TH = opt.tol_mm ?? CONTRACT.tol_mm, RHO = opt.resolution_mm ?? CONTRACT.resolution_mm, EPS = opt.eval_err_mm ?? CONTRACT.eval_err_mm, TOLS = opt.tol_s ?? 1e-12;
+  const H = m.horizon_s, byId = new Map(m.agents.map((a) => [a.id, a])), problems: string[] = [];
+  const keyOf = (ids: string[]) => [...ids].sort().join('|');
+  const epsOf = new Map<string, CkEpisode[]>();
+  for (const e of rep.list) { const k = keyOf(e.pair); if (!epsOf.has(k)) epsOf.set(k, []); epsOf.get(k)!.push(e); }
+  const gaps = new Map<string, PairGap>();
+  let inside = 0, below = 0, open = 0, maxOut = 0;
+  for (const c of ivs) {
+    const k = keyOf(c.agents), [i, j] = k.split('|'), A = byId.get(i), B = byId.get(j);
+    if (!A || !B) { problems.push(`${k}: constraint for an unknown agent`); continue; }
+    let G = gaps.get(k);
+    if (!G) { G = new PairGap(commonIntervals(piecesOf(A, m.body), piecesOf(B, m.body), Math.max(A.present_from, B.present_from), Math.min(A.present_until ?? H, B.present_until ?? H, H))); gaps.set(k, G); }
+    const s = c.start_t_s, e = c.end_t_s ?? H;
+    if (c.end_t_s === null) open++;
+    const fail = (why: string) => problems.push(`${k}@${s}: ${why}`);
+    if (!(e >= s)) { fail(`end ${e} before start`); continue; }
+    const gs = G.at(s); if (!(gs <= TH + EPS)) fail(`constraint active at gap ${gs} mm > θ + ε`);
+    const up = G.firstAbove(TH + EPS, s, e); if (up && up[1] < e) fail(`gap above θ + ε at ${up[1]} s while the constraint is active (until ${e} s)`);
+    if (c.end_t_s !== null) {
+      const ge = G.at(e); if (!(ge >= TH - EPS)) fail(`constraint released at gap ${ge} mm < θ − ε`);
+      if (c.end_bracket_s && !(c.end_bracket_s[0] <= e && c.end_bracket_s[1] === e && G.at(c.end_bracket_s[0]) <= TH + EPS)) fail(`end bracket [${c.end_bracket_s}] does not hold the release`);
+    }
+    const ep = (epsOf.get(k) ?? []).find((x) => {
+      const lo = Math.min(x.start_lo ?? x.t_start, x.t_start), hi = x.end_kind === 'contact_end' ? Math.max(x.hi ?? x.t_end!, x.t_end!) : H;
+      return s >= lo - TOLS && e <= hi + TOLS;
+    });
+    if (ep) { inside++; continue; }
+    const deep = G.firstAtOrBelow(TH - RHO - EPS, s, e);
+    if (deep) { fail(`constraint interval [${s}, ${e}] not inside any geometric episode, and the gap reaches θ − ρ at ${deep[1]} s`); continue; }
+    below++;
+    const near = (epsOf.get(k) ?? []).map((x) => Math.max(0, (x.start_lo ?? x.t_start) - s, e - (x.end_kind === 'contact_end' ? x.hi ?? x.t_end! : H)));
+    if (near.length) maxOut = Math.max(maxOut, Math.min(...near));
+  }
+  return { intervals: ivs.length, inside_episode: inside, below_resolution: below, open_at_horizon: open, violations: problems.length, problems: problems.slice(0, 20), max_outside_s: maxOut };
+}
+
 /** motion-record invariants: chronological segments, no teleport (each segment starts where the previous one ended),
  *  path length = ∫ speed dt (when speeds are exported), displacement = speed × duration per segment */
 export interface MotionReport { agents: number; segments: number; teleports: number; speed_mismatch: number; max_teleport_mm: number; max_speed_rel_err: number; path_mm: Record<string, number>; problems: string[] }

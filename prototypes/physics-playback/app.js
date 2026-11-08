@@ -5,8 +5,8 @@ import { poseAt, eventTimes, lastEventAt } from './motion.js';
 
 const $ = (id) => document.getElementById(id);
 const KIND = {
-  start: '出發', arrive: '抵達', contact_start: '接觸開始', contact_end: '接觸結束', stop: '停止', resume: '恢復', follow: '跟隨（減速）',
-  free: '恢復自由速度', pass: '錯身', turn: '轉向', turn_blocked: '轉向受阻', stalled: '卡住（時間終點）', contact_end_unconfirmed: '接觸結束未確認（時間終點；不能當原因）', unresolved: '未解', record: '原生運動紀錄',
+  start: '出發', arrive: '抵達', contact_start: '幾何接觸開始', contact_end: '幾何接觸結束', stop: '停止', resume: '恢復', follow: '跟隨（減速）',
+  free: '恢復自由速度', pass: '錯身', turn: '轉向', turn_blocked: '轉向受阻', stalled: '卡住（時間終點）', contact_end_unconfirmed: '幾何接觸結束未確認（時間終點；不能當原因）', unresolved: '未解', record: '原生運動紀錄',
   obstruction: '受阻', follow_start: '跟隨開始', follow_end: '跟隨結束', blocked: '受阻', yield_start: '讓路（候選規則）', yield_hold: '讓路等待（候選規則）',
   yield_resume: '讓路後恢復（候選規則）', cross_wait: '交叉等待（候選規則）', cross_resume: '交叉後恢復（候選規則）',
 };

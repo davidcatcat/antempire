@@ -25,7 +25,7 @@ import { nativeConfig, toTrajectory as nativeTraj } from '../solver-compare/lib/
 import { laneFrames, poseOn } from '../solver-compare/lib/traj.ts';
 import { solve2D, type Solver2DResult } from '../../engine/physics/solver2d.ts';
 import { simulate } from '../../engine/physics/collision.ts';
-import { checkContacts, checkMotion, CONTRACT } from '../physics-check/contact-check.ts';
+import { checkContacts, checkConstraints, checkMotion, CONTRACT } from '../physics-check/contact-check.ts';
 
 export const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const DATA_DIR = path.join(HERE, 'data');
@@ -49,6 +49,17 @@ export interface PbEvent {
   /** PH-3b contact events: the solver's root bracket and error bound, and the INDEPENDENT checker's interval (check_s,
    *  check_err_s = its width) computed from this file's own segments (prototypes/physics-check/contact-check.ts) */
   bracket_s?: [number, number]; err_s?: number; confirmed_t_s?: number; exact?: boolean; usable_as_cause?: boolean; check_s?: [number, number]; check_err_s?: number;
+  /** contact events: 'geometric_contact' (the only contact kind PH-3b emits as events) */
+  contact_kind?: string;
+}
+/** the three contact kinds of a PH-3b run (docs/physics-time-contract.md §4): geometric episodes are the contact events;
+ *  constraint_active intervals are the solver's constraint state (rows in `columns` order); antenna_contact is
+ *  unsupported (no antenna geometry) and is null — never drawn, never invented */
+export interface PbContactKinds {
+  geometric_contact: { source: 'events'; episodes: number; note: string };
+  constraint_active: { columns: string[]; rows: (string | number | null)[][]; binding: number; note: string };
+  antenna_contact: { supported: false; value: null; note: string };
+  note: string;
 }
 export interface PbAgent {
   id: string; lane: string; layer: string; dir: 1 | -1; u_mm: number; start_t_s: number; goal_s_mm: number; free_speed_mm_s: number; speed_source: string;
@@ -63,6 +74,8 @@ export interface PbRun {
   obstacles: ({ id: string; kind: 'circle'; center_mm: [number, number]; radius_mm: number } | { id: string; kind: 'polygon'; points_mm: [number, number][] })[];
   agents: PbAgent[]; events: PbEvent[];
   motion_note: string;
+  /** PH-3b runs only */
+  contact_kinds?: PbContactKinds;
 }
 
 const scenarioFile = (s: (typeof SCENARIOS)[number]) => s.from === 'playback' ? path.join(HERE, 'scenarios', `${s.id}.json`) : path.join(HERE, '..', 'solver-compare', 'scenarios', `${s.id}.json`);
@@ -109,13 +122,27 @@ export function ph3bRun(sc: Scenario, file: string): { run: PbRun; res: Solver2D
     schema: PLAYBACK_SCHEMA, run_id: `${sc.id}--ph3b`, solver: 'ph3b', solver_label: 'PH-3b 事件驅動二維解算器',
     solver_notes: ['只有物理約束：碰到就停、追上就跟、側面可滑過；沒有讓路、側移、掉頭（生物決策未建模）', '橫向偏移 u 整段固定為情境給定值（橫向轉向模型未知，null）', `解算器狀態：${res.stats.aborted ? `中止（${res.stats.aborted}）` : '正常結束'}；unresolved ${res.stats.unresolved}`],
     ...common(sc, file), status: res.stats.aborted ? `aborted: ${res.stats.aborted}` : 'completed',
-    agents, events: res.events.map((e) => ({ t: e.t_s, kind: e.kind, class: e.class, agents: e.agents, detail: e.detail, ...(e.bracket_s ? { bracket_s: e.bracket_s, err_s: e.err_s, confirmed_t_s: e.confirmed_t_s } : {}), ...(e.exact !== undefined ? { exact: e.exact, usable_as_cause: e.usable_as_cause } : {}) })),
+    agents, events: res.events.map((e) => ({ t: e.t_s, kind: e.kind, class: e.class, agents: e.agents, detail: e.detail, ...(e.bracket_s ? { bracket_s: e.bracket_s, err_s: e.err_s, confirmed_t_s: e.confirmed_t_s } : {}), ...(e.exact !== undefined ? { exact: e.exact, usable_as_cause: e.usable_as_cause } : {}), ...(e.contact_kind ? { contact_kind: e.contact_kind } : {}) })),
     motion_note: '每一段是解算器在兩個事件之間的直線等速平移（兩端是解算器紀錄的精確姿態）；畫面上的位置就是這個運動，不是取樣點的插值，沒有平滑。',
   };
   // independent check of every contact event against THIS file's segments; refuse to write a file that fails it
   const ck = checkContacts({ horizon_s: H, body: { length_mm: run.body.length_mm, width_mm: run.body.width_mm }, agents: agents.map((a) => ({ id: a.id, segments: a.segments, final: a.final, present_from: 0, present_until: null, layer: a.layer })), events: run.events });
   const mc = checkMotion({ horizon_s: H, body: run.body, agents: agents.map((a) => ({ id: a.id, segments: a.segments, final: a.final, present_from: 0, present_until: null })), events: [] });
-  if (ck.violations || mc.problems.length) throw Error(`PLAYBACK: ${sc.id}: independent contact/motion check failed: ${[...ck.problems, ...mc.problems].slice(0, 3).join(' | ')}`);
+  const cc = checkConstraints({ horizon_s: H, body: { length_mm: run.body.length_mm, width_mm: run.body.width_mm }, agents: agents.map((a) => ({ id: a.id, segments: a.segments, final: a.final, present_from: 0, present_until: null, layer: a.layer })), events: run.events }, res.constraint_active, ck);
+  if (ck.violations || mc.problems.length || cc.violations) throw Error(`PLAYBACK: ${sc.id}: independent contact/motion/constraint check failed: ${[...ck.problems, ...mc.problems, ...cc.problems].slice(0, 3).join(' | ')}`);
+  if (res.antenna_contact !== null || res.events.some((e) => e.contact_kind === 'antenna_contact')) throw Error(`PLAYBACK: ${sc.id}: PH-3b has no antenna geometry; an antenna contact must never be emitted`);
+  run.contact_kinds = {
+    geometric_contact: { source: 'events', episodes: ck.episodes, note: `contact_start／contact_end：兩身體膠囊間距 ≤ θ（${CONTRACT.tol_mm} mm）的連續區段；附根區間、誤差界與獨立檢查區間` },
+    constraint_active: {
+      columns: ['agent_a', 'agent_b', 'start_t_s', 'end_t_s', 'start_trigger', 'end_trigger', 'end_bracket_lo_s', 'binding_t_s', 'binding_solves'],
+      rows: res.constraint_active.map((c) => [c.agents[0], c.agents[1], c.start_t_s, c.end_t_s, c.start_trigger, c.end_trigger, c.end_bracket_s ? c.end_bracket_s[0] : null, c.binding_t_s, c.binding_solves]),
+      binding: res.stats.constraint_intervals_binding,
+      note: `解算器的不穿透約束確實在速度求解中的區間（解算器狀態，不是間距穿越 θ 的根）；獨立檢查：每段都在同一對的幾何接觸之內（${cc.inside_episode}／${cc.intervals}，解析度以下 ${cc.below_resolution}）。end_t_s = null：時間終點仍作用。binding_t_s：第一次真的限制了速度的時刻（null：從未限制）`,
+    },
+    antenna_contact: { supported: false, value: null, note: 'PH-3b 沒有觸角幾何：不產生觸角接觸。之後的化學感知／CHC 辨識（#135）需要先建立觸角幾何模型；身體接觸不等於觸角接觸' },
+    note: '三種接觸彼此不能互相推導；任何接觸都不代表交哺、招募或攻擊（這些生物行為沒有建模）',
+  };
+  run.solver_notes.push(`三種接觸：幾何接觸（事件 ${ck.episodes} 段）≠ 約束作用（區間 ${res.constraint_active.length} 段，其中 ${res.stats.constraint_intervals_binding} 段真的限制了速度）≠ 觸角接觸（PH-3b 無觸角幾何：不支援、不產生）。接觸不代表交哺、招募或攻擊`);
   for (const ep of ck.list) {
     const key = [...ep.pair].sort().join('|'), same = (e: PbEvent) => [...e.agents].sort().join('|') === key;
     const st = run.events.find((e) => e.kind === 'contact_start' && e.t === ep.t_start && same(e));

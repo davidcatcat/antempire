@@ -81,6 +81,34 @@ export interface SolverEvent {
    *  that width was clamped at the start of the incoming motion, and the time at which the episode change was confirmed
    *  (g reached θ ∓ SEP_RES_MM). exact: computed from the motion; usable_as_cause: may be read as a physical cause. */
   bracket_s?: [number, number]; err_s?: number; err_clamped?: boolean; confirmed_t_s?: number; exact?: boolean; usable_as_cause?: boolean;
+  /** contact events only: which of the three contact kinds this is (docs/physics-time-contract.md §4). PH-3b emits only
+   *  'geometric_contact' events; 'constraint_active' is reported as intervals (Solver2DResult.constraint_active) */
+  contact_kind?: ContactKind;
+}
+/**
+ * The three contact kinds (Owner decision 2026-11-08, issue #146). None is derivable from another:
+ *  - geometric_contact: the two body capsules are within the contact tolerance θ (gap ≤ θ); episodes contact_start /
+ *    contact_end with root brackets and error bounds (events of class 'physical_contact');
+ *  - constraint_active: the solver's non-penetration constraint dg/dt ≥ 0 of the pair is in the velocity solve
+ *    (Solver2DResult.constraint_active intervals); a geometric contact need not have an active constraint (e.g. a graze
+ *    within θ that never reaches the touch), and an active constraint need not bind (change any velocity);
+ *  - antenna_contact: antenna–body contact for chemical perception / CHC recognition. PH-3b has NO antenna geometry, so it
+ *    is never emitted (Solver2DResult.antenna_contact = null); a later antenna geometry model (CHEM / CHC, #135) must
+ *    define it. A body contact is not an antenna contact.
+ * No contact kind implies trophallaxis, recruitment, attack or any other behaviour; behaviour models must name the contact
+ * kind they read.
+ */
+export type ContactKind = 'geometric_contact' | 'constraint_active' | 'antenna_contact';
+export const CONTACT_KINDS_EMITTED: readonly ContactKind[] = ['geometric_contact', 'constraint_active'];
+/** one interval during which a pair's contact constraint was in the velocity solve (solver state, not a gap crossing).
+ *  start_t_s / end_t_s are the event instants at which the solver added / removed the constraint: exact instants of the
+ *  solver's piecewise model, NOT roots of g = θ (the constraint starts at the touch g ≈ 0, which follows the geometric
+ *  contact_start; it ends at the first floating-point time with g > θ, release bisection bracket in end_bracket_s).
+ *  binding_t_s: first velocity solve in the interval in which this constraint limited a velocity (null: never bound). */
+export interface ConstraintActiveInterval {
+  agents: [string, string]; start_t_s: number; start_trigger: 'contact_event' | 'membership_check';
+  end_t_s: number | null; end_trigger: 'release_event' | 'membership_check' | null; end_bracket_s: [number, number] | null;
+  binding_t_s: number | null; binding_solves: number; contact_kind: 'constraint_active';
 }
 /** final_mode: arrived | not_started (start time > horizon) | started_at_horizon (start event at the horizon itself: zero
  *  duration, no displacement; final_speed_mm_s is the speed solved at that instant) | moving | stopped_by_geometry |
@@ -88,6 +116,10 @@ export interface SolverEvent {
 export interface AgentOut { lane: string; layer: string; samples: Sample[]; arrival_t_s: number | null; final_mode: string; final_speed_mm_s: number; stop_cause: string | null; geometry_stop_s_mm: number | null }
 export interface Solver2DResult {
   agents: Record<string, AgentOut>; events: SolverEvent[];
+  /** constraint_active intervals ordered by (start, pair); an interval still active at the horizon has end_t_s null */
+  constraint_active: ConstraintActiveInterval[];
+  /** antenna_contact: unsupported in PH-3b (no antenna geometry) — always null, never invented */
+  antenna_contact: null;
   stats: {
     batches: number; events_processed: number; queue_pushes: number; stale_pops: number; pair_hit_evals: number; windows: number;
     candidate_pairs_total: number; candidate_pairs_max: number; velocity_solves: number; max_component: number; max_same_instant_batches: number;
@@ -99,6 +131,8 @@ export interface Solver2DResult {
     /** batches after which a constraint was active for a pair that was neither in a contact episode nor at g ≤ θ pending
      *  its confirmation (consistency check of the two bookkeepings; expected 0) */
     constraint_outside_contact: number;
+    /** constraint_active intervals (closed + open at the horizon) and how many of them ever bound a velocity */
+    constraint_intervals: number; constraint_intervals_binding: number;
     passes: number; turns: number; turn_blocked: number; stalled: number; arrived: number; unresolved: number;
     aborted: string | null; t_end_s: number;
   };
@@ -396,7 +430,7 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
 
   // ---- event machinery
   const events: SolverEvent[] = [];
-  const stats: Solver2DResult['stats'] = { batches: 0, events_processed: 0, queue_pushes: 0, stale_pops: 0, pair_hit_evals: 0, windows: 0, candidate_pairs_total: 0, candidate_pairs_max: 0, velocity_solves: 0, max_component: 0, max_same_instant_batches: 0, contacts: 0, releases: 0, contact_episodes: 0, contact_episode_ends: 0, sub_resolution_excursions: 0, episode_events: 0, episodes_open_at_horizon: 0, ends_unconfirmed_at_horizon: 0, constraint_outside_contact: 0, passes: 0, turns: 0, turn_blocked: 0, stalled: 0, arrived: 0, unresolved: 0, aborted: null, t_end_s: 0 };
+  const stats: Solver2DResult['stats'] = { batches: 0, events_processed: 0, queue_pushes: 0, stale_pops: 0, pair_hit_evals: 0, windows: 0, candidate_pairs_total: 0, candidate_pairs_max: 0, velocity_solves: 0, max_component: 0, max_same_instant_batches: 0, contacts: 0, releases: 0, contact_episodes: 0, contact_episode_ends: 0, sub_resolution_excursions: 0, episode_events: 0, episodes_open_at_horizon: 0, ends_unconfirmed_at_horizon: 0, constraint_outside_contact: 0, constraint_intervals: 0, constraint_intervals_binding: 0, passes: 0, turns: 0, turn_blocked: 0, stalled: 0, arrived: 0, unresolved: 0, aborted: null, t_end_s: 0 };
   const ev = (t: number, kind: string, ids: number[], cls: EventClass, detail: string | null = null) => events.push({ t_s: t, kind, agents: ids.map((i) => A[i].id), class: cls, detail });
   const heap = new Heap();
   const SNAP = horizonSnap(H);
@@ -406,6 +440,10 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
   const pairVer = new Map<number, number>(), active = new Set<number>(), activeAdj: Set<number>[] = A.map(() => new Set());
   let cand = new Set<number>(), nb: number[][] = A.map(() => []);
   const processedContacts = new Set<string>();
+  // constraint_active intervals: read-only bookkeeping of the active set (never feeds back into the motion)
+  interface CIv { start: number; trig: ConstraintActiveInterval['start_trigger']; bind: number | null; solves: number }
+  const cOpen = new Map<number, CIv>(), cDone: { key: number; iv: CIv; end: number | null; endTrig: ConstraintActiveInterval['end_trigger']; br: [number, number] | null }[] = [];
+  const relBr = new Map<number, [number, number]>();
   const sample = (a: RT, t: number) => {
     const c = centreAt(a, t), s = sAt(a, t), h = headingOf(a), last = a.samples[a.samples.length - 1];
     if (last && last[0] === t && last[1] === c.x && last[2] === c.y && last[3] === h) return;
@@ -441,7 +479,7 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
       if (G(hi) <= 0) return;
       for (let m = 0; m < 200 && hi - lo > 1e-15 * Math.max(1, hi); m++) { const x = (lo + hi) / 2; if (G(x) <= 0) lo = x; else hi = x; }
       let tr = hi; for (let m = 0; G(tr) <= 0 && m < 64; m++) tr = nextUp(tr);
-      if (tr >= now) push({ t: tr, kind: 'release', a: i, b: j, va: P.ver, vb: Q.ver, vp });
+      if (tr >= now) { push({ t: tr, kind: 'release', a: i, b: j, va: P.ver, vb: Q.ver, vp }); relBr.set(key, [lo, tr]); }
     } else {
       stats.pair_hit_evals++;
       const h = pairFirstHit(cP, vP, cQ, vQ);
@@ -527,7 +565,7 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
     if (best) push({ t: best[0], kind: 'ep', a: i, b: j, va: P.ver, vb: Q.ver, vp: ep.ver, lo: best[1], th: best[2] });
   };
   const epEvent = (i: number, j: number, kind: 'contact_start' | 'contact_end', ep: Ep, t: number) => {
-    events.push({ t_s: ep.mark!, kind, agents: [A[i].id, A[j].id], class: 'physical_contact', detail: null, bracket_s: ep.markBr, err_s: Math.max(0, (ep.errHi ?? t) - ep.errLo), confirmed_t_s: t, exact: true, usable_as_cause: true });
+    events.push({ t_s: ep.mark!, kind, agents: [A[i].id, A[j].id], class: 'physical_contact', detail: null, bracket_s: ep.markBr, err_s: Math.max(0, (ep.errHi ?? t) - ep.errLo), confirmed_t_s: t, exact: true, usable_as_cause: true, contact_kind: 'geometric_contact' });
   };
   /** one boundary crossing of TB[k] (up or down) at time t with bracket br; episode bookkeeping */
   const crossBoundary = (key: number, ep: Ep, k: number, up: boolean, br: [number, number], t: number) => {
@@ -641,6 +679,14 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
         if (rounds > 4 * comp.length + 10) { stats.unresolved++; ev(t, 'unresolved', comp.slice(0, 5), 'solver_status', 'velocity solve did not settle'); break; }
         ch = relax();
       }
+      // constraint_active bookkeeping (read-only): a pair constraint binds when it attains the solved velocity of x below
+      // x's cap (the same test as the reported cause)
+      const bound = new Set<number>();
+      for (const k of cons) {
+        const vx = v.get(k.x)!; if (!(vx < cap.get(k.x)!)) continue;
+        if (k.y < 0 ? vx === 0 : k.c * v.get(k.y)! === vx) bound.add(pkey(k.x, k.o));
+      }
+      for (const key of bound) { const iv = cOpen.get(key); if (iv) { if (iv.bind === null) iv.bind = t; iv.solves++; } }
       const causeOf = (x: number): string | null => {
         const a = A[x], nv = v.get(x)!;
         if (nv >= a.v0) return null;
@@ -725,6 +771,7 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
   };
   const processBatch = (t: number, batch: QE[], epFired: QE[]) => {
     const affected = new Set<number>(), turners: number[] = [], retries = new Set<number>(), firedPairs: number[] = [];
+    const firedContact = new Set<number>(), firedRelease = new Set<number>();
     const ver0 = new Map<number, number>();
     for (const e of batch) { ver0.set(e.a, A[e.a].ver); if (e.b >= 0) ver0.set(e.b, A[e.b].ver); }
     batch.sort((x, y) => (qLess(x, y) ? -1 : qLess(y, x) ? 1 : 0));
@@ -740,9 +787,9 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
         case 'contact': {
           const k = `${e.a}|${e.b}|${pairVer.get(pkey(e.a, e.b))}|${e.va}|${e.vb}`;
           if (processedContacts.has(k)) throw Error(`SOLVER2D: contact ${k} executed twice (defect)`);
-          processedContacts.add(k); affected.add(e.a); affected.add(e.b); firedPairs.push(pkey(e.a, e.b)); break;
+          processedContacts.add(k); affected.add(e.a); affected.add(e.b); firedPairs.push(pkey(e.a, e.b)); firedContact.add(pkey(e.a, e.b)); break;
         }
-        case 'release': affected.add(e.a); affected.add(e.b); firedPairs.push(pkey(e.a, e.b)); break;
+        case 'release': affected.add(e.a); affected.add(e.b); firedPairs.push(pkey(e.a, e.b)); firedRelease.add(pkey(e.a, e.b)); break;
         case 'pass': { stats.passes++; ev(t, 'pass', [e.a, e.b], 'motion', `lateral offsets ${A[e.a].u} / ${A[e.b].u} mm`); break; }
       }
     }
@@ -771,8 +818,8 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
         if (on === was) continue;
         const i = Math.min(x, y), j = Math.max(x, y);
         // constraint bookkeeping only: the physical contact events are the episodes (reconcileEp), not these toggles
-        if (on) { active.add(key); activeAdj[i].add(j); activeAdj[j].add(i); stats.contacts++; if (g < -OCC_TOL_MM) { stats.unresolved++; ev(t, 'unresolved', [i, j], 'solver_status', `overlap ${-g} mm when the contact constraint became active (defect)`); } }
-        else { active.delete(key); activeAdj[i].delete(j); activeAdj[j].delete(i); stats.releases++; }
+        if (on) { cOpen.set(key, { start: t, trig: firedContact.has(key) ? 'contact_event' : 'membership_check', bind: null, solves: 0 }); active.add(key); activeAdj[i].add(j); activeAdj[j].add(i); stats.contacts++; if (g < -OCC_TOL_MM) { stats.unresolved++; ev(t, 'unresolved', [i, j], 'solver_status', `overlap ${-g} mm when the contact constraint became active (defect)`); } }
+        else { const rb = relBr.get(key), viaRel = firedRelease.has(key); cDone.push({ key, iv: cOpen.get(key)!, end: t, endTrig: viaRel ? 'release_event' : 'membership_check', br: viaRel && rb && rb[1] === t ? rb : null }); cOpen.delete(key); active.delete(key); activeAdj[i].delete(j); activeAdj[j].delete(i); stats.releases++; }
         pairVer.set(key, (pairVer.get(key) ?? 0) + 1); membershipChanged.push(key);
       }
     }
@@ -825,7 +872,7 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
     const ep = eps.get(key)!; if (!ep.inC) continue;
     const i = Math.floor(key / N), j = key % N;
     if (ep.mark === null) stats.episodes_open_at_horizon++;
-    else { stats.ends_unconfirmed_at_horizon++; events.push({ t_s: H, kind: 'contact_end_unconfirmed', agents: [A[i].id, A[j].id], class: 'solver_status', detail: `gap above the contact tolerance since ${ep.mark} s but below the separation resolution (${SEP_RES_MM} mm) at the horizon: separation undetermined`, exact: false, usable_as_cause: false }); }
+    else { stats.ends_unconfirmed_at_horizon++; events.push({ t_s: H, kind: 'contact_end_unconfirmed', agents: [A[i].id, A[j].id], class: 'solver_status', detail: `gap above the contact tolerance since ${ep.mark} s but below the separation resolution (${SEP_RES_MM} mm) at the horizon: separation undetermined`, exact: false, usable_as_cause: false, contact_kind: 'geometric_contact' }); }
   }
   const agents: Record<string, AgentOut> = {};
   for (const a of A) {
@@ -836,5 +883,11 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
   }
   // episode events are emitted when confirmed, with the time of the crossing: order the list by time (stable)
   const ordered = events.map((e, k) => [e, k] as const).sort((p, q) => p[0].t_s - q[0].t_s || p[1] - q[1]).map(([e]) => e);
-  return { agents, events: ordered, stats };
+  for (const [key, iv] of cOpen) cDone.push({ key, iv, end: null, endTrig: null, br: null });
+  const ids = (key: number): [string, string] => { const x = A[Math.floor(key / N)].id, y = A[key % N].id; return x < y ? [x, y] : [y, x]; };
+  const constraint_active: ConstraintActiveInterval[] = cDone
+    .map((d) => ({ agents: ids(d.key), start_t_s: d.iv.start, start_trigger: d.iv.trig, end_t_s: d.end, end_trigger: d.endTrig, end_bracket_s: d.br, binding_t_s: d.iv.bind, binding_solves: d.iv.solves, contact_kind: 'constraint_active' as const }))
+    .sort((p, q) => p.start_t_s - q.start_t_s || (p.agents[0] < q.agents[0] ? -1 : p.agents[0] > q.agents[0] ? 1 : 0) || (p.agents[1] < q.agents[1] ? -1 : p.agents[1] > q.agents[1] ? 1 : 0));
+  stats.constraint_intervals = constraint_active.length; stats.constraint_intervals_binding = constraint_active.filter((c) => c.binding_t_s !== null).length;
+  return { agents, events: ordered, constraint_active, antenna_contact: null, stats };
 }
