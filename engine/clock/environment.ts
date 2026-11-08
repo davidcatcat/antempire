@@ -94,7 +94,17 @@ export interface DayRecord {
 
 export class ClockRun {
   readonly cfg: ClockWorldConfig; readonly series: WeatherSeries; readonly plan: RainPlan;
-  scheduler: WorldScheduler; state: EnvState; days: DayRecord[] = [];
+  state: EnvState; days: DayRecord[] = [];
+  private sched!: WorldScheduler;
+  /** the scheduler of this run; assigning one (e.g. a restored or re-filled scheduler) moves the environment's commit
+   *  hook to it, so the environment always commits in the same atomic step as that scheduler's batch */
+  get scheduler(): WorldScheduler { return this.sched; }
+  set scheduler(s: WorldScheduler) {
+    if (!(s instanceof WorldScheduler)) clockFail('scheduler must be a WorldScheduler');
+    s.setCommitHook(this.commitStaged);
+    if (this.sched && this.sched !== s) this.sched.setCommitHook(null);
+    this.sched = s; this.staged = null;
+  }
   /** batch hook for non-environment events sharing the scheduler: receives all of them of one batch together (a set);
    *  may return children / cancellations like any scheduler handler. Default null: such events are refused. */
   foreign: ((batch: readonly Readonly<WorldEvent>[], ctx: BatchContext) => StepOutput | void) | null = null;
@@ -115,9 +125,25 @@ export class ClockRun {
     this.state = { light: lightStateAt(this.series.light(cfg.first_day)!, 0), raining: [], started_rain: {}, last_sample: null, day_counts: {}, last_exact: null };
   }
 
-  /** the batch handler: applies a batch as a SET (order inside a batch never matters) and checks local invariants */
+  /** the environment state a batch would produce, staged by the handler until the scheduler accepts that batch */
+  private staged: { ids: string; next: EnvState } | null = null;
+  /** scheduler commit hook: runs after the foreign hook returned and the scheduler validated the batch output, right
+   *  before the scheduler commits; the environment and the scheduler therefore commit together or not at all. A staged
+   *  state is used only for the same batch run with this clock's handler (never a stale one from a failed attempt). */
+  private readonly commitStaged = (ids: readonly string[], handler: Handler): void => {
+    const st = this.staged; this.staged = null;
+    if (handler !== this.handler) return;
+    if (!st || st.ids !== ids.join('\n')) clockFail('internal: the environment batch to commit is not the batch the scheduler accepted');
+    this.state = st!.next;
+  };
+
+  /** the batch handler: applies a batch as a SET (order inside a batch never matters) and checks local invariants.
+   *  It works on a COPY of the environment state; the copy is committed by commitStaged() only once the foreign hook
+   *  returned and the scheduler accepted the output. On any failure (a check here, the foreign hook throwing or returning
+   *  invalid output, a refused re-entry) neither the environment nor the scheduler changes, and the batch can be retried. */
   readonly handler: Handler = (batch, ctx) => {
-    const st = this.state, ends = new Set<string>(), starts: string[] = [], others: Readonly<WorldEvent>[] = [];
+    this.staged = null;
+    const st: EnvState = JSON.parse(JSON.stringify(this.state)), ends = new Set<string>(), starts: string[] = [], others: Readonly<WorldEvent>[] = [];
     let light: LightState | null = null;
     const dc = (st.day_counts[String(batch[0].at.day)] ??= { batches: 0, by_kind: {} }); dc.batches++;
     for (const e of batch) {
@@ -139,7 +165,10 @@ export class ClockRun {
     st.raining = [...st.raining.filter((x) => !ends.has(x)), ...starts].sort();
     const hi = batch.reduce((m, e) => (compareExact(e.exact, m) > 0 ? e.exact : m), batch[0].exact);
     st.last_exact = { ...hi };
-    return others.length ? this.foreign!(others, ctx) : undefined;
+    // the foreign hook sees the environment as it was before this batch (the batch is a set; nothing is committed yet)
+    const out = others.length ? this.foreign!(others, ctx) : undefined;
+    this.staged = { ids: batch.map((e) => e.id).sort().join('\n'), next: st };
+    return out;
   };
 
   /** raining at the current clock: null on a wet day whose timing is unknown (never shown as dry) */
@@ -155,7 +184,6 @@ export class ClockRun {
     this.scheduler.runDay(day, this.handler);
     const counts = this.state.day_counts[String(day)] ?? { batches: 0, by_kind: {} }, batches = counts.batches;
     const executed_by_kind = Object.fromEntries(Object.entries(counts.by_kind).sort(([a], [b]) => (a < b ? -1 : 1)));
-    delete this.state.day_counts[String(day)];
     const pd = this.plan.days.find((x) => x.day === day)!, L = this.series.light(day)!;
     let fromEvents = 0;
     for (const segs of Object.values(this.state.started_rain)) for (const s of segs) if (s.day === day) fromEvents += s.amount_nm;
@@ -169,6 +197,7 @@ export class ClockRun {
       light_at_close: this.state.light, raining_at_close: this.rainingAt(day), pending_after_close: this.scheduler.pending().length,
       light_times: { civil_dawn: disp(L.civil_dawn), sunrise: disp(L.sunrise), sunset: disp(L.sunset), civil_dusk: disp(L.civil_dusk) },
     };
+    delete this.state.day_counts[String(day)];
     // forget segments that can no longer be settled (their last day is closed)
     for (const [id, segs] of Object.entries(this.state.started_rain)) if (segs.every((s) => s.day <= day) && !this.state.raining.includes(id)) delete this.state.started_rain[id];
     this.days.push(rec);

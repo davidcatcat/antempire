@@ -383,6 +383,8 @@ export class WorldScheduler {
   private busy: string | null = null;
   /** last day closed by runDay() (-1: none); nothing may be scheduled on or before it */
   private closedDay = -1;
+  /** called inside step() after a batch's output is validated and before the scheduler commits (see setCommitHook) */
+  private commitHook: ((ids: readonly string[], handler: Handler) => void) | null = null;
 
   /** start: the earliest instant anything may be scheduled at. time.order: 'tick' (default, the #116 contract) or 'layered'. */
   constructor(world: string, start: WorldTime = { day: 0, minute: 0 }, time: TimeOptions = {}) {
@@ -405,6 +407,18 @@ export class WorldScheduler {
   private exclusive<T>(op: string, fn: () => T): T {
     this.guard(op); this.busy = op;
     try { return fn(); } finally { this.busy = null; }
+  }
+  /**
+   * Let a holder of state OUTSIDE the scheduler (e.g. the environment clock) commit that state in the same atomic step
+   * as the batch: the hook receives the sorted ids of the batch and the handler that produced the output, after the
+   * handler returned and its output passed validation, and before the scheduler commits. If the hook throws, the batch
+   * goes back and the scheduler is unchanged; the hook itself must apply its change last (e.g. one assignment). Not part
+   * of a snapshot: whoever restores a scheduler sets its hook again. Re-entry from the hook is refused like a handler's.
+   */
+  setCommitHook(fn: ((ids: readonly string[], handler: Handler) => void) | null): void {
+    this.guard('setCommitHook');
+    if (fn !== null && typeof fn !== 'function') fail('commit hook must be a function or null');
+    this.commitHook = fn;
   }
   get clock(): { at: WorldTime; round: number } { return { at: { ...this.clockAt }, round: this.clockRound }; }
   /** a frozen copy of this instance's log (entries since construction or restore) */
@@ -527,6 +541,8 @@ export class WorldScheduler {
           newIds.add(e.id); children.push(e);
         }
         this.checkCancels(out.cancel, inBatch);
+        // external state commits here, last, so that it and the batch below commit together or not at all
+        if (this.commitHook) this.commitHook(Object.freeze(batch.map((e) => e.id).sort()), handler);
       } catch (err) { restore(); throw err; }
       // nothing below can fail: every value was validated above and is no longer read from the producer
       // commit: the batch executes, then its cancellations, then its children are queued

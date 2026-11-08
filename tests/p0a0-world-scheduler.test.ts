@@ -424,4 +424,30 @@ const split3 = harness(42, world(3, 12), 3, { split: true });
   { const s = mk(); try { s.step(() => { throw new Error('x'); }); } catch { /* */ } s.runUntil({ day: 1, minute: 0 }, () => {}); ok(s.audit().executed === 2 && verifyLog(s.log).ok, 'guard released in finally: later steps run'); }
 }
 
+// ------------------------------------------------------------ commit hook (external state commits with the batch; R13-02)
+{
+  const mk = () => { const s = new WorldScheduler(W); for (const k of ['q', 'p']) s.schedule({ kind: 'a', key: k, at: { day: 0, minute: 1 }, scope: ref(null, null), source: null, target: null }); s.schedule({ kind: 'a', key: 'z', at: { day: 0, minute: 2 }, scope: ref(null, null), source: null, target: null }); return s; };
+  const s = mk(), calls: string[][] = [], h = () => {};
+  s.setCommitHook((ids, handler) => { calls.push([...ids]); ok(handler === h, 'commit hook receives the handler that produced the output'); });
+  s.step(h);
+  ok(JSON.stringify(calls) === JSON.stringify([['a:p', 'a:q']]), 'commit hook receives the sorted ids of the batch, once');
+  // invalid output: the hook is not called
+  const snap = JSON.stringify(s.snapshot());
+  assert.throws(() => s.step(() => ({ cancel: [{ id: 'a:nope', reason: 'x' }] }) as unknown as StepOutput));
+  ok(calls.length === 1 && JSON.stringify(s.snapshot()) === snap, 'output that fails validation: the commit hook is not called, scheduler unchanged');
+  // a hook that throws: the batch goes back, the scheduler is unchanged, the batch can be retried
+  let fail = true; s.setCommitHook(() => { if (fail) throw new Error('hook'); });
+  assert.throws(() => s.step(h), /hook/);
+  ok(JSON.stringify(s.snapshot()) === snap && s.get('a:z')!.state === 'scheduled', 'a throwing commit hook leaves the scheduler unchanged');
+  fail = false; s.step(h); ok(s.get('a:z')!.state === 'executed' && verifyLog(s.log).ok, 'the same batch then commits');
+  // re-entry from the hook, and setting a hook from inside a handler, are refused
+  const s2 = mk(); s2.setCommitHook(() => { s2.schedule({ kind: 'b', key: 'r', at: { day: 0, minute: 3 }, scope: ref(null, null), source: null, target: null }); });
+  const snap2 = JSON.stringify(s2.snapshot());
+  refuses(() => s2.step(h), /inside a batch handler/, 'the commit hook cannot re-enter the scheduler');
+  ok(JSON.stringify(s2.snapshot()) === snap2, 'refused re-entry from the hook: scheduler unchanged');
+  const s3 = mk(); refuses(() => s3.step(() => { s3.setCommitHook(null); }), /inside a batch handler/, 'a handler cannot change the commit hook');
+  refuses(() => s3.setCommitHook(42 as unknown as null), /function or null/, 'a commit hook must be a function or null');
+  ok(!('commitHook' in s3.snapshot()) && JSON.stringify(WorldScheduler.restore(s.snapshot()).snapshot()) === JSON.stringify(s.snapshot()), 'the hook is not part of a snapshot');
+}
+
 console.log(JSON.stringify({ test: 'p0a0-world-scheduler', passed: true, checks, harness: base.s.audit() }));

@@ -19,7 +19,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { REPO_ROOT } from '../cli/lib/load.ts';
 import { hash32, rng } from '../engine/rng.ts';
-import { type TimeOrder, type WorldEvent, WorldScheduler, compareExact, exactOf, labelOf, verifyLog, compareTime } from '../engine/scheduler/world-events.ts';
+import { type StepOutput, type TimeOrder, type WorldEvent, WorldScheduler, compareExact, exactOf, labelOf, verifyLog, compareTime } from '../engine/scheduler/world-events.ts';
 import { ClockError, DEFAULT_ORDER, minutesOfDay, nativeOnClock, requireNativeOnClock, sameInstant, secondsOfDay, civilFromDays, dateOfDay, dayOfDate, dayOfYear, daysFromCivil, displayOf, ecoNative, formatDate, msFloor, parseDate, physicsNative, type CalendarAnchor } from '../engine/clock/time-frames.ts';
 import { CIVIL_TWILIGHT_ALTITUDE_DEG, SUNRISE_ALTITUDE_DEG, lightTimes, lightStateAt, solarAltitude, type SolarSite } from '../engine/clock/solar.ts';
 import { type DailyWeatherInput, type RainTimingScenario, type TemperatureShape, WeatherSeries, checkDailyInput, fromSyntheticDaily, planRain, saturationVapourKPa, splitInteger } from '../engine/clock/weather-input.ts';
@@ -313,6 +313,79 @@ try {
   {
     const r = new ClockRun(cfgOf(), fixtureInputs(ANCHOR, 6, 1, () => 0)); r.closeDay(1);
     refuses(() => r.closeDay(1), /already closed/, 'a closed day cannot be closed (re-run) again');
+  }
+
+  // ------------------------------------------------------------ 6b. environment + scheduler commit atomically (R13-02)
+  // Taichung 2027-06-21, 20–30 °C, RH 70 %, dry; foreign events at the exact native instant of civil dawn. Any failure in
+  // a batch leaves the environment AND the scheduler unchanged, and the same batch then succeeds; the end result equals
+  // the run that never failed, byte for byte (snapshot, log, day records).
+  for (const order of ['layered', 'tick'] as TimeOrder[]) {
+    const acfg = cfgOf({ order, first_day: 0, last_day: 1, temperature_shape: null, rain_timing: null });
+    const ainputs: DailyWeatherInput[] = ['2027-06-21', '2027-06-22'].map((date) => ({ date, provenance: SYN(date), t_min_c: 20, t_max_c: 30, t_mean_c: 25, rh_mean_percent: 70, rain_mm: 0, hourly: null }));
+    const ref0 = (w: string) => ({ world: w, colony: null, individual: null });
+    /** a run with two foreign events and (optionally) extra environment events injected at the native instant of dawn */
+    const mkA = (injectEnv: boolean) => {
+      const r = new ClockRun(acfg, ainputs), d = r.scheduler.pending().find((e) => e.kind === 'light_civil_dawn' && e.at.day === 0)!;
+      for (const k of ['f1', 'f2']) r.scheduler.schedule({ kind: 'foreign_case', key: k, native: d.native, scope: ref0(acfg.world), source: null, target: null });
+      if (injectEnv) {
+        r.scheduler.schedule({ kind: 'weather_sample', key: 'inj', native: d.native, scope: ref0(acfg.world), source: null, target: null, payload: { minute_local: d.at.minute, temp_c: null, rh_percent: null } });
+        const rp = { rain_event: 'inj', segments: [] };
+        r.scheduler.schedule({ kind: 'rain_start', key: 'inj', native: d.native, scope: ref0(acfg.world), source: null, target: null, payload: rp });
+        r.scheduler.schedule({ kind: 'rain_end', key: 'inj', native: ecoNative({ clock: 'eco.rain', day: 0, minute: 600, resolution: 'minute' }), scope: ref0(acfg.world), source: null, target: null, payload: rp });
+      }
+      r.foreign = () => {};
+      r.runUntil({ day: 0, minute: Math.floor(d.at.minute) });
+      return { r, dawn: d };
+    };
+    const finish = (r: ClockRun) => { for (let day = 0; day <= 1; day++) r.closeDay(day); return r; };
+    const fullKey = (r: ClockRun) => JSON.stringify(r.snapshot()) + logKey(r);
+    for (const injectEnv of [false, true]) {
+      const tag = `${order}${injectEnv ? '+env×3' : ''}`;
+      const clean = finish(mkA(injectEnv).r);
+      ok(clean.days[0].light_at_close === 'night' && clean.scheduler.audit().pending === 0, `${tag}: the never-failing run completes`);
+      // failure kinds: foreign throws; foreign returns malformed output (scheduler validation); foreign tries to re-enter
+      // the scheduler (refused, error propagates); a refused child id clash. Each repeated 3 times, then success.
+      const kinds: [string, (r: ClockRun) => StepOutput | void][] = [
+        ['foreign throws', () => { throw new Error('transient foreign failure'); }],
+        ['foreign returns malformed output', () => ({ bogus: 1 }) as unknown as StepOutput],
+        ['foreign child with a cause outside the batch', () => ({ children: [{ cause: 'nope', spec: { kind: 'x', key: 'k', scope: ref0(acfg.world), source: null, target: null } }] })],
+        ['foreign cancels an unknown event', () => ({ cancel: [{ id: 'nope', reason: 'x' }] })],
+        ['foreign re-enters the scheduler', (r) => { r.scheduler.schedule({ kind: 'foreign_case', key: 'sneak', at: { day: 1, minute: 0 }, scope: ref0(acfg.world), source: null, target: null }); }],
+      ];
+      for (const [what, bad] of kinds) {
+        const { r } = mkA(injectEnv), snap0 = JSON.stringify(r.snapshot()), env0 = JSON.stringify(r.state);
+        for (let attempt = 0; attempt < 3; attempt++) {
+          r.foreign = () => bad(r);
+          let threw = false; try { r.scheduler.step(r.handler); } catch { threw = true; }
+          ok(threw && JSON.stringify(r.state) === env0 && JSON.stringify(r.snapshot()) === snap0, `${tag}: ${what} (attempt ${attempt + 1}): environment, scheduler and clock snapshot unchanged`);
+        }
+        ok(r.state.light === 'night', `${tag}: ${what}: light not advanced by a failed batch`);
+        r.foreign = () => {};
+        const batch = r.scheduler.step(r.handler);
+        ok(batch.length === (injectEnv ? 5 : 3) && r.state.light === 'civil_twilight', `${tag}: ${what}: the same batch then succeeds`);
+        ok(fullKey(finish(r)) === fullKey(clean), `${tag}: ${what}: after the retry the run equals the never-failing run byte for byte`);
+      }
+      // a failure through runUntil / closeDay (the public entry points), with a snapshot taken after the failure and a
+      // restore from it: identical to the never-failing run
+      {
+        const { r } = mkA(injectEnv), snap0 = JSON.stringify(r.snapshot());
+        let n = 0; r.foreign = () => { if (n++ < 2) throw new Error('transient'); };
+        for (let k = 0; k < 2; k++) { let threw = false; try { r.closeDay(0); } catch { threw = true; } ok(threw && JSON.stringify(r.snapshot()) === snap0 && r.days.length === 0, `${tag}: closeDay failing in the dawn batch (${k + 1}) leaves the clock snapshot unchanged`); }
+        const rr = new ClockRun(acfg, ainputs, JSON.parse(snap0));
+        rr.foreign = () => {};
+        finish(rr); ok(JSON.stringify(rr.snapshot()) === JSON.stringify(clean.snapshot()), `${tag}: restore from the snapshot taken after failed attempts = never-failing run`);
+        ok(fullKey(finish(r)) === fullKey(clean), `${tag}: the failed run, retried through closeDay, equals the never-failing run`);
+      }
+    }
+    // a failure in the middle of the environment part of a batch (an illegal rain_end among several environment events
+    // at one instant): nothing of the batch is applied (refused input stays refused; it is not repaired)
+    {
+      const { r, dawn } = mkA(true);
+      r.scheduler.schedule({ kind: 'rain_end', key: 'ghost', native: dawn.native, scope: ref0(acfg.world), source: null, target: null, payload: { rain_event: 'ghost', segments: [] } });
+      const snap0 = JSON.stringify(r.snapshot());
+      refuses(() => r.scheduler.step(r.handler), /rain_end .* without an active rain event/, `${order}: an illegal environment event mid-batch is refused`);
+      ok(JSON.stringify(r.snapshot()) === snap0 && r.state.light === 'night' && r.state.raining.length === 0 && r.state.last_sample?.minute !== dawn.at.minute, `${order}: … and no part of the batch (light, rain start, sample) was applied`);
+    }
   }
 
   // ------------------------------------------------------------ 7. Day0 experiment world (synthetic climatology)
