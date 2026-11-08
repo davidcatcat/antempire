@@ -9,13 +9,19 @@
  *  4. locality: an agent far away (another lane, out of reach) does not change anyone else's trajectory or draws;
  *  5. failures are kept: head-on in the 1.0 mm corridor is reported (rule D: too narrow for two) and stalls are recorded;
  *  6. refusals: unknown policy, a needed parameter that is null, a bent lane;
- *  7. isolation: the official pipeline does not import the module; no platform API, no unseeded randomness, no species branch.
+ *  7. isolation: the official pipeline does not import the module; no platform API, no unseeded randomness, no species branch;
+ *  8. event timing (R13-05/06): analytic arrivals (on a decision-grid point, off-grid, initially at the goal, at the horizon,
+ *     recorded once, same as PH-3b) and contacts (the other body starting late, separation across decision boundaries,
+ *     positive duration = analytic value); for every candidate and scenario: arrival recorded once at the goal, never
+ *     missed; contact_end ≥ contact_start, the gap stays within CONTACT_TOL_MM at every motion record before the end
+ *     (the end is never before the separating motion begins) and has just exceeded it at the end.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { REPO_ROOT } from '../cli/lib/load.ts';
-import { steer2D, STEER_POLICIES, SteerRefused, type SteerResult } from '../engine/physics/local-steer.ts';
+import { steer2D, STEER_POLICIES, SteerRefused, CONTACT_TOL_MM, type SteerResult, type SteerInput, type SteerPolicyId } from '../engine/physics/local-steer.ts';
+import { capsuleGap, type Capsule } from '../engine/physics/body2d.ts';
 import { solve2D } from '../engine/physics/solver2d.ts';
 import { ph3bInput } from '../prototypes/solver-compare/lib/ph3b.ts';
 import { judge } from '../prototypes/solver-compare/lib/judge.ts';
@@ -23,6 +29,54 @@ import { steerInput, runSteer, verify, runHash, toTrajectory } from '../prototyp
 import { scenarioById } from '../prototypes/local-steer/compare.ts';
 
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
+const timing = { arrivals: 0, contacts: 0 };
+/** event-timing invariants of one run (R13-05/06), from the run's own records only */
+function timingInvariants(inp: SteerInput, res: SteerResult, label: string) {
+  const spec = new Map(inp.agents.map((a) => [a.id, a]));
+  const capAt = (id: string, t: number): Capsule => {
+    const S = res.agents[id].samples, sp = spec.get(id)!;
+    let k = 0; while (k + 1 < S.length && S[k + 1][0] <= t) k++;
+    const p = S[k], q = S[k + 1], f = q && q[0] > p[0] ? (t - p[0]) / (q[0] - p[0]) : 0;
+    const x = q ? p[1] + (q[1] - p[1]) * f : p[1], y = q ? p[2] + (q[2] - p[2]) * f : p[2], h = p[3];
+    const hw = Math.max(0, sp.body.length_mm! - sp.body.width_mm!) / 2, d = { x: Math.cos(h) * hw, y: Math.sin(h) * hw };
+    return { a: { x: x - d.x, y: y - d.y }, b: { x: x + d.x, y: y + d.y }, r: sp.body.width_mm! / 2 };
+  };
+  const gap = (i: string, j: string, t: number) => capsuleGap(capAt(i, t), capAt(j, t));
+  // arrivals: once, at the goal; an agent that is not arrived never reached its goal at any record
+  for (const [id, a] of Object.entries(res.agents)) {
+    const sp = spec.get(id)!, arr = res.events.filter((e) => e.kind === 'arrive' && e.agents[0] === id);
+    ok(arr.length <= 1, `${label}/${id}: arrival recorded at most once`);
+    if (a.arrival_t_s !== null) {
+      timing.arrivals++;
+      ok(arr.length === 1 && arr[0].t_s === a.arrival_t_s && a.arrival_t_s <= inp.horizon_s, `${label}/${id}: arrival event = arrival_t_s ≤ horizon`);
+      const at = a.samples.filter((s) => s[0] === a.arrival_t_s).at(-1)!;
+      ok(at && Math.abs((at[4] - sp.goal_s_mm) * sp.dir) <= 1e-9 && a.final_mode === 'arrived', `${label}/${id}: at the goal on arrival`);
+      ok(a.samples.every((s) => s[0] <= a.arrival_t_s! || (s[1] === at[1] && s[2] === at[2])), `${label}/${id}: no motion after arrival`);
+    } else {
+      ok(arr.length === 0 && (sp.start_t_s > inp.horizon_s || a.samples.every((s) => (sp.goal_s_mm - s[4]) * sp.dir > 1e-12)), `${label}/${id}: not arrived → not started by the horizon, or never at its goal (no missed arrival)`);
+    }
+  }
+  // contacts: matched start/end per pair
+  const open = new Map<string, number>();
+  const episode = (i: string, j: string, ts: number, te: number | null) => {
+    timing.contacts++;
+    const end = te ?? inp.horizon_s, recs = [...new Set([ts, ...res.agents[i].samples.map((s) => s[0]), ...res.agents[j].samples.map((s) => s[0])])].filter((t) => t >= ts && t < end);
+    if (te !== null) ok(te >= ts, `${label}/${i}-${j}: contact_end ${te} ≥ contact_start ${ts}`);
+    for (const r of recs) ok(gap(i, j, r) <= CONTACT_TOL_MM + 1e-12, `${label}/${i}-${j}: still in contact at record ${r} (start ${ts}, end ${te}): gap ${gap(i, j, r)}`);
+    if (te !== null) {
+      ok(gap(i, j, te) > CONTACT_TOL_MM / 2, `${label}/${i}-${j}: gap has opened at contact_end ${te} (${gap(i, j, te)})`);
+      ok(te - 1e-9 < ts || gap(i, j, te - 1e-9) <= CONTACT_TOL_MM + 1e-12, `${label}/${i}-${j}: contact_end is the first separation (to 1e-9 s)`);
+    }
+  };
+  for (const e of res.events) {
+    if (e.kind !== 'contact_start' && e.kind !== 'contact_end') continue;
+    const key = e.agents.join('|');
+    if (e.kind === 'contact_start') { ok(!open.has(key), `${label}/${key}: no nested contact_start`); open.set(key, e.t_s); }
+    else { ok(open.has(key), `${label}/${key}: contact_end has a start`); episode(e.agents[0], e.agents[1], open.get(key)!, e.t_s); open.delete(key); }
+  }
+  for (const [key, ts] of open) { const [i, j] = key.split('|'); episode(i, j, ts, null); }
+}
+
 const SMALL = ['head-on-2', 'offset-block', 'pass-clear', 'pass-graze', 'crossing', 'crossing-flank', 'stone', 'corridor-8'];
 
 // 1 + 3: no penetration everywhere; 'none' = PH-3b
@@ -42,6 +96,7 @@ for (const id of SMALL) {
       for (const aid of Object.keys(base.agents)) { assert.deepEqual(res.agents[aid].samples, base.agents[aid].samples); ok(res.agents[aid].final_mode === base.agents[aid].final_mode && res.agents[aid].arrival_t_s === base.agents[aid].arrival_t_s, `${id}: none = PH-3b agent ${aid}`); }
       ok(res.ph3b !== undefined && JSON.stringify(res.ph3b.stats) === JSON.stringify(base.stats), `${id}: none carries the PH-3b stats unchanged`);
     } else {
+      timingInvariants(steerInput(sc, p), res, `${id}/${p}`);
       // every recorded motion change is named by an event of that agent (no unexplained motion)
       for (const [aid, a] of Object.entries(res.agents)) {
         const own = new Set(res.events.filter((e) => e.agents.includes(aid)).map((e) => e.t_s));
@@ -71,6 +126,7 @@ for (const id of SMALL) {
     ok(runHash(runSteer(sc, p, { order: 'shuffled' }).res) === h, `crossing-traffic-100/${p}: shuffled input identical`);
     ok(runHash(runSteer(sc, p, { seed: 2 }).res) !== h, `crossing-traffic-100/${p}: the seed is used (seed 2 differs)`);
     ok(r1.stats.stalled + r1.stats.arrived <= 100 && r1.stats.decision_instants === 400, `crossing-traffic-100/${p}: bookkeeping`);
+    timingInvariants(steerInput(sc, p), r1, `crossing-traffic-100/${p}`);
   }
   const none = runSteer(sc, 'none').res;
   ok(runHash(none) === runHash(runSteer(sc, 'none', { order: 'shuffled' }).res), 'crossing-traffic-100/none: shuffled input identical');
@@ -126,6 +182,55 @@ for (const id of ['corridor-8', 'stone', 'crossing']) for (const p of STEER_POLI
   ok(refused(() => steer2D(bent)), 'a bent lane is refused (no body-rotation model)');
 }
 
+// 8: event timing — analytic cases (R13-05 arrival at an interval end; R13-06 contact end from the actual separation)
+{
+  const params = { sensing_radius_mm: 0.5, decision_interval_s: 0.1, probe_angles_deg: [0, 90], same_heading_max_deg: 20, stall_window_s: 1, stall_progress_mm: 0.01, p_wait: 0.5, p_back: 0.25, p_reroute: 0.25, wait_s: 0.5, back_distance_mm: 0.5, reroute_max_s: 0.5 };
+  const lanes = [{ id: 'L', centerline_mm: [{ x: 0, y: 0 }, { x: 100, y: 0 }], width_mm: 10, layer: 'G' }], body = { length_mm: 2.5, width_mm: 0.8 };
+  const ag = (id: string, s: number, start: number, goal: number) => ({ id, lane: 'L', s_mm: s, u_mm: 0, dir: 1 as const, start_t_s: start, goal_s_mm: goal, free_speed_mm_s: 10, body });
+  const run = (policy: SteerPolicyId, agents: ReturnType<typeof ag>[], horizon_s: number, dt: number) => { const inp: SteerInput = { lanes, obstacles: [], agents, horizon_s, policy, params: { ...params, decision_interval_s: dt }, seed: 1 }; return { inp, res: steer2D(inp) }; };
+  const near = (x: number | null, y: number, tol = 1e-12) => x !== null && Math.abs(x - y) <= tol;
+  // arrivals: [label, start s, start time, goal, horizon, dt, expected arrival (null = none)]
+  const cases: [string, number, number, number, number, number, number | null][] = [
+    ['on a decision-grid point', 10, 0, 11, 0.4, 0.1, 0.1],
+    ['off grid', 10, 0, 11.1, 0.4, 0.1, 0.11],
+    ['on grid, late start', 10, 0.05, 11, 0.4, 0.1, 0.15],
+    ['initially at the goal', 10, 0, 10, 0.4, 0.1, 0],
+    ['initially at the goal, late start', 10, 0.05, 10, 0.4, 0.1, 0.05],
+    ['exactly at the horizon (on grid)', 10, 0, 14, 0.4, 0.1, 0.4],
+    ['exactly at the horizon (horizon off grid)', 10, 0, 13.5, 0.35, 0.1, 0.35],
+    ['just beyond the horizon', 10, 0, 14.001, 0.4, 0.1, null],
+    ['start after the horizon', 10, 0.5, 10, 0.4, 0.1, null],
+  ];
+  for (const p of STEER_POLICIES) for (const [label, s0, st, goal, H, dt, exp] of cases) {
+    const { inp, res } = run(p, [ag('A', s0, st, goal)], H, dt), a = res.agents.A;
+    ok(exp === null ? a.arrival_t_s === null : near(a.arrival_t_s, exp), `${p}: arrival ${label}: expected ${exp}, got ${a.arrival_t_s}`);
+    ok(res.events.filter((e) => e.kind === 'arrive').length === (exp === null ? 0 : 1), `${p}: arrival ${label} recorded exactly ${exp === null ? 0 : 1} time(s)`);
+    ok(exp === null || (a.final_mode === 'arrived' && !res.events.some((e) => e.kind === 'stop')), `${p}: arrival ${label}: final mode arrived, no stop event`);
+    const ph = solve2D({ lanes, obstacles: [], agents: inp.agents, horizon_s: H });
+    ok(exp === null ? ph.agents.A.arrival_t_s === null : near(ph.agents.A.arrival_t_s, exp), `PH-3b reference: arrival ${label} = ${ph.agents.A.arrival_t_s}`);
+    timingInvariants(inp, res, `arrival ${label}/${p}`);
+  }
+  // contacts: A (s 10) follows B (s 13.1, starting late); A stops on touching B at (13.1 − 2.5 − 10)/10 = 0.06 s and the
+  // contact lasts until B's own motion opens the gap beyond CONTACT_TOL_MM: end = B start + (tol − gap at stop)/10 mm/s
+  for (const p of ['B_contact_decision', 'C_sidestep'] as const) for (const [bStart, dt] of [[0.15, 0.2], [0.25, 0.2], [0.33, 0.1], [0.07, 0.05], [0.41, 0.2]] as const) {
+    const { inp, res } = run(p, [ag('A', 10, 0, 90), ag('B', 13.1, bStart, 90)], 0.5, dt), lbl = `${p}: B starts at ${bStart}, decision interval ${dt}`;
+    const cs = res.events.filter((e) => e.kind === 'contact_start'), ce = res.events.filter((e) => e.kind === 'contact_end');
+    ok(cs.length === 1 && ce.length === 1, `${lbl}: one contact episode (${cs.length}/${ce.length})`);
+    const ts = cs[0].t_s, sA = res.agents.A.samples.find((s) => s[0] === ts)!, g0 = sA ? 13.1 - sA[4] - 2.5 : NaN;
+    ok(near(ts, 0.06, 1e-9), `${lbl}: contact starts at 0.06 s (${ts})`);
+    const expEnd = bStart + (CONTACT_TOL_MM - g0) / 10;
+    ok(near(ce[0].t_s, expEnd, 1e-12), `${lbl}: contact ends at B's start + (tol − gap)/v = ${expEnd} (${ce[0].t_s})`);
+    ok(ce[0].t_s >= bStart && ce[0].t_s - ts > 0 && near(ce[0].t_s - ts, expEnd - 0.06, 1e-9), `${lbl}: positive contact duration ${ce[0].t_s - ts} = analytic ${expEnd - 0.06}`);
+    timingInvariants(inp, res, lbl);
+  }
+  // control: B starts exactly on A's decision instant → both move at the same speed, the gap never opens: no contact_end
+  for (const p of ['B_contact_decision', 'C_sidestep'] as const) {
+    const { inp, res } = run(p, [ag('A', 10, 0, 90), ag('B', 13.1, 0.2, 90)], 0.5, 0.2);
+    ok(res.events.filter((e) => e.kind === 'contact_start').length === 1 && !res.events.some((e) => e.kind === 'contact_end'), `${p}: lockstep after a contact keeps the contact open`);
+    timingInvariants(inp, res, `${p}: lockstep`);
+  }
+}
+
 // 7: isolation
 {
   const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
@@ -139,4 +244,5 @@ for (const id of ['corridor-8', 'stone', 'crossing']) for (const p of STEER_POLI
   const others = fs.readdirSync(path.join(REPO_ROOT, 'engine/physics')).filter((f) => f.endsWith('.ts') && f !== 'local-steer.ts');
   for (const f of others) ok(!/local-steer/.test(fs.readFileSync(path.join(REPO_ROOT, 'engine/physics', f), 'utf8')), `engine/physics/${f} does not depend on local-steer (PH-3b unchanged)`);
 }
-console.log(JSON.stringify({ wp4_local_steer: 'pass', checks }, null, 2));
+ok(timing.arrivals > 0 && timing.contacts > 0, `timing invariants exercised (${timing.arrivals} arrivals, ${timing.contacts} contact episodes)`);
+console.log(JSON.stringify({ wp4_local_steer: 'pass', checks, timing }, null, 2));

@@ -37,13 +37,21 @@
  *    for the agent(s) moving INTO the contact (normal test); iterated Jacobi-style over all candidate pairs until no stop
  *    time changes (order-independent). If that does not settle within a cap, nobody moves in that interval (safe,
  *    counted as `fallback_intervals`). Contacts are inelastic: a stopped agent waits for the next decision instant.
+ *  - arrival (same horizon semantics as PH-3b, which processes every event with t <= horizon): an agent arrives at the
+ *    first instant t <= horizon_s at which its forward coordinate reaches its goal — inside an interval, exactly at an
+ *    interval end (including the horizon itself), or at its start time when it starts on its goal (zero remaining
+ *    distance). Arrival is recorded exactly once; an arrived agent no longer moves or decides.
+ *  - contact: a contact starts when an agent is stopped by a body (inelastic stop) and ends at the first instant the
+ *    capsule gap exceeds CONTACT_TOL_MM (= PH-3b ACTIVE_TOL_MM), solved exactly on the piecewise-constant-velocity motion
+ *    of both bodies within the interval (the gap is convex in time on each piece; bisection), never at a time before the
+ *    motion that opens the gap.
  * Determinism: agents in id order; decisions read only the state at the decision instant and named RNG streams keyed by
  * (seed, stream, agent id, decision index) — independent of input order. Units: mm, s, mm/s.
  */
 import type { Vec2 } from './vec.ts';
 import { segmentSegment2D } from './vec.ts';
 import { type Capsule, capsuleGap, laneBoundary, OCC_TOL_MM } from './body2d.ts';
-import { solve2D, pairFirstHit, Solver2DRefused, HIT_TOL_MM, type Solver2DInput, type Solver2DResult, type Sample } from './solver2d.ts';
+import { solve2D, pairFirstHit, Solver2DRefused, HIT_TOL_MM, ACTIVE_TOL_MM, type Solver2DInput, type Solver2DResult, type Sample } from './solver2d.ts';
 import { type AABB, broadphasePairs } from './broadphase.ts';
 import { hash32, rng } from '../rng.ts';
 
@@ -82,6 +90,12 @@ export interface SteerResult {
   /** 'none' only: the untouched PH-3b result */
   ph3b?: Solver2DResult;
 }
+
+/** contact membership tolerance: a contact ends when the capsule gap first exceeds this (the PH-3b value) */
+export const CONTACT_TOL_MM = ACTIVE_TOL_MM;
+
+/** numerical tolerance (mm) for reaching the goal exactly at an interval end (floating-point rounding of the time grid) */
+export const GOAL_TOL_MM = 1e-12;
 
 export class SteerRefused extends Error { constructor(m: string) { super(`STEER_REFUSED: ${m}`); this.name = 'SteerRefused'; } }
 
@@ -253,7 +267,7 @@ function runPolicy(input: SteerInput): SteerResult {
   interface Percept { bodies: { j: number; cap: Capsule; e: Vec2 }[]; statics: Piece[]; contact: boolean }
   const perceive = (a: Ag, nbr: number[]): Percept => {
     const me = capOf(a), out: Percept = { bodies: [], statics: [], contact: false };
-    for (const j of nbr) { const b = A[j], cb = capOf(b), g = capsuleGap(me, cb); if (g <= RHO) { out.bodies.push({ j, cap: cb, e: b.f }); if (g <= 1e-7) out.contact = true; } }
+    for (const j of nbr) { const b = A[j], cb = capOf(b), g = capsuleGap(me, cb); if (g <= RHO) { out.bodies.push({ j, cap: cb, e: b.f }); if (g <= CONTACT_TOL_MM) out.contact = true; } }
     for (const p of a.statics) if (capsuleGap(me, p.c) <= RHO) out.statics.push(p);
     return out;
   };
@@ -367,9 +381,13 @@ function runPolicy(input: SteerInput): SteerResult {
     for (const key of pairs) { const i = Math.floor(key / N), j = key % N; nb[i].push(j); nb[j].push(i); }
     // decisions (read the state at t0 only)
     const w: Vec2[] = A.map(() => ZERO), aT = A.map(() => 0), bT = A.map(() => 0), dec: (Decision | null)[] = A.map(() => null);
+    const atGoal: boolean[] = A.map(() => false);
     for (const a of live) {
       const x = a.k;
       aT[x] = Math.max(0, a.start - t0);
+      // zero remaining distance (only possible for an agent that starts on its goal: an arrival inside or at the end of an
+      // interval is recorded there): it arrives at its start instant, without a decision
+      if (a.goal * a.dir - fwdOf(a) <= 0) { atGoal[x] = true; bT[x] = aT[x]; continue; }
       const d = decide(a, perceive(a, nb[x]), t0, epoch);
       dec[x] = d; w[x] = d.w; bT[x] = sameVec(d.w, ZERO) ? aT[x] : span;
       stats.decisions[d.kind] = (stats.decisions[d.kind] ?? 0) + 1;
@@ -378,11 +396,15 @@ function runPolicy(input: SteerInput): SteerResult {
     // static geometry and goal
     const cause: (string | null)[] = A.map(() => null), causeKind: ('static' | 'goal' | 'body' | null)[] = A.map(() => null), causeJ: number[] = A.map(() => -1);
     for (const a of live) {
-      const x = a.k; if (bT[x] === aT[x]) continue;
+      const x = a.k; if (atGoal[x] || bT[x] === aT[x]) continue;
       const me = capOf(a);
       for (const p of a.statics) { const h = boundedHit(me, w[x], p.c, ZERO, span - aT[x]); if (h) { const tb = aT[x] + (h.overlapping ? 0 : h.tau); if (tb < bT[x]) { bT[x] = tb; cause[x] = `static geometry ${p.id}`; causeKind[x] = 'static'; } } }
       const along = dot(w[x], a.f);
-      if (along > 0) { const tg = aT[x] + (a.goal * a.dir - fwdOf(a)) / along; if (tg <= bT[x]) { bT[x] = Math.max(aT[x], tg); cause[x] = 'goal'; causeKind[x] = 'goal'; } }
+      if (along > 0) {
+        // reached inside the interval, or at its end up to GOAL_TOL_MM (the time grid k·dt and the end time are rounded)
+        const rem = a.goal * a.dir - fwdOf(a), tg = aT[x] + rem / along;
+        if (tg <= bT[x] || (bT[x] === span && rem - along * (span - aT[x]) <= GOAL_TOL_MM)) { bT[x] = Math.max(aT[x], Math.min(tg, span)); cause[x] = 'goal'; causeKind[x] = 'goal'; }
+      }
     }
     // bodies: Jacobi iteration on the stop times
     let changed = new Set<number>(live.filter((a) => bT[a.k] > aT[a.k]).map((a) => a.k)), rounds = 0, fallback = false;
@@ -410,9 +432,12 @@ function runPolicy(input: SteerInput): SteerResult {
     if (fallback) { stats.fallback_intervals++; stats.unresolved++; ev(t0, 'unresolved', live.map((a) => a.k).slice(0, 5), 'solver_status', 'contact stop times did not settle: nobody moves in this interval (safe fallback)'); for (const a of live) { bT[a.k] = aT[a.k]; cause[a.k] = 'physics fallback (nobody moves)'; causeKind[a.k] = 'body'; } }
 
     // apply motion, records and events
+    const bodyStops: [number, number, number][] = [];   // (agent, other body, stop time) of this interval
     for (const a of live) {
-      const x = a.k, d = dec[x]!, tA = t0 + aT[x], moved = bT[x] > aT[x];
+      const x = a.k, tA = t0 + aT[x];
       if (!a.started) { a.started = true; ev(a.start, 'start', [x], 'motion'); }
+      if (atGoal[x]) { sample(a, tA); a.eff = ZERO; a.arrived = tA; stats.arrived++; ev(tA, 'arrive', [x], 'motion'); continue; }
+      const d = dec[x]!, moved = bT[x] > aT[x];
       const key = `${d.kind}|${d.w.x}|${d.w.y}`;
       let named = false;
       if (key !== a.lastKey) { ev(tA, d.kind, [x], 'behavioural_response', d.detail); a.lastKey = key; named = true; }
@@ -427,24 +452,58 @@ function runPolicy(input: SteerInput): SteerResult {
       a.eff = vStart;
       if (moved) {
         a.c = add(c0[x], d.w, bT[x] - aT[x]);
-        if (bT[x] < span) {
-          const tb = t0 + bT[x];
+        const tb = t0 + bT[x];
+        // the goal reached inside the interval OR exactly at its end (incl. the horizon): arrival, recorded once
+        if (causeKind[x] === 'goal') { sample(a, tb); a.eff = ZERO; a.arrived = tb; stats.arrived++; ev(tb, 'arrive', [x], 'motion'); }
+        else if (bT[x] < span) {
           sample(a, tb); a.eff = ZERO;
-          if (causeKind[x] === 'goal') { a.arrived = tb; stats.arrived++; ev(tb, 'arrive', [x], 'motion'); }
-          else {
-            ev(tb, 'stop', [x], 'physical_constraint', cause[x]); a.stopCause = cause[x];
-            if (causeKind[x] === 'static') stats.stops_static++; else stats.stops_contact++;
-            const j = causeJ[x];
-            if (causeKind[x] === 'body' && j >= 0 && !activeContacts.has(pkey(x, j))) { activeContacts.set(pkey(x, j), tb); stats.contacts++; ev(tb, 'contact_start', [Math.min(x, j), Math.max(x, j)], 'physical_contact', null); }
-          }
+          ev(tb, 'stop', [x], 'physical_constraint', cause[x]); a.stopCause = cause[x];
+          if (causeKind[x] === 'static') stats.stops_static++; else stats.stops_contact++;
+          if (causeKind[x] === 'body' && causeJ[x] >= 0) bodyStops.push([x, causeJ[x], tb]);
         }
+      } else if (causeKind[x] === 'goal') { sample(a, tA); a.eff = ZERO; a.arrived = tA; stats.arrived++; ev(tA, 'arrive', [x], 'motion'); }
+    }
+    // contacts: the exact first separation time from the piecewise motion of both bodies in this interval
+    const posAt = (x: number, t: number) => add(c0[x], w[x], Math.min(Math.max(t - t0, aT[x]), bT[x]) - aT[x]);
+    /** first t in [from, t1] at which the gap of i and j exceeds CONTACT_TOL_MM; null if it never does in this interval */
+    const firstSeparation = (i: number, j: number, from: number): number | null => {
+      const gapAt = (t: number) => capsuleGap(capOf(A[i], posAt(i, t)), capOf(A[j], posAt(j, t)));
+      const pts = [...new Set([from, t1, ...[i, j].flatMap((x) => [t0 + aT[x], t0 + bT[x]]).filter((p) => p > from && p < t1)])].sort((p, q) => p - q);
+      for (let k = 0; k + 1 < pts.length; k++) {
+        const p = pts[k], q = pts[k + 1], mid = (p + q) / 2;
+        const still = (x: number) => !(mid - t0 > aT[x] && mid - t0 < bT[x]);
+        if (still(i) && still(j)) continue;                // gap constant on this piece
+        if (gapAt(p) > CONTACT_TOL_MM) return p;          // (only at `from` for a contact that did not start touching)
+        if (!(gapAt(q) > CONTACT_TOL_MM)) continue;       // convex on the piece: <= tol at both ends -> <= tol throughout
+        let lo = p, hi = q;
+        for (let n = 0; n < 200 && hi - lo > 1e-15 * Math.max(1, hi); n++) { const m = (lo + hi) / 2; if (gapAt(m) > CONTACT_TOL_MM) hi = m; else lo = m; }
+        return hi;
       }
+      return null;
+    };
+    const endContact = (key: number, ts: number) => {
+      const i = Math.floor(key / N), j = key % N, te = firstSeparation(i, j, Math.max(t0, ts));
+      if (te === null) return null;
+      activeContacts.delete(key);
+      ev(te, 'contact_end', [i, j], 'physical_contact', `gap first exceeds ${CONTACT_TOL_MM} mm (exact, from the piecewise motion of both bodies)`);
+      return te;
+    };
+    // 1) contacts already open at t0 (a separation before a new stop of the same pair ends the old contact)
+    const endedAt = new Map<number, number>();
+    for (const [key, ts] of [...activeContacts].sort((p, q) => p[0] - q[0])) { const te = endContact(key, ts); if (te !== null) endedAt.set(key, te); }
+    // 2) body stops start a contact unless the pair is in contact at that instant already. A stop computed against the
+    //    other body's planned path is conservative when that body itself stopped earlier (stop times only decrease in the
+    //    Jacobi iteration): if the bodies do not touch at the stop instant (gap > CONTACT_TOL_MM) it is no contact.
+    const fresh: number[] = [];
+    for (const [x, j, tb] of bodyStops) {
+      const key = pkey(x, j), te = endedAt.get(key);
+      if (activeContacts.has(key) || (te !== undefined && te > tb)) continue;
+      if (capsuleGap(capOf(A[x], posAt(x, tb)), capOf(A[j], posAt(j, tb))) > CONTACT_TOL_MM) continue;
+      endedAt.delete(key); activeContacts.set(key, tb); fresh.push(key); stats.contacts++;
+      ev(tb, 'contact_start', [Math.min(x, j), Math.max(x, j)], 'physical_contact', null);
     }
-    // contacts that opened up during the interval end at its start (the separating motion was chosen at t0)
-    for (const [key, ts] of [...activeContacts].sort((p, q) => p[0] - q[0])) {
-      const i = Math.floor(key / N), j = key % N, g = capsuleGap(capOf(A[i]), capOf(A[j]));
-      if (g > 1e-7) { activeContacts.delete(key); ev(Math.max(t0, ts), 'contact_end', [i, j], 'physical_contact', 'gap opened in this decision interval (time = its start, or the contact start if later)'); }
-    }
+    // 3) contacts started in this interval that already separate in it
+    for (const key of fresh.sort((p, q) => p - q)) endContact(key, activeContacts.get(key)!);
     // rule D: progress over the stall window, local diagnosis, report once per episode
     for (const a of live) {
       if (a.arrived !== null || !a.started) continue;

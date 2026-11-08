@@ -41,8 +41,8 @@
    },
    "decisions": {},
    "contacts": 1,
-   "cpu_ms": 8.431,
-   "wall_ms": 8.514589999999998,
+   "cpu_ms": 9.996,
+   "wall_ms": 10.811991000000006,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -73,7 +73,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 5.425116000000003
+    "judge_wall_ms": 2.0339680000000158
    },
    "replay": {
     "hash": "6666829951c94f08",
@@ -124,8 +124,8 @@
     "wait": 690
    },
    "contacts": 0,
-   "cpu_ms": 404.172,
-   "wall_ms": 344.03614899999997,
+   "cpu_ms": 368.773,
+   "wall_ms": 356.379608,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -156,7 +156,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.7296120000000883
+    "judge_wall_ms": 0.7700530000001891
    },
    "replay": {
     "hash": "cd893d38f834c98f",
@@ -207,8 +207,8 @@
     "wait": 690
    },
    "contacts": 0,
-   "cpu_ms": 266.184,
-   "wall_ms": 268.270301,
+   "cpu_ms": 232.403,
+   "wall_ms": 231.62122900000008,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -239,7 +239,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.5643749999999272
+    "judge_wall_ms": 0.804189999999835
    },
    "replay": {
     "hash": "cd893d38f834c98f",
@@ -290,8 +290,8 @@
     "wait": 690
    },
    "contacts": 0,
-   "cpu_ms": 238.084,
-   "wall_ms": 234.99127599999974,
+   "cpu_ms": 234.638,
+   "wall_ms": 237.9854220000002,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -322,7 +322,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 1.6866919999997663
+    "judge_wall_ms": 0.5501759999997375
    },
    "replay": {
     "hash": "cd893d38f834c98f",
@@ -373,8 +373,8 @@
     "wait": 690
    },
    "contacts": 0,
-   "cpu_ms": 288.527,
-   "wall_ms": 289.11785199999986,
+   "cpu_ms": 229.396,
+   "wall_ms": 228.8995,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -405,7 +405,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.3247289999999339
+    "judge_wall_ms": 0.32959500000015396
    },
    "replay": {
     "hash": "cd893d38f834c98f",
@@ -456,8 +456,8 @@
     "wait": 690
    },
    "contacts": 0,
-   "cpu_ms": 260.453,
-   "wall_ms": 262.93861400000014,
+   "cpu_ms": 229.951,
+   "wall_ms": 230.2756199999999,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -488,7 +488,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.2576240000003054
+    "judge_wall_ms": 0.2598760000000766
    },
    "replay": {
     "hash": "cd893d38f834c98f",
@@ -549,8 +549,8 @@
     "reroute": 3
    },
    "contacts": 1,
-   "cpu_ms": 25.319,
-   "wall_ms": 24.891262000000097,
+   "cpu_ms": 25.009,
+   "wall_ms": 24.715265000000272,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -581,10 +581,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 2,
-    "judge_wall_ms": 2.0879640000002837
+    "judge_wall_ms": 1.3577900000000227
    },
    "replay": {
-    "hash": "87b5a471a15f6518",
+    "hash": "7787ca1349cc2b87",
     "rerun_identical": true,
     "reversed_input_identical": true,
     "shuffled_input_identical": true
@@ -641,8 +641,8 @@
     "back_off": 315
    },
    "contacts": 1,
-   "cpu_ms": 43.413,
-   "wall_ms": 23.549253000000135,
+   "cpu_ms": 40.454,
+   "wall_ms": 21.11065299999973,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -673,10 +673,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 3,
-    "judge_wall_ms": 0.7790830000003552
+    "judge_wall_ms": 1.0950779999998304
    },
    "replay": {
-    "hash": "73a14fe5f17a5980",
+    "hash": "cdbcb5667aca21e8",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -734,8 +734,8 @@
     "reroute": 2
    },
    "contacts": 1,
-   "cpu_ms": 37.357,
-   "wall_ms": 20.21966199999997,
+   "cpu_ms": 40.12,
+   "wall_ms": 22.472215000000233,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -766,10 +766,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 4,
-    "judge_wall_ms": 1.5199549999997544
+    "judge_wall_ms": 1.137992999999824
    },
    "replay": {
-    "hash": "a914be238b2be0a7",
+    "hash": "ea6f3218f1ea93a9",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -826,8 +826,8 @@
     "reroute": 3
    },
    "contacts": 1,
-   "cpu_ms": 36.413,
-   "wall_ms": 15.817051999999876,
+   "cpu_ms": 21.164,
+   "wall_ms": 10.877628000000186,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -858,10 +858,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 2,
-    "judge_wall_ms": 1.3183180000000903
+    "judge_wall_ms": 0.9484870000001138
    },
    "replay": {
-    "hash": "af7f9077f27cba19",
+    "hash": "1bb66db60b5e9659",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -921,8 +921,8 @@
     "reroute": 173
    },
    "contacts": 1,
-   "cpu_ms": 48.216,
-   "wall_ms": 46.6976709999999,
+   "cpu_ms": 121.753,
+   "wall_ms": 71.20013399999971,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -953,10 +953,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 3,
-    "judge_wall_ms": 1.3687140000001818
+    "judge_wall_ms": 2.728871000000254
    },
    "replay": {
-    "hash": "74b4154f66d0b92f",
+    "hash": "fc205c740225f06c",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -1004,8 +1004,8 @@
     "wait": 690
    },
    "contacts": 0,
-   "cpu_ms": 388.506,
-   "wall_ms": 325.238777,
+   "cpu_ms": 375.892,
+   "wall_ms": 263.1503600000001,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -1036,7 +1036,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.3532230000000709
+    "judge_wall_ms": 0.24767900000006193
    },
    "replay": {
     "hash": "385266a2355fa0bb",
@@ -1087,8 +1087,8 @@
     "wait": 690
    },
    "contacts": 0,
-   "cpu_ms": 215.065,
-   "wall_ms": 219.43123699999978,
+   "cpu_ms": 218.663,
+   "wall_ms": 218.61069600000064,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -1119,7 +1119,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.3084159999998519
+    "judge_wall_ms": 0.24113500000021304
    },
    "replay": {
     "hash": "385266a2355fa0bb",
@@ -1170,8 +1170,8 @@
     "wait": 690
    },
    "contacts": 0,
-   "cpu_ms": 370.079,
-   "wall_ms": 245.15621200000078,
+   "cpu_ms": 415.782,
+   "wall_ms": 260.806732,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -1202,7 +1202,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.2301530000004277
+    "judge_wall_ms": 0.23429699999996956
    },
    "replay": {
     "hash": "385266a2355fa0bb",
@@ -1253,8 +1253,8 @@
     "wait": 690
    },
    "contacts": 0,
-   "cpu_ms": 207.135,
-   "wall_ms": 209.0869499999999,
+   "cpu_ms": 212.044,
+   "wall_ms": 213.56870700000036,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -1285,7 +1285,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.2847410000003947
+    "judge_wall_ms": 0.23150600000008126
    },
    "replay": {
     "hash": "385266a2355fa0bb",
@@ -1336,8 +1336,8 @@
     "wait": 690
    },
    "contacts": 0,
-   "cpu_ms": 212.837,
-   "wall_ms": 213.9031329999998,
+   "cpu_ms": 212.371,
+   "wall_ms": 211.59861499999988,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -1368,7 +1368,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.23579399999925954
+    "judge_wall_ms": 0.22340299999996205
    },
    "replay": {
     "hash": "385266a2355fa0bb",
@@ -1414,8 +1414,8 @@
    },
    "decisions": {},
    "contacts": 1,
-   "cpu_ms": 0.753,
-   "wall_ms": 0.7438360000005559,
+   "cpu_ms": 0.678,
+   "wall_ms": 0.670020999999906,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -1446,7 +1446,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.37321200000042154
+    "judge_wall_ms": 0.2632370000001174
    },
    "replay": {
     "hash": "25d220de38110244",
@@ -1493,8 +1493,8 @@
     "sidestep": 2
    },
    "contacts": 0,
-   "cpu_ms": 6.268,
-   "wall_ms": 9.278737999999976,
+   "cpu_ms": 4.683,
+   "wall_ms": 4.243789000000106,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -1525,7 +1525,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.3399650000001202
+    "judge_wall_ms": 0.2615589999995791
    },
    "replay": {
     "hash": "a6c5a76e2b140b76",
@@ -1572,8 +1572,8 @@
     "sidestep": 2
    },
    "contacts": 0,
-   "cpu_ms": 12.285,
-   "wall_ms": 8.157438000000184,
+   "cpu_ms": 7.862,
+   "wall_ms": 3.4175610000002052,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -1604,7 +1604,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.41289599999981874
+    "judge_wall_ms": 0.2599950000003446
    },
    "replay": {
     "hash": "a6c5a76e2b140b76",
@@ -1651,8 +1651,8 @@
     "sidestep": 2
    },
    "contacts": 0,
-   "cpu_ms": 7.641,
-   "wall_ms": 4.001307999999881,
+   "cpu_ms": 7.365,
+   "wall_ms": 3.397746999999981,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -1683,7 +1683,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.2643210000005638
+    "judge_wall_ms": 0.2590570000002117
    },
    "replay": {
     "hash": "a6c5a76e2b140b76",
@@ -1730,8 +1730,8 @@
     "sidestep": 2
    },
    "contacts": 0,
-   "cpu_ms": 5.354,
-   "wall_ms": 3.1331270000000586,
+   "cpu_ms": 17.011,
+   "wall_ms": 9.912629999999808,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -1762,7 +1762,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.35836099999960425
+    "judge_wall_ms": 4.479483000000073
    },
    "replay": {
     "hash": "a6c5a76e2b140b76",
@@ -1809,8 +1809,8 @@
     "sidestep": 2
    },
    "contacts": 0,
-   "cpu_ms": 22.382,
-   "wall_ms": 13.005620999999337,
+   "cpu_ms": 4.959,
+   "wall_ms": 3.477617999999893,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -1841,7 +1841,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.28001399999993737
+    "judge_wall_ms": 0.2490139999999883
    },
    "replay": {
     "hash": "a6c5a76e2b140b76",
@@ -1894,8 +1894,8 @@
     "reroute": 2
    },
    "contacts": 0,
-   "cpu_ms": 5.686,
-   "wall_ms": 3.782137000000148,
+   "cpu_ms": 11.203,
+   "wall_ms": 7.151375000000371,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -1926,7 +1926,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.2872880000004443
+    "judge_wall_ms": 0.3926710000005187
    },
    "replay": {
     "hash": "5da25a040a55aceb",
@@ -1980,8 +1980,8 @@
     "reroute": 2
    },
    "contacts": 0,
-   "cpu_ms": 15.407,
-   "wall_ms": 6.192802999999913,
+   "cpu_ms": 12.638,
+   "wall_ms": 8.109237000000576,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -2012,7 +2012,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.4194569999999658
+    "judge_wall_ms": 0.39001399999960995
    },
    "replay": {
     "hash": "afe18a2aaed68c83",
@@ -2061,8 +2061,8 @@
     "reroute": 2
    },
    "contacts": 0,
-   "cpu_ms": 6.105,
-   "wall_ms": 3.6321480000005977,
+   "cpu_ms": 5.008,
+   "wall_ms": 4.021026999999776,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -2093,7 +2093,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.29504800000086107
+    "judge_wall_ms": 0.3649709999999686
    },
    "replay": {
     "hash": "42ccee7edff0ddd2",
@@ -2147,8 +2147,8 @@
     "reroute": 2
    },
    "contacts": 0,
-   "cpu_ms": 9.087,
-   "wall_ms": 5.0202100000005885,
+   "cpu_ms": 9.19,
+   "wall_ms": 4.929479999999785,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -2179,7 +2179,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.4347809999999299
+    "judge_wall_ms": 0.3920140000000174
    },
    "replay": {
     "hash": "1b0e77088231cd0c",
@@ -2233,8 +2233,8 @@
     "reroute": 2
    },
    "contacts": 0,
-   "cpu_ms": 6.995,
-   "wall_ms": 7.037191999999777,
+   "cpu_ms": 14.742,
+   "wall_ms": 6.31862799999999,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -2265,7 +2265,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.45885100000032253
+    "judge_wall_ms": 0.38312199999927543
    },
    "replay": {
     "hash": "afe18a2aaed68c83",
@@ -2312,8 +2312,8 @@
     "sidestep": 2
    },
    "contacts": 0,
-   "cpu_ms": 3.895,
-   "wall_ms": 3.8990939999994225,
+   "cpu_ms": 8.41,
+   "wall_ms": 3.526568999999654,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -2344,7 +2344,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.28708000000005995
+    "judge_wall_ms": 0.3324499999998807
    },
    "replay": {
     "hash": "02a7d5ec86972993",
@@ -2391,8 +2391,8 @@
     "sidestep": 2
    },
    "contacts": 0,
-   "cpu_ms": 3.441,
-   "wall_ms": 3.4168319999998857,
+   "cpu_ms": 10.261,
+   "wall_ms": 10.460790000000088,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -2423,7 +2423,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.26636299999972834
+    "judge_wall_ms": 0.2990669999999227
    },
    "replay": {
     "hash": "02a7d5ec86972993",
@@ -2470,8 +2470,8 @@
     "sidestep": 2
    },
    "contacts": 0,
-   "cpu_ms": 3.867,
-   "wall_ms": 3.857195999999931,
+   "cpu_ms": 3.953,
+   "wall_ms": 8.005167000000256,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -2502,7 +2502,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.7276449999999386
+    "judge_wall_ms": 0.2763439999998809
    },
    "replay": {
     "hash": "02a7d5ec86972993",
@@ -2549,8 +2549,8 @@
     "sidestep": 2
    },
    "contacts": 0,
-   "cpu_ms": 6.79,
-   "wall_ms": 3.515918000000056,
+   "cpu_ms": 3.757,
+   "wall_ms": 3.722052000000076,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -2581,7 +2581,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.6362829999998212
+    "judge_wall_ms": 0.2708519999996497
    },
    "replay": {
     "hash": "02a7d5ec86972993",
@@ -2628,8 +2628,8 @@
     "sidestep": 2
    },
    "contacts": 0,
-   "cpu_ms": 5.977,
-   "wall_ms": 3.1278409999995347,
+   "cpu_ms": 3.702,
+   "wall_ms": 4.957360000000335,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -2660,7 +2660,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.760457000000315
+    "judge_wall_ms": 0.3014370000000781
    },
    "replay": {
     "hash": "02a7d5ec86972993",
@@ -2702,8 +2702,8 @@
    },
    "decisions": {},
    "contacts": 0,
-   "cpu_ms": 0.57,
-   "wall_ms": 0.5633719999996174,
+   "cpu_ms": 0.386,
+   "wall_ms": 0.3818100000007689,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -2734,7 +2734,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.2397980000005191
+    "judge_wall_ms": 0.17118900000059512
    },
    "replay": {
     "hash": "b7fbfb0f3a1709dd",
@@ -2779,8 +2779,8 @@
     "go": 215
    },
    "contacts": 0,
-   "cpu_ms": 10.567,
-   "wall_ms": 5.145308000000114,
+   "cpu_ms": 3.157,
+   "wall_ms": 3.1452250000002095,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -2811,7 +2811,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.1645410000000993
+    "judge_wall_ms": 0.17254899999988993
    },
    "replay": {
     "hash": "653cb646b56a9d63",
@@ -2856,8 +2856,8 @@
     "go": 215
    },
    "contacts": 0,
-   "cpu_ms": 7.426,
-   "wall_ms": 3.2692329999999856,
+   "cpu_ms": 6.233,
+   "wall_ms": 3.2391399999996793,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -2888,7 +2888,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.1502410000002783
+    "judge_wall_ms": 0.15116200000011304
    },
    "replay": {
     "hash": "653cb646b56a9d63",
@@ -2933,8 +2933,8 @@
     "go": 215
    },
    "contacts": 0,
-   "cpu_ms": 5.165,
-   "wall_ms": 3.371399999999994,
+   "cpu_ms": 6.461,
+   "wall_ms": 4.00482699999975,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -2965,7 +2965,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.271045000000413
+    "judge_wall_ms": 0.20019500000034895
    },
    "replay": {
     "hash": "653cb646b56a9d63",
@@ -3010,8 +3010,8 @@
     "go": 215
    },
    "contacts": 0,
-   "cpu_ms": 8.667,
-   "wall_ms": 10.45682399999987,
+   "cpu_ms": 4.446,
+   "wall_ms": 3.553603000000294,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -3042,7 +3042,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.19998800000030315
+    "judge_wall_ms": 0.18424899999990885
    },
    "replay": {
     "hash": "653cb646b56a9d63",
@@ -3087,8 +3087,8 @@
     "go": 215
    },
    "contacts": 0,
-   "cpu_ms": 3.604,
-   "wall_ms": 3.071939999999813,
+   "cpu_ms": 3.675,
+   "wall_ms": 3.1208550000001196,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -3119,7 +3119,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.14590799999950832
+    "judge_wall_ms": 0.1489529999998922
    },
    "replay": {
     "hash": "653cb646b56a9d63",
@@ -3164,8 +3164,8 @@
     "go": 215
    },
    "contacts": 0,
-   "cpu_ms": 19.167,
-   "wall_ms": 13.315891000000192,
+   "cpu_ms": 7.877,
+   "wall_ms": 3.6164950000002136,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -3196,7 +3196,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 6.361885999999686
+    "judge_wall_ms": 0.15136700000039127
    },
    "replay": {
     "hash": "653cb646b56a9d63",
@@ -3241,8 +3241,8 @@
     "go": 215
    },
    "contacts": 0,
-   "cpu_ms": 7.665,
-   "wall_ms": 3.700278999999682,
+   "cpu_ms": 11.808,
+   "wall_ms": 3.4131139999999505,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -3273,7 +3273,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.16984299999967334
+    "judge_wall_ms": 0.17167999999946915
    },
    "replay": {
     "hash": "653cb646b56a9d63",
@@ -3318,8 +3318,8 @@
     "go": 215
    },
    "contacts": 0,
-   "cpu_ms": 7.539,
-   "wall_ms": 3.1689610000003086,
+   "cpu_ms": 5.007,
+   "wall_ms": 3.103026000000682,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -3350,7 +3350,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.21048900000005233
+    "judge_wall_ms": 0.14716499999940424
    },
    "replay": {
     "hash": "653cb646b56a9d63",
@@ -3395,8 +3395,8 @@
     "go": 215
    },
    "contacts": 0,
-   "cpu_ms": 4.992,
-   "wall_ms": 3.367181999999957,
+   "cpu_ms": 3.262,
+   "wall_ms": 3.2177759999995033,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -3427,7 +3427,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.1618270000008124
+    "judge_wall_ms": 0.15720799999962765
    },
    "replay": {
     "hash": "653cb646b56a9d63",
@@ -3472,8 +3472,8 @@
     "go": 215
    },
    "contacts": 0,
-   "cpu_ms": 12.047,
-   "wall_ms": 7.135374000000411,
+   "cpu_ms": 17.561,
+   "wall_ms": 3.505670999999893,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -3504,7 +3504,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.16367600000012317
+    "judge_wall_ms": 0.17575500000020838
    },
    "replay": {
     "hash": "653cb646b56a9d63",
@@ -3549,8 +3549,8 @@
     "go": 215
    },
    "contacts": 0,
-   "cpu_ms": 7.277,
-   "wall_ms": 3.3981409999996686,
+   "cpu_ms": 13.489,
+   "wall_ms": 7.181040000000394,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -3581,7 +3581,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.17643199999929493
+    "judge_wall_ms": 0.15816199999972014
    },
    "replay": {
     "hash": "653cb646b56a9d63",
@@ -3626,8 +3626,8 @@
     "go": 215
    },
    "contacts": 0,
-   "cpu_ms": 9.932,
-   "wall_ms": 4.294491999999991,
+   "cpu_ms": 14.902,
+   "wall_ms": 8.315410000000156,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -3658,7 +3658,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.17841200000020763
+    "judge_wall_ms": 0.1582300000000032
    },
    "replay": {
     "hash": "653cb646b56a9d63",
@@ -3703,8 +3703,8 @@
     "go": 215
    },
    "contacts": 0,
-   "cpu_ms": 7.794,
-   "wall_ms": 3.765708999999333,
+   "cpu_ms": 4.158,
+   "wall_ms": 3.865068000000065,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -3735,7 +3735,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.1761449999994511
+    "judge_wall_ms": 0.15638100000069244
    },
    "replay": {
     "hash": "653cb646b56a9d63",
@@ -3780,8 +3780,8 @@
     "go": 215
    },
    "contacts": 0,
-   "cpu_ms": 4.634,
-   "wall_ms": 3.2554000000000087,
+   "cpu_ms": 7.009,
+   "wall_ms": 3.577849999999671,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -3812,7 +3812,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.21324800000002142
+    "judge_wall_ms": 0.15223100000002887
    },
    "replay": {
     "hash": "653cb646b56a9d63",
@@ -3857,8 +3857,8 @@
     "go": 215
    },
    "contacts": 0,
-   "cpu_ms": 3.748,
-   "wall_ms": 8.080659000000196,
+   "cpu_ms": 3.511,
+   "wall_ms": 3.4463770000002114,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -3889,7 +3889,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.23145000000022264
+    "judge_wall_ms": 0.21312500000021828
    },
    "replay": {
     "hash": "653cb646b56a9d63",
@@ -3935,8 +3935,8 @@
    },
    "decisions": {},
    "contacts": 1,
-   "cpu_ms": 1.441,
-   "wall_ms": 0.48979700000018056,
+   "cpu_ms": 1.64,
+   "wall_ms": 0.47463299999981245,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -3967,7 +3967,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.292501999999331
+    "judge_wall_ms": 0.24265100000047823
    },
    "replay": {
     "hash": "6dedb90c1b658962",
@@ -4024,8 +4024,8 @@
     "wait": 254
    },
    "contacts": 1,
-   "cpu_ms": 60.966,
-   "wall_ms": 57.18224900000041,
+   "cpu_ms": 62.727,
+   "wall_ms": 57.90295100000003,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -4056,10 +4056,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.3576309999998557
+    "judge_wall_ms": 0.2678960000002917
    },
    "replay": {
-    "hash": "4c106015329f0961",
+    "hash": "d1624949b1cdefa0",
     "rerun_identical": true,
     "reversed_input_identical": true,
     "shuffled_input_identical": true
@@ -4113,8 +4113,8 @@
     "wait": 254
    },
    "contacts": 1,
-   "cpu_ms": 86.633,
-   "wall_ms": 50.061641000000236,
+   "cpu_ms": 90.715,
+   "wall_ms": 50.774623999999676,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -4145,10 +4145,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.388981000000058
+    "judge_wall_ms": 0.39644699999917066
    },
    "replay": {
-    "hash": "4c106015329f0961",
+    "hash": "d1624949b1cdefa0",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -4202,8 +4202,8 @@
     "wait": 254
    },
    "contacts": 1,
-   "cpu_ms": 73.338,
-   "wall_ms": 74.44680400000016,
+   "cpu_ms": 73.588,
+   "wall_ms": 79.72018500000013,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -4234,10 +4234,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.3795770000006087
+    "judge_wall_ms": 0.4804439999998067
    },
    "replay": {
-    "hash": "4c106015329f0961",
+    "hash": "d1624949b1cdefa0",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -4291,8 +4291,8 @@
     "wait": 254
    },
    "contacts": 1,
-   "cpu_ms": 51.765,
-   "wall_ms": 51.00156599999991,
+   "cpu_ms": 74.448,
+   "wall_ms": 73.68087600000035,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -4323,10 +4323,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.3050309999998717
+    "judge_wall_ms": 0.3169559999996636
    },
    "replay": {
-    "hash": "4c106015329f0961",
+    "hash": "d1624949b1cdefa0",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -4380,8 +4380,8 @@
     "wait": 254
    },
    "contacts": 1,
-   "cpu_ms": 50.592,
-   "wall_ms": 50.313624000000345,
+   "cpu_ms": 62.291,
+   "wall_ms": 57.40149500000007,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -4412,10 +4412,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.4147510000002512
+    "judge_wall_ms": 0.44318699999985256
    },
    "replay": {
-    "hash": "4c106015329f0961",
+    "hash": "d1624949b1cdefa0",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -4467,8 +4467,8 @@
     "back_off": 143
    },
    "contacts": 0,
-   "cpu_ms": 5.586,
-   "wall_ms": 5.487065999999686,
+   "cpu_ms": 6.73,
+   "wall_ms": 6.646208999999544,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -4499,7 +4499,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.3845440000004601
+    "judge_wall_ms": 0.26386400000046706
    },
    "replay": {
     "hash": "4e62aeb9a14deb03",
@@ -4554,8 +4554,8 @@
     "back_off": 143
    },
    "contacts": 0,
-   "cpu_ms": 8.412,
-   "wall_ms": 8.408317000000352,
+   "cpu_ms": 5.874,
+   "wall_ms": 5.047174000000268,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -4586,7 +4586,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.3002459999997882
+    "judge_wall_ms": 0.34542400000009366
    },
    "replay": {
     "hash": "4e62aeb9a14deb03",
@@ -4637,8 +4637,8 @@
     "back_off": 286
    },
    "contacts": 0,
-   "cpu_ms": 12.053,
-   "wall_ms": 5.619251999999506,
+   "cpu_ms": 10.855,
+   "wall_ms": 6.932786999999735,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -4669,7 +4669,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.33248699999967357
+    "judge_wall_ms": 5.180690000000141
    },
    "replay": {
     "hash": "5b679babecae5243",
@@ -4731,8 +4731,8 @@
     "back_off": 127
    },
    "contacts": 1,
-   "cpu_ms": 23.397,
-   "wall_ms": 10.118935999999849,
+   "cpu_ms": 35.57,
+   "wall_ms": 27.541618999999628,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -4763,10 +4763,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.38528000000042084
+    "judge_wall_ms": 0.5596820000000662
    },
    "replay": {
-    "hash": "676ba4558621cc52",
+    "hash": "738f54b004c074f4",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -4812,8 +4812,8 @@
     "wait": 10
    },
    "contacts": 0,
-   "cpu_ms": 11.221,
-   "wall_ms": 4.288332000000082,
+   "cpu_ms": 11.375,
+   "wall_ms": 5.885235000000648,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -4844,7 +4844,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.2721799999999348
+    "judge_wall_ms": 0.5369970000001558
    },
    "replay": {
     "hash": "448bfb0c847b2b08",
@@ -4901,8 +4901,8 @@
     "wait": 254
    },
    "contacts": 1,
-   "cpu_ms": 164.712,
-   "wall_ms": 124.57661300000018,
+   "cpu_ms": 235.45,
+   "wall_ms": 155.2858959999994,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -4933,10 +4933,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.2771149999989575
+    "judge_wall_ms": 0.35815399999955844
    },
    "replay": {
-    "hash": "e3a74acd848ba27e",
+    "hash": "bd17c57489605480",
     "rerun_identical": true,
     "reversed_input_identical": true,
     "shuffled_input_identical": true
@@ -4990,8 +4990,8 @@
     "wait": 254
    },
    "contacts": 1,
-   "cpu_ms": 79.004,
-   "wall_ms": 79.15743000000111,
+   "cpu_ms": 113.204,
+   "wall_ms": 113.50095899999906,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -5022,10 +5022,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.2331819999999425
+    "judge_wall_ms": 0.29882499999985157
    },
    "replay": {
-    "hash": "e3a74acd848ba27e",
+    "hash": "bd17c57489605480",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -5079,8 +5079,8 @@
     "wait": 254
    },
    "contacts": 1,
-   "cpu_ms": 90.67,
-   "wall_ms": 101.47373900000093,
+   "cpu_ms": 103.5,
+   "wall_ms": 104.67757600000004,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -5111,10 +5111,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.2410440000003291
+    "judge_wall_ms": 0.6116460000012012
    },
    "replay": {
-    "hash": "e3a74acd848ba27e",
+    "hash": "bd17c57489605480",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -5168,8 +5168,8 @@
     "wait": 254
    },
    "contacts": 1,
-   "cpu_ms": 89.779,
-   "wall_ms": 90.59879899999942,
+   "cpu_ms": 119.353,
+   "wall_ms": 119.5490520000003,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -5200,10 +5200,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.24604700000054436
+    "judge_wall_ms": 0.3506040000011126
    },
    "replay": {
-    "hash": "e3a74acd848ba27e",
+    "hash": "bd17c57489605480",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -5257,8 +5257,8 @@
     "wait": 254
    },
    "contacts": 1,
-   "cpu_ms": 173.127,
-   "wall_ms": 95.48568599999999,
+   "cpu_ms": 255.034,
+   "wall_ms": 180.9562109999988,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -5289,10 +5289,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.31841199999871606
+    "judge_wall_ms": 0.4054919999998674
    },
    "replay": {
-    "hash": "e3a74acd848ba27e",
+    "hash": "bd17c57489605480",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -5338,8 +5338,8 @@
    },
    "decisions": {},
    "contacts": 1567,
-   "cpu_ms": 227.385,
-   "wall_ms": 146.01545700000133,
+   "cpu_ms": 147.266,
+   "wall_ms": 87.41588600000068,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -5370,7 +5370,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 178.10505000000012
+    "judge_wall_ms": 198.30575399999907
    },
    "replay": {
     "hash": "71e67466ed21cb0b",
@@ -5417,8 +5417,8 @@
     "sidestep": 2
    },
    "contacts": 0,
-   "cpu_ms": 7.555,
-   "wall_ms": 5.861963999999716,
+   "cpu_ms": 11.944,
+   "wall_ms": 5.272320999998556,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -5449,7 +5449,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.5112360000002809
+    "judge_wall_ms": 0.47248899999976857
    },
    "replay": {
     "hash": "a7922410e6bbaa95",
@@ -5501,8 +5501,8 @@
     "sidestep": 6
    },
    "contacts": 1,
-   "cpu_ms": 8.584,
-   "wall_ms": 10.34799699999894,
+   "cpu_ms": 14.76,
+   "wall_ms": 11.952975000000151,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -5533,10 +5533,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.40342299999974784
+    "judge_wall_ms": 0.4485560000011901
    },
    "replay": {
-    "hash": "aca2851d63c00e4a",
+    "hash": "e9319fddee95f390",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -5585,8 +5585,8 @@
     "sidestep": 5
    },
    "contacts": 1,
-   "cpu_ms": 12.618,
-   "wall_ms": 11.976211999999578,
+   "cpu_ms": 11.374,
+   "wall_ms": 6.7908970000007685,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -5617,10 +5617,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 4.7544530000013765
+    "judge_wall_ms": 0.46691999999893596
    },
    "replay": {
-    "hash": "6d33399c105bd6b0",
+    "hash": "c3ccfad6b81b97de",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -5669,8 +5669,8 @@
     "sidestep": 4
    },
    "contacts": 1,
-   "cpu_ms": 7.505,
-   "wall_ms": 4.20633799999996,
+   "cpu_ms": 5.107,
+   "wall_ms": 5.098040000000765,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -5701,10 +5701,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.5139230000004318
+    "judge_wall_ms": 0.713528000000224
    },
    "replay": {
-    "hash": "429bc09615157d79",
+    "hash": "8d05b6fef038a918",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -5753,8 +5753,8 @@
     "sidestep": 5
    },
    "contacts": 1,
-   "cpu_ms": 5.666,
-   "wall_ms": 5.261394000001019,
+   "cpu_ms": 4.47,
+   "wall_ms": 4.461161000001084,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -5785,10 +5785,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.42043700000067474
+    "judge_wall_ms": 0.601528999999573
    },
    "replay": {
-    "hash": "6d33399c105bd6b0",
+    "hash": "c3ccfad6b81b97de",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -5832,8 +5832,8 @@
     "wait": 10
    },
    "contacts": 0,
-   "cpu_ms": 12.642,
-   "wall_ms": 4.790874999998778,
+   "cpu_ms": 25.391,
+   "wall_ms": 11.185707000000548,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -5864,7 +5864,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.8058670000009442
+    "judge_wall_ms": 0.3148400000009133
    },
    "replay": {
     "hash": "a2de04dcf71fb206",
@@ -5917,8 +5917,8 @@
     "back_off": 142
    },
    "contacts": 0,
-   "cpu_ms": 10.797,
-   "wall_ms": 6.873161999999866,
+   "cpu_ms": 31.768,
+   "wall_ms": 38.38314700000046,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -5949,7 +5949,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.203006000001551
+    "judge_wall_ms": 0.6397070000002714
    },
    "replay": {
     "hash": "e096b23b1b5ed4e0",
@@ -6001,8 +6001,8 @@
     "reroute": 13
    },
    "contacts": 1,
-   "cpu_ms": 13.917,
-   "wall_ms": 5.92450800000006,
+   "cpu_ms": 11.041,
+   "wall_ms": 6.223225000001548,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -6033,10 +6033,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.543920000000071
+    "judge_wall_ms": 0.5224579999994603
    },
    "replay": {
-    "hash": "253e34db82b8b58a",
+    "hash": "544769f77c19c4ae",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -6080,8 +6080,8 @@
     "wait": 10
    },
    "contacts": 0,
-   "cpu_ms": 5.755,
-   "wall_ms": 3.562362000000576,
+   "cpu_ms": 8.336,
+   "wall_ms": 4.37273500000083,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -6112,7 +6112,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.2998479999987467
+    "judge_wall_ms": 0.30368000000089523
    },
    "replay": {
     "hash": "a2de04dcf71fb206",
@@ -6172,8 +6172,8 @@
     "back_off": 131
    },
    "contacts": 1,
-   "cpu_ms": 11.422,
-   "wall_ms": 10.252715000000535,
+   "cpu_ms": 17.858,
+   "wall_ms": 7.999651000000085,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -6204,10 +6204,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.6698469999992085
+    "judge_wall_ms": 0.5018669999990379
    },
    "replay": {
-    "hash": "b7e2629ba17c8052",
+    "hash": "6be72c5777d981d8",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -6251,8 +6251,8 @@
     "sidestep": 2
    },
    "contacts": 0,
-   "cpu_ms": 10.791,
-   "wall_ms": 6.389304999998785,
+   "cpu_ms": 10.941,
+   "wall_ms": 4.705298999999286,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -6283,7 +6283,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.333228000001327
+    "judge_wall_ms": 0.3434080000006361
    },
    "replay": {
     "hash": "887832e022924421",
@@ -6330,8 +6330,8 @@
     "sidestep": 2
    },
    "contacts": 0,
-   "cpu_ms": 8.421,
-   "wall_ms": 4.422811999998885,
+   "cpu_ms": 12.385,
+   "wall_ms": 4.381230000000869,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -6362,7 +6362,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.3172610000001441
+    "judge_wall_ms": 0.4383209999996325
    },
    "replay": {
     "hash": "887832e022924421",
@@ -6414,8 +6414,8 @@
     "sidestep": 13
    },
    "contacts": 1,
-   "cpu_ms": 19.081,
-   "wall_ms": 10.637558000000354,
+   "cpu_ms": 10.457,
+   "wall_ms": 6.446812000000136,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -6446,10 +6446,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.47808399999848916
+    "judge_wall_ms": 0.5662869999996474
    },
    "replay": {
-    "hash": "2867b56e21ed8e06",
+    "hash": "64445a50d7591605",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -6498,8 +6498,8 @@
     "sidestep": 13
    },
    "contacts": 1,
-   "cpu_ms": 5.851,
-   "wall_ms": 6.194239999998899,
+   "cpu_ms": 9.933,
+   "wall_ms": 5.9527280000002065,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -6530,10 +6530,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.6389600000002247
+    "judge_wall_ms": 0.5391490000001795
    },
    "replay": {
-    "hash": "2867b56e21ed8e06",
+    "hash": "64445a50d7591605",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -6577,8 +6577,8 @@
     "sidestep": 2
    },
    "contacts": 0,
-   "cpu_ms": 3.834,
-   "wall_ms": 3.824339000000691,
+   "cpu_ms": 3.937,
+   "wall_ms": 3.9273659999998927,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -6609,7 +6609,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.39028399999915564
+    "judge_wall_ms": 0.4420640000007552
    },
    "replay": {
     "hash": "887832e022924421",
@@ -6653,8 +6653,8 @@
    },
    "decisions": {},
    "contacts": 0,
-   "cpu_ms": 0.761,
-   "wall_ms": 0.7516849999992701,
+   "cpu_ms": 2.714,
+   "wall_ms": 0.7947599999988597,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -6685,7 +6685,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.1632850000005419
+    "judge_wall_ms": 0.24983999999858497
    },
    "replay": {
     "hash": "a8fbf69acb502adc",
@@ -6732,8 +6732,8 @@
     "sidestep": 50
    },
    "contacts": 0,
-   "cpu_ms": 41.738,
-   "wall_ms": 30.691710999999486,
+   "cpu_ms": 41.99,
+   "wall_ms": 32.97043499999927,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -6764,7 +6764,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.5834809999996651
+    "judge_wall_ms": 0.5844059999999445
    },
    "replay": {
     "hash": "c967468723e9363e",
@@ -6811,8 +6811,8 @@
     "sidestep": 46
    },
    "contacts": 0,
-   "cpu_ms": 65.64,
-   "wall_ms": 28.595565999999963,
+   "cpu_ms": 72.222,
+   "wall_ms": 39.86573200000021,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -6843,7 +6843,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 1.0815509999993083
+    "judge_wall_ms": 0.606711999998879
    },
    "replay": {
     "hash": "18b57eb2a92e89f2",
@@ -6890,8 +6890,8 @@
     "sidestep": 44
    },
    "contacts": 0,
-   "cpu_ms": 26.087,
-   "wall_ms": 33.389689000001454,
+   "cpu_ms": 61.941,
+   "wall_ms": 31.4371859999992,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -6922,7 +6922,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.4544290000012552
+    "judge_wall_ms": 0.46224199999960547
    },
    "replay": {
     "hash": "ac6fe9d7085ac426",
@@ -6969,8 +6969,8 @@
     "sidestep": 48
    },
    "contacts": 0,
-   "cpu_ms": 22.206,
-   "wall_ms": 23.491452999998728,
+   "cpu_ms": 26.72,
+   "wall_ms": 26.62970900000073,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -7001,7 +7001,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.46411299999999756
+    "judge_wall_ms": 0.5007869999990362
    },
    "replay": {
     "hash": "a40e306ff1821c05",
@@ -7048,8 +7048,8 @@
     "sidestep": 46
    },
    "contacts": 0,
-   "cpu_ms": 21.627,
-   "wall_ms": 21.67633500000011,
+   "cpu_ms": 24.592,
+   "wall_ms": 24.477577999999994,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -7080,7 +7080,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.5350209999996878
+    "judge_wall_ms": 0.6009299999986979
    },
    "replay": {
     "hash": "18b57eb2a92e89f2",
@@ -7127,8 +7127,8 @@
     "reroute": 44
    },
    "contacts": 0,
-   "cpu_ms": 23.367,
-   "wall_ms": 25.406447999999727,
+   "cpu_ms": 23.617,
+   "wall_ms": 23.487098999999944,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -7159,7 +7159,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.4110180000006949
+    "judge_wall_ms": 0.459552000000258
    },
    "replay": {
     "hash": "6e0ad6a48f289b3d",
@@ -7218,8 +7218,8 @@
     "follow": 210
    },
    "contacts": 1,
-   "cpu_ms": 28.737,
-   "wall_ms": 36.30341700000099,
+   "cpu_ms": 31.055,
+   "wall_ms": 31.02236500000072,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -7250,7 +7250,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.8448520000001736
+    "judge_wall_ms": 0.6070069999987027
    },
    "replay": {
     "hash": "07a4691402c5a2f9",
@@ -7309,8 +7309,8 @@
     "follow": 210
    },
    "contacts": 1,
-   "cpu_ms": 34.896,
-   "wall_ms": 32.826365999999325,
+   "cpu_ms": 36.605,
+   "wall_ms": 35.79767399999946,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -7341,7 +7341,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.6050390000000334
+    "judge_wall_ms": 0.9144720000003872
    },
    "replay": {
     "hash": "bee1b309b64a3914",
@@ -7388,8 +7388,8 @@
     "reroute": 44
    },
    "contacts": 0,
-   "cpu_ms": 73.728,
-   "wall_ms": 56.59244099999887,
+   "cpu_ms": 85.99,
+   "wall_ms": 75.09911499999907,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -7420,7 +7420,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 3.5961630000001605
+    "judge_wall_ms": 0.4575600000007398
    },
    "replay": {
     "hash": "6ea71d8dd16b80ca",
@@ -7479,8 +7479,8 @@
     "follow": 210
    },
    "contacts": 1,
-   "cpu_ms": 72.859,
-   "wall_ms": 39.366400000000795,
+   "cpu_ms": 130.801,
+   "wall_ms": 69.77001800000107,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -7511,7 +7511,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.8667619999996532
+    "judge_wall_ms": 0.6314439999987371
    },
    "replay": {
     "hash": "bee1b309b64a3914",
@@ -7558,8 +7558,8 @@
     "sidestep": 44
    },
    "contacts": 0,
-   "cpu_ms": 23.778,
-   "wall_ms": 24.762306999999055,
+   "cpu_ms": 27.782,
+   "wall_ms": 27.055233999999473,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -7590,7 +7590,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.7197420000011334
+    "judge_wall_ms": 0.5536429999992833
    },
    "replay": {
     "hash": "b98325f8e49dc506",
@@ -7637,8 +7637,8 @@
     "sidestep": 44
    },
    "contacts": 0,
-   "cpu_ms": 21.865,
-   "wall_ms": 22.705292000000554,
+   "cpu_ms": 28.402,
+   "wall_ms": 29.740029999999024,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -7669,7 +7669,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.4063640000003943
+    "judge_wall_ms": 0.7391640000005282
    },
    "replay": {
     "hash": "b370a5c273036863",
@@ -7728,8 +7728,8 @@
     "follow": 210
    },
    "contacts": 1,
-   "cpu_ms": 28.504,
-   "wall_ms": 31.074264999999286,
+   "cpu_ms": 61.585,
+   "wall_ms": 60.21586800000114,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -7760,7 +7760,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.4434419999997772
+    "judge_wall_ms": 0.5196230000001378
    },
    "replay": {
     "hash": "1cae36a97d1a1e28",
@@ -7819,8 +7819,8 @@
     "follow": 210
    },
    "contacts": 1,
-   "cpu_ms": 26.437,
-   "wall_ms": 26.29023000000052,
+   "cpu_ms": 36.976,
+   "wall_ms": 37.15516100000059,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -7851,7 +7851,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.4360130000004574
+    "judge_wall_ms": 0.5660009999992326
    },
    "replay": {
     "hash": "1cae36a97d1a1e28",
@@ -7910,8 +7910,8 @@
     "follow": 210
    },
    "contacts": 1,
-   "cpu_ms": 38.604,
-   "wall_ms": 36.607803999999305,
+   "cpu_ms": 69.274,
+   "wall_ms": 45.891036999999415,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -7942,7 +7942,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.8275210000010702
+    "judge_wall_ms": 0.467571000001044
    },
    "replay": {
     "hash": "1cae36a97d1a1e28",
@@ -7990,8 +7990,8 @@
    },
    "decisions": {},
    "contacts": 8,
-   "cpu_ms": 9.891,
-   "wall_ms": 8.369234000001597,
+   "cpu_ms": 17.007,
+   "wall_ms": 9.24607499999911,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -8022,7 +8022,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 8,
-    "judge_wall_ms": 6.881686999999147
+    "judge_wall_ms": 5.864794000000984
    },
    "replay": {
     "hash": "da2b0cbf2cabfe4b",
@@ -8083,8 +8083,8 @@
     "wait": 12837
    },
    "contacts": 9,
-   "cpu_ms": 4137.218,
-   "wall_ms": 4030.3042029999997,
+   "cpu_ms": 4839.118,
+   "wall_ms": 4748.446948000001,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -8115,10 +8115,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 20,
-    "judge_wall_ms": 102.65252800000235
+    "judge_wall_ms": 59.70374699999957
    },
    "replay": {
-    "hash": "ea433b8fd1888fd2",
+    "hash": "9076c3a6ed78a2bb",
     "rerun_identical": true,
     "reversed_input_identical": true,
     "shuffled_input_identical": true
@@ -8174,8 +8174,8 @@
     "wait": 15029
    },
    "contacts": 3,
-   "cpu_ms": 5208.241,
-   "wall_ms": 5258.642032,
+   "cpu_ms": 5728.607,
+   "wall_ms": 5730.725869999998,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -8206,10 +8206,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 7,
-    "judge_wall_ms": 165.6566460000031
+    "judge_wall_ms": 88.48049900000478
    },
    "replay": {
-    "hash": "a6b5a46164b14764",
+    "hash": "e96e4a83d60903db",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -8265,8 +8265,8 @@
     "wait": 17945
    },
    "contacts": 1,
-   "cpu_ms": 5869.359,
-   "wall_ms": 5914.039838000004,
+   "cpu_ms": 6894.595,
+   "wall_ms": 6927.1815940000015,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -8297,10 +8297,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 31.42893599999661
+    "judge_wall_ms": 10.660588999999163
    },
    "replay": {
-    "hash": "60f0845ff3ed2f2b",
+    "hash": "32a8b1dff3af26cd",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -8356,8 +8356,8 @@
     "wait": 15629
    },
    "contacts": 2,
-   "cpu_ms": 4996.846,
-   "wall_ms": 5048.734934,
+   "cpu_ms": 5469.584,
+   "wall_ms": 5457.372554000001,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -8388,10 +8388,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 10,
-    "judge_wall_ms": 90.36573599999974
+    "judge_wall_ms": 72.28553100000136
    },
    "replay": {
-    "hash": "b39ab85b5632f62f",
+    "hash": "93c7fc6a53e4593a",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -8447,8 +8447,8 @@
     "wait": 14836
    },
    "contacts": 9,
-   "cpu_ms": 5335.399,
-   "wall_ms": 5368.845025000002,
+   "cpu_ms": 5213.643,
+   "wall_ms": 5253.539841000005,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -8479,10 +8479,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 13,
-    "judge_wall_ms": 90.36401999999362
+    "judge_wall_ms": 95.727819000007
    },
    "replay": {
-    "hash": "6438a0a3ae4b9382",
+    "hash": "67ce702d6b5ea708",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -8542,8 +8542,8 @@
     "wait": 4482
    },
    "contacts": 13,
-   "cpu_ms": 1123.8,
-   "wall_ms": 1127.6335529999924,
+   "cpu_ms": 1063.111,
+   "wall_ms": 936.5228139999963,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -8574,10 +8574,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 13,
-    "judge_wall_ms": 12.622514000002411
+    "judge_wall_ms": 3.5204739999899175
    },
    "replay": {
-    "hash": "3c07de368e8249f9",
+    "hash": "c547573375130394",
     "rerun_identical": true,
     "reversed_input_identical": true,
     "shuffled_input_identical": true
@@ -8637,8 +8637,8 @@
     "wait": 4480
    },
    "contacts": 18,
-   "cpu_ms": 912.836,
-   "wall_ms": 914.0369670000073,
+   "cpu_ms": 889.091,
+   "wall_ms": 883.4923639999906,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -8669,10 +8669,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 18,
-    "judge_wall_ms": 8.404897000000346
+    "judge_wall_ms": 5.195825999995577
    },
    "replay": {
-    "hash": "7e621eebf5d285bb",
+    "hash": "5eed78c5086809fa",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -8732,8 +8732,8 @@
     "back_off": 58
    },
    "contacts": 21,
-   "cpu_ms": 900.445,
-   "wall_ms": 905.4838739999977,
+   "cpu_ms": 1058.635,
+   "wall_ms": 1056.9696300000069,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -8764,10 +8764,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 21,
-    "judge_wall_ms": 9.69063900000765
+    "judge_wall_ms": 4.335180000009132
    },
    "replay": {
-    "hash": "6bc7e3d14aefdb58",
+    "hash": "b8291853a81aac1f",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -8827,8 +8827,8 @@
     "wait": 4480
    },
    "contacts": 18,
-   "cpu_ms": 961.94,
-   "wall_ms": 991.6572299999971,
+   "cpu_ms": 1036.517,
+   "wall_ms": 1036.2229670000088,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -8859,10 +8859,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 18,
-    "judge_wall_ms": 3.3672050000022864
+    "judge_wall_ms": 3.9626610000123037
    },
    "replay": {
-    "hash": "7e621eebf5d285bb",
+    "hash": "5eed78c5086809fa",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -8928,8 +8928,8 @@
     "halt_geometry": 2250
    },
    "contacts": 13,
-   "cpu_ms": 936.873,
-   "wall_ms": 952.5398620000051,
+   "cpu_ms": 1144.716,
+   "wall_ms": 1014.0616919999884,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -8960,10 +8960,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 13,
-    "judge_wall_ms": 2.8783189999958267
+    "judge_wall_ms": 3.0658709999988787
    },
    "replay": {
-    "hash": "e29edd2c8fb2a79b",
+    "hash": "5b600044803afa2b",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -9020,8 +9020,8 @@
     "wait": 4616
    },
    "contacts": 16,
-   "cpu_ms": 2111.789,
-   "wall_ms": 2161.989891999998,
+   "cpu_ms": 2277.13,
+   "wall_ms": 2287.781864999997,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -9052,10 +9052,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 16,
-    "judge_wall_ms": 2.5240409999969415
+    "judge_wall_ms": 2.8748860000050627
    },
    "replay": {
-    "hash": "5885fd4a84f717e8",
+    "hash": "fe6e6d715968a123",
     "rerun_identical": true,
     "reversed_input_identical": true,
     "shuffled_input_identical": true
@@ -9112,8 +9112,8 @@
     "wait": 4616
    },
    "contacts": 16,
-   "cpu_ms": 1998.885,
-   "wall_ms": 2012.4266339999886,
+   "cpu_ms": 2366.625,
+   "wall_ms": 2377.245066000003,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -9144,10 +9144,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 16,
-    "judge_wall_ms": 2.7928289999981644
+    "judge_wall_ms": 3.0785330000071554
    },
    "replay": {
-    "hash": "5885fd4a84f717e8",
+    "hash": "fe6e6d715968a123",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -9204,8 +9204,8 @@
     "wait": 4616
    },
    "contacts": 16,
-   "cpu_ms": 1975.662,
-   "wall_ms": 1989.4620369999902,
+   "cpu_ms": 2220.512,
+   "wall_ms": 2228.098398000002,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -9236,10 +9236,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 16,
-    "judge_wall_ms": 2.6544640000065556
+    "judge_wall_ms": 2.7568840000021737
    },
    "replay": {
-    "hash": "5885fd4a84f717e8",
+    "hash": "fe6e6d715968a123",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -9296,8 +9296,8 @@
     "wait": 4616
    },
    "contacts": 16,
-   "cpu_ms": 1983.998,
-   "wall_ms": 2011.8732060000038,
+   "cpu_ms": 1955.318,
+   "wall_ms": 1962.6268169999967,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -9328,10 +9328,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 16,
-    "judge_wall_ms": 3.098717000000761
+    "judge_wall_ms": 3.128478999991785
    },
    "replay": {
-    "hash": "5885fd4a84f717e8",
+    "hash": "fe6e6d715968a123",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -9388,8 +9388,8 @@
     "wait": 4616
    },
    "contacts": 16,
-   "cpu_ms": 1868.696,
-   "wall_ms": 1883.8334380000015,
+   "cpu_ms": 2241.337,
+   "wall_ms": 2259.5375179999974,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -9420,10 +9420,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 16,
-    "judge_wall_ms": 2.989740000004531
+    "judge_wall_ms": 2.6248909999994794
    },
    "replay": {
-    "hash": "5885fd4a84f717e8",
+    "hash": "fe6e6d715968a123",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -9471,8 +9471,8 @@
    },
    "decisions": {},
    "contacts": 10261,
-   "cpu_ms": 1185.509,
-   "wall_ms": 1191.3217260000092,
+   "cpu_ms": 1134.901,
+   "wall_ms": 942.0390139999945,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -9497,7 +9497,7 @@
     "max_obstacle_penetration_mm": 0,
     "occupancy2d": null,
     "body_contact_episodes": 97,
-    "judge_wall_ms": 14214.523973999996
+    "judge_wall_ms": 13902.626468000002
    },
    "replay": {
     "hash": "0b164add7cd69f7d",
@@ -9532,12 +9532,12 @@
     "stalled": 27,
     "arrived": 73
    },
-   "events": 4810,
+   "events": 4782,
    "events_by_class": {
     "motion": 173,
     "behavioural_response": 3428,
     "physical_constraint": 524,
-    "physical_contact": 560,
+    "physical_contact": 532,
     "solver_status": 125
    },
    "events_by_kind": {
@@ -9546,8 +9546,8 @@
     "wait": 344,
     "sidestep": 2447,
     "stop": 523,
-    "contact_start": 280,
-    "contact_end": 280,
+    "contact_start": 266,
+    "contact_end": 266,
     "blocked_report": 98,
     "resume": 1,
     "arrive": 73,
@@ -9558,9 +9558,9 @@
     "wait": 7947,
     "sidestep": 2898
    },
-   "contacts": 280,
-   "cpu_ms": 5042.437,
-   "wall_ms": 5143.862336999999,
+   "contacts": 266,
+   "cpu_ms": 4335.138,
+   "wall_ms": 3977.441715999972,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -9585,10 +9585,10 @@
     "max_obstacle_penetration_mm": 0,
     "occupancy2d": null,
     "body_contact_episodes": 358,
-    "judge_wall_ms": 1053.3845509999956
+    "judge_wall_ms": 981.5925670000142
    },
    "replay": {
-    "hash": "ac375a741b4ec15b",
+    "hash": "21fcb816cd63a5c6",
     "rerun_identical": true,
     "reversed_input_identical": true,
     "shuffled_input_identical": true
@@ -9619,12 +9619,12 @@
     "stalled": 55,
     "arrived": 45
    },
-   "events": 3906,
+   "events": 3884,
    "events_by_class": {
     "motion": 145,
     "behavioural_response": 2779,
     "physical_constraint": 416,
-    "physical_contact": 439,
+    "physical_contact": 417,
     "solver_status": 127
    },
    "events_by_kind": {
@@ -9633,8 +9633,8 @@
     "wait": 268,
     "sidestep": 2025,
     "stop": 416,
-    "contact_start": 223,
-    "contact_end": 216,
+    "contact_start": 212,
+    "contact_end": 205,
     "blocked_report": 72,
     "arrive": 45,
     "stalled": 55
@@ -9644,9 +9644,9 @@
     "wait": 16428,
     "sidestep": 2217
    },
-   "contacts": 223,
-   "cpu_ms": 6058.976,
-   "wall_ms": 6118.842002999998,
+   "contacts": 212,
+   "cpu_ms": 7061.537,
+   "wall_ms": 7074.271401000005,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -9671,10 +9671,10 @@
     "max_obstacle_penetration_mm": 0,
     "occupancy2d": null,
     "body_contact_episodes": 362,
-    "judge_wall_ms": 786.7050790000067
+    "judge_wall_ms": 843.3603129999829
    },
    "replay": {
-    "hash": "653d73ea569ac102",
+    "hash": "21a86695ce854381",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -9705,12 +9705,12 @@
     "stalled": 53,
     "arrived": 47
    },
-   "events": 3551,
+   "events": 3525,
    "events_by_class": {
     "motion": 147,
     "behavioural_response": 2466,
     "physical_constraint": 384,
-    "physical_contact": 412,
+    "physical_contact": 386,
     "solver_status": 142
    },
    "events_by_kind": {
@@ -9719,8 +9719,8 @@
     "wait": 284,
     "sidestep": 1712,
     "stop": 384,
-    "contact_start": 208,
-    "contact_end": 204,
+    "contact_start": 195,
+    "contact_end": 191,
     "blocked_report": 89,
     "arrive": 47,
     "stalled": 53
@@ -9730,9 +9730,9 @@
     "wait": 15947,
     "sidestep": 1917
    },
-   "contacts": 208,
-   "cpu_ms": 6609.676,
-   "wall_ms": 6820.2792910000135,
+   "contacts": 195,
+   "cpu_ms": 6192.258,
+   "wall_ms": 6151.021265999996,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -9757,10 +9757,10 @@
     "max_obstacle_penetration_mm": 0,
     "occupancy2d": null,
     "body_contact_episodes": 231,
-    "judge_wall_ms": 842.2987739999953
+    "judge_wall_ms": 726.9710600000108
    },
    "replay": {
-    "hash": "fab99fd83d529ab2",
+    "hash": "ff8f264a79796a5a",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -9792,12 +9792,12 @@
     "stalled": 51,
     "arrived": 49
    },
-   "events": 3961,
+   "events": 3931,
    "events_by_class": {
     "motion": 149,
     "behavioural_response": 2797,
     "physical_constraint": 428,
-    "physical_contact": 459,
+    "physical_contact": 429,
     "solver_status": 128
    },
    "events_by_kind": {
@@ -9806,8 +9806,8 @@
     "wait": 289,
     "sidestep": 2028,
     "stop": 427,
-    "contact_start": 232,
-    "contact_end": 227,
+    "contact_start": 217,
+    "contact_end": 212,
     "blocked_report": 77,
     "resume": 1,
     "arrive": 49,
@@ -9818,9 +9818,9 @@
     "wait": 14564,
     "sidestep": 2249
    },
-   "contacts": 232,
-   "cpu_ms": 5613.104,
-   "wall_ms": 5858.655746000004,
+   "contacts": 217,
+   "cpu_ms": 5262.044,
+   "wall_ms": 5223.277340000001,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -9845,10 +9845,10 @@
     "max_obstacle_penetration_mm": 0,
     "occupancy2d": null,
     "body_contact_episodes": 259,
-    "judge_wall_ms": 877.2868529999978
+    "judge_wall_ms": 802.4448570000241
    },
    "replay": {
-    "hash": "c582061a88048478",
+    "hash": "b00fd534fe1a040e",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -9879,12 +9879,12 @@
     "stalled": 45,
     "arrived": 55
    },
-   "events": 3188,
+   "events": 3166,
    "events_by_class": {
     "motion": 155,
     "behavioural_response": 2168,
     "physical_constraint": 368,
-    "physical_contact": 391,
+    "physical_contact": 369,
     "solver_status": 106
    },
    "events_by_kind": {
@@ -9893,8 +9893,8 @@
     "wait": 239,
     "sidestep": 1415,
     "stop": 367,
-    "contact_start": 199,
-    "contact_end": 192,
+    "contact_start": 188,
+    "contact_end": 181,
     "blocked_report": 61,
     "arrive": 55,
     "resume": 1,
@@ -9905,9 +9905,9 @@
     "wait": 13457,
     "sidestep": 1721
    },
-   "contacts": 199,
-   "cpu_ms": 6291.566,
-   "wall_ms": 6488.330384000001,
+   "contacts": 188,
+   "cpu_ms": 5297.294,
+   "wall_ms": 5261.509886999993,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -9932,10 +9932,10 @@
     "max_obstacle_penetration_mm": 0,
     "occupancy2d": null,
     "body_contact_episodes": 194,
-    "judge_wall_ms": 685.1088009999949
+    "judge_wall_ms": 733.0812009999936
    },
    "replay": {
-    "hash": "fb3704884ddcd60d",
+    "hash": "5d98b215c19ee784",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -9969,12 +9969,12 @@
     "moving": 19,
     "waiting_or_stopped": 1
    },
-   "events": 1989,
+   "events": 1959,
    "events_by_class": {
     "motion": 117,
     "behavioural_response": 1041,
     "physical_constraint": 286,
-    "physical_contact": 234,
+    "physical_contact": 204,
     "solver_status": 311
    },
    "events_by_kind": {
@@ -9982,11 +9982,11 @@
     "go": 357,
     "follow": 53,
     "stop": 209,
-    "contact_start": 127,
+    "contact_start": 112,
     "resume": 77,
     "reroute": 265,
     "wait": 203,
-    "contact_end": 107,
+    "contact_end": 92,
     "blocked_report": 248,
     "back_off": 163,
     "arrive": 17,
@@ -9999,9 +9999,9 @@
     "wait": 6965,
     "back_off": 11263
    },
-   "contacts": 127,
-   "cpu_ms": 1382.466,
-   "wall_ms": 1395.980104999995,
+   "contacts": 112,
+   "cpu_ms": 1595.357,
+   "wall_ms": 1543.2263939999975,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -10026,10 +10026,10 @@
     "max_obstacle_penetration_mm": 0,
     "occupancy2d": null,
     "body_contact_episodes": 119,
-    "judge_wall_ms": 476.4636449999816
+    "judge_wall_ms": 654.7298609999998
    },
    "replay": {
-    "hash": "a623c486feb077a9",
+    "hash": "7fb6d6695f33b54e",
     "rerun_identical": true,
     "reversed_input_identical": true,
     "shuffled_input_identical": true
@@ -10062,12 +10062,12 @@
     "moving": 27,
     "arrived": 15
    },
-   "events": 1476,
+   "events": 1428,
    "events_by_class": {
     "motion": 115,
     "behavioural_response": 687,
     "physical_constraint": 236,
-    "physical_contact": 203,
+    "physical_contact": 155,
     "solver_status": 235
    },
    "events_by_kind": {
@@ -10075,10 +10075,10 @@
     "go": 268,
     "follow": 47,
     "stop": 180,
-    "contact_start": 114,
+    "contact_start": 90,
     "resume": 56,
     "reroute": 149,
-    "contact_end": 89,
+    "contact_end": 65,
     "back_off": 105,
     "blocked_report": 177,
     "wait": 118,
@@ -10092,9 +10092,9 @@
     "back_off": 11952,
     "wait": 7294
    },
-   "contacts": 114,
-   "cpu_ms": 1446.371,
-   "wall_ms": 1455.1930619999766,
+   "contacts": 90,
+   "cpu_ms": 1537.224,
+   "wall_ms": 1540.829171999998,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -10119,10 +10119,10 @@
     "max_obstacle_penetration_mm": 0,
     "occupancy2d": null,
     "body_contact_episodes": 90,
-    "judge_wall_ms": 442.54448599999887
+    "judge_wall_ms": 413.3953709999914
    },
    "replay": {
-    "hash": "015faa5fcc3587b4",
+    "hash": "fb6f4813557070da",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -10156,12 +10156,12 @@
     "moving": 29,
     "waiting_or_stopped": 3
    },
-   "events": 1803,
+   "events": 1771,
    "events_by_class": {
     "motion": 120,
     "behavioural_response": 878,
     "physical_constraint": 300,
-    "physical_contact": 241,
+    "physical_contact": 209,
     "solver_status": 264
    },
    "events_by_kind": {
@@ -10169,12 +10169,12 @@
     "go": 310,
     "follow": 58,
     "stop": 215,
-    "contact_start": 130,
+    "contact_start": 114,
     "resume": 85,
     "back_off": 121,
     "blocked_report": 216,
     "reroute": 245,
-    "contact_end": 111,
+    "contact_end": 95,
     "wait": 144,
     "arrive": 20,
     "stalled": 48
@@ -10186,9 +10186,9 @@
     "reroute": 355,
     "wait": 5542
    },
-   "contacts": 130,
-   "cpu_ms": 1248.359,
-   "wall_ms": 1259.8356610000192,
+   "contacts": 114,
+   "cpu_ms": 1475.408,
+   "wall_ms": 1527.2233309999865,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -10213,10 +10213,10 @@
     "max_obstacle_penetration_mm": 0,
     "occupancy2d": null,
     "body_contact_episodes": 120,
-    "judge_wall_ms": 437.0456429999904
+    "judge_wall_ms": 462.4490110000188
    },
    "replay": {
-    "hash": "d234d7fe2e704a6c",
+    "hash": "3211d2c281e2814e",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -10250,12 +10250,12 @@
     "moving": 24,
     "waiting_or_stopped": 2
    },
-   "events": 2007,
+   "events": 1981,
    "events_by_class": {
     "motion": 131,
     "behavioural_response": 992,
     "physical_constraint": 367,
-    "physical_contact": 261,
+    "physical_contact": 235,
     "solver_status": 256
    },
    "events_by_kind": {
@@ -10263,12 +10263,12 @@
     "go": 373,
     "follow": 63,
     "stop": 253,
-    "contact_start": 141,
+    "contact_start": 128,
     "resume": 114,
     "wait": 175,
     "blocked_report": 213,
     "reroute": 254,
-    "contact_end": 120,
+    "contact_end": 107,
     "back_off": 127,
     "arrive": 31,
     "stalled": 43
@@ -10280,9 +10280,9 @@
     "reroute": 364,
     "back_off": 11244
    },
-   "contacts": 141,
-   "cpu_ms": 1088.781,
-   "wall_ms": 1100.3844099999988,
+   "contacts": 128,
+   "cpu_ms": 956.607,
+   "wall_ms": 967.0711249999877,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -10307,10 +10307,10 @@
     "max_obstacle_penetration_mm": 0,
     "occupancy2d": null,
     "body_contact_episodes": 131,
-    "judge_wall_ms": 467.08482999997796
+    "judge_wall_ms": 482.32834400000866
    },
    "replay": {
-    "hash": "a3ae55c5f53f084c",
+    "hash": "fcc127b394d4cb9b",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -10344,12 +10344,12 @@
     "moving": 24,
     "waiting_or_stopped": 1
    },
-   "events": 1882,
+   "events": 1820,
    "events_by_class": {
     "motion": 126,
     "behavioural_response": 867,
     "physical_constraint": 334,
-    "physical_contact": 284,
+    "physical_contact": 222,
     "solver_status": 271
    },
    "events_by_kind": {
@@ -10357,12 +10357,12 @@
     "go": 308,
     "follow": 50,
     "stop": 232,
-    "contact_start": 151,
+    "contact_start": 120,
     "resume": 102,
     "back_off": 110,
     "blocked_report": 222,
     "wait": 164,
-    "contact_end": 133,
+    "contact_end": 102,
     "reroute": 235,
     "arrive": 26,
     "stalled": 49
@@ -10374,9 +10374,9 @@
     "wait": 5288,
     "reroute": 361
    },
-   "contacts": 151,
-   "cpu_ms": 1083.127,
-   "wall_ms": 1112.2615689999948,
+   "contacts": 120,
+   "cpu_ms": 1073.883,
+   "wall_ms": 1058.5926580000087,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -10401,10 +10401,10 @@
     "max_obstacle_penetration_mm": 0,
     "occupancy2d": null,
     "body_contact_episodes": 128,
-    "judge_wall_ms": 437.6960010000039
+    "judge_wall_ms": 384.1166300000041
    },
    "replay": {
-    "hash": "6d75d6c2cc32ffe0",
+    "hash": "540cd5cb10528cde",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -10435,12 +10435,12 @@
     "stalled": 75,
     "arrived": 25
    },
-   "events": 3072,
+   "events": 3046,
    "events_by_class": {
     "motion": 125,
     "behavioural_response": 1908,
     "physical_constraint": 443,
-    "physical_contact": 430,
+    "physical_contact": 404,
     "solver_status": 166
    },
    "events_by_kind": {
@@ -10448,10 +10448,10 @@
     "go": 341,
     "follow": 86,
     "stop": 390,
-    "contact_start": 240,
+    "contact_start": 227,
     "resume": 53,
     "sidestep": 1315,
-    "contact_end": 190,
+    "contact_end": 177,
     "blocked_report": 91,
     "wait": 166,
     "arrive": 25,
@@ -10463,9 +10463,9 @@
     "sidestep": 1463,
     "wait": 7966
    },
-   "contacts": 240,
-   "cpu_ms": 6909.462,
-   "wall_ms": 6939.727629000001,
+   "contacts": 227,
+   "cpu_ms": 6654.316,
+   "wall_ms": 6581.211369000026,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -10490,10 +10490,10 @@
     "max_obstacle_penetration_mm": 0,
     "occupancy2d": null,
     "body_contact_episodes": 237,
-    "judge_wall_ms": 978.4501750000054
+    "judge_wall_ms": 787.2489990000031
    },
    "replay": {
-    "hash": "5ceaf4b94664263d",
+    "hash": "3c6816b1c889022d",
     "rerun_identical": true,
     "reversed_input_identical": true,
     "shuffled_input_identical": true
@@ -10524,12 +10524,12 @@
     "stalled": 72,
     "arrived": 28
    },
-   "events": 3345,
+   "events": 3303,
    "events_by_class": {
     "motion": 128,
     "behavioural_response": 2100,
     "physical_constraint": 481,
-    "physical_contact": 477,
+    "physical_contact": 435,
     "solver_status": 159
    },
    "events_by_kind": {
@@ -10537,10 +10537,10 @@
     "go": 391,
     "follow": 86,
     "stop": 422,
-    "contact_start": 263,
+    "contact_start": 242,
     "resume": 59,
     "sidestep": 1441,
-    "contact_end": 214,
+    "contact_end": 193,
     "blocked_report": 87,
     "wait": 182,
     "arrive": 28,
@@ -10552,9 +10552,9 @@
     "sidestep": 1762,
     "wait": 8500
    },
-   "contacts": 263,
-   "cpu_ms": 7043.582,
-   "wall_ms": 8370.635730999988,
+   "contacts": 242,
+   "cpu_ms": 6411.653,
+   "wall_ms": 6352.126710000011,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -10579,10 +10579,10 @@
     "max_obstacle_penetration_mm": 0,
     "occupancy2d": null,
     "body_contact_episodes": 246,
-    "judge_wall_ms": 1093.9172950000502
+    "judge_wall_ms": 733.8225209999946
    },
    "replay": {
-    "hash": "c17038fe57b4a04c",
+    "hash": "166112ab7495e372",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -10613,12 +10613,12 @@
     "stalled": 66,
     "arrived": 34
    },
-   "events": 3667,
+   "events": 3511,
    "events_by_class": {
     "motion": 134,
     "behavioural_response": 2246,
     "physical_constraint": 541,
-    "physical_contact": 597,
+    "physical_contact": 441,
     "solver_status": 149
    },
    "events_by_kind": {
@@ -10626,10 +10626,10 @@
     "go": 441,
     "follow": 84,
     "stop": 487,
-    "contact_start": 321,
+    "contact_start": 243,
     "resume": 54,
     "sidestep": 1557,
-    "contact_end": 276,
+    "contact_end": 198,
     "blocked_report": 83,
     "wait": 164,
     "arrive": 34,
@@ -10641,9 +10641,9 @@
     "sidestep": 1883,
     "wait": 6802
    },
-   "contacts": 321,
-   "cpu_ms": 6527.571,
-   "wall_ms": 8327.288609999989,
+   "contacts": 243,
+   "cpu_ms": 5207.893,
+   "wall_ms": 5186.613409999991,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -10668,10 +10668,10 @@
     "max_obstacle_penetration_mm": 0,
     "occupancy2d": null,
     "body_contact_episodes": 328,
-    "judge_wall_ms": 1305.9561109999777
+    "judge_wall_ms": 875.8953049999545
    },
    "replay": {
-    "hash": "44415357d65d08e2",
+    "hash": "a3fca124b474a1ea",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -10703,12 +10703,12 @@
     "stalled": 75,
     "arrived": 25
    },
-   "events": 3708,
+   "events": 3620,
    "events_by_class": {
     "motion": 125,
     "behavioural_response": 1887,
     "physical_constraint": 1049,
-    "physical_contact": 478,
+    "physical_contact": 390,
     "solver_status": 169
    },
    "events_by_kind": {
@@ -10716,10 +10716,10 @@
     "go": 354,
     "follow": 83,
     "stop": 701,
-    "contact_start": 261,
+    "contact_start": 217,
     "resume": 348,
     "sidestep": 1278,
-    "contact_end": 217,
+    "contact_end": 173,
     "blocked_report": 94,
     "wait": 172,
     "arrive": 25,
@@ -10731,9 +10731,9 @@
     "sidestep": 1751,
     "wait": 10099
    },
-   "contacts": 261,
-   "cpu_ms": 8042.942,
-   "wall_ms": 10578.77704700001,
+   "contacts": 217,
+   "cpu_ms": 7094.338,
+   "wall_ms": 7017.0526069999905,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -10758,10 +10758,10 @@
     "max_obstacle_penetration_mm": 0,
     "occupancy2d": null,
     "body_contact_episodes": 289,
-    "judge_wall_ms": 1295.1280609999667
+    "judge_wall_ms": 950.1910769999959
    },
    "replay": {
-    "hash": "72b4164beb2f5b1c",
+    "hash": "d9e43a70cd296bde",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -10792,12 +10792,12 @@
     "stalled": 73,
     "arrived": 27
    },
-   "events": 3134,
+   "events": 3114,
    "events_by_class": {
     "motion": 127,
     "behavioural_response": 1879,
     "physical_constraint": 471,
-    "physical_contact": 474,
+    "physical_contact": 454,
     "solver_status": 183
    },
    "events_by_kind": {
@@ -10805,10 +10805,10 @@
     "go": 400,
     "follow": 93,
     "stop": 414,
-    "contact_start": 260,
+    "contact_start": 250,
     "resume": 57,
     "sidestep": 1174,
-    "contact_end": 214,
+    "contact_end": 204,
     "blocked_report": 110,
     "wait": 212,
     "arrive": 27,
@@ -10820,9 +10820,9 @@
     "sidestep": 1454,
     "wait": 9258
    },
-   "contacts": 260,
-   "cpu_ms": 7041.773,
-   "wall_ms": 8193.186311000027,
+   "contacts": 250,
+   "cpu_ms": 6276.813,
+   "wall_ms": 6229.152731000038,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -10847,10 +10847,10 @@
     "max_obstacle_penetration_mm": 0,
     "occupancy2d": null,
     "body_contact_episodes": 253,
-    "judge_wall_ms": 736.0162040000432
+    "judge_wall_ms": 797.054376999964
    },
    "replay": {
-    "hash": "5530618ed81adc74",
+    "hash": "0682072b85d7bb29",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -10898,8 +10898,8 @@
    },
    "decisions": {},
    "contacts": 17355,
-   "cpu_ms": 2884.766,
-   "wall_ms": 3073.5176520000095,
+   "cpu_ms": 2717.499,
+   "wall_ms": 2314.4922759999754,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -10946,12 +10946,12 @@
    "final_modes": {
     "stalled": 1000
    },
-   "events": 18147,
+   "events": 18037,
    "events_by_class": {
     "motion": 1000,
     "behavioural_response": 11960,
     "physical_constraint": 1256,
-    "physical_contact": 1315,
+    "physical_contact": 1205,
     "solver_status": 2616
    },
    "events_by_kind": {
@@ -10960,8 +10960,8 @@
     "go": 3419,
     "sidestep": 4475,
     "stop": 1254,
-    "contact_start": 690,
-    "contact_end": 625,
+    "contact_start": 635,
+    "contact_end": 570,
     "blocked_report": 1616,
     "resume": 2,
     "stalled": 1000
@@ -10971,9 +10971,9 @@
     "wait": 328051,
     "sidestep": 4707
    },
-   "contacts": 690,
-   "cpu_ms": 170152.479,
-   "wall_ms": 169414.26649099996,
+   "contacts": 635,
+   "cpu_ms": 151407.642,
+   "wall_ms": 123530.713988,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -10989,7 +10989,7 @@
    },
    "judge": "not run",
    "replay": {
-    "hash": "f57a345afe6f337f",
+    "hash": "47888b92a8d9287a",
     "rerun_identical": null,
     "reversed_input_identical": true,
     "shuffled_input_identical": null
@@ -11020,12 +11020,12 @@
    "final_modes": {
     "stalled": 1000
    },
-   "events": 14972,
+   "events": 14918,
    "events_by_class": {
     "motion": 1000,
     "behavioural_response": 2475,
     "physical_constraint": 6239,
-    "physical_contact": 2092,
+    "physical_contact": 2038,
     "solver_status": 3166
    },
    "events_by_kind": {
@@ -11033,8 +11033,8 @@
     "follow": 946,
     "go": 836,
     "stop": 3646,
-    "contact_start": 1498,
-    "contact_end": 594,
+    "contact_start": 1471,
+    "contact_end": 567,
     "resume": 2593,
     "back_off": 177,
     "wait": 286,
@@ -11049,9 +11049,9 @@
     "wait": 30874,
     "reroute": 279
    },
-   "contacts": 1498,
-   "cpu_ms": 90683.579,
-   "wall_ms": 60897.55108499993,
+   "contacts": 1471,
+   "cpu_ms": 85304.57,
+   "wall_ms": 51936.47123200004,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -11067,7 +11067,7 @@
    },
    "judge": "not run",
    "replay": {
-    "hash": "b425394fcadc9b6c",
+    "hash": "4fb28bbb28c5af28",
     "rerun_identical": null,
     "reversed_input_identical": true,
     "shuffled_input_identical": null
@@ -11097,12 +11097,12 @@
    "final_modes": {
     "stalled": 1000
    },
-   "events": 38789,
+   "events": 38123,
    "events_by_class": {
     "motion": 1000,
     "behavioural_response": 3475,
     "physical_constraint": 28499,
-    "physical_contact": 3112,
+    "physical_contact": 2446,
     "solver_status": 2703
    },
    "events_by_kind": {
@@ -11110,8 +11110,8 @@
     "follow": 1012,
     "go": 960,
     "stop": 15080,
-    "contact_start": 2008,
-    "contact_end": 1104,
+    "contact_start": 1675,
+    "contact_end": 771,
     "resume": 13419,
     "sidestep": 1179,
     "blocked_report": 1703,
@@ -11124,9 +11124,9 @@
     "sidestep": 1326,
     "wait": 35385
    },
-   "contacts": 2008,
-   "cpu_ms": 118208.556,
-   "wall_ms": 85626.06263200007,
+   "contacts": 1675,
+   "cpu_ms": 101398.736,
+   "wall_ms": 66167.68330400006,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -11142,7 +11142,7 @@
    },
    "judge": "not run",
    "replay": {
-    "hash": "4ddcc2902ad55677",
+    "hash": "cb3284c00f874717",
     "rerun_identical": null,
     "reversed_input_identical": true,
     "shuffled_input_identical": null
@@ -11175,22 +11175,22 @@
     "stalled": 46,
     "arrived": 54
    },
-   "events": 8063,
+   "events": 7989,
    "events_by_class": {
     "motion": 154,
     "behavioural_response": 3658,
     "physical_constraint": 1836,
-    "physical_contact": 2308,
+    "physical_contact": 2234,
     "solver_status": 107
    },
    "events_by_kind": {
     "start": 100,
     "go": 650,
     "stop": 1830,
-    "contact_start": 1168,
+    "contact_start": 1131,
     "wait": 352,
     "sidestep": 2656,
-    "contact_end": 1140,
+    "contact_end": 1103,
     "blocked_report": 61,
     "resume": 6,
     "arrive": 54,
@@ -11201,9 +11201,9 @@
     "wait": 12050,
     "sidestep": 2775
    },
-   "contacts": 1168,
-   "cpu_ms": 5320.011,
-   "wall_ms": 4966.031748000067,
+   "contacts": 1131,
+   "cpu_ms": 4121.282,
+   "wall_ms": 3913.958360000048,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -11219,7 +11219,7 @@
    },
    "judge": "not run",
    "replay": {
-    "hash": "89596fc535071e9e",
+    "hash": "021481bbcf0c347d",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -11252,12 +11252,12 @@
     "stalled": 48,
     "arrived": 52
    },
-   "events": 3018,
+   "events": 3012,
    "events_by_class": {
     "motion": 152,
     "behavioural_response": 2207,
     "physical_constraint": 264,
-    "physical_contact": 283,
+    "physical_contact": 277,
     "solver_status": 112
    },
    "events_by_kind": {
@@ -11266,8 +11266,8 @@
     "wait": 302,
     "sidestep": 1438,
     "stop": 264,
-    "contact_start": 142,
-    "contact_end": 141,
+    "contact_start": 139,
+    "contact_end": 138,
     "blocked_report": 64,
     "arrive": 52,
     "stalled": 48
@@ -11277,9 +11277,9 @@
     "wait": 15553,
     "sidestep": 1800
    },
-   "contacts": 142,
-   "cpu_ms": 8595.702,
-   "wall_ms": 8694.72743999993,
+   "contacts": 139,
+   "cpu_ms": 7290.134,
+   "wall_ms": 7227.544582000002,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -11295,7 +11295,7 @@
    },
    "judge": "not run",
    "replay": {
-    "hash": "65842b4a2acc73e4",
+    "hash": "958733229ec70dac",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -11331,24 +11331,24 @@
     "waiting_or_stopped": 3,
     "stalled": 44
    },
-   "events": 3091,
+   "events": 2999,
    "events_by_class": {
     "motion": 125,
     "behavioural_response": 1160,
     "physical_constraint": 737,
-    "physical_contact": 774,
+    "physical_contact": 682,
     "solver_status": 295
    },
    "events_by_kind": {
     "start": 100,
     "go": 453,
     "stop": 593,
-    "contact_start": 398,
+    "contact_start": 352,
     "follow": 84,
     "resume": 144,
     "reroute": 246,
     "wait": 204,
-    "contact_end": 376,
+    "contact_end": 330,
     "blocked_report": 251,
     "back_off": 173,
     "arrive": 25,
@@ -11361,9 +11361,9 @@
     "wait": 4476,
     "back_off": 13321
    },
-   "contacts": 398,
-   "cpu_ms": 1010.993,
-   "wall_ms": 987.3602219999302,
+   "contacts": 352,
+   "cpu_ms": 896.41,
+   "wall_ms": 867.4329869999783,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -11379,7 +11379,7 @@
    },
    "judge": "not run",
    "replay": {
-    "hash": "c8b736ca6c307c05",
+    "hash": "5d2c8a9a4fa77e1a",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -11415,12 +11415,12 @@
     "stalled": 57,
     "waiting_or_stopped": 3
    },
-   "events": 1767,
+   "events": 1759,
    "events_by_class": {
     "motion": 120,
     "behavioural_response": 918,
     "physical_constraint": 258,
-    "physical_contact": 199,
+    "physical_contact": 191,
     "solver_status": 272
    },
    "events_by_kind": {
@@ -11428,11 +11428,11 @@
     "go": 335,
     "follow": 65,
     "stop": 169,
-    "contact_start": 113,
+    "contact_start": 109,
     "resume": 89,
     "reroute": 252,
     "wait": 154,
-    "contact_end": 86,
+    "contact_end": 82,
     "blocked_report": 215,
     "back_off": 112,
     "arrive": 20,
@@ -11445,9 +11445,9 @@
     "wait": 5534,
     "back_off": 10799
    },
-   "contacts": 113,
-   "cpu_ms": 1539.672,
-   "wall_ms": 1560.9300899999216,
+   "contacts": 109,
+   "cpu_ms": 1448.378,
+   "wall_ms": 1443.5897289999994,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -11463,7 +11463,7 @@
    },
    "judge": "not run",
    "replay": {
-    "hash": "f36a2773335d0db9",
+    "hash": "2676ba8e105b688d",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -11496,23 +11496,23 @@
     "stalled": 70,
     "arrived": 30
    },
-   "events": 3378,
+   "events": 3278,
    "events_by_class": {
     "motion": 130,
     "behavioural_response": 1550,
     "physical_constraint": 670,
-    "physical_contact": 873,
+    "physical_contact": 773,
     "solver_status": 155
    },
    "events_by_kind": {
     "start": 100,
     "go": 384,
     "stop": 633,
-    "contact_start": 467,
+    "contact_start": 417,
     "follow": 77,
     "resume": 37,
     "sidestep": 972,
-    "contact_end": 406,
+    "contact_end": 356,
     "blocked_report": 85,
     "wait": 117,
     "arrive": 30,
@@ -11524,9 +11524,9 @@
     "sidestep": 1144,
     "wait": 9693
    },
-   "contacts": 467,
-   "cpu_ms": 7242.866,
-   "wall_ms": 7202.665847999975,
+   "contacts": 417,
+   "cpu_ms": 5205.011,
+   "wall_ms": 5023.1631650000345,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -11542,7 +11542,7 @@
    },
    "judge": "not run",
    "replay": {
-    "hash": "3f1f3f4a73d1363c",
+    "hash": "bfd858d38de0a4e2",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
@@ -11575,12 +11575,12 @@
     "stalled": 73,
     "arrived": 27
    },
-   "events": 2536,
+   "events": 2532,
    "events_by_class": {
     "motion": 127,
     "behavioural_response": 1611,
     "physical_constraint": 328,
-    "physical_contact": 306,
+    "physical_contact": 302,
     "solver_status": 164
    },
    "events_by_kind": {
@@ -11588,10 +11588,10 @@
     "go": 304,
     "follow": 62,
     "stop": 269,
-    "contact_start": 170,
+    "contact_start": 168,
     "resume": 59,
     "sidestep": 1076,
-    "contact_end": 136,
+    "contact_end": 134,
     "blocked_report": 91,
     "wait": 169,
     "arrive": 27,
@@ -11603,9 +11603,9 @@
     "sidestep": 1652,
     "wait": 12596
    },
-   "contacts": 170,
-   "cpu_ms": 11210.137,
-   "wall_ms": 11081.856322000036,
+   "contacts": 168,
+   "cpu_ms": 8869.941,
+   "wall_ms": 8825.953160000034,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -11621,7 +11621,7 @@
    },
    "judge": "not run",
    "replay": {
-    "hash": "a3fb381b05afd80e",
+    "hash": "01ffad8521e3230b",
     "rerun_identical": true,
     "reversed_input_identical": null,
     "shuffled_input_identical": null
