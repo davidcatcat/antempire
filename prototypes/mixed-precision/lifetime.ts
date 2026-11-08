@@ -19,8 +19,27 @@
  * recorded category accounts (stock, body, respiration sink, corpse, producer). Draws come from named streams keyed by
  * (day, phase, unit path, member index) via ledger.ts `draw`; storage order never matters.
  * This module holds NO biological value: every rate/amount is an input (see the fixtures and their labels).
+ *
+ * STATUS (issue #145, Owner 2026-11-08): lifeDay / LifeState is NOT an authoritative population ledger. It is kept as a
+ * comparison engine (lifetime-compare.ts) and as the source of the per-member life rules (canFeed, devProb, canLay,
+ * hazardOf). The single authoritative ledger is unified.ts; a LifeState is converted with migrateLifetime() and is then
+ * superseded. Its promote/demote refuse observer causes (issue #144 fallback, view-guard.ts).
  */
 import { draw } from './ledger.ts';
+import { isViewCause, VIEW_REFUSAL } from './view-guard.ts';
+
+// ---------------------------------------------------------------- per-member rules (issue #145: the single source of the
+// life-time rules; lifeDay below and the unified ledger unified.ts both call these, so neither keeps its own copy)
+/** feeding eligibility: a feeding stage with room for one meal */
+export const canFeed = (P: LifeParams, sd: StageDef, reserve: number) => sd.feeds && reserve + P.meal <= P.crop_cap;
+/** daily probability of advancing one Erlang sub-stage (degree-days above t_lower, slowed when hungry) */
+export const devProb = (P: LifeParams, sd: StageDef, temp_c: number, hungry: boolean) =>
+  Math.min(1, sd.substages * ((Math.max(0, temp_c - P.t_lower) / sd.dd_required!) * (hungry ? P.dev_factor_hungry : 1)));
+/** reproduction eligibility */
+export const canLay = (P: LifeParams, sd: StageDef, hungry: boolean, reserve: number) => sd.reproduces && !hungry && reserve >= P.egg_cost;
+/** daily death probability: baseline + starvation + linear senescence after senescence_start */
+export const hazardOf = (P: LifeParams, sd: StageDef, hungry: boolean, age: number) =>
+  Math.min(1, sd.hazard + (hungry ? P.h_starve : 0) + (sd.senesces ? P.senescence_slope * Math.max(0, age - P.senescence_start) : 0));
 
 export interface StageDef {
   name: string;
@@ -74,6 +93,8 @@ export interface LifeState {
   corpses: Record<string, number>;
   producers: Record<string, number>;
   retired: string[];
+  /** set by unified-migrate.ts: converted into the unified ledger; no longer advanced (#145) */
+  superseded_by?: string;
 }
 export interface Cause { kind: string; driver_event_ids: string[] }
 export type LifeCommand =
@@ -188,6 +209,7 @@ function needCause(c: Cause | undefined, what: string): Cause {
 // ---------------------------------------------------------------- representation commands
 function promote(cx: Cx, ws: W[], c: Extract<LifeCommand, { kind: 'promote' }>): W[] {
   const cause = needCause(c.cause, 'promote');
+  if (isViewCause(cause)) refuse(VIEW_REFUSAL, `${c.key}: a view action cannot promote (issue #144)`);
   if (cx.res.deterministic) refuse('NO_IDS_IN_MEAN_FIELD', 'a deterministic run has no members to promote');
   if (!Number.isSafeInteger(c.n) || c.n < 1) refuse('BAD_COUNT', `${c.n}`);
   const restored: NonNullable<LifeRecord['restored']> = [];
@@ -228,6 +250,7 @@ function promote(cx: Cx, ws: W[], c: Extract<LifeCommand, { kind: 'promote' }>):
 }
 function demote(cx: Cx, ws: W[], c: Extract<LifeCommand, { kind: 'demote' }>): W[] {
   const cause = needCause(c.cause, 'demote');
+  if (isViewCause(cause)) refuse(VIEW_REFUSAL, `${c.key}: a view action cannot demote (issue #144)`);
   const i = ws.find((u) => u.id === c.id) ?? refuse('UNKNOWN_INDIVIDUAL', c.id);
   if (cx.res.age_bin_days !== 1) refuse('ROSTER_NEEDS_DAILY_AGE_BINS', 'known IDs are kept only in daily age bins');
   const bin: W = { region: i.region, stage: i.stage, sub: i.sub, age: i.age, id: null, n: 1, reserve: i.reserve, rkey: cx.res.reserve === 'exact' ? i.reserve : null, age_sum: i.age, roster: [{ id: i.id!, age: i.age }], path: `#${i.id}>bin`, hungry: false };
@@ -279,6 +302,7 @@ function merge(cx: Cx, ws: W[]): Unit[] {
 
 /** Advance one day: atomic (works on a copy), canonical order, same rules for every representation. */
 export function lifeDay(state: LifeState, P: LifeParams, input: DayInput): { state: LifeState; records: LifeRecord[] } {
+  if (state.superseded_by) refuse('SUPERSEDED_BY_UNIFIED_LEDGER', `${state.superseded_by} (#145: one authoritative ledger)`);
   const st = structuredClone(state);
   const cx: Cx = { seed: st.seed, day: st.day, res: st.res, P, recs: [], st, retired: new Set(st.retired), serial: 0 };
   const det = st.res.deterministic;
@@ -302,7 +326,7 @@ export function lifeDay(state: LifeState, P: LifeParams, input: DayInput): { sta
   const after2: W[] = [];
   for (const r of [...new Set(ws.map((u) => u.region))].sort(byStr)) {
     const here = ws.filter((u) => u.region === r);
-    const elig = here.filter((u) => S[u.stage].feeds && perReserve(u) + P.meal <= P.crop_cap);
+    const elig = here.filter((u) => canFeed(P, S[u.stage], perReserve(u)));
     const N = elig.reduce((a, u) => a + u.n, 0), stock = st.stocks[r] ?? 0;
     const F = Math.min(N, det ? stock / P.meal : Math.floor(stock / P.meal));
     const ks = choose(cx, elig, F, 'feed', r);
@@ -333,7 +357,7 @@ export function lifeDay(state: LifeState, P: LifeParams, input: DayInput): { sta
   // 4. reproduction: a fed reproductive member with reserve >= egg_cost lays one egg with probability p_lay
   const born: W[] = [], after4: W[] = [];
   for (const u of ws) {
-    if (!S[u.stage].reproduces || u.hungry || perReserve(u) < P.egg_cost) { after4.push(u); continue; }
+    if (!canLay(P, S[u.stage], u.hungry, perReserve(u))) { after4.push(u); continue; }
     const L = binom(cx, u.n, P.p_lay, 'lay', u.path);
     const [a, b] = partition(cx, u, L, 'lay-pick');
     after4.push(b);
@@ -361,8 +385,7 @@ export function lifeDay(state: LifeState, P: LifeParams, input: DayInput): { sta
   for (const u of ws) {
     const sd = S[u.stage];
     if (sd.substages === 0 || sd.dd_required === null) { after5.push(u); continue; }
-    const rate = (Math.max(0, input.temp_c - P.t_lower) / sd.dd_required) * (u.hungry ? P.dev_factor_hungry : 1);
-    const k = binom(cx, u.n, Math.min(1, sd.substages * rate), 'develop', u.path);
+    const k = binom(cx, u.n, devProb(P, sd, input.temp_c, u.hungry), 'develop', u.path);
     const [a, b] = partition(cx, u, k, 'develop-pick');
     after5.push(b);
     if (a.n <= 0) continue;
@@ -384,8 +407,7 @@ export function lifeDay(state: LifeState, P: LifeParams, input: DayInput): { sta
   const after6: W[] = [];
   for (const u of ws) {
     const sd = S[u.stage];
-    const h = Math.min(1, sd.hazard + (u.hungry ? P.h_starve : 0) + (sd.senesces ? P.senescence_slope * Math.max(0, perAge(cx, u) - P.senescence_start) : 0));
-    const k = binom(cx, u.n, h, 'death', u.path);
+    const k = binom(cx, u.n, hazardOf(P, sd, u.hungry, perAge(cx, u)), 'death', u.path);
     const [a, b] = partition(cx, u, k, 'death-pick');
     after6.push(b);
     if (a.n <= 0) continue;
