@@ -332,7 +332,7 @@ const bracketStats = { episodes: 0, exact: 0, max_err_s: 0 };
   // the exported playback files (the segments the page draws) pass the same check
   for (const f of fs.readdirSync(DATA_DIR).filter((n) => /--steer-/.test(n))) {
     const run = JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf8'));
-    const c = checkContacts({ horizon_s: run.horizon_s, body: run.body, agents: run.agents.map((a: { id: string; segments: CkMotion['agents'][number]['segments']; final: { x: number; y: number; heading: number } }) => ({ id: a.id, segments: a.segments, final: a.final, present_from: 0, present_until: null })), events: run.events });
+    const c = checkContacts({ horizon_s: run.horizon_s, body: run.body, agents: run.agents.map((a: { id: string; segments: CkMotion['agents'][number]['segments']; final: { x: number; y: number; heading: number } | null; present_from_t_s?: number | null; removed_t_s?: number | null }) => ({ id: a.id, segments: a.segments, final: a.final, present_from: a.present_from_t_s === undefined ? 0 : a.present_from_t_s === null ? Infinity : a.present_from_t_s, present_until: a.removed_t_s ?? null })), events: run.events });
     ok(c.violations === 0 && run.contact_end_check?.violations === 0 && run.events.filter((e: { kind: string; check_s?: number[] }) => e.kind === 'contact_end').every((e: { t: number; check_s?: number[] }) => e.check_s && e.check_s[0] <= e.t && e.t <= e.check_s[1]), `playback ${f}: every contact_end inside the recorded independent bracket`);
   }
   // positive controls: a contact_end moved by 1 ms, a deleted contact_end (the contact claimed open), a removed flag

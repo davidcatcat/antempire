@@ -224,7 +224,18 @@ N＝不讓路對照（§1）。100 隻，種子 1–5（N 沒有亂數，只跑�
 - R14 新增（同檔，BLOCKING）：(9) 獨立檢查器對 A、B、C、N × 8 個播放情境＋100 隻交叉口：每個 `contact_end` 在區間內、誤差界 < 1 µs、檢查器看到每段接觸；播放檔本身的分段也通過；正對照（結束時刻移 1 ms、刪掉一個結束、把精確結束改標成估計）都會被抓到；寫「contact with」的停止確實接觸、`conservative stop` 確實沒有。(10) 估計結束：只有出口會產生、標 `usable_as_cause: false`、恰在離開時刻、不會另外捏造精確結束；出口占用不超過容量；`none` 拒絕對照規則。(11) 對照 K0–K3 × A、B、C、N：0 穿透、檢查器乾淨、進場前不在路上且進場姿態當時空著、離開只在抵達之後、N 從不側移；K3 重跑與反序輸入逐位元相同。(12) 決策間隔減半／加倍：0 穿透、結束都在區間內；只由運動決定的分離在不同網格下時刻相同。執行約 4.7 分鐘，49,815 項。
 - `tests/physics-playback.test.ts`：候選播放資料＝重新匯出；每個分段邊界都是該個體的引擎事件時刻；用頁面自己的 `motion.js` 重播與解算紀錄一致（≤ 1e-9 mm，最終姿態逐位元相同）。
 - `tests/physics-playback.test.ts` 另檢查：只有密集基準帶 `scope_note`（含「不適用於」）；每個候選 `contact_end` 帶解算器 `bracket_s` 與獨立 `check_s`／`err_s`，且時刻在區間內。匯出器在獨立檢查失敗時拒絕寫檔。
-- 播放頁：`prototypes/physics-playback/`「解算器」選單多了「A／B／C（候選，假設）」（不讓路對照 N 只在比較表，不上播放頁）；密集基準在徽章下方顯示適用範圍；`contact_end` 事件顯示獨立檢查的區間與誤差界、估計結束顯示「不能當生物原因」；徽章顯示「隔離物理實驗・候選行為規則（非本種/假設）・非正式」；瀏覽器檢查（桌面＋手機，39 個 run）31,074 項通過。100 隻交叉口只有候選（PH-3b 有 4.5 萬事件，太大）。
+- 播放頁：`prototypes/physics-playback/`「解算器」選單多了「A／B／C（候選，假設）」與「N（不讓路對照）」（Owner 決定 9，見 §6.4）；密集基準在徽章下方顯示適用範圍；`contact_end` 事件顯示獨立檢查的區間與誤差界、估計結束顯示「不能當生物原因」；徽章顯示「隔離物理實驗・候選行為規則（非本種/假設）・非正式」；瀏覽器檢查（桌面＋手機，39 個 run）31,074 項通過。100 隻交叉口只有候選（PH-3b 有 4.5 萬事件，太大）。
+
+### 6.4 播放頁上的控制組與對照情境（Owner 決定 9）
+
+播放頁（`prototypes/physics-playback/`）現在除了候選 A／B／C，也放上不讓路控制組 N 與對照情境 K0–K3。全部資料由 `export.ts` 呼叫 `engine/physics/local-steer.ts`（`steer2D`）實際執行匯出，沒有手改；`export.ts --check` 與 `tests/physics-playback.test.ts` 逐位元比對重新匯出。
+
+- **選擇的執行集合**（控制資料量）：(1) N 加到原本每一個候選播放情境（8 個小情境＋`crossing-traffic-100`，含窄道迎面 `head-on-2`、交叉 `crossing`），共 9 個；(2) `crossing-traffic-100` 的 K0、K1、K2、K3 × A、B、C、N，**只用種子 1**，共 16 個。種子 2–5 與 1000 隻版本只在 §5b 表格與 `out/controls-*.json`（1000 隻一個檔就數十 MB，不適合放頁面）。播放 run 從 39 增為 64 個；`data/` 由約 5.5 MB 增為約 21 MB（16 個對照檔 0.3–2.0 MB；最大是 K0-A，3,486 次側移事件）。
+- **種子 1 的結果與 §5b 表格一致**（抵達：K0 A73／B19／C25／N0；K1 A100／B42／C50／N0；K2 A74／B38／C41／N0；K3 A100／B55／C100／N0）。
+- **標示**：N 與 K0–K3 的徽章是「隔離物理實驗・候選行為規則／控制組（非本種／假設）・非正式」；N 的說明寫明是對照、不是候選也不是本種行為；K0–K3 在徽章下方顯示對照情境的適用範圍（取代密集基準的說明），「這個情境」列出 `control-scenarios.json` 的每個遊戲假設參數。
+- **進場／離開**：播放檔記錄每隻的 `present_from_t_s`（進場時刻，null＝未進場）與 `removed_t_s`（離開道路時刻），都是解算結果原值；頁面只在 [進場, 離開]（含兩端，與獨立檢查器相同）內畫身體。不在道路上的個體不畫；若它是目前事件的個體，只在進場姿態（進場前）或離開姿態（離開後）畫一個**虛線位置標記**並寫「尚未進場／已離開道路」，這是標記不是運動。對照情境另顯示此刻在道路上／已離開／尚未進場的隻數（由進場／離開時刻計算）。
+- **邊界事件**：進場（`start`，對照情境）、`entry_blocked`、`exit`、`contact_end_estimated` 在匯出時標 `boundary: true`；事件列表以虛線左框與「對照邊界」標籤、時間軸以獨立顏色顯示；`contact_end_estimated` 的標籤是「估計・非原因」，目前事件欄寫「［估計・非原因］」與「不能當生物原因」（`usable_as_cause: false`）。
+- **檢查**：`tests/physics-playback.test.ts` 新增：N 與 K 執行的標示、進場／離開區間等於解算器輸出、運動只在道路上、邊界旗標恰好落在邊界事件、估計結束不可當原因、K0 無邊界事件、K2 只有進場、K1 只有離開（且離開數 ≤ 抵達數）、K3 兩者都有；決定性改為比對整個匯出（每個檔案）。瀏覽器檢查（桌面 1280×800＋Pixel 7 尺寸 412×915 DPR 2）新增：每個走訪時刻畫出的身體恰好是在道路上的個體、位置標記只給目前事件且不在道路上的個體、控制組徽章與對照適用範圍、邊界列的標籤。截圖新增 `head-on-2--steer-N`（停止）、`crossing--steer-N`（接觸開始）、`crossing-traffic-100-K0--steer-N`（回報受阻）、`K1--steer-B`（離開道路）、`K2--steer-C`（入口被占）、`K3--steer-C`（接觸結束估計）。
 
 ## 7. 需要本種證據或 Owner 決定
 
@@ -240,6 +251,7 @@ node prototypes/local-steer/compare.ts --no-1000
 node prototypes/local-steer/controls.ts           # 對照情境 100 隻（K0–K3 × A/B/C/N）
 node prototypes/local-steer/controls.ts --n 1000 --variants K2_inflow_stay,K3_inflow_exit --seeds 1
 node prototypes/local-steer/convergence.ts        # 決策間隔 0.025/0.05/0.1 s
-node prototypes/physics-playback/export.ts         # 重新匯出播放資料（含候選）
+node prototypes/physics-playback/export.ts         # 重新匯出播放資料（含候選、控制組 N、對照 K0–K3；約 2 分鐘）
+node prototypes/physics-playback/export.ts --check # 比對已提交資料與重新匯出
 node tests/wp4-local-steer.test.ts
 ```

@@ -4,7 +4,10 @@
  *  - no page errors; the 非正式 label is shown;
  *  - at every visited time the drawn pose of every agent equals the exact piecewise motion read here independently
  *    from the JSON (|Δ| ≤ 1e-9 mm), and the highlighted agents are those of the current engine event;
- *  - clicking an event row jumps to that event's exact time.
+ *  - clicking an event row jumps to that event's exact time;
+ *  - control runs (no-yield control N, control scenarios K0–K3): the control badge and scope note are shown; exactly the
+ *    agents on the road at t (presence intervals read here from the JSON) are drawn as bodies; boundary rows (entry,
+ *    exit, entry blocked, estimated contact end) carry their tag, and an estimated end is shown as not usable as a cause.
  * Screenshots go to ./screenshots/.   node prototypes/physics-playback/browser-check.cjs [maxStepsPerRun]
  */
 const fs = require('node:fs');
@@ -15,6 +18,9 @@ const DIR = __dirname, OUT = path.join(DIR, 'screenshots');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8' };
 const read = (f) => JSON.parse(fs.readFileSync(path.join(DIR, f), 'utf8'));
 
+function onRoad(a, t) { // independent of the page: [present_from, removed], both inclusive
+  return a.segments.length > 0 && (a.present_from_t_s === undefined || (a.present_from_t_s !== null && t >= a.present_from_t_s)) && (typeof a.removed_t_s !== 'number' || t <= a.removed_t_s);
+}
 function exactPose(a, t) { // independent of the page: the segment that holds t (later one at a boundary)
   const S = a.segments;
   if (t < S[0].t0) return { x: S[0].x0, y: S[0].y0 };
@@ -50,6 +56,20 @@ function exactPose(a, t) { // independent of the page: the segment that holds t 
     // a contact_end row shows the independent checker's bracket and error bound
     { const id = 'head-on-2--steer-B', run = read(`data/${id}.json`), i = run.events.findIndex((e) => e.kind === 'contact_end');
       if (i >= 0) { await page.evaluate((x) => window.playback.load(x), id); await page.evaluate((x) => window.playback.selectEvent(x), i); const t = await page.evaluate(() => document.getElementById('now').textContent); check(t.includes('獨立檢查') && t.includes('誤差界'), `${name}: contact_end shows the independent bracket`); } else failures.push(`${id}: no contact_end`); }
+    // control runs: badge, scope note, boundary rows with their tags
+    { const id = 'head-on-2--steer-N'; await page.evaluate((x) => window.playback.load(x), id); check((await page.textContent('#badge')).includes('候選行為規則／控制組（非本種／假設）・非正式'), `${name}: control badge on N`); }
+    for (const [id, kind, tag] of [['crossing-traffic-100-K1--steer-B', 'exit', '對照邊界'], ['crossing-traffic-100-K2--steer-N', 'start', '對照邊界'], ['crossing-traffic-100-K3--steer-C', 'contact_end_estimated', '估計・非原因']]) {
+      const run = read(`data/${id}.json`), i = run.events.findIndex((e) => e.kind === kind && e.boundary); if (i < 0) { failures.push(`${id}: no boundary ${kind}`); continue; }
+      await page.evaluate((x) => window.playback.load(x), id);
+      check((await page.textContent('#badge')).includes('控制組（非本種／假設）'), `${name} ${id}: control badge`);
+      const sc = await page.evaluate(() => { const e = document.getElementById('scope'); return { hidden: e.hidden, text: e.textContent }; }); check(!sc.hidden && sc.text.includes('對照情境') && sc.text.includes('不適用於'), `${name} ${id}: control scope shown`);
+      await page.evaluate((x) => window.playback.selectEvent(x), i);
+      const row = await page.evaluate((x) => { const el = document.querySelector(`.ev[data-i="${x}"]`); return el ? { bd: el.classList.contains('bd'), tag: el.querySelector('.tag')?.textContent ?? '' } : null; }, i);
+      check(row && row.bd && row.tag === tag, `${name} ${id}: ${kind} row tagged ${tag}`);
+      const now = await page.evaluate(() => document.getElementById('now').textContent);
+      check(now.includes(kind === 'contact_end_estimated' ? '［估計・非原因］' : '［對照邊界］') && now.includes('此刻在道路上'), `${name} ${id}: ${kind} marked in the current-event panel`);
+      if (kind === 'contact_end_estimated') check(now.includes('不能當生物原因'), `${name} ${id}: estimated end not usable as a cause`);
+    }
     const noHScroll = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
     check(noHScroll, `${name}: no horizontal page scroll`);
     for (const meta of index.runs) {
@@ -64,6 +84,8 @@ function exactPose(a, t) { // independent of the page: the segment that holds t 
         const s = await page.evaluate(() => window.playback.state());
         check(s.t === t, `${name} ${meta.run_id}: stepping lands on event time ${t} (got ${s.t})`);
         for (const d of s.drawn) { const a = run.agents.find((x) => x.id === d.id), p = exactPose(a, s.t); check(Math.abs(p.x - d.x) <= 1e-9 && Math.abs(p.y - d.y) <= 1e-9, `${name} ${meta.run_id} t=${s.t} ${d.id}: drawn pose = exact motion`); }
+        check(JSON.stringify(s.drawn.map((d) => d.id).sort()) === JSON.stringify(run.agents.filter((a) => onRoad(a, s.t)).map((a) => a.id).sort()), `${name} ${meta.run_id} t=${s.t}: drawn bodies = agents on the road`);
+        check(s.ghosts.every((g) => s.highlighted.includes(g.id) && !onRoad(run.agents.find((a) => a.id === g.id), s.t)), `${name} ${meta.run_id} t=${s.t}: markers only for off-road agents of the current event`);
         const ev = run.events[s.sel]; check(ev && ev.t === s.t && JSON.stringify([...s.highlighted].sort()) === JSON.stringify([...ev.agents].sort()), `${name} ${meta.run_id} t=${s.t}: highlighted = agents of the current event`);
         if (times.length > visit.length && t === visit[visit.length - 2]) await page.evaluate((x) => window.playback.setTime(x), times[times.length - 2]);
       }
@@ -71,9 +93,12 @@ function exactPose(a, t) { // independent of the page: the segment that holds t 
       const mid = (times[0] + (times[1] ?? run.horizon_s)) / 2; await page.evaluate((x) => window.playback.setTime(x), mid);
       const s2 = await page.evaluate(() => window.playback.state());
       for (const d of s2.drawn) { const p = exactPose(run.agents.find((x) => x.id === d.id), mid); check(Math.abs(p.x - d.x) <= 1e-9 && Math.abs(p.y - d.y) <= 1e-9, `${name} ${meta.run_id} mid: drawn pose = exact motion`); }
+      check(s2.drawn.length === run.agents.filter((a) => onRoad(a, mid)).length, `${name} ${meta.run_id} mid: drawn bodies = agents on the road`);
     }
     // click a row: jumps to its exact time; screenshots of chosen moments
-    const shots = [['head-on-2--ph3b', 'contact_start'], ['pass-clear--ph3b', 'pass'], ['offset-block--ph3b', 'stop'], ['crossing-flank--ph3b', 'contact_start'], ['crossing-flank--ph3b', 'arrive'], ['stone--ph3b', 'stop'], ['corridor-8--ph3b', 'resume'], ['head-on-2--native', 'yield_start'], ['head-on-2--steer-B', 'back_off'], ['offset-block--steer-C', 'sidestep'], ['stone--steer-A', 'sidestep'], ['crossing-traffic-100--steer-A', 'blocked_report']];
+    const shots = [['head-on-2--ph3b', 'contact_start'], ['pass-clear--ph3b', 'pass'], ['offset-block--ph3b', 'stop'], ['crossing-flank--ph3b', 'contact_start'], ['crossing-flank--ph3b', 'arrive'], ['stone--ph3b', 'stop'], ['corridor-8--ph3b', 'resume'], ['head-on-2--native', 'yield_start'], ['head-on-2--steer-B', 'back_off'], ['offset-block--steer-C', 'sidestep'], ['stone--steer-A', 'sidestep'], ['crossing-traffic-100--steer-A', 'blocked_report'],
+      ['head-on-2--steer-N', 'stop'], ['crossing--steer-N', 'contact_start'], ['crossing-traffic-100-K0--steer-N', 'blocked_report'], ['crossing-traffic-100-K1--steer-B', 'exit'],
+      ['crossing-traffic-100-K2--steer-C', 'entry_blocked'], ['crossing-traffic-100-K3--steer-C', 'contact_end_estimated']];
     for (const [id, kind] of shots) {
       const run = read(`data/${id}.json`), i = run.events.findIndex((e) => e.kind === kind); if (i < 0) { failures.push(`${id}: no ${kind}`); continue; }
       await page.evaluate((x) => window.playback.load(x), id);

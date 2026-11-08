@@ -8,21 +8,21 @@
   :root {
     --bg: #f6f5f1; --panel: #ffffff; --ink: #1d1f21; --muted: #5d6166; --line: #d9d6cf;
     --lane: #ebe4d3; --lane-edge: #b9ab8a; --wall: #6f6a62; --accent: #1b5fae; --warn-bg: #fff3d6; --warn-ink: #6b4800;
-    --c-contact: #c4372d; --c-constraint: #d07a12; --c-motion: #1b5fae; --c-status: #6c7178; --c-behaviour: #7b3fa6; --c-record: #9aa0a6;
+    --c-contact: #c4372d; --c-constraint: #d07a12; --c-motion: #1b5fae; --c-status: #6c7178; --c-behaviour: #7b3fa6; --c-record: #9aa0a6; --c-boundary: #0f7c86;
     --sel: #fff1b8;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #17191c; --panel: #202327; --ink: #e8e6e1; --muted: #a3a7ad; --line: #383c42;
       --lane: #3a3428; --lane-edge: #8d7f5f; --wall: #8b867d; --accent: #6aa5f0; --warn-bg: #3b3018; --warn-ink: #f2d38a;
-      --c-contact: #ff7a6e; --c-constraint: #f0a54a; --c-motion: #6aa5f0; --c-status: #a3a7ad; --c-behaviour: #c792ea; --c-record: #7d838a;
+      --c-contact: #ff7a6e; --c-constraint: #f0a54a; --c-motion: #6aa5f0; --c-status: #a3a7ad; --c-behaviour: #c792ea; --c-record: #7d838a; --c-boundary: #4fc3cc;
       --sel: #4a4120;
     }
   }
   :root[data-theme="dark"] {
     --bg: #17191c; --panel: #202327; --ink: #e8e6e1; --muted: #a3a7ad; --line: #383c42;
     --lane: #3a3428; --lane-edge: #8d7f5f; --wall: #8b867d; --accent: #6aa5f0; --warn-bg: #3b3018; --warn-ink: #f2d38a;
-    --c-contact: #ff7a6e; --c-constraint: #f0a54a; --c-motion: #6aa5f0; --c-status: #a3a7ad; --c-behaviour: #c792ea; --c-record: #7d838a;
+    --c-contact: #ff7a6e; --c-constraint: #f0a54a; --c-motion: #6aa5f0; --c-status: #a3a7ad; --c-behaviour: #c792ea; --c-record: #7d838a; --c-boundary: #4fc3cc;
     --sel: #4a4120;
   }
   * { box-sizing: border-box; }
@@ -58,6 +58,9 @@
   .ev.sel { background: var(--sel); }
   .ev .t { font-variant-numeric: tabular-nums; color: var(--muted); display: inline-block; width: 78px; }
   .ev .kd { font-weight: 600; }
+  .ev.bd { border-left: 4px dashed var(--c-boundary); padding-left: 4px; }
+  .ev .tag { font-size: 11px; border: 1px dashed currentColor; border-radius: 3px; padding: 0 3px; margin-right: 4px; }
+  .ev .tag.est { border-style: dotted; }
   details { margin-top: 8px; font-size: 12.5px; color: var(--muted); }
   details p, details li { margin: 4px 0; overflow-wrap: anywhere; }
   details ul { padding-left: 18px; margin: 4px 0; }
@@ -115,6 +118,7 @@
       <span class="dot" style="background:var(--c-status)"></span>解算器狀態
       <span class="dot" style="background:var(--c-behaviour)"></span>候選行為規則（原生 PH-2 或 WP4；非本種／假設）
       <span class="dot" style="background:var(--c-record)"></span>原生運動紀錄
+      <span class="dot" style="background:var(--c-boundary)"></span>對照情境邊界（進場／入口被占／離開道路／接觸結束〔估計〕；虛線框＝不在道路上的個體位置標記，不是運動）
     </div>
   </section>
   <aside class="card" aria-label="事件">
@@ -132,6 +136,7 @@
         <li>橫向位置 u 整段固定為情境給定值。能不能錯身取決於給定的 u 與通道寬度。</li>
         <li>沒有推擠、摩擦、質量、加速度；身體不含觸角與腳。</li>
         <li>「候選 A／B／C」（WP4）：隔離物理實驗・候選行為規則（非本種/假設）。決策只用局部感知（觸角可及半徑內的身體與牆）；所有行為參數都是遊戲假設，大頭家蟻沒有讓路或側移研究。身體軸維持與通道平行（幾何約定），側移是平移。</li>
+        <li>「控制組 N」與「對照 K0–K3」：隔離物理實驗・候選行為規則／控制組（非本種／假設）・非正式。N＝不讓路對照（永遠直走、碰到就停），不是候選行為。K0–K3＝同一個 100 隻交叉口，改變起點（格狀／依時間流入）與抵達後處理（留在路上／有限容量出口）；流入率、出口容量、停留時間都是遊戲假設。入口與出口是情境邊界規則；個體離開道路造成的「接觸結束（估計）」不是物理分離，不能當生物原因。只顯示種子 1。</li>
         <li>側面滑過的接觸以分段等速近似（每次間距打開 1e-7 mm 就重解），所以滑過時會有很多細碎事件——這是解算器的真實輸出。</li>
       </ul>
     </details>
