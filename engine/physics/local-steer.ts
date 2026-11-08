@@ -45,6 +45,9 @@
  *    first instant t <= horizon_s at which its forward coordinate reaches its goal — inside an interval, exactly at an
  *    interval end (including the horizon itself), or at its start time when it starts on its goal (zero remaining
  *    distance). Arrival is recorded exactly once; an arrived agent no longer moves or decides.
+ *    The horizon itself is processed as a final zero-length instant (no decision, no motion): exit and entry rules, then an
+ *    agent whose start time equals the horizon is started (as in PH-3b) and, if on its goal, arrives there once; one not
+ *    on its goal ends as 'started_at_horizon'.
  *  - contact: a contact starts when an agent is stopped by a body (inelastic stop) and ends at the first instant the
  *    capsule gap exceeds CONTACT_TOL_MM (= PH-3b ACTIVE_TOL_MM), solved exactly on the piecewise-constant-velocity motion
  *    of both bodies within the interval (the gap is convex in time on each piece; bisection), never at a time before the
@@ -189,6 +192,8 @@ interface Ag {
   progress: number[]; stalledSince: number | null; reported: boolean; reports: number;
   // control boundaries: on the road now; scheduled start; entry and removal instants
   present: boolean; sched: number; entered: number | null; removed: number | null; entryBlocked: boolean;
+  /** started exactly at the horizon (no decision, no motion by the horizon) */
+  atHorizonStart: boolean;
 }
 
 /** policy params the policy needs (null → refused) */
@@ -272,7 +277,7 @@ function runPolicy(input: SteerInput): SteerResult {
       hw: Math.max(0, L - w) / 2, r: w / 2, half: L / 2, statics: [...ln.bnd, ...(obsByLayer.get(ln.layer) ?? [])],
       c, started: false, arrived: null, eff: ZERO, lastKey: '', samples: [], stopCause: null, halted: false,
       mode: 'go', until: 0, backLeft: 0, side: 0, sideSince: 0, progress: [], stalledSince: null, reported: false, reports: 0,
-      present: !SPAWN, sched: sp.start_t_s, entered: SPAWN ? null : 0, removed: null, entryBlocked: false,
+      present: !SPAWN, sched: sp.start_t_s, entered: SPAWN ? null : 0, removed: null, entryBlocked: false, atHorizonStart: false,
     };
   });
   const capOf = (a: Ag, c = a.c): Capsule => ({ a: add(c, a.f, -a.hw), b: add(c, a.f, a.hw), r: a.r });
@@ -408,9 +413,11 @@ function runPolicy(input: SteerInput): SteerResult {
   };
 
   let epoch = 0;
-  for (let t0 = 0; t0 < H; epoch++) {
-    const t1 = Math.min(H, (epoch + 1) * DT), span = t1 - t0;
-    stats.decision_instants++;
+  // the horizon itself is the last instant of the grid (PH-3b processes every event with t <= horizon): at t0 = H the
+  // boundary rules, starts and zero-distance arrivals are applied; no decision, no motion (zero-length interval)
+  for (let t0 = 0; t0 <= H; epoch++) {
+    const final = t0 >= H, t1 = final ? H : Math.min(H, (epoch + 1) * DT), span = t1 - t0;
+    if (!final) stats.decision_instants++;
     // control boundaries at the decision instant t0: exits first (they free road space), then entries
     if (EXIT) {
       const out = A.filter((a) => a.present && a.arrived !== null).sort((p, q) => p.arrived! - q.arrived! || (p.id < q.id ? -1 : p.id > q.id ? 1 : 0));
@@ -438,6 +445,15 @@ function runPolicy(input: SteerInput): SteerResult {
         if (!free) { stats.entry_blocked_instants++; if (!a.entryBlocked) { a.entryBlocked = true; ev(t0, 'entry_blocked', [a.k], 'solver_status', 'entry pose occupied: waits off the road (control scenario boundary)'); } continue; }
         a.present = true; a.entered = t0; a.start = t0; stats.entered++; sample(a, t0);
       }
+    }
+    if (final) {
+      // agents starting exactly at the horizon are started (as in PH-3b); one already on its goal arrives at H, once
+      for (const a of A) {
+        if (!a.present || a.arrived !== null || a.start > H) continue;
+        if (!a.started) { a.started = true; ev(a.start, 'start', [a.k], 'motion', SPAWN ? `entered the road at its entry pose (scheduled ${a.sched} s; control scenario boundary)` : null); a.atHorizonStart = true; }
+        if (a.goal * a.dir - fwdOf(a) <= 0) { sample(a, H); a.eff = ZERO; a.arrived = H; stats.arrived++; ev(H, 'arrive', [a.k], 'motion'); }
+      }
+      break;
     }
     // agents that exist as moving deciders in this interval: on the road, started (or starting before t1), not arrived
     const live = A.filter((a) => a.present && a.arrived === null && a.start < t1);
@@ -602,7 +618,7 @@ function runPolicy(input: SteerInput): SteerResult {
   for (const a of A) {
     if (a.present) sample(a, H);
     const moving = !sameVec(a.eff, ZERO);
-    const mode = a.removed !== null ? 'exited' : a.arrived !== null ? 'arrived' : SPAWN && a.entered === null ? 'not_entered' : !a.started ? 'not_started' : a.halted ? 'halted_geometry' : a.stalledSince !== null ? 'stalled' : moving ? 'moving' : 'waiting_or_stopped';
+    const mode = a.removed !== null ? 'exited' : a.arrived !== null ? 'arrived' : SPAWN && a.entered === null ? 'not_entered' : !a.started ? 'not_started' : a.atHorizonStart ? 'started_at_horizon' : a.halted ? 'halted_geometry' : a.stalledSince !== null ? 'stalled' : moving ? 'moving' : 'waiting_or_stopped';
     if (mode === 'stalled' || mode === 'halted_geometry') { stats.stalled++; events.push({ t_s: H, kind: 'stalled', agents: [a.id], class: 'solver_status', detail: `${mode} since ${a.stalledSince} s${a.stopCause ? `; last stop: ${a.stopCause}` : ''}` }); }
     agents[a.id] = { lane: a.lane, layer: a.layerName, samples: a.samples, arrival_t_s: a.arrived, final_mode: mode, final_speed_mm_s: Math.hypot(a.eff.x, a.eff.y), stop_cause: a.stopCause, geometry_stop_s_mm: null, blocked_reports: a.reports };
     if (SPAWN) Object.assign(agents[a.id], { scheduled_start_t_s: a.sched, present_from_t_s: a.entered });

@@ -242,6 +242,54 @@ for (const id of ['corridor-8', 'stone', 'crossing']) for (const p of STEER_POLI
   }
 }
 
+// 13 (R15, Codex): the horizon instant itself — PH-3b processes every event with t <= horizon, so an agent starting at
+//   t = horizon is started there, and one starting ON its goal arrives exactly once at t = horizon (final mode arrived).
+//   Each case is compared with PH-3b (solve2D) on the same input, start and arrive events and arrival time, every policy.
+{
+  const params = { sensing_radius_mm: 0.5, decision_interval_s: 0.1, probe_angles_deg: [0, 90], same_heading_max_deg: 20, stall_window_s: 1, stall_progress_mm: 0.01, p_wait: 0.5, p_back: 0.25, p_reroute: 0.25, wait_s: 0.5, back_distance_mm: 0.5, reroute_max_s: 0.5 };
+  const lanes = [{ id: 'L', centerline_mm: [{ x: 0, y: 0 }, { x: 100, y: 0 }], width_mm: 10, layer: 'G' }], body = { length_mm: 2.5, width_mm: 0.8 };
+  const ag = (id: string, s: number, start: number, goal: number) => ({ id, lane: 'L', s_mm: s, u_mm: 0, dir: 1 as const, start_t_s: start, goal_s_mm: goal, free_speed_mm_s: 10, body });
+  const se = (evs: { t_s: number; kind: string; agents: string[] }[]) => evs.filter((e) => e.kind === 'start' || e.kind === 'arrive').map((e) => `${e.kind}:${e.agents.join('|')}@${e.t_s}`).join(',');
+  // [label, start s, start time, goal, horizon]
+  const cases: [string, number, number, number, number][] = [
+    ['on its goal, start = horizon (on grid)', 10, 0.4, 10, 0.4],
+    ['on its goal, start = horizon (horizon off grid)', 10, 0.35, 10, 0.35],
+    ['not on its goal, start = horizon', 10, 0.4, 14, 0.4],
+    ['on its goal, start > horizon', 10, 0.5, 10, 0.4],
+    ['not on its goal, start > horizon', 10, 0.5, 14, 0.4],
+    ['on its goal, start < horizon (on grid)', 10, 0.3, 10, 0.4],
+    ['on its goal, start < horizon (off grid)', 10, 0.37, 10, 0.4],
+    ['not on its goal, start just before the horizon', 10, 0.39, 14, 0.4],
+  ];
+  for (const [label, s0, st, goal, H] of cases) {
+    const agents = [ag('A', s0, st, goal), ag('Z', 50, 0, 60)];
+    const ph = solve2D({ lanes, obstacles: [], agents, horizon_s: H }), ref = se(ph.events);
+    for (const p of STEER_POLICIES) for (const control of [undefined, { exit: { capacity: 1, dwell_s: 0.5 } }]) {
+      if (p === 'none' && control) continue;
+      const inp: SteerInput = { lanes, obstacles: [], agents, horizon_s: H, policy: p, params, seed: 1, control }, res = steer2D(inp), a = res.agents.A, lbl = `horizon: ${label}/${p}${control ? '/exit' : ''}`;
+      ok(se(res.events) === ref, `${lbl}: start/arrive events = PH-3b (${se(res.events)} vs ${ref})`);
+      ok(a.arrival_t_s === ph.agents.A.arrival_t_s, `${lbl}: arrival ${a.arrival_t_s} = PH-3b ${ph.agents.A.arrival_t_s}`);
+      ok(res.events.filter((e) => e.kind === 'arrive' && e.agents[0] === 'A').length === (ph.agents.A.arrival_t_s === null ? 0 : 1), `${lbl}: arrival recorded once (or never)`);
+      if (ph.agents.A.final_mode === 'arrived') ok(a.final_mode === 'arrived' || (control && a.final_mode === 'exited'), `${lbl}: final mode arrived (${a.final_mode})`);
+      if (st === H && goal !== s0) ok(a.final_mode === (p === 'none' ? 'moving' : 'started_at_horizon') && a.samples.every((x) => x[4] === s0), `${lbl}: started at the horizon without motion (${a.final_mode})`);
+      if (st > H) ok(a.final_mode === 'not_started' && a.arrival_t_s === null, `${lbl}: not started`);
+      timingInvariants(inp, res, lbl);
+    }
+  }
+  // control spawn (scenario rule, no PH-3b counterpart): entry at the first grid instant >= schedule, the horizon included;
+  // on the goal → arrives exactly once at the entry instant; a schedule after the horizon never enters
+  for (const p of STEER_POLICIES.filter((x) => x !== 'none')) for (const control of [{ spawn: true }, { spawn: true, exit: { capacity: 1, dwell_s: 0.5 } }]) {
+    for (const [label, st, goal, H, entry] of [['scheduled = horizon, on goal', 0.4, 10, 0.4, 0.4], ['scheduled = horizon (off grid), on goal', 0.35, 10, 0.35, 0.35], ['scheduled = horizon, not on goal', 0.4, 14, 0.4, 0.4], ['scheduled between the last grid instant and the horizon, on goal', 0.37, 10, 0.4, 0.4], ['scheduled after the horizon', 0.5, 10, 0.4, null]] as const) {
+      const inp: SteerInput = { lanes, obstacles: [], agents: [ag('A', 10, st, goal)], horizon_s: H, policy: p, params, seed: 1, control }, res = steer2D(inp), a = res.agents.A, lbl = `horizon spawn: ${label}/${p}${control.exit ? '/exit' : ''}`;
+      ok(a.present_from_t_s === entry, `${lbl}: entered at ${entry} (${a.present_from_t_s})`);
+      const atGoal = goal === 10 && entry !== null;
+      ok(se(res.events) === (entry === null ? '' : `start:A@${entry}${atGoal ? `,arrive:A@${entry}` : ''}`), `${lbl}: events ${se(res.events)}`);
+      ok(a.arrival_t_s === (atGoal ? entry : null) && a.final_mode === (entry === null ? 'not_entered' : atGoal ? 'arrived' : 'started_at_horizon'), `${lbl}: arrival ${a.arrival_t_s}, mode ${a.final_mode}`);
+      timingInvariants(inp, res, lbl);
+    }
+  }
+}
+
 // 7: isolation
 {
   const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
