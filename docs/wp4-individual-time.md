@@ -37,7 +37,7 @@
 
 ### 4.2 數學／物理不變量
 
-個體時鐘下（`tests/wp4-individual-time.test.ts` 與 `prototypes/local-steer/out/time-mode.json`）：獨立取樣驗證器 0 穿透（成對與靜態）、裁判（≤ 24 隻）0 重疊、獨立 `contact_end` 檢查全部在區間內、決策時刻 0 違規、重跑／反序／打亂逐位元相同。詳細數字見 §5。
+個體時鐘下（`tests/wp4-individual-time.test.ts` 與 `prototypes/local-steer/out/time-mode.json`）：獨立取樣驗證器 0 穿透（成對與靜態）、裁判（≤ 24 隻）0 重疊、獨立 `contact_end` 檢查全部在區間內、決策時刻 0 違規、重跑／反序／打亂逐位元相同。詳細數字見 §5。阻擋測試只跑其中一部分以守住 CI 時限：head-on-2、crossing-flank、stone 跑種子 1–3（種子 1 加反序／打亂重播），較重的 corridor-8 與 K3 只跑種子 1、只做重跑；完整矩陣（含 100 隻交叉與 K2、所有種子與重排重播）由 `prototypes/local-steer/time-mode.ts` 重新產生並寫入 `out/time-mode.json`。
 
 ### 4.3 生物學與文獻比較
 
