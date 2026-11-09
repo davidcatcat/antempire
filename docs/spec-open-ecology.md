@@ -1,6 +1,6 @@
 # 開放式自然生態世界規格（D7-A）：花園不是封閉容器
 
-> **文件地位**：研究與設計規格（**已設計，未實作**）。正式決策見 `docs/owner-decisions-2026-11-03-d4a-d7a.md`；本文件的 §c.2／§c.5「個體層跟著蟻群走」是設計建議，待 Owner 說明（決策紀錄 §5 Q2）。**不改程式、參數或存檔，也不推進遊戲時鐘**（CLAUDE.md §5、§6）。每一個實作步驟都要另開規則更新 PR，合併後從下一個遊戲日起生效，且先在 Day0 實驗世界驗證。
+> **文件地位**：研究與設計規格（**已設計，未實作**）。Owner 已回答 Q1–Q3（人為搬運只作有來源的情境事件；焦點蟻群個體越界保留身分與區室；混合精度），§c.2、§c.5 的可實作契約改寫在 `docs/od1-mixed-precision-open-ecology.md`（WP5；兩者衝突時以該文件為準，待 Owner 確認）。正式決策見 `docs/owner-decisions-2026-11-03-d4a-d7a.md`；本文件的 §c.2／§c.5「個體層跟著蟻群走」是設計建議，待 Owner 說明（決策紀錄 §5 Q2）。**不改程式、參數或存檔，也不推進遊戲時鐘**（CLAUDE.md §5、§6）。每一個實作步驟都要另開規則更新 PR，合併後從下一個遊戲日起生效，且先在 Day0 實驗世界驗證。
 > **依據**：Owner 決策 D7-A（2026-11-03，最終決定，不再重議）與相關決策 D4-A。CLAUDE.md 是最高約束；本文件與 CLAUDE.md 衝突時，以較嚴格者為準。
 > **引用的現況**：`origin/main` 於 `d701a23`（引擎 `antempire.v2-review.21-brood-care-snapshot`）。
 > **文獻**：既有編號沿用 `docs/references.md`；新編號 R330 起（已加入 `docs/references.md`；R312–R329 保留給未合併的 PR #55）。證據逐項整理在 `reports/open-ecology-research/evidence-matrix.md`。
