@@ -729,6 +729,27 @@ R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-
 | R391 | Allen RG, Pereira LS, Raes D, Smith M (1998) *Crop evapotranspiration*（FAO Irrigation and Drainage Paper 56），第 3 章 式 10、11。https://www.fao.org/4/x0490e/x0490e07.htm | 線上全文（第 3 章）；式 11 的常數由原文例題 3 確認（式本身是圖片） | 飽和水氣壓 e°(T) = 0.6108 exp(17.27T/(T+237.3)) kPa；RH = 實際／飽和水氣壓；RH 日變化（日出附近最高、午後最低）只作方向 | 一般物理；「日內實際水氣壓固定或內插」是本專案的遊戲假設，不是 FAO-56 的結論 |
 | R392 | Nautical Almanac Office, US Naval Observatory (1990) *Almanac for Computers*（日出日落簡化演算法） | **未讀原文**；演算法為廣泛流傳的轉載版本 | 只在測試中作為獨立的交叉驗證，不是引擎方法 | 精度約 1～2 分鐘；不用於任何輸出 |
 
+## 2026-11-08 相遇、轉向、避障與窄道交通（R740–R746；Issue #147，`docs/research-encounter-behaviour-pmegacephala.md`）
+
+> - **編號說明**：從 R740 起，避開其他進行中分支已使用的編號（最高 R701）。
+> - **本種狀況**：2026-11-08 重查，大頭家蟻與 *Pheidole* 屬仍沒有任何相遇、讓路、等待、窄道交通、避障或轉向運動學研究。下列 R740–R746 **全部非本種**，只作候選機制與量測方法；本次**沒有採用任何數值**到參數或候選檔。
+
+| ID | 文獻 | 閱讀程度 | 物種與條件 | 可支持 | 不可外推 |
+|---|---|---|---|---|---|
+| R740 | Couzin ID, Franks NR (2003) Self-organized lane formation and optimized traffic flow in army ants. *Proc. R. Soc. Lond. B* 270:139–146. DOI 10.1098/rspb.2002.2210 | 全文（pdftotext；圖 3 數值未讀） | **非本種**：*Eciton burchelli*，巴拿馬野外主路線 11 cm 段，50 Hz 俯拍；226 隻軌跡、113 次相遇 | 外出走兩側、回巢走中央；外出者閃避轉向率較高；以接觸點前後 ≥ 1.5 體長的位置量「相遇偏轉角」（方法可借用）；模型校準值（行軍蟻）：接觸範圍 1.2 cm、期望速度 13 cm/s、最低 2 cm/s、加速度 50 cm/s² | 行軍蟻體長約 8 mm、近乎全盲、超大群；數值不可用於本種 |
+| R741 | Bouchebti S, Ferrere S, Vittori K, Latil G, Dussutour A, Fourcassié V (2015) Contact rate modulates foraging efficiency in leaf cutting ants. *Sci. Rep.* 5:18650. DOI 10.1038/srep18650 | 全文（擷取工具，非逐字） | **非本種**：*Atta laevigata*，實驗室 2 群，70 × 1.5 cm 橋，每處理 n = 20 | 外出者在 15 cm 段迎面接觸約 4.2 隻空手、0.5 隻帶葉回巢者；完全分道降低覓食效率；迎面接觸帶資訊 | 沒有接觸時間或速度；他屬 |
+| R742 | El Boukhrissi A, Taheri A, Bennas N, Belkhiri A, El Ajjouri B, Reyes-López JL (2025) Foraging trail traffic rules: a new study method of trajectories of the harvester ants. *Insect Science* 32(2):687–700. DOI 10.1111/1744-7917.13411 | 摘要 | **非本種**：*Messor barbarus*，野外主幹路線人為分道，影像追蹤 | 單向道軌跡較直、較快；迎面相遇降低直線度 | 摘要無數值，不採用 |
+| R743 | Hönicke C, Bliss P, Moritz RFA (2015) Effect of density on traffic and velocity on trunk trails of *Formica pratensis*. *The Science of Nature*. DOI 10.1007/s00114-015-1267-6 | 摘要與新聞稿 | **非本種**：*F. pratensis*，野外，補餵改變密度 | 最高密度也不堵塞；高密度用滿路寬；回巢者較快 | 新聞稿「快 50 %」未核對；卷期未核對 |
+| R744 | Gravish N, Gold G, Zangwill A, Goodisman MAD, Goldman DI (2015) Glass-like dynamics in confined and congested ant traffic. *Soft Matter* 11:6552–6561. DOI 10.1039/C5SM00693G | 摘要（全文 PDF 下載失敗） | **非本種**：*Solenopsis invicta*，不同直徑覓食隧道 | 窄道中不可穿透＋短暫觸角互動停留造成快慢交錯（類玻璃動態） | 只讀摘要，不採用數值 |
+| R745 | Hunt ER, Baddeley RJ, Worley A, Sendova-Franks AB, Franks NR (2016) Ants determine their next move at rest: motor planning and causality in complex systems. *R. Soc. Open Sci.* 3:150534. DOI 10.1098/rsos.150534 | 摘要 | **非本種**：*Temnothorax albipennis*，單隻競技場探索 | 走—停間歇；對社會訊號的調整發生在停頓時 | 單隻、無相遇；不提供決策間隔 |
+| R746 | Sakamoto Y, Sakiyama T (2022) Ant *Lasius niger* joining one-way trails go against the flow. *Sci. Rep.* 12:2361. DOI 10.1038/s41598-022-05879-4 | 摘要 | **非本種**：*L. niger*，直角進入單向路線 | 新進者傾向逆流；同伴存在可影響選向 | 只讀摘要 |
+
+**既有編號的附註**（新增，不改寫原有行）：
+- R133（Vázquez et al. 2020）2026-11-08 經擷取工具再讀全文：本種每隻在 150 mm 測試段平均 **12.8 ± 0.25 次「修正轉向」**（左右轉離或轉回中線），沒有分去回程；描點用 5 × 5 mm 格紙，轉向次數受此解析度影響；幀率與試驗溫度未寫；沒有停頓資料。**陷阱**：搜尋摘要曾把 *Paratrechina longicornis* 的 29.5／26.8 mm/s 誤寫為本種；原句「29.5 ± 1.35 and 18.5 ± 0.53 mm/s, respectively」中本種是 18.5。
+- R95（UF IFAS）：本種有時以碎屑築脆弱的覓食管道、地表覓食通道有多個出入口——代表本種有封閉窄道路段；推廣文件，未量測。
+- R146（Asfiya et al. 2016）2026-11-08 以 pdftotext 核對：**沒有**步行速度資料。
+- R385（Burd & Aranwela 2003）2026-11-08 重查：Springer 需登入，仍只讀到搜尋片段（1 m 路段錄影、相遇使速度下降但效果小於體型與負重）；數值仍不採用。
+
 ## 2026-11-08 WP5b 群組中的生命時間：年齡／齡期結構族群模型（R640–R652；`docs/od1b-cohort-life-time.md`）
 
 > 編號從 R640 起，避開其他工作包可能使用的編號。全部是**數學／一般方法**，不提供任何本種或背景物種的參數。「Crossref 核對」＝本次以 Crossref API 核對作者、年份、卷期頁與 DOI；**沒有讀全文**，方法內容是教科書層級的一般知識，引用時不得宣稱讀過原文細節。他種研究標**非本種**。
