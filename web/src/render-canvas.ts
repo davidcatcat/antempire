@@ -42,6 +42,16 @@ export interface RendererOptions {
   rotSheetPx?: number;
   /** keep the destination anchor of every ant blit of the last frame (tests) */
   recordBlits?: boolean;
+  /** cap the device pixel ratio (backing store and chunk zoom bucket), e.g. 1 for a DPR-1 comparison */
+  maxDpr?: number;
+  /** override the décor LOD of new chunk bakes (1 = drop the smallest décor); default: the quality level's */
+  decorLod?: 0 | 1;
+  /** skip drawing ants whose sprite lies wholly outside the viewport (the plan, motion state and returned draws are
+   *  unchanged; only the blits are skipped) */
+  cullOffscreen?: boolean;
+  /** keep a screen-sized composite of the static layers (ground…propsLow, propsHigh) and re-blit it while the camera,
+   *  size, DPR, engine state and weather are unchanged and no chunk is still missing */
+  cacheStatic?: boolean;
 }
 export interface AntLayerInfo { L: number; dpr: number; cam: Camera; shadows: boolean; crowd: boolean; light: LightState; atlasFor: (variant: number) => AntAtlas; variantOf: (id: string) => number; frameOf: (d: AntDraw) => number; shadowLift: number }
 export interface ExternalAnts { draw(layer: 'antShadows' | 'ants', draws: readonly AntDraw[], info: AntLayerInfo): void; above: CanvasRenderingContext2D }
@@ -91,7 +101,12 @@ export class LayeredRenderer {
   private rot = new Map<string, RotAtlas | null>();
   /** ant blits of the last frame: id, anchor (CSS px), drawn heading, bucket (−1 = live rotation) — tests only */
   blits: { id: string; ax: number; ay: number; heading: number; bucket: number; n: number }[] = [];
-  antStats = { prerotated: 0, rotated: 0, buckets: 0 as number | null, rotBytes: 0, rotBakeMs: 0 };
+  antStats = { prerotated: 0, rotated: 0, buckets: 0 as number | null, rotBytes: 0, rotBakeMs: 0, culled: 0, staticHits: 0 };
+  /** dynamic DPR cap (setDprCap; drawing only) */
+  private dprCap: number | null = null;
+  /** screen composites of the static layers (cacheStatic) and the state they were drawn for */
+  private statics: { key: string; low: HTMLCanvasElement; high: HTMLCanvasElement } | null = null;
+  private stateVersion = 0;
   /** current drawing target (the main context, or ExternalAnts.above for the layers above the ants) */
   private tg: CanvasRenderingContext2D;
 
@@ -101,14 +116,14 @@ export class LayeredRenderer {
 
   /** New world: places, recorded routes, engine state and weather. Clears every cache. */
   setScene(s: SceneInput) {
-    this.scene = s; this.light = s.light ?? SCHEMATIC_LIGHT; this.chunks.clear(); this.objSprites.clear(); this.look.clear(); this.cells.clear();
+    this.scene = s; this.light = s.light ?? SCHEMATIC_LIGHT; this.statics = null; this.chunks.clear(); this.objSprites.clear(); this.look.clear(); this.cells.clear();
     this.setEngineState(s.sources, s.weather);
     this.obstacles = { places: this.registry.map((o) => ({ x: o.x, y: o.y, radiusCm: o.radiusCm })), routes: s.routes, plants: this.registry.filter((o) => o.kind === 'honeydew' || o.kind === 'nectar').map((o) => ({ x: o.x, y: o.y })) }; this.cells.clear();
   }
   /** Per-day engine state (food-source state, daily weather). Only engine-object sprites change; wet ground is a per-frame tint. */
   setEngineState(sources: Sources, weather: SceneInput['weather']) {
     if (!this.scene) return;
-    this.registry = engineRegistry(this.scene.places, this.scene.pos, sources);
+    this.registry = engineRegistry(this.scene.places, this.scene.pos, sources); this.stateVersion++;
     const w = weatherState(weather);
     this.weather = w;
   }
@@ -134,15 +149,21 @@ export class LayeredRenderer {
 
   /** Size the backing store to the element × DPR (capped by the quality level). */
   resize() {
-    this.dpr = Math.min(QUALITY[this.q].dprCap, window.devicePixelRatio || 1);
+    this.dpr = Math.min(QUALITY[this.q].dprCap, this.deviceDpr(), this.dprCap ?? Infinity);
     const w = this.canvas.clientWidth, h = this.canvas.clientHeight;
     this.canvas.width = Math.round(w * this.dpr); this.canvas.height = Math.round(h * this.dpr);
     this.overlays.clear(); // world caches are keyed by zoom bucket (which includes the DPR), so they need no clearing
   }
 
+  /** device DPR, capped by the maxDpr option */
+  private deviceDpr() { return Math.min(window.devicePixelRatio || 1, this.opts.maxDpr ?? Infinity); }
+  /** Dynamic DPR cap (null = none): resizes the backing store; chunk zoom buckets keep the device DPR (no rebake). */
+  setDprCap(cap: number | null) { if (cap === this.dprCap) return; this.dprCap = cap; this.resize(); }
+  dprNow() { return this.dpr; }
+
   // ------------------------------------------------------------ chunk baking
   /** zoom bucket from the device's own DPR (not the quality-capped one), so a quality step never forces a rebake */
-  private bucket(s: number) { return Math.min(128, Math.max(1, 2 ** Math.round(Math.log2(s * Math.min(2, window.devicePixelRatio || 1))))); }
+  private bucket(s: number) { return Math.min(128, Math.max(1, 2 ** Math.round(Math.log2(s * Math.min(2, this.deviceDpr()))))); }
   private soilTileAt(px: number): HTMLCanvasElement {
     const k = `${this.scene?.seed}|${this.light.label}|${px}`; let t = this.tiles.get(k); if (t) return t;
     const sk = this.light.label; let src = this.soilSrc.get(sk);
@@ -176,7 +197,7 @@ export class LayeredRenderer {
     }
   }
   private bakeChunk(bucket: number, i: number, j: number) {
-    const s = this.scene as SceneInput, cm = CHUNK_PX / bucket, x0 = i * cm, y0 = j * cm, y1 = y0 + cm, lod = QUALITY[this.q].decorLod;
+    const s = this.scene as SceneInput, cm = CHUNK_PX / bucket, x0 = i * cm, y0 = j * cm, y1 = y0 + cm, lod = this.opts.decorLod ?? QUALITY[this.q].decorLod;
     // baked with a GUTTER of neighbouring ground on every side, so the bilinear resampling at blit time sees the real
     // neighbouring pixels at the chunk edge (no clamped edge column = no seam)
     const low = mk(CHUNK_PX + 2 * GUTTER, CHUNK_PX + 2 * GUTTER), g = ctxOf(low); g.translate(GUTTER, GUTTER);
@@ -274,10 +295,10 @@ export class LayeredRenderer {
     g.fillStyle = v; g.fillRect(0, 0, w, h);
     this.overlays.set(key, c); if (this.overlays.size > 8) this.overlays.delete(this.overlays.keys().next().value as string); this.spritesBaked++; return c;
   }
-  private drawGlints(u: number) {
+  private drawGlints(u: number, list: readonly AntDraw[]) {
     if (!this.glint) { this.glint = mk(64, 64); const g = ctxOf(this.glint), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,246,232,1)'); gr.addColorStop(0.35, 'rgba(255,236,210,0.38)'); gr.addColorStop(1, 'rgba(255,236,210,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); }
     const g = this.tg; g.save(); g.globalCompositeOperation = 'screen';
-    for (const d of this.draws) {
+    for (const d of list) {
       const c = Math.cos(d.heading), s = Math.sin(d.heading);
       for (const p of antGlintSpots(d.heading)) { const x = d.sx + (p.x * c - p.y * s) * u, y = d.sy + (p.x * s + p.y * c) * u, r = p.r * u; g.globalAlpha = p.a; g.drawImage(this.glint, x - r, y - r, r * 2, r * 2); }
     }
@@ -352,35 +373,54 @@ export class LayeredRenderer {
       if (part === 'body') { this.antStats.prerotated++; if (rec) this.blits.push({ id: d.id, ax: r.dx + c.ax / this.dpr, ay: r.dy + c.ay / this.dpr, heading: bucketAngle(k, rot.plan.n), bucket: k, n: rot.plan.n }); }
       return true;
     };
+    // cullOffscreen: blits only for sprites that can touch the viewport (the crowd LOD still follows the full plan)
+    const pad = L * 1.25, vis = this.opts.cullOffscreen ? this.draws.filter((d) => d.sx > -pad && d.sx < cam.w + pad && d.sy > -pad && d.sy < cam.h + pad) : this.draws;
+    this.antStats.culled = this.draws.length - vis.length;
+    // cacheStatic: one screen composite per static layer group, rebuilt when anything it shows may have changed
+    const sKey = this.opts.cacheStatic ? [cam.cx, cam.cy, cam.s, cam.w, cam.h, this.dpr, this.stateVersion, this.weather.wet, this.light.label].join('|') : '';
+    const useStatic = !!this.opts.cacheStatic && this.statics?.key === sKey, buildStatic = !!this.opts.cacheStatic && !useStatic;
+    if (buildStatic) {
+      const W = Math.round(cam.w * this.dpr), H = Math.round(cam.h * this.dpr), have = this.statics;
+      this.statics = have && have.low.width === W && have.low.height === H ? { ...have, key: '' } : { key: '', low: mk(W, H), high: mk(W, H) };
+    }
+    /** draw `body` into the static composite `which` (rebuilding it when needed), then blit the composite */
+    const viaStatic = (which: 'low' | 'high', target: CanvasRenderingContext2D, body: () => void) => {
+      const st = this.statics as NonNullable<typeof this.statics>, c = st[which];
+      if (buildStatic) { const cg = ctxOf(c); cg.setTransform(1, 0, 0, 1, 0, 0); cg.clearRect(0, 0, c.width, c.height); cg.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); this.tg = cg; body(); this.tg = target; }
+      else this.antStats.staticHits++;
+      target.drawImage(c, 0, 0, cam.w, cam.h);
+    };
+    this.antStats.staticHits = 0;
     withLight(this.light, () => {
+      const lowStatic = () => { this.blitChunks('low'); if (this.weather.wet) { this.tg.fillStyle = 'rgba(22,16,10,0.3)'; this.tg.fillRect(0, 0, cam.w, cam.h); } };
       const draw: Record<Layer, () => void> = {
-        ground: () => { this.blitChunks('low'); if (this.weather.wet) { g.fillStyle = 'rgba(22,16,10,0.3)'; g.fillRect(0, 0, cam.w, cam.h); } }, // baked: soil + decals + shadows + low props; wet day = darkened ground (日值)
+        ground: () => { if (this.opts.cacheStatic) viaStatic('low', g, () => { lowStatic(); this.drawObjects('low'); }); else lowStatic(); }, // baked: soil + decals + shadows + low props; wet day = darkened ground (日值)
         decals: () => {}, shadows: () => {},    // (baked into the ground chunks)
-        propsLow: () => this.drawObjects('low'),
+        propsLow: () => { if (!this.opts.cacheStatic) this.drawObjects('low'); },
         routes: () => { if (!opts.showRoutes) return; g.save(); g.setLineDash([4, 5]); g.strokeStyle = 'rgba(255,236,190,0.45)'; g.lineWidth = 1; for (const [a, b] of this.obstacles.routes) { const p = worldToScreen(cam, a.x, a.y), q = worldToScreen(cam, b.x, b.y); g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); g.stroke(); } g.restore(); },
         antShadows: () => {
-          if (ext) { ext.draw('antShadows', this.draws, info()); return; }
+          if (ext) { ext.draw('antShadows', vis, info()); return; }
           if (!Q.antShadows || this.light.intensity <= 0) return;
-          if (this.draws.length <= CROWD) { for (const d of this.draws) if (!rotBlit(d, 'shadow')) drawAntSprite(g, atlas, this.dpr, d.sx, d.sy, d.heading, d.gait as Gait, frameOf(d), { part: 'shadow' }); return; }
+          if (this.draws.length <= CROWD) { for (const d of vis) if (!rotBlit(d, 'shadow')) drawAntSprite(g, atlas, this.dpr, d.sx, d.sy, d.heading, d.gait as Gait, frameOf(d), { part: 'shadow' }); return; }
           // crowd LOD: one batched path of soft body-shadow ellipses instead of one sprite per ant
           const o = this.light.shadow, h = L * 0.05; g.beginPath();
-          for (const d of this.draws) g.ellipse(d.sx + o.x * h, d.sy + o.y * h, L * 0.42, L * 0.12, d.heading, 0, Math.PI * 2);
+          for (const d of vis) g.ellipse(d.sx + o.x * h, d.sy + o.y * h, L * 0.42, L * 0.12, d.heading, 0, Math.PI * 2);
           g.fillStyle = 'rgba(24,14,6,0.28)'; g.fill();
         },
         ants: () => {
           if (ext) {
-            ext.draw('ants', this.draws, info());
+            ext.draw('ants', vis, info());
             // the layers above the ants go to the overlay context (cleared each frame), so the stacking order is kept
             g = ext.above; this.tg = g; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, g.canvas.width, g.canvas.height); g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); return;
           }
-          for (const d of this.draws) {
+          for (const d of vis) {
             if (rotBlit(d, 'body')) continue;
             drawAntSprite(g, this.atlasFor(L, variantOf(d.id)), this.dpr, d.sx, d.sy, d.heading, d.gait as Gait, frameOf(d), { part: 'body', glints: false }); this.antStats.rotated++;
             if (rec) this.blits.push({ id: d.id, ax: d.sx, ay: d.sy, heading: d.heading, bucket: -1, n: 0 });
           }
-          if (Q.glints) this.drawGlints(atlas.scale / this.dpr);
+          if (Q.glints) this.drawGlints(atlas.scale / this.dpr, vis);
         },
-        propsHigh: () => { this.blitChunks('high'); this.drawObjects('high'); },
+        propsHigh: () => { if (this.opts.cacheStatic) viaStatic('high', g, () => { this.blitChunks('high'); this.drawObjects('high'); }); else { this.blitChunks('high'); this.drawObjects('high'); } },
         lighting: () => g.drawImage(this.overlayFor(cam.w, cam.h), 0, 0, cam.w, cam.h), // light grade + vignette (+ overcast day state, baked together)
         weather: () => {},                                                           // wet ground: tint in the ground layer; overcast: in the overlay
         ui: () => {
@@ -395,6 +435,7 @@ export class LayeredRenderer {
       };
       for (const layer of LAYERS) { const t0 = performance.now(); draw[layer](); const ms = performance.now() - t0; this.stats.lastMs[layer] = ms; this.stats.layerMs[layer] = (this.stats.layerMs[layer] ?? 0) * 0.95 + ms * 0.05; this.trace.push(layer); }
     });
+    if (buildStatic && this.statics && this.stats.missing === 0) this.statics.key = sKey; // a composite with a missing chunk is not reused
     this.stats.chunks = this.chunks.size; this.bakedLast = this.stats.bakedThisFrame > 0 || this.spritesBaked > 0; this.spritesBaked = 0;
     return this.draws;
   }

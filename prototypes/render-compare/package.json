@@ -1,6 +1,7 @@
 {
   "name": "antempire-render-compare",
   "private": true,
+  "type": "module",
   "version": "0.0.0",
   "description": "Issue #159: Canvas 2D vs Canvas 2D + pre-rotated atlas vs PixiJS/WebGL on the same scene (drawing only; not wired into web/)",
   "scripts": {
