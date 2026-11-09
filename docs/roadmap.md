@@ -35,7 +35,7 @@
 | 大工蟻（P1-A） | ✔ | ✔（#39） | — | — | — |
 | 巢穴與共用空間（P1-B） | ✔ | ✔（#40） | — | — | — |
 | 完整繁殖系統（D4-A，Day0 必要條件） | 部分（#53、#55，均未合併；複核 `reports/review-pr53-pr55-2026-11-03.md`） | 部分（#55；依 D4-A 修訂 `docs/research-design-reproduction-d4a.md`） | — | — | — |
-| 開放式自然生態（D7-A，Day0 必要條件） | 部分（`reports/open-ecology-research/`；證據矩陣為草稿） | 部分（`docs/spec-open-ecology.md`；個體層範圍與架構待 Owner 說明 Q2、Q3；幾何與斑塊未定） | —（main 只有單向流入的外部昆蟲池） | — | — |
+| 開放式自然生態（D7-A，Day0 必要條件） | 部分（`reports/open-ecology-research/`；證據矩陣為草稿） | 部分（`docs/spec-open-ecology.md`；Owner 已回答 Q1–Q3，混合精度設計見 `docs/od1-mixed-precision-open-ecology.md`；幾何與斑塊未定） | —（main 只有單向流入的外部昆蟲池；隔離原型 `prototypes/mixed-precision/` 不在引擎中） | 原型的帳、升降級、越界守恆測試（`tests/wp5-mixed-precision.test.ts`） | — |
 | 個體決策敏感度 | — | — | 評估工具（#34） | ✔ | 不適用（診斷） |
 | 觀察器 | — | ✔ | ✔（#35、#41） | ✔（含瀏覽器） | 不適用 |
 | Issue #43 詳細狀態 | 見 `docs/requirements-and-plan.md` §9.4 | | | | |
