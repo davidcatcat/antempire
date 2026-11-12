@@ -2,7 +2,7 @@
  * Issue #189 / #193 ruling 1 — one contact classification for every walking / contact solver (isolated).
  *
  * Status: isolated physics experiment. Not imported by the daily loop, Day0, cli/ or web/ (tests/physics-isolation.test.ts).
- * It does not change any solver: PH-3b (solver2d.ts), WP4 (local-steer.ts), KIN-2D (kinematics2d.ts, kinematics2d-contact.ts)
+ * It does not change any solver: PH-3b (solver2d.ts), WP4 (steer2D), KIN-2D (kinematics2d.ts, kinematics2d-contact.ts)
  * and ANTENNA-GEO (antenna-geometry.ts) are only READ, through adapters, into one record format.
  *
  * Two record kinds, never mixed (ruling 1; Owner decisions C6 / 36):
@@ -26,7 +26,6 @@
  * Pure, deterministic, independent of input array order (records sorted by (start, kind, ids)). Units: s, mm.
  */
 import type { Solver2DResult } from './solver2d.ts';
-import type { SteerResult } from './local-steer.ts';
 import type { KinResult } from './kinematics2d.ts';
 import type { ContactRunResult } from './kinematics2d-contact.ts';
 import type { AntennaContactResult } from './antenna-geometry.ts';
@@ -90,6 +89,13 @@ function episodesFrom(events: { t_s: number; kind: string; ids: string[] }[], st
 }
 
 // ---------------------------------------------------------------- adapters
+/** the part of a WP4 steer2D result this module reads (structural type: WP4's module rule is that no other physics
+ *  module depends on it, so its result type is not imported) */
+export interface SteerResultLike {
+  policy: string;
+  events: { t_s: number; kind: string; agents: string[]; class: string; detail: string | null }[];
+  ph3b?: Solver2DResult;
+}
 /** PH-3b: geometric episodes from contact_start / contact_end (contact_end_unconfirmed = still open); pair constraints from Solver2DResult.constraint_active */
 export function classifyPh3b(res: Solver2DResult, horizon_s: number, source: ContactSource = 'PH-3b'): ContactClassification {
   const contact_episodes = episodesFrom(res.events.map((e) => ({ t_s: e.t_s, kind: e.kind, ids: e.agents })), ['contact_start'], { contact_end: true }, () => 'body_body', source);
@@ -100,7 +106,7 @@ export function classifyPh3b(res: Solver2DResult, horizon_s: number, source: Con
 /** WP4: policy 'none' is PH-3b; A–C / N: episodes from contact_start / contact_end / contact_end_estimated (boundary
  *  rule, not physical); constraint_active from each 'stop' (physical_constraint) until the body's next resume, decision,
  *  arrival or exit event (null if none before the horizon). A conservative stop has in_contact false. */
-export function classifySteer(res: SteerResult, horizon_s: number): ContactClassification {
+export function classifySteer(res: SteerResultLike, horizon_s: number): ContactClassification {
   if (res.policy === 'none') { if (!res.ph3b) throw new ClassificationRefused('WP4 none without the PH-3b result'); return classifyPh3b(res.ph3b, horizon_s, 'WP4'); }
   const ev = res.events.map((e) => ({ t_s: e.t_s, kind: e.kind, ids: e.agents }));
   const contact_episodes = episodesFrom(ev, ['contact_start'], { contact_end: true, contact_end_estimated: false }, () => 'body_body', 'WP4');

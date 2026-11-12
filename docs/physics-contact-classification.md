@@ -1,6 +1,6 @@
 # 接觸分類：幾何接觸段與力學約束分開（#189、#193 裁示第 1 項）
 
-> **地位**：隔離物理實驗。`engine/physics/contact-classification.ts` 只**讀取** PH-3b（`solver2d.ts`）、WP4（`local-steer.ts`）、KIN-2D（`kinematics2d.ts` 凍結、`kinematics2d-contact.ts` 投影）與 ANTENNA-GEO（`antenna-geometry.ts`）的輸出，轉成同一種紀錄格式；這些解算器**都沒有修改**。不被正式流程引用（`tests/physics-isolation.test.ts`），golden 逐位元組相同。
+> **地位**：隔離物理實驗。`engine/physics/contact-classification.ts` 只**讀取** PH-3b（`solver2d.ts`）、WP4（`steer2D`；以結構型別讀取，不匯入該模組，遵守 WP4 的隔離規則）、KIN-2D（`kinematics2d.ts` 凍結、`kinematics2d-contact.ts` 投影）與 ANTENNA-GEO（`antenna-geometry.ts`）的輸出，轉成同一種紀錄格式；這些解算器**都沒有修改**。不被正式流程引用（`tests/physics-isolation.test.ts`），golden 逐位元組相同。
 > **不宣稱**：本種沒有觸角接觸（antennation）、CHC 辨識或接觸後反應的量測。下面的「生物接觸條件」是**候選規則（遊戲假設）**，只決定「何時允許考慮一個觸角訊號」，不模擬辨識、交哺或任何決策。
 
 ## 1. 兩種紀錄，不混用
