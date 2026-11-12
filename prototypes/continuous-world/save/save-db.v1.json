@@ -3,12 +3,90 @@
   "database_name": "antempire-experiment-worlds",
   "database_version": 1,
   "stores": {
-    "worlds": { "keyPath": "world_id", "fields": ["world_id", "name", "seed", "created_at", "next_gen", "slots", "quarantined", "last_saved_at", "t_sim", "seq", "rules_fingerprint", "engine_version", "schema_version", "summary", "official", "label"] },
-    "snapshots": { "keyPath": ["world_id", "gen"], "fields": ["world_id", "gen", "status", "written_at", "header", "payload_json", "payload_sha256"] }
+    "worlds": {
+      "keyPath": "world_id",
+      "fields": [
+        "world_id",
+        "name",
+        "seed",
+        "created_at",
+        "next_gen",
+        "slots",
+        "quarantined",
+        "last_saved_at",
+        "t_sim",
+        "seq",
+        "rules_fingerprint",
+        "engine_version",
+        "schema_version",
+        "summary",
+        "official",
+        "label",
+        "sim_world_id",
+        "provenance",
+        "manual",
+        "last_save"
+      ]
+    },
+    "snapshots": {
+      "keyPath": [
+        "world_id",
+        "gen"
+      ],
+      "fields": [
+        "world_id",
+        "gen",
+        "status",
+        "written_at",
+        "header",
+        "payload_json",
+        "payload_sha256"
+      ]
+    }
   },
-  "status_values": ["pending", "verified"],
-  "retain_verified": { "value": 3, "minimum": 2, "assumption": true, "basis": "遊戲假設（產品候選值，非生物參數）" },
-  "autosave_interval_s": { "value": 30, "assumption": true, "basis": "遊戲假設（產品候選值；依 SAVE-1 寫入成本量測再定）" },
+  "status_values": [
+    "pending",
+    "verified"
+  ],
+  "retain_verified": {
+    "value": 3,
+    "minimum": 2,
+    "assumption": true,
+    "basis": "遊戲假設（產品候選值，非生物參數）"
+  },
+  "autosave_interval_s": {
+    "value": 30,
+    "assumption": true,
+    "basis": "遊戲假設（產品候選值；依 SAVE-1 寫入成本量測再定）"
+  },
   "lock_name_prefix": "antempire-experiment-world:",
-  "error_codes": ["quota_exceeded", "aborted", "verify_failed", "conflict", "not_writer", "write_failed", "world_exists", "unknown_world", "invalid_snapshot", "no_valid_snapshot", "unknown_schema", "newer_schema", "rules_mismatch", "migration_failed", "unsupported"]
+  "error_codes": [
+    "quota_exceeded",
+    "aborted",
+    "verify_failed",
+    "conflict",
+    "not_writer",
+    "write_failed",
+    "world_exists",
+    "unknown_world",
+    "invalid_snapshot",
+    "no_valid_snapshot",
+    "unknown_schema",
+    "newer_schema",
+    "rules_mismatch",
+    "migration_failed",
+    "unsupported",
+    "manual_limit",
+    "import_too_large"
+  ],
+  "manual_keep_max": {
+    "value": 20,
+    "assumption": true,
+    "basis": "遊戲假設（產品候選值；Owner 決策 55：手動存檔與自動存檔回復點分開保存，不被輪替；上限防止無限成長，超過時拒絕而不刪除）"
+  },
+  "max_import_bytes": {
+    "value": 16777216,
+    "assumption": true,
+    "basis": "遊戲假設（產品候選值；Owner 決策 57：限制匯入檔大小與資源使用）"
+  }
 }

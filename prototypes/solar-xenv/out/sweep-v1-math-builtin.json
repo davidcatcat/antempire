@@ -1,0 +1,557 @@
+{
+ "schema": "antempire.solar-xenv.v1",
+ "label": "調查用：跨環境浮點比較；非正式；不改引擎",
+ "A": {
+  "chromium": "153.0.8010.12",
+  "node": "v22.23.4",
+  "node_ms": 1444,
+  "A1": {
+   "cases": 1461,
+   "values": 7305,
+   "equal_values": 7137,
+   "differing_values": 168,
+   "refusal_flips": 0,
+   "refused_both": 0,
+   "max_ulps": 2,
+   "max_abs_min": 2.2737367544323206e-13,
+   "max_exact_us": 0.000013642420526593924,
+   "tick_flips": 0,
+   "display_minute_flips": 0,
+   "display_ms_flips": 0,
+   "whole_minute_between": 0,
+   "light_state_flips_at_midnight": 0,
+   "examples": [
+    {
+     "site": {
+      "latitude_deg": 24.18,
+      "longitude_deg": 120.64
+     },
+     "date": "2026-03-28",
+     "key": "sunrise",
+     "node": 353.8220565627473,
+     "chromium": 353.82205656274726,
+     "ulps": 1,
+     "abs_min": 5.684341886080802e-14,
+     "exact_us": 0.000003410605131648481,
+     "tick_flip": false,
+     "display_minute_flip": false,
+     "display_ms_flip": false,
+     "whole_minute_between": false
+    },
+    {
+     "site": {
+      "latitude_deg": 24.18,
+      "longitude_deg": 120.64
+     },
+     "date": "2026-03-30",
+     "key": "civil_dawn",
+     "node": 329.0644252389628,
+     "chromium": 329.0644252389629,
+     "ulps": 1,
+     "abs_min": 5.684341886080802e-14,
+     "exact_us": 0.000003410605131648481,
+     "tick_flip": false,
+     "display_minute_flip": false,
+     "display_ms_flip": false,
+     "whole_minute_between": false
+    },
+    {
+     "site": {
+      "latitude_deg": 24.18,
+      "longitude_deg": 120.64
+     },
+     "date": "2026-04-15",
+     "key": "civil_dawn",
+     "node": 313.193122213034,
+     "chromium": 313.1931222130339,
+     "ulps": 1,
+     "abs_min": 5.684341886080802e-14,
+     "exact_us": 0.000003410605131648481,
+     "tick_flip": false,
+     "display_minute_flip": false,
+     "display_ms_flip": false,
+     "whole_minute_between": false
+    },
+    {
+     "site": {
+      "latitude_deg": 24.18,
+      "longitude_deg": 120.64
+     },
+     "date": "2026-04-18",
+     "key": "sunrise",
+     "node": 333.66639230467206,
+     "chromium": 333.666392304672,
+     "ulps": 1,
+     "abs_min": 5.684341886080802e-14,
+     "exact_us": 0.000003410605131648481,
+     "tick_flip": false,
+     "display_minute_flip": false,
+     "display_ms_flip": false,
+     "whole_minute_between": false
+    },
+    {
+     "site": {
+      "latitude_deg": 24.18,
+      "longitude_deg": 120.64
+     },
+     "date": "2026-05-02",
+     "key": "civil_dawn",
+     "node": 298.6091874882847,
+     "chromium": 298.60918748828465,
+     "ulps": 1,
+     "abs_min": 5.684341886080802e-14,
+     "exact_us": 0.000003410605131648481,
+     "tick_flip": false,
+     "display_minute_flip": false,
+     "display_ms_flip": false,
+     "whole_minute_between": false
+    },
+    {
+     "site": {
+      "latitude_deg": 24.18,
+      "longitude_deg": 120.64
+     },
+     "date": "2026-05-02",
+     "key": "sunrise",
+     "node": 322.4823974932988,
+     "chromium": 322.4823974932987,
+     "ulps": 1,
+     "abs_min": 5.684341886080802e-14,
+     "exact_us": 0.000003410605131648481,
+     "tick_flip": false,
+     "display_minute_flip": false,
+     "display_ms_flip": false,
+     "whole_minute_between": false
+    },
+    {
+     "site": {
+      "latitude_deg": 24.18,
+      "longitude_deg": 120.64
+     },
+     "date": "2026-05-05",
+     "key": "civil_dawn",
+     "node": 296.42759400244915,
+     "chromium": 296.4275940024491,
+     "ulps": 1,
+     "abs_min": 5.684341886080802e-14,
+     "exact_us": 0.000003410605131648481,
+     "tick_flip": false,
+     "display_minute_flip": false,
+     "display_ms_flip": false,
+     "whole_minute_between": false
+    },
+    {
+     "site": {
+      "latitude_deg": 24.18,
+      "longitude_deg": 120.64
+     },
+     "date": "2026-05-08",
+     "key": "sunrise",
+     "node": 318.54857401690305,
+     "chromium": 318.5485740169031,
+     "ulps": 1,
+     "abs_min": 5.684341886080802e-14,
+     "exact_us": 0.000003410605131648481,
+     "tick_flip": false,
+     "display_minute_flip": false,
+     "display_ms_flip": false,
+     "whole_minute_between": false
+    }
+   ],
+   "max_ulps_example": {
+    "site": {
+     "latitude_deg": 24.18,
+     "longitude_deg": 120.64
+    },
+    "date": "2027-09-03",
+    "key": "civil_dawn",
+    "node": 316.376855158667,
+    "chromium": 316.3768551586671,
+    "ulps": 2,
+    "abs_min": 1.1368683772161603e-13,
+    "exact_us": 0.000006821210263296962,
+    "tick_flip": false,
+    "display_minute_flip": false,
+    "display_ms_flip": false,
+    "whole_minute_between": false
+   },
+   "ulps_histogram": {
+    "1": 165,
+    "2": 3
+   }
+  },
+  "A2": {
+   "cases": 63510,
+   "values": 302960,
+   "equal_values": 290222,
+   "differing_values": 12738,
+   "refusal_flips": 0,
+   "refused_both": 2918,
+   "max_ulps": 320,
+   "max_abs_min": 1.1368683772161603e-12,
+   "max_exact_us": 0.00006821210263296962,
+   "tick_flips": 0,
+   "display_minute_flips": 0,
+   "display_ms_flips": 0,
+   "whole_minute_between": 0,
+   "light_state_flips_at_midnight": 0,
+   "examples": [
+    {
+     "site": {
+      "latitude_deg": -72,
+      "longitude_deg": -179.5
+     },
+     "date": "2026-02-20",
+     "key": "sunrise",
+     "node": 214.68964681968032,
+     "chromium": 214.6896468196802,
+     "ulps": 4,
+     "abs_min": 1.1368683772161603e-13,
+     "exact_us": 0.000006821210263296962,
+     "tick_flip": false,
+     "display_minute_flip": false,
+     "display_ms_flip": false,
+     "whole_minute_between": false
+    },
+    {
+     "site": {
+      "latitude_deg": -72,
+      "longitude_deg": -179.5
+     },
+     "date": "2026-03-17",
+     "key": "civil_dawn",
+     "node": 271.84886237203386,
+     "chromium": 271.8488623720338,
+     "ulps": 1,
+     "abs_min": 5.684341886080802e-14,
+     "exact_us": 0.000003410605131648481,
+     "tick_flip": false,
+     "display_minute_flip": false,
+     "display_ms_flip": false,
+     "whole_minute_between": false
+    },
+    {
+     "site": {
+      "latitude_deg": -72,
+      "longitude_deg": -179.5
+     },
+     "date": "2026-04-06",
+     "key": "sunrise",
+     "node": 433.2596244732699,
+     "chromium": 433.25962447327,
+     "ulps": 1,
+     "abs_min": 5.684341886080802e-14,
+     "exact_us": 0.000003410605131648481,
+     "tick_flip": false,
+     "display_minute_flip": false,
+     "display_ms_flip": false,
+     "whole_minute_between": false
+    },
+    {
+     "site": {
+      "latitude_deg": -72,
+      "longitude_deg": -179.5
+     },
+     "date": "2026-04-26",
+     "key": "civil_dawn",
+     "node": 450.75826455498833,
+     "chromium": 450.7582645549883,
+     "ulps": 1,
+     "abs_min": 5.684341886080802e-14,
+     "exact_us": 0.000003410605131648481,
+     "tick_flip": false,
+     "display_minute_flip": false,
+     "display_ms_flip": false,
+     "whole_minute_between": false
+    },
+    {
+     "site": {
+      "latitude_deg": -72,
+      "longitude_deg": -179.5
+     },
+     "date": "2026-08-04",
+     "key": "civil_dusk",
+     "node": 940.5681108678359,
+     "chromium": 940.568110867836,
+     "ulps": 1,
+     "abs_min": 1.1368683772161603e-13,
+     "exact_us": 0.000006821210263296962,
+     "tick_flip": false,
+     "display_minute_flip": false,
+     "display_ms_flip": false,
+     "whole_minute_between": false
+    },
+    {
+     "site": {
+      "latitude_deg": -72,
+      "longitude_deg": -179.5
+     },
+     "date": "2026-08-29",
+     "key": "civil_dawn",
+     "node": 394.0652505198891,
+     "chromium": 394.06525051988905,
+     "ulps": 1,
+     "abs_min": 5.684341886080802e-14,
+     "exact_us": 0.000003410605131648481,
+     "tick_flip": false,
+     "display_minute_flip": false,
+     "display_ms_flip": false,
+     "whole_minute_between": false
+    },
+    {
+     "site": {
+      "latitude_deg": -72,
+      "longitude_deg": -179.5
+     },
+     "date": "2026-10-23",
+     "key": "civil_dawn",
+     "node": 36.4915556932325,
+     "chromium": 36.491555693232726,
+     "ulps": 32,
+     "abs_min": 2.2737367544323206e-13,
+     "exact_us": 0.000013642420526593924,
+     "tick_flip": false,
+     "display_minute_flip": false,
+     "display_ms_flip": false,
+     "whole_minute_between": false
+    },
+    {
+     "site": {
+      "latitude_deg": -72,
+      "longitude_deg": -120
+     },
+     "date": "2026-02-25",
+     "key": "sunrise",
+     "node": 243.9348011673152,
+     "chromium": 243.93480116731507,
+     "ulps": 4,
+     "abs_min": 1.1368683772161603e-13,
+     "exact_us": 0.000006821210263296962,
+     "tick_flip": false,
+     "display_minute_flip": false,
+     "display_ms_flip": false,
+     "whole_minute_between": false
+    }
+   ],
+   "max_ulps_example": {
+    "site": {
+     "latitude_deg": -63,
+     "longitude_deg": 0
+    },
+    "date": "2026-01-16",
+    "key": "civil_dawn",
+    "node": 20.69769062717819,
+    "chromium": 20.697690627177053,
+    "ulps": 320,
+    "abs_min": 1.1368683772161603e-12,
+    "exact_us": 0.00006821210263296962,
+    "tick_flip": false,
+    "display_minute_flip": false,
+    "display_ms_flip": false,
+    "whole_minute_between": false
+   },
+   "ulps_histogram": {
+    "1": 10031,
+    "2": 743,
+    "3-16": 1949,
+    "17-128": 14,
+    ">128": 1
+   }
+  }
+ },
+ "B": {
+  "rows": [
+   {
+    "seed": 1,
+    "days": 30,
+    "events": 90239,
+    "light_events": 120,
+    "other_events": 90119,
+    "min_gap_us": 451866.6237792969
+   },
+   {
+    "seed": 2,
+    "days": 30,
+    "events": 90614,
+    "light_events": 120,
+    "other_events": 90494,
+    "min_gap_us": 191220.42700195312
+   },
+   {
+    "seed": 3,
+    "days": 30,
+    "events": 92085,
+    "light_events": 120,
+    "other_events": 91965,
+    "min_gap_us": 33041.8092956543
+   },
+   {
+    "seed": 4,
+    "days": 30,
+    "events": 90461,
+    "light_events": 120,
+    "other_events": 90341,
+    "min_gap_us": 51256.81726074219
+   },
+   {
+    "seed": 5,
+    "days": 30,
+    "events": 91581,
+    "light_events": 120,
+    "other_events": 91461,
+    "min_gap_us": 120972.6552734375
+   },
+   {
+    "seed": 6,
+    "days": 30,
+    "events": 90198,
+    "light_events": 120,
+    "other_events": 90078,
+    "min_gap_us": 63896.1943359375
+   },
+   {
+    "seed": 7,
+    "days": 30,
+    "events": 91017,
+    "light_events": 120,
+    "other_events": 90897,
+    "min_gap_us": 53774.38232421875
+   },
+   {
+    "seed": 8,
+    "days": 30,
+    "events": 90044,
+    "light_events": 120,
+    "other_events": 89924,
+    "min_gap_us": 199649.07006835938
+   },
+   {
+    "seed": 9,
+    "days": 30,
+    "events": 90534,
+    "light_events": 120,
+    "other_events": 90414,
+    "min_gap_us": 3842.438720703125
+   },
+   {
+    "seed": 10,
+    "days": 30,
+    "events": 92593,
+    "light_events": 120,
+    "other_events": 92473,
+    "min_gap_us": 188575.23046875
+   },
+   {
+    "seed": 11,
+    "days": 30,
+    "events": 90087,
+    "light_events": 120,
+    "other_events": 89967,
+    "min_gap_us": 332375.76416015625
+   },
+   {
+    "seed": 12,
+    "days": 30,
+    "events": 90286,
+    "light_events": 120,
+    "other_events": 90166,
+    "min_gap_us": 103358.07353973389
+   },
+   {
+    "seed": 13,
+    "days": 30,
+    "events": 91555,
+    "light_events": 120,
+    "other_events": 91435,
+    "min_gap_us": 15545.6201171875
+   },
+   {
+    "seed": 14,
+    "days": 30,
+    "events": 91140,
+    "light_events": 120,
+    "other_events": 91020,
+    "min_gap_us": 47287.80224609375
+   },
+   {
+    "seed": 15,
+    "days": 30,
+    "events": 90864,
+    "light_events": 120,
+    "other_events": 90744,
+    "min_gap_us": 10281.098388671875
+   },
+   {
+    "seed": 16,
+    "days": 30,
+    "events": 89639,
+    "light_events": 120,
+    "other_events": 89519,
+    "min_gap_us": 395310.3793640137
+   },
+   {
+    "seed": 17,
+    "days": 30,
+    "events": 90736,
+    "light_events": 120,
+    "other_events": 90616,
+    "min_gap_us": 114595.58569335938
+   },
+   {
+    "seed": 18,
+    "days": 30,
+    "events": 90290,
+    "light_events": 120,
+    "other_events": 90170,
+    "min_gap_us": 28900.540588378906
+   },
+   {
+    "seed": 19,
+    "days": 30,
+    "events": 90842,
+    "light_events": 120,
+    "other_events": 90722,
+    "min_gap_us": 300103.9494628906
+   },
+   {
+    "seed": 20,
+    "days": 30,
+    "events": 90962,
+    "light_events": 120,
+    "other_events": 90842,
+    "min_gap_us": 61823.05975341797
+   }
+  ],
+  "min_gap_us": 3842.438720703125
+ },
+ "C": {
+  "date": "2026-03-27",
+  "sunrise_node": 354.8291761906146,
+  "sunrise_neighbour": 354.82917619061465,
+  "diff_min": 5.684341886080802e-14,
+  "C1_same_instant": {
+   "node": "light+other",
+   "other_env": "other | light",
+   "changes_batching": true
+  },
+  "C2_between": {
+   "strictly_between_exists": false,
+   "note": "neighbouring doubles: no other minute value lies strictly between; an event at exactly a or b is the only way to be inside the window"
+  },
+  "C2_1e12": {
+   "node": "light | other",
+   "other_env": "light | other",
+   "changes_order": false
+  },
+  "C3_tick_flip": {
+   "value": 354.82917649999996,
+   "neighbour": 354.8291765,
+   "tick_label_a": 354.829176,
+   "tick_label_b": 354.829177
+  },
+  "C4_state_at_own_value": {
+   "node": "day",
+   "with_neighbour_times_at_node_value": "civil_twilight"
+  }
+ }
+}

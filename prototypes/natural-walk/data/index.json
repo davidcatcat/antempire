@@ -1,0 +1,4 @@
+{
+ "note": "PR A（#163，kinematics2d）匯出的 antempire.pose-stream.v1，逐位元組複製自該分支 6fe6f26；PR A 合併後以其為準。",
+ "files": ["straight-vs-natural.json", "trail-following-C.json", "exploration-B.json", "obstacle-turn.json"]
+}

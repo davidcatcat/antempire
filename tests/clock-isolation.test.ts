@@ -22,7 +22,7 @@ for (const f of official) ok(!refersTo(fs.readFileSync(f, 'utf8')), `${path.rela
 ok(ruleFiles().engine.every((f) => !f.includes('clock')), 'engine/clock is outside the rules fingerprint (no rules change)');
 const files = fs.readdirSync(path.join(REPO_ROOT, 'engine/clock')).filter((f) => f.endsWith('.ts'));
 ok(files.length >= 4, 'engine/clock exists');
-const ALLOWED = new Set(['../scheduler/world-events.ts', '../rng.ts', './time-frames.ts', './solar.ts', './weather-input.ts', './environment.ts']);
+const ALLOWED = new Set(['../scheduler/world-events.ts', '../rng.ts', './time-frames.ts', './solar.ts', './weather-input.ts', './environment.ts', './detmath.ts']); // detmath: #190 cross-environment deterministic trigonometry
 for (const f of files) {
   const raw = fs.readFileSync(path.join(REPO_ROOT, 'engine/clock', f), 'utf8'), src = strip(raw), code = noStrings(src);
   for (const m of src.matchAll(/from\s+'([^']+)'/g)) ok(ALLOWED.has(m[1]), `engine/clock/${f} imports only the scheduler, the RNG and clock modules (${m[1]})`);

@@ -1,7 +1,8 @@
 # 日出時刻的跨環境差異調查（Owner 決定 51）
 
-> 狀態：**調查報告＋規則 PR 提案**。本分支**不修改** `engine/clock/solar.ts`、排程器、任何參數、存檔或日誌；不推進遊戲日。
-> 結論：差異**不只影響顯示值**，在構造的情境下可以改變事件批次、順序與分類，因此**不定義比較容許值**，改提規則 PR（§6）。正式歷史目前不受影響（§4.4）。
+> 狀態：§1～§6 是**調查報告＋規則 PR 提案**（歷史紀錄，保留不改寫其結論）；**§7 是依 Owner 決定 #190（#193 裁示，2026-11-12）實作方案 A 的紀錄**。不推進遊戲日；不改存檔、日誌或正式引擎。
+> 調查結論：差異**不只影響顯示值**，在構造的情境下可以改變事件批次、順序與分類，因此**不定義比較容許值**，改提規則 PR（§6）。正式歷史目前不受影響（§4.4）。
+> 實作結果（§7）：`engine/clock/solar.ts` 改用 `engine/clock/detmath.ts` 後，A1、A2、A3 全部 639 625 個值在 Node、Chromium 頁面與 Chromium Worker **逐位元相同**（0 個不同，沒有容許值）；與舊版 `Math.*` 結果最大差 3.9×10⁻¹² 分。**ARM64 未驗證**。
 
 ## 1. 問題
 
@@ -9,7 +10,7 @@ PR #169（P0-A2 Worker 執行環境，`docs/experimental-worker-runtime.md` §6�
 
 要回答：(1) 是否改變事件分類；(2) 是否改變依日出／日落的決策；(3) 是否讓 Node 與 Worker 的歷史分岔；(4) 在時間邊界附近找反例。
 
-## 2. 方法（`prototypes/solar-xenv/sweep.ts`，結果 `prototypes/solar-xenv/out/sweep.json`）
+## 2. 方法（`prototypes/solar-xenv/sweep.ts`；本節與 §3 的結果保存在 `prototypes/solar-xenv/out/sweep-v1-math-builtin.json`，方案 A 之後的結果見 §7）
 
 - **A：跨環境掃描**（需 Playwright Chromium）。同一份 `engine/clock/solar.ts` 原始碼（只去掉型別註記，算術不變）分別在 Node 與真實 Chromium 頁面執行：
   - A1：實驗世界代表點（24.18°N、120.64°E、UTC+8）連續 4 年每天（1 461 天 × 5 個時刻）；
@@ -44,7 +45,7 @@ PR #169（P0-A2 Worker 執行環境，`docs/experimental-worker-runtime.md` §6�
 
 **因此不是「只影響顯示」**：不寫比較容許值。在事件時刻上加容許值（例如「相差 ≤ 10⁻⁹ 分視為相同」）會把 C1、C3 的翻轉藏起來，等於放寬正式歷史的決定性要求，不採用。
 
-## 5. 本分支做了什麼
+## 5. 調查分支做了什麼（歷史紀錄；方案 A 之後的變更見 §7）
 
 - `prototypes/solar-xenv/sweep.ts` 與 `out/sweep.json`：調查程式與結果（不被任何正式或實驗程式匯入）。
 - `tests/solar-xenv.test.ts`（阻擋性，只用 Node）：B（種子 1–3 × 10 天）的最小距離 ≫ 量到的差；C1、C3、C4 反例可重現；光照時刻的使用者清單固定（新增使用者時測試會失敗，需對照本文件審查）；頂層 `engine/*.ts` 不引用 `engine/clock`。
@@ -63,8 +64,9 @@ PR #169（P0-A2 Worker 執行環境，`docs/experimental-worker-runtime.md` §6�
   - 兩者都不為零，所以**不能**宣稱 Node 與 Worker 逐位元相同。
 - **目前影響**：原型只在 Node 執行，正式歷史與 Day14 不受影響，Node 內的重播決定性不受影響。
 - **第三階段要求**：接入實驗 Worker 之前，必須先依 §6 的 Owner 裁示（方案 A 或 A+B）解決，並以 Node 對 Chromium 的逐位元比較驗證，不得改用容許值。
+- **更新（#190 方案 A，§7）**：光照時刻現在逐位元跨環境相同（x86-64 驗證）。原型的 `Math.round(minute × 60000)` 量化與 `lightStateAt` 讀到的轉換值因此在 Node 與 Chromium 相同；上面的「暴露」機率不再適用於已驗證的環境。原型 24 小時釘選雜湊不變（見 §7.5）。ARM64 未驗證。
 
-## 6. 規則 PR 提案（待 Owner 裁示，本分支不實作）
+## 6. 規則 PR 提案（調查時的提案；Owner 已於 #193 裁示採方案 A，實作見 §7）
 
 目標：光照時刻在任何符合 ECMAScript 的環境（Node 各版本、瀏覽器 Worker、x86-64／ARM64）都**逐位元相同**，不放寬任何決定性要求。
 
@@ -81,3 +83,57 @@ PR #169（P0-A2 Worker 執行環境，`docs/experimental-worker-runtime.md` §6�
 **不做的事**：比較時加容許值、只在 Worker 裡「修正」數值、改用 `Math.fround` 等降精度——都不能保證跨環境相同，或會改變事件時刻卻不留紀錄。
 
 需要 Owner 決定：採用 A（或 A＋B）、量化格寬（若採 B）、是否要求 ARM64 也逐位元相同、P0-A1 時鐘進入正式歷史前是否以此為前提。
+
+## 7. 實作紀錄：方案 A（Owner 決定 #190，#193 裁示，2026-11-12）
+
+> 規則更新（實驗世界）：不推進遊戲日；正式引擎、規則指紋、存檔與日誌都不變。
+
+### 7.1 裁示內容
+- 採方案 A：在 `engine/clock/solar.ts` 以固定、跨環境決定性的演算法計算光照時刻；只用 IEEE 基本運算（+、−、×、÷）與 `Math.sqrt`（ECMAScript 規格要求正確捨入）。三角函數以 Cody–Waite 角度縮減＋固定係數多項式（係數寫成十進位字面值）；asin／acos 以恆等式＋多項式，|x|→1 時用 sqrt 形式。
+- **不使用任何容許值比較**。以 Node 對 Chromium Worker 在既有掃描全部輸入（含轉換邊界與 #181 反例）**逐位元相同**驗證。
+- 要包含 ARM64 驗證；CI 目前沒有 ARM64，所以明確記為「**ARM64 未驗證**」，不宣稱。
+- 這是 `engine/clock` 進入正式歷史、以及 P0-A2 宣稱跨環境一致的前提條件。
+- 若方案 A 無法達到逐位元相同：不得放寬，改寫錯誤／影響報告並停止（A＋B 只在報告中提出）。**本次已達成，不需要此路徑。**
+
+### 7.2 演算法（`engine/clock/detmath.ts`）
+- `detSin`、`detCos`：Cody–Waite 縮減 x = k·(π/2) + r。π/2 拆成三段（fdlibm `e_rem_pio2.c` 的 `pio2_1`、`pio2_2`、`pio2_3`，前兩段 33 個有效位元，|k| < 2²⁰ 時 k·P₁、k·P₂ 精確）；k = Math.round(x·2/π)（`Math.round` 規格精確）。|r| ≤ π/4 上用 fdlibm `k_sin.c`／`k_cos.c` 的 minimax 係數（十進位字面值，各引擎解析成同一個 double）。引數上限 |x| ≤ 1.6×10⁶（超過即拒絕，不靜默）；本模型最大引數約 600 弧度。
+- `detTan` = sin／cos（只用於 ε/2 ≈ 11.7°，遠離極點）。原本的 `Math.tan(...) ** 2` 也改成 `t * t`（`**` 同樣是實作近似）。
+- `detAsin`、`detAcos`：fdlibm `e_asin.c`／`e_acos.c` 的有理近似 R(z) = z·P(z)/Q(z)；|x| < 0.5 直接用；|x| ≥ 0.5 用半角 sqrt 形式（1 − |x| 在 |x| ≥ 0.5 時精確，Sterbenz 引理），避免 |x|→1 時的病態放大；定義域外回傳 NaN（與 `Math.asin/acos` 相同語意）。
+- 精度（與 V8 `Math.*` 比較，±1000 弧度隨機 2×10⁶ 點）：sin、cos 絕對差 ≤ 1.1×10⁻¹⁶；tan ≤ 3 ulp；asin ≤ 2 ulp；acos ≤ 1 ulp。是工程程式，不是模型參數；NOAA 方法本身的誤差約 1 分（R390），不受影響。
+- 為什麼決定性：每一步只有「規格規定唯一結果」的運算（基本四則、`Math.sqrt`、`Math.round`、`Math.abs`、`%`、十進位字面值）；`Math.PI` 是規格固定的常數。沒有任何實作近似的 `Math` 函式（`tests/solar-xenv.test.ts` 掃描原始碼）。
+- 放在 `engine/clock/`：P0-A1 時鐘與實驗 Worker 都能匯入（`engine/clock/` 已在 `worker-boundary.json` 白名單；`tests/clock-isolation.test.ts` 的 clock 模組匯入清單加入 `./detmath.ts`）。實驗 Worker 個體規則用的 `prototypes/continuous-world/worker/detmath.ts`（detLog 等）不變。
+
+### 7.3 驗證結果（Node 22.23.4、Chromium 153.0.8010.12，linux-x64；`prototypes/solar-xenv/out/sweep.json`）
+
+| 掃描 | 案例 | 比較的值 | Node vs Chromium 頁面 不同 | Node vs Chromium Worker 不同 | 拒絕翻轉 | 兩邊都拒絕 |
+|---|---|---|---|---|---|---|
+| A1 臺中代表點 4 年 | 1 461 | 7 305 | 0 | 0 | 0 | 0 |
+| A2 緯度×經度×日期 | 63 510 | 302 960 | 0 | 0 | 0 | 2 918 |
+| A3 高緯轉換邊界（±60°～±72°，0.1°，每日） | 88 330 | 329 360 | 0 | 0 | 0 | 22 458 |
+
+- 合計 153 301 個案例、639 625 個值，三個環境**逐位元相同**（`Object.is`），SHA-256 摘要（IEEE 位元型樣）三方相同。
+- A3 是新增的邊界集：高緯度上曙光／日出解出現與消失的日期（|cos H|→1、acos 病態、拒絕邊界），包含舊版 320 ulp 最大差所在的條件。
+- 舊版的差異與反例輸入逐一列出（`spotlight`）：#181 C1／C3／C4 的輸入（實驗世界第 1 日日出，2026-03-27）、舊 A1 最大差（2027-09-03 曙光）、舊 A2 最大差（南緯 63°、2026-01-16 曙光，320 ulp）——三個環境都逐位元相同。
+- 實驗 Worker（`tests/browser/worker-runtime.check.cjs`，種子 11、12、13，各 48 小時）：17 937／17 937 個事件、3／3 個 48 小時狀態逐位元組相同（PR #169 的 3 個不同事件已消失）。原本光照時刻的誤差界（10⁻⁹ 分、10⁻³ µs）**已移除**，改為嚴格相等。
+- `tests/solar-xenv.test.ts`（阻擋性，Node）：讀取上述真實 Chromium 執行的紀錄，要求 0 個不同；並在 Node 重新計算 A1～A3，摘要必須等於紀錄的 Chromium 摘要（`solar.ts`／`detmath.ts` 改變任何位元都會失敗，直到重新以 Chromium 掃描並記錄）。
+- C1、C3、C4 反例仍保留並可重現：它們說明「1 ulp 不只影響顯示」，這正是要求逐位元相同、不用容許值的理由。
+
+### 7.4 與舊版（`Math.*`）的差異
+- A1～A3 全部 639 625 個值：36 002 個（5.6%）末位不同，**最大差 3.9×10⁻¹² 分**（南緯 71°、2026-05-19 日落），遠小於 NOAA 方法誤差（約 1 分）的 10⁻⁹（即 6×10⁻¹⁰ 分）；0 個拒絕翻轉。A1（實驗世界代表點）：75／7 305 個不同，最大 2.3×10⁻¹³ 分，第一個不同在 2026-04-21（世界第 26 日）。
+- `tests/p0a1-24h-clock.test.ts`：轉換時刻的太陽高度自洽誤差 1.1×10⁻¹⁰°（門檻 10⁻⁶°），與 USNO 曆書演算法的差 ≤ 0.199 分，結果同前。
+
+### 7.5 版本與雜湊
+- 實驗世界 `ENGINE_VERSION`：`experiment-world-runtime/1` → `experiment-world-runtime/2`（`prototypes/continuous-world/worker/params.ts`）。理由：光照時刻在第 26 日之後的末位改變；舊版快照若在新版還原，之後各天會得到「既非舊版也非新版」的混合歷史，所以以 `ENGINE_MISMATCH` 拒絕。
+  - 規則指紋（`RULES_FINGERPRINT`）：`269810bd1ab9633e70617fa6b5ecf5a7f9206181be4726764216881c3af97fc0` → `90ccff0fee7331f675bef995cb970f15ef7d2830e07da8ebeed09c4fc4031fee`。
+  - `tests/worker-runtime.test.ts` 的 48 小時狀態雜湊（種子 11）：`1be68441…7517ec` → `539dbf1d…c34c384`；只因 `engine_version` 欄位改變（以新演算法、舊版本字串計算時雜湊與舊版相同：前 48 小時的光照時刻逐位元未變）。這兩個值沒有釘選在測試中，僅記錄。
+- P0-A2 24 小時原型（`tests/p0a2-24h-proto.test.ts`）的釘選雜湊**不變**（log `7d6e43af…187d85`、state `eeae295c…e8582f`）：該情境的光照事件（量化到整數毫秒後）在新舊版相同。原型沒有自己的版本字串。
+- P0-A1 時鐘（`engine/clock`）沒有釘選雜湊；不在正式規則指紋內。
+- 正式引擎：輸出逐位元組不變（`tests/golden.test.ts` 未改、通過）；頂層 `engine/*.ts` 仍不引用 `engine/clock`。
+
+### 7.6 未驗證事項
+- **ARM64 未驗證**：CI 與本次執行都只有 x86-64（linux-x64）。演算法只用規格規定唯一結果的運算，理論上 ARM64 也應相同，但這是推論，不是驗證；在 ARM64 上執行 `node prototypes/solar-xenv/sweep.ts` 與 `node tests/solar-xenv.test.ts` 之前不得宣稱。
+- 其他瀏覽器引擎（Firefox、Safari）未驗證；Node 其他版本未驗證（只有 `.nvmrc` 的 22.23.4）。
+- `Math.sqrt` 的正確捨入依規格；本次以三環境結果相同作為實測佐證。
+
+### 7.7 回滾
+- 還原本次提交即可：`solar.ts` 回到 `Math.*`、刪除 `detmath.ts`、`ENGINE_VERSION` 回到 `/1`、`sweep.json` 回到 v1 紀錄。回滾後 §3 的跨環境差異會重新出現，P0-A2 不得宣稱跨環境一致，`engine/clock` 進入正式歷史的前提也不再成立。實驗世界 `/2` 的快照在回滾後會被拒絕（`ENGINE_MISMATCH`）；正式存檔與日誌不受影響。

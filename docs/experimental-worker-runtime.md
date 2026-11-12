@@ -74,6 +74,7 @@ Worker 匯入的引擎模組只有白名單內的 `engine/scheduler/world-events
 - 結果（種子 11、12、13，各 48 小時，`tests/browser/worker-runtime.check.cjs`）：17 937 個事件中 17 934 個逐位元組相同；3 個不同的都是 `engine/clock/solar.ts` 算出的**第 2 日日出時刻**（相差 1 ulp，5.7×10⁻¹⁴ 分），因此 48 小時完整狀態的雜湊不同，但去掉光照時刻後三個種子的完整狀態都逐位元組相同。誤差界：光照分鐘值 ≤ 10⁻⁹ 分、精確時刻 ≤ 10⁻³ µs（實測 3.4×10⁻⁶ µs）。
 - **不宣稱**跨環境逐位元組相同。光照時刻的 1 ulp 差異不會影響個體（個體不讀光照），但若某個個體事件與光照事件相距小於 1 ulp，兩環境的順序理論上可能不同；這只能以比較測試觀察，無法證明。修正需要讓 `engine/clock/solar.ts` 使用決定性三角函數，屬於另一張規則／引擎 PR（待 Owner 裁示）。
 - 後續調查（Owner 決定 51，`docs/solar-cross-env-check.md`）：系統掃描（4 年臺中代表點、緯度 −72°～72° × 6 經度）最大差 320 ulp（1.1×10⁻¹² 分），掃描中沒有任何分類、顯示或拒絕翻轉；但構造反例證明 1 ulp 可以改變同時刻批次、`tick` 標籤與邊界狀態，所以不只是顯示差異，不定義容許值，改提規則 PR（決定性三角函數）。
+- **已解決（Owner 決定 #190，#193 裁示，2026-11-12，方案 A）**：`engine/clock/solar.ts` 改用 `engine/clock/detmath.ts`（只用 IEEE 基本運算與 `Math.sqrt`）。`ENGINE_VERSION` 提高為 `experiment-world-runtime/2`（舊版快照以 `ENGINE_MISMATCH` 拒絕）。同一比較（種子 11、12、13，各 48 小時）：17 937／17 937 個事件、3／3 個 48 小時狀態**逐位元組相同**；原本的光照誤差界已移除，改為嚴格相等。上兩點保留為歷史紀錄。只在 x86-64 驗證，**ARM64 未驗證**。詳見 `docs/solar-cross-env-check.md` §7。
 
 ## 7. 驗證
 
@@ -88,7 +89,8 @@ Worker 匯入的引擎模組只有白名單內的 `engine/scheduler/world-events
 
 - **合成世界**：不是科學模型；P0-A2 個體行為（`docs/p0a2-24h-behaviour-design.md`）尚未接入。
 - **白名單**：`engine/sha256.ts`、`engine/rng.ts` 不在白名單，所以 Worker 內有 SHA-256 與 mulberry32 的移植副本（以 node:crypto 交叉驗證）。若要直接共用，需另開規則 PR 把 `engine/sha256.ts`（與 `engine/rng.ts`）加入白名單。
-- **跨環境**：見 §6；光照時刻 1 ulp 差異未消除。
+- **跨環境**：見 §6；光照時刻的 1 ulp 差異已由 #190 方案 A 消除（x86-64 上 Node 與 Chromium Worker 逐位元組相同）；**ARM64 未驗證**（CI 沒有 ARM64 執行器）。
 - 規則指紋只涵蓋 engine_version 與參數，不含程式碼雜湊；改核心行為時必須提高 `ENGINE_VERSION`。
 - 執行中 Worker 只保留待處理事件；已送出的事件不留在 Worker 記憶體中（畫面端自行保存需要的事件）。
-- 尚未做：#144（鏡頭不改命運）的完整畫面測試、#145 單一帳本、手機效能、V6-2 整合（PR 3）、本地存檔（SAVE-1）。
+- V6-2 畫面整合（PR 3）已完成：`web/experiment.html`，見 [`v62-experiment-mode.md`](v62-experiment-mode.md)（含鏡頭／縮放／追蹤／速度／幀率不改結果的瀏覽器測試與無頭量測）。
+- 尚未做：#145 單一帳本、實機手機效能、本地存檔接線（SAVE-2）。

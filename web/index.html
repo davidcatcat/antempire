@@ -6,23 +6,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>螞蟻帝國</title>
 <style>
-  /* Game View: one fixed natural look (soil scene); every control sets its own colours so either host theme reads */
-  :root { --bar: rgba(28,22,15,0.82); --bar-ink: #f3ead6; --muted: #cbbd9f; --accent: #e9b949; --line: rgba(243,234,214,0.25); --exp-bg: #f6e3d1; --exp-fg: #6b3410; color-scheme: dark; }
+  /* Game View: the garden fills the screen; a minimal translucent HUD; analysis aids are optional layers */
+  :root { --bar: rgba(22,16,10,0.55); --panel: rgba(24,18,12,0.9); --bar-ink: #f3ead6; --muted: #cbbd9f; --accent: #e9b949; --line: rgba(243,234,214,0.22); --exp-bg: rgba(246,227,209,0.92); --exp-fg: #6b3410; color-scheme: dark; }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; background: #6e5338; color: var(--bar-ink); font-family: system-ui, -apple-system, "Noto Sans TC", sans-serif; overflow: hidden; }
+  html, body { margin: 0; height: 100%; background: #3d2c1d; color: var(--bar-ink); font-family: system-ui, -apple-system, "Noto Sans TC", sans-serif; overflow: hidden; }
   #scene { position: fixed; inset: 0; width: 100vw; height: 100dvh; display: block; touch-action: none; cursor: grab; }
-  .bar { position: fixed; left: 0; right: 0; background: var(--bar); color: var(--bar-ink); display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); backdrop-filter: blur(3px); z-index: 2; }
-  #top { top: 0; padding-block: calc(6px + env(safe-area-inset-top, 0px)) 6px; }
-  #bottom { bottom: 0; padding-block: 6px calc(8px + env(safe-area-inset-bottom, 0px)); }
-  h1 { font-size: 16px; margin: 0; letter-spacing: 0.05em; }
-  select, button, a.btn { font: inherit; font-size: 14px; min-height: 34px; color: var(--bar-ink); background: rgba(255,255,255,0.08); border: 1px solid var(--line); border-radius: 8px; padding: 0 10px; }
+  .bar { position: fixed; left: 0; right: 0; background: var(--bar); color: var(--bar-ink); display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); backdrop-filter: blur(4px); z-index: 2; }
+  #top { top: 0; padding-block: calc(4px + env(safe-area-inset-top, 0px)) 4px; background: linear-gradient(rgba(22,16,10,0.62), rgba(22,16,10,0.38)); }
+  #bottom { bottom: 0; padding-block: 4px calc(6px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(rgba(22,16,10,0.38), rgba(22,16,10,0.66)); }
+  h1 { font-size: 15px; margin: 0 4px 0 0; letter-spacing: 0.05em; }
+  select, button, a.btn { font: inherit; font-size: 13px; min-height: 32px; color: var(--bar-ink); background: rgba(255,255,255,0.08); border: 1px solid var(--line); border-radius: 8px; padding: 0 9px; }
   button:disabled { opacity: 0.4; }
-  button.primary { background: var(--accent); color: #2a1d0b; border-color: var(--accent); font-weight: 600; min-width: 72px; }
+  button.primary { background: var(--accent); color: #2a1d0b; border-color: var(--accent); font-weight: 600; min-width: 64px; }
   option { color: #1d160e; }
   a { color: var(--accent); }
   a.btn { display: inline-flex; align-items: center; text-decoration: none; }
-  label { font-size: 13px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-  #badge { flex-basis: 100%; font-size: 12px; color: var(--exp-fg); background: var(--exp-bg); border-radius: 6px; padding: 3px 8px; }
+  label { font-size: 12.5px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+  #badge { font-size: 11px; color: var(--exp-fg); background: var(--exp-bg); border-radius: 6px; padding: 2px 7px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 260px; }
   #timeline { flex: 1 1 100%; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
   #clock { width: 100%; min-width: 0; margin: 0; accent-color: var(--accent); }
   /* walk marks: one per engine-recorded walk interval; a minimum drawn width keeps very short walks visible (drawing only) */
@@ -31,7 +31,7 @@
   .marks-legend { font-size: 11px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
   .marks-legend b { flex: none; display: inline-block; width: 14px; height: 8px; background: rgba(233,185,73,0.75); border-radius: 1px; }
   button.touch { min-height: 44px; min-width: 44px; }
-  #summary { position: fixed; inset: 96px max(10px, env(safe-area-inset-right, 0px)) 92px max(10px, env(safe-area-inset-left, 0px)); max-width: 720px; margin-inline: auto; overflow: auto; background: rgba(24,18,12,0.96); border: 2px solid var(--accent); border-radius: 12px; padding: 10px 16px; font-size: 13px; line-height: 1.6; z-index: 3; }
+  #summary { position: fixed; inset: 84px max(10px, env(safe-area-inset-right, 0px)) 92px max(10px, env(safe-area-inset-left, 0px)); max-width: 720px; margin-inline: auto; overflow: auto; background: rgba(24,18,12,0.96); border: 2px solid var(--accent); border-radius: 12px; padding: 10px 16px; font-size: 13px; line-height: 1.6; z-index: 3; }
   #summary .sum-label { display: inline-block; font-size: 16px; font-weight: 700; color: #2a1d0b; background: var(--accent); border-radius: 6px; padding: 2px 10px; }
   #summary h2 { font-size: 15px; margin: 8px 0 4px; } #summary h3 { font-size: 14px; margin: 10px 0 4px; }
   #summary table { border-collapse: collapse; width: 100%; font-size: 12px; } #summary th, #summary td { text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--line); }
@@ -40,20 +40,22 @@
   body.summary-mode #scene { visibility: hidden; }
   body.summary-mode .play-only, body.summary-mode #banner, body.summary-mode #toast, body.summary-mode #weather, body.summary-mode #counts, body.summary-mode #card { display: none !important; }
   @media (pointer: coarse) { #clock { min-height: 44px; } #marks { height: 22px; } }
-  #time { font-size: 13px; font-variant-numeric: tabular-nums; flex-basis: 100%; }
-  .chip { position: fixed; right: max(10px, env(safe-area-inset-right, 0px)); background: var(--bar); border-radius: 8px; padding: 4px 8px; font-size: 12px; z-index: 2; }
-  #weather { top: 108px; } #counts { top: 136px; }
-  #card { position: fixed; left: max(10px, env(safe-area-inset-left, 0px)); top: 108px; max-width: min(420px, calc(100vw - 20px)); background: var(--bar); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 13px; line-height: 1.6; z-index: 3; }
+  #time { font-size: 12px; font-variant-numeric: tabular-nums; flex-basis: 100%; color: var(--muted); }
+  .chip { position: fixed; right: max(10px, env(safe-area-inset-right, 0px)); background: var(--panel); border-radius: 8px; padding: 4px 8px; font-size: 12px; z-index: 2; }
+  #weather { top: 84px; } #counts { top: 112px; }
+  #layers { position: fixed; top: 44px; right: max(10px, env(safe-area-inset-right, 0px)); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; z-index: 4; font-size: 13px; }
+  #layers .legend-tag { max-width: 220px; white-space: normal; }
+  #card { position: fixed; left: max(10px, env(safe-area-inset-left, 0px)); top: 84px; max-width: min(420px, calc(100vw - 20px)); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 13px; line-height: 1.6; z-index: 3; }
   #card .muted { color: var(--muted); font-size: 12px; }
   #card .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
-  #banner, #toast { position: fixed; left: 50%; transform: translateX(-50%); max-width: min(640px, calc(100vw - 24px)); background: rgba(20,15,10,0.88); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 13px; line-height: 1.5; text-align: center; z-index: 3; }
-  #banner { top: 42%; } #toast { top: 30%; font-size: 12px; color: var(--muted); }
-  #about { position: fixed; inset: 96px max(10px, env(safe-area-inset-right, 0px)) 120px max(10px, env(safe-area-inset-left, 0px)); max-width: 640px; margin-inline: auto; overflow: auto; background: rgba(24,18,12,0.95); border: 1px solid var(--line); border-radius: 12px; padding: 10px 16px; font-size: 13px; line-height: 1.6; z-index: 4; }
+  #banner, #toast { position: fixed; left: 50%; transform: translateX(-50%); max-width: min(640px, calc(100vw - 24px)); background: rgba(20,15,10,0.82); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 13px; line-height: 1.5; text-align: center; z-index: 3; }
+  #banner { top: 42%; } #toast { top: 18%; font-size: 12px; color: var(--muted); }
+  #about { position: fixed; inset: 84px max(10px, env(safe-area-inset-right, 0px)) 120px max(10px, env(safe-area-inset-left, 0px)); max-width: 640px; margin-inline: auto; overflow: auto; background: rgba(24,18,12,0.95); border: 1px solid var(--line); border-radius: 12px; padding: 10px 16px; font-size: 13px; line-height: 1.6; z-index: 4; }
   #about h2 { font-size: 15px; margin: 4px 0 6px; }
   #about code { font-size: 12px; overflow-wrap: anywhere; }
   .legend-tag { font-size: 11px; color: var(--muted); }
   [hidden] { display: none !important; }
-  @media (max-width: 600px) { h1 { font-size: 15px; } #weather { top: 128px; } #counts { top: 156px; } #card { top: 184px; } #badge { font-size: 11px; } select, button, a.btn { font-size: 13px; min-height: 36px; } }
+  @media (max-width: 600px) { h1 { font-size: 14px; } #weather { top: 96px; } #counts { top: 124px; } #card { top: 96px; } select, button, a.btn { font-size: 12.5px; min-height: 34px; } #bottom .legend-tag:not(#motionTag) { display: none; } }
 </style>
 </head>
 <body>
@@ -61,12 +63,21 @@
 <div id="top" class="bar">
   <h1>螞蟻帝國</h1>
   <select id="world" aria-label="實驗世界"></select>
+  <button id="layersBtn" type="button" aria-expanded="false">圖層</button>
   <button id="infoBtn" type="button" aria-expanded="false">資料說明</button>
   <a class="btn" href="analysis.html">分析模式</a>
   <div id="badge">載入中…</div>
 </div>
-<div id="weather" class="chip"></div>
-<div id="counts" class="chip"></div>
+<div id="layers" hidden>
+  <label><input type="checkbox" id="layerEngine">引擎物件標示</label>
+  <label><input type="checkbox" id="layerLabels">地點代號</label>
+  <label><input type="checkbox" id="layerRoutes">紀錄路段</label>
+  <label><input type="checkbox" id="layerIds">螞蟻 ID</label>
+  <label><input type="checkbox" id="layerChips">狀態列（氣溫、在外數）</label>
+  <span class="legend-tag">這些是玩家視角的輔助圖層，螞蟻不知道這些資訊。</span>
+</div>
+<div id="weather" class="chip" hidden></div>
+<div id="counts" class="chip" hidden></div>
 <div id="card" hidden></div>
 <div id="banner" hidden></div>
 <div id="toast" hidden></div>
@@ -80,7 +91,7 @@
   <button id="modeBtn" class="touch" type="button" aria-pressed="false" title="切換：連續播放／日摘要（非連續播放）">日摘要</button>
   <select id="speed" class="play-only" aria-label="播放速度"></select>
   <label class="play-only"><input type="checkbox" id="skip" checked>快轉無人行走的時段</label>
-  <label class="play-only"><input type="checkbox" id="labels">標籤</label>
+  <button id="homeBtn" class="play-only" type="button">巢口近景</button>
   <button id="fit" class="play-only" type="button">全景</button>
   <div id="timeline" class="play-only">
     <input type="range" id="clock" min="0" max="360" step="any" value="0" aria-label="活動時段內的時間（分鐘）">
@@ -88,7 +99,8 @@
     <div class="marks-legend"><b></b><span>引擎紀錄的行走時段（worker_activity）；點選或拖曳可跳轉，不改變紀錄</span></div>
   </div>
   <div id="time" class="play-only" aria-live="off"></div>
-  <span class="legend-tag play-only">位置＝引擎紀錄點與其間的顯示插值；場景為示意；螞蟻放大顯示</span>
+  <span class="legend-tag play-only">位置＝引擎紀錄點與其間的顯示插值；場景、光源為示意；螞蟻放大顯示</span>
+  <span class="legend-tag" id="motionTag">頭與觸角動作＝示意動畫（引擎尚未模擬）</span>
 </div>
 <script type="module" src="dist/game.js"></script>
 </body>

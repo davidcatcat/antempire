@@ -1,0 +1,5 @@
+{
+  "extends": "../../web/tsconfig.json",
+  "compilerOptions": { "rootDir": "../..", "outDir": "dist" },
+  "include": ["harness.ts", "../../web/src/art-*.ts", "../../web/src/render-*.ts"]
+}

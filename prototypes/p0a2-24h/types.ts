@@ -43,6 +43,9 @@ export interface Worker {
   trip_loaded: boolean;
   /** consecutive arrivals at its remembered source that found nothing (own experience; used only by the give-up switch) */
   empty_streak: number;
+  /** instant of its own last intake at a food source (null = never) and the interval between its last two such intakes
+   *  (own experience; read only by the Q2 retention candidate, default off) */
+  last_intake_t: number | null; forage_interval_ms: number | null;
   contacts: ContactRec[]; begging: BegRec[];
   /** id of this worker's one live event (others in the queue are stale and skipped) */
   pending: string | null;
@@ -62,8 +65,9 @@ export interface Stats {
   exits_by_hour: number[]; declines_by_hour: number[]; returns_by_hour: number[];
   temp_unavailable: number; heat_refusals: number; searches_found: number; searches_failed: number;
   trophallaxis_events: number; larva_feeds: number;
-  /** events that shared their exact instant and round with an event of another actor (processed in canonical-id
-   *  order; the same-instant contest rule is open — design §4.1, P0-A1 §7) */
+  /** events that shared their exact instant and round with an event of another actor (processed in the seeded tie-break
+   *  order hash32(seed|t|id) — a transitional ENGINEERING arbitration, not a natural competition rule, Owner #193 Q4;
+   *  the same-instant contest rule is open — design §4.1, P0-A1 §7) */
   same_instant_events: number;
 }
 
@@ -91,6 +95,9 @@ export interface SelfView {
   recruit_contacts_recent: number;
   /** begging larvae it touched within the contact window */
   begging_recent: number;
+  /** its own experience: ms between its own last two intakes at a food source (null until it has fed there twice);
+   *  read only by the Q2 retention candidate (default off) */
+  forage_interval_ms: number | null;
 }
 /** what a worker senses at the nest entrance or outside, at its own location and instant */
 export interface SiteView { temp_c: number | null; light: LightState }
@@ -104,9 +111,15 @@ export interface LarvaView { begging: number; room: number }
 /** species / scenario constants handed to decisions (not colony state) */
 export interface DecisionConsts {
   hill_n: number; recruit_contact_weight: number; idle_probability: number;
-  /** null = no temperature anchors (sensitivity variant 'ft-flat'): f_T = 1; the CTmax heat rule still applies */
+  /** null = no temperature anchors (the reference 'ft-flat', Owner #193 Q1 = B; provisional, uncalibrated): f_T = 1;
+   *  the CTmax heat rule still applies. Numbers = sensitivity scenarios only (ft-r190, ft-peak-30) */
   f_t: { zero_low: number; peak: number; zero_high: number } | null; light_factor_night: number;
   transfer_max: number; feed_bolus: number; begging_threshold: number;
+  /** Q2 candidate 'forager keeps what it needs' (Owner #188 / #193): null = OFF (reference). 'horizon': keep its own
+   *  metabolic need for need_ms; 'own_interval': for factor x its own last experienced interval between intakes */
+  retention: { kind: 'horizon'; need_ms: number } | { kind: 'own_interval'; factor: number } | null;
+  /** the worker's own metabolic rate (µP / day; the same for every worker in this prototype) and the day length (ms) */
+  metabolic_rate_per_day: number; day_ms: number;
 }
 export type NestChoice = 'forage' | 'brood' | 'idle' | 'rest';
 export type ExitChoice = 'exit' | 'declined' | 'temp_unavailable' | 'heat';
