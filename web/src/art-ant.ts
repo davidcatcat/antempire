@@ -269,6 +269,13 @@ export function antGlints(heading: number): DrawList {
   ];
 }
 
+/** The bright glint spots of antGlints as plain circles (local units) for batched stamp drawing in renderers. */
+export function antGlintSpots(heading: number): { x: number; y: number; r: number; a: number }[] {
+  const L = light(); if (L.intensity <= 0) return [];
+  const lx = -L.dir.x, ly = -L.dir.y, c = Math.cos(-heading), s = Math.sin(-heading), x = lx * c - ly * s, y = lx * s + ly * c;
+  return [{ x: -34 + x * 5.5, y: y * 4.4, r: 4.4, a: 0.75 }, { x: 32 + x * 4, y: y * 3.8, r: 3.4, a: 0.5 }, { x: 14 + x * 2.5, y: y * 2.4, r: 3.4, a: 0.38 }];
+}
+
 /** Walk-cycle phase driven by distance travelled on screen (px) for an ant drawn bodyLenPx long. Returns cycles. */
 export const walkCycles = (distPx: number, bodyLenPx: number) => distPx / ((CYCLE_ADVANCE / 100) * bodyLenPx);
 /** Frame index from accumulated cycles. */
