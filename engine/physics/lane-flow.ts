@@ -56,6 +56,26 @@ export interface LaneFlowInput {
    *  start_t_s + k·retry_interval_s (exact decimals). Ties at one instant: scheduled time, then id. Omitted = every body
    *  is on the lane at its start pose from t = 0 (the PH-3b / KIN-2D convention). */
   entry?: { control: true; retry_interval_s: number };
+  /** decision layer (ruling 7; opt-in; omitted = no decisions, output unchanged). Each agent has its OWN clock anchored
+   *  at its ACTUAL start (no entry control: start_t_s) or ACTUAL entry instant (entry control): it decides there first
+   *  and then at anchor + k·interval_s (exact decimals; #180 individual clock). A decision reads ONLY the state at that
+   *  instant within sensing_radius_mm (LocalView): no history, no future, no global quantity. Rule 'go_unless_oncoming'
+   *  (candidate, 遊戲假設): wait if a body moving the other way blocks the way ahead (its capsule overlaps the own capsule
+   *  swept forward by the sensing radius), else go at the free speed (a same-direction body ahead is followed; the
+   *  contact response decides the mechanics). With contact_response 'stop' a stopped body holds until its next own
+   *  decision instant and then decides again. No decision at the horizon (zero duration). */
+  decision?: { interval_s: number; sensing_radius_mm: number; rule: 'go_unless_oncoming' };
+}
+/** what a decision may read: bodies on the lane within the sensing radius at the decision instant (capsule and heading only) */
+export interface LocalView { t_s: number; self: { id: string; pose: Pose; dims: { h: number; r: number } }; sensed: { id: string; pose: Pose; dims: { h: number; r: number }; gap_mm: number }[] }
+export interface DecisionRecord { t_s: number; agent: string; kind: 'go' | 'wait'; first: boolean; sensed: string[]; blocking: string[] }
+/** the candidate rule, a pure function of the LocalView only */
+export function decideGoUnlessOncoming(v: LocalView, radius: number): { kind: 'go' | 'wait'; blocking: string[] } {
+  const p = v.self.pose, c = Math.cos(p.th), s = Math.sin(p.th), h = v.self.dims.h;
+  const probe = { a: { x: p.x - c * h, y: p.y - s * h }, b: { x: p.x + c * (h + radius), y: p.y + s * (h + radius) }, r: v.self.dims.r };
+  const blocking = v.sensed.filter((o) => capGap(probe, capsuleAt(o.pose, o.dims)).g < 0).map((o) => o.id);
+  const oncoming = v.sensed.filter((o) => blocking.includes(o.id) && Math.cos(o.pose.th - p.th) < 0);
+  return { kind: oncoming.length ? 'wait' : 'go', blocking };
 }
 /** executed motion piece (closed form: pose(t) = advancePose(p0, tw, t − t0) for t ∈ [t0, t1]) */
 export interface ExecPiece { t0: number; t1: number; p0: Pose; tw: { v: number; vl: number; w: number } }
@@ -76,6 +96,8 @@ export interface LaneFlowResult {
   initial_states: Record<string, AgentState>;
   statics: Static[];
   stats: { epochs: number; kin_runs: number; reruns_to_arrival: number; arrived: number; hysteresis_closes: number; boundary_contact_ends: number; entered: number; entry_blocked_attempts: number };
+  /** decision layer only (absent without it: the output is then unchanged) */
+  decisions?: DecisionRecord[];
 }
 
 /** numerical: reaching the goal within this progress (mm) at an epoch end counts as arrived there (float rounding) */
@@ -88,6 +110,8 @@ interface Ag {
   arrived: number | null; removed: number | null; presentFrom: number | null; pieces: ExecPiece[]; samples: [number, number, number, number][];
   /** entry control: attempts made, next attempt instant (null = none left before the horizon or entered) */
   tries: number; nextTry: number | null;
+  /** decision layer: command in effect, own clock anchor, own index, next own instant (null = none), first decision pending */
+  cmd: 'go' | 'wait'; anchor: number | null; dk: number; nextDec: number | null; firstDue: boolean;
 }
 
 export function laneFlow(input: LaneFlowInput): LaneFlowResult {
@@ -97,7 +121,9 @@ export function laneFlow(input: LaneFlowInput): LaneFlowResult {
   if (input.contact_response !== 'stop' && input.contact_response !== 'slow') throw new LaneFlowRefused(`unknown contact response ${String(input.contact_response)}`);
   if (input.arrival !== 'leave_to_ledger' && input.arrival !== 'stay_as_obstacle') throw new LaneFlowRefused(`unknown arrival rule ${String(input.arrival)}`);
   validateSites(input.sites);
-  const CTL = input.entry ?? null;
+  const CTL = input.entry ?? null, DEC = input.decision ?? null;
+  if (DEC && (!(DEC.interval_s > 0) || !Number.isFinite(DEC.interval_s) || !(DEC.sensing_radius_mm > 0) || DEC.rule !== 'go_unless_oncoming')) throw new LaneFlowRefused('decision layer needs a positive interval_s, a positive sensing_radius_mm and rule go_unless_oncoming (candidates, never defaulted)');
+  const decisions: DecisionRecord[] = [];
   if (CTL && (CTL.control !== true || !(CTL.retry_interval_s > 0) || !Number.isFinite(CTL.retry_interval_s))) throw new LaneFlowRefused('entry control needs control: true and a positive retry_interval_s (scenario assumption, never defaulted)');
   const siteIds = new Set(input.sites.map((s) => s.id));
   const specs = [...input.agents].sort((a, b) => cmp(a.id, b.id));
@@ -116,7 +142,7 @@ export function laneFlow(input: LaneFlowInput): LaneFlowResult {
     if (!(sp.s_mm >= 0 && sp.goal_s_mm >= sp.s_mm && sp.goal_s_mm <= lane.length_mm)) throw new LaneFlowRefused(`${sp.id}: start / goal must satisfy 0 ≤ s ≤ goal ≤ lane length`);
     if (Math.abs(sp.u_mm) + w / 2 > W2) throw new LaneFlowRefused(`${sp.id}: body outside the lane walls`);
     if (!(sp.start_t_s >= 0) || !Number.isFinite(sp.start_t_s)) throw new LaneFlowRefused(`${sp.id}: start time`);
-    return { sp, d: { L }, pose: poseOf(sp, sp.s_mm), present: !CTL, started: false, frozen: false, arrived: null, removed: null, presentFrom: CTL ? null : 0, pieces: [], samples: [], tries: 0, nextTry: CTL && sp.start_t_s <= H ? sp.start_t_s : null };
+    return { sp, d: { L }, pose: poseOf(sp, sp.s_mm), present: !CTL, started: false, frozen: false, arrived: null, removed: null, presentFrom: CTL ? null : 0, pieces: [], samples: [], tries: 0, nextTry: CTL && sp.start_t_s <= H ? sp.start_t_s : null, cmd: 'go', anchor: null, dk: 0, nextDec: null, firstDue: false };
   });
   const byId = new Map(A.map((a) => [a.sp.id, a]));
   const transitions: Transition[] = [];
@@ -138,7 +164,27 @@ export function laneFlow(input: LaneFlowInput): LaneFlowResult {
     a.arrived = t; stats.arrived++;
     if (input.arrival === 'leave_to_ledger') { removeAgent(a, t); requests.push({ t, agent: a.sp.id, site: a.sp.site, kind: 'arrive' }); }
   };
-  const moving = (a: Ag) => a.present && a.started && a.arrived === null && !a.frozen;
+  const moving = (a: Ag) => a.present && a.started && a.arrived === null && !a.frozen && a.cmd === 'go';
+  /** the agent starts its own decision clock at its actual start / entry instant */
+  const anchorAt = (a: Ag, now: number) => { if (DEC && a.arrived === null) { a.anchor = now; a.dk = 0; a.firstDue = true; a.cmd = 'wait'; } };
+  /** decisions due at `now` (first decisions and own-clock instants), as ONE batch reading the same state */
+  const decideDue = (now: number) => {
+    if (!DEC || now >= H) return;
+    const due = A.filter((a) => a.present && a.arrived === null && (a.firstDue || a.nextDec === now));
+    if (!due.length) return;
+    const views = due.map((a) => {
+      const dims = dimsOf(a.sp.body, a.sp.id), own = capsuleAt(a.pose, dims);
+      const sensed = A.filter((b) => b !== a && b.present).map((b) => { const bd = dimsOf(b.sp.body, b.sp.id); return { id: b.sp.id, pose: { ...b.pose }, dims: bd, gap_mm: capGap(own, capsuleAt(b.pose, bd)).g }; }).filter((o) => o.gap_mm <= DEC.sensing_radius_mm);
+      return { a, view: { t_s: now, self: { id: a.sp.id, pose: { ...a.pose }, dims }, sensed } as LocalView };
+    });
+    for (const { a, view } of views) {
+      const d = decideGoUnlessOncoming(view, DEC.sensing_radius_mm);
+      decisions.push({ t_s: now, agent: a.sp.id, kind: d.kind, first: a.firstDue, sensed: view.sensed.map((o) => o.id), blocking: d.blocking });
+      a.cmd = d.kind; a.frozen = false; a.firstDue = false; a.dk++;
+      const nt = addTime(a.anchor as number, gridTime(a.dk, DEC.interval_s));
+      a.nextDec = nt <= H ? nt : null;
+    }
+  };
 
   // initial legality: no overlap among bodies present at the start (with entry control nobody is on the lane before entering)
   if (!CTL) {
@@ -147,7 +193,7 @@ export function laneFlow(input: LaneFlowInput): LaneFlowResult {
   }
   const starts = CTL ? [] : [...new Set(A.map((a) => a.sp.start_t_s).filter((t) => t <= H))].sort((x, y) => x - y);
   let t = 0;
-  const startDue = (now: number) => { for (const a of A) if (!a.started && a.present && a.sp.start_t_s <= now) { a.started = true; if (progress(a.sp, a.pose) >= a.sp.goal_s_mm) arrive(a, now); } };
+  const startDue = (now: number) => { for (const a of A) if (!a.started && a.present && a.sp.start_t_s <= now) { a.started = true; if (progress(a.sp, a.pose) >= a.sp.goal_s_mm) arrive(a, now); else anchorAt(a, now); } };
   /** entry control at instant `now`: attempts due now, in (scheduled time, id) order; each checks the bodies on the lane (incl. those that just entered) */
   const entriesDue = (now: number) => {
     if (!CTL) return;
@@ -157,7 +203,7 @@ export function laneFlow(input: LaneFlowInput): LaneFlowResult {
       if (free) {
         a.present = true; a.presentFrom = now; a.started = true; a.nextTry = null; stats.entered++;
         transitions.push({ t: now, agent: a.sp.id, to: 'in_lane' }); sample(a, now);
-        if (progress(a.sp, a.pose) >= a.sp.goal_s_mm) arrive(a, now);
+        if (progress(a.sp, a.pose) >= a.sp.goal_s_mm) arrive(a, now); else anchorAt(a, now);
       } else {
         stats.entry_blocked_attempts++;
         if (a.tries === 0) transitions.push({ t: now, agent: a.sp.id, to: 'waiting_entry' });
@@ -170,9 +216,11 @@ export function laneFlow(input: LaneFlowInput): LaneFlowResult {
   if (!CTL) for (const a of A) sample(a, 0);
   startDue(0);
   entriesDue(0);
+  decideDue(0);
   for (;;) {
     const tries = A.map((a) => a.nextTry).filter((x): x is number => x !== null && x > t);
-    const next = Math.min(H, ...starts.filter((s) => s > t), ...tries);
+    const decs = DEC ? A.map((a) => (a.present && a.arrived === null ? a.nextDec : null)).filter((x): x is number => x !== null && x > t) : [];
+    const next = Math.min(H, ...starts.filter((s) => s > t), ...tries, ...decs);
     const live = A.filter((a) => a.present);
     let tEnd = next;
     if (live.some(moving) && next > t) {
@@ -212,6 +260,7 @@ export function laneFlow(input: LaneFlowInput): LaneFlowResult {
     if (t >= H) { entriesDue(t); break; }
     startDue(t);
     entriesDue(t);
+    decideDue(t);
   }
 
   // ledger: arrivals → admit / queue / turn away → release
@@ -225,7 +274,7 @@ export function laneFlow(input: LaneFlowInput): LaneFlowResult {
   const agents: Record<string, FlowAgentOut> = {};
   for (const a of A) agents[a.sp.id] = { dir: a.sp.dir, site: a.sp.site, scheduled_t_s: a.sp.start_t_s, present_from_t_s: a.presentFrom, removed_t_s: a.removed, arrival_t_s: a.arrived, final_state: stateOf.get(a.sp.id)!, final_pose: a.present ? { ...a.pose } : null, pieces: a.pieces, samples: a.samples };
   const classification: ContactClassification = { source: 'LANE-FLOW', horizon_s: H, contact_episodes: sortEp(episodes), constraint_active: sortCa(constraints) };
-  return { agents, classification, ledger, transitions, initial_states, statics, stats };
+  return { agents, classification, ledger, transitions, initial_states, statics, stats, ...(DEC ? { decisions } : {}) };
 
   function stitch(c: ContactClassification, t0: number) {
     const seenEp = new Set<string>();
