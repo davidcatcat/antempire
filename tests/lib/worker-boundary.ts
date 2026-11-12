@@ -5,7 +5,8 @@
  *   - Every reached module must sit under an allowed prefix and under no denied prefix.
  *   - No `node:` or bare-package imports, no non-literal dynamic import, no nested Worker.
  *   - No storage / network / file-system globals anywhere in the graph (no bypass of the isolation).
- *   - Reached engine modules must not read wall clocks, frame timers or Math.random (simulation time only).
+ *   - Reached engine modules (and every module under `pure_module_prefixes`, e.g. the allowlisted P0-A2 core) must not
+ *     read wall clocks, frame timers or Math.random (simulation time only).
  *   - No path strings naming official saves / journals in the graph.
  *   - web/src may create a Worker only in the listed client files.
  *   - Nothing official (top-level engine/*.ts, engine/scheduler, engine/clock, cli/, web/src) imports the Worker dir.
@@ -16,6 +17,8 @@ export interface Boundary {
   worker_entry_dir: string; worker_client_files: string[]; allowed_import_prefixes: string[]; denied_import_prefixes: string[];
   forbidden_globals_in_worker_graph: string[]; forbidden_in_engine_modules: string[]; forbidden_path_strings_in_worker_graph: string[];
   experimental_save_store: { files: string[]; database_name_prefix: string };
+  /** module prefixes held to forbidden_in_engine_modules (default: engine/ only) */
+  pure_module_prefixes?: string[];
 }
 export interface Violation { file: string; rule: string; detail: string }
 
@@ -63,7 +66,7 @@ export function checkBoundary(files: Map<string, string>, b: Boundary): { violat
     for (const g of b.forbidden_globals_in_worker_graph) { checks++; if (new RegExp(`(^|[^\\w$])${esc(g)}(?![\\w$])`).test(code) || new RegExp(`['"\`]${esc(g)}['"\`]`).test(text)) bad(f, 'forbidden-global', g); }
     checks++; if (/\bnew\s+(Shared)?Worker\s*\(/.test(code)) bad(f, 'nested-worker', 'Worker graph may not spawn workers');
     for (const p of b.forbidden_path_strings_in_worker_graph) { checks++; if (text.includes(p)) bad(f, 'official-path-string', p); }
-    if (f.startsWith('engine/')) for (const t of b.forbidden_in_engine_modules) { checks++; if (code.includes(t)) bad(f, 'engine-impurity', t); }
+    if ((b.pure_module_prefixes ?? ['engine/']).some((p) => under(f, p))) for (const t of b.forbidden_in_engine_modules) { checks++; if (code.includes(t)) bad(f, 'engine-impurity', t); }
   }
   // web/src: Worker creation only in the client files; client files only import viewer modules (checked by web.test).
   for (const [f, src] of files) {

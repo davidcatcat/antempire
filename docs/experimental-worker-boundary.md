@@ -1,6 +1,6 @@
 # 非正式實驗 Worker 邊界（Owner 決策 #39）
 
-> 狀態：規則與保護測試（PR 1／3）；Worker 執行環境（PR 2）見 [`experimental-worker-runtime.md`](experimental-worker-runtime.md)；V6-2 畫面整合（PR 3）尚未實作。
+> 狀態：規則與保護測試（PR 1／3）；Worker 執行環境（PR 2）見 [`experimental-worker-runtime.md`](experimental-worker-runtime.md)；V6-2 畫面整合（PR 3）見 [`v62-experiment-mode.md`](v62-experiment-mode.md)。白名單已擴充到 P0-A2 24 小時原型的核心檔（Owner 2026-11-12 授權，#156 第三階段，§4c）。
 > 本文件說明 CLAUDE.md §9「觀察器的兩種模式」的有限例外；若兩者不一致，以 CLAUDE.md 與較嚴格者為準。
 
 ## 1. 為什麼要例外
@@ -48,7 +48,15 @@ V6-2 UI ──► Worker Client (web/src/experimental/worker-client.ts)
 - 匯入圖中的 `engine/` 模組不得使用 `Math.random`、`Date.now`、`new Date(`、`performance.`、`requestAnimationFrame`、`setTimeout`、`setInterval`（行為只依模擬時間與種子）。
 - 匯入圖中不得出現指向正式資料的路徑字串（`saves/`、`journal/`、`commit-log`、`.advance-tmp`）。
 - `web/src/` 中只有清單內的 client 檔可以 `new Worker(...)`；正式程式（`engine/*.ts`、`engine/scheduler/`、`engine/clock/`、`cli/`、`web/src/`）不得匯入 Worker 目錄。
-- P0-A2 新增的純模組要加入白名單時，屬規則修改：另開 PR、列出該模組的純度檢查，經 Codex 固定 SHA 審查後才生效。
+- P0-A2 新增的純模組要加入白名單時，屬規則修改：另開 PR、列出該模組的純度檢查，並取得 Owner 授權。**Owner 2026-11-12 的授權（#156 第三階段）取代了原本「經 Codex 固定 SHA 審查」這一步**（適用於這類白名單擴充）。CLAUDE.md §9 B 目前仍寫「經 Codex 固定 SHA 審查」；本 PR 沒有修改 CLAUDE.md，兩者的差異已在 PR 說明中請 Owner 裁示（依 CLAUDE.md 開頭的規則，衝突時以較嚴格者為準，直到 Owner 更新 CLAUDE.md）。
+
+## 4c. P0-A2 24 小時原型核心（Owner 2026-11-12 授權，#156 第三階段）
+
+- **加入白名單的檔案（只有核心，逐檔列出）**：`prototypes/p0a2-24h/canon.ts`、`decision.ts`、`environment.ts`、`params.ts`、`types.ts`、`world.ts` 與參數檔 `params.json`（以 JSON 模組匯入）。`observer.ts`（觀察算子）不在白名單；`prototypes/p0a2-24h/tools/`（Node 分析工具，使用 `fs`）與 `out/` 列入**禁止**清單。
+- **純度檢查**：新增 `pure_module_prefixes: ["engine/", "prototypes/p0a2-24h/"]`，`forbidden_in_engine_modules`（`Math.random`、`Date.now`、`new Date(`、`performance.`、`requestAnimationFrame`、`setTimeout`、`setInterval`）也套用到 P0-A2 核心；儲存／網路全域、`node:`／外部套件匯入、動態匯入、正式資料路徑字串的檢查本來就涵蓋整個 Worker 匯入圖。`tests/worker-boundary.test.ts` 的真實掃描現在也讀入 `prototypes/p0a2-24h/`，並確認 Worker 圖到達 `world.ts`、`decision.ts`、`params.json`，且不到達 `tools/`、`out/`、`observer.ts`。
+- **新增負面樣本**（7 個，全部必須失敗）：匯入 `tools/`（denied-module）、匯入 `observer.ts`（not-allowlisted）、核心檔用 `Math.random`、用 `Date.now`（engine-impurity）、核心檔匯入 `node:fs`（node-import）、核心檔遞移匯入 `cli/`（denied-module）、核心檔用 `fetch`（forbidden-global）。
+- **介接方式**：Worker 目錄內的薄轉接層 `prototypes/continuous-world/worker/p0a2-world.ts`（不改 P0-A2 任何行為檔），見 [`experimental-worker-runtime.md`](experimental-worker-runtime.md) §9。P0-A2 核心仍是平台無關（`prototypes/p0a2-24h/tsconfig.json`：無 DOM、無 Node 型別），Worker 的獨立 tsconfig 只多列這些檔案。
+- 規則指紋包含 P0-A2 參數檔 SHA-256 與「程式碼 SHA-256」（P0-A2 轉接層的執行期匯入圖中每個 TypeScript 檔，`prototypes/continuous-world/tools/p0a2-code-hash.ts` 產生、`tests/worker-runtime.test.ts` 檢查是否過期）；任何一個檔案改變，舊存檔載入時都會被拒絕（`FINGERPRINT_MISMATCH`），不會在不同規則下默默接續。
 
 ## 4b. 實驗世界本地存檔例外（SAVE）
 

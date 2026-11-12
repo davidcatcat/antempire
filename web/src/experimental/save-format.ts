@@ -147,7 +147,7 @@ export function compatibility(h: Pick<SnapshotHeader, 'schema' | 'rules_fingerpr
 
 // ---------- world records, retention, load order ----------
 
-export interface WorldSummary { queens?: number | null; workers?: number | null; individuals?: number | null; note?: string | null }
+export interface WorldSummary { queens?: number | null; workers?: number | null; larvae?: number | null; individuals?: number | null; note?: string | null }
 /** Where an imported copy came from (Owner decision 54). The copy's stored snapshots are the source's verified bytes. */
 export interface Provenance {
   kind: 'import_copy'; source_world_id: string; source_name: string; source_exported_at: string; source_export_sha256: string;
@@ -248,8 +248,13 @@ export function simDayTime(t_sim: number | null): { day: number; clock: string }
   return { day, clock: `${p2(Math.floor(sec / 3600))}:${p2(Math.floor(sec / 60) % 60)}:${p2(sec % 60)}` };
 }
 
-/** Individuals in a Worker snapshot payload, for the save list. The synthetic world has no queen (null, not 0). */
+/** Individuals in a Worker snapshot payload, for the save list. Neither world has a queen (null, not 0). */
 export function summaryOf(snapshot: unknown): WorldSummary {
+  const p0 = (snapshot as { payload?: { world_kind?: unknown; state?: { workers?: object; larvae?: object } } })?.payload;
+  if (p0?.world_kind === 'p0a2') {
+    const nw = p0.state?.workers ? Object.keys(p0.state.workers).length : null, nl = p0.state?.larvae ? Object.keys(p0.state.larvae).length : null;
+    return { queens: null, workers: nw, larvae: nl, individuals: nw === null || nl === null ? null : nw + nl, note: 'P0-A2 候選／實驗世界（非正式）：小工蟻與幼蟲，沒有蟻后（尚未模擬）' };
+  }
   const ants = (snapshot as { payload?: { ants?: unknown[] } })?.payload?.ants;
   const n = Array.isArray(ants) ? ants.length : null;
   return { queens: null, workers: null, individuals: n, note: '合成世界：沒有蟻后，個體不分階級' };

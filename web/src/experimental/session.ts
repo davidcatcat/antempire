@@ -10,13 +10,17 @@
 import { ExperimentWorkerClient } from './worker-client.ts';
 import { ExperimentSaveStore, acquireWriterLock, type LoadResult, type SaveReceipt, type WorldListing, type WriterLock } from './save-store.ts';
 import { AutosaveController, errR, newWorldId, okR, seedFromInput, summaryOf, type Result, type RuntimeInfo, type SaveReason, type SaveUiState } from './save-format.ts';
+import { WORLD_KINDS, type WorldKind } from './worker-protocol.ts';
+
+/** the world kind a new game starts by default: the P0-A2 24 h individual-behaviour world (candidate, non-official) */
+export const DEFAULT_WORLD_KIND: WorldKind = 'p0a2';
 
 export interface SessionState { world_id: string; name: string; seed: number; writer: boolean; readOnlyReason: string | null; recoveredNotice: string | null; sim_world_id: string }
 
 export class ExperimentSession {
   readonly client: ExperimentWorkerClient;
   readonly store: ExperimentSaveStore;
-  private rtInfo: RuntimeInfo | null = null;
+  private rtInfo = new Map<WorldKind, RuntimeInfo>();
   current: SessionState | null = null;
   private lock: WriterLock | null = null;
   autosave: AutosaveController | null = null;
@@ -33,30 +37,47 @@ export class ExperimentSession {
 
   constructor(client: ExperimentWorkerClient, store: ExperimentSaveStore) { this.client = client; this.store = store; }
 
-  /** What this Worker build expects of a snapshot. Read from a throw-away world the Worker creates and that is never
-   *  saved or shown (the protocol has no separate info command). */
-  async runtimeInfo(): Promise<RuntimeInfo> {
-    if (this.rtInfo) return this.rtInfo;
-    await this.client.init('exp-runtime-probe', 0);
+  /** What this Worker build expects of a snapshot of one world kind. Read from a throw-away world the Worker creates
+   *  and that is never saved or shown (the protocol has no separate info command). */
+  async runtimeInfo(kind: WorldKind = DEFAULT_WORLD_KIND): Promise<RuntimeInfo> {
+    const have = this.rtInfo.get(kind); if (have) return have;
+    await this.client.init('exp-runtime-probe', 0, kind);
     const r = await this.client.snapshot();
     const s = (r as { snapshot?: { rules_fingerprint: string; engine_version: string; schema_version: number } }).snapshot;
     if (!s) throw new Error('the Worker did not return a snapshot');
-    this.rtInfo = { rules_fingerprint: s.rules_fingerprint, engine_version: s.engine_version, schema_version: s.schema_version };
-    return this.rtInfo;
+    const rt = { rules_fingerprint: s.rules_fingerprint, engine_version: s.engine_version, schema_version: s.schema_version };
+    this.rtInfo.set(kind, rt);
+    return rt;
   }
-  list(): Promise<WorldListing[]> { return this.runtimeInfo().then((rt) => this.store.listWorlds(rt)); }
+  /** the runtime info a stored world is checked against: the kind whose engine version the save names (a save with
+   *  an unknown engine version is checked against the default kind and shows as a rules mismatch) */
+  async runtimeFor(engine_version: string | null | undefined): Promise<RuntimeInfo> {
+    for (const k of WORLD_KINDS) { const rt = await this.runtimeInfo(k); if (rt.engine_version === engine_version) return rt; }
+    return this.runtimeInfo(DEFAULT_WORLD_KIND);
+  }
+  /** the runtime info an import file is checked against (by the engine version its snapshot names; data only) */
+  runtimeForImport(text: string): Promise<RuntimeInfo> {
+    let ev: unknown = null; try { ev = (JSON.parse(text) as { snapshot?: { engine_version?: unknown } })?.snapshot?.engine_version; } catch { /* parseImport reports it */ }
+    return this.runtimeFor(typeof ev === 'string' ? ev : null);
+  }
+  /** the save list; each world's compatibility is computed against the runtime of its own world kind */
+  async list(): Promise<WorldListing[]> {
+    const per = await Promise.all(WORLD_KINDS.map(async (k) => ({ rt: await this.runtimeInfo(k), rows: await this.store.listWorlds(await this.runtimeInfo(k)) })));
+    const def = await this.runtimeInfo(DEFAULT_WORLD_KIND);
+    return per[0].rows.map((row) => { const hit = per.find((p) => p.rt.engine_version === row.engine_version) ?? per.find((p) => p.rt === def)!; return hit.rows.find((x) => x.world_id === row.world_id) ?? row; });
+  }
 
-  /** New game: new exp- world id, the player's or a fresh seed, experiment Day0 of the synthetic world, initial
-   *  snapshot written immediately. Never overwrites (a duplicate id is refused by the store). */
-  async newGame(name: string, seedInput: string): Promise<Result<{ seed: number; how: string; receipt: SaveReceipt }>> {
+  /** New game: new exp- world id, the player's or a fresh seed, experiment Day0 (00:00) of the chosen world kind,
+   *  initial snapshot written immediately. Never overwrites (a duplicate id is refused by the store). */
+  async newGame(name: string, seedInput: string, kind: WorldKind = DEFAULT_WORLD_KIND): Promise<Result<{ seed: number; how: string; receipt: SaveReceipt }>> {
     const sd = await seedFromInput(seedInput);
     if (!sd) return errR('invalid_snapshot', '種子必須是 0～4294967295 的整數，或任意文字（會轉成整數）');
     await this.leave(false);
-    await this.runtimeInfo();
+    await this.runtimeInfo(kind);
     const id = newWorldId(), got = await acquireWriterLock(id, { onLost: () => this.lockLost() });
     if (got.mode !== 'writer') return errR('not_writer', got.reason);
     this.onWorldStart();
-    const ini = await this.client.init(id, sd.seed);
+    const ini = await this.client.init(id, sd.seed, kind);
     if (ini.type === 'error') { got.lock.release(); return errR('invalid_snapshot', `${ini.code}: ${ini.message}`); }
     const snap = await this.client.snapshot();
     if (snap.type !== 'snapshot') { got.lock.release(); return errR('invalid_snapshot', 'no snapshot'); }
@@ -71,7 +92,7 @@ export class ExperimentSession {
   /** Open a saved world (latest recovery point, or one manual save). A second tab gets read-only unless `steal`. */
   async open(world_id: string, opts: { steal?: boolean; readOnly?: boolean; gen?: number } = {}): Promise<Result<LoadResult & { readOnly: string | null }>> {
     await this.leave(false);
-    const rt = await this.runtimeInfo();
+    const rt = await this.runtimeFor((await this.store.getWorld(world_id))?.engine_version);
     let lock: WriterLock | null = null, readOnly: string | null = null;
     if (!opts.readOnly) {
       const got = await acquireWriterLock(world_id, { steal: opts.steal, onLost: () => this.lockLost() });

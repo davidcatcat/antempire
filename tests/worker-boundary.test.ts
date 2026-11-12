@@ -22,6 +22,13 @@ for (const p of B.allowed_import_prefixes) ok(!B.denied_import_prefixes.some((d)
 for (const p of B.allowed_import_prefixes) ok(!/^(cli|saves|journal|web|tests)\//.test(p) && p !== 'engine/' , `allowlist entry ${p} is narrow and not official tooling`);
 for (const g of ['indexedDB', 'caches', 'localStorage', 'fetch', 'WebSocket', 'importScripts']) ok(B.forbidden_globals_in_worker_graph.includes(g), `forbidden global listed: ${g}`);
 ok(B.worker_client_files.every((f) => f.startsWith('web/src/')), 'client files live in web/src');
+// P0-A2 core (Owner 2026-11-12, #156 phase 3): only named core files, never tools/ or out/, all held to the purity rules
+const P0 = 'prototypes/p0a2-24h/';
+const p0Allowed = B.allowed_import_prefixes.filter((p) => p.startsWith(P0));
+ok(p0Allowed.length > 0 && p0Allowed.every((p) => /^prototypes\/p0a2-24h\/[a-z0-9-]+\.(ts|json)$/.test(p)), `P0-A2 allowlist entries are single core files (${p0Allowed.join(', ')})`);
+ok(B.denied_import_prefixes.includes(`${P0}tools/`) && B.denied_import_prefixes.includes(`${P0}out/`), 'P0-A2 tools/ and out/ are denied');
+ok((B.pure_module_prefixes ?? []).includes('engine/') && (B.pure_module_prefixes ?? []).includes(P0), 'engine/ and the P0-A2 core are held to the purity rules');
+ok(/Owner/.test(B.how_to_extend as string) && /2026-11-12/.test(B.how_to_extend as string), 'how_to_extend records the Owner authorisation that replaces the Codex fixed-SHA step');
 ok(B.experimental_save_store.files.every((f) => f.startsWith('web/src/experimental/')) && B.experimental_save_store.database_name_prefix === 'antempire-experiment-', 'save store is confined to web/src/experimental and experiment-prefixed databases');
 
 // 1. specifier extraction catches every import form.
@@ -81,6 +88,14 @@ const cases: [string, (m: Map<string, string>) => void, string][] = [
   ['save store names official saves', (m) => m.set('web/src/experimental/save-store.ts', "const p = 'saves/main.json';"), 'official-path-string'],
   ['save store imports engine', (m) => m.set('web/src/experimental/save-store.ts', "import { x } from '../../../engine/rng.ts';"), 'store-import'],
   ['missing module', (m) => m.set(`${W}core.ts`, "import { q } from './nope.ts';"), 'missing'],
+  // P0-A2 core in the Worker graph (Owner 2026-11-12)
+  ['P0-A2 tools import', (m) => { m.set('prototypes/p0a2-24h/tools/q4.ts', 'export const q = 1;'); m.set(`${W}p0.ts`, "import { q } from '../../p0a2-24h/tools/q4.ts';"); }, 'denied-module'],
+  ['P0-A2 non-allowlisted module (observer)', (m) => { m.set('prototypes/p0a2-24h/observer.ts', 'export const o = 1;'); m.set(`${W}p0.ts`, "import { o } from '../../p0a2-24h/observer.ts';"); }, 'not-allowlisted'],
+  ['Math.random in a P0-A2 core module', (m) => { m.set('prototypes/p0a2-24h/world.ts', 'export const w = () => Math.random();'); m.set(`${W}p0.ts`, "import { w } from '../../p0a2-24h/world.ts';"); }, 'engine-impurity'],
+  ['wall clock in a P0-A2 core module', (m) => { m.set('prototypes/p0a2-24h/decision.ts', 'export const d = () => Date.now();'); m.set(`${W}p0.ts`, "import { d } from '../../p0a2-24h/decision.ts';"); }, 'engine-impurity'],
+  ['P0-A2 core module imports node', (m) => { m.set('prototypes/p0a2-24h/params.ts', "import fs from 'node:fs';\nexport const p = 1;"); m.set(`${W}p0.ts`, "import { p } from '../../p0a2-24h/params.ts';"); }, 'node-import'],
+  ['P0-A2 core module leaks to cli', (m) => { m.set('prototypes/p0a2-24h/canon.ts', "import { advance } from '../../cli/advance.ts';\nexport const c = 1;"); m.set(`${W}p0.ts`, "import { c } from '../../p0a2-24h/canon.ts';"); }, 'denied-module'],
+  ['P0-A2 core module uses fetch', (m) => { m.set('prototypes/p0a2-24h/environment.ts', "export const e = () => fetch('/x');"); m.set(`${W}p0.ts`, "import { e } from '../../p0a2-24h/environment.ts';"); }, 'forbidden-global'],
 ];
 for (const [name, mutate, rule] of cases) {
   const m = base(); mutate(m);
@@ -91,9 +106,11 @@ for (const [name, mutate, rule] of cases) {
 // 3. the real repository.
 const walk = (dir: string): string[] => fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(path.join(dir, e.name)) : /\.(ts|js|mjs|json)$/.test(e.name) ? [path.join(dir, e.name)] : []) : [];
 const real = new Map<string, string>();
-for (const d of ['engine', 'cli', 'web/src', B.worker_entry_dir, 'saves', 'journal']) for (const f of walk(path.join(REPO_ROOT, d))) real.set(path.relative(REPO_ROOT, f).split(path.sep).join('/'), fs.readFileSync(f, 'utf8'));
+for (const d of ['engine', 'cli', 'web/src', B.worker_entry_dir, 'prototypes/p0a2-24h', 'saves', 'journal']) for (const f of walk(path.join(REPO_ROOT, d))) real.set(path.relative(REPO_ROOT, f).split(path.sep).join('/'), fs.readFileSync(f, 'utf8'));
 const r = checkBoundary(real, B);
 ok(r.violations.length === 0, `real repository respects the Worker boundary (${JSON.stringify(r.violations.slice(0, 5))})`);
+for (const f of ['prototypes/p0a2-24h/world.ts', 'prototypes/p0a2-24h/decision.ts', 'prototypes/p0a2-24h/params.json']) ok(r.reached.includes(f), `the Worker graph reaches the P0-A2 core (${f})`);
+ok(!r.reached.some((f) => f.startsWith('prototypes/p0a2-24h/tools/') || f.startsWith('prototypes/p0a2-24h/out/') || f === 'prototypes/p0a2-24h/observer.ts'), 'the Worker graph reaches no P0-A2 tool, output or observer module');
 checks += r.checks;
 // 4. the allowlist is closed: every allowlisted engine module's own transitive imports stay inside the allowlist
 //    (otherwise an allowlisted module would be unusable or would smuggle in a denied one).

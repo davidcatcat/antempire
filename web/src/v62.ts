@@ -6,6 +6,12 @@
  *  - display interpolation: an ant's point strictly between the two records of its straight segment (v62-model.poseAt),
  *    the display clock's small lead between frames, camera, zoom, leg motion and turning ease — drawing only;
  *  - 示意: ground texture (and optional litter), the fixed schematic light. The synthetic world has no obstacles.
+ * World kinds: the P0-A2 24 h individual-behaviour world (default; candidate / experiment world, non-official, Owner
+ * #201) and the synthetic test world (?world=synthetic, or a saved synthetic world). For P0-A2 (v62-p0a2-model.ts):
+ *  - engine state: each worker's activity, location class, state start, crop fill, route; route travel end times; the
+ *    light state the workers sense (scene light; sun altitude by the general method, bucketed; shadow direction 示意);
+ *  - display interpolation: a travelling worker between the recorded ends of its route trip;
+ *  - 示意: route direction (only its length is an engine parameter), a searching worker's point, the nest inset.
  * Nothing here runs the simulation, fetches web/data, reads saves/ or journal/, or writes anything.
  */
 import { ExperimentWorkerClient } from './experimental/worker-client.ts';
@@ -13,12 +19,14 @@ import { ExperimentSaveStore } from './experimental/save-store.ts';
 import { ExperimentSession } from './experimental/session.ts';
 import type { SaveUiState } from './experimental/save-format.ts';
 import { Menu } from './v62-menu.ts';
-import type { EventMsg, FrameMsg, PacingMsg } from './experimental/worker-protocol.ts';
+import { isP0a2Frame, type AnyFrameMsg, type EventMsg, type PacingMsg, type WorldKind } from './experimental/worker-protocol.ts';
 import { LayeredRenderer } from './render-canvas.ts';
 import { antLengthPx, worldToScreen, type Camera } from './render-scene.ts';
 import { SCHEMATIC_LIGHT } from './art-core.ts';
 import { hash32 } from './game-model.ts';
 import { ACTIVITY_LABEL, DEFAULT_SPEED, EventDigest, FPS_CAPS, LIGHT_LABEL, MODE_LABEL, NEST_PLACE, V62_SPEEDS, antInputs, displayTime, fmtWorldTime, posesAt, scenePositions, type Pose } from './v62-model.ts';
+import { P0A2_STATUS_LABEL, layoutOf, p0AntInputs, p0EventText, p0Light, p0Places, p0Poses, type P0Pose } from './v62-p0a2-model.ts';
+import { cardHtml, drawInset, hudStatus, insetRect, type InsetHit } from './v62-p0a2-view.ts';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const canvas = $<HTMLCanvasElement>('scene');
@@ -26,8 +34,8 @@ const ui = { play: $<HTMLButtonElement>('play'), speed: $<HTMLSelectElement>('sp
 
 const R = new LayeredRenderer(canvas);
 const client = new ExperimentWorkerClient();
-let frame: FrameMsg | null = null, pacing: PacingMsg | null = null, frameAt = 0, followedView: unknown = null, lastDisplay: number | null = null;
-let poses: Pose[] = [], selected: string | null = null, following: string | null = null, arenaR = 60;
+let frame: AnyFrameMsg | null = null, pacing: PacingMsg | null = null, frameAt = 0, followedView: unknown = null, lastDisplay: number | null = null;
+let poses: Pose[] = [], p0poses: P0Pose[] = [], insetHits: InsetHit[] = [], sceneLight = '', selected: string | null = null, following: string | null = null, arenaR = 60;
 let digest = new EventDigest(); const recent: EventMsg[] = [], protocolErrors: string[] = [];
 /** the throw-away world the session uses to read the Worker's runtime info is never drawn or counted */
 const PROBE = 'exp-runtime-probe';
@@ -42,14 +50,36 @@ const camera = (): Camera => ({ cx: cam.x, cy: cam.y, s: cam.s, w: canvas.client
 const S2W = (sx: number, sy: number) => [cam.x + (sx - canvas.clientWidth / 2) / cam.s, cam.y - (sy - canvas.clientHeight / 2) / cam.s] as const;
 
 client.onEvents = (evs) => { if (evs[0]?.world_id === PROBE) return; session?.markDirty(); for (const e of evs) { digest.add(e); recent.push(e); } if (recent.length > 60) recent.splice(0, recent.length - 60); if (!ui.log.hidden) renderLog(); };
-client.onState = (f, p, fol) => { if (f.world_id === PROBE) return; if (p.running && frame && f.t_sim !== frame.t_sim) session?.markDirty(); frame = f; pacing = p; followedView = fol; frameAt = performance.now(); arenaR = f.arena_radius_cm; syncControls(); };
+client.onState = (f, p, fol) => {
+  if (f.world_id === PROBE) return; if (p.running && frame && f.t_sim !== frame.t_sim) session?.markDirty();
+  frame = f; pacing = p; followedView = fol; frameAt = performance.now();
+  arenaR = isP0a2Frame(f) ? f.layout.source_distance_cm * 0.62 : f.arena_radius_cm;
+  // P0-A2: the scene light follows the world's light state (bucketed; re-baked only when the bucket changes)
+  if (active && isP0a2Frame(f) && p0Light(f).label !== sceneLight) setScene();
+  syncControls();
+};
 client.onProtocolError = (w) => { protocolErrors.push(w); ui.status.textContent = `協定錯誤：${w}`; };
 
 function setScene() {
+  if (isP0a2Frame(frame)) {
+    const P = p0Places(frame), light = p0Light(frame); sceneLight = light.label;
+    R.setScene({ decor: ui.decor.checked, seed: hash32(frame.world_id), places: P.places, pos: P.pos, routes: P.routes, sources: { [frame.layout.source_id]: { host_alive: null, hemipteran_colonies: null } }, weather: null, light });
+    return;
+  }
+  sceneLight = '';
   R.setScene({ decor: ui.decor.checked, seed: hash32(frame?.world_id ?? 'exp'), places: [NEST_PLACE], pos: scenePositions(), routes: [], sources: {}, weather: null, light: SCHEMATIC_LIGHT });
   // no synchronous warm here: a toggle re-bakes chunks through the renderer's per-frame bake budget (the page stays responsive)
 }
-function homeCamera() { cam.x = 0; cam.y = 0; cam.s = Math.min(canvas.clientWidth, canvas.clientHeight - bottomBarPx - topBarPx) / (arenaR * 2.2); }
+function homeCamera() {
+  if (isP0a2Frame(frame)) {
+    // fit nest + route + source into the space between the top bar and the nest inset (display only)
+    const L = layoutOf(frame), w = canvas.clientWidth, h = canvas.clientHeight, ins = insetRect(w, h, bottomBarPx), top = topBarPx + 8, bottom = ins.y - 8;
+    cam.s = Math.min((w * 0.86) / (Math.abs(L.source.x) + 50), Math.max(40, bottom - top) / (Math.abs(L.source.y) + 70));
+    cam.x = L.source.x / 2; cam.y = L.source.y / 2 - (h / 2 - (top + bottom) / 2) / cam.s;
+    return;
+  }
+  cam.x = 0; cam.y = 0; cam.s = Math.min(canvas.clientWidth, canvas.clientHeight - bottomBarPx - topBarPx) / (arenaR * 2.2);
+}
 function resize() { R.resize(); topBarPx = $('top').getBoundingClientRect().height; bottomBarPx = $('bottom').getBoundingClientRect().height; }
 
 // ------------------------------------------------------------------ controls (scheduling / observation only)
@@ -59,7 +89,7 @@ function syncControls() {
   if (ui.play.textContent !== label) ui.play.textContent = label;
   ui.play.setAttribute('aria-pressed', String(running));
   if (pacing && document.activeElement !== ui.speed && ui.speed.value !== String(pacing.speed) && [...ui.speed.options].some((o) => o.value === String(pacing!.speed))) ui.speed.value = String(pacing.speed);
-  if (frame && ui.follow.options.length === 1) for (const a of frame.ants) ui.follow.add(new Option(a.id, a.id));
+  if (frame && ui.follow.options.length === 1) for (const a of isP0a2Frame(frame) ? frame.workers : frame.ants) ui.follow.add(new Option(a.id, a.id));
 }
 async function playPause() {
   if (!pacing) return;
@@ -77,6 +107,7 @@ function drawFrame(dt: number, fms: number | null) {
   if (!frame) return;
   const now = performance.now(), t = displayTime(frame.t_sim, !!pacing?.running, pacing?.speed ?? DEFAULT_SPEED, now - frameAt, lastDisplay);
   lastDisplay = pacing?.running ? t : null;
+  if (isP0a2Frame(frame)) { drawP0(dt, fms, t); return; }
   poses = posesAt(frame, t);
   if (following) { const p = poses.find((x) => x.id === following); if (p && p.vis !== 'in_nest') { cam.x += (p.x - cam.x) * Math.min(1, dt * 6); cam.y += (p.y - cam.y) * Math.min(1, dt * 6); } }
   const c = camera(), L = antLengthPx(cam.s, minAntPx());
@@ -90,16 +121,49 @@ function drawFrame(dt: number, fms: number | null) {
   g.font = '11px system-ui'; g.fillStyle = '#fff6dc'; for (const d of draws) g.fillText(d.id, d.sx + L * 0.45, d.sy - L * 0.4);
   drawHud(t);
 }
+/** P0-A2 world: surface (route, source, travelling / feeding / searching workers) + the schematic nest inset */
+function drawP0(dt: number, fms: number | null, t: number) {
+  const f = frame; if (!isP0a2Frame(f)) return;
+  p0poses = p0Poses(f, t); poses = [];
+  if (following) { const p = p0poses.find((x) => x.id === following); if (p && p.vis !== 'in_nest') { cam.x += (p.x - cam.x) * Math.min(1, dt * 6); cam.y += (p.y - cam.y) * Math.min(1, dt * 6); } }
+  const c = camera(), L = antLengthPx(cam.s, minAntPx());
+  const ins = insetRect(canvas.clientWidth, canvas.clientHeight, bottomBarPx);
+  const draws = R.frame(c, p0AntInputs(p0poses), dt, fms, { uiBottom: canvas.clientWidth < 640 ? canvas.clientHeight - ins.y + 6 : bottomBarPx + 6, displayTurns: true, colourVariants: true, minAntPx: minAntPx(), showRoutes: true });
+  const g = R.g, lay = layoutOf(f), [nx, ny] = worldToScreen(c, lay.nest.x, lay.nest.y), [sx, sy] = worldToScreen(c, lay.source.x, lay.source.y);
+  g.save(); g.font = '11.5px system-ui'; g.fillStyle = '#fff6dc'; g.strokeStyle = 'rgba(20,12,6,0.7)'; g.lineWidth = 3;
+  const label = (x: number, y: number, s: string) => { g.strokeText(s, x, y); g.fillText(s, x, y); };
+  const narrow = canvas.clientWidth < 640;
+  label(nx + 10, ny + 22, '巢口（P0-A2 實驗巢）');
+  g.textAlign = sx > canvas.clientWidth * 0.6 ? 'right' : 'left'; label(sx + (g.textAlign === 'right' ? -10 : 10), sy + 22, `蜜露源 ${f.layout.source_id}（情境）`);
+  g.textAlign = 'center'; label((nx + sx) / 2, (ny + sy) / 2 + 26, narrow ? `路線 ${lay.distance_cm} cm（方向示意）` : `路線 ${lay.distance_cm} cm（長度＝引擎參數；方向示意）`); g.textAlign = 'left';
+  // searching workers: schematic ring (search has no spatial model)
+  if (p0poses.some((p) => p.where === 'search')) { g.setLineDash([3, 5]); g.strokeStyle = 'rgba(255,236,190,0.45)'; g.lineWidth = 1; g.beginPath(); g.arc(nx, ny, 36 * cam.s, 0, Math.PI * 2); g.stroke(); g.setLineDash([]); label(nx - 36 * cam.s, ny - 36 * cam.s - 4, '搜尋中（位置示意）'); }
+  const sel = selected ? draws.find((d) => d.id === selected) : undefined;
+  if (sel) { g.strokeStyle = following === selected ? '#9fe0ff' : '#ffe08a'; g.lineWidth = 2; g.beginPath(); g.arc(sel.sx, sel.sy, L * 0.62, 0, Math.PI * 2); g.stroke(); }
+  g.font = '11px system-ui'; g.fillStyle = '#fff6dc'; for (const d of draws) g.fillText(d.id, d.sx + L * 0.45, d.sy - L * 0.4);
+  g.restore();
+  insetHits = drawInset(g, f, ins, selected, following);
+  setText('time', ui.time, `${fmtWorldTime(t)}（${f.env.date}）｜${pacing?.running ? `執行中 ${pacing.speed}×` : pacing?.started ? '已暫停' : '尚未開始'}${pacing?.lagging ? '（Worker 落後，事件照常逐一處理）' : ''}`);
+  setText('status', ui.status, hudStatus(f, p0poses));
+}
 const hud: Record<string, string> = {};
 const setText = (k: string, el: HTMLElement, v: string) => { if (hud[k] !== v) { hud[k] = v; el.textContent = v; } };
 function drawHud(t: number) {
-  if (!frame) return;
+  if (!frame || isP0a2Frame(frame)) return;
   const out = poses.filter((p) => p.vis !== 'in_nest').length, walking = poses.filter((p) => p.vis === 'walking' && p.moving).length;
   setText('time', ui.time, `${fmtWorldTime(t)}｜${pacing?.running ? `執行中 ${pacing.speed}×` : pacing?.started ? '已暫停' : '尚未開始'}${pacing?.lagging ? '（Worker 落後，事件照常逐一處理）' : ''}`);
   setText('status', ui.status, `個體 ${frame.ants.length}（巢外 ${out}、行走 ${walking}、巢內 ${frame.ants.length - out}）｜事件 ${digest.count}｜光照 ${frame.env.light ? LIGHT_LABEL[frame.env.light] : '—'}｜氣溫 ${frame.env.temperature_c ?? '—'}°C（合成）`);
 }
 function renderCard() {
   const id = selected; if (!id || !frame) { ui.card.hidden = true; return; }
+  if (isP0a2Frame(frame)) {
+    const html = cardHtml(frame, id, p0poses.find((x) => x.id === id), following === id, following === id ? followedView : null);
+    if (!html) { ui.card.hidden = true; return; }
+    ui.card.hidden = false; ui.card.innerHTML = html;
+    $('followBtn').onclick = () => void setFollow(following === id ? null : id);
+    $('closeCard').onclick = () => { selected = null; void setFollow(null); };
+    return;
+  }
   const a = frame.ants.find((x) => x.id === id), p = poses.find((x) => x.id === id); if (!a) { ui.card.hidden = true; return; }
   const where = a.in_nest ? '在巢內（地表不畫位置）' : p?.interpolated ? `行走中（畫面位置＝兩個引擎紀錄點之間的顯示插值）` : `引擎紀錄點 (${a.from.x.toFixed(2)}, ${a.from.y.toFixed(2)}) cm`;
   const fv = following === id && followedView ? followedView as { bout_index?: number; memory?: unknown[] } : null;
@@ -110,7 +174,7 @@ function renderCard() {
 }
 let cardKey = '';
 function renderLog() {
-  ui.log.textContent = recent.slice().reverse().map((e) => `#${e.seq} ${fmtWorldTime(e.t_sim)} ${e.kind} ${e.entity ?? ''} ${e.kind === 'ant_bout_end' ? `${String(e.data.from)}→${String(e.data.to)}` : e.kind === 'env_hour' ? `${String(e.data.temperature_c)}°C（合成）` : e.kind === 'light_change' ? String(e.data.light) : ''}`).join('\n');
+  ui.log.textContent = recent.slice().reverse().map((e) => `#${e.seq} ${fmtWorldTime(e.t_sim)} ${e.kind} ${e.entity ?? ''} ${e.engine_version.startsWith('experiment-p0a2') ? p0EventText(e) : e.kind === 'ant_bout_end' ? `${String(e.data.from)}→${String(e.data.to)}` : e.kind === 'env_hour' ? `${String(e.data.temperature_c)}°C（合成）` : e.kind === 'light_change' ? String(e.data.light) : ''}`).join('\n');
 }
 
 // ------------------------------------------------------------------ input (camera only)
@@ -122,6 +186,7 @@ function zoomAt(sx: number, sy: number, k: number) {
 function pick(sx: number, sy: number) {
   let best: string | null = null, bd = Math.max(22, antLengthPx(cam.s, minAntPx()) * 0.7);
   for (const d of R.lastDraws()) { const dd = Math.hypot(d.sx - sx, d.sy - sy); if (dd < bd) { bd = dd; best = d.id; } }
+  if (isP0a2Frame(frame)) for (const h of insetHits) { const dd = Math.hypot(h.sx - sx, h.sy - sy); if (dd <= h.r && dd < bd) { bd = dd; best = h.id; } }
   selected = best; if (!best && following) void setFollow(null); renderCard();
 }
 function setupPointer() {
@@ -170,6 +235,9 @@ async function init() {
   ui.decor.onchange = () => setScene();
   setupPointer();
   window.addEventListener('resize', () => { resize(); });
+  // the bottom bar grows when its status text wraps: keep the renderer margin and the nest inset above it
+  // (bar heights only: no renderer resize, which would re-bake the scene whenever the status text wraps differently)
+  new ResizeObserver(() => { const was = bottomBarPx; bottomBarPx = $('bottom').getBoundingClientRect().height; if (Math.abs(was - bottomBarPx) > 24 && isP0a2Frame(frame) && !following) homeCamera(); }).observe($('bottom'));
   resize();
   ui.saveBtn.onclick = () => { void session?.request('manual'); };
   ui.menuBtn.onclick = () => void toMenu();
@@ -179,8 +247,8 @@ async function init() {
   const q = new URLSearchParams(location.search);
   requestAnimationFrame(loop);
   if (q.has('seed')) { // temporary experiment (not saved): the P0-A2 PR 3 route, kept for the V6-2 tests
-    tempMode = true; const seed = Number(q.get('seed'));
-    const r = await client.init(`exp-v62-${seed}`, seed);
+    tempMode = true; const seed = Number(q.get('seed')), kind: WorldKind = q.get('world') === 'synthetic' ? 'synthetic' : 'p0a2';
+    const r = await client.init(`exp-v62-${seed}`, seed, kind);
     if (r.type === 'error') { ui.badge.textContent = `無法建立實驗世界：${r.code}`; return; }
     await enterWorld(q.get('autostart') !== '0');
     return;
@@ -188,7 +256,7 @@ async function init() {
   const st = await ExperimentSaveStore.open();
   session = st.ok ? new ExperimentSession(client, st.value) : null;
   if (session) {
-    session.onWorldStart = () => { digest = new EventDigest(); recent.length = 0; frame = null; };
+    session.onWorldStart = () => { digest = new EventDigest(); recent.length = 0; frame = null; p0poses = []; insetHits = []; };
     session.onRestored = (seq) => { digest.lastSeq = seq - 1; };
     session.onSaveState = (s) => { saveUi = s; };
     session.onLockLost = () => { ui.ro.hidden = false; ui.ro.textContent = session?.current?.readOnlyReason ?? '本分頁為唯讀'; };
@@ -208,7 +276,7 @@ async function enterWorld(autostart: boolean) {
   ui.ro.hidden = !cur || cur.writer; if (cur && !cur.writer) ui.ro.textContent = cur.readOnlyReason ?? '唯讀';
   ui.saveBtn.hidden = ui.menuBtn.hidden = tempMode; ui.saveStatus.hidden = tempMode;
   await client.setSpeed(DEFAULT_SPEED);
-  ui.badge.textContent = `${MODE_LABEL}｜${tempMode ? '臨時實驗（不存檔）' : `「${cur?.name ?? ''}」`}｜世界 ${frame?.world_id}｜種子 ${frame?.seed}｜規則指紋 ${frame?.rules_fingerprint.slice(0, 12)}…`;
+  ui.badge.textContent = `${MODE_LABEL}｜${isP0a2Frame(frame) ? `${P0A2_STATUS_LABEL}｜P0-A2 24 小時個體行為世界` : '合成測試世界（不是螞蟻科學模型）'}｜${tempMode ? '臨時實驗（不存檔）' : `「${cur?.name ?? ''}」`}｜世界 ${frame?.world_id}｜種子 ${frame?.seed}｜規則指紋 ${frame?.rules_fingerprint.slice(0, 12)}…`;
   R.warm(camera());
   if (autostart) await client.start();
   syncControls();
@@ -247,6 +315,9 @@ function renderSave() {
   digest: () => ({ value: digest.value(), count: digest.count, lastSeq: digest.lastSeq, gaps: digest.gaps }),
   recent: () => recent.slice(),
   poses: () => poses.map((p) => ({ ...p })),
+  p0poses: () => p0poses.map((p) => ({ ...p })),
+  insetHits: () => insetHits.map((h) => ({ ...h })),
+  sceneLight: () => sceneLight,
   draws: () => R.lastDraws().map((d) => ({ id: d.id, ex: d.ex, ey: d.ey, sx: d.sx, sy: d.sy })),
   camera: () => camera(),
   state: () => ({ selected, following, fpsCap, cam: { ...cam }, quality: R.quality().level, canvas_px: [canvas.width, canvas.height], layers: [...R.trace], lastDisplay }),
