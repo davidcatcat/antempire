@@ -168,7 +168,7 @@
         "value": 3,
         "assumption": true,
         "basis": "遊戲假設",
-        "evidence": "左右濃度差的轉向增益（模型 C）；機制：雙側比較（tropotaxis）只有他種證據（Camponotus pennsylvanicus，Draft et al. 2018，非本種）；數值無資料"
+        "evidence": "左右濃度差的轉向增益（模型 C）；機制：雙側比較（tropotaxis）只有他種證據（Camponotus pennsylvanicus，R810 Draft et al. 2018，非本種）；數值無資料"
       },
       "chem_floor": {
         "value": 0.01,

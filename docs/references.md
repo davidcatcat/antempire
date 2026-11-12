@@ -750,6 +750,14 @@ R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-
 - R146（Asfiya et al. 2016）2026-11-08 以 pdftotext 核對：**沒有**步行速度資料。
 - R385（Burd & Aranwela 2003）2026-11-08 重查：Springer 需登入，仍只讀到搜尋片段（1 m 路段錄影、相遇使速度下降但效果小於體型與負重）；數值仍不採用。
 
+## 2026-11-08 KIN-2D 自然步行後續：觸角取樣（R810；`docs/physics-kinematics2d.md` §6、`docs/kin2d-model-c-diagnosis.md`）
+
+> 編號 R810 已先在 origin/main 與所有 origin 分支上 `git grep` 確認未被使用。**非本種**，只讀摘要；只作為模型 C「雙側取樣」的候選機制來源，不提供任何本種數值。
+
+| ID | 文獻 | 閱讀程度 | 物種 | 支持的內容 | 不可外推之處 |
+|---|---|---|---|---|---|
+| R810 | Draft RW, McGill MR, Kapoor V, Murthy VN (2018) Carpenter ants use diverse antennae sampling strategies to track odor trails. *J. Exp. Biol.* 221: jeb185124. DOI 10.1242/jeb.185124，PMID 30266788 | **只讀摘要** | **非本種**：*Camponotus pennsylvanicus* | 觸角探測有多種模式；左右觸角不是單純同步；觸角取樣方式與沿跡追蹤有關 | **不支持**本種的任何觸角角度、擺動頻率、頭部擺幅或運動參數；不支持把左右反相或特定取樣模式套到 *P. megacephala*；沒有本種的觸角量測 |
+
 ## 2026-11-08 WP5b 群組中的生命時間：年齡／齡期結構族群模型（R640–R652；`docs/od1b-cohort-life-time.md`）
 
 > 編號從 R640 起，避開其他工作包可能使用的編號。全部是**數學／一般方法**，不提供任何本種或背景物種的參數。「Crossref 核對」＝本次以 Crossref API 核對作者、年份、卷期頁與 DOI；**沒有讀全文**，方法內容是教科書層級的一般知識，引用時不得宣稱讀過原文細節。他種研究標**非本種**。
