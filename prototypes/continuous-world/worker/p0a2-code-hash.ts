@@ -4,7 +4,7 @@
  * p0a2-world.ts). Part of the P0-A2 rules fingerprint: a snapshot made under other code is refused on restore.
  * tests/worker-runtime.test.ts fails when this is stale.
  */
-export const P0A2_CODE_SHA256 = '20a6aa1ae7a3f5bafa7a5e0b90ea2f18055172b640bedef49f97e3a08086acff';
+export const P0A2_CODE_SHA256 = 'd496bacd8ad0a64edf8af30925591dd6366afadf3e80666388242b8af22a72f4';
 export const P0A2_CODE_FILES: readonly string[] = [
   'engine/clock/detmath.ts',
   'engine/clock/solar.ts',

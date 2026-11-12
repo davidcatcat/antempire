@@ -48,7 +48,7 @@ V6-2 UI ──► Worker Client (web/src/experimental/worker-client.ts)
 - 匯入圖中的 `engine/` 模組不得使用 `Math.random`、`Date.now`、`new Date(`、`performance.`、`requestAnimationFrame`、`setTimeout`、`setInterval`（行為只依模擬時間與種子）。
 - 匯入圖中不得出現指向正式資料的路徑字串（`saves/`、`journal/`、`commit-log`、`.advance-tmp`）。
 - `web/src/` 中只有清單內的 client 檔可以 `new Worker(...)`；正式程式（`engine/*.ts`、`engine/scheduler/`、`engine/clock/`、`cli/`、`web/src/`）不得匯入 Worker 目錄。
-- P0-A2 新增的純模組要加入白名單時，屬規則修改：另開 PR、列出該模組的純度檢查，並取得 Owner 授權。**Owner 2026-11-12 的授權（#156 第三階段）取代了原本「經 Codex 固定 SHA 審查」這一步**（適用於這類白名單擴充）。CLAUDE.md §9 B 目前仍寫「經 Codex 固定 SHA 審查」；本 PR 沒有修改 CLAUDE.md，兩者的差異已在 PR 說明中請 Owner 裁示（依 CLAUDE.md 開頭的規則，衝突時以較嚴格者為準，直到 Owner 更新 CLAUDE.md）。
+- P0-A2 新增的純模組要加入白名單時，屬規則修改：另開 PR、列出該模組的純度檢查，並取得 Owner 授權。**Owner 2026-11-12 的授權（#156 第三階段）取代了原本「經 Codex 固定 SHA 審查」這一步**（適用於這類白名單擴充）。CLAUDE.md §9 B 已由 #203（依 #200 裁示）改為「依 Owner 2026-11-12 授權由 Claude 自審並附邊界測試證據（Codex 恢復後另安排獨立審查）」，與本段一致。
 
 ## 4c. P0-A2 24 小時原型核心（Owner 2026-11-12 授權，#156 第三階段）
 
