@@ -1,0 +1,19 @@
+{
+  "//": "Independent build of the NON-OFFICIAL experiment Worker (Owner decision #39). WebWorker lib only (no DOM, no Node types); include is this directory plus the allowlisted engine modules (prototypes/continuous-world/worker-boundary.json). Output web/worker-dist/ is a build product (gitignored).",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "lib": ["ES2023", "WebWorker"],
+    "types": [],
+    "strict": true,
+    "rootDir": "../../..",
+    "outDir": "../../../web/worker-dist",
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "skipLibCheck": true
+  },
+  "include": ["./*.ts", "../../../engine/scheduler/world-events.ts", "../../../engine/clock/solar.ts", "../../../engine/clock/time-frames.ts"]
+}
