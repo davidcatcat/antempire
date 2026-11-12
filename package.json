@@ -2,7 +2,7 @@
   "name": "antempire",
   "private": true,
   "version": "0.0.0",
-  "description": "螞蟻帝國：熱帶大頭家蟻生態模擬（engine 純模擬核心 / cli 推進與檢查工具 / web 預留）",
+  "description": "螞蟻帝國：熱帶大頭家蟻生態模擬（engine 純模擬核心 / cli 報告與匯出工具 / web 唯讀觀察器）",
   "type": "module",
   "engines": {
     "node": ">=22.18.0"
@@ -13,8 +13,6 @@
     "test:golden": "node tests/golden.test.ts",
     "test:naturalism": "node tests/naturalism.test.ts",
     "test:rest": "node tests/run-all.ts --except golden,naturalism",
-    "check:saves": "node cli/check-saves.ts",
-    "advance": "node cli/advance.ts",
     "evaluate:day0": "node cli/reports/day0-evaluation.ts",
     "evaluate:day0-extremes": "node cli/reports/day0-extremes.ts",
     "web:export": "node cli/web-export.ts",
