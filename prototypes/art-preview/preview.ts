@@ -1,5 +1,5 @@
 /**
- * Art preview / contact sheet (PR A). Shows every asset of the art kit at DPR 1 and the device DPR, plus a 示意 mock
+ * Art preview / contact sheet (PR A). Shows every asset of the art kit at DPR 1 and the device DPR, plus a 示範 mock
  * garden composed only of these assets. No simulation data is read; nothing here is an engine record.
  */
 import { bakeAntAtlas, drawAntSprite, drawList, pixelsToCanvas, type AntAtlas } from '../../web/src/art-raster.ts';
@@ -48,16 +48,16 @@ function paintSoil(g: CanvasRenderingContext2D, w: number, h: number, pxPerMm: n
 function drawMm(g: CanvasRenderingContext2D, list: DrawList, pxPerMm: number, dpr = DPR) { g.save(); g.scale(pxPerMm, pxPerMm); drawList(g, list, pxPerMm * dpr); g.restore(); }
 function drawDecal(g: CanvasRenderingContext2D, d: Decal, pxPerMm: number, dpr = DPR) { drawMm(g, d.shadow, pxPerMm, dpr); drawMm(g, d.body, pxPerMm, dpr); if (d.highShadow) drawMm(g, d.highShadow, pxPerMm, dpr); if (d.high) drawMm(g, d.high, pxPerMm, dpr); }
 
-// ---------------------------------------------------------------- mock garden (示意 mock: assets only, not engine data)
+// ---------------------------------------------------------------- mock garden (示範 mock: assets only, not engine data)
 function mockGarden() {
-  const s = section('mock-garden', '示意 mock 花園：只用本 PR 的資產組成（不是引擎資料、不是遊戲畫面）', '螞蟻沿一條示意路線往返、在植物旁靜止；位置、數量與路線全是示範，引擎重播的接線在 PR C。<b>螞蟻放大顯示</b>（見左下角標示）。');
+  const s = section('mock-garden', '示範 mock 花園：只用本 PR 的資產組成（不是引擎資料、不是遊戲畫面）', '螞蟻沿一條示範路線往返、在植物旁靜止；位置、數量與路線全是示範，引擎重播的接線在 PR C。<b>螞蟻放大顯示</b>（見左下角標示）。');
   const w = W(), h = Math.round(Math.min(560, Math.max(420, w * 0.5))), ppm = w < 600 ? 3.2 : 4.4; // CSS px per mm
   const wrap = document.createElement('div'); wrap.style.position = 'relative'; s.appendChild(wrap);
   const g = canvasIn(wrap, w, h, DPR);
   const label = document.createElement('div');
   label.style.cssText = 'position:absolute;left:10px;bottom:10px;padding:3px 8px;border-radius:6px;background:rgba(20,12,6,.72);color:#f6e7cf;font-size:12px';
   wrap.appendChild(label);
-  const tag = document.createElement('div'); tag.textContent = '示意 mock・非引擎資料';
+  const tag = document.createElement('div'); tag.textContent = '示範 mock・非引擎資料';
   tag.style.cssText = 'position:absolute;right:10px;top:10px;padding:3px 8px;border-radius:6px;background:rgba(90,59,27,.85);color:#ffe6bf;font-size:12px'; wrap.appendChild(tag);
   const Wmm = w / ppm, Hmm = h / ppm, r = rng(20261108);
   // static layers baked once: base (soil + low decals + nest + plant low) and high (overhanging blades, upper leaves, flower)
@@ -81,7 +81,7 @@ function mockGarden() {
   drawList(hg, [sunWash(w, h), vignette(w, h)], DPR);
   // ants: a curved demo route nest → plant and back; a few idling beside the plant
   const L = 30, atlas = bakeAntAtlas(L, DPR), mag = magnification(L, ppm * 10);
-  label.textContent = `螞蟻放大顯示 ×${mag.toFixed(1)}（小工蟻約 ${MINOR_LENGTH_CM * 10} mm；本圖 ${ppm} px/mm）・示意`;
+  label.textContent = `螞蟻放大顯示 ×${mag.toFixed(1)}（小工蟻約 ${MINOR_LENGTH_CM * 10} mm；本圖 ${ppm} px/mm）・示範`;
   const route = (u: number): [number, number] => { const ax = nest.x * ppm, ay = nest.y * ppm, bx = plant.x * ppm - 40, by = plant.y * ppm + 30, cx = (ax + bx) / 2, cy = Math.min(ay, by) + h * 0.32; const v = 1 - u; return [v * v * ax + 2 * v * u * cx + u * u * bx, v * v * ay + 2 * v * u * cy + u * u * by]; };
   const routeLen = (() => { let d = 0, p = route(0); for (let i = 1; i <= 200; i++) { const q = route(i / 200); d += Math.hypot(q[0] - p[0], q[1] - p[1]); p = q; } return d; })();
   const ants = Array.from({ length: 9 }, (_, i) => ({ off: i / 9, dir: i % 2 ? -1 : 1, lane: ((i * 7) % 5 - 2) * 4 }));
@@ -190,9 +190,9 @@ function fxSection() {
 
 // ---------------------------------------------------------------- turning
 function turnSection() {
-  const s = section('turning', '轉向動畫：弧線轉彎（內側腳步幅較短）與原地轉身（兩側腳反向掃動）', `這些列<b>只在有權威角速度 ω 時使用</b>（物理解算器的朝向／ω，V6-2）；sprite 不會自己發明轉向。重播資料沒有 ω、朝向只在紀錄的路段轉折處改變，所以重播只用直行／靜止列。下方的 ω 是示範值（示意）。selectGait(ω 未提供) = ${selectGait({ moving: true })}。`);
+  const s = section('turning', '轉向動畫：弧線轉彎（內側腳步幅較短）與原地轉身（兩側腳反向掃動）', `這些列<b>只在有權威角速度 ω 時使用</b>（物理解算器的朝向／ω，V6-2）；sprite 不會自己發明轉向。重播資料沒有 ω、朝向只在紀錄的路段轉折處改變，所以重播只用直行／靜止列。下方的 ω 是示範值。selectGait(ω 未提供) = ${selectGait({ moving: true })}。`);
   const rw = row(s), L = 70, atlas = bakeAntAtlas(L, DPR);
-  const demos: [string, number, number][] = [['弧線左轉 curveL（ω=−0.8 rad/s 示意）', -0.8, 1.2], ['弧線右轉 curveR（ω=+0.8 rad/s 示意）', 0.8, 1.2], ['原地右轉 pivotR（ω=+1.2 rad/s 示意）', 1.2, 0]];
+  const demos: [string, number, number][] = [['弧線左轉 curveL（ω=−0.8 rad/s 示範）', -0.8, 1.2], ['弧線右轉 curveR（ω=+0.8 rad/s 示範）', 0.8, 1.2], ['原地右轉 pivotR（ω=+1.2 rad/s 示範）', 1.2, 0]];
   for (const [cap, omega, speedBL] of demos) {
     const w = 260, h = 220, ctx = canvasIn(rw, w, h, DPR, cap), gait = selectGait({ moving: speedBL > 0, speedBL, omega });
     animations.push((t) => {
@@ -214,9 +214,9 @@ function turnSection() {
 
 // ---------------------------------------------------------------- sun states
 function sunSection() {
-  const s = section('sun', '光源狀態（示意）：同一組資產在不同太陽位置下', `光線由明確的光源狀態（方位角、高度角）驅動，陰影方向與長度、反光、地面立體感與整體色調都跟著變。<b>重播模式只用固定示意光源</b>（「${SCHEMATIC_LIGHT.label}」）：重播資料只有 360 分鐘活動時段、沒有時刻。真正的日夜只在引擎提供真實時間與太陽位置時接線（P0-A1 太陽模組，尚未進入重播資料；V6-2）。以下太陽位置都是示意假設值。`);
+  const s = section('sun', '光源狀態（示意）：同一組資產在不同太陽位置下', `光線由明確的光源狀態（方位角、高度角）驅動，陰影方向與長度、反光、地面立體感與整體色調都跟著變。<b>重播模式只用固定示意光源</b>（「${SCHEMATIC_LIGHT.label}」）：重播資料只有 360 分鐘活動時段、沒有時刻。真正的日夜只在引擎提供真實時間與太陽位置時接線（P0-A1 太陽模組，尚未進入重播資料；V6-2）。以下太陽位置都是示範用的假設值。`);
   const rw = row(s), tw = Math.min(228, (W() - 40) / 5), th = 190, ppm = 4;
-  const states = [lightFromSun(90, 8, '清晨・東・8°（示意）'), lightFromSun(125, 42, '上午・東南・42°（示意）'), lightFromSun(180, 78, '近正午・78°（示意）'), lightFromSun(262, 14, '傍晚・西・14°（示意）'), lightFromSun(300, -12, '夜間・太陽在地平線下（示意）'), SCHEMATIC_LIGHT];
+  const states = [lightFromSun(90, 8, '清晨・東・8°（示範）'), lightFromSun(125, 42, '上午・東南・42°（示範）'), lightFromSun(180, 78, '近正午・78°（示範）'), lightFromSun(262, 14, '傍晚・西・14°（示範）'), lightFromSun(300, -12, '夜間・太陽在地平線下（示範）'), SCHEMATIC_LIGHT];
   for (const st of states) {
     const g = canvasIn(rw, tw, th, DPR, st.label);
     withLight(st, () => {

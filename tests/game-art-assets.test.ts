@@ -12,7 +12,7 @@
  *  7. lighting is driven by an explicit light state (sun azimuth / elevation); replay mode uses the fixed schematic light;
  *     turning gaits (curved walk with shorter inner strides, pivot with opposite sides) are chosen only from a supplied ω;
  *  8. the licensing note and the art style spec exist and state the magnification and 示意 rules; the preview page is
- *     labelled as a mock and is not wired into the game view.
+ *     labelled as a 示範 mock and is not wired into the game view; its screenshots are generated, git-ignored, not committed.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -139,9 +139,14 @@ ok(/美術資產/.test(lic) && /原創/.test(lic) && /AI/.test(lic) && /web\/src
 const style = fs.readFileSync(path.join(REPO_ROOT, 'docs', 'game-art-style.md'), 'utf8');
 ok(/放大顯示/.test(style) && /×N/.test(style) && /示意/.test(style) && /大工蟻/.test(style) && /360/.test(style) && /日值/.test(style) && /仿射|affine/i.test(style) && /solar/.test(style) && /ω/.test(style) && /分析/.test(style), 'style spec: magnification label, 示意 rules, no majors, 360-min window, daily rain, affine camera, sun/ω wiring, analysis UI');
 const preview = fs.readFileSync(path.join(REPO_ROOT, 'prototypes', 'art-preview', 'index.html'), 'utf8');
-ok(/示意 mock/.test(preview) && /不是引擎資料/.test(preview), 'preview page is labelled as a mock, not engine data');
+ok(/示範 mock/.test(preview) && /不是引擎資料/.test(preview), 'preview page is labelled as a mock, not engine data');
 const pv = fs.readFileSync(path.join(REPO_ROOT, 'prototypes', 'art-preview', 'preview.ts'), 'utf8');
 ok(!/Math\.random|fetch\(|data\/experiment/.test(pv), 'preview reads no replay data and uses no unseeded randomness');
-for (const f of ['desktop-first-screen.png', 'pixel7-first-screen.png', 'desktop-ant.png', 'desktop-mock-garden.png']) ok(fs.existsSync(path.join(REPO_ROOT, 'prototypes', 'art-preview', 'screenshots', f)), `screenshot ${f} committed`);
+// screenshots are generated (npm run art:preview → shoot.cjs), not committed: the script must still write into the
+// git-ignored screenshots/ folder, and no PNG may be tracked there.
+const shoot = fs.readFileSync(path.join(REPO_ROOT, 'prototypes', 'art-preview', 'shoot.cjs'), 'utf8');
+ok(/path\.join\(ROOT, 'screenshots'\)/.test(shoot) && /mkdirSync\(OUT/.test(shoot), 'shoot.cjs writes screenshots into prototypes/art-preview/screenshots/ (created on demand)');
+const gitignore = fs.readFileSync(path.join(REPO_ROOT, '.gitignore'), 'utf8');
+ok(/^prototypes\/art-preview\/screenshots\/$/m.test(gitignore), 'prototypes/art-preview/screenshots/ is git-ignored (screenshots are not committed)');
 
 console.log(JSON.stringify({ test: 'game-art-assets', passed: true, checks }));
