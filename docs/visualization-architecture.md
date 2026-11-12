@@ -78,7 +78,7 @@ tests/web.test.ts        CI 測試
 tests/browser/*.cjs      本機瀏覽器檢查（Playwright）
 ```
 
-> 非正式實驗模式（Owner 決策 #39）：持續運作的實驗世界由獨立的 Web Worker 執行，`web/src/` 只經 Worker client 以訊息連接；邊界與白名單見 [`experimental-worker-boundary.md`](experimental-worker-boundary.md)。正式觀察模式的規則不變。
+> 非正式實驗模式（Owner 決策 #39）：持續運作的實驗世界由獨立的 Web Worker 執行，`web/src/` 只經 Worker client 以訊息連接；邊界與白名單見 [`experimental-worker-boundary.md`](experimental-worker-boundary.md)。正式觀察模式的規則不變。V6-2 實驗模式頁面見 [`v62-experiment-mode.md`](v62-experiment-mode.md)。
 
 ## 7. 測試策略
 - **CI**（`tests/web.test.ts`）：

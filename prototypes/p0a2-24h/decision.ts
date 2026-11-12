@@ -47,9 +47,23 @@ export function decideAtSource(self: SelfView, here: SourceView): { take: number
   return { take: Math.min(self.crop_room, here.food_here), heat: false };
 }
 
-/** trophallaxis offered by a returning forager to one nestmate it touched (µP) */
+/** Q2 candidate (Owner #188 / #193; default OFF): the part of its own crop a returning forager keeps for its OWN
+ *  expected metabolic need until its next feeding opportunity, computed ONLY from its own state — its own metabolic
+ *  rate and, for 'own_interval', the interval between its own last two intakes at a source (its own experience). No
+ *  colony store, no nestmate, no larva is read. Mechanism direction only from R147 (Camponotus sanctus, other species:
+ *  foragers do not hand over their whole crop); the 'hand over half' ratio is NOT used; formulations and values are
+ *  game assumptions. null retention (reference) => 0. Unknown interval (no two own intakes yet) => 0 (not filled). */
+export function ownReserve(self: SelfView, c: DecisionConsts): number {
+  const r = c.retention;
+  if (r === null) return 0;
+  const need_ms = r.kind === 'horizon' ? r.need_ms : self.forage_interval_ms === null ? 0 : r.factor * self.forage_interval_ms;
+  return Math.ceil((c.metabolic_rate_per_day * need_ms) / c.day_ms);
+}
+
+/** trophallaxis offered by a returning forager to one nestmate it touched (µP); with the Q2 candidate on, it never
+ *  offers below its own reserve (ownReserve) */
 export function decideTransfer(self: SelfView, partner: PartnerView, c: DecisionConsts): number {
-  return Math.max(0, Math.min(c.transfer_max, self.crop, partner.crop_room));
+  return Math.max(0, Math.min(c.transfer_max, self.crop - ownReserve(self, c), partner.crop_room));
 }
 
 /** feeding one larva the worker touched: only when the larva's begging (perceived at the contact) reaches the threshold */

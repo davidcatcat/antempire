@@ -14,8 +14,9 @@
  */
 import {
   type Result, type RuntimeInfo, type SnapshotEnvelope, type SnapshotRecord, type WorldRecord, type WorldSummary, type Compatibility,
-  MigrationRegistry, LABEL, LOCK_PREFIX, RETAIN_VERIFIED, okR, errR, verifyEnvelope, headerOf, planPromote, sweepable, recordProblem,
-  compatibility, buildExport, parseImport, simDayTime, defaultMigrations,
+  type Provenance, type SaveKind, type ManualSave, type LastSave,
+  MigrationRegistry, LABEL, LOCK_PREFIX, RETAIN_VERIFIED, MANUAL_KEEP_MAX, okR, errR, verifyEnvelope, headerOf, planPromote, sweepable, recordProblem,
+  compatibility, buildExport, parseImport, simDayTime, defaultMigrations, simIdOf, newCopyId,
 } from './save-format.ts';
 
 export const DB_NAME = 'antempire-experiment-worlds';
@@ -88,12 +89,14 @@ export function acquireWriterLock(world_id: string, opts: { steal?: boolean; onL
 
 // ---------- results ----------
 
-export interface SaveReceipt { world_id: string; gen: number; seq: number; t_sim: number; saved_at: string; bytes: number; ms: { hash: number; write: number; verify: number; promote: number } }
+export interface SaveReceipt { world_id: string; gen: number; seq: number; t_sim: number; saved_at: string; bytes: number; kind: SaveKind; ms: { hash: number; write: number; verify: number; promote: number } }
 export interface LoadResult { envelope: SnapshotEnvelope; gen: number; recovered: boolean; skipped: { gen: number; reason: string }[]; migrated_from: number | null; notice: string | null }
 export interface WorldListing {
   world_id: string; name: string; seed: number; t_sim: number | null; sim_day: number | null; sim_clock: string | null;
   last_saved_at: string | null; queens: number | null; workers: number | null; compat: Compatibility | 'no_snapshot';
   verified_snapshots: number; quarantined: number; official: false; label: typeof LABEL;
+  sim_world_id: string; summary: WorldSummary; rules_fingerprint: string; engine_version: string; schema_version: number;
+  provenance: Provenance | null; manual: ManualSave[]; last_save: LastSave | null;
 }
 export interface DeleteToken { world_id: string; nonce: string }
 
@@ -133,6 +136,8 @@ export class ExperimentSaveStore {
         last_saved_at: w.last_saved_at, queens: w.summary?.queens ?? null, workers: w.summary?.workers ?? null,
         compat: w.slots.length ? compatibility({ schema: 'antempire.experiment-world-snapshot.v1', rules_fingerprint: w.rules_fingerprint, schema_version: w.schema_version }, rt, this.migrations) : 'no_snapshot',
         verified_snapshots: w.slots.length, quarantined: w.quarantined.length, official: false, label: LABEL,
+        sim_world_id: simIdOf(w), summary: { ...w.summary }, rules_fingerprint: w.rules_fingerprint, engine_version: w.engine_version, schema_version: w.schema_version,
+        provenance: w.provenance ?? null, manual: [...(w.manual ?? [])], last_save: w.last_save ?? null,
       };
     }).sort((a, b) => (b.last_saved_at ?? '').localeCompare(a.last_saved_at ?? '') || a.world_id.localeCompare(b.world_id));
   }
@@ -145,50 +150,57 @@ export class ExperimentSaveStore {
   }
 
   /** New game: a new world_id that must not exist; the initial snapshot is written immediately. Never overwrites. */
-  async createWorld(lock: WriterLock, name: string, initial: unknown, summary: WorldSummary = {}): Promise<Result<SaveReceipt>> {
+  async createWorld(lock: WriterLock, name: string, initial: unknown, summary: WorldSummary = {}, provenance: Provenance | null = null): Promise<Result<SaveReceipt>> {
     const v = await verifyEnvelope(initial);
     if (!v.ok) return v;
     const env = v.value.envelope;
-    if (!lock.held || lock.world_id !== env.world_id) return errR('not_writer', 'this tab does not hold the writer lock for the new world');
+    // the record key is the lock's world; only an imported copy (with provenance) may differ from the snapshot's id
+    if (!lock.held || (lock.world_id !== env.world_id && !provenance)) return errR('not_writer', 'this tab does not hold the writer lock for the new world');
     const rec: WorldRecord = {
-      world_id: env.world_id, name: name.slice(0, 200), seed: env.seed, created_at: nowIso(), official: false, label: LABEL, next_gen: 1, slots: [], quarantined: [],
+      ...(lock.world_id !== env.world_id ? { sim_world_id: env.world_id } : {}), provenance, manual: [], last_save: null,
+      world_id: lock.world_id, name: name.slice(0, 200), seed: env.seed, created_at: nowIso(), official: false, label: LABEL, next_gen: 1, slots: [], quarantined: [],
       last_saved_at: null, t_sim: null, seq: null, rules_fingerprint: env.rules_fingerprint, engine_version: env.engine_version, schema_version: env.schema_version, summary: { ...summary },
     };
     try { const tx = this.db.transaction(W, 'readwrite'); tx.objectStore(W).add(rec); await done(tx); } catch (err) {
-      if ((err as { name?: string })?.name === 'ConstraintError') return errR('world_exists', `world ${env.world_id} already exists`);
+      if ((err as { name?: string })?.name === 'ConstraintError') return errR('world_exists', `world ${lock.world_id} already exists`);
       const c = classify(err); return errR(c.code, c.message);
     }
     lock.head = null;
-    return this.commit(lock, env, v.value.payload_json, summary);
+    return this.commit(lock, env, v.value.payload_json, summary, 0, 'auto');
   }
 
   /** Autosave / manual save of the current world. Only the lock holder may write. */
-  async saveSnapshot(lock: WriterLock, snapshot: unknown, summary?: WorldSummary): Promise<Result<SaveReceipt>> {
+  /** Autosave / manual save of the current world. Only the lock holder may write. A manual save is also kept in the
+   *  world's manual list, which autosave rotation never removes (Owner decision 55). */
+  async saveSnapshot(lock: WriterLock, snapshot: unknown, summary?: WorldSummary, kind: SaveKind = 'auto'): Promise<Result<SaveReceipt>> {
     const t0 = ms(); const v = await verifyEnvelope(snapshot);
     if (!v.ok) return v;
-    if (!lock.held || lock.world_id !== v.value.envelope.world_id) return errR('not_writer', 'this tab is not the writer of this world (read-only or lock lost)');
-    return this.commit(lock, v.value.envelope, v.value.payload_json, summary, ms() - t0);
+    if (!lock.held) return errR('not_writer', 'this tab is not the writer of this world (read-only or lock lost)');
+    return this.commit(lock, v.value.envelope, v.value.payload_json, summary, ms() - t0, kind);
   }
 
-  private async commit(lock: WriterLock, env: SnapshotEnvelope, payload_json: string, summary?: WorldSummary, hashMs = 0): Promise<Result<SaveReceipt>> {
+  private async commit(lock: WriterLock, env: SnapshotEnvelope, payload_json: string, summary: WorldSummary | undefined, hashMs: number, kind: SaveKind): Promise<Result<SaveReceipt>> {
+    const key = lock.world_id;
     const header = headerOf(env); let gen = 0; const t1 = ms(); let tx: IDBTransaction | undefined;
     const abandon = () => { try { tx?.abort(); } catch { /* already finished */ } };
     // 1. write pending (allocate a generation; the latest pointer is untouched)
     try {
       tx = this.db.transaction([W, S], 'readwrite'); const ws = tx.objectStore(W);
-      const w = await req(ws.get(env.world_id) as IDBRequest<WorldRecord | undefined>);
-      if (!w) { tx.abort(); return errR('unknown_world', `world ${env.world_id} does not exist`); }
+      const w = await req(ws.get(key) as IDBRequest<WorldRecord | undefined>);
+      if (!w) { tx.abort(); return errR('unknown_world', `world ${key} does not exist`); }
+      if (simIdOf(w) !== env.world_id) { tx.abort(); return errR('not_writer', `snapshot of world ${env.world_id} cannot be saved into ${key}`); }
+      if (kind === 'manual' && (w.manual ?? []).length >= MANUAL_KEEP_MAX) { tx.abort(); return errR('manual_limit', `at most ${MANUAL_KEEP_MAX} manual saves per world; export or delete the world to free space`); }
       if (w.seed !== env.seed || w.rules_fingerprint !== env.rules_fingerprint) { tx.abort(); return errR('rules_mismatch', 'snapshot seed or rules differ from this world; a world never changes rules'); }
       gen = w.next_gen; ws.put({ ...w, next_gen: gen + 1 });
-      const rec: SnapshotRecord = { world_id: env.world_id, gen, status: 'pending', written_at: nowIso(), header, payload_json, payload_sha256: env.payload_sha256 };
+      const rec: SnapshotRecord = { world_id: key, gen, status: 'pending', written_at: nowIso(), header, payload_json, payload_sha256: env.payload_sha256 };
       tx.objectStore(S).put(rec);
       await done(tx);
     } catch (err) { abandon(); const c = classify(err); return errR(c.code, `write: ${c.message}`); }
     const t2 = ms();
     // 2. verify by re-reading in a separate transaction
     try {
-      const rec = await req(this.db.transaction(S, 'readonly').objectStore(S).get([env.world_id, gen]) as IDBRequest<SnapshotRecord | undefined>);
-      const problem = await recordProblem(rec, env.world_id, gen);
+      const rec = await req(this.db.transaction(S, 'readonly').objectStore(S).get([key, gen]) as IDBRequest<SnapshotRecord | undefined>);
+      const problem = await recordProblem(rec, key, gen, env.world_id);
       if (problem) return errR('verify_failed', `re-read of generation ${gen}: ${problem}`);
       if (rec!.payload_json !== payload_json) return errR('verify_failed', `re-read of generation ${gen}: stored payload differs from what was written`);
     } catch (err) { const c = classify(err); return errR(c.code, `verify: ${c.message}`); }
@@ -197,22 +209,25 @@ export class ExperimentSaveStore {
     try {
       if (!lock.held) return errR('not_writer', 'writer lock lost before promote; the previous snapshot stays the latest');
       tx = this.db.transaction([W, S], 'readwrite'); const ws = tx.objectStore(W), ss = tx.objectStore(S);
-      const w = await req(ws.get(env.world_id) as IDBRequest<WorldRecord | undefined>);
+      const w = await req(ws.get(key) as IDBRequest<WorldRecord | undefined>);
       if (!w) { tx.abort(); return errR('unknown_world', 'world deleted during save'); }
       const head = w.slots[0] ?? null;
       if (head !== lock.head) { tx.abort(); return errR('conflict', `latest snapshot changed under this writer (expected ${lock.head}, found ${head})`); }
       const q = w.quarantined.map((x) => x.gen), { slots } = planPromote(w.slots, q, gen, RETAIN_VERIFIED);
       saved_at = nowIso();
-      ws.put({ ...w, slots, last_saved_at: saved_at, t_sim: env.t_sim, seq: env.seq, engine_version: env.engine_version, schema_version: env.schema_version, summary: summary ? { ...summary } : w.summary });
-      const rec = await req(ss.get([env.world_id, gen]) as IDBRequest<SnapshotRecord>);
+      const manual = [...(w.manual ?? []), ...(kind === 'manual' ? [{ gen, saved_at, t_sim: env.t_sim, seq: env.seq }] : [])];
+      const last_save: LastSave = { kind, bytes: payload_json.length, ms: Math.round((hashMs + ms() - t1) * 10) / 10, saved_at };
+      ws.put({ ...w, slots, manual, last_save, last_saved_at: saved_at, t_sim: env.t_sim, seq: env.seq, engine_version: env.engine_version, schema_version: env.schema_version, summary: summary ? { ...summary } : w.summary });
+      const rec = await req(ss.get([key, gen]) as IDBRequest<SnapshotRecord>);
       ss.put({ ...rec, status: 'verified' });
-      const keys = await req(ss.getAllKeys(range(env.world_id))) as [string, number][];
-      for (const g of sweepable(keys.map((k) => k[1]), slots, q, gen)) ss.delete([env.world_id, g]);
+      const keys = await req(ss.getAllKeys(range(key))) as [string, number][];
+      // manual saves are never swept by the autosave rotation
+      for (const g of sweepable(keys.map((k) => k[1]), [...slots, ...manual.map((m) => m.gen)], q, gen)) ss.delete([key, g]);
       await done(tx);
     } catch (err) { abandon(); const c = classify(err); return errR(c.code, `promote: ${c.message}`); }
     lock.head = gen;
     const t4 = ms();
-    return okR({ world_id: env.world_id, gen, seq: env.seq, t_sim: env.t_sim, saved_at, bytes: payload_json.length, ms: { hash: hashMs, write: t2 - t1, verify: t3 - t2, promote: t4 - t3 } });
+    return okR({ world_id: key, gen, seq: env.seq, t_sim: env.t_sim, saved_at, bytes: payload_json.length, kind, ms: { hash: hashMs, write: t2 - t1, verify: t3 - t2, promote: t4 - t3 } });
   }
 
   /**
@@ -220,17 +235,19 @@ export class ExperimentSaveStore {
    * are also quarantined. Version problems (newer schema, different rules, unknown schema) stop the load instead of
    * silently falling back. Migrations run on a copy; the stored snapshot is unchanged.
    */
-  async loadLatest(world_id: string, rt: RuntimeInfo, lock?: WriterLock): Promise<Result<LoadResult>> {
+  async loadLatest(world_id: string, rt: RuntimeInfo, lock?: WriterLock, only?: number): Promise<Result<LoadResult>> {
     const w = await this.getWorld(world_id);
     if (!w) return errR('unknown_world', `world ${world_id} does not exist`);
     const skipped: { gen: number; reason: string }[] = [];
-    for (const gen of w.slots) {
+    // `only`: load one chosen snapshot (a manual save); otherwise the recovery points newest first
+    const order = only === undefined ? w.slots : [only];
+    for (const gen of order) {
       const rec = await req(this.db.transaction(S, 'readonly').objectStore(S).get([world_id, gen]) as IDBRequest<SnapshotRecord | undefined>);
-      const problem = await recordProblem(rec, world_id, gen);
+      const problem = await recordProblem(rec, world_id, gen, simIdOf(w));
       if (problem) { skipped.push({ gen, reason: problem }); continue; }
       const env = { ...rec!.header, payload: JSON.parse(rec!.payload_json) } as SnapshotEnvelope;
       const compat = compatibility(env, rt, this.migrations);
-      if (compat === 'unknown_schema' || compat === 'newer_schema' || compat === 'rules_mismatch') return errR(compat, `generation ${gen}: ${compat}; the save is kept unchanged`);
+      if (compat === 'unknown_schema' || compat === 'newer_schema' || compat === 'rules_mismatch') return errR(compat, `generation ${gen}: ${compat} (saved: rules ${env.rules_fingerprint.slice(0, 12)}…, engine ${env.engine_version}, schema v${env.schema_version}; this runtime: rules ${rt.rules_fingerprint.slice(0, 12)}…, engine ${rt.engine_version}, schema v${rt.schema_version}); the save is kept unchanged and can still be exported`);
       if (compat === 'no_migration_path') return errR('migration_failed', `generation ${gen}: no migration from schema v${env.schema_version}`);
       let out = env, migrated_from: number | null = null;
       if (compat === 'migratable') {
@@ -238,11 +255,12 @@ export class ExperimentSaveStore {
         if (!m.ok) return m;
         out = m.value.envelope; migrated_from = m.value.from;
       }
-      if (skipped.length && lock?.held && lock.world_id === world_id) await this.quarantine(world_id, skipped);
+      if (skipped.length && only === undefined && lock?.held && lock.world_id === world_id) await this.quarantine(world_id, skipped);
       if (lock?.held && lock.world_id === world_id) lock.head = (await this.getWorld(world_id))?.slots[0] ?? null;
       const notice = skipped.length ? `最新存檔損壞，已回復到上一個已驗證的存檔（第 ${gen} 代；略過：${skipped.map((s) => `第 ${s.gen} 代 ${s.reason}`).join('、')}）` : null;
       return okR({ envelope: out, gen, recovered: skipped.length > 0, skipped, migrated_from, notice });
     }
+    if (only !== undefined) return errR('no_valid_snapshot', `snapshot ${only}: ${skipped.map((s) => s.reason).join('; ')}`);
     return errR('no_valid_snapshot', w.slots.length ? `no verified snapshot passed the checks (${skipped.map((s) => `${s.gen}: ${s.reason}`).join('; ')})` : 'this world has no verified snapshot');
   }
 
@@ -283,9 +301,9 @@ export class ExperimentSaveStore {
     if (!w) return errR('unknown_world', world_id);
     for (const gen of w.slots) {
       const rec = await req(this.db.transaction(S, 'readonly').objectStore(S).get([world_id, gen]) as IDBRequest<SnapshotRecord | undefined>);
-      if (await recordProblem(rec, world_id, gen)) continue;
+      if (await recordProblem(rec, world_id, gen, simIdOf(w))) continue;
       const env = { ...rec!.header, payload: JSON.parse(rec!.payload_json) } as SnapshotEnvelope;
-      const f = await buildExport(w, env, nowIso());
+      const f = await buildExport({ ...w, world_id: simIdOf(w) }, env, nowIso());
       return okR({ text: JSON.stringify(f), filename: `antempire-experiment-${world_id}-gen${gen}.json` });
     }
     return errR('no_valid_snapshot', 'nothing verified to export');
@@ -302,6 +320,28 @@ export class ExperimentSaveStore {
     try {
       const r = await this.createWorld(got.lock, file.world.name, file.snapshot, file.world.summary ?? {});
       return r.ok ? okR({ receipt: r.value, compat }) : r;
+    } finally { got.lock.release(); }
+  }
+
+  /**
+   * "匯入為副本" (Owner decision 54): a NEW local world (new record id) holding the source's verified snapshot bytes
+   * unchanged, with provenance (source world id, export / payload SHA-256 checked at import). Never overwrites, never
+   * changes the world's state: the snapshot (and so the simulated world id inside it) is exactly the exported one.
+   */
+  async importWorldAsCopy(text: string, rt: RuntimeInfo): Promise<Result<{ receipt: SaveReceipt; compat: Compatibility; provenance: Provenance }>> {
+    const p = await parseImport(text, rt, this.migrations);
+    if (!p.ok) return p;
+    const { file, compat } = p.value, id = newCopyId();
+    const provenance: Provenance = {
+      kind: 'import_copy', source_world_id: file.world.world_id, source_name: file.world.name, source_exported_at: file.exported_at, source_export_sha256: file.export_sha256,
+      source_payload_sha256: file.snapshot.payload_sha256, source_t_sim: file.snapshot.t_sim, source_seq: file.snapshot.seq, imported_at: nowIso(),
+      verification: 'export_sha256 與 payload_sha256 在匯入時重算相符（只偵測意外損壞，不是真實性證明）',
+    };
+    const got = await acquireWriterLock(id);
+    if (got.mode !== 'writer') return errR('not_writer', got.reason);
+    try {
+      const r = await this.createWorld(got.lock, `${file.world.name}（副本）`, file.snapshot, file.world.summary ?? {}, provenance);
+      return r.ok ? okR({ receipt: r.value, compat, provenance }) : r;
     } finally { got.lock.release(); }
   }
 }

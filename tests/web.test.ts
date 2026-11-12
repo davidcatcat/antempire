@@ -1,10 +1,10 @@
 /**
- * Read-only web viewer (web/, cli/web-export.ts). The viewer must only SHOW what the engine and the official saves
- * contain:
+ * Read-only web viewer (web/, cli/web-export.ts). The viewer must only SHOW what the engine produced. There is no
+ * official world (legacy Day14 saves retired, #194), so no official snapshot is exported:
  *  1. the export is deterministic (same seed -> byte-identical files) and the committed web/data/ equals a fresh
  *     export (data are regenerated whenever the engine changes);
  *  2. exporting never writes saves/ or journal/;
- *  3. the official snapshot lists exactly the saved individuals (none invented, none dropped);
+ *  3. no official world is exported (index.json says official: null; no official-day14.json);
  *  4. every experiment event shown is an engine event (same fields, nothing added) and every worker drawn exists in
  *     the engine state at the start of that day;
  *  5. display interpolation is pure and only between recorded points: at every recorded route_step minute the drawn
@@ -17,14 +17,14 @@
  *     worker is not drawn after its death day, the population changes only by recorded eclosions and deaths, the day
  *     boundary is exactly the engine's end-of-day state, and minutes/days outside the recorded replay are not
  *     extrapolated;
- *  9. official and experiment data are never mixed: each file declares its kind, the loader refuses the wrong kind,
- *     experiment files hold no official colony data, the official snapshot holds no replay.
+ *  9. every exported world declares itself experiment / not official, the loader refuses any other kind, and the
+ *     garden geography comes only from data/xitun-garden-geography.json (no colony data of the retired Day14 record).
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import assert from 'node:assert/strict';
-import { exportOfficial, exportExperiment, EXPERIMENTS, layoutOf, WEB_DATA_DIR } from '../cli/web-export.ts';
+import { exportExperiment, EXPERIMENTS, layoutOf, WEB_DATA_DIR } from '../cli/web-export.ts';
 import { REPO_ROOT, readJson, loadBundle } from '../cli/lib/load.ts';
 import { simulateWorldDay } from '../engine/index.ts';
 import { buildDay0, seasonStart } from '../cli/lib/day0.ts';
@@ -33,14 +33,12 @@ import { type SimEvent, assertKind, taskOf, trailScale, stateAt, isTimed, SETTLE
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
 const sha = (f: string) => crypto.createHash('sha256').update(fs.readFileSync(path.join(REPO_ROOT, f))).digest('hex');
-const protectedFiles = ['saves/main.json', 'saves/world-state.json'].map((f) => [f, sha(f)]);
+const listFiles = (d: string): string[] => fs.existsSync(path.join(REPO_ROOT, d)) ? fs.readdirSync(path.join(REPO_ROOT, d), { withFileTypes: true }).flatMap((e) => e.isDirectory() ? listFiles(path.posix.join(d, e.name)) : [path.posix.join(d, e.name)]) : [];
+const protectedFiles = [...listFiles('saves'), 'data/xitun-garden-geography.json'].map((f) => [f, sha(f)]);
 const journalBefore = fs.readdirSync(path.join(REPO_ROOT, 'journal')).sort().join();
 
 try {
   // 1. determinism and committed data
-  const off = exportOfficial(), off2 = exportOfficial();
-  ok(JSON.stringify(off) === JSON.stringify(off2), 'official snapshot export is deterministic');
-  ok(fs.readFileSync(path.join(REPO_ROOT, WEB_DATA_DIR, 'official-day14.json'), 'utf8') === JSON.stringify(off) + '\n', 'committed web/data/official-day14.json equals a fresh export');
   const exps: Experiment[] = [];
   for (const spec of EXPERIMENTS) {
     const a = exportExperiment(spec), b = exportExperiment(spec);
@@ -49,10 +47,9 @@ try {
     ok(a.official === false && a.kind === 'experiment', `${spec.id}: marked as experiment, not official`);
     exps.push(a);
   }
-  // 3. official snapshot
-  const main = readJson('saves/main.json');
-  ok(JSON.stringify(off.workers.map((w: Any) => [w.id, w.status])) === JSON.stringify(main.colony.workers.individuals.map((w: Any) => [w.id, w.status])), 'official snapshot: exactly the saved workers with their status');
-  ok(off.read_only === true && off.sources.files['saves/main.json'] === sha('saves/main.json'), 'official snapshot records the hashes of the saves it read');
+  // 3. no official world (#194)
+  ok(!fs.existsSync(path.join(REPO_ROOT, WEB_DATA_DIR, 'official-day14.json')), 'the retired official Day14 snapshot is no longer exported');
+  { const idx = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, WEB_DATA_DIR, 'index.json'), 'utf8')); ok(idx.official === null && typeof idx.official_note === 'string' && idx.official_note.includes('#194'), 'index.json: no official world, and it says why'); }
   // 4. events and workers come from the engine — for EVERY experiment scenario
   EXPERIMENTS.forEach((spec, k) => {
     const exp = exps[k], bundle = loadBundle();
@@ -95,8 +92,14 @@ try {
   }
   // 7. layout
   ok(layoutOf('東北', 48)?.x === 33.94 && layoutOf('北', 92)?.y === 92 && layoutOf('未知', null) === null && layoutOf(null, 40) === null, 'layout only from recorded bearing + distance; unknown stays unknown');
-  const pos = displayPositions(off.map.places);
-  ok(off.map.places.filter((p: Any) => !p.layout).every((p: Any) => pos[p.id].known === false), 'places without a recorded position are flagged unknown (drawn in a separate tray)');
+  for (const exp of exps) {
+    const pos = displayPositions(exp.map.places);
+    ok(exp.map.places.filter((p: Any) => !p.layout).every((p: Any) => pos[p.id].known === false), `${exp.spec.id}: places without a recorded position are flagged unknown (drawn in a separate tray)`);
+  }
+  {
+    const geo = readJson('data/xitun-garden-geography.json');
+    ok(geo.assumption === true && geo.locations.every((l: Any) => Object.keys(l).join() === 'id,name,bearing,distance_cm'), 'garden geography file: labelled assumption, only id / name / bearing / distance');
+  }
   // 8. life-cycle and replay boundaries
   let eclosionsSeen = 0, deathsSeen = 0;
   for (const exp of exps) {
@@ -143,22 +146,23 @@ try {
     assert.ok(tr.max === (vals.length ? Math.max(...vals) : 0) && tr.edges === vals.length, `${exp.spec.id} day ${d}: pheromone legend = engine trail values at the start of the day`);
     checks += st.workers.length + 2;
   }
-  // 9. official and experiment data are never mixed
+  // 9. every exported world is an experiment
   const idx = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, WEB_DATA_DIR, 'index.json'), 'utf8'));
-  const offFile = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, WEB_DATA_DIR, idx.official), 'utf8'));
-  ok(assertKind(offFile, 'official', idx.official) === offFile && !('days' in offFile) && !('spec' in offFile) && !('engine_version' in offFile), 'the official file is an official snapshot without any replay');
-  assert.throws(() => assertKind(offFile, 'experiment', idx.official), /not experiment data/); checks++;
-  ok(idx.experiments.length === EXPERIMENTS.length && idx.experiments.every((e: Any) => e.file !== idx.official), 'index lists each experiment once and never the official file as an experiment');
+  ok(idx.experiments.length === EXPERIMENTS.length && new Set(idx.experiments.map((e: Any) => e.file)).size === EXPERIMENTS.length, 'index lists each experiment once');
+  ok(fs.readdirSync(path.join(REPO_ROOT, WEB_DATA_DIR)).sort().join() === ['index.json', ...idx.experiments.map((e: Any) => e.file)].sort().join(), 'web/data holds only the index and the experiment replays');
   for (const e of idx.experiments) {
     const f = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, WEB_DATA_DIR, e.file), 'utf8'));
     ok(assertKind(f, 'experiment', e.file) === f && f.official === false, `${e.file}: declares itself experiment / not official`);
     assert.throws(() => assertKind(f, 'official', e.file), /not official data/); checks++;
     const spec = EXPERIMENTS.find((x) => x.id === e.id)!, engineDay0 = buildDay0(spec.founding, spec.seed, seasonStart(spec.season), loadBundle()).state.colonies[0];
     ok(JSON.stringify(f.day0.state.workers.map((w: Any) => w.id)) === JSON.stringify(engineDay0.population.workers.map((w) => w.id)) && JSON.stringify(f.day0.state.brood.map((b: Any) => b.id)) === JSON.stringify(engineDay0.population.brood.map((b) => b.id)), `${e.file}: Day0 individuals come from the Day0 initializer, not from the official save`);
-    ok(typeof f.map.geography_source === 'string' && f.map.geography_source.includes('world_map.locations'), `${e.file}: only garden geography is read from the official record, and it says so`);
+    ok(typeof f.map.geography_source === 'string' && f.map.geography_source.startsWith('data/xitun-garden-geography.json'), `${e.file}: only garden geography is read (from the scenario geography file), and it says so`);
+    const geoIds = new Set(readJson('data/xitun-garden-geography.json').locations.map((l: Any) => l.id));
+    ok(f.map.places.every((p: Any) => p.layout === null || geoIds.has(p.id)), `${e.file}: every placed location comes from the geography file`);
   }
   console.log(JSON.stringify({ passed: true, checks, experiments: EXPERIMENTS.map((e) => e.id), eclosions_checked: eclosionsSeen, deaths_checked: deathsSeen }, null, 2));
 } finally {
-  for (const [f, h] of protectedFiles) assert.equal(sha(f), h, 'REAL SAVE CHANGED: ' + f);
+  for (const [f, h] of protectedFiles) assert.equal(sha(f), h, 'PROTECTED FILE CHANGED: ' + f);
+  assert.equal(listFiles('saves').join(), protectedFiles.map(([f]) => f).filter((f) => f.startsWith('saves/')).join(), 'saves/ gained or lost files');
   assert.equal(fs.readdirSync(path.join(REPO_ROOT, 'journal')).sort().join(), journalBefore, 'journal/ changed');
 }

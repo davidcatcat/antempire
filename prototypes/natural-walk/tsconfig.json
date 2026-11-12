@@ -1,0 +1,5 @@
+{
+  "extends": "../../web/tsconfig.json",
+  "compilerOptions": { "rootDir": "../..", "outDir": "dist" },
+  "include": ["natural-walk.ts", "pose-stream.ts", "../../web/src/art-*.ts", "../../web/src/display-motion.ts", "../../web/src/game-model.ts", "../../web/src/model.ts"]
+}

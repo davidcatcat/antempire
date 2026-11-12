@@ -1,5 +1,5 @@
 {
-  "//": "Platform-free check of the P0-A2 prototype core (same rules as engine/tsconfig.json: no DOM lib, no Node types), so it can run unchanged in the experiment Web Worker (phase 3). Run: npx tsc -p prototypes/p0a2-24h/tsconfig.json",
+  "//": "Platform-free check of the P0-A2 prototype core (same rules as engine/tsconfig.json: no DOM lib, no Node types), so it can run unchanged in the experiment Web Worker (phase 3). Run: npx tsc -p prototypes/p0a2-24h/tsconfig.json. tools/ holds Node-only analysis scripts (fs / path; Owner #193 Q2 / Q4 sensitivity runs) and is excluded here; they are typechecked by the root tsconfig.json.",
   "compilerOptions": {
     "target": "ES2023",
     "lib": ["ES2023"],
@@ -13,5 +13,6 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true
   },
-  "include": ["./**/*.ts"]
+  "include": ["./**/*.ts"],
+  "exclude": ["./tools/**"]
 }

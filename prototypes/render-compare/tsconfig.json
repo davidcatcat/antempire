@@ -1,0 +1,5 @@
+{
+  "extends": "../../web/tsconfig.json",
+  "compilerOptions": { "rootDir": "../..", "noEmit": true, "types": [] },
+  "include": ["src/*.ts", "../../web/src/art-*.ts", "../../web/src/render-*.ts"]
+}

@@ -1,22 +1,32 @@
 /**
- * Owner decision 51 (docs/solar-cross-env-check.md): does the 1-ulp Node-vs-Chromium difference of engine/clock/solar.ts
- * light times change anything beyond displayed values? INVESTIGATION ONLY: changes no engine code, no parameter, no save.
+ * Owner decision 51 (docs/solar-cross-env-check.md): cross-environment check of engine/clock/solar.ts light times.
+ * Changes no engine code, no parameter, no save.
  *
- * Part A (cross-environment sweep, needs Playwright Chromium): the SAME source of engine/clock/solar.ts (transpiled, types
- * stripped only) is evaluated in Node and in a real Chromium page on
+ * HISTORY: the first run (2026-11-12, solar.ts on Math.sin / cos / tan / asin / acos) found 12 906 differing values
+ * between Node and Chromium (1–320 ulp); that output is kept unchanged in out/sweep-v1-math-builtin.json, and the
+ * counterexamples C1 / C3 / C4 (Part C) show why such a difference is not display-only. Owner decision #190 (ruled in
+ * #193) chose scheme A: solar.ts now uses engine/clock/detmath.ts (IEEE basic operations + Math.sqrt only). This sweep
+ * now VERIFIES bit-identity: every value must be identical (Object.is) in Node, a Chromium page and a Chromium module
+ * Worker. There is no tolerance anywhere.
+ *
+ * Part A (cross-environment sweep, needs Playwright Chromium): the SAME source of engine/clock/solar.ts and its imports
+ * (transpiled, types stripped only) is evaluated in Node, in a real Chromium page and in a Chromium module Worker on
  *   A1 the experiment-world site (24.18 N, 120.64 E, UTC+8), every day of 4 years;
  *   A2 latitudes −72…72 (1°) × 6 longitudes (local zone = round(lon/15) h) × every 5th day of a year;
- * and every differing value is classified: ulps; tick label (1e-6 min, 'tick' order) flip; displayed minute / ms flip;
- * refusal flip (a day that is refused in one environment only); light state (lightStateAt) flip at the instants
- * the clocks actually query (minute 0 of each day).
+ *   A3 transition boundaries: latitudes −72…−60 and 60…72 (0.1°) at longitude 0, every day of a year — where the
+ *      twilight / sunrise solutions appear and vanish (|cos H| → 1, acos ill-conditioned; refusal boundary);
+ * every differing value (none expected) is classified: ulps; tick label (1e-6 min, 'tick' order) flip; displayed
+ * minute / ms flip; refusal flip; light state (lightStateAt) flip at minute 0 of each day. Digests (SHA-256 of the IEEE
+ * bit patterns of every output) are recorded so tests/solar-xenv.test.ts can check later Node runs against this
+ * recorded Chromium output without a browser.
  * Part B (Node only, no browser): synthetic experiment world (prototypes/continuous-world) seeds 1–20 × 30 days: the
- * smallest distance between any ant / hour / day event instant and any light-transition instant, compared with the
- * cross-environment difference.
- * Part C (adversarial, Node only): constructed cases where an event lies within 1e-9 min of a light transition, using the
- * neighbouring double of the Node value as the stand-in for the other environment's value (what Part A measured).
+ * smallest distance between any ant / hour / day event instant and any light-transition instant.
+ * Part C (adversarial, Node only, kept as history): constructed cases where an event lies within 1e-9 min of a light
+ * transition, using the neighbouring double of the Node value as a stand-in for a differing environment.
  *   node prototypes/solar-xenv/sweep.ts [--no-browser] [--out file]
  * Writes prototypes/solar-xenv/out/sweep.json.
  */
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
@@ -33,7 +43,7 @@ const KEYS = ['civil_dawn', 'sunrise', 'solar_noon', 'sunset', 'civil_dusk'] as 
 type Case = { site: SolarSite; anchor: CalendarAnchor; date: string };
 type Out = number[] | string;
 
-export function cases(): { A1: Case[]; A2: Case[] } {
+export function cases(): { A1: Case[]; A2: Case[]; A3: Case[] } {
   const anchor = DEFAULT_PARAMS.calendar as CalendarAnchor, site = DEFAULT_PARAMS.site;
   const A1: Case[] = []; for (let d = 0; d < 4 * 365 + 1; d++) A1.push({ site, anchor, date: dateOfDay(anchor, d) });
   const A2: Case[] = [];
@@ -41,20 +51,38 @@ export function cases(): { A1: Case[]; A2: Case[] } {
     const a: CalendarAnchor = { day0_date: '2026-01-01', utc_offset_minutes: Math.round(lon / 15) * 60, zone: 'synthetic' } as CalendarAnchor;
     for (let d = 0; d < 365; d += 5) A2.push({ site: { latitude_deg: lat, longitude_deg: lon }, anchor: a, date: dateOfDay(a, d) });
   }
-  return { A1, A2 };
+  const A3: Case[] = [], a0: CalendarAnchor = { day0_date: '2026-01-01', utc_offset_minutes: 0, zone: 'synthetic' } as CalendarAnchor;
+  for (let t = -720; t <= 720; t++) if (Math.abs(t) >= 600) for (let d = 0; d < 365; d++) A3.push({ site: { latitude_deg: t / 10, longitude_deg: 0 }, anchor: a0, date: dateOfDay(a0, d) });
+  return { A1, A2, A3 };
 }
-const evalCase = (c: Case): Out => { try { const t = lightTimes(c.site, c.anchor, c.date); return KEYS.map((k) => t[k]); } catch (e) { return String((e as Error).message).slice(0, 80); } };
+/** SHA-256 of the IEEE-754 bit patterns of every output (refusals by their message), in case order */
+export function outputDigest(out: Out[]): string {
+  const h = crypto.createHash('sha256'), b = new Uint8Array(8), dv = new DataView(b.buffer);
+  for (const o of out) {
+    if (typeof o === 'string') { h.update(`R${o}\n`); continue; }
+    for (const v of o) { dv.setFloat64(0, v, true); h.update(b); } // little-endian bit pattern, whatever the host
+    h.update('\n');
+  }
+  return h.digest('hex');
+}
+export const evalAll = (all: Case[]): Out[] => all.map(evalCase);
+export const evalCase = (c: Case): Out => { try { const t = lightTimes(c.site, c.anchor, c.date); return KEYS.map((k) => t[k]); } catch (e) { return String((e as Error).message).slice(0, 80); } };
 
-/** the browser side: the same modules, transpiled (type annotations removed; no arithmetic changes), served from memory */
-async function browserEval(all: Case[]): Promise<{ version: string; out: Out[] }> {
+/** the browser side: the same modules, transpiled (type annotations removed; no arithmetic changes), served from memory;
+ *  evaluated on the page's main thread AND in a dedicated module Worker (the experiment world runs in a Worker) */
+async function browserEval(all: Case[]): Promise<{ version: string; page: Out[]; worker: Out[] }> {
   const require = createRequire(import.meta.url);
   const { chromium } = require('playwright');
   const browser = await chromium.launch();
+  const runSrc = `const keys = ['civil_dawn', 'sunrise', 'solar_noon', 'sunset', 'civil_dusk'];
+const run = (m, all) => all.map((c) => { try { const t = m.lightTimes(c.site, c.anchor, c.date); return keys.map((k) => t[k]); } catch (e) { return String(e.message).slice(0, 80); } });`;
   try {
     const page = await browser.newPage();
     await page.route('http://solar.test/**', async (route: { request(): { url(): string }; fulfill(o: object): Promise<void> }) => {
       const u = new URL(route.request().url()), f = path.join(ROOT, u.pathname);
       if (u.pathname === '/') return route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>solar</title>' });
+      if (u.pathname === '/run.js') return route.fulfill({ status: 200, contentType: 'text/javascript', body: `${runSrc}\nexport { run };` });
+      if (u.pathname === '/sweep-worker.js') return route.fulfill({ status: 200, contentType: 'text/javascript', body: `import * as m from '/engine/clock/solar.ts';\nimport { run } from '/run.js';\nonmessage = (e) => postMessage(run(m, e.data));` });
       if (!f.startsWith(path.join(ROOT, 'engine')) || !fs.existsSync(f)) return route.fulfill({ status: 404, body: '' });
       const js = ts.transpileModule(fs.readFileSync(f, 'utf8'), { compilerOptions: { target: ts.ScriptTarget.ESNext, module: ts.ModuleKind.ESNext, rewriteRelativeImportExtensions: false } }).outputText;
       return route.fulfill({ status: 200, contentType: 'text/javascript', body: js });
@@ -62,10 +90,17 @@ async function browserEval(all: Case[]): Promise<{ version: string; out: Out[] }
     await page.goto('http://solar.test/');
     const out = await page.evaluate(async (all: Case[]) => {
       const m = await import(/* browser: served by the route above */ '/engine/clock/solar.ts' as string);
-      const keys = ['civil_dawn', 'sunrise', 'solar_noon', 'sunset', 'civil_dusk'];
-      return all.map((c) => { try { const t = m.lightTimes(c.site, c.anchor, c.date); return keys.map((k: string) => t[k]); } catch (e) { return String((e as Error).message).slice(0, 80); } });
+      const { run } = await import('/run.js' as string);
+      const pageOut = run(m, all);
+      // browser-side Worker (this file is type-checked without the DOM library, hence the minimal local type)
+      type BrowserWorker = { onmessage: (e: { data: unknown[] }) => void; onerror: (e: { message: string }) => void; postMessage(x: unknown): void; terminate(): void };
+      const WorkerCtor = (globalThis as unknown as { Worker: new (url: string, o: { type: 'module' }) => BrowserWorker }).Worker;
+      const w = new WorkerCtor('/sweep-worker.js', { type: 'module' });
+      const workerOut = await new Promise<unknown[]>((res, rej) => { w.onmessage = (e) => res(e.data); w.onerror = (e) => rej(new Error(String(e.message))); w.postMessage(all); });
+      w.terminate();
+      return { pageOut, workerOut };
     }, all);
-    return { version: browser.version(), out };
+    return { version: browser.version(), page: out.pageOut as Out[], worker: out.workerOut as Out[] };
   } finally { await browser.close(); }
 }
 
@@ -158,19 +193,47 @@ export function partC() {
   return out;
 }
 
+/** inputs where the first run (out/sweep-v1-math-builtin.json) found differences or built its counterexamples; reported
+ *  value by value so the record shows each of them in all three environments */
+export const SPOTLIGHT = [
+  { why: 'C1/C3/C4 counterexample input (#181): experiment site, day 1 sunrise', lat: 24.18, lon: 120.64, date: '2026-03-27', key: 'sunrise' },
+  { why: 'A1 largest difference of the first run (2 ulp)', lat: 24.18, lon: 120.64, date: '2027-09-03', key: 'civil_dawn' },
+  { why: 'A2 largest difference of the first run (320 ulp, |cos H| near 1)', lat: -63, lon: 0, date: '2026-01-16', key: 'civil_dawn' },
+] as const;
+function spotlight(all: Case[], node: Out[], page: Out[], worker: Out[]) {
+  return SPOTLIGHT.map((w) => {
+    const i = all.findIndex((c) => c.site.latitude_deg === w.lat && c.site.longitude_deg === w.lon && c.date === w.date), j = KEYS.indexOf(w.key);
+    if (i < 0) return { ...w, found: false };
+    const v = (o: Out) => (typeof o === 'string' ? o : o[j]);
+    return { ...w, found: true, node: v(node[i]), chromium_page: v(page[i]), chromium_worker: v(worker[i]), bit_identical: Object.is(v(node[i]), v(page[i])) && Object.is(v(node[i]), v(worker[i])) };
+  });
+}
+
 const me = fileURLToPath(import.meta.url);
 if (process.argv[1] && path.resolve(process.argv[1]) === me) {
   const arg = (k: string) => { const i = process.argv.indexOf(k); return i >= 0 ? process.argv[i + 1] : null; };
-  const { A1, A2 } = cases(), all = [...A1, ...A2];
-  const t0 = performance.now(), node = all.map(evalCase), nodeMs = performance.now() - t0;
+  const sets = cases(), all = [...sets.A1, ...sets.A2, ...sets.A3];
+  const t0 = performance.now(), node = evalAll(all), nodeMs = performance.now() - t0;
   let A: unknown = 'not run (--no-browser)';
   if (!process.argv.includes('--no-browser')) {
     const br = await browserEval(all);
-    A = { chromium: br.version, node: process.version, node_ms: Math.round(nodeMs), A1: compare(A1, node.slice(0, A1.length), br.out.slice(0, A1.length)), A2: compare(A2, node.slice(A1.length), br.out.slice(A1.length)) };
+    const per: Record<string, unknown> = {}; let off = 0, differing = 0;
+    for (const [k, set] of Object.entries(sets)) {
+      const n = node.slice(off, off + set.length), p = br.page.slice(off, off + set.length), w = br.worker.slice(off, off + set.length); off += set.length;
+      const vsPage = compare(set, n, p), vsWorker = compare(set, n, w);
+      differing += vsPage.differing_values + vsPage.refusal_flips + vsWorker.differing_values + vsWorker.refusal_flips;
+      per[k] = { node_vs_chromium_page: vsPage, node_vs_chromium_worker: vsWorker, digest: { node: outputDigest(n), chromium_page: outputDigest(p), chromium_worker: outputDigest(w) } };
+    }
+    A = {
+      algorithm: 'engine/clock/detmath.ts (Owner decision #190, ruled in #193): IEEE basic operations + Math.sqrt only',
+      chromium: br.version, node: process.version, platform: `${process.platform}-${process.arch}`, arm64: '未驗證（CI 無 ARM64 執行器）',
+      node_ms: Math.round(nodeMs), cases: all.length, differing_values_total: differing, bit_identical: differing === 0,
+      ...per, spotlight: spotlight(all, node, br.page, br.worker),
+    };
   }
   const B = partB(Array.from({ length: 20 }, (_, i) => i + 1), 30), C = partC();
-  const res = { schema: 'antempire.solar-xenv.v1', label: '調查用：跨環境浮點比較；非正式；不改引擎', A, B, C };
+  const res = { schema: 'antempire.solar-xenv.v2', label: '跨環境逐位元比較（#190 方案 A 驗證）；非正式；不改規則', history: 'out/sweep-v1-math-builtin.json: first run with Math.* trigonometry (1–320 ulp differences), kept unchanged', A, B, C };
   const out = arg('--out') ?? path.join(HERE, 'out', 'sweep.json');
   fs.mkdirSync(path.dirname(out), { recursive: true }); fs.writeFileSync(out, JSON.stringify(res, null, 1) + '\n');
-  console.log(JSON.stringify(res, (k, v) => (k === 'rows' ? undefined : v), 1));
+  console.log(JSON.stringify(res, (k, v) => (k === 'rows' || k === 'examples' ? undefined : v), 1));
 }

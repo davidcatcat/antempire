@@ -14,6 +14,11 @@ export const THIS_SPECIES = 'Pheidole megacephala';
 const REF_RE = /^R\d+$/;
 const fail = (m: string): never => { throw Error(`P0A2_PARAMS: ${m}`); };
 
+/** the two variant maps: diagnostic sensitivity scenarios, and the isolated Q2 retention experiment (Owner #193) */
+export const VARIANT_SECTIONS = ['sensitivity_variants', 'q2_retention_variants'] as const;
+/** every variant name of a raw parameter file, per section */
+export const variantNames = (raw: any, sec: (typeof VARIANT_SECTIONS)[number]): string[] => Object.keys(raw?.[sec] ?? {}).filter((k) => k !== '_note');
+
 type Entry = { value: unknown; evidence_class: string; assumption: boolean; basis: string; sources: string[]; species?: string; extrapolation_limit?: string; note?: string };
 /** every entry that holds a value (parameters, site values, scenario dates) with its path */
 export function valueEntries(raw: any): [string, Entry][] {
@@ -21,7 +26,7 @@ export function valueEntries(raw: any): [string, Entry][] {
   for (const [k, v] of Object.entries(raw.parameters ?? {})) out.push([`parameters.${k}`, v as Entry]);
   for (const [k, v] of Object.entries(raw.site ?? {})) if (k !== 'zone') out.push([`site.${k}`, v as Entry]);
   for (const [s, sc] of Object.entries(raw.weather_scenarios ?? {})) out.push([`weather_scenarios.${s}.day0_date`, (sc as any).day0_date]);
-  for (const [n, va] of Object.entries(raw.sensitivity_variants ?? {})) if (n !== '_note') for (const [k, e] of Object.entries((va as any).overrides ?? {})) out.push([`sensitivity_variants.${n}.${k}`, e as Entry]);
+  for (const sec of VARIANT_SECTIONS) for (const [n, va] of Object.entries(raw[sec] ?? {})) if (n !== '_note') for (const [k, e] of Object.entries((va as any).overrides ?? {})) out.push([`${sec}.${n}.${k}`, e as Entry]);
   return out;
 }
 
@@ -29,6 +34,14 @@ export function valueEntries(raw: any): [string, Entry][] {
 export function evidenceProblems(raw: any): string[] {
   const p: string[] = [];
   if (raw?.official !== false) p.push('official must be false');
+  if (typeof raw?.reference_variant !== 'string' || !variantNames(raw, 'sensitivity_variants').includes(raw.reference_variant)) p.push('reference_variant must name a sensitivity variant');
+  const seen = new Set<string>();
+  for (const sec of VARIANT_SECTIONS) for (const n of variantNames(raw, sec)) {
+    if (seen.has(n)) p.push(`variant ${n} is defined twice`); seen.add(n);
+    const va = raw[sec][n];
+    if (typeof va?.label !== 'string' || !va.label) p.push(`${sec}.${n}: label required`);
+    if (typeof va?.status !== 'string' || !va.status) p.push(`${sec}.${n}: status required (reference or sensitivity, and what it is not)`);
+  }
   for (const [path, e] of valueEntries(raw)) {
     if (!e || typeof e !== 'object' || !('value' in e)) { p.push(`${path}: not a labelled value`); continue; }
     if (!EVIDENCE_CLASSES.includes(e.evidence_class as never)) p.push(`${path}: evidence_class ${e.evidence_class} not in ${EVIDENCE_CLASSES.join('/')}`);
@@ -67,6 +80,8 @@ export interface Model {
   rest_ms: number; idle_ms: number; brood_ms: number; search_ms: number; find_p: number;
   /** null = give-up / route forgetting off (reference); K = forget the route after K consecutive empty arrivals */
   give_up_empty_trips: number | null; variant: string;
+  /** the variant's label and status text (Q1: the reference ft-flat is provisional and uncalibrated) — for outputs */
+  variant_label: string; variant_status: string; reference_variant: string;
   honeydew_ms: number; honeydew_amount: number; thermal_sd: number; ctmax_c: number; surface_offset_c: number;
   consts: DecisionConsts;
 }
@@ -80,16 +95,26 @@ export function deepFreeze<T>(v: T): T { if (v && typeof v === 'object') { for (
 
 /** the parameter set of a sensitivity variant: the raw file with the variant's labelled overrides applied */
 export function applyVariant(raw: any, variant: string): any {
-  const va = raw.sensitivity_variants?.[variant];
-  if (!va || variant === '_note') fail(`unknown sensitivity variant ${variant}`);
+  const sec = VARIANT_SECTIONS.find((x) => variant !== '_note' && raw[x] && Object.prototype.hasOwnProperty.call(raw[x], variant));
+  const va = sec ? raw[sec][variant] : undefined;
+  if (!va) fail(`unknown sensitivity variant ${variant}`);
   const out = JSON.parse(JSON.stringify(raw));
   for (const [k, e] of Object.entries(va.overrides ?? {})) { if (!(k in out.parameters)) fail(`variant ${variant} overrides unknown parameter ${k}`); out.parameters[k] = JSON.parse(JSON.stringify(e)); }
   return out;
 }
 
-export function buildModel(rawFile: any, scenario: string, variant = 'reference'): Model {
+/** the Q2 retention candidate (default OFF = null); refuses anything it cannot honour, never repairs */
+function retentionOf(x: any): DecisionConsts['retention'] {
+  if (x === null) return null;
+  if (x && x.kind === 'horizon' && typeof x.hours === 'number' && Number.isFinite(x.hours) && x.hours > 0 && Object.keys(x).length === 2) return { kind: 'horizon', need_ms: Math.round(x.hours * 3_600_000) };
+  if (x && x.kind === 'own_interval' && typeof x.factor === 'number' && Number.isFinite(x.factor) && x.factor > 0 && Object.keys(x).length === 2) return { kind: 'own_interval', factor: x.factor };
+  return fail('forager_retention must be null (off) or {kind: "horizon", hours > 0} or {kind: "own_interval", factor > 0}');
+}
+
+export function buildModel(rawFile: any, scenario: string, variantIn?: string): Model {
   const probs = evidenceProblems(rawFile); if (probs.length) fail(probs.join('; '));
-  const raw = applyVariant(rawFile, variant);
+  const variant = variantIn ?? rawFile.reference_variant, raw = applyVariant(rawFile, variant);
+  const vSec = VARIANT_SECTIONS.find((x) => Object.prototype.hasOwnProperty.call(rawFile[x] ?? {}, variant))!, vDef = rawFile[vSec][variant];
   for (const [m, on] of Object.entries(MECHANISMS_IMPLEMENTED)) if (raw.mechanisms?.[m]?.enabled !== on) fail(`mechanism ${m} must be ${on ? 'enabled' : 'disabled'}: the prototype implements only the reference combination (design §5)`);
   const P = raw.parameters, v = (k: string): any => { if (!(k in P)) fail(`missing parameter ${k}`); return P[k].value; };
   const num = (k: string, lo = 0): number => { const x = v(k); if (typeof x !== 'number' || !Number.isFinite(x) || x < lo) fail(`${k} must be a number >= ${lo}`); return x; };
@@ -103,6 +128,7 @@ export function buildModel(rawFile: any, scenario: string, variant = 'reference'
   if (ftNull.some((x) => x) && !ftNull.every((x) => x)) fail('f_T anchors must be all numbers or all null');
   const f_t = ftNull[0] ? null : { zero_low: num('forage_temp_zero_low_c', -50), peak: num('forage_temp_peak_c', -50), zero_high: num('forage_temp_zero_high_c', -50) };
   if (f_t && !(f_t.zero_low < f_t.peak && f_t.peak < f_t.zero_high)) fail('need forage_temp_zero_low_c < forage_temp_peak_c < forage_temp_zero_high_c');
+  const retention = retentionOf(v('forager_retention'));
   const gu = v('give_up_empty_trips'); if (!(gu === null || (Number.isInteger(gu) && gu >= 1))) fail('give_up_empty_trips must be null or an integer >= 1');
   const workers = num('colony_workers', 1), larvae = num('colony_larvae');
   if (!Number.isInteger(workers) || !Number.isInteger(larvae) || workers > 999 || larvae > 99) fail('colony sizes must be integers (workers <= 999, larvae <= 99)');
@@ -110,9 +136,9 @@ export function buildModel(rawFile: any, scenario: string, variant = 'reference'
   const speed = num('trail_walking_speed_mm_s'); if (!(speed > 0)) fail('speed must be > 0');
   const ms = (k: string) => { const x = Math.round(num(k) * 1000); if (!(x >= 1)) fail(`${k} must be >= 1 ms`); return x; };
   const S = raw.site;
-  const consts: DecisionConsts = deepFreeze({ hill_n: num('hill_n'), recruit_contact_weight: num('recruit_contact_weight'), idle_probability: prob('idle_probability'), f_t, light_factor_night: lightNight, transfer_max: up('transfer_max_portions'), feed_bolus: up('feed_bolus_portions'), begging_threshold: prob('larva_begging_threshold') });
+  const consts: DecisionConsts = deepFreeze({ hill_n: num('hill_n'), recruit_contact_weight: num('recruit_contact_weight'), idle_probability: prob('idle_probability'), f_t, light_factor_night: lightNight, transfer_max: up('transfer_max_portions'), feed_bolus: up('feed_bolus_portions'), begging_threshold: prob('larva_begging_threshold'), retention, metabolic_rate_per_day: up('worker_sugar_daily_portions'), day_ms: 86_400_000 });
   return {
-    params_sha: sha256Hex(canon(rawFile)), scenario, variant, give_up_empty_trips: gu,
+    params_sha: sha256Hex(canon(rawFile)), scenario, variant, give_up_empty_trips: gu, variant_label: vDef.label, variant_status: vDef.status, reference_variant: rawFile.reference_variant,
     anchor: checkAnchor({ day0_date: sc.day0_date.value, utc_offset_minutes: S.utc_offset_minutes.value, zone: S.zone }),
     site: checkSite({ latitude_deg: S.latitude_deg.value, longitude_deg: S.longitude_deg.value }),
     hourly_temp_c: [...sc.hourly_temp_c], rh_mean_percent: typeof sc.rh_mean_percent === 'number' ? sc.rh_mean_percent : null, synthetic: true, weather_generator: sc.generator,

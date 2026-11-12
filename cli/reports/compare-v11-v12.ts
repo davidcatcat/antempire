@@ -1,5 +1,5 @@
 /**
- * Rules-update evidence for v2-review.12: injury types. Migrates the REAL Day14 saves (read only; nothing is
+ * Rules-update evidence for v2-review.12: injury types. Migrates the retired legacy Day14 state (read only; nothing is
  * written) with the v11 rules (migration switch off, every repair multiplier 1) and with v12, then runs the 20
  * fixed seeds × Day15–134 from each and compares day by day. Also lists the type each injured worker gets.
  * Writes reports/rules-update-v12-injury-types.json. Diagnostic only: never touches saves/ or journal/.
@@ -13,7 +13,8 @@ import { approvedChanges, revertChange } from '../../tests/lib/approved-changes.
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 const V12 = 'antempire.v2-review.12-injury-types';
-const main = readJson('saves/main.json'), world = readJson('saves/world-state.json'), clim = readJson('data/taichung-climatology-1991-2020.json');
+// #194: the legacy Day14 saves are retired; the byte-identical copies in tests/fixtures/legacy-day14/ reproduce this report.
+const main = readJson('tests/fixtures/legacy-day14/main.json'), world = readJson('tests/fixtures/legacy-day14/world-state.json'), clim = readJson('data/taichung-climatology-1991-2020.json');
 const bundles = { v11: loadBundle(), v12: loadBundle() };
 for (const ch of approvedChanges().filter((x) => x.rules_version === V12)) revertChange(bundles.v11, ch);
 const strip = (st: Any) => { const c = structuredClone(st); for (const w of c.population.workers) { delete w.injury_type; delete w.injury_body_part; delete w.injury_record; } return c; };

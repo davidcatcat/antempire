@@ -3,7 +3,7 @@
  * (Playwright "Pixel 7", touch; an emulation, not a physical phone). Expectations come from web/data, read here
  * independently of the page. FAILS (exit 1) on any failed check or page error.
  *  - every chart is drawn; hovering (desktop) or tapping a chart shows that day's engine values; a click/tap moves the
- *    map to that day; the table view lists Day0 + every simulated day; the official snapshot has no daily series;
+ *    map to that day; the table view lists Day0 + every simulated day; there is no official world (legacy Day14 retired, #194);
  *  - a walking worker's panel shows the derived speed = recorded edge length / recorded time, labelled as an average
  *    from a game-assumption length; no horizontal page scroll on the phone.
  *   npm run web:build && node cli/web-serve.ts 8781 &  node tests/browser/web-stats.check.cjs <outDir> http://localhost:8781/
@@ -25,8 +25,8 @@ const read = (f) => JSON.parse(fs.readFileSync(path.join(DATA, f), 'utf8'));
     page.on('pageerror', (e) => errors.push(`${name}: ${e.message}`));
     const V = (fn, ...a) => page.evaluate(fn, ...a);
     const setDay = async (d, m) => { await page.$eval('#day', (el, v) => { el.value = String(v); el.dispatchEvent(new Event('input')); }, d); await page.$eval('#minute', (el, v) => { el.value = String(v); el.dispatchEvent(new Event('input')); }, m); };
-    await page.goto(new URL('analysis.html', base).href); await page.waitForFunction(() => document.getElementById('badge').textContent.includes('Day14'));
-    check((await page.$eval('#stats', (e) => e.textContent)).includes('沒有每日序列') && (await page.$$('#stats svg')).length === 0, `${name}: the official snapshot shows no daily series`);
+    await page.goto(new URL('analysis.html', base).href); await page.waitForFunction((id) => window.antempireViewer && window.antempireViewer.state().mode === id, index.experiments[0].id);
+    check(index.official === null && (await page.$$eval('#mode option', (os) => os.map((o) => o.value))).every((v) => index.experiments.some((e) => e.id === v)), `${name}: no official world is offered; every world has a daily series`);
     await page.selectOption('#mode', meta.id); await page.waitForFunction((id) => window.antempireViewer.state().mode === id, meta.id);
     await setDay(12, 0);
     const charts = await page.$$eval('#stats svg[data-chart]', (s) => s.map((x) => x.dataset.chart));

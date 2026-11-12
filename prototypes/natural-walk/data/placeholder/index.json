@@ -1,0 +1,10 @@
+{
+ "placeholder": true,
+ "note": "示意・待 PR A 物理資料",
+ "files": [
+  "straight.json",
+  "trail.json",
+  "explore.json",
+  "obstacle.json"
+ ]
+}
