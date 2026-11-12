@@ -13,5 +13,6 @@
     "resolveJsonModule": true,
     "skipLibCheck": true
   },
-  "include": ["engine/**/*.ts", "cli/**/*.ts", "tests/**/*.ts", "prototypes/**/*.ts"]
+  "include": ["engine/**/*.ts", "cli/**/*.ts", "tests/**/*.ts", "prototypes/**/*.ts"],
+  "exclude": ["prototypes/art-preview/**"]
 }
