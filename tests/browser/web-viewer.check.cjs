@@ -1,9 +1,10 @@
 /**
  * Browser smoke test of the read-only viewer (needs Chromium + Playwright; runs in CI as the "viewer-smoke" job and
  * locally). Desktop (1280x800) and phone (390x844, touch, DPR 3). FAILS (exit 1) when any check fails:
- *  - no page errors; the official Day14 snapshot loads; clicking an ant shows its record;
- *  - every experiment loads with the "非正式" badge, and the official snapshot is restored when switching back
- *    (same living workers as the save, no timeline): the two worlds never mix;
+ *  - no page errors; there is no official world (legacy Day14 retired, #194): the world list holds only the experiments,
+ *    the first experiment opens by default and the badge says there is no official world; clicking an ant shows its record;
+ *  - every experiment loads with the "非正式" badge, and switching back to the first experiment restores its Day 1
+ *    roster: the worlds never mix;
  *  - an ant caught between two recorded points is found, selected, and its panel shows the label
  *    「位置為顯示插值」 — a missing label fails the test;
  *  - day crossing: the ants drawn at the start of day d+1 are exactly the engine's end-of-day-d workers (from the
@@ -22,7 +23,7 @@ const read = (f) => JSON.parse(fs.readFileSync(path.join(DATA, f), 'utf8'));
 (async () => {
   const out = process.argv[2], base = process.argv[3] || 'http://localhost:8781/';
   fs.mkdirSync(out, { recursive: true });
-  const index = read('index.json'), official = read(index.official), failures = [], errors = [];
+  const index = read('index.json'), first = index.experiments[0], firstExp = read(first.file), failures = [], errors = [];
   const check = (cond, msg) => { if (!cond) failures.push(msg); };
   const browser = await chromium.launch();
   for (const [name, vp] of [['desktop', { width: 1280, height: 800 }], ['mobile', { width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 3 }]]) {
@@ -31,14 +32,16 @@ const read = (f) => JSON.parse(fs.readFileSync(path.join(DATA, f), 'utf8'));
     const V = (fn, ...a) => page.evaluate(fn, ...a);
     const setDay = async (d, m) => { await page.$eval('#day', (el, v) => { el.value = String(v); el.dispatchEvent(new Event('input')); }, d); await page.$eval('#minute', (el, v) => { el.value = String(v); el.dispatchEvent(new Event('input')); }, m); };
     const drawn = async () => (await V(() => window.antempireViewer.antsOnScreen())).map((a) => a.id).sort();
-    await page.goto(new URL('analysis.html', base).href); await page.waitForFunction(() => document.getElementById('badge').textContent.includes('Day14'));
-    // official snapshot
-    const aliveSaved = official.workers.filter((w) => w.status === 'alive').map((w) => w.id).sort();
-    const off = await V(() => window.antempireViewer.antsOnScreen());
-    check(JSON.stringify(off.map((a) => a.id).sort()) === JSON.stringify(aliveSaved), `${name}: official ants = living workers of the save`);
-    await page.mouse.click(off[0].x, off[0].y);
-    check((await page.$eval('#info', (e) => e.textContent)).includes(off[0].id), `${name}: clicking an official ant shows its record`);
-    await page.screenshot({ path: `${out}/${name}-official.png`, fullPage: true });
+    await page.goto(new URL('analysis.html', base).href); await page.waitForFunction((t) => document.getElementById('badge').textContent.includes(t), first.title);
+    // no official world (#194): only experiments are offered, the first one opens by default
+    const options = await page.$$eval('#mode option', (os) => os.map((o) => o.value));
+    check(index.official === null && JSON.stringify(options) === JSON.stringify(index.experiments.map((e) => e.id)), `${name}: the world list holds only the experiments (no official world)`);
+    check((await page.$eval('#badge', (e) => e.textContent)).includes('目前沒有正式世界') && (await V(() => window.antempireViewer.state())).official === false, `${name}: the badge says there is no official world`);
+    const day1 = firstExp.day0.state.workers.map((w) => w.id).sort(), start = await V(() => window.antempireViewer.antsOnScreen());
+    check(JSON.stringify(start.map((a) => a.id).sort()) === JSON.stringify(day1), `${name}: default world drawn = the first experiment's Day 1 roster`);
+    await page.mouse.click(start[0].x, start[0].y);
+    check((await page.$eval('#info', (e) => e.textContent)).includes(start[0].id), `${name}: clicking an ant shows its record`);
+    await page.screenshot({ path: `${out}/${name}-default.png`, fullPage: true });
     for (const meta of index.experiments) {
       const exp = read(meta.file), ndays = exp.days.length;
       await page.selectOption('#mode', meta.id); await page.waitForFunction((t) => document.getElementById('badge').textContent.includes(t), meta.title);
@@ -89,10 +92,10 @@ const read = (f) => JSON.parse(fs.readFileSync(path.join(DATA, f), 'utf8'));
       check(st.day === ndays && st.minute <= lastW + 1e-9 && (await page.$eval('#play', (e) => e.textContent)) === '播放', `${name} ${meta.id}: playing at the end of the replay stops at day ${ndays} minute ${lastW}`);
     }
     await page.selectOption('#view', 'nest'); await page.screenshot({ path: `${out}/${name}-nest.png` }); await page.selectOption('#view', 'garden');
-    // back to the official world: nothing from the experiments remains
-    await page.selectOption('#mode', 'official'); await page.waitForFunction(() => document.getElementById('badge').textContent.includes('Day14'));
+    // back to the first experiment: nothing from the other experiments remains
+    await page.selectOption('#mode', first.id); await page.waitForFunction((id) => window.antempireViewer.state().mode === id, first.id);
     const back = await V(() => window.antempireViewer.state());
-    check(back.official === true && JSON.stringify([...back.workers].sort()) === JSON.stringify(aliveSaved) && (await page.$eval('#timeline', (e) => e.hidden)), `${name}: switching back restores the official snapshot (no timeline, saved workers only)`);
+    check(back.official === false && back.day === 1 && JSON.stringify([...back.workers].sort()) === JSON.stringify(day1), `${name}: switching back restores the first experiment at Day 1 (its own workers only)`);
     await ctx.close();
   }
   await browser.close();

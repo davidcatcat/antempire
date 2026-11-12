@@ -1,20 +1,21 @@
 /**
- * 《螞蟻帝國》read-only viewer (MVP). Draws ONLY what the exported files contain (web/data/*.json): the official
- * Day14 snapshot (static) and engine-generated experimental Day0 replays. It never runs the simulation, never
- * writes anything, and every position between two recorded points is a display interpolation (model.poseAt).
+ * 《螞蟻帝國》read-only viewer (MVP). Draws ONLY what the exported files contain (web/data/*.json): engine-generated
+ * experimental Day0 replays. There is no official world (the legacy Day14 saves were retired, #194), so no official
+ * mode exists. It never runs the simulation, never writes anything, and every position between two recorded points
+ * is a display interpolation (model.poseAt).
  */
 import { CHARTS, FLOW_CHARTS, FLOW_COLUMNS, panelHtml, tableHtml, readout, dayAtX } from './charts.ts';
-import { dailySeries, walkSpeedAt, type DayPoint, ACTION_LABEL, NEST, assertKind, REASON_LABEL, TASK_LABEL, describeEvent, displayPositions, eventsUntil, exploredEdges, poseAt, segmentsOf, stateAtStart, taskOf, trailScale, type Experiment, type Official, type Place, type Link, stateAt, isSettled, windowOf, SETTLEMENT_STEP, dayTimeline, eventJump, eventWorkers, followStatus, type EventJump, allTimeline, filterRows, categoryCounts, categoryOf, CATEGORY_LABEL, eventMarks, recordedRoute, routeSummary, eventBroodIds, type EventCategory, type TimelineRow, type RouteLeg } from './model.ts';
+import { dailySeries, walkSpeedAt, type DayPoint, ACTION_LABEL, NEST, assertKind, REASON_LABEL, TASK_LABEL, describeEvent, displayPositions, eventsUntil, exploredEdges, poseAt, segmentsOf, stateAtStart, taskOf, trailScale, type Experiment, type Place, type Link, stateAt, isSettled, windowOf, SETTLEMENT_STEP, dayTimeline, eventJump, eventWorkers, followStatus, type EventJump, allTimeline, filterRows, categoryCounts, categoryOf, CATEGORY_LABEL, eventMarks, recordedRoute, routeSummary, eventBroodIds, type EventCategory, type TimelineRow, type RouteLeg } from './model.ts';
 
 type Pos = Record<string, { x: number; y: number; known: boolean }>;
-interface Index { official: string; experiments: { id: string; file: string; title: string }[] }
+interface Index { official: null; official_note?: string; experiments: { id: string; file: string; title: string }[] }
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const canvas = $<HTMLCanvasElement>('map'), ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 const ui = { mode: $<HTMLSelectElement>('mode'), day: $<HTMLInputElement>('day'), minute: $<HTMLInputElement>('minute'), play: $<HTMLButtonElement>('play'), speed: $<HTMLSelectElement>('speed'), time: $('timeLabel'), badge: $('badge'), info: $('info'), events: $('events'), nest: $('nest'), weather: $('weather'), view: $<HTMLSelectElement>('view'), ovTrail: $<HTMLInputElement>('ovTrail'), ovExplored: $<HTMLInputElement>('ovExplored'), ovFood: $<HTMLInputElement>('ovFood'), ovLabels: $<HTMLInputElement>('ovLabels'), ovTask: $<HTMLInputElement>('ovTask'), legend: $('legend'), timeline: $('timeline'), follow: $<HTMLButtonElement>('follow'), who: $<HTMLSelectElement>('who'), followMsg: $('followMsg'), jump: $('jump'), evMine: $<HTMLInputElement>('evMine'), stats: $('stats'), statsChart: $<HTMLButtonElement>('statsChart'), statsTable: $<HTMLButtonElement>('statsTable'), ovEvents: $<HTMLInputElement>('ovEvents'), ovRoute: $<HTMLInputElement>('ovRoute'), route: $('route'), flows: $('flows'), flowsChart: $<HTMLButtonElement>('flowsChart'), flowsTable: $<HTMLButtonElement>('flowsTable'), evScope: $<HTMLSelectElement>('evScope'), evCats: $('evCats'), evCount: $('evCount'), placeEvents: $('placeEvents') };
 
 /** Canvas colours come from the page's CSS tokens so both light and dark themes stay readable. */
 const tok = (name: string, fallback: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
-let index: Index, official: Official | null = null, exp: Experiment | null = null, pos: Pos = {}, places: Place[] = [], links: Link[] = [];
+let index: Index, exp: Experiment | null = null, pos: Pos = {}, places: Place[] = [], links: Link[] = [];
 let selected: string | null = null, playing = false, last = 0, modeRequest = 0;
 /** V3 follow camera: the followed worker (null = free camera), and the last event jump (shown until the next one). */
 let series: DayPoint[] = [], statsKey = '', statsView: 'chart' | 'table' = 'chart', whoKey = '', following: string | null = null, followNote = '', lastJump: (EventJump & { event: string; type: string }) | null = null, eventsKey = '';
@@ -28,7 +29,7 @@ async function load<T>(file: string): Promise<T> { const r = await fetch('data/'
 
 async function init() {
   index = await load<Index>('index.json');
-  ui.mode.innerHTML = `<option value="official">正式遊戲 Day14（唯讀快照）</option>` + index.experiments.map((e) => `<option value="${e.id}">${e.title}</option>`).join('');
+  ui.mode.innerHTML = index.experiments.map((e) => `<option value="${e.id}">${e.title}</option>`).join('');
   ui.mode.onchange = () => switchMode(ui.mode.value);
   ui.day.oninput = () => { ui.minute.value = '0'; draw(); };
   ui.follow.onclick = () => { if (following) stopFollow('已取消追蹤'); else if (selected && exp) { following = selected; followNote = ''; draw(); } };
@@ -54,27 +55,18 @@ async function init() {
   for (const el of [ui.ovTrail, ui.ovExplored, ui.ovFood, ui.ovLabels, ui.ovTask, ui.ovEvents, ui.ovRoute, ui.view]) el.onchange = () => draw();
   setupPanZoom();
   window.addEventListener('resize', () => { fit(); draw(); });
-  await switchMode('official');
+  await switchMode(index.experiments[0].id); // no official world (#194): the first experiment is the default
 }
 
 async function switchMode(id: string) {
   playing = false; ui.play.textContent = '播放'; selected = null; following = null; whoKey = ''; followNote = ''; lastJump = null; eventsKey = ''; ui.jump.hidden = true; allRows = []; flowsKey = ''; catsKey = ''; routeKey = ''; placeKey = '';
   const req = ++modeRequest; // a slower earlier load must never overwrite the world chosen later
-  if (id === 'official') {
-    const o = official ?? assertKind(await load<Official>(index.official), 'official', index.official);
-    if (req !== modeRequest) return;
-    official = o; exp = null; series = []; statsKey = '';
-    places = official.map.places; links = official.map.links;
-    ui.badge.className = 'badge official'; ui.badge.textContent = `正式遊戲 Day${official.day}（${official.calendar_date}）唯讀快照：沒有逐分鐘紀錄，因此不播放動畫`;
-    ui.timeline.hidden = true;
-  } else {
-    const meta = index.experiments.find((e) => e.id === id) as Index['experiments'][number];
-    const e = assertKind(await load<Experiment>(meta.file), 'experiment', meta.file);
-    if (req !== modeRequest) return;
-    exp = e; places = exp.map.places; links = exp.map.links; series = dailySeries(exp); statsKey = ''; allRows = allTimeline(exp);
-    ui.badge.className = 'badge experiment'; ui.badge.textContent = `${meta.title}｜非正式、不寫入存檔｜引擎 ${exp.engine_version}`;
-    ui.timeline.hidden = false; ui.day.min = '1'; ui.day.max = String(exp.days.length); ui.day.value = '1'; ui.minute.value = '0';
-  }
+  const meta = index.experiments.find((e) => e.id === id) as Index['experiments'][number];
+  const e = assertKind(await load<Experiment>(meta.file), 'experiment', meta.file);
+  if (req !== modeRequest) return;
+  exp = e; places = exp.map.places; links = exp.map.links; series = dailySeries(exp); statsKey = ''; allRows = allTimeline(exp);
+  ui.badge.className = 'badge experiment'; ui.badge.textContent = `${meta.title}｜非正式、不寫入存檔｜引擎 ${exp.engine_version}｜目前沒有正式世界`;
+  ui.timeline.hidden = false; ui.day.min = '1'; ui.day.max = String(exp.days.length); ui.day.value = '1'; ui.minute.value = '0';
   pos = displayPositions(places); fit(); draw();
 }
 
@@ -112,12 +104,8 @@ function setupPanZoom() {
   canvas.onwheel = (e) => { e.preventDefault(); cam.scale *= e.deltaY < 0 ? 1.15 : 1 / 1.15; draw(); };
 }
 
-/** Ants to draw now: [id, x, y]. Official: every living worker at its recorded day-end place. Experiment: engine poses. */
+/** Ants to draw now: [id, x, y] at the engine poses of the experiment replay. */
 function ants(): { id: string; x: number; y: number; interpolated: boolean; injured: boolean; task: string | null; trayAt?: string }[] {
-  if (official && !exp) {
-    const alive = official.workers.filter((w) => w.status === 'alive');
-    return alive.map((w, i) => { const at = pos[w.location_at_day_end ?? NEST] ?? pos[NEST], a = (i / Math.max(1, alive.length)) * Math.PI * 2; return { id: w.id, x: at.x + Math.cos(a) * 4, y: at.y + Math.sin(a) * 4, interpolated: false, injured: !!w.injured_preexisting, task: null }; });
-  }
   if (!exp) return [];
   const day = Number(ui.day.value), d = exp.days[day - 1], t = Number(ui.minute.value), s = stateAt(exp, day, t);
   const inNest = s.workers.filter((w) => poseAt(d, w.id, t, pos).place === NEST);
@@ -216,12 +204,12 @@ function draw() {
   renderPanels(); renderLegend();
 }
 
-/** V5: the world kind, drawn ON the canvas (a screenshot of the map alone still says whether it is official). */
+/** V5: the world kind, drawn ON the canvas (a screenshot of the map alone still says it is not official). */
 function drawWorldMark(belowFollow = true) {
-  const dpr = window.devicePixelRatio || 1, txt = exp ? '實驗世界・非正式' : '正式 Day14・唯讀快照'; lastMark = txt;
+  const dpr = window.devicePixelRatio || 1, txt = '實驗世界・非正式'; lastMark = txt;
   ctx.font = `bold ${12 * dpr}px system-ui`; const w = ctx.measureText(txt).width + 14 * dpr, y = belowFollow && (following || followNote) ? 34 * dpr : 8 * dpr;
-  ctx.fillStyle = tok(exp ? '--exp-bg' : '--official-bg', '#eee'); ctx.fillRect(8 * dpr, y, w, 20 * dpr);
-  ctx.fillStyle = tok(exp ? '--exp-fg' : '--official-fg', '#222'); ctx.fillText(txt, 15 * dpr, y + 14.5 * dpr);
+  ctx.fillStyle = tok('--exp-bg', '#eee'); ctx.fillRect(8 * dpr, y, w, 20 * dpr);
+  ctx.fillStyle = tok('--exp-fg', '#222'); ctx.fillText(txt, 15 * dpr, y + 14.5 * dpr);
 }
 
 /** V5: rows of the current day under the event filter (category chips + 「只看所選個體」). */
@@ -287,8 +275,7 @@ function drawNest() {
   ctx.fillText('巢內（非空間名冊）', 14 * dpr, 52 * dpr);
   ctx.font = `${11 * dpr}px system-ui`; ctx.fillText('引擎目前沒有巢室與通道結構，只畫出實際存在的個體。', 14 * dpr, 70 * dpr);
   let queen: boolean, workers: string[], brood: { id: string; stage: string }[];
-  if (official && !exp) { queen = official.queen.status !== 'dead'; workers = official.workers.filter((w) => w.status === 'alive' && (w.location_at_day_end ?? NEST) === NEST).map((w) => w.id); brood = official.brood.filter((b) => b.living); }
-  else if (exp) { const day = Number(ui.day.value), d = exp.days[day - 1], t = Number(ui.minute.value), s0 = stateAt(exp, day, t); queen = s0.queen_alive; workers = s0.workers.filter((w) => poseAt(d, w.id, t, pos).place === NEST).map((w) => w.id); brood = s0.brood; }
+  if (exp) { const day = Number(ui.day.value), d = exp.days[day - 1], t = Number(ui.minute.value), s0 = stateAt(exp, day, t); queen = s0.queen_alive; workers = s0.workers.filter((w) => poseAt(d, w.id, t, pos).place === NEST).map((w) => w.id); brood = s0.brood; }
   else return;
   // V5: individuals named by today's settlement brood events (once the settlement is shown) and by the jumped-to event.
   // Highlighting an ID in the roster is not a position: the engine records no place inside the nest.
@@ -324,21 +311,6 @@ function drawNest() {
 }
 
 function renderPanels() {
-  if (official && !exp) {
-    const alive = official.workers.filter((w) => w.status === 'alive'), dead = official.workers.filter((w) => w.status !== 'alive');
-    ui.weather.textContent = `${official.calendar_date}｜正式快照`;
-    ui.nest.innerHTML = `<b>蟻后</b> ${official.queen.id}（${official.queen.status}）<br><b>幼體</b> ${official.brood.filter((b) => b.living).map((b) => `${b.id}·${b.stage}`).join('、') || '無'}<br><b>存活工蟻</b> ${alive.length}　<b>已死亡</b> ${dead.map((w) => `${w.id}（${w.cause_of_death ?? '原因未記錄'}）`).join('、')}`;
-    const w = official.workers.find((x) => x.id === selected);
-    ui.info.innerHTML = w ? `<h3>${w.id}</h3><p>狀態：${w.status}${w.injured_preexisting ? '｜帶有舊傷' : ''}</p><p>Day${w.last_recorded_day} 經過地點：${w.site_sequence.join(' → ') || '—'}；日終在 ${w.location_at_day_end ?? '—'}</p><p>紀錄的活動：${w.activity.join('；')}</p><p class="note">正式歷史只有日終狀態與敘述，沒有逐分鐘位置。</p>` : '<p class="note">點選地圖上的工蟻查看資料。</p>';
-    updateWho(alive.map((x) => x.id));
-    setStats('official', '<p class="note">正式 Day14 是唯讀快照，沒有每日序列。</p>');
-    setEvents('official', '<p class="note">正式 Day1～14 沒有引擎事件時間軸，所以沒有可跳轉的事件。</p>');
-    setFlows('official', '<p class="note">正式 Day14 是唯讀快照，沒有每日序列。</p>');
-    setRoute('official', '<p class="note">正式快照沒有逐分鐘的路線紀錄（只有日終敘述的經過地點，見「個體」）。</p>');
-    if (catsKey !== 'official') { catsKey = 'official'; ui.evCats.innerHTML = ''; ui.evCount.textContent = ''; ui.placeEvents.innerHTML = ''; placeKey = ''; }
-    ui.follow.disabled = true; ui.follow.textContent = '追蹤個體'; ui.followMsg.textContent = w ? '正式快照沒有逐分鐘位置，無法追蹤' : '';
-    return;
-  }
   if (!exp) return;
   const day = Number(ui.day.value), d = exp.days[day - 1], t = Number(ui.minute.value), s = stateAt(exp, day, t), wmin = windowOf(d), settled = isSettled(d, t);
   ui.minute.max = String(wmin + SETTLEMENT_STEP);
@@ -534,7 +506,7 @@ function tick(now: number) {
   nestHighlights: () => lastHl,
   route: (id: string) => exp ? recordedRoute(exp.days[Number(ui.day.value) - 1], id, links) : null,
   canvasCentre: () => { const r = canvas.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; },
-  state: () => ({ mode: exp ? exp.spec.id : 'official', official: !exp, day: exp ? Number(ui.day.value) : null, minute: exp ? Number(ui.minute.value) : null, workers: exp ? stateAt(exp, Number(ui.day.value), Number(ui.minute.value)).workers.map((w) => w.id) : (official?.workers.filter((w) => w.status === 'alive').map((w) => w.id) ?? []), info: ui.info.textContent ?? '' }),
+  state: () => ({ mode: exp ? exp.spec.id : null, official: false, day: exp ? Number(ui.day.value) : null, minute: exp ? Number(ui.minute.value) : null, workers: exp ? stateAt(exp, Number(ui.day.value), Number(ui.minute.value)).workers.map((w) => w.id) : [], info: ui.info.textContent ?? '' }),
 };
 
 init().catch((e) => { ui.badge.textContent = '載入失敗：' + (e as Error).message; });

@@ -1,5 +1,7 @@
 # TypeScript 引擎架構（engine-ts.1）
 
+> **退役說明（Owner 2026-11-12，#194）**：本文提到的正式推進工具（`cli/advance.ts`、`npm run advance`、`cli/check-saves.ts`、`cli/lib/save-transaction.ts`、`cli/lib/conservation.ts`、`cli/lib/day-summary.ts`）、正式存檔與 Day15 遷移流程已隨舊版 Day14 退役移除；Day14 狀態只剩 `tests/fixtures/legacy-day14/` 的回歸 fixture。`engine/`、`cli/lib/project-day.ts` 與 `engine/migration.ts` 的說明仍適用（後兩者在規則指紋內，移除須另開規則更新 PR）。詳見 `docs/owner-decisions-2026-11-12b.md`。
+
 > 本文件說明 2026-11 的程式改寫。TypeScript 移植本身**行為完全不變**：移植時的輸出與 `sim/day_engine.cjs`（v2-review.6）逐位元組相同。之後刻意的行為改變只有已核准的規則更新（清單：`tests/golden/approved-rule-changes.json`；v2-review.7 巢溫記憶、v2-review.8 受傷工蟻任務傾向、v2-review.9 同時段合作捕獵、v2-review.10 大型獵物隊伍上限、v2-review.11 後到者加入等待中的獵物、v2-review.12 傷勢分類、v2-review.13 產卵耗糖扣嗉囊、v2-review.14 個體路線記憶、v2-review.15 Day0 初始化——Day14 起算輸出不變、v2-review.16 死亡診斷——只增加事件欄位、v2-review.17 個體行動時間軸），`tests/differential.test.ts` 證明撤回這些變更後與 v6 逐位元組相同，`tests/rules-isolation.test.ts` 證明每一版只改了所列的參數或模型開關。
 
 ## 1. 目錄
@@ -98,7 +100,7 @@ F03、F04 的陌生蟻群目前在 `world/xitun-garden.json#background_colonies`
 
 ## 7. 推進工具 `npm run advance`
 
-一個遊戲日＝一筆可復原的交易，同時提交兩份存檔、當日日誌與 `saves/commit-log.json`。完整說明（流程、一致性保證與限制、讀取端配合、故障測試）見 [`docs/save-transactions.md`](save-transactions.md)。
+一個遊戲日＝一筆可復原的交易，同時提交兩份存檔、當日日誌與 `saves/commit-log.json`。完整說明（流程、一致性保證與限制、讀取端配合、故障測試）見 [`docs/save-transactions.md`](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/docs/save-transactions.md)。
 
 | 指令 | 作用 |
 |---|---|
