@@ -750,6 +750,23 @@ R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-
 - R146（Asfiya et al. 2016）2026-11-08 以 pdftotext 核對：**沒有**步行速度資料。
 - R385（Burd & Aranwela 2003）2026-11-08 重查：Springer 需登入，仍只讀到搜尋片段（1 m 路段錄影、相遇使速度下降但效果小於體型與負重）；數值仍不採用。
 
+## 2026-11-08 CHEM-0 化學生態證據稽核（R700–R701；#131，`docs/chemical-ecology-engine.md`、`docs/research-pheromone-models-2026-11.md` §11）
+
+> 新編號從 R700 起，避開其他進行中工作包。閱讀程度只寫本次實際讀到的；他種只作候選機制，不提供本種數值。
+
+| ID | 文獻 | 閱讀程度 | 物種 | 支持的內容 | 不可外推之處 |
+|---|---|---|---|---|---|
+| R700 | Gellert HR, Halley DC, Sieb ZJ, Smith JC, Pask GM (2022) Microstructures at the distal tip of ant chemosensory sensilla. *Scientific Reports* 12:19328. DOI 10.1038/s41598-022-21507-7 | 開放 PDF 全文文字（pdftotext）；SEM 圖未看 | **非本種**：*Camponotus pennsylvanicus*、*Harpegnathos saltator*，另 6 種形態調查（不含 *Pheidole*） | 錐形感覺毛集中在觸角末端；作者認為 CHC 主要經接觸或近接觸偵測（B，形態學間接證據） | 作者明言仍不清楚是否**必須**接觸；不是行為實驗；沒有距離數值 |
+| R701 | Boissard E, Degond P, Motsch S (2013) Trail formation based on directed pheromone deposition. *J Math Biol* 66:1267–1301. DOI 10.1007/s00285-012-0529-6（讀的是 arXiv 1108.3495v1 預印本） | 預印本全文文字 | 數學模型；參數盡量取自 *Lasius niger*（**非本種**） | 個體沉積有方向的費洛蒙片段、路徑湧現；模型忽略擴散（C，建模框架） | 本種參數；期刊版可能與預印本不同 |
+
+**既有編號的附註**（新增，不改寫原有行）：
+- R21／R96／R152（Dussutour et al. 2009 JEB）2026-11-08 再以網頁擷取工具讀期刊頁（含 Discussion）：確認作者原句「未鑑定化學物質，不能提供使用兩種費洛蒙的決定性證據」、實驗 3 流量數字、λ 的 R²（0.79、0.65）。仍未讀 PDF、未看圖。
+- R102（Saund & Friedman 2023）2026-11-08：AntWiki 開放 PDF（#130 網址）與 ScienceDirect 均回 403，**仍只讀到摘要**。#130 轉述正文 §3 說明未處理 Experiment 3，Claude 未能自行核對。
+- R98／R107（Dejean et al. 2007）2026-11-08 以開放 PDF（pdftotext）重讀：短距招募 4 群 50 例、首隻 36.1±2.3 s 對第二隻 6.8±0.4 s、「至少 10 cm」、第二隻觸角碰首隻腹部末端（36 例，P<0.001）；「警戒費洛蒙」是作者推論，沒有化學分析。
+- R101／R110（Fournier et al. 2012）2026-11-08 以開放 PDF 讀全文文字：64 巢、8 族群、4 個超級群落；var. 1 攻擊與化學距離無關（Mantel r＝−0.054）。
+- R113（Fournier et al. 2009）2026-11-08：Wiley 全文 403，**只讀摘要**。
+- R36（van Oudenhove et al. 2012）2026-11-08：HAL 與 hdl 位置無法取得，**只讀摘要**（PubMed）；非本種。
+
 ## 2026-11-08 臺中花園植物、半翅目與寄主關係（R780–R786；Issue #149，`docs/research-taichung-plants-hemiptera.md`）
 
 > 研究文件，未改規則或世界檔。本次**沒有一篇讀到全文**；閱讀程度如實標記。分類欄位仍為 `unknown`，不從地點名稱推斷。
