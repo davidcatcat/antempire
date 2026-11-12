@@ -19,7 +19,7 @@ import { canonicalJson as refCanonical } from './lib/canonical-json.ts';
 import {
   canonicalJson, sha256Hex, envelopeErrors, verifyEnvelope, sealEnvelope, MigrationRegistry, defaultMigrations, compatibility, planPromote, sweepable,
   recordProblem, buildExport, parseImport, AutosaveController, simDayTime, newWorldId, newSeed, headerOf, LABEL, RETAIN_VERIFIED, AUTOSAVE_INTERVAL_S, LOCK_PREFIX,
-  CURRENT_SCHEMA_VERSION, type SnapshotEnvelope, type SnapshotRecord, type Result, type SaveReason,
+  CURRENT_SCHEMA_VERSION, verificationOf, VERIFICATION_TEXT, NOT_NODE_VERIFIED, type SnapshotEnvelope, type SnapshotRecord, type Result, type SaveReason,
 } from '../web/src/experimental/save-format.ts';
 
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
@@ -63,6 +63,16 @@ ok(compatibility({ ...e0, schema: 'other' as never }, RT, reg1) === 'unknown_sch
 const reg2 = new MigrationRegistry(2).register(1, (e) => ({ ...e, schema_version: 2, payload: { ...e.payload, migrated: { from: 1 } } }));
 const RT2 = { ...RT, schema_version: 2 };
 ok(compatibility(e0, RT2, reg2) === 'migratable' && compatibility(e0, RT2, new MigrationRegistry(2)) === 'no_migration_path', 'older schema: migratable only with a registered step');
+// Owner ruling #200: an old payload schema without a path is reported as such even when its rules fingerprint differs
+// (the Worker's fingerprint includes the payload schema; schema 1 has no event-chain commitment and cannot be migrated)
+ok(compatibility(e0, { rules_fingerprint: 'rules-v2', engine_version: 'worker-0', schema_version: 2 }, reg1) === 'no_migration_path', 'payload schema 1 under a schema-2 runtime: no_migration_path (not rules_mismatch)');
+// verification status (#200): the browser never claims Node verification
+{
+  const all = [true, false].flatMap((l) => [true, false].map((i) => verificationOf({ loadable: l, integrity_checked: i })));
+  ok(all.every((v) => v.level !== 'node_verified' && v.text.includes(NOT_NODE_VERIFIED)), 'verificationOf never yields node_verified and always says 未經 Node 驗證');
+  ok(verificationOf({ loadable: true, integrity_checked: false }).text.startsWith(VERIFICATION_TEXT.local_playable) && verificationOf({ loadable: true, integrity_checked: true }).text.startsWith(VERIFICATION_TEXT.integrity_ok) && verificationOf({ loadable: false, integrity_checked: true }).level === null, 'list = 本機可玩, after a checked load = 完整性檢查通過, unloadable = no level');
+  ok(VERIFICATION_TEXT.local_playable === '本機可玩' && VERIFICATION_TEXT.integrity_ok === '完整性檢查通過' && VERIFICATION_TEXT.node_verified === 'Node 已重算驗證', 'the three status names of #200');
+}
 const orig = deepFreeze(await env(4)), origText = canonicalJson(orig);
 const m2 = await reg2.migrate(orig);
 ok(m2.ok && m2.value.envelope.schema_version === 2 && (m2.value.envelope.payload as Record<string, unknown>).migrated !== undefined && m2.value.from === 1, 'test migration v1 -> v2 applied');

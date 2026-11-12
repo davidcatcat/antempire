@@ -72,7 +72,7 @@ for (const k of Object.keys(DEFAULT_PARAMS).filter((k) => !['schema', 'synthetic
 // ---------------------------------------------------------------- 2-3. a 48 h reference run: labels and time-contract invariants
 const A = run(7, 48 * H);
 ok(A.events.length > 1000, `48 h reference run produced ${A.events.length} events`);
-ok(A.events.every((e) => e.official === false && e.label === LABEL_ZH && e.world_id === 'exp-test' && e.seed === 7 && e.rules_fingerprint === RULES_FINGERPRINT && typeof e.engine_version === 'string' && e.schema_version === 1), 'every event carries official:false, the label, world id, seed, rules fingerprint and versions');
+ok(A.events.every((e) => e.official === false && e.label === LABEL_ZH && e.world_id === 'exp-test' && e.seed === 7 && e.rules_fingerprint === RULES_FINGERPRINT && typeof e.engine_version === 'string' && e.schema_version === 2), 'every event carries official:false, the label, world id, seed, rules fingerprint and versions');
 ok(A.events.every((e, i) => e.seq === i), 'seq is contiguous from 0');
 ok(new Set(A.events.map((e) => e.event_id)).size === A.events.length, 'event ids are unique');
 let mono = true, grouped = true; const seenInstant = new Set<string>();

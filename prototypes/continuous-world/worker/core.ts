@@ -21,6 +21,11 @@
  * (`cause`), so ids stay short in a run of unbounded length. Executed events are compacted out of the scheduler at
  * consistent boundaries (they were already emitted); compaction cannot change behaviour (order depends only on pending
  * events) and the snapshot always holds the compacted form, so a restored world and a continuous one are identical.
+ *
+ * Payload schema 2 (Owner ruling #200; docs/save-format-v2.md): every committed event also advances the event-chain
+ * commitment (chain.ts) and the payload carries save_meta (world kind, trusted initial conditions, species /
+ * environment fingerprints, fork lineage) and chain (head + count). Recording the chain draws nothing and changes no
+ * event or state; restore checks the chain's shape, genesis and count (the head itself only by Node recomputation).
  */
 import { WorldScheduler, type ExactTime, type EventSpec, type JsonValue, type SchedulerSnapshot, type WorldEvent, compareExact, exactOf, TICKS_PER_MINUTE } from '../../../engine/scheduler/world-events.ts';
 import { lightTimes, lightStateAt, type LightState, type LightTimes } from '../../../engine/clock/solar.ts';
@@ -29,6 +34,7 @@ import { DEFAULT_PARAMS, ENGINE_VERSION, LABEL_ZH, SCHEMA_VERSION, SNAPSHOT_SCHE
 import { DrawCursor, streamSeed, type StreamState } from './rng.ts';
 import { canonicalJson, hashJson } from './sha256.ts';
 import { detLog, norm, unitVector } from './detmath.ts';
+import { chainNext, chainShapeProblem, chainStart, type ChainState } from './chain.ts';
 
 export { LABEL_ZH, ENGINE_VERSION, SCHEMA_VERSION, SNAPSHOT_SCHEMA };
 
@@ -75,10 +81,36 @@ export interface ExperimentEvent {
   world_id: string; seed: number; rules_fingerprint: string; engine_version: string; schema_version: number;
   official: false; label: string;
 }
+/** world kind of this core (docs/save-format-v2.md §5); the Node verifier dispatches on it (world-kinds.ts) */
+export const WORLD_KIND = 'synthetic-v1';
+/**
+ * Save metadata (payload schema v2, Owner ruling #200): the world kind, the TRUSTED initial conditions a verifier
+ * recomputes from, species / environment versions and fingerprints, and the fork lineage. Constant for a world.
+ */
+export interface SaveMeta {
+  format: 'antempire.experiment-save-meta.v1';
+  world_kind: string;
+  initial: { world_id: string; seed: number; t_sim: 0; params_sha256: string; how: string };
+  species: { id: null; fingerprint: null; note: string };
+  environment: { id: string; fingerprint: string; synthetic: true; note: string };
+  /** fork records, oldest first (docs/save-format-v2.md §6). This runtime implements no fork: always empty. */
+  lineage: never[];
+}
+export function saveMetaOf(worldId: string, seed: number, p: WorldParams): SaveMeta {
+  return {
+    format: 'antempire.experiment-save-meta.v1', world_kind: WORLD_KIND,
+    initial: { world_id: worldId, seed, t_sim: 0, params_sha256: hashJson(p as unknown as JsonValue), how: 'ExperimentWorld.create(world_id, seed) with the runtime\'s own DEFAULT_PARAMS' },
+    species: { id: null, fingerprint: null, note: '合成世界：沒有物種參數（不是任何真實物種）' },
+    environment: { id: 'synthetic-env/1', fingerprint: hashJson({ calendar: p.calendar, site: p.site, temperature_profile_c: p.temperature_profile_c } as unknown as JsonValue), synthetic: true, note: '合成環境：光照由一般方法計算、氣溫為手寫剖面（synthetic: true）' },
+    lineage: [],
+  };
+}
 export interface Payload {
   params: WorldParams; world_id: string; seed: number; engine_version: string; schema_version: number; rules_fingerprint: string;
   now: ExactTime; t_sim: number; seq: number;
   ants: AntState[]; env: EnvState; rng: Record<string, StreamState>; scheduler: SchedulerSnapshot; ledgers: Ledgers;
+  /** payload schema v2: constant save metadata and the event-chain commitment over every event committed so far */
+  save_meta: SaveMeta; chain: ChainState;
 }
 export interface ExperimentSnapshot {
   schema: string; label: string; official: false;
@@ -117,6 +149,8 @@ export class ExperimentWorld {
   private env: EnvState;
   private rng: Map<string, StreamState>;
   private ledgers: Ledgers;
+  private readonly meta: SaveMeta;
+  private chain: ChainState;
   private sinceCompact = 0;
   /** executed events since the last compaction above which the scheduler is compacted (memory bound; behaviour-neutral) */
   static COMPACT_AFTER = 2048;
@@ -126,6 +160,7 @@ export class ExperimentWorld {
     this.sched = sched; this.now = { ...p.now }; this.seq = p.seq;
     this.ants = new Map(p.ants.map((a) => [a.id, a])); this.env = p.env;
     this.rng = new Map(Object.entries(p.rng)); this.ledgers = p.ledgers;
+    this.meta = p.save_meta; this.chain = { ...p.chain };
   }
 
   /** a new isolated world at 00:00 of day 0; events at that instant are processed before it returns */
@@ -145,7 +180,9 @@ export class ExperimentWorld {
     const env: EnvState = { day: 0, date: null, light: null, light_times: null, temperature_c: null, temperature_synthetic: true, next_day_event: '', next_hour_event: '' };
     env.next_day_event = sched.schedule(daySpec(worldId, 0, null));
     env.next_hour_event = sched.schedule(hourSpec(worldId, 0, 0, null));
-    const p: Payload = { params, world_id: worldId, seed, engine_version: ENGINE_VERSION, schema_version: SCHEMA_VERSION, rules_fingerprint: rulesFingerprint(params), now: { day: 0, us: 0, us_lo: 0 }, t_sim: 0, seq: 0, ants, env, rng, scheduler: sched.snapshot(), ledgers };
+    const fp = rulesFingerprint(params);
+    const p: Payload = { params, world_id: worldId, seed, engine_version: ENGINE_VERSION, schema_version: SCHEMA_VERSION, rules_fingerprint: fp, now: { day: 0, us: 0, us_lo: 0 }, t_sim: 0, seq: 0, ants, env, rng, scheduler: sched.snapshot(), ledgers,
+      save_meta: saveMetaOf(worldId, seed, params), chain: chainStart({ world_kind: WORLD_KIND, world_id: worldId, seed, rules_fingerprint: fp }) };
     const world = new ExperimentWorld(p, sched);
     const events = world.advanceTo(0).events;
     return { world, events };
@@ -154,6 +191,8 @@ export class ExperimentWorld {
   tSim(): number { return secondsOf(this.now); }
   nowExact(): ExactTime { return { ...this.now }; }
   seqNo(): number { return this.seq; }
+  /** the event-chain commitment over every event committed so far (copy) */
+  chainState(): ChainState { return { ...this.chain }; }
   antIds(): string[] { return [...this.ants.keys()].sort(); }
   /** read-only copy of one ant (observation; used by follow) */
   antView(id: string): AntState | null { const a = this.ants.get(id); return a ? copy(a) : null; }
@@ -165,8 +204,12 @@ export class ExperimentWorld {
    */
   advanceTo(t: number, maxBatches = Infinity): { events: ExperimentEvent[]; done: boolean } {
     if (typeof t !== 'number' || !Number.isFinite(t) || t < 0) refuse('BAD_TIME', 't must be a finite number >= 0');
-    const end = exactOfSeconds(t);
-    if (compareExact(end, this.now) < 0) refuse('TIME_BACKWARDS', `t ${t} is before the world time ${this.tSim()}`);
+    return this.advanceToExact(exactOfSeconds(t), maxBatches);
+  }
+
+  /** advanceTo with the end given as an exact instant (the Node verifier stops at a save's exact `now`) */
+  advanceToExact(end: ExactTime, maxBatches = Infinity): { events: ExperimentEvent[]; done: boolean } {
+    if (compareExact(end, this.now) < 0) refuse('TIME_BACKWARDS', `t ${secondsOf(end)} is before the world time ${this.tSim()}`);
     const out: ExperimentEvent[] = [];
     let n = 0;
     for (;;) {
@@ -190,7 +233,13 @@ export class ExperimentWorld {
       const l = this.ledgers.ants[u.ant.id]; l.bouts++; l.walked_cm = z(l.walked_cm + u.walked_cm); l.walking_s = z(l.walking_s + u.walking_s);
     }
     Object.assign(this.env, c.env);
-    for (const r of c.records) { out.push({ ...r, seq: this.seq++ }); this.ledgers.events_by_kind[r.kind] = (this.ledgers.events_by_kind[r.kind] ?? 0) + 1; }
+    let head = this.chain.head;
+    for (const r of c.records) {
+      const ev: ExperimentEvent = { ...r, seq: this.seq++ };
+      head = chainNext(head, ev); out.push(ev);
+      this.ledgers.events_by_kind[r.kind] = (this.ledgers.events_by_kind[r.kind] ?? 0) + 1;
+    }
+    this.chain = { algo: this.chain.algo, genesis: this.chain.genesis, head, count: this.chain.count + c.records.length };
     this.now = { ...batch[0].exact };
     for (const u of c.ants) { const id = this.sched.schedule(u.next); this.ants.get(u.ant.id)!.next_event = id; }
     for (const s of c.envNext) {
@@ -292,6 +341,7 @@ export class ExperimentWorld {
       ants: [...this.ants.values()].sort((a, b) => (a.id < b.id ? -1 : 1)), env: this.env,
       rng: Object.fromEntries([...this.rng.entries()].sort(([a], [b]) => (a < b ? -1 : 1))),
       scheduler: compactScheduler(this.sched.snapshot(), this.now), ledgers: this.ledgers,
+      save_meta: this.meta, chain: this.chain,
     };
     return copy(p);
   }
@@ -308,6 +358,7 @@ export class ExperimentWorld {
     const keys = Object.keys(s).sort().join();
     if (keys !== 'engine_version,label,official,payload,payload_sha256,rules_fingerprint,schema,schema_version,seed,seq,t_sim,world_id') refuse('BAD_SNAPSHOT', `unexpected fields ${keys}`);
     if (s.schema !== SNAPSHOT_SCHEMA) refuse('SCHEMA_MISMATCH', `schema ${String(s.schema)} is not ${SNAPSHOT_SCHEMA}`);
+    if (s.schema_version === 1) refuse('SCHEMA_MISMATCH', `schema_version 1 snapshots carry no event-chain commitment and cannot be continued by this runtime (schema_version ${SCHEMA_VERSION}); the saved data is not changed and can still be exported`);
     if (s.schema_version !== SCHEMA_VERSION) refuse('SCHEMA_MISMATCH', `schema_version ${String(s.schema_version)} is not ${SCHEMA_VERSION}`);
     if (s.label !== LABEL_ZH || s.official !== false) refuse('NOT_EXPERIMENT', 'a snapshot must be labelled non-official (official:false)');
     if (s.engine_version !== ENGINE_VERSION) refuse('ENGINE_MISMATCH', `engine_version ${String(s.engine_version)} is not ${ENGINE_VERSION}`);
@@ -340,6 +391,15 @@ export class ExperimentWorld {
     if (count('ant_bout_end') !== ids.length || count('env_day') !== 1 || count('env_hour') !== 1 || count('light_change') + ids.length + 2 !== kinds.length) refuse('BAD_STATE', 'queue has unexpected events');
     const total = Object.values(q.ledgers.events_by_kind).reduce((x, y) => x + y, 0);
     if (total !== q.seq) refuse('LEDGER_MISMATCH', `events by kind (${total}) != seq (${q.seq})`);
+    // payload schema v2: save metadata and event-chain commitment (the head itself is checked only by recomputation)
+    const pk = Object.keys(q).sort().join();
+    if (pk !== 'chain,engine_version,env,ants,ledgers,now,params,rng,rules_fingerprint,save_meta,scheduler,schema_version,seed,seq,t_sim,world_id'.split(',').sort().join()) refuse('BAD_STATE', `unexpected payload fields ${pk}`);
+    if (Array.isArray(q.save_meta?.lineage) && q.save_meta.lineage.length > 0) refuse('FORK_UNSUPPORTED', 'the snapshot records a fork; this runtime implements no fork (docs/save-format-v2.md §6)');
+    if (canonicalJson(q.save_meta) !== canonicalJson(saveMetaOf(q.world_id, q.seed, q.params))) refuse('META_MISMATCH', 'save_meta does not match the world id, seed and parameters (initial conditions / versions)');
+    const cp = chainShapeProblem(q.chain);
+    if (cp) refuse('CHAIN_MISMATCH', cp);
+    if (q.chain.genesis !== chainStart({ world_kind: WORLD_KIND, world_id: q.world_id, seed: q.seed, rules_fingerprint: q.rules_fingerprint }).genesis) refuse('CHAIN_MISMATCH', 'chain genesis does not belong to this world, seed and rules');
+    if (q.chain.count !== q.seq) refuse('CHAIN_MISMATCH', `chain count ${q.chain.count} != seq ${q.seq}`);
     return new ExperimentWorld(q, sched);
   }
 
