@@ -1,0 +1,102 @@
+{
+ "schema": "antempire.p0a2-q4-tiebreak-fairness.v1",
+ "official": false,
+ "status": "非正式：Owner #193 Q4。平手順序 hash32(種子|t|ID) 是過渡性的工程仲裁，不是宣稱的自然競爭規則；本檢查只問首位處理是否偏向某個 ID。",
+ "command": "node prototypes/p0a2-24h/tools/q4-tiebreak-fairness.ts --seeds 60 --days 2",
+ "scenario": "taichung-march-ref (synthetic)",
+ "seeds": 60,
+ "days": 2,
+ "threshold": "binomial |z| < 3.291 and chi-square < critical value, both p = 0.001; per-size chi-square only when every expected count >= 5",
+ "results": {
+  "ft-flat": {
+   "batches": 544,
+   "lowest_id_first": 250,
+   "expected": 245.5833,
+   "z": 0.3853,
+   "binomial_passes": true,
+   "per_batch_size": {
+    "2": {
+     "batches": 390,
+     "first_served_rank_counts": [
+      194,
+      196
+     ],
+     "chi2": 0.0103,
+     "critical_p001": 10.828,
+     "tested": true,
+     "passes": true
+    },
+    "3": {
+     "batches": 145,
+     "first_served_rank_counts": [
+      56,
+      44,
+      45
+     ],
+     "chi2": 1.8345,
+     "critical_p001": 13.816,
+     "tested": true,
+     "passes": true
+    },
+    "4": {
+     "batches": 9,
+     "first_served_rank_counts": [
+      0,
+      2,
+      3,
+      4
+     ],
+     "chi2": 3.8889,
+     "critical_p001": 16.266,
+     "tested": false,
+     "passes": null
+    }
+   }
+  },
+  "ft-r190": {
+   "batches": 684,
+   "lowest_id_first": 322,
+   "expected": 303.6667,
+   "z": 1.4298,
+   "binomial_passes": true,
+   "per_batch_size": {
+    "2": {
+     "batches": 459,
+     "first_served_rank_counts": [
+      239,
+      220
+     ],
+     "chi2": 0.7865,
+     "critical_p001": 10.828,
+     "tested": true,
+     "passes": true
+    },
+    "3": {
+     "batches": 215,
+     "first_served_rank_counts": [
+      80,
+      63,
+      72
+     ],
+     "chi2": 2.0186,
+     "critical_p001": 13.816,
+     "tested": true,
+     "passes": true
+    },
+    "4": {
+     "batches": 10,
+     "first_served_rank_counts": [
+      3,
+      2,
+      3,
+      2
+     ],
+     "chi2": 0.4,
+     "critical_p001": 16.266,
+     "tested": false,
+     "passes": null
+    }
+   }
+  }
+ }
+}

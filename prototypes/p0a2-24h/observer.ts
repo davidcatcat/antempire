@@ -13,6 +13,9 @@ const OUTSIDE = new Set(['outbound', 'searching', 'feeding', 'returning']);
 
 export interface ActivityReport {
   label: string;
+  /** the variant's status text from params.json — for the reference ft-flat: provisional, UNCALIBRATED; equal
+   *  day / night exit factors do NOT mean measured activity is equal; the day / night distribution is NOT validated */
+  variant_status: string;
   days: number;
   /** per local hour 0..23: fraction of all worker-time spent outside the nest (pooled over days) */
   outside_share_by_hour: number[];
@@ -25,7 +28,8 @@ export interface ActivityReport {
   exits_day: number; exits_twilight_or_night: number;
 }
 
-export function activityReport(stats: Stats, lines: readonly string[], label: string): ActivityReport {
+export function activityReport(stats: Stats, lines: readonly string[], label: string, variant_status: string): ActivityReport {
+  if (!variant_status) throw Error('P0A2: an activity report must carry the variant status (Owner #193 Q1)');
   const total = new Array(24).fill(0), outside = new Array(24).fill(0);
   for (const s of WORKER_STATES) for (let h = 0; h < 24; h++) { total[h] += stats.occ[s][h]; if (OUTSIDE.has(s)) outside[h] += stats.occ[s][h]; }
   const r6 = (x: number) => Math.round(x * 1e6) / 1e6;
@@ -42,7 +46,7 @@ export function activityReport(stats: Stats, lines: readonly string[], label: st
     if (e.k === 'arrive_nest') trap[bin]++;
   }
   return {
-    label, days: r6(last / MS_PER_DAY),
+    label, variant_status, days: r6(last / MS_PER_DAY),
     outside_share_by_hour: outside.map((v, h) => (total[h] ? r6(v / total[h]) : 0)), state_share_by_hour: share,
     exits_by_hour: [...stats.exits_by_hour], declines_by_hour: [...stats.declines_by_hour], trap_3h: trap,
     exits_day: exitsDay, exits_twilight_or_night: exitsOther,
