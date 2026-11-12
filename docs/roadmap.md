@@ -2,8 +2,18 @@
 
 > - 依 `docs/requirements-and-plan.md`（統一需求與工作計畫）與 `docs/product-vision.md`。**科學真實性優先**；兩條線並行：科學模擬、可視化（玩家介面只有觀察功能）。
 > - 每個科學規則修改是獨立 PR：來源、舊模型開關與黃金測試、多種子多季節、守恆、不確定性分析；先在 Day0 實驗世界測試。每項純可視化修改也是獨立 PR。
-> - 正式 Day14 是過渡資料；**不推進 Day15**；新版正式 Day0 的條件見統一需求 §2.2。
+> - **舊版 Day14 已退役**（Owner 2026-11-12，[#194](https://github.com/davidcatcat/antempire/issues/194)）：不再延續 Day15，目前沒有正式世界；正式起點是新版 Day0，啟用前須通過整合驗證門檻（下一個里程碑 R2，見下方「Day14 退役與新版 Day0 正式化」與統一需求 §2.2）。
 > - 優先順序依：**科學證據完整性**、**模型缺陷嚴重程度**、**生態系統相依關係**。
+
+## Day14 退役與新版 Day0 正式化（Owner 2026-11-12，[#194](https://github.com/davidcatcat/antempire/issues/194)）
+
+| 步驟 | 內容 | 狀態 |
+|---|---|---|
+| R1 退役 | 移除正式存檔、`npm run advance`、存檔交易、`check:saves`、commit-log、舊版 Day15 遷移程序（`sim/`）、與 Day14 綁定的 CI 步驟與測試、觀察器「正式 Day14」模式、Day1～14 日誌；回歸測試改用 `tests/fixtures/legacy-day14/`（golden 28 條完整輸出軌跡、差異測試、傷害測試保留）；舊狀態在封存分支 `claude/ant-empire-engine-refactor-i45q93-legacy-day14-final`（`d70174b`） | 本 PR |
+| R1b 規則更新 | `engine/migration.ts`、`cli/lib/project-day.ts`、`world/xitun-garden.json#day15_migration` 在規則指紋內，移除它們會改變規則指紋，須依 CLAUDE.md §6 另開規則更新 PR（登錄新規則版本並證明 golden 不變） | 未開始 |
+| **R2 新版 Day0 正式化門檻（下一個里程碑）** | 定義並通過整合驗收門檻：本種與臺中西屯環境；已整合模組清單；局部感測、無全知資訊；科學數據與假設分開標示；同條件、同規則版本、同種子可重播；完整存檔內容（個體、蟻群、環境、時間、亂數狀態、規則版本）。沿用 SAVE 系統（新遊戲、自動存檔、繼續、載入、管理、刪除、關閉後重開、意外中斷恢復）；不載入舊版 Day14。未通過前新遊戲一律標示「開發中／實驗」 | 未開始 |
+
+決議全文：[`docs/owner-decisions-2026-11-12b.md`](owner-decisions-2026-11-12b.md)。
 
 ## 0. 狀態的六種層級（不可混為一談）
 | 層級 | 意思 |

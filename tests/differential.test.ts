@@ -8,25 +8,23 @@
  *     replayed; each day the TypeScript engine receives the same v6 input with exactly the approved changes
  *     undone (approved parameter values reverted, approved engine changes neutralised on the input state).
  *     summary, events and state must then be byte-identical to v6 (engine_version excepted).
- *  2. migrationState on the REAL Day14 saves: byte-identical v2 state.
- *  3. projectDaily on the REAL Day14 saves -> Day15 with the reverted parameters: main/world/journal
- *     byte-identical after normalising only the intended save-mapping differences (tests/lib/v6-normalise.ts).
+ * (Until #194 this test also replayed the Day14 -> Day15 migration and save mapping on the official Day14 saves against
+ *  sim/migrate_day15.cjs and sim/run_day.cjs. The legacy saves and that official Day15 path were retired by the Owner
+ *  on 2026-11-12, so only the engine isolation proof remains; tests/injury.test.ts and tests/migration.test.ts still
+ *  cover engine/migration.ts on the retired fixture until a rules-update PR removes it.)
  * Nothing is written to saves/ or journal/.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
-import { simulateDay, migrationState } from '../engine/index.ts';
-import { projectDaily, DEFAULT_REFS } from '../cli/lib/project-day.ts';
-import { rulesFingerprint } from '../cli/lib/fingerprint.ts';
+import { simulateDay } from '../engine/index.ts';
 import { REPO_ROOT, readJson, loadBundle } from '../cli/lib/load.ts';
 import { SCENARIOS, applyNew, applyOld } from './lib/scenarios.ts';
-import { normaliseV6Projection } from './lib/v6-normalise.ts';
 import { neutraliseState, revertParams, approvedChanges, normaliseOutput } from './lib/approved-changes.ts';
 
 if (!fs.existsSync(path.join(REPO_ROOT, 'sim/day_engine.cjs'))) { console.log(JSON.stringify({ skipped: 'sim/ archived; tests/golden.test.ts pins the v6 output instead' })); process.exit(0); }
 const require = createRequire(import.meta.url);
-const old = require(path.join(REPO_ROOT, 'sim/day_engine.cjs')), oldMigrate = require(path.join(REPO_ROOT, 'sim/migrate_day15.cjs')), oldRun = require(path.join(REPO_ROOT, 'sim/run_day.cjs'));
+const old = require(path.join(REPO_ROOT, 'sim/day_engine.cjs'));
 const firstDiff = (a: string, b: string) => { let i = 0; while (i < a.length && a[i] === b[i]) i++; return `at char ${i}: old …${a.slice(Math.max(0, i - 120), i + 80)}… new …${b.slice(Math.max(0, i - 120), i + 80)}…`; };
 const fail = (msg: string) => { console.error('DIFFERENTIAL FAILURE ' + msg); process.exit(1); };
 
@@ -46,29 +44,4 @@ for (const sc of SCENARIOS) {
   }
 }
 
-// Real authoritative Day14 saves (read-only).
-const main = readJson('saves/main.json'), world = readJson('saves/world-state.json'), clim = readJson('data/taichung-climatology-1991-2020.json');
-const oldParams = readJson('sim/params.json'), bundle = loadBundle(); revertParams(bundle);
-const ms = JSON.stringify(oldMigrate.migrationState(main, world, clim, oldParams)), ns = JSON.stringify(migrationState(main, world, clim, bundle));
-if (ms !== ns) fail('migrationState ' + firstDiff(ms, ns));
-
-const fp = rulesFingerprint(), now = '2026-11-01T00:00:00.000Z';
-const o = oldRun.projectDaily(structuredClone(main), structuredClone(world), clim, oldParams, fp.engine, fp.params);
-const n = normaliseOutput(projectDaily(structuredClone(main), structuredClone(world), clim, bundle, fp, DEFAULT_REFS, now));
-// v2-review.22 (diagnostics only): the journal lists every engine event as one '- {json}' line; the normaliser above
-// drops the food_transfer events from arrays, and here the same events are dropped from the journal text.
-if (typeof n.journal === 'string') n.journal = n.journal.split('\n').filter((line: string) => !line.startsWith('- {"type":"food_transfer"')).join('\n');
-// Normalise ONLY the intentional save-mapping differences of the old output (see tests/lib/v6-normalise.ts).
-normaliseV6Projection(o, now);
-// #11 rules registry: the new save records its rules history (activation at Day15). This is the only addition to
-// the save mapping; it is checked here and then removed so every other byte is still compared with v6.
-{
-  const h = n.world.sim_engine_v2.rules_history;
-  if (!Array.isArray(h) || h.length !== 1 || h[0].event !== 'activated' || h[0].effective_from_day !== 15) fail('rules_history at Day15 activation malformed: ' + JSON.stringify(h));
-  delete n.world.sim_engine_v2.rules_history;
-}
-for (const [label, a, b] of [['main.json', o.main, n.main], ['world-state.json', o.world, n.world], ['journal', o.journal, n.journal]] as const) {
-  const sa = JSON.stringify(a, null, 2), sb = JSON.stringify(b, null, 2);
-  if (sa !== sb) fail(`projectDaily ${label} ${firstDiff(sa, sb)}`);
-}
-console.log(JSON.stringify({ passed: true, isolation_proof: 'current engine = v6 once exactly the approved changes are undone', approved_changes: approvedChanges().map((c) => `${c.rules_version} ${c.kind} ${c.path ?? c.neutralise?.delete_state_path ?? ''}`), scenarios: SCENARIOS.length, simulated_days_compared: days, migration_state_identical: true, day15_projection_identical_after_metadata_normalisation: true, normalised: 'tests/lib/v6-normalise.ts (refs, timestamp, cumulative counters, eggs_hatching key); new rules_history (#11) checked then removed', day15_population: n.report.summary.population }, null, 2));
+console.log(JSON.stringify({ passed: true, isolation_proof: 'current engine = v6 once exactly the approved changes are undone', approved_changes: approvedChanges().map((c) => `${c.rules_version} ${c.kind} ${c.path ?? c.neutralise?.delete_state_path ?? ''}`), scenarios: SCENARIOS.length, simulated_days_compared: days, retired_by_194: 'Day14 -> Day15 migration / save-mapping comparison (official world retired)' }, null, 2));

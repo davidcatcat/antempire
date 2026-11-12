@@ -1,5 +1,6 @@
 /**
- * v2-review.12 injury types. Read-only on the real saves (migration is a pure function; nothing is written).
+ * v2-review.12 injury types. Read-only on the RETIRED legacy Day14 state (tests/fixtures/legacy-day14/, #194: an engine
+ * regression fixture, not a game save; migration is a pure function; nothing is written).
  *  1. Day15 migration reads the type ONLY from the Day14 injury records: '擦傷' -> abrasion, irreversible_damage
  *     true -> appendage_damage, anything else (e.g. '舊傷') -> unknown; body part and description copied
  *     verbatim; workers without a record get no type; with the switch off nothing is added (v2-review.11).
@@ -14,7 +15,7 @@ import { counter, fixture, MAIN_SPECIES, setParam } from './lib/harness.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 const c = counter(), { ok } = c;
-const main = readJson('saves/main.json'), world = readJson('saves/world-state.json'), clim = readJson('data/taichung-climatology-1991-2020.json');
+const main = readJson('tests/fixtures/legacy-day14/main.json'), world = readJson('tests/fixtures/legacy-day14/world-state.json'), clim = readJson('data/taichung-climatology-1991-2020.json');
 const before = JSON.stringify([main, world]);
 
 // 1. migration

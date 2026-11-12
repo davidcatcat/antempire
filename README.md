@@ -1,8 +1,19 @@
 # 螞蟻帝國｜Ant Empire
 
+## 目前狀態（2026-11-12）：沒有正式世界；新版 Day0 開發／實驗中
+
+- **舊版 Day14 遊戲存檔已退役**（Owner 裁示 2026-11-12，[#194](https://github.com/davidcatcat/antempire/issues/194)；紀錄見 [Owner 決策 2026-11-12b](docs/owner-decisions-2026-11-12b.md)）。不再延續舊版 Day15，`npm run advance`、存檔交易與 `check:saves` 已移除。
+- **正式遊戲將由新版 Day0 開始**，採用持續開發中的科學生態、數學、物理、化學與個體行為模擬系統。新版 Day0 必須先通過整合驗證門檻（R2）；在那之前，所有世界（Day0 實驗、觀察器重播、Worker 實驗模式、本地實驗存檔）都標示「開發中／實驗・非正式」，不宣稱為正式世界。
+- 舊版 Day1～14 的存檔、日誌與 v1 編年史保存在 git 歷史與[封存分支 `legacy-day14-final`](https://github.com/davidcatcat/antempire/tree/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final)（`d70174b`）。仍有回歸價值的舊狀態放在 [`tests/fixtures/legacy-day14/`](tests/fixtures/legacy-day14/README.md)，只作引擎回歸測試，不是遊戲進度，不可推進。
+- 觀察器（`npm run web`）目前只播放 Day0 實驗世界的引擎重播；路線圖見 [Roadmap](docs/roadmap.md)。
+
+以下是舊版遊戲到 Day14 為止的歷史紀錄，**保留作為歷史，不再是目前進度**。
+
+---
+
 ## 🧪 2026-11-01：Day15 起生效的自然生態數值引擎 v2（已提交，尚未推進）
 
-**目前正式遊戲仍停 Day14／336 小時；本次僅更新規則和引擎。** Day1～Day14 存檔、日誌與舊的演算法輸出都不改。下一次玩家明確說「繼續」，才由[Day15 一次性遷移](sim/migrate_day15.cjs)接續[新版單日模擬程式](sim/day_engine.cjs)及[遊戲假設參數](sim/params.json)推進。既有 Day9～14 可用[封存舊引擎](sim/day_engine_v1_day9_day14.cjs)重播。
+**目前正式遊戲仍停 Day14／336 小時；本次僅更新規則和引擎。** Day1～Day14 存檔、日誌與舊的演算法輸出都不改。下一次玩家明確說「繼續」，才由[Day15 一次性遷移](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/sim/migrate_day15.cjs)接續[新版單日模擬程式](sim/day_engine.cjs)及[遊戲假設參數](sim/params.json)推進。既有 Day9～14 可用[封存舊引擎](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/sim/day_engine_v1_day9_day14.cjs)重播。
 
 **最高原則：AI 不得上帝視角干預蟻群。** 不得因劇情需要指定補糧、死亡、保命或提前羽化；昆蟲死亡、腐敗、鄰接探索、局部訊號、工蟻分工與繁殖皆需因果來源。所有定量份數與機率明確為**遊戲假設，不是科學實測**。每天只執行凍結引擎、寫存檔、寫日誌；調參只能獨立規則更新，不能在推進途中更動。
 
@@ -50,16 +61,16 @@
 新增[整合規格](docs/advanced-ecology-integration.md)及12項跨系統的物種／群體機制：感染與社會免疫、介殼蟲/蜜露互利、真實捕獵、屍體與垃圾、閒置工蟻、個體記憶、其他蟻群/分巢、幼體營養、地表遮蔽通道、延遲生態連鎖、蟻道交通、條件式生殖利益衝突。參見新增文獻[R102–R114](docs/references.md)、[研究紀事](journal/v2-research-advanced-ecology-2026-11-01.md)。**重要科學更正**：[pheromone-model-evidence.md](docs/pheromone-model-evidence.md)指出2023單費洛蒙模型也能重現舊結果，因此不可將招募「兩種化學分子」視作已證實。所有新疾病、獵物、瓢蟲、額外蟻后、垃圾和事件均未被憑空加入現有Day5。**仍120小時、Q001×1、14工蟻、卵1幼蟲2**。
 
 ## 2026-11-01：Day 6 正式推進（遊戲內日期2026-11-05）
-觀察者明確要求「繼續」，從Day5 120h推進**Day6 144h**，首次套用Pheidole megacephala物種專屬及12項進階生態規格。W005在既有F01蚜蟲蜜露點成功帶回**一次少量液態醣源（mg未知）**，返巢後與W004局部接觸並口對口分食（非第二次外界收入）。F08小白花短暫泌蜜但無工蟻採收；F03/F04競爭蟻自行活動，W015只重訪U00既知外緣。**Q001×1、工蟻14、卵1／幼蟲2／蛹0、六傷蟻原樣；無新出生、死亡、新巢室或新確定地圖。**Day6天氣採中央氣象署2026-11-01 05:00發布的臺中市11/5**預報**，並非實測。見 [Day 6 紀事](journal/v2-day-0006.md)；下一次等待玩家命令才推進Day7。
+觀察者明確要求「繼續」，從Day5 120h推進**Day6 144h**，首次套用Pheidole megacephala物種專屬及12項進階生態規格。W005在既有F01蚜蟲蜜露點成功帶回**一次少量液態醣源（mg未知）**，返巢後與W004局部接觸並口對口分食（非第二次外界收入）。F08小白花短暫泌蜜但無工蟻採收；F03/F04競爭蟻自行活動，W015只重訪U00既知外緣。**Q001×1、工蟻14、卵1／幼蟲2／蛹0、六傷蟻原樣；無新出生、死亡、新巢室或新確定地圖。**Day6天氣採中央氣象署2026-11-01 05:00發布的臺中市11/5**預報**，並非實測。見 [Day 6 紀事](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/journal/v2-day-0006.md)；下一次等待玩家命令才推進Day7。
 
 ## 2026-11-01 群體人口與壽命的可擴充規格（研究更新、不推進遊戲）
 [完整規格](docs/colony-demography-scaling.md)：模型不以現有14工蟻為上限；未來100、1000、10000隻仍以同一套生命史與人口守恆模擬，採個體詳細記錄＋出生批次/齡級聚合＋局部事件的混合設計。R94本種實驗的minor平均成年壽命26.25日、major 56日僅作參考，**不是固定死期或台中巢群已校準的死亡機率**。批次產卵、多世代重疊、多巢/多后及群體資源限制有條件啟用；不憑空新增個體。此為規格訂定，非已開發/效能驗證的程式引擎；**Day6／144小時、Q001＋14工蟻、卵1幼蟲2蛹0保持不變**。
 
 ## 2026-11-01：Day 7 正式推進（遊戲內日期2026-11-06）
-Day6→Day7，144→**168模擬小時**，使用[可擴充人口生命史規格](docs/colony-demography-scaling.md)：主存檔加入從舊名冊衍生而不重複計數的`colony.population_demography`，仍是**Q001一后、14工蟻、卵E001一顆／幼蟲L001與L002兩隻／蛹0**；卵、工蟻、死亡、離巢皆無新增。W010在F05與原有蜘蛛時空相遇後成功避讓，無新傷；W005、W006、W011、W015、W017探訪既有食源但無新食物入巢。F04競爭蟻獨立活動、F11殘屑持續分解、U00沒有擴區。**11/6臺中市預報晴時多雲白天23–30°C、夜間23–26°C**是11/1發布的市級預報不是實測。見[Day7日誌](journal/v2-day-0007.md)。等待觀察者明確要求才推Day8。
+Day6→Day7，144→**168模擬小時**，使用[可擴充人口生命史規格](docs/colony-demography-scaling.md)：主存檔加入從舊名冊衍生而不重複計數的`colony.population_demography`，仍是**Q001一后、14工蟻、卵E001一顆／幼蟲L001與L002兩隻／蛹0**；卵、工蟻、死亡、離巢皆無新增。W010在F05與原有蜘蛛時空相遇後成功避讓，無新傷；W005、W006、W011、W015、W017探訪既有食源但無新食物入巢。F04競爭蟻獨立活動、F11殘屑持續分解、U00沒有擴區。**11/6臺中市預報晴時多雲白天23–30°C、夜間23–26°C**是11/1發布的市級預報不是實測。見[Day7日誌](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/journal/v2-day-0007.md)。等待觀察者明確要求才推Day8。
 
 ## 2026-11-01：Day 8 正式推進（遊戲內2026-11-07）
-Day7→Day8，168→**192模擬小時**。既有F01蚜蟲清晨產少量可及蜜露，W005在園丁**虛構局部澆水前**帶回一次糖源；10:20局部澆水導致巢口鬆土，W013整理、無巢室淹水證據。W016獨立經U00外緣進入新確認石縫**U01**，補記兩段已走過但未量距的路線，沒有新食源或外圈X01–X04開圖。Q001傍晚產下**E002/E003兩卵**；工蟻仍14，卵由1→3、幼蟲2、蛹0、六傷蟻原樣，無死亡/羽化。11/7臺中市白天23～31°C、夜23～27°C**僅11/1 05:00發布的市級預報非實測**。詳見[Day8紀事](journal/v2-day-0008.md)。
+Day7→Day8，168→**192模擬小時**。既有F01蚜蟲清晨產少量可及蜜露，W005在園丁**虛構局部澆水前**帶回一次糖源；10:20局部澆水導致巢口鬆土，W013整理、無巢室淹水證據。W016獨立經U00外緣進入新確認石縫**U01**，補記兩段已走過但未量距的路線，沒有新食源或外圈X01–X04開圖。Q001傍晚產下**E002/E003兩卵**；工蟻仍14，卵由1→3、幼蟲2、蛹0、六傷蟻原樣，無死亡/羽化。11/7臺中市白天23～31°C、夜23～27°C**僅11/1 05:00發布的市級預報非實測**。詳見[Day8紀事](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/journal/v2-day-0008.md)。
 
 ## 2026-11-01 長期天氣引擎已正式設定（Day9起；不推進遊戲）
 玩家確定**真實臺灣臺中市西屯區地理＋歷史氣候生成虛擬天氣**。採[長期天氣引擎正式規格](docs/historical-climate-weather-engine.md)與[1991–2020臺中每月氣候基準](data/taichung-climatology-1991-2020.json)：已發生日期優先採實測、未來有效範圍優先採官方預報，**沒有可靠逐日預報時自動生成保有季節與跨日連續性的虛擬天氣**，永不把生成數字冒充真實觀測。臺中市府1991～2020月平均數據11月22.6°C/23.8mm、12月18.7°C/30.5mm，這是30年氣候平均**不是2026年12月預測**。修復world天氣快取落後Day8（原active_date 11/4、weather_driven_day5）的問題；Day8紀事不改、**仍Day8/192h，Q001/14工蟻/3卵/2幼蟲/0蛹**。參見[研究紀事](journal/v2-research-long-term-climate-weather-2026-11-01.md)。
@@ -68,30 +79,30 @@ Day7→Day8，168→**192模擬小時**。既有F01蚜蟲清晨產少量可及�
 根據**Pheidole megacephala**直接研究（2025年Tsuji & Win跨巢蛋白/醣互補與工蟻分食；2007年Dejean捕食、UF/IFAS食性）及其他蟻種營養幾何研究，新增[完整食物、營養、消耗、生命史規格](docs/colony-nutrition-food-web.md)與[13個既有食源分類資料](data/pmegacephala-food-web-v1.json)。完整模型涵蓋自然食源產生/枯竭、工蟻自主搜尋、實際帶回與巢外自食、嗉囊與育幼分配、糖/蛋白/脂/水獨立守恆、成年工蟻/蟻后/幼蟲代謝、連續營養壓力及有證據的產卵/幼蟲/傷亡效應。設計**不限14隻，支援14/100/1000/10000假設尺度**；數值攝取/死亡風險未經本種及西屯花園校準，不填造每日mg或Lasius最適P:C比。新增`foraging_economy.nutrition_engine`**待Day9首次套用**；舊存檔Day8/192h、14工蟻、3卵2幼蟲、U01及Day8日誌原封不動。參見[研究紀事](journal/v2-research-food-nutrition-2026-11-01.md)。
 
 ## 最新 Day9（2026/11/08，216模擬小時）
-**Day9完成：216模擬小時**；Q001蟻后1、工蟻14、卵4（新增E004）、幼蟲2、蛹0，六舊傷蟻不變。歷史氣候虛擬天氣由實際Node.js程式生成：**虛擬無雨、23.41°C日均溫、0mm模擬降雨**（非11/8實測）。W017從F08小白花帶回一次少量花蜜；W005在F01和W011在F07都空載；F11背景出現新昆蟲殘骸但未被主巢取得。W016回訪U01、W013維護巢口，無新增巢室與死亡；**食物儲備/代謝數量未知，無法判定是否即將飢餓**。詳見[Day9日誌](journal/v2-day-0009.md)、[單日模擬執行程式](sim/day_engine.cjs)與[單日程式輸出](sim/results/day9.json)。下一次說繼續才推Day10。
+**Day9完成：216模擬小時**；Q001蟻后1、工蟻14、卵4（新增E004）、幼蟲2、蛹0，六舊傷蟻不變。歷史氣候虛擬天氣由實際Node.js程式生成：**虛擬無雨、23.41°C日均溫、0mm模擬降雨**（非11/8實測）。W017從F08小白花帶回一次少量花蜜；W005在F01和W011在F07都空載；F11背景出現新昆蟲殘骸但未被主巢取得。W016回訪U01、W013維護巢口，無新增巢室與死亡；**食物儲備/代謝數量未知，無法判定是否即將飢餓**。詳見[Day9日誌](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/journal/v2-day-0009.md)、[單日模擬執行程式](sim/day_engine.cjs)與[單日程式輸出](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/sim/results/day9.json)。下一次說繼續才推Day10。
 
 ## 🐜 最新 Day10（2026-11-09；216→240模擬小時）
 
-**Day10完成：240模擬小時**，熱帶大頭家蟻主巢Q001蟻后1、工蟻14、卵4、幼蟲2、蛹0（0新卵/羽化/死亡，舊六傷蟻維持）。歷史氣候生成**虛擬無雨、日均溫21.95°C、虛構降雨0mm**，地表含水情境指數0.0219而非真實土壤量測。F01已有蚜蟲蜜露窗口但W005沒到；W017返F08花蜜未採到；**W011從F07今日新昆蟲殘骸、W006從F11昨日新昆蟲殘骸各帶回一次，合計2筆新蛋白來源**，濕重及可消化蛋白mg未知。Q001本日沒產卵、E001～E004不強制孵化，W016沒再探U01，異巢/蜘蛛未直接接觸。已使用[可執行模擬程式](sim/day_engine.cjs)生成可重播輸出，並通過Day9回歸驗證。詳見[Day10紀事](journal/v2-day-0010.md)、[Day10程式輸入](sim/results/day10-input.json)及[Day10計算輸出](sim/results/day10.json)。下次才推進Day11。
+**Day10完成：240模擬小時**，熱帶大頭家蟻主巢Q001蟻后1、工蟻14、卵4、幼蟲2、蛹0（0新卵/羽化/死亡，舊六傷蟻維持）。歷史氣候生成**虛擬無雨、日均溫21.95°C、虛構降雨0mm**，地表含水情境指數0.0219而非真實土壤量測。F01已有蚜蟲蜜露窗口但W005沒到；W017返F08花蜜未採到；**W011從F07今日新昆蟲殘骸、W006從F11昨日新昆蟲殘骸各帶回一次，合計2筆新蛋白來源**，濕重及可消化蛋白mg未知。Q001本日沒產卵、E001～E004不強制孵化，W016沒再探U01，異巢/蜘蛛未直接接觸。已使用[可執行模擬程式](sim/day_engine.cjs)生成可重播輸出，並通過Day9回歸驗證。詳見[Day10紀事](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/journal/v2-day-0010.md)、[Day10程式輸入](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/sim/results/day10-input.json)及[Day10計算輸出](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/sim/results/day10.json)。下次才推進Day11。
 
 ## 🐜 最新 Day11（2026-11-10；240→264h）
 
-**Day11完成：264模擬小時**，Q001蟻后1、工蟻14、卵4、幼蟲2、蛹0（本日0新卵、0羽化、0死亡，六舊傷工蟻仍有記錄）。真實臺中市西屯區地理之虛構花園；沿用1991～2020臺中歷史氣候生成**虛擬無雨、日均溫23.11°C、模擬降雨0mm**，地表無量綱濕潤指數降至0（不是實際土壤水分0%）。**W005回訪F01未採得蜜露**；F08雖有模型花蜜窗口W017未到；F07新生成**獨立**昆蟲死亡殘骸，但W011未出巢搜尋，W006亦未到F11，**全日新食物入巢0筆確認**，既有巢內庫存/攝食mg未知。Q001不產卵，E001～E004/兩幼蟲未轉階，W016未探索U01。模擬[程式](sim/day_engine.cjs)、[Day11輸入](sim/results/day11-input.json)、[Day11結果](sim/results/day11.json)及[完整紀事](journal/v2-day-0011.md)已保存；**0入巢不代表斷糧或立即餓死**。
+**Day11完成：264模擬小時**，Q001蟻后1、工蟻14、卵4、幼蟲2、蛹0（本日0新卵、0羽化、0死亡，六舊傷工蟻仍有記錄）。真實臺中市西屯區地理之虛構花園；沿用1991～2020臺中歷史氣候生成**虛擬無雨、日均溫23.11°C、模擬降雨0mm**，地表無量綱濕潤指數降至0（不是實際土壤水分0%）。**W005回訪F01未採得蜜露**；F08雖有模型花蜜窗口W017未到；F07新生成**獨立**昆蟲死亡殘骸，但W011未出巢搜尋，W006亦未到F11，**全日新食物入巢0筆確認**，既有巢內庫存/攝食mg未知。Q001不產卵，E001～E004/兩幼蟲未轉階，W016未探索U01。模擬[程式](sim/day_engine.cjs)、[Day11輸入](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/sim/results/day11-input.json)、[Day11結果](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/sim/results/day11.json)及[完整紀事](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/journal/v2-day-0011.md)已保存；**0入巢不代表斷糧或立即餓死**。
 
 ## 🐜 最新 Day12（2026-11-11；264→288h）
 
-**Day12完成：288模擬小時**。1蟻后Q001、14工蟻、4卵、2幼蟲、0蛹；本日無新產卵/死亡，舊6傷蟻持續存在。臺中西屯真實地理下虛構庭院的歷史氣候引擎生成**虛構小雨2.15mm、日均溫22.54°C、濕度77.3%**（非當日真實氣象）。W006重走F11卻無可搬運殘骸、W005未去F01、W017未去F08、W011未去F07；本日**0筆可確認新食物入巢，已連續2日**。外界F01蜜露與F08花蜜窗口未被採，F07 Day11殘骸未採收，均未重複刷新。W016回訪已知U01石縫沒有新地圖，蟻后無新卵。食物儲量/生理耗能毫克仍未知，不能僅據0入巢就推算餓死期限。詳見[Day12紀事](journal/v2-day-0012.md)、[模擬程式](sim/day_engine.cjs)、[Day12輸入](sim/results/day12-input.json)及[計算結果](sim/results/day12.json)。
+**Day12完成：288模擬小時**。1蟻后Q001、14工蟻、4卵、2幼蟲、0蛹；本日無新產卵/死亡，舊6傷蟻持續存在。臺中西屯真實地理下虛構庭院的歷史氣候引擎生成**虛構小雨2.15mm、日均溫22.54°C、濕度77.3%**（非當日真實氣象）。W006重走F11卻無可搬運殘骸、W005未去F01、W017未去F08、W011未去F07；本日**0筆可確認新食物入巢，已連續2日**。外界F01蜜露與F08花蜜窗口未被採，F07 Day11殘骸未採收，均未重複刷新。W016回訪已知U01石縫沒有新地圖，蟻后無新卵。食物儲量/生理耗能毫克仍未知，不能僅據0入巢就推算餓死期限。詳見[Day12紀事](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/journal/v2-day-0012.md)、[模擬程式](sim/day_engine.cjs)、[Day12輸入](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/sim/results/day12-input.json)及[計算結果](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/sim/results/day12.json)。
 
 ## 🐜 最新 Day13（2026-11-12；288→312 模擬小時）
 
-**Day13完成：312模擬小時**。主巢Q001蟻后1、14工蟻、5顆卵（今日Q001虛構情境新產`E005`）、2幼蟲、0蛹，沒有羽化/死亡；六傷蟻狀態仍在。臺中西屯真實行政地區的虛構花園，歷史氣候模型生成連續第2個**虛構雨日、0.17mm微量雨、平均23.08°C、濕度77.7%**，不是當日實測。W011訪F07而無新食物入巢；W005/W006/W017未外出採食，F07 Day11殘骸仍以來源ID保留，沒有重置。**本日0筆確認入巢，已連續3個模擬日**；儲糧重量、攝食與死亡風險仍未知，新增E005不能證明食物夠吃。W016未再探U01，沒有新巢室/地圖。Day13模擬使用未變更的[原始Node.js引擎](sim/day_engine.cjs)與固定seed重播，見[Day13紀事](journal/v2-day-0013.md)、[輸入](sim/results/day13-input.json)、[輸出](sim/results/day13.json)。下次推Day14。
+**Day13完成：312模擬小時**。主巢Q001蟻后1、14工蟻、5顆卵（今日Q001虛構情境新產`E005`）、2幼蟲、0蛹，沒有羽化/死亡；六傷蟻狀態仍在。臺中西屯真實行政地區的虛構花園，歷史氣候模型生成連續第2個**虛構雨日、0.17mm微量雨、平均23.08°C、濕度77.7%**，不是當日實測。W011訪F07而無新食物入巢；W005/W006/W017未外出採食，F07 Day11殘骸仍以來源ID保留，沒有重置。**本日0筆確認入巢，已連續3個模擬日**；儲糧重量、攝食與死亡風險仍未知，新增E005不能證明食物夠吃。W016未再探U01，沒有新巢室/地圖。Day13模擬使用未變更的[原始Node.js引擎](sim/day_engine.cjs)與固定seed重播，見[Day13紀事](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/journal/v2-day-0013.md)、[輸入](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/sim/results/day13-input.json)、[輸出](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/sim/results/day13.json)。下次推Day14。
 
 ## 🐜 最新 Day14（2026-11-13；312→336 模擬小時）
 
-**Day14已完成336模擬小時**。臺中市西屯區真實行政區的虛構庭院，`Pheidole megacephala`主巢Q001蟻后1、工蟻14、卵5、幼蟲2、蛹0，六舊傷蟻保留；0新卵、0羽化、0死亡。固定seed的歷史氣候模型生成**虛構有雨7.8mm、平均氣溫20.56°C、相對濕度76.6%**，不是11/13真實氣象，地表無量綱濕潤指數0.29。W005往F01、W006往F11，兩者均空手返巢；W011未到F07，沒有新死昆蟲事件，F07 Day11來源不重新刷新。**連續4日沒有確認新食物入巢**，巢內食物真實mg/攝食/代謝仍未知，不能據此報告「快餓死」或營養充足。W013局部維護巢口、沒有新增巢室；W016未到U01也未解鎖新地點。詳見[Day14紀事](journal/v2-day-0014.md)、[可執行模擬程式](sim/day_engine.cjs)、[當日輸入](sim/results/day14-input.json)與[計算結果](sim/results/day14.json)。下次才推Day15。
+**Day14已完成336模擬小時**。臺中市西屯區真實行政區的虛構庭院，`Pheidole megacephala`主巢Q001蟻后1、工蟻14、卵5、幼蟲2、蛹0，六舊傷蟻保留；0新卵、0羽化、0死亡。固定seed的歷史氣候模型生成**虛構有雨7.8mm、平均氣溫20.56°C、相對濕度76.6%**，不是11/13真實氣象，地表無量綱濕潤指數0.29。W005往F01、W006往F11，兩者均空手返巢；W011未到F07，沒有新死昆蟲事件，F07 Day11來源不重新刷新。**連續4日沒有確認新食物入巢**，巢內食物真實mg/攝食/代謝仍未知，不能據此報告「快餓死」或營養充足。W013局部維護巢口、沒有新增巢室；W016未到U01也未解鎖新地點。詳見[Day14紀事](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/journal/v2-day-0014.md)、[可執行模擬程式](sim/day_engine.cjs)、[當日輸入](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/sim/results/day14-input.json)與[計算結果](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/sim/results/day14.json)。下次才推Day15。
 
 ## 最新檢查點
-**2026-11-07 Day8 完成：192模擬小時**；Q001蟻后1、工蟻**14**、卵**3（E001/E002/E003）**、幼蟲**2（L001/L002）**、蛹**0**。Day8新產兩卵但**沒有新工蟻出生或死亡**。W005由F01帶回一次少量蜜露；虛構園丁澆水使N00/F01土表受擾但未確認巢內進水。W016沿已知U00外緣發現新石縫**U01**，未確認新食源；X01～X04候選區仍未具體化。六傷蟻保留、巢室不增加，物理食物與水存量仍為null。11/7天氣為11/1中央氣象署臺中市預報（晴時多雲，白天23～31°C，夜間23～27°C），非當日觀測。參見[Day8日誌](journal/v2-day-0008.md)。
+**2026-11-07 Day8 完成：192模擬小時**；Q001蟻后1、工蟻**14**、卵**3（E001/E002/E003）**、幼蟲**2（L001/L002）**、蛹**0**。Day8新產兩卵但**沒有新工蟻出生或死亡**。W005由F01帶回一次少量蜜露；虛構園丁澆水使N00/F01土表受擾但未確認巢內進水。W016沿已知U00外緣發現新石縫**U01**，未確認新食源；X01～X04候選區仍未具體化。六傷蟻保留、巢室不增加，物理食物與水存量仍為null。11/7天氣為11/1中央氣象署臺中市預報（晴時多雲，白天23～31°C，夜間23～27°C），非當日觀測。參見[Day8日誌](https://github.com/davidcatcat/antempire/blob/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/journal/v2-day-0008.md)。
 
 | 項目 | 狀態 |
 |---|---|
@@ -109,8 +120,7 @@ Day7→Day8，168→**192模擬小時**。既有F01蚜蟲清晨產少量可及�
 
 ## 檔案導覽
 ### 最新狀態
-- [蟻群主存檔](saves/main.json) — 個體／幼體／歷史／模擬設定
-- [生態世界狀態](saves/world-state.json) — 區域、食源、風險、未校準環境與科學時間
+- 目前沒有正式存檔（[`saves/`](saves/README.md) 只有說明）。舊版 Day14 的 `main.json`／`world-state.json` 已退役，逐位元組保留在 [`tests/fixtures/legacy-day14/`](tests/fixtures/legacy-day14/README.md) 只供引擎回歸測試。
 
 ### 科學設計
 - [科學行為模型](docs/science-model.md) — 蟻后、工蟻、幼體、傷勢、資源與巢穴
@@ -158,31 +168,23 @@ Day7→Day8，168→**192模擬小時**。既有F01蚜蟲清晨產少量可及�
 - [螞蟻訊號文獻整合紀事](journal/v2-research-ant-communication-2026-11-01.md) — 純規則更新，Day5不動
 - [食物與覓食研究增補紀事](journal/v2-research-foraging-economy-2026-11-01.md) — 純規則更新，Day5不動
 - [西屯場景與真實天氣設定紀事](journal/v2-setting-xitun-2026-10-31.md) — 只改世界位置與後續天氣來源，Day1不重演
-- [Day 8自治生態紀事](journal/v2-day-0008.md) — Q001新產兩卵、W016找到U01與虛構澆水；192h
-- [Day 7自治生態紀事](journal/v2-day-0007.md) — W010蜘蛛避讓與大群人口帳Day7守恆；168h
-- [Day 6自治生態紀事](journal/v2-day-0006.md) — F01蜜露成功一次、巢內分食與多系統守恆；Day6 144h
-- [Day 5自治生態紀事](journal/v2-day-0005.md) — 連續食源失收、W015探索未知草根外緣、競爭與掠食者各自活動
-- [Day 4自治生態紀事](journal/v2-day-0004.md) — 局部澆水、巢口整理、糖源採集失敗、舊腐葉極少食物與其他生物背景活動
-- [Day 3自治生態紀事](journal/v2-day-0003.md) — 競爭與蜘蛛風險、微量資源、沒有新卵或新工蟻；11/2真實日期與預報
-- [Day 2自治生態紀事](journal/v2-day-0002.md) — 使用真實日期與有來源的氣象預報，微量採食、蜘蛛／蟾蜍風險、蟻后新卵E001
-- [Day 1自治生態紀事](journal/v2-day-0001.md) — 首個24小時，食源稀少、競爭與捕食風險、幼體慢速發育，物理資源量仍未知
+- [Day 8自治生態紀事](https://github.com/davidcatcat/antempire/tree/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/journal/v2-day-0008.md) — Q001新產兩卵、W016找到U01與虛構澆水；192h（已退役，封存分支）
+- [Day 7自治生態紀事](https://github.com/davidcatcat/antempire/tree/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/journal/v2-day-0007.md) — W010蜘蛛避讓與大群人口帳Day7守恆；168h（已退役，封存分支）
+- [Day 6自治生態紀事](https://github.com/davidcatcat/antempire/tree/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/journal/v2-day-0006.md) — F01蜜露成功一次、巢內分食與多系統守恆；Day6 144h（已退役，封存分支）
+- [Day 5自治生態紀事](https://github.com/davidcatcat/antempire/tree/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/journal/v2-day-0005.md) — 連續食源失收、W015探索未知草根外緣、競爭與掠食者各自活動（已退役，封存分支）
+- [Day 4自治生態紀事](https://github.com/davidcatcat/antempire/tree/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/journal/v2-day-0004.md) — 局部澆水、巢口整理、糖源採集失敗、舊腐葉極少食物與其他生物背景活動（已退役，封存分支）
+- [Day 3自治生態紀事](https://github.com/davidcatcat/antempire/tree/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/journal/v2-day-0003.md) — 競爭與蜘蛛風險、微量資源、沒有新卵或新工蟻；11/2真實日期與預報（已退役，封存分支）
+- [Day 2自治生態紀事](https://github.com/davidcatcat/antempire/tree/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/journal/v2-day-0002.md) — 使用真實日期與有來源的氣象預報，微量採食、蜘蛛／蟾蜍風險、蟻后新卵E001（已退役，封存分支）
+- [Day 1自治生態紀事](https://github.com/davidcatcat/antempire/tree/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/journal/v2-day-0001.md) — 首個24小時，食源稀少、競爭與捕食風險、幼體慢速發育，物理資源量仍未知（已退役，封存分支）
 - [v2世界切換紀事](journal/v2-transition.md) — 第1150分鐘存檔停表，科學Day0初始化，未推進時間
-- [原始遊戲紀事](journal/chronicle.md) 與 `journal/chronicle_*.md`：保留舊加速遊戲的事件，不當作生物實測數據。
+- [原始遊戲紀事](https://github.com/davidcatcat/antempire/tree/claude/ant-empire-engine-refactor-i45q93-legacy-day14-final/journal/chronicle.md) 與 `journal/chronicle_*.md`（已退役，封存分支）：舊加速遊戲的事件，不當作生物實測數據。
 
-## 如何繼續（Day15 起：`npm run advance`）
-玩家說**「繼續螞蟻帝國」**、**「推進一天」**等明確要求時，由 Claude 在 repo 中以 Node 執行推進工具（正式推進只在 Node；不會在聊天之外自動執行）。玩家與 ChatGPT 討論結果與規則，修改交給 Claude 實作（見 [CLAUDE.md](CLAUDE.md)）。
+## 如何繼續
 
-1. **預演**：`npm run advance` — 讀取兩份存檔，用凍結的引擎跑下一天並印出事件摘要與守恆檢查；**不寫任何檔案**。
-2. **正式推進 Day N**（只在玩家明確要求時）：`npm run advance -- --confirm-advance --day N`，N 必須等於下一個遊戲日（目前是 **Day15**）。所有守恆與日誌檢查通過後，一筆可復原的交易會同時提交：
-   - `saves/main.json`、`saves/world-state.json`；
-   - `journal/v2-day-NNNN.md`（引擎完整事件紀錄＋自動摘要；提交後不可改寫）；
-   - `saves/commit-log.json`（各檔 sha256，用來驗證存檔與日誌未被改動）。
-3. **敘事**（選用）：該日提交後另建 `journal/v2-day-NNNN-narrative.md`；數字以正式日誌為準，更正另建 `-narrative-erratum-K.md`。
-4. **提交 git**：上述四個檔案放在同一個 git commit，以「推進遊戲日」PR 給玩家審；不可與規則更新混在同一個 PR。
-5. **中斷或異常**：`npm run advance -- --recover` 完成或撤銷未完成的交易（不會多推進一天）；`npm run check:saves` 檢查守恆、交易狀態與日誌雜湊。
+舊版 Day15 推進流程已退役（#194），目前**沒有可推進的正式世界**。新版正式世界的新遊戲、自動存檔、繼續、載入、管理與中斷恢復，將與新版 Day0 正式化門檻（R2）一起定義；在那之前：
 
-- **預設一次 1 個生態日**；同一天不能推進兩次，推進途中不改引擎或參數。允許零事件、死亡、找不到食物；未知量維持 null。
-- **天氣**：Day15 起由引擎依臺中 1991～2020 月平均氣候合成虛擬日天氣，不是實測或預報（見 [GM 規則卡](docs/gm-rules.md)）。
-- **規則與程式**：[CLAUDE.md](CLAUDE.md)、[GM 規則卡](docs/gm-rules.md)、[引擎架構](docs/engine-architecture.md)、[存檔交易](docs/save-transactions.md)。
+- **實驗**：`npm run evaluate:day0`（Day0 多種子評估）、`npm run web`（唯讀觀察器，播放 Day0 實驗重播）；結果一律非正式，不寫入 `saves/`。
+- **規則與程式**：[CLAUDE.md](CLAUDE.md)、[GM 規則卡](docs/gm-rules.md)、[引擎架構](docs/engine-architecture.md)、[Roadmap](docs/roadmap.md)。
+- **測試**：`npm run typecheck`、`npm test`（golden 仍以已退役 Day14 fixture 的 28 條完整輸出軌跡作為引擎回歸基準）。
 
-若只想觀察：「檢查蟻后」、「查看傷蟻」、「列出根際蜜露點的競爭者」，可不推進時間直接閱讀狀態與分析。
+若只想觀察：可在觀察器中閱讀 Day0 實驗世界的個體、事件與統計（非正式）。
