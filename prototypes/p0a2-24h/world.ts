@@ -26,10 +26,10 @@ import { hash32, rng } from '../../engine/rng.ts';
 import { sha256Hex } from '../../engine/sha256.ts';
 import { US_PER_DAY, type ExactTime } from '../../engine/scheduler/world-events.ts';
 import { canon } from './canon.ts';
-import { chooseInNest, decideAtSource, decideExit, decideFeedLarva, decideTransfer, ownReserve } from './decision.ts';
+import { chooseInNest, decideAtSource, decideExit, decideFeedLarva, decideTransfer, ownNeed, ownReserve } from './decision.ts';
 import { Environment, MS_PER_DAY, MS_PER_HOUR, dayOf, hourOfDay } from './environment.ts';
 import { type Model, buildModel } from './params.ts';
-import { type Json, type Larva, type Loc, type QEvent, type SelfView, type Stats, type Worker, type WorkerState, type WorldState, WORKER_STATES } from './types.ts';
+import { type CarerView, type DonorView, type Json, type Larva, type Loc, type QEvent, type SelfView, type Stats, type Worker, type WorkerState, type WorldState, WORKER_STATES } from './types.ts';
 
 export const STATE_SCHEMA = 'antempire.p0a2-24h-proto.state.v1';
 export const LOG_GENESIS = 'antempire.p0a2-24h-proto.log.v1';
@@ -61,6 +61,24 @@ export function guardView<T extends object>(o: T, name: string): T {
     set() { throw new LocalityError(`${name} (write)`); },
     defineProperty() { throw new LocalityError(`${name} (define)`); },
   });
+}
+
+// ------------------------------------------------------------------ own metabolism (process 1) and hunger diagnostics
+/** the booking fields an individual's own pool (worker crop / larval gut) shares */
+interface Pool { last: number; carry: number; consumed: number; empty_since: number | null; empty_ms: number; max_empty_ms: number }
+/** book a constant own consumption `rate` (µP / day) from a pool holding `have` µP over [x.last, t] (exact integers);
+ *  returns what was taken and the unmet part. Also books the HUNGER DIAGNOSTICS (statistics only, never in a view):
+ *  the instant the pool ran dry inside the interval, total and longest continuous time empty. A pool refilled since
+ *  its last booking ended its spell then (refills only happen at instants where the receiver is booked) */
+export function drainPool(x: Pool, have: number, rate: number, t: number): { take: number; short: number } {
+  if (t < x.last) fail('booked backwards');
+  const num = (t - x.last) * rate + x.carry, need = Math.floor(num / MS_PER_DAY);
+  if (have > 0) x.empty_since = null;
+  const dry = have === 0 ? x.last : rate > 0 && need >= have ? x.last + Math.ceil((have * MS_PER_DAY - x.carry) / rate) : null;
+  if (dry !== null) { x.empty_ms += t - dry; if (x.empty_since === null) x.empty_since = dry; x.max_empty_ms = Math.max(x.max_empty_ms, t - x.empty_since); }
+  x.carry = num - need * MS_PER_DAY;
+  const take = Math.min(need, have); x.consumed += take; x.last = t;
+  return { take, short: need - take };
 }
 
 // ------------------------------------------------------------------ queue
@@ -120,7 +138,8 @@ export class World {
       const lerp = (r: [number, number]) => r[0] + g() * (r[1] - r[0]);
       workers[id] = { id, state: 'resting', loc: 'nest', since: 0, crop, last: 0, carry: 0, consumed: 0, debt: 0,
         theta_forage: lerp(m.theta_forage), theta_brood: lerp(m.theta_brood), gain: lerp(m.gain), thermal_offset_c: 0, ctmax_c: m.ctmax_c,
-        route: null, trip_loaded: false, empty_streak: 0, last_intake_t: null, forage_interval_ms: null, contacts: [], begging: [], pending: null, n: 0 };
+        route: null, trip_loaded: false, empty_streak: 0, last_intake_t: null, forage_interval_ms: null, contacts: [], begging: [],
+        empty_since: crop === 0 ? 0 : null, empty_ms: 0, max_empty_ms: 0, pending: null, n: 0 };
       const w = workers[id], first = Math.max(1, Math.round(-m.rest_ms * Math.log(1 - g())));
       const eid = `${id}#${pad(w.n++, 8)}`, ev: QEvent = { t: first, r: 0, q: tieOf(seed, first, eid), id: eid, k: 'bout_end', a: id, p: {} };
       w.pending = ev.id; queue.push(ev);
@@ -128,7 +147,7 @@ export class World {
     for (let i = 1; i <= m.larvae; i++) {
       const id = `l${pad(i, 2)}`, g = rng(hash32(`${seed}|init|${id}`));
       const gut = Math.floor(g() * m.init_gut_max * m.gut_cap); initial += gut;
-      larvae[id] = { id, gut, last: 0, carry: 0, consumed: 0, deficit: 0 };
+      larvae[id] = { id, gut, last: 0, carry: 0, consumed: 0, deficit: 0, received: 0, empty_since: gut === 0 ? 0 : null, empty_ms: 0, max_empty_ms: 0 };
     }
     queue.push({ t: 0, r: 0, q: tieOf(seed, 0, 'env:d00000:day'), id: 'env:d00000:day', k: 'env_day', a: 'env', p: { day: 0 } });
     const pid = `${SOURCE_ID}#${pad(0, 8)}`;
@@ -238,16 +257,24 @@ export class World {
     if (t < w.last) fail(`${w.id} booked backwards`);
     const occ = this.#s.stats.occ[w.state];
     for (let a = w.last; a < t;) { const end = Math.min(t, (Math.floor(a / MS_PER_HOUR) + 1) * MS_PER_HOUR); occ[hourOfDay(a)] += end - a; a = end; }
-    const num = (t - w.last) * this.m.worker_rate + w.carry, need = Math.floor(num / MS_PER_DAY);
-    w.carry = num - need * MS_PER_DAY;
-    const take = Math.min(need, w.crop); w.crop -= take; w.consumed += take; w.debt += need - take;
-    w.last = t;
+    // (1) own metabolism: from its own crop only; an unmet need is `debt` (diagnostic, not food)
+    const d = drainPool(w, w.crop, this.m.worker_rate, t); w.crop -= d.take; w.debt += d.short;
   }
-  #bookLarva(l: Larva, t: number): void {
-    const num = (t - l.last) * this.m.larva_rate + l.carry, need = Math.floor(num / MS_PER_DAY);
-    l.carry = num - need * MS_PER_DAY;
-    const take = Math.min(need, l.gut); l.gut -= take; l.consumed += take; l.deficit += need - take;
-    l.last = t;
+  #bookLarva(l: Larva, t: number): void { const d = drainPool(l, l.gut, this.m.larva_rate, t); l.gut -= d.take; l.deficit += d.short; }
+
+  /** HUNGER, GROWTH-PROXY AND 'DEATH'-PROXY DIAGNOSTICS at t_now (statistics only: computed on copies, books nothing,
+   *  never fed back). Development and starvation death are NOT modelled: `received` is food received (growth proxy)
+   *  and the long-spell counts are diagnostic thresholds, not deaths */
+  hunger(): { workers: HungerRow[]; larvae: HungerRow[] } {
+    const s = this.#s, T = s.t_now;
+    const row = (id: string, x: Pool & { debt?: number; deficit?: number; received?: number }, have: number, rate: number): HungerRow => {
+      const c = JSON.parse(JSON.stringify(x)) as Pool, d = drainPool(c, have, rate, T);
+      return { id, unmet: (x.debt ?? x.deficit ?? 0) + d.short, empty_ms: c.empty_ms, max_empty_ms: c.max_empty_ms, empty_now: have - d.take === 0, received: x.received ?? null, held: have - d.take };
+    };
+    return {
+      workers: this.#workerIds.map((id) => row(id, s.workers[id], s.workers[id].crop, this.m.worker_rate)),
+      larvae: this.#larvaIds.map((id) => row(id, s.larvae[id], s.larvae[id].gut, this.m.larva_rate)),
+    };
   }
   #set(w: Worker, t: number, state: WorkerState, loc: Loc): void { this.#book(w, t); w.state = state; w.loc = loc; w.since = t; }
 
@@ -260,15 +287,29 @@ export class World {
       theta_forage: w.theta_forage, theta_brood: w.theta_brood, gain: w.gain, thermal_offset_c: w.thermal_offset_c, ctmax_c: w.ctmax_c,
       has_route: w.route !== null,
       recruit_contacts_recent: w.contacts.filter((c) => c.loaded).length,
-      begging_recent: w.begging.filter((b) => b.signal >= this.m.consts.begging_threshold).length,
+      begging_recent: w.begging.filter((b) => b.signal >= this.m.consts.brood.begging_threshold).length,
       forage_interval_ms: w.forage_interval_ms,
     }, 'self', w.id, t);
   }
 
+  /** (2) the returning forager's own view when it offers trophallaxis */
+  #donor(w: Worker, t: number): DonorView { return this.#gv<DonorView>({ crop: w.crop, forage_interval_ms: w.forage_interval_ms }, 'donor', w.id, t); }
+  /** (3) the carer's own view when it feeds a larva it touched */
+  #carer(w: Worker, t: number): CarerView { return this.#gv<CarerView>({ crop: w.crop, crop_fill: w.crop / this.m.crop_cap, forage_interval_ms: w.forage_interval_ms }, 'carer', w.id, t); }
+
   #decideInNest(w: Worker, e: QEvent, g: () => number): { [k: string]: Json } {
     const c = chooseInNest(this.#self(w, e.t), this.m.consts, g(), g(), g());
     if (c === 'forage') { this.#set(w, e.t, 'to_entrance', 'nest_transit'); this.#next(w, e, 'at_entrance', this.m.move_ms); return { choice: c }; }
-    if (c === 'brood') { this.#set(w, e.t, 'brood_care', 'nest'); const larvae = this.#touchLarvae(w, e.t, g, true); this.#next(w, e, 'bout_end', this.#exp(g, this.m.brood_ms)); return { choice: c, larvae }; }
+    if (c === 'brood') {
+      this.#set(w, e.t, 'brood_care', 'nest');
+      // brood candidates on (isolated experiment only): log the carer's own brood reserve before and its crop after, so
+      // tests can verify from the log that a carer never feeds below its own reserve; reference: nothing added
+      const b = this.m.consts.brood, logged = b.retention !== null || b.min_own_crop_fill !== null;
+      const pre: { [k: string]: Json } = logged ? { carer_reserve: ownNeed(this.#carer(w, e.t), b.retention, this.m.consts), carer_crop: w.crop } : {};
+      const larvae = this.#touchLarvae(w, e.t, g, true);
+      this.#next(w, e, 'bout_end', this.#exp(g, this.m.brood_ms));
+      return { choice: c, larvae, ...pre, ...(logged ? { carer_crop_left: w.crop } : {}) };
+    }
     if (c === 'idle') { this.#set(w, e.t, 'idle', 'nest'); this.#next(w, e, 'bout_end', this.#exp(g, this.m.idle_ms)); return { choice: c }; }
     this.#set(w, e.t, 'resting', 'nest'); this.#next(w, e, 'bout_end', this.#exp(g, this.m.rest_ms)); return { choice: c };
   }
@@ -283,8 +324,12 @@ export class World {
       w.begging.push({ t, larva: id, signal });
       let fed = 0;
       if (feed) {
-        fed = decideFeedLarva(this.#self(w, t), this.#gv({ begging: signal, room: this.m.gut_cap - l.gut }, 'larva', w.id, t), this.m.consts);
-        if (fed > 0) { l.gut += fed; w.crop -= fed; this.#s.stats.larva_feeds++; }
+        // (3) adult→brood feeding: the carer's own view, the begging of THIS larva at THIS contact; the graded trigger
+        // (isolated experiment only) draws one uniform from the event's own stream, the reference draws nothing
+        const u = this.m.consts.brood.trigger === 'graded' ? g() : 0;
+        fed = decideFeedLarva(this.#carer(w, t), this.#gv({ begging: signal, room: this.m.gut_cap - l.gut }, 'larva', w.id, t), this.m.consts, u);
+        if (fed > w.crop || fed > this.m.gut_cap - l.gut) fail(`${w.id} -> ${id}: a feed beyond the carer's crop or the larva's room`);
+        if (fed > 0) { l.gut += fed; l.received += fed; w.crop -= fed; this.#s.stats.larva_feeds++; }
       }
       out.push({ larva: id, signal, fed });
     }
@@ -356,7 +401,8 @@ export class World {
     const loaded = w.trip_loaded, touched: Json[] = [];
     for (const { id } of met.slice(0, this.m.max_trophallaxis)) {
       const J = s.workers[id]; this.#book(J, t);
-      const amt = decideTransfer(this.#self(w, t), this.#gv({ crop_room: this.m.crop_cap - J.crop }, 'partner', w.id, t), this.m.consts);
+      const amt = decideTransfer(this.#donor(w, t), this.#gv({ crop_room: this.m.crop_cap - J.crop }, 'partner', w.id, t), this.m.consts);
+      if (amt > w.crop || amt > this.m.crop_cap - J.crop) fail(`${w.id} -> ${id}: a transfer beyond the donor's crop or the partner's room`);
       if (amt > 0) { J.crop += amt; w.crop -= amt; s.stats.trophallaxis_events++; }
       J.contacts.push({ t, from: w.id, loaded, route: loaded ? w.route : null });
       if (loaded && w.route && J.route === null) J.route = w.route;
@@ -367,7 +413,7 @@ export class World {
     w.trip_loaded = false;
     // Q2 candidate on (isolated experiment only): log the forager's own reserve and what it kept, so tests can verify
     // the rule from the event log; with retention off (reference) nothing is added and the log is unchanged
-    const kept: { [k: string]: Json } = this.m.consts.retention === null ? {} : { reserve: ownReserve(this.#self(w, t), this.m.consts), crop_left: w.crop };
+    const kept: { [k: string]: Json } = this.m.consts.trophallaxis.retention === null ? {} : { reserve: ownReserve(this.#donor(w, t), this.m.consts), crop_left: w.crop };
     return { loaded, touched, ...kept, ...this.#decideInNest(w, e, g) };
   }
 
@@ -381,6 +427,10 @@ export class World {
     return { date: L.date, sunrise_min: L.sunrise, sunset_min: L.sunset, temperature: 'synthetic scenario hourly profile', synthetic: true, assumption: true, rain: null };
   }
 }
+
+/** one individual's hunger diagnostics (World.hunger): unmet own need (µP), total / longest continuous empty time (ms),
+ *  empty at t_now, food received from carers (larvae only; growth proxy), food held at t_now */
+export interface HungerRow { id: string; unmet: number; empty_ms: number; max_empty_ms: number; empty_now: boolean; received: number | null; held: number }
 
 /** convenience for tests and phase 3: build, run to t, return the world */
 export function runTo(rawParams: unknown, scenario: string, seed: number, t: number, opts: WorldOptions = {}): World {

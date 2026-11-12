@@ -16,6 +16,10 @@
  *  8. time contract: the log is in layered order and no batch merges distinct instants
  *  7b. Q2 retention candidate (Owner #188 / #193): default OFF (the reference log is byte-identical to the former
  *     ft-flat variant), food conserved exactly with it on, the reserve rule holds in the event log, locality-guarded
+ *  7c. the three food processes kept apart (Owner #188 supplementary ruling, 2026-11-12): (1) own metabolism,
+ *     (2) adult–adult trophallaxis, (3) adult→brood feeding — separate parameters, separate guarded decision functions,
+ *     per-individual mass balance from the event log, brood decisions read no colony total (negative fixtures),
+ *     default-off brood candidates keep the reference log byte-identical, hunger diagnostics never feed back
  *  8b. Q4 same-instant tie-break hash32(seed|t|id) — a transitional ENGINEERING arbitration, not a natural rule:
  *     (a) fairness: first-served position is not biased by id (chi-square / binomial tests at p = 0.001, deterministic;
  *     negative fixtures prove the tests bite), (b) chunk / snapshot invariance at same-instant batch instants,
@@ -25,7 +29,8 @@
  *     sensitivity; give-up-2 default-off assumption variant)
  * 10. pinned log / state hashes for seed 1 (update DELIBERATELY when behaviour changes)
  *
- * The heavy multi-seed Q2 sensitivity analysis is NOT here: prototypes/p0a2-24h/tools/q2-retention-sensitivity.ts.
+ * The heavy multi-seed sensitivity analyses are NOT here: prototypes/p0a2-24h/tools/q2-retention-sensitivity.ts and
+ * prototypes/p0a2-24h/tools/brood-feeding-sensitivity.ts.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -37,7 +42,7 @@ import { evaluateContract } from '../engine/scheduler/time-contract.ts';
 import { World, type WorldOptions, guardView, LocalityError, exactOfMs, tieOf, WORKER_KINDS, WORLD_KINDS, SOURCE_ID } from '../prototypes/p0a2-24h/world.ts';
 import { evidenceProblems, valueEntries, buildModel, variantNames } from '../prototypes/p0a2-24h/params.ts';
 import { canon } from '../prototypes/p0a2-24h/canon.ts';
-import { chooseInNest, decideTransfer, ownReserve } from '../prototypes/p0a2-24h/decision.ts';
+import { broodGivable, chooseInNest, decideFeedLarva, decideTransfer, ownNeed, ownReserve } from '../prototypes/p0a2-24h/decision.ts';
 import { activityReport } from '../prototypes/p0a2-24h/observer.ts';
 
 const T0 = Date.now();
@@ -69,7 +74,7 @@ const logSha = (lines: readonly string[]) => sha256Hex(lines.join('\n'));
   const c = clone(); c.parameters.rest_bout_mean_s.assumption = false; ok(evidenceProblems(c).some((x) => x.includes('rest_bout_mean_s')), 'a game assumption without assumption: true is reported');
   const d = clone(); d.weather_scenarios[SC].synthetic = false; ok(evidenceProblems(d).some((x) => x.includes('synthetic')), 'synthetic weather without synthetic: true is reported');
   const v1 = clone(); delete v1.sensitivity_variants['give-up-2'].overrides.give_up_empty_trips.evidence_class; ok(evidenceProblems(v1).some((x) => x.includes('give-up-2')), 'a sensitivity-variant override without evidence_class is reported');
-  for (const sec of ['sensitivity_variants', 'q2_retention_variants'] as const) for (const vn of variantNames(RAW, sec)) ok(buildModel(RAW, SC, vn).variant === vn, `${sec} ${vn} builds`);
+  for (const sec of ['sensitivity_variants', 'q2_retention_variants', 'brood_feeding_variants'] as const) for (const vn of variantNames(RAW, sec)) ok(buildModel(RAW, SC, vn).variant === vn, `${sec} ${vn} builds`);
   // Owner #188 / #193 decisions
   const refM = buildModel(RAW, SC);
   ok(RAW.reference_variant === 'ft-flat' && refM.variant === 'ft-flat' && refM.reference_variant === 'ft-flat', 'Q1 = B: the reference scenario is ft-flat');
@@ -83,8 +88,23 @@ const logSha = (lines: readonly string[]) => sha256Hex(lines.join('\n'));
   }
   ok(buildModel(RAW, SC, 'ft-r190').consts.f_t!.peak === 24 && buildModel(RAW, SC, 'ft-peak-30').consts.f_t!.peak === 30, 'ft-r190 peak 24 °C (R190), ft-peak-30 peak 30 °C (game assumption)');
   ok(refM.give_up_empty_trips === null && buildModel(RAW, SC, 'give-up-2').give_up_empty_trips === 2 && /預設關/.test(RAW.sensitivity_variants['give-up-2'].status), 'Q3: give-up stays a default-off assumption variant');
-  ok(RAW.parameters.transfer_max_portions.value === 0.28 && refM.consts.transfer_max === 280_000, 'Q2: the official transfer_max is unchanged (0.28 portions)');
-  ok(RAW.parameters.forager_retention.value === null && refM.consts.retention === null, 'Q2: the retention candidate is OFF by default');
+  ok(RAW.parameters.transfer_max_portions.value === 0.28 && refM.consts.trophallaxis.transfer_max === 280_000, 'Q2: the official transfer_max is unchanged (0.28 portions)');
+  ok(RAW.parameters.forager_retention.value === null && refM.consts.trophallaxis.retention === null, 'Q2: the retention candidate is OFF by default');
+  // Owner #188 supplementary ruling (2026-11-12): the three processes have separate parameters, all brood candidates OFF
+  ok(refM.consts.brood.retention === null && refM.consts.brood.min_own_crop_fill === null && refM.consts.brood.trigger === 'threshold' && refM.consts.brood.feed_bolus === 25_000 && refM.consts.brood.begging_threshold === 0.3, '#188b: the reference brood feeding is unchanged (threshold 0.3, bolus 0.025, no carer reserve, no own-fill condition)');
+  ok((refM.consts.brood as object) !== (refM.consts.trophallaxis as object) && !('transfer_max' in refM.consts.brood) && !('feed_bolus' in refM.consts.trophallaxis), '#188b: trophallaxis (2) and brood feeding (3) have separate caps');
+  ok(buildModel(RAW, SC, 'q2-h6').consts.brood.retention === null && buildModel(RAW, SC, 'b-res-h6').consts.trophallaxis.retention === null && buildModel(RAW, SC, 'b-res-h6').consts.brood.retention !== null, '#188b: the forager (2) and carer (3) retention settings are independent (switching one leaves the other off)');
+  for (const vn of variantNames(RAW, 'brood_feeding_variants')) {
+    const va = RAW.brood_feeding_variants[vn];
+    ok(/預設關/.test(va.status) && /非參考/.test(va.status), `${vn}: labelled default-off, not the reference`);
+    for (const [k, e] of Object.entries(va.overrides) as [string, any][]) {
+      ok(e.evidence_class === 'game_assumption' && e.assumption === true && !/ratio|fraction|half|share/i.test(JSON.stringify(e.value)), `${vn}.${k}: game assumption, no fixed hand-over ratio`);
+      if (e.sources.length) ok(e.sources.every((x: string) => x !== 'R346' && x !== 'R367') && typeof e.species_of_mechanism === 'string' && /非本種/.test(e.basis), `${vn}.${k}: an other-species mechanism source is labelled 非本種 with its species (never the species reference)`);
+    }
+  }
+  const rb = clone(); rb.parameters.brood_carer_retention.value = { kind: 'fraction', value: 0.5 }; assert.throws(() => buildModel(rb, SC), /brood_carer_retention/); checks++; // a fixed carer ratio is refused
+  const rt = clone(); rt.parameters.brood_feed_trigger.value = 'colony_need'; assert.throws(() => buildModel(rt, SC), /brood_feed_trigger/); checks++;
+  const rbv = clone(); rbv.reference_variant = 'b-res-h6'; ok(evidenceProblems(rbv).some((x) => x.includes('reference_variant')), 'the reference cannot be a brood experiment variant');
   for (const vn of variantNames(RAW, 'q2_retention_variants')) {
     const e = RAW.q2_retention_variants[vn].overrides.forager_retention;
     ok(e.evidence_class === 'game_assumption' && e.assumption === true && e.sources.join() === 'R147' && e.species_of_mechanism === 'Camponotus sanctus' && /非本種/.test(e.basis), `${vn}: game assumption, mechanism direction R147 (Camponotus sanctus, other species) only`);
@@ -137,7 +157,7 @@ function importProblems(src: string, fileRel: string): string[] {
     ok(!/\b(saves|journal)\//.test(src) && !/\.(write|append)FileSync\(\s*(?!path\.join\(OUT|path\.join\(DIR, 'out')/.test(code), `tools/${f} writes only prototypes/p0a2-24h/out/`);
   }
   for (const f of files) ok(!/tools\//.test(strip(fs.readFileSync(path.join(DIR, f), 'utf8'))), `${f} does not import the analysis tools`);
-  ok(!/p0a2-24h\/tools|q2-retention|q4-tiebreak/.test(fs.readFileSync(path.join(REPO_ROOT, 'tests/run-all.ts'), 'utf8')), 'the heavy sensitivity tools are not in the blocking test list');
+  ok(!/p0a2-24h\/tools|q2-retention|q4-tiebreak|brood-feeding/.test(fs.readFileSync(path.join(REPO_ROOT, 'tests/run-all.ts'), 'utf8')), 'the heavy sensitivity tools are not in the blocking test list');
   // the allowlisted engine modules themselves stay inside the allowlist (transitive closure)
   for (const d of ['engine/clock', 'engine/scheduler']) for (const f of fs.readdirSync(path.join(REPO_ROOT, d)).filter((x) => x.endsWith('.ts'))) {
     const pr = importProblems(fs.readFileSync(path.join(REPO_ROOT, d, f), 'utf8'), `${d}/${f}`).filter((x) => x.includes('import'));
@@ -156,8 +176,10 @@ function importProblems(src: string, fileRel: string): string[] {
 const VIEW_FIELDS: Record<string, string[]> = {
   SelfView: ['begging_recent', 'crop', 'crop_fill', 'crop_room', 'ctmax_c', 'forage_interval_ms', 'gain', 'has_route', 'recruit_contacts_recent', 'theta_brood', 'theta_forage', 'thermal_offset_c'],
   SiteView: ['light', 'temp_c'], SourceView: ['food_here', 'temp_c'], PartnerView: ['crop_room'], LarvaView: ['begging', 'room'],
+  // Owner #188 supplementary ruling: the giving processes see only the giver's own crop (+ own fill) and own experience
+  DonorView: ['crop', 'forage_interval_ms'], CarerView: ['crop', 'crop_fill', 'forage_interval_ms'], NeedView: ['forage_interval_ms'],
 };
-const VIEW_OF_NAME: Record<string, string> = { self: 'SelfView', site: 'SiteView', source: 'SourceView', partner: 'PartnerView', larva: 'LarvaView' };
+const VIEW_OF_NAME: Record<string, string> = { self: 'SelfView', site: 'SiteView', source: 'SourceView', partner: 'PartnerView', larva: 'LarvaView', donor: 'DonorView', carer: 'CarerView' };
 const sameSet = (a: readonly string[], b: readonly string[]) => [...a].sort().join() === [...b].sort().join();
 const viewJson = (v: object) => canon(Object.fromEntries(Object.keys(v).sort().map((k) => [k, (v as any)[k]])));
 const FORBIDDEN = /\b(world|World|workers|larvae|sources|ledger|stats|colony|colonies|queue|stock|totals?|t_now|hourOfDay|Date|env|Environment|this|globalThis)\b/;
@@ -169,7 +191,7 @@ function decisionProblems(src: string): string[] {
   if (/^(export\s+)?(let|var)\s/m.test(c)) p.push('decision module has module-level mutable state (top-level let / var)');
   for (const m of c.matchAll(/export function \w+\(([^)]*)\)/g)) for (const prm of m[1].split(',')) {
     const ty = prm.split(':')[1]?.trim().replace(/\[''\]$/, '');
-    if (ty && !['SelfView', 'SiteView', 'SourceView', 'PartnerView', 'LarvaView', 'DecisionConsts', 'number'].includes(ty)) p.push(`decision parameter type ${ty} is not a local view`);
+    if (ty && !['SelfView', 'SiteView', 'SourceView', 'PartnerView', 'LarvaView', 'DonorView', 'CarerView', 'NeedView', 'Retention', 'DecisionConsts', 'number'].includes(ty)) p.push(`decision parameter type ${ty} is not a local view`);
   }
   return p;
 }
@@ -186,6 +208,11 @@ function decisionProblems(src: string): string[] {
     "export function bad(self: SelfView): number { return new Date().getHours(); }",
     "let seen = 0;\nexport function bad(self: SelfView): number { return ++seen; }",
     "export var memo: number[] = [];\nexport function bad(self: SelfView): number { return memo.length; }",
+    // Owner #188 supplementary ruling: brood decisions never read colony stores, the larvae count or other larvae
+    "import type { CarerView } from './types.ts';\nexport function bad(self: CarerView, colony: { sugar: number }): number { return Math.min(self.crop, colony.sugar); }",
+    "import type { CarerView, LarvaView } from './types.ts';\nexport function bad(self: CarerView, larva: LarvaView, larvae: LarvaView[]): number { return larvae.length; }",
+    "import type { CarerView } from './types.ts';\nexport function bad(self: CarerView): number { return self.crop - stats.larva_feeds; }",
+    "import type { CarerView } from './types.ts';\nexport function bad(self: CarerView, totals: number): number { return totals; }",
   ]) ok(decisionProblems(bad).length > 0, `static locality check catches: ${bad.split('\n').pop()}`);
   // the view types carry only individual / local fields
   const types = strip(fs.readFileSync(path.join(DIR, 'types.ts'), 'utf8'));
@@ -194,6 +221,10 @@ function decisionProblems(src: string): string[] {
   // negative fixture: Mutation A (a colony aggregate added to SelfView) fails the pin
   const mutA = types.replace('  begging_recent: number;', '  begging_recent: number;\n  nest_mood: number;');
   ok(mutA !== types && !sameSet(fieldsOf(mutA, 'SelfView'), VIEW_FIELDS.SelfView), 'pin check catches a field added to SelfView (nest_mood)');
+  const mutB = types.replace('export interface CarerView { crop: number;', 'export interface CarerView { colony_larval_need: number; crop: number;');
+  ok(mutB !== types && !sameSet(fieldsOf(mutB, 'CarerView'), VIEW_FIELDS.CarerView), 'pin check catches a colony aggregate added to CarerView (colony_larval_need, negative fixture)');
+  const mutC = types.replace('export interface DonorView { crop: number;', 'export interface DonorView { colony_sugar: number; crop: number;');
+  ok(mutC !== types && !sameSet(fieldsOf(mutC, 'DonorView'), VIEW_FIELDS.DonorView), 'pin check catches a colony store added to DonorView (colony_sugar, negative fixture)');
   // deep-frozen constants
   const deepFrozen = (o: unknown): boolean => o === null || typeof o !== 'object' || (Object.isFrozen(o) && Object.values(o as object).every(deepFrozen));
   const mc = buildModel(RAW, SC).consts;
@@ -239,7 +270,7 @@ ok(ref.lines!.length > 5000, `a 24 h run produces many events (${ref.lines!.leng
   const seen: Record<string, Set<string>> = {};
   const insp = run(1, [DAY], { captureLog: false, inspectViews: (name: string, _a: string, _t: number, v: object) => { (seen[name] ??= new Set()).add(Object.keys(v).sort().join()); } });
   ok(insp.logHash === ref.logHash && insp.stateHash() === refState, 'the view inspector does not change the world');
-  ok(Object.keys(seen).sort().join() === 'larva,partner,self,site,source', `every view kind is built in 24 h (${Object.keys(seen).join(',')})`);
+  ok(Object.keys(seen).sort().join() === 'carer,donor,larva,partner,self,site,source', `every view kind is built in 24 h (${Object.keys(seen).join(',')})`);
   for (const [name, sets] of Object.entries(seen)) ok(sets.size === 1 && sameSet([...sets][0].split(','), VIEW_FIELDS[VIEW_OF_NAME[name]]), `world.ts builds ${name} views with exactly the pinned fields (${[...sets].join(' | ')})`);
   const keysCheck = (keys: string[], view: string) => sameSet(keys, VIEW_FIELDS[view]);
   ok(!keysCheck([...VIEW_FIELDS.SelfView, 'nest_mood'], 'SelfView'), 'runtime pin catches an extra key in a built view (negative fixture)');
@@ -266,11 +297,11 @@ ok(ref.lines!.length > 5000, `a 24 h run produces many events (${ref.lines!.leng
 }
 
 // ------------------------------------------------------------------ 5. snapshot / restore
-let cont48: World;
+let cont48: World, restored48: World;
 {
   cont48 = run(1, [2 * DAY]);
   const a = run(1, [DAY]), snap = a.snapshot();
-  const b = World.restore(RAW, snap, { captureLog: true });
+  const b = World.restore(RAW, snap, { captureLog: true }); restored48 = b;
   ok(b.snapshot() === snap, 'restore(snapshot).snapshot() is byte-identical');
   b.advanceTo(2 * DAY);
   ok(b.stateHash() === cont48.stateHash() && b.logHash === cont48.logHash, '48 h == 24 h + snapshot / restore + 24 h (state and log hash chain)');
@@ -332,7 +363,7 @@ const BASE_SELF = { crop: 0, crop_room: 800_000, crop_fill: 0, theta_forage: 0.5
 const selfOf = (o: Partial<typeof BASE_SELF>) => guardView({ ...BASE_SELF, ...o }, 'self');
 {
   ok(ref.logHash === FORMER.ft_flat_log, 'Q2 off + Q1: the new reference log is byte-identical to the former ft-flat variant log (the switched-off candidate changes no event)');
-  ok(!ref.lines!.some((l) => l.includes('"reserve"') || l.includes('"crop_left"')), 'reference log carries no retention fields');
+  ok(!ref.lines!.some((l) => l.includes('"reserve"') || l.includes('"crop_left"') || l.includes('"carer_reserve"')), 'reference log carries no retention fields (trophallaxis or brood)');
   // isolated run with the candidate on (fixed 6 h horizon), with the view inspector
   const selfKeys = new Set<string>();
   const q = World.create(RAW, SC, 1, { captureLog: true, variant: 'q2-h6', inspectViews: (name, _a, _t, v) => { if (name === 'self') selfKeys.add(Object.keys(v).sort().join()); } });
@@ -358,6 +389,91 @@ const selfOf = (o: Partial<typeof BASE_SELF>) => guardView({ ...BASE_SELF, ...o 
   // locality: the candidate reads only the forager's own view; a view without its own interval cannot be read around
   assert.throws(() => ownReserve(guardView({ crop: 1 } as any, 'self'), cI), LocalityError); checks++;
   assert.throws(() => decideTransfer(guardView({ crop: 1, forage_interval_ms: H } as any, 'self'), guardView({} as any, 'partner'), cI), LocalityError); checks++;
+}
+
+// ------------------------------------------------------------------ 7c. three food processes (Owner #188 supplementary ruling 2026-11-12)
+// (1) own metabolism / own need, (2) adult–adult trophallaxis, (3) adult→brood feeding: separate parameters and separate
+// guarded decisions. Checked: per-individual mass balance from the event log (no food created because a larva needs
+// it), every transfer bounded by the giver's own crop and the receiver's room, brood candidates default OFF (reference
+// log unchanged, see §7b), the carer never feeds below its own brood reserve, brood views carry no colony total
+// (runtime pin + behavioural probe + negative fixtures), hunger diagnostics never feed back.
+/** per-individual food balance from the event log: for every worker, initial + taken + received − given − fed to
+ *  larvae − consumed == crop; for every larva, initial + fed == gut + consumed and fed == received. Returns problems */
+function individualBalance(w: World, variant?: string): string[] {
+  const p: string[] = [], v = w.view(), init = World.create(RAW, SC, w.seed, { variant }).view();
+  const flow: Record<string, number> = {}, add = (id: string, x: number) => { flow[id] = (flow[id] ?? 0) + x; };
+  for (const l of w.lines!) {
+    const e = JSON.parse(l);
+    if ((e.k === 'arrive_source' || e.k === 'search_end') && typeof e.p.take === 'number') add(e.a, e.p.take);
+    if (e.k === 'arrive_nest') for (const x of e.p.touched) { add(e.a, -x.amount); add(x.worker, x.amount); }
+    if ((e.k === 'bout_end' || e.k === 'wake' || e.k === 'arrive_nest') && Array.isArray(e.p.larvae)) for (const x of e.p.larvae) { add(e.a, -x.fed); add(x.larva, x.fed); }
+  }
+  for (const [id, x] of Object.entries(v.workers)) if (init.workers[id].crop + (flow[id] ?? 0) - x.consumed !== x.crop) p.push(`${id}: ${init.workers[id].crop} + ${flow[id] ?? 0} - ${x.consumed} != ${x.crop}`);
+  for (const [id, x] of Object.entries(v.larvae)) if (init.larvae[id].gut + (flow[id] ?? 0) !== x.gut + x.consumed || (flow[id] ?? 0) !== x.received) p.push(`${id}: larval balance`);
+  return p;
+}
+{
+  // per-individual balance: reference 48 h (seed 1) and the brood candidates on (isolated, 12 h)
+  const pr = individualBalance(cont48);
+  ok(pr.length === 0, `#188b: reference 48 h — every worker's and larva's food balances from the event log (${pr.slice(0, 3).join('; ')})`);
+  const carerKeys = new Set<string>(), donorKeys = new Set<string>();
+  const runs: Record<string, World> = {};
+  for (const vn of ['b-res-h6', 'b-graded', 'b-minfill-25']) {
+    const w = World.create(RAW, SC, 1, { captureLog: true, variant: vn, inspectViews: (name, _a, _t, v) => { if (name === 'carer') carerKeys.add(Object.keys(v).sort().join()); if (name === 'donor') donorKeys.add(Object.keys(v).sort().join()); } });
+    w.advanceTo(8 * H); runs[vn] = w;
+    const c = w.conservation(), b = individualBalance(w, vn);
+    ok(c.ok && b.length === 0, `#188b ${vn}: food conserved exactly and every individual balances from the log over 8 h (${b.slice(0, 2).join('; ')})`);
+  }
+  ok(carerKeys.size === 1 && sameSet([...carerKeys][0].split(','), VIEW_FIELDS.CarerView) && donorKeys.size === 1 && sameSet([...donorKeys][0].split(','), VIEW_FIELDS.DonorView), `#188b: with brood candidates on, carer / donor views keep exactly the pinned fields (${[...carerKeys].join('|')} / ${[...donorKeys].join('|')})`);
+  // the carer never feeds below its own brood reserve (b-res-h6: 0.1 portion/day × 6 h = 25 000 µP), from the log
+  const bouts = runs['b-res-h6'].lines!.map((l) => JSON.parse(l)).filter((e) => e.p.choice === 'brood');
+  const fedBouts = bouts.filter((e) => e.p.larvae.some((x: any) => x.fed > 0));
+  ok(bouts.length > 20 && bouts.every((e) => e.p.carer_reserve === 25_000 && e.p.carer_crop > 25_000), `b-res-h6: brood care is chosen only by a carer whose own crop exceeds its own reserve (${bouts.length} bouts)`);
+  ok(fedBouts.length > 0 && fedBouts.every((e) => e.p.carer_crop_left >= e.p.carer_reserve && e.p.carer_crop - e.p.carer_crop_left === e.p.larvae.reduce((a: number, x: any) => a + x.fed, 0)), `b-res-h6: in every bout that fed, the carer kept its own reserve and lost exactly what the larvae received (${fedBouts.length} bouts)`);
+  const mf = runs['b-minfill-25'].lines!.map((l) => JSON.parse(l)).filter((e) => e.p.choice === 'brood');
+  ok(mf.length > 0 && mf.every((e) => e.p.carer_crop >= 200_000), `b-minfill-25: only carers with own crop fill >= 0.25 choose brood care (${mf.length} bouts)`);
+  // decisions on guarded views: the larva's begging never creates food; caps and reserves are separate
+  const cR = buildModel(RAW, SC).consts, cB = buildModel(RAW, SC, 'b-res-h6').consts, cG = buildModel(RAW, SC, 'b-graded').consts, cM = buildModel(RAW, SC, 'b-minfill-25').consts, cQ = buildModel(RAW, SC, 'q2-h6').consts;
+  const carer = (crop: number, iv: number | null = null) => guardView({ crop, crop_fill: crop / 800_000, forage_interval_ms: iv }, 'carer');
+  const larva = (begging: number, room = 25_000) => guardView({ begging, room }, 'larva');
+  ok(decideFeedLarva(carer(0), larva(1), cR, 0) === 0 && decideFeedLarva(carer(0), larva(1), cG, 0) === 0, '(3) an empty carer gives nothing however hungry the larva (no food is created for a need)');
+  ok(decideFeedLarva(carer(500_000), larva(0.29), cR, 0) === 0 && decideFeedLarva(carer(500_000), larva(0.3), cR, 0) === 25_000 && decideFeedLarva(carer(10_000), larva(1), cR, 0) === 10_000 && decideFeedLarva(carer(500_000), larva(1, 7), cR, 0) === 7, '(3) reference: threshold 0.3 on the perceived signal; bolus = min(0.025, own crop, larva room)');
+  ok(decideFeedLarva(carer(20_000), larva(1), cB, 0) === 0 && decideFeedLarva(carer(30_000), larva(1), cB, 0) === 5_000 && broodGivable(carer(30_000), cB) === 5_000, '(3) b-res-h6: never below the carer\'s own reserve (25 000 µP)');
+  ok(decideFeedLarva(carer(500_000), larva(0.2), cG, 0.19) === 25_000 && decideFeedLarva(carer(500_000), larva(0.2), cG, 0.2) === 0, '(3) b-graded: feeds with probability = perceived signal (no threshold)');
+  ok(decideFeedLarva(carer(199_999), larva(1), cM, 0) === 0 && decideFeedLarva(carer(200_000), larva(1), cM, 0) === 25_000, '(3) b-minfill-25: the carer\'s own crop fill must reach 0.25');
+  ok(ownNeed(carer(1), cQ.trophallaxis.retention, cQ) === 25_000 && broodGivable(carer(30_000), cQ) === 30_000 && ownNeed(carer(1), cB.brood.retention, cB) === 25_000 && decideTransfer(guardView({ crop: 30_000, forage_interval_ms: null }, 'donor'), guardView({ crop_room: 800_000 }, 'partner'), cB) === 30_000, '(1)/(2)/(3) separate: the forager reserve does not bind brood feeding and the carer reserve does not bind trophallaxis');
+  ok(ownNeed(carer(1, 3 * H), { kind: 'own_interval', factor: 2 }, cR) === 25_000 && ownNeed(carer(1, null), { kind: 'own_interval', factor: 2 }, cR) === 0, '(1) own need: factor × own interval × own rate; unknown interval => 0 (not filled)');
+  // runtime guard: a brood decision cannot read past the carer's own view (negative fixtures)
+  assert.throws(() => decideFeedLarva(guardView({ crop: 1, crop_fill: 0 } as any, 'carer'), larva(1), buildModel(RAW, SC, 'b-res-int2').consts, 0), LocalityError); checks++; // own_interval needs its own interval: not handed => throws
+  const leakyBrood = (v: unknown) => (v as { colony_larval_need: number }).colony_larval_need;
+  assert.throws(() => leakyBrood(carer(1)), LocalityError); checks++;
+  assert.throws(() => (carer(1) as any).workers, LocalityError); checks++;
+  // behavioural probe: at a brood decision, change every OTHER worker's crop, the source stock and every larva's gut;
+  // the carer's own view must not change (a view leaking the larvae's total need is caught — negative fixture)
+  let w = run(1, [3 * H], { captureLog: false }), probe: { snap: string; actor: string; t: number } | null = null;
+  for (let i = 0; i < 400 && !probe; i++) {
+    const sn = JSON.parse(w.snapshot()), first = sn.queue.find((e: any) => e.a in sn.workers)!;
+    if (first.k === 'bout_end' || first.k === 'wake') {
+      let hit = false; const x = World.restore(RAW, w.snapshot(), { inspectViews: (name, a, t) => { if (name === 'carer' && a === first.a && t === first.t) hit = true; } }); x.advanceTo(first.t);
+      if (hit) { probe = { snap: w.snapshot(), actor: first.a, t: first.t }; break; }
+    }
+    w.advanceTo(first.t);
+  }
+  ok(probe !== null, 'found a brood decision to probe');
+  const mutateAll = (snap: string): string => { const sn = JSON.parse(snap); for (const y of Object.values(sn.workers) as any[]) if (y.id !== probe!.actor) y.crop = y.crop > 400_000 ? 0 : 800_000; for (const l of Object.values(sn.larvae) as any[]) l.gut = 0; sn.sources[SOURCE_ID].stock += 555_555; return canon(sn); };
+  const carerAt = (snap: string, leak: boolean): string => {
+    let h = ''; const sn = JSON.parse(snap);
+    const need = (Object.values(sn.larvae) as any[]).reduce((a, l) => a + (25_000 - l.gut), 0);
+    const x = World.restore(RAW, snap, { inspectViews: (name, a, t, v) => { if (!h && name === 'carer' && a === probe!.actor && t === probe!.t) h = leak ? canon({ ...JSON.parse(viewJson(v)), larval_need: need }) : viewJson(v); } });
+    x.advanceTo(probe!.t); return h;
+  };
+  ok(carerAt(probe!.snap, false) === carerAt(mutateAll(probe!.snap), false) && carerAt(probe!.snap, false).length > 0, `carer ${probe!.actor}'s view is unchanged when other workers, the source and every larva change`);
+  ok(carerAt(probe!.snap, true) !== carerAt(mutateAll(probe!.snap), true), 'behavioural probe catches a carer view that sums the larvae\'s need (negative fixture)');
+  // hunger diagnostics: statistics only (books nothing, never fed back), consistent with the conserved state
+  const before = cont48.stateHash(), hu = cont48.hunger();
+  ok(cont48.stateHash() === before, 'World.hunger() changes nothing (diagnostic copy)');
+  ok(hu.workers.length === 30 && hu.larvae.length === 8 && hu.workers.every((x) => x.max_empty_ms <= x.empty_ms && x.empty_ms <= 2 * DAY && x.unmet >= cont48.view().workers[x.id].debt) && hu.larvae.every((x) => x.received === cont48.view().larvae[x.id].received), 'hunger rows: longest empty spell <= total empty time <= run length; unmet need >= booked debt; larval received = state');
+  ok(canon(restored48.hunger()) === canon(hu), 'hunger diagnostics survive snapshot / restore unchanged (48 h == 24 h + restore + 24 h; state fields, chunk-invariant)');
 }
 
 // ------------------------------------------------------------------ 8. time contract
@@ -456,9 +572,11 @@ const fairness: Record<string, unknown> = {};
 // ------------------------------------------------------------------ 9. diagnostic (NOT a target, CLAUDE.md §7)
 const diag: Record<string, unknown> = {};
 for (const variant of Object.keys(RAW.sensitivity_variants).filter((k) => k !== '_note')) for (const sc of ['taichung-march-ref', 'taichung-may-ref']) {
-  const w = World.create(RAW, sc, 1, { captureLog: true, variant }); w.advanceTo(DAY);
+  // the reference / March / seed 1 / 2-day run is exactly cont48 (same parameters, scenario, seed and span): reuse it
+  const isRef = variant === RAW.reference_variant && sc === SC, w = isRef ? cont48 : World.create(RAW, sc, 1, { captureLog: true, variant });
+  if (!isRef) w.advanceTo(DAY);
   if (variant === 'ft-r190' && sc === SC) ok(w.logHash === FORMER.reference_r190_log, 'Q1: the former reference (R190 anchors) survives byte-identically as the ft-r190 sensitivity scenario');
-  w.advanceTo(2 * DAY);
+  if (!isRef) w.advanceTo(2 * DAY);
   if (variant === 'ft-r190' && sc === SC) {
     const evs = w.lines!.map((l) => JSON.parse(l)), declines = evs.filter((e) => e.k === 'at_entrance' && e.p.choice !== 'exit').length, backIns = evs.filter((e) => e.k === 'back_in').length;
     ok(declines > 0 && backIns > 0 && backIns <= declines, `ft-r190: declines walk back before entering the nest (${declines} declines, ${backIns} back_in)`);
@@ -477,7 +595,12 @@ for (const variant of Object.keys(RAW.sensitivity_variants).filter((k) => k !== 
 //         because the reference changed; no event of ft-flat changed; the former reference log is now ft-r190, see §9)
 //   state eeae295c…582f -> 60f5e6e7…ccb2  (parameter file sha, variant name 'ft-flat', and the two own-experience fields
 //         last_intake_t / forage_interval_ms read only by the default-off Q2 candidate)
-const PINNED = { log: '0ca01939dbb611871e6bc14b41ea58a1a3bdefc17659e3ea0422ec129d1ef2db', state: '60f5e6e79a967e77c6021e5c937c7f8a67fa51a3db22d0d088cbbf63a7a1ccb2' };
+// Re-pinned for the Owner #188 supplementary ruling (2026-11-12, three food processes kept apart): the LOG is unchanged
+// (0ca01939…f2db: the default-off brood candidates change no event); only the state:
+//   state 60f5e6e7…ccb2 -> 86c354e8…d93b  (parameter file sha: three new default-off brood parameters and the
+//         brood_feeding_variants section; new diagnostic-only state fields: workers empty_since / empty_ms / max_empty_ms,
+//         larvae received / empty_since / empty_ms / max_empty_ms — statistics, never in any decision view)
+const PINNED = { log: '0ca01939dbb611871e6bc14b41ea58a1a3bdefc17659e3ea0422ec129d1ef2db', state: '86c354e8cb1f1840b5f3622d03d6c5e49302725d1443ceb44d7141bbb8cad93b' };
 ok(ref.logHash === PINNED.log, `pinned 24 h log hash (got ${ref.logHash})`);
 ok(refState === PINNED.state, `pinned 24 h state hash (got ${refState})`);
 console.log(JSON.stringify({ test: 'p0a2-24h-proto', checks, seconds: (Date.now() - T0) / 1000, events_24h_seed1: ref.lines!.length, log_sha_24h_seed1: ref.logHash, q4_fairness: fairness, diagnostic_not_a_target: diag }));

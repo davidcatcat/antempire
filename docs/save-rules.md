@@ -1,5 +1,8 @@
 # 存檔規則 v2｜科學啟發式蟻群世界
 
+> **本文件已退役（Owner 2026-11-12，[#194](https://github.com/davidcatcat/antempire/issues/194)）**：以下是舊版正式存檔（`saves/main.json`、`saves/world-state.json`，停在 Day14）的規則。那兩份存檔已退役，逐位元組移到 `tests/fixtures/legacy-day14/` 只供引擎回歸測試；`saves/` 目前沒有正式存檔。新版正式世界的存檔規則（完整個體、蟻群、環境、時間、亂數狀態、規則版本）隨新版 Day0 正式化門檻（R2）與 SAVE 系統定義。本文保留作為歷史，不再約束任何現行流程。決議：[`docs/owner-decisions-2026-11-12b.md`](owner-decisions-2026-11-12b.md)。
+
+
 本 repo 專門保存《螞蟻帝國》的世界資料、規格和故事進度；**不是程式碼開發倉庫**。
 
 ## 權威資料與唯讀歷史

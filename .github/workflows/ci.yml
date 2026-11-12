@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   checks:
-    name: typecheck · golden · naturalism · saves
+    name: typecheck · golden · naturalism · tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -22,12 +22,10 @@ jobs:
       - run: npm ci
       - name: Type check (whole repo + engine without DOM/Node libs)
         run: npm run typecheck
-      - name: Golden test (current-rules reports byte-identical + 28 Day14 full-output traces + 24 Day0 traces)
+      - name: Golden test (current-rules reports byte-identical + 28 full-output traces from the retired legacy Day14 fixture + 24 Day0 traces)
         run: npm run test:golden
       - name: Naturalism (no-god-mode checks; 216 under v2-review.20 to v2-review.31)
         run: npm run test:naturalism
-      - name: Save conservation (saves/main.json + saves/world-state.json)
-        run: npm run check:saves
 
   tests:
     # The remaining BLOCKING tests, split into parallel shards (tests/run-all.ts --shard k/n).
@@ -68,7 +66,7 @@ jobs:
         run: |
           node cli/web-serve.ts 8781 &
           for i in $(seq 1 30); do curl -sf http://localhost:8781/ > /dev/null && break; sleep 1; done
-      - name: Smoke test (desktop + phone; interpolation label, day crossing, deaths, eclosions, replay end, official/experiment separation)
+      - name: Smoke test (desktop + phone; interpolation label, day crossing, deaths, eclosions, replay end, no official world / experiment label)
         run: |
           mkdir -p "$RUNNER_TEMP/viewer-shots"
           set -o pipefail
