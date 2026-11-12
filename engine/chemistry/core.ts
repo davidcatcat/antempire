@@ -31,21 +31,29 @@ import {
   type ChannelSpec, type ChemClock, type ChemTime, type DepositEvent, type Domain, type SampleQuery, type Where,
 } from './contract.ts';
 import { discCellWeights, type Grid2D } from './sampling.ts';
+import { KineticsRuntime, kineticsActive, validateEnvTrace, validateKinetics, type EnvTrace, type KineticsSpec } from './kinetics.ts';
 
 export class ChemRefused extends Error {
   readonly codes: string[];
   constructor(codes: string[]) { super(`CHEM_REFUSED: ${codes.join(', ')}`); this.name = 'ChemRefused'; this.codes = codes; }
 }
 
-export interface ChannelConfig { spec: ChannelSpec; domain: Domain }
-export interface StoreConfig { clock: ChemClock; channels: ChannelConfig[] }
+/** `kinetics` (CHEM-2, opt-in): environment-coupled decay (kinetics.ts). Absent, or with every term OFF, the channel
+ *  decays exactly as in CHEM-1 (same expression, bitwise). */
+export interface ChannelConfig { spec: ChannelSpec; domain: Domain; kinetics?: KineticsSpec }
+/** `environment` (CHEM-2): the environment trace the active kinetics read (data from the world clock, never colony state) */
+export interface StoreConfig { clock: ChemClock; channels: ChannelConfig[]; environment?: EnvTrace }
 
 export type RejectReason = 'OUT_OF_BOUNDS' | 'LATE_DEPOSIT' | 'DUPLICATE_DEPOSIT_ID' | 'DUPLICATE_ORIGIN_EVENT';
 export interface DepositResult { deposit_id: string; accepted: boolean; reason: RejectReason | null }
 
-interface Cell { key: string; layer: string; cx: number; cy: number; a: number; t_ref: number; decayed: number; contributors: string[] }
+interface Cell { key: string; layer: string; cx: number; cy: number; a: number; t_ref: number; decayed: number; contributors: string[]; z: number }
 interface Channel {
   spec: ChannelSpec; domain: Domain; lambda: number; size: number;
+  /** CHEM-2 environment kinetics; null = CHEM-1 constant-λ formula */
+  kin: KineticsRuntime | null;
+  /** zone index per edge id (kinetics on edges) */
+  edgeZone: Map<string, number>;
   edges: Map<string, { length_mm: number; layer: string; bins: number }>; nx: number; ny: number; grid: Grid2D | null;
   cells: Map<string, Cell>;
   pending: DepositEvent[];
@@ -203,8 +211,12 @@ export class ChemStore {
     this.clock = cfg.clock;
     const errs: string[] = [];
     if (!cfg.clock || !(typeof cfg.clock.name === 'string' && cfg.clock.name)) errs.push('MISSING:clock');
-    for (const { spec, domain } of cfg.channels) {
+    const envErr = cfg.environment ? validateEnvTrace(cfg.environment, cfg.clock?.name) : [];
+    errs.push(...envErr);
+    for (const { spec, domain, kinetics } of cfg.channels) {
       const e = validateChannel(spec).map((x) => `${spec.signal_id}:${x}`);
+      if (kinetics !== undefined) e.push(...validateKinetics(kinetics, spec.units?.quantity !== 'normalized_activity').map((x) => `${spec.signal_id}:${x}`));
+      if (kineticsActive(kinetics) && !cfg.environment) e.push(`${spec.signal_id}:KINETICS_WITHOUT_ENVIRONMENT`);
       if (this.ch.has(spec.signal_id)) e.push(`${spec.signal_id}:DUPLICATE_CHANNEL`);
       if (spec.backend !== 'surface_edge' && spec.backend !== 'sparse_2d') e.push(`${spec.signal_id}:NOT_A_FIELD_CHANNEL`);
       if (domain.backend !== spec.backend) e.push(`${spec.signal_id}:DOMAIN_BACKEND_MISMATCH`);
@@ -225,7 +237,19 @@ export class ChemStore {
       const grid: Grid2D | null = domain.backend === 'sparse_2d' ? { x0: domain.bounds_mm.x0, y0: domain.bounds_mm.y0, x1: domain.bounds_mm.x1, y1: domain.bounds_mm.y1, size, nx, ny } : null;
       const lambda = spec.time_rule.lambda_per_s!.value as number;
       const zero = () => ({ count: 0, amount: 0 });
-      this.ch.set(spec.signal_id, { spec, domain, lambda, size, edges, nx, ny, grid, cells: new Map(), pending: [], committed: [], stats: { accepted_count: 0, accepted_amount: 0, integrated_count: 0, integrated_amount: 0, rejected: { OUT_OF_BOUNDS: zero(), LATE_DEPOSIT: zero(), DUPLICATE_DEPOSIT_ID: zero(), DUPLICATE_ORIGIN_EVENT: zero() } } });
+      // CHEM-2: every cell this channel can create must lie in exactly one environment zone with the traces it reads
+      let kin: KineticsRuntime | null = null;
+      const edgeZone = new Map<string, number>();
+      if (kineticsActive(kinetics) && cfg.environment && !envErr.length) {
+        const t = cfg.environment.zones.find((z) => z.temperature)?.temperature;
+        if (kinetics!.temperature && kinetics!.temperature.q10.value !== null && cfg.environment.zones.some((z) => z.temperature && z.temperature.quantity !== kinetics!.temperature!.input)) errs.push(`${spec.signal_id}:ENV_QUANTITY_MISMATCH:${t?.quantity}`);
+        kin = new KineticsRuntime(kinetics!, lambda, cfg.environment);
+        const zerr = new Set<string>(), use = (i: number, where: string) => { if (i === -1) zerr.add(`ENV_ZONE_MISSING:${where}`); else if (i === -2) zerr.add(`ENV_ZONE_AMBIGUOUS:${where}`); else for (const x of kin!.zoneErrors(i)) zerr.add(x); };
+        if (domain.backend === 'surface_edge') for (const id of edges.keys()) { const i = kin.zoneOf(id, 0, 0); use(i, id); edgeZone.set(id, i); }
+        else for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) use(kin.zoneOf(null, domain.bounds_mm.x0 + (i + 0.5) * size, domain.bounds_mm.y0 + (j + 0.5) * size), `cell ${i},${j}`);
+        errs.push(...[...zerr].sort().slice(0, 20).map((x) => `${spec.signal_id}:${x}`));
+      }
+      this.ch.set(spec.signal_id, { spec, domain, lambda, size, kin, edgeZone, edges, nx, ny, grid, cells: new Map(), pending: [], committed: [], stats: { accepted_count: 0, accepted_amount: 0, integrated_count: 0, integrated_amount: 0, rejected: { OUT_OF_BOUNDS: zero(), LATE_DEPOSIT: zero(), DUPLICATE_DEPOSIT_ID: zero(), DUPLICATE_ORIGIN_EVENT: zero() } } });
     }
     if (errs.length) throw new ChemRefused(errs);
   }
@@ -274,7 +298,16 @@ export class ChemStore {
   advance(to: ChemTime): void {
     const e = validateTimeOnly(to, this.clock);
     if (this.h && compareChemTime(to, this.h) < 0) e.push('HORIZON_BACKWARDS');
-    if (e.length) throw new ChemRefused(e);
+    // CHEM-2: the environment must be known up to `to` (and from every due deposit) in every zone a channel uses;
+    // checked before anything changes, so a refused advance leaves the store as it was
+    if (!e.length) for (const c of this.ch.values()) {
+      if (!c.kin) continue;
+      const zs = new Set<number>(c.domain.backend === 'surface_edge' ? c.edgeZone.values() : [...c.cells.values()].map((x) => x.z));
+      if (c.domain.backend === 'sparse_2d') for (const d of c.pending) if (compareChemTime(d.time, to) <= 0) for (const z of planeZones(c, d)) zs.add(z);
+      for (const z of zs) e.push(...c.kin.coverageErrors(z, to.t_s).map((x) => `${c.spec.signal_id}:${x}`));
+      for (const d of c.pending) if (compareChemTime(d.time, to) <= 0) for (const z of zs) e.push(...c.kin.coverageErrors(z, d.time.t_s).map((x) => `${c.spec.signal_id}:${x}`));
+    }
+    if (e.length) throw new ChemRefused([...new Set(e)]);
     for (const c of [...this.ch.values()]) {
       const due = c.pending.filter((d) => compareChemTime(d.time, to) <= 0).sort(canonicalCompare);
       if (!due.length) continue;
@@ -360,16 +393,22 @@ export class ChemStore {
   }
 }
 
-/** own copy of an accepted event (the caller may reuse its objects) */
-const valueAt = (c: Channel, cell: Cell, t: number): number => cell.a * Math.exp(-c.lambda * (t - cell.t_ref));
+/** decay factor of a cell from t0 to t1: CHEM-1 constant λ (unchanged expression) or the CHEM-2 exact hazard integral */
+const decayFactor = (c: Channel, z: number, t0: number, t1: number): number => c.kin ? Math.exp(-c.kin.hazard(z, t0, t1)) : Math.exp(-c.lambda * (t1 - t0));
+const valueAt = (c: Channel, cell: Cell, t: number): number => cell.a * decayFactor(c, cell.z, cell.t_ref, t);
+/** zones of the plane cells a deposit enters (CHEM-2 coverage pre-check) */
+function planeZones(c: Channel, d: DepositEvent): number[] {
+  const b = (c.domain as Extract<Domain, { backend: 'sparse_2d' }>).bounds_mm;
+  return planeShares(d.where, b.x0, b.y0, c.size, c.nx, c.ny).map(([i, j]) => c.kin!.zoneOf(null, b.x0 + (i + 0.5) * c.size, b.y0 + (j + 0.5) * c.size));
+}
 
 /** add one deposit to a cell map (the live field or a historical reconstruction): analytic decay to the deposit time */
 function integrateInto(c: Channel, cells: Map<string, Cell>, d: DepositEvent): void {
   const t = d.time.t_s;
   const put = (key: string, layer: string, cx: number, cy: number, q: number) => {
     let cell = cells.get(key);
-    if (!cell) { cell = { key, layer, cx, cy, a: 0, t_ref: t, decayed: 0, contributors: [] }; cells.set(key, cell); }
-    const kept = cell.a * Math.exp(-c.lambda * (t - cell.t_ref));
+    if (!cell) { cell = { key, layer, cx, cy, a: 0, t_ref: t, decayed: 0, contributors: [], z: !c.kin ? -1 : c.domain.backend === 'surface_edge' ? c.edgeZone.get(key.slice(0, key.lastIndexOf('#')))! : c.kin.zoneOf(null, cx, cy) }; cells.set(key, cell); }
+    const kept = cell.a * decayFactor(c, cell.z, cell.t_ref, t);
     cell.decayed += cell.a - kept; cell.a = kept + q; cell.t_ref = t;
     cell.contributors.push(d.deposit_id);
   };
