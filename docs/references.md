@@ -763,3 +763,18 @@ R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-
 | R784 | Navarrete B, McAuslane H, Deyrup M, Peña JE (2013) Ants (Hymenoptera: Formicidae) associated with *Diaphorina citri* (Hemiptera: Liviidae) and their role in its biological control. *Florida Entomologist* 96(2):590–597. DOI 10.1653/024.096.0225 | 摘要（經搜尋工具與 AGRIS；BioOne 頁面未能讀取） | **本種**在佛州月橘上與柑橘木蝨相伴，排除螞蟻後 *Tamarixia radiata* 寄生率上升 | **非臺灣**；*Brachymyrmex* 種名在各來源不一致 |
 | R785 | Win AT, Kinoshita T, Tsuji K (2018) The presence of an alternative food source changes the tending behavior of the big-headed ant, *Pheidole megacephala*, on *Dysmicoccus brevipes*. *Applied Entomology and Zoology* 53:253–258. DOI 10.1007/s13355-018-0553-0 | 摘要（ScaleNet 摘錄） | **本種**有替代糖或蛋白時照護頻率下降；未見攻擊或捕食粉介殼蟲 | 研究地點頁面未載明；實驗條件，非花園 |
 | R786 | Pacific Pests, Pathogens & Weeds fact sheet: Citrus aphids（lucidcentral.org） | 說明頁 | *Toxoptera aurantii* 寄主含柑橘、朱槿、茶等 | **非臺灣**、非同儕審查；兩種橘蚜的俗名在不同來源互相顛倒 |
+
+## 2026-11-08 P0-A2 24 小時個體行為（R760–R763；`docs/p0a2-24h-behaviour-design.md`，Issue #156）
+
+> 編號從 R760 起，避開其他進行中工作包。閱讀程度如實標記；他種只作候選機制（非本種）。
+
+| ID | 文獻 | 閱讀程度 | 物種 | 支持的內容 | 不可外推之處 |
+|---|---|---|---|---|---|
+| R760 | Leong CM, Tsang TPN, Guénard B (2022) Testing the reliability and ecological implications of ramping rates in the measurement of Critical Thermal maximum. *PLoS ONE* 17(3):e0265361. DOI 10.1371/journal.pone.0265361（PMC8920270） | 全文（Europe PMC XML）；圖 4 的 CTmax、FTmax 絕對值**未讀數**；補充資料未讀 | 27 種，**含本種**（香港、澳門） | 升溫 0.2／0.5／1.0°C/min 得到不同 CTmax；1°C/min 最接近野外最高覓食地表溫度（FTmax）。本種 \|FTmax−CTmax\| 約 7.7／6.3／3°C（表 2 第一區塊）。FTmax 來自 2015～2018 年 10:00～16:00 的香腸餌（>11 817 個），紅外線量地表溫度 | 表 2 第二區塊（1% top FT）的列序與第一區塊不一致，疑似排版錯位，數值只引用第一區塊並待核；餌只在白天，**沒有日夜資料**；FTmax 受競爭影響，不是生理門檻 |
+| R761 | Kaspari M, Clay NA, Lucas J, Yanoviak SP, Kay A (2015) Thermal adaptation generates a diversity of thermal limits in a rainforest ant community. *Global Change Biology* 21:1092–1102. DOI 10.1111/gcb.12750 | 摘要（Europe PMC） | **非本種**：巴拿馬 88 種 | 同一森林內曬到太陽的表面比落葉層高約 8°C；樹冠種 CTmax 比林下高 3.5～5°C；小型螞蟻 <10 s 達熱平衡 → 個體應讀微地點地表溫度 | 熱帶雨林；無本種；數值不用 |
+| R762 | Bujan J, Kaspari M (2017) Nutrition modifies critical thermal maximum of a dominant canopy ant. *J. Insect Physiol.* 102:1–6. DOI 10.1016/j.jinsphys.2017.08.007 | 摘要（Europe PMC） | **非本種**：*Azteca chartifex* | 只給水 10 h 後兩組差異消失；10% 蔗糖任食使 CTmax 升高約 5°C → 個體營養狀態影響熱耐受的候選機制 | 樹棲種；短期效應；數值不得套用本種 |
+| R763 | Martin RA, Chick LD, Yilmaz AR, Diamond SE (2019) Evolution, not transgenerational plasticity, explains the adaptive divergence of acorn ant thermal tolerance across an urban-rural temperature cline. *Evolutionary Applications*（卷頁未核）. DOI 10.1111/eva.12826（PMC6708418） | 摘要（Europe PMC） | **非本種**：*Temnothorax curvispinosus* | 都市族群耐熱較高、耐寒較低，以演化差異為主 | 與 R145 本種都市 CTmax 較低（1 群）方向相反 → 族群間差異的方向不可假設；不提供本種數值 |
+
+**既有編號的補充**（新增，不改寫原有行）：
+- R145（Chen & Neoh 2023）2026-11-08 再讀正文（Frontiers 網頁全文，圖 2 未重新量）：CTmax 方法為 25°C 起、每 2 分升 1°C 至 35°C、之後每 5 分升 1°C（約 0.5 → 0.2°C/min，屬 R760 所稱的慢速升溫）；以翻身後無法翻正判定；未量 CTmin。原文**沒有**本種日夜活動的統計檢定，第四角分析是性狀對環境；都市「人類廚餘時段」本次讀到約 11～18 時（舊筆記記 09～18 時，待核）。森林 CTmax 的「24 隻」是否為每群數量，原文表述不明確。
+- R146（Asfiya et al. 2016）2026-11-08 以 pdftotext 核對：餌站調查為上午 07:30～10:30 與下午 12:30～15:30，沒有夜間取樣。
