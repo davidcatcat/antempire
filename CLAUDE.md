@@ -11,13 +11,15 @@
 - 遇到舊程式疑似 bug：先以測試重現，再開獨立 PR 修正並附回歸測試。修正若改變科學規則或正式輸出，依 §6 以規則更新 PR 處理。規則不清楚時，記錄在 PR 說明中；屬於產品方向、科學規則取捨、正式存檔或授權的事項，才向 Owner 提問。
 - **最高原則**（Owner 2026-11-02 確認，見 [`docs/product-vision.md`](docs/product-vision.md)、[`docs/requirements-and-plan.md`](docs/requirements-and-plan.md)）：這是以螞蟻科學文獻與自然生態學建立的**生態模擬遊戲**。螞蟻與環境都依有科學依據的規律自主運作；玩家是只觀察的上帝視角。**科學真實性高於遊戲平衡、娛樂性、劇情與畫面效果**。不是讓畫面上的螞蟻看起來像真的，而是讓引擎中的螞蟻按生物學規律生活，畫面只呈現引擎的狀態與事件（§8）。不得宣稱已完整重現自然；未驗證的機制要標明是模型假設。可視化與科學並行開發，衝突時科學優先。
 
-## 1. 歷史不可改寫
+## 1. 舊版 Day14 已退役；正式歷史不可改寫
 
-> **Day14 的地位（Owner 2026-11-02）**：目前的 Day14 存檔是舊版遊戲歷史的**過渡資料**；未來將由科學模擬引擎建立**新版正式 Day0** 取代 Day14 作為正式起點。在 Owner 明確核准正式切換之前，本節的保護規則**完全有效**。切換時另開遷移／清理 PR，列出要移除的存檔、舊版相依與歷史檔案的處理方式；舊歷史封存或清除由 Owner 在切換時決定。新正式 Day0 的蟻群建立方式必須有本種研究依據，不可選存活率最高的實驗組；A1～A5 只是研究情境。
+> **Day14 已退役（Owner 2026-11-12，[#194](https://github.com/davidcatcat/antempire/issues/194)，見 [`docs/owner-decisions-2026-11-12b.md`](docs/owner-decisions-2026-11-12b.md)）**：舊版 Day14 遊戲存檔正式退役，不再延續舊版 Day15。正式起點是**新版 Day0**，採用持續開發中的科學生態、數學、物理、化學與個體行為模擬系統；新版 Day0 **啟用前須通過整合驗證門檻**（R2：本種與臺中西屯環境、已整合模組清單、局部感測無全知資訊、科學數據與假設分開標示、同條件同規則版本同種子可重播、完整存檔內容）。未通過門檻前，新遊戲一律標示「開發中／實驗」，不得宣稱為正式世界；新遊戲不載入舊版 Day14。新正式 Day0 的蟻群建立方式必須有本種研究依據，不可選存活率最高的實驗組；A1～A5 只是研究情境。
 
-- **不得修改 Day1～14 的歷史存檔和日誌**：`saves/` 中 Day14 權威狀態（`saves/main.json`、`saves/world-state.json` 的 Day14 內容）、`journal/` 中 `v2-day-0001.md`～`v2-day-0014.md`、v1 `chronicle*.md`、`sim/results/day9*`～`day14*` 等歷史輸出，一律唯讀。
-- 已完成日只能被「下一日」接續，不能重跑、覆寫、倒填或「修正」成另一種結果。
-- 研究／規則更新紀事（`journal/v2-research-*.md` 等）同樣是歷史紀錄，只能新增，不改寫舊檔。
+- **目前沒有正式世界**，也沒有正式存檔（`saves/` 只有說明檔）。舊版 Day1～14 存檔與日誌保存在 git 歷史與封存分支 `claude/ant-empire-engine-refactor-i45q93-legacy-day14-final`（`d70174b`）。
+- 仍有回歸測試價值的舊狀態放在 `tests/fixtures/legacy-day14/`（與 `tests/fixtures/day14-projection.json`）：**只作引擎回歸測試，不是遊戲進度，不可推進**，也不得當作新遊戲或正式世界的起點。這些 fixture 與 golden 基準一律唯讀；改動它們等同改動回歸基準，要依 §6 另開 PR 說明。
+- **不得誤刪**仍有科學研究、回歸測試或數據驗證價值的資料（Owner #194）。刪除前先做相依分析並寫進 PR 說明。
+- **新版正式世界建立之後**，它已完成的歷史只能被「下一日／下一段」接續，不能重跑、覆寫、倒填或「修正」成另一種結果；已提交的正式存檔、事件與日誌只能新增。
+- 研究／規則更新紀事（`journal/v2-research-*.md` 等）是歷史紀錄，只能新增，不改寫舊檔。
 
 ## 2. 無上帝視角
 
@@ -74,13 +76,14 @@
 - 查不到的數值標 `assumption: true` 並說明理由（為什麼查不到、採用什麼推理、與哪個物種的哪個數值無關或有關）。
 - 物種差異一律透過物種參數檔表達；只有特定物種才有的機制（例如兵蟻／major 型態）用參數開關控制，**不得在程式中用 `if` 判斷物種名稱**。
 
-## 5. 推進遊戲日
+## 5. 推進遊戲時間
 
-- **只在玩家明確要求時才推進遊戲日**（例如玩家說「繼續」「推進一天」）。預設一次一個生態日。
-- 研究、規則更新、程式改寫、測試、報告**都不推進**遊戲時鐘。
-- 推進的固定流程：①執行凍結的單日程式 → ②更新兩份權威存檔 → ③寫當日日誌。任一守恆或驗證檢查失敗，就**不得**提交存檔或日誌，如實回報。
-- **推進遊戲日的過程中不准修改引擎或參數**；同一天不得重複執行或重跑擇優。
-- 推進工具：`npm run advance` 預設只預演（不寫檔）；玩家明確要求推進 Day N 時才用 `npm run advance -- --confirm-advance --day N`。它在一筆可復原的交易中同時提交 `saves/main.json`、`saves/world-state.json`、`journal/v2-day-NNNN.md` 與 `saves/commit-log.json`，所有守恆與日誌檢查通過才提交；中斷後用 `npm run advance -- --recover`。已提交的日誌不可改寫，補充敘事要另建新檔 `journal/v2-day-NNNN-narrative.md`（該日提交之後才建立，只新增不覆寫；數字以正式日誌為準，更正另建 `-narrative-erratum-K.md`）。`saves/commit-log.json` 進 git，且必須與該日兩份存檔、日誌在同一個 git commit 中提交；`saves/.txn/`、鎖與 `*.advance-tmp` 不進 git。規則指紋（引擎＋參數）不符、或存檔不是最後確認版本時工具會拒絕執行。詳見 [`docs/save-transactions.md`](docs/save-transactions.md)。
+- 舊版推進工具（`npm run advance`、存檔交易、`npm run check:saves`、`saves/commit-log.json`、Day14→Day15 遷移流程）已隨 Day14 退役（#194）移除；**不存在必須接續 Day15 的正式流程**。
+- 新版正式世界的推進、自動存檔、繼續、載入與意外中斷恢復，將與新版 Day0 及 SAVE 系統一起定義（R2），在 Owner 核准該門檻之前不得宣稱任何世界為正式世界。
+- 以下原則在新版正式世界中繼續有效：
+  - **只在玩家明確要求或正式啟用的自動推進流程下才推進正式時間**；研究、規則更新、程式改寫、測試、報告**都不推進**正式時鐘。
+  - 推進正式時間的過程中**不准修改引擎或參數**；同一段不得重複執行或重跑擇優；任一守恆或驗證檢查失敗就不得提交，如實回報。
+- 實驗世界（Day0、多種子、Worker 實驗模式、本地實驗存檔）可以自由執行，但必須標示「非正式」，不得寫入正式存檔或冒充正式歷史。
 
 ## 6. 規則／參數修改
 
@@ -98,7 +101,7 @@
 
 ## 8. 執行環境
 
-- **正式推進只在 Node 執行**（固定 Node 版本、固定種子）。
+- **正式推進只在 Node 執行**（固定 Node 版本、固定種子）；新版正式世界的執行環境由 R2 門檻定義前，沿用此原則。
 - 網頁觀察器（`web/`）**只讀取結果**，不產生正式歷史，也不寫回 `saves/` 或 `journal/`。
 - 觀察器上的資料必須分成三類並清楚標示：
   1. **引擎事件**：原樣顯示；
@@ -113,25 +116,26 @@
 ## 9. 程式結構與指令
 
 - `engine/`：純模擬核心（TypeScript，無 DOM／Node API）。`species/<id>.json` 物種參數、`world/<id>.json` 世界參數；程式中不寫死數值、不用物種名稱判斷。架構見 [`docs/engine-architecture.md`](docs/engine-architecture.md)。
-- `cli/`：Node 工具（讀檔、規則指紋、存檔映射、報告產生器）。
-- `web/`：唯讀觀察器。`cli/web-export.ts` 由存檔（唯讀）與引擎產生 `web/data/`；`web/src/` 不得匯入 `engine/` 或 `cli/`、不得執行模擬、不得寫入。引擎輸出改變時要重新執行 `npm run web:export` 並提交 `web/data/`（`tests/web.test.ts` 檢查）。
+- `cli/`：Node 工具（讀檔、規則指紋、規則版本登錄、報告產生器、觀察器資料匯出）。舊版正式推進與存檔檢查工具已退役（#194）。
+- `web/`：唯讀觀察器。`cli/web-export.ts` 由引擎與花園情境地理（`data/xitun-garden-geography.json`，唯讀）產生 `web/data/` 的實驗重播；目前沒有正式世界，所以不匯出正式快照；`web/src/` 不得匯入 `engine/` 或 `cli/`、不得執行模擬、不得寫入。引擎輸出改變時要重新執行 `npm run web:export` 並提交 `web/data/`（`tests/web.test.ts` 檢查）。
 - **觀察器的兩種模式（Owner 決策 #39，2026-11-08；本節唯一的有限例外）**：
-  - **A. 正式觀察模式**：上一條規則全部保留。`web/src/` 不得匯入 `engine/`、不得執行模擬、不得修改 `saves/`／`journal/`，只讀取正式引擎產生的資料；正式推進只在 Node 執行。
+  - **A. 觀察模式（唯讀）**：上一條規則全部保留。`web/src/` 不得匯入 `engine/`、不得執行模擬、不得修改 `saves/`／`journal/`，只讀取 Node 端引擎產生的資料；正式推進只在 Node 執行。
   - **B. 非正式實驗模式**：只有實驗 Worker 入口 `prototypes/continuous-world/worker/`（獨立入口、獨立建置設定）可以匯入**白名單**內的純 TypeScript 模擬核心；白名單與禁止清單記在 [`prototypes/continuous-world/worker-boundary.json`](prototypes/continuous-world/worker-boundary.json)，擴充白名單屬規則修改，要另開 PR 並經 Codex 固定 SHA 審查。`web/src/` 只能經由清單中的 Worker client 檔以 `postMessage` 連接 Worker，不得直接匯入 `engine/` 或 Worker 目錄，畫面主執行緒不得執行生態模擬。
   - Worker 不得匯入 `cli/`、存檔讀寫、日誌產生、正式歷史提交與遷移工具，也不得透過 IndexedDB、Cache API、localStorage、檔案系統、網路寫入或任何其他方式繞過隔離。
   - **實驗世界本地存檔（Owner SAVE 需求，2026-11-08；最小例外）**：只有清單中的實驗儲存模組（`web/src/experimental/save-store.ts`）可以使用 IndexedDB、`navigator.storage`（persist／estimate）與 Web Locks，且只能開啟名稱以 `antempire-experiment-` 開頭的資料庫，只保存由 Worker 在一致事件邊界產生、標示「非正式」的世界快照。此例外不開放 `saves/`、`journal/` 或 Node 正式推進流程的任何寫入，存檔動作不得改變世界的行為、時間或隨機串流。設計見 [`docs/experimental-save-system.md`](docs/experimental-save-system.md)（SAVE-0）。
   - Worker 必須使用 P0-A 模擬時間契約：不得以 `requestAnimationFrame` 或牆鐘時間差決定行為，不得因降速、暫停、縮放、拖曳或追蹤個體而跳過事件或改變同一模擬時刻的結果；播放速度只改排程。訊息順序、事件 ID、時間戳、版本、種子與參數指紋必須可追溯，同環境可重播，並與 Node 執行結果交叉比對（跨環境浮點差異要記錄並驗證誤差界，未證明不得宣稱逐位元組相同）。
-  - 所有 Worker 結果標示「非正式實驗世界／不屬於正式遊戲歷史」；不得修改 Day14、推進正式 Day15、寫入正式存檔或日誌、自動升級為正式世界、混用正式存檔與實驗初始化狀態、或讓畫面插值回寫引擎。
+  - 所有 Worker 結果標示「非正式實驗世界／不屬於正式遊戲歷史」；不得寫入正式存檔或日誌、自動升級為正式世界、載入已退役的舊版 Day14 狀態、混用正式存檔與實驗初始化狀態、或讓畫面插值回寫引擎。
   - #144（鏡頭不得改變命運）與 #145（單一權威帳本）未通過前，不得宣稱觀察不影響結果或背景帳本已正確整合。
   - 邊界由 `tests/worker-boundary.test.ts`（靜態匯入圖＋負面樣本）檢查；架構見 [`docs/experimental-worker-boundary.md`](docs/experimental-worker-boundary.md)。
-- `npm ci`、`npm run typecheck`、`npm test`、`npm run check:saves`、`npm run advance`（Node 版本固定於 `.nvmrc`，原生執行 `.ts`）。CI（`.github/workflows/ci.yml`）在每次 push 與 PR 執行。
+- `npm ci`、`npm run typecheck`、`npm test`、`npm run test:golden`、`npm run web:export`、`npm run web:build`（Node 版本固定於 `.nvmrc`，原生執行 `.ts`）。CI（`.github/workflows/ci.yml`）在每次 push 與 PR 執行。
 - 純重構必須通過 `tests/golden.test.ts`（逐位元組）；改變輸出就是規則更新，要另開規則更新 PR。
 
 ## 10. 參考文件
 
-- [`docs/gm-rules.md`](docs/gm-rules.md)：GM 規則卡（每日順序、守恆、遷移）。
-- [`docs/save-rules.md`](docs/save-rules.md)：存檔規則。
+- [`docs/gm-rules.md`](docs/gm-rules.md)：GM 規則卡（每日順序、守恆）；其中舊版 Day14／Day15 遷移部分已退役（#194）。
+- [`docs/save-rules.md`](docs/save-rules.md)：舊版正式存檔規則（已退役，#194）；新版存檔規則隨 R2 定義。
+- [`docs/owner-decisions-2026-11-12b.md`](docs/owner-decisions-2026-11-12b.md)：Day14 退役（#194）與 #193 集中裁示（#188～#192）。
 - [`docs/references.md`](docs/references.md)：文獻清單與外推限制。
 - [`docs/species-pheidole-megacephala.md`](docs/species-pheidole-megacephala.md)：主蟻群物種規格。
-- `README.md`：目前正式進度（Day14／336 小時）。
+- `README.md`：目前狀態（沒有正式世界；新版 Day0 開發／實驗中）。
 - [`docs/requirements-and-plan.md`](docs/requirements-and-plan.md)、[`docs/product-vision.md`](docs/product-vision.md)、[`docs/roadmap.md`](docs/roadmap.md)：統一需求、產品願景與 Roadmap（#36）。
