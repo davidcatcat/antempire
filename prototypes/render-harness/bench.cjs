@@ -9,6 +9,7 @@ const { chromium, devices } = require('playwright');
 const REPO = path.resolve(__dirname, '../..'), OUT = path.join(__dirname, 'screenshots'), SECS = Number(process.argv[2] || 6);
 const ALLOWED = ['/prototypes/render-harness/', '/web/data/'], TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json' };
 const LAYERS = ['ground', 'decals', 'shadows', 'propsLow', 'routes', 'antShadows', 'ants', 'propsHigh', 'lighting', 'weather', 'ui'];
+fs.mkdirSync(OUT, { recursive: true }); // git-ignored output folder: screenshots are generated, not committed
 const server = http.createServer((req, res) => {
   const u = decodeURIComponent(req.url.split('?')[0]), f = path.normalize(path.join(REPO, u));
   if (!ALLOWED.some((a) => u.startsWith(a)) || !f.startsWith(REPO) || !fs.existsSync(f) || !fs.statSync(f).isFile()) { res.writeHead(404); res.end(); return; }
