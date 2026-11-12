@@ -63,6 +63,8 @@ jobs:
         run: node tests/browser/web-v5.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/
       - name: V6 game view E2E + frame-rate measurement (desktop 1280x800; Android Pixel 7 touch; Android with 4x CPU throttling)
         run: node tests/browser/web-game.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/
+      - name: Experiment Worker runtime (P0-A2 PR 2; Node vs Chromium Worker, replay, snapshot/restore, pacing, demo page; non-official)
+        run: node tests/browser/worker-runtime.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/
       - name: Assemble the static preview (page + compiled script + data + screenshots + test results + instructions)
         if: always()
         run: |
