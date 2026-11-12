@@ -188,7 +188,8 @@ export interface CommitEntry {
   rules_version?: string | null;
   /** #11: present on the day a new approved rules version was adopted. */
   rules_adopted?: { from: string; to: string; effective_from_day: number };
-  rules_fingerprint: { engine: string; params: string };
+  /** v1 {engine, params}, or from the day a version with a v2 fingerprint was adopted, the v2 record (docs/rules-fingerprint-v2.md). */
+  rules_fingerprint: { engine: string; params: string } | { schema: 'antempire.rules-fingerprint.v2'; engine_version: string; source: string; params: string; data: string; digest: string };
   files: Record<string, string>;     // rel -> sha256 of the committed bytes
   previous: Record<string, string | null>; // rel -> sha256 of what was replaced (null = newly created)
 }

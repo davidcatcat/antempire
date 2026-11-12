@@ -23,7 +23,23 @@
   a.btn { display: inline-flex; align-items: center; text-decoration: none; }
   label { font-size: 13px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
   #badge { flex-basis: 100%; font-size: 12px; color: var(--exp-fg); background: var(--exp-bg); border-radius: 6px; padding: 3px 8px; }
-  #clock { flex: 1 1 200px; min-width: 140px; accent-color: var(--accent); }
+  #timeline { flex: 1 1 100%; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  #clock { width: 100%; min-width: 0; margin: 0; accent-color: var(--accent); }
+  /* walk marks: one per engine-recorded walk interval; a minimum drawn width keeps very short walks visible (drawing only) */
+  #marks { position: relative; height: 14px; border-radius: 4px; background: rgba(255,255,255,0.07); border: 1px solid var(--line); touch-action: none; cursor: pointer; overflow: hidden; }
+  #marks i { position: absolute; top: 2px; bottom: 2px; min-width: 2px; background: rgba(233,185,73,0.55); border-radius: 1px; pointer-events: none; }
+  .marks-legend { font-size: 11px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+  .marks-legend b { flex: none; display: inline-block; width: 14px; height: 8px; background: rgba(233,185,73,0.75); border-radius: 1px; }
+  button.touch { min-height: 44px; min-width: 44px; }
+  #summary { position: fixed; inset: 96px max(10px, env(safe-area-inset-right, 0px)) 92px max(10px, env(safe-area-inset-left, 0px)); max-width: 720px; margin-inline: auto; overflow: auto; background: rgba(24,18,12,0.96); border: 2px solid var(--accent); border-radius: 12px; padding: 10px 16px; font-size: 13px; line-height: 1.6; z-index: 3; }
+  #summary .sum-label { display: inline-block; font-size: 16px; font-weight: 700; color: #2a1d0b; background: var(--accent); border-radius: 6px; padding: 2px 10px; }
+  #summary h2 { font-size: 15px; margin: 8px 0 4px; } #summary h3 { font-size: 14px; margin: 10px 0 4px; }
+  #summary table { border-collapse: collapse; width: 100%; font-size: 12px; } #summary th, #summary td { text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--line); }
+  #summary details { margin: 2px 0; } #summary summary { cursor: pointer; min-height: 32px; display: list-item; } #summary ul { margin: 2px 0 6px; padding-left: 18px; overflow-wrap: anywhere; }
+  #summary .muted { color: var(--muted); }
+  body.summary-mode #scene { visibility: hidden; }
+  body.summary-mode .play-only, body.summary-mode #banner, body.summary-mode #toast, body.summary-mode #weather, body.summary-mode #counts, body.summary-mode #card { display: none !important; }
+  @media (pointer: coarse) { #clock { min-height: 44px; } #marks { height: 22px; } }
   #time { font-size: 13px; font-variant-numeric: tabular-nums; flex-basis: 100%; }
   .chip { position: fixed; right: max(10px, env(safe-area-inset-right, 0px)); background: var(--bar); border-radius: 8px; padding: 4px 8px; font-size: 12px; z-index: 2; }
   #weather { top: 108px; } #counts { top: 136px; }
@@ -55,17 +71,24 @@
 <div id="banner" hidden></div>
 <div id="toast" hidden></div>
 <div id="about" hidden></div>
+<div id="summary" hidden role="region" aria-label="日摘要（非連續播放）"></div>
 <div id="bottom" class="bar">
-  <button id="play" class="primary" type="button" aria-pressed="true">暫停</button>
+  <button id="play" class="primary play-only" type="button" aria-pressed="true">暫停</button>
+  <button id="nextAct" class="touch play-only" type="button" title="跳到下一段引擎紀錄的行走開始前（快捷鍵 N）" aria-keyshortcuts="N">下一段活動 ⏭</button>
   <button id="prevDay" type="button" aria-label="前一日">◀ 日</button>
   <button id="nextDay" type="button" aria-label="後一日">日 ▶</button>
-  <select id="speed" aria-label="播放速度"></select>
-  <label><input type="checkbox" id="skip" checked>快轉無人行走的時段</label>
-  <label><input type="checkbox" id="labels">標籤</label>
-  <button id="fit" type="button">全景</button>
-  <input type="range" id="clock" min="0" max="360" step="any" value="0" aria-label="活動時段內的時間（分鐘）">
-  <div id="time" aria-live="off"></div>
-  <span class="legend-tag">位置＝引擎紀錄點與其間的顯示插值；場景為示意；螞蟻放大顯示</span>
+  <button id="modeBtn" class="touch" type="button" aria-pressed="false" title="切換：連續播放／日摘要（非連續播放）">日摘要</button>
+  <select id="speed" class="play-only" aria-label="播放速度"></select>
+  <label class="play-only"><input type="checkbox" id="skip" checked>快轉無人行走的時段</label>
+  <label class="play-only"><input type="checkbox" id="labels">標籤</label>
+  <button id="fit" class="play-only" type="button">全景</button>
+  <div id="timeline" class="play-only">
+    <input type="range" id="clock" min="0" max="360" step="any" value="0" aria-label="活動時段內的時間（分鐘）">
+    <div id="marks" role="img" aria-label="引擎紀錄的行走時段"></div>
+    <div class="marks-legend"><b></b><span>引擎紀錄的行走時段（worker_activity）；點選或拖曳可跳轉，不改變紀錄</span></div>
+  </div>
+  <div id="time" class="play-only" aria-live="off"></div>
+  <span class="legend-tag play-only">位置＝引擎紀錄點與其間的顯示插值；場景為示意；螞蟻放大顯示</span>
 </div>
 <script type="module" src="dist/game.js"></script>
 </body>

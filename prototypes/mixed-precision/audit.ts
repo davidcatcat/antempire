@@ -423,3 +423,27 @@ function replay(initial: WorldState, records: LedgerRecord[], final: WorldState,
   for (const id of stk.keys()) if (!fStk.has(id)) v.push(`stock ${id}: vanished without a record`);
   for (const id of final.retired) if (!retired.has(id)) v.push(`id ${id}: retired without a death record`);
 }
+
+// ---------------------------------------------------------------- life-time continuity (WP5b, docs/od1b-cohort-life-time.md)
+/**
+ * Owner P0 (2026-11): an organism's life time continues while it is pooled. For every known ID that exists (as an
+ * individual or on a cohort roster) both in `before` and in `after`, a numeric `age_d` must have advanced by exactly the
+ * elapsed days. The PR #126 cohort keeps a frozen physiology snapshot, so this check flags it; the life-time cohort
+ * (lifetime.ts) has its own, stronger audit (lifetime-audit.ts). Returns violations (empty = time continued).
+ */
+export function auditLifeTimeContinuity(before: WorldState, after: WorldState): string[] {
+  const ages = (st: WorldState) => {
+    const m = new Map<string, unknown>();
+    for (const i of st.individuals) m.set(i.id, i.physio.age_d);
+    for (const c of st.cohorts) for (const r of c.roster) m.set(r.id, r.physio.age_d);
+    return m;
+  };
+  const a = ages(before), b = ages(after), elapsed = after.day - before.day, v: string[] = [];
+  for (const [id, x] of [...a].sort(([p], [q]) => (p < q ? -1 : p > q ? 1 : 0))) {
+    if (!b.has(id) || typeof x !== 'number') continue;
+    const y = b.get(id);
+    if (typeof y !== 'number') v.push(`FROZEN_TIME ${id}: age_d ${x} became ${String(y)} (not a number)`);
+    else if (y !== x + elapsed) v.push(`FROZEN_TIME ${id}: age_d ${x} -> ${y} over ${elapsed} day(s); expected ${x + elapsed}`);
+  }
+  return v;
+}

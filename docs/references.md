@@ -750,6 +750,60 @@ R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-
 - R146（Asfiya et al. 2016）2026-11-08 以 pdftotext 核對：**沒有**步行速度資料。
 - R385（Burd & Aranwela 2003）2026-11-08 重查：Springer 需登入，仍只讀到搜尋片段（1 m 路段錄影、相遇使速度下降但效果小於體型與負重）；數值仍不採用。
 
+## 2026-11-08 WP5b 群組中的生命時間：年齡／齡期結構族群模型（R640–R652；`docs/od1b-cohort-life-time.md`）
+
+> 編號從 R640 起，避開其他工作包可能使用的編號。全部是**數學／一般方法**，不提供任何本種或背景物種的參數。「Crossref 核對」＝本次以 Crossref API 核對作者、年份、卷期頁與 DOI；**沒有讀全文**，方法內容是教科書層級的一般知識，引用時不得宣稱讀過原文細節。他種研究標**非本種**。
+
+| ID | 文獻 | 閱讀程度 | 用途 | 不可外推之處 |
+|---|---|---|---|---|
+| R640 | Leslie PH (1945) On the use of matrices in certain population mathematics. *Biometrika* 33(3):183–212. DOI 10.1093/biomet/33.3.183 | 書目（Crossref 核對） | 年齡結構矩陣（固定步長、只有年齡）；說明為何不足以表達溫度改變齡期長度 | 方法；無數值 |
+| R641 | Lefkovitch LP (1965) The study of population growth in organisms grouped by stages. *Biometrics* 21(1):1–18. DOI 10.2307/2528348 | 書目（Crossref 核對） | 齡期結構矩陣；寬年齡格的類別轉移（`cohort-coarse`） | 方法；幾何停留時間使齡期長度變異過大 |
+| R642 | McKendrick AG (1926) Applications of mathematics to medical problems. *Proc. Edinburgh Math. Soc.* 44:98–130. DOI 10.1017/s0013091500034428（Crossref 的出版年欄位為 1925） | 書目（Crossref 核對） | 連續年齡結構偏微分方程；`mean-field` 是其離散決定性投影的類比 | 方法；決定性 |
+| R643 | von Foerster H (1959) Some remarks on changing populations. In: Stohlman F (ed.) *The Kinetics of Cellular Proliferation*. Grune & Stratton, pp. 382–407 | **書目未核對**（無 DOI；依一般引用格式） | 同 R642（McKendrick–von Foerster 方程） | 同上 |
+| R644 | Caswell H (2001) *Matrix Population Models: Construction, Analysis, and Interpretation*, 2nd ed. Sinauer | 書目（未核對 ISBN） | 矩陣族群模型的標準教科書 | 方法 |
+| R645 | Manetsch TJ (1976) Time-varying distributed delays and their use in aggregative models of large systems. *IEEE Trans. Syst. Man Cybern.* SMC-6(8):547–553. DOI 10.1109/tsmc.1976.4309549 | 書目（Crossref 核對） | Erlang（k 階）分布延遲；時變發育速率 | 方法；k 需逐物種估計 |
+| R646 | Vansickle J (1977) Attrition in distributed delay models. *IEEE Trans. Syst. Man Cybern.* 7(9):635–638. DOI 10.1109/tsmc.1977.4309800 | 書目（Crossref 核對） | 分布延遲中的死亡（耗損） | 方法 |
+| R647 | Plant RE, Wilson LT (1986) Models for age structured populations with distributed maturation rates. *J. Math. Biol.* 23:247–262. DOI 10.1007/bf00276960 | 書目（Crossref 核對） | 成熟速率有個體差異的年齡結構模型；與 Erlang 延遲的關係 | 方法 |
+| R648 | Goudriaan J (1973) Dispersion in simulation models of population growth and salt movement in the soil. *Neth. J. Agric. Sci.* 21:269–281. DOI 10.18174/njas.v21i4.17242 | 書目（Crossref 核對） | boxcar train（以子期控制齡期長度離散度） | 方法 |
+| R649 | de Roos AM (1988) Numerical methods for structured population models: the escalator boxcar train. *Numer. Methods Partial Differ. Equ.* 4:173–195. DOI 10.1002/num.1690040303；de Roos AM, Diekmann O, Metz JAJ (1992) *Am. Nat.* 139:123–147. DOI 10.1086/285316 | 書目（Crossref 核對） | 生理結構族群的 cohort 數值方法（本原型未實作，只作對照） | 方法；1992 的應用對象是 *Daphnia*（**非本種**） |
+| R650 | Campbell A, Frazer BD, Gilbert N, Gutierrez AP, Mackauer M (1974) Temperature requirements of some aphids and their parasites. *J. Appl. Ecol.* 11(2):431–438. DOI 10.2307/2402197 | 書目（Crossref 核對；頁碼範圍未核對） | 線性度日、發育門檻的經典用法 | **非本種**（蚜蟲與寄生蜂）；不得作任何背景物種的數值 |
+| R651 | Trudgill DL, Honek A, Li D, van Straalen NM (2005) Thermal time – concepts and utility. *Ann. Appl. Biol.* 146:1–14. DOI 10.1111/j.1744-7348.2005.04088.x | 書目（Crossref 核對） | 度日（thermal time）概念與適用限制的綜述 | 綜述；線性近似在高溫失效 |
+| R652 | Kemeny JG, Snell JL (1960) *Finite Markov Chains*. Van Nostrand | 書目（依 Crossref 書評條目核對書名、作者、年份） | 馬可夫鏈的可合併性（lumpability）：狀態相同的成員可以只記計數 | 數學；本原型的可合併性是依構造成立並以數值驗證，不是引用其定理證明 |
+
+## 2026-11-08 CHEM-4 警戒與 CHC 接觸辨識（R720–R721；Issue #135，`docs/chem4-alarm-chc-literature.md`）
+
+> 編號從 R720 起，避開 CHEM-0（R700–R701）。只新增，不改寫既有行。閱讀程度如實標記。
+
+| ID | 文獻 | 閱讀程度 | 物種、地點 | 支持的內容 | 不可外推之處 |
+|---|---|---|---|---|---|
+| R720 | Chiu Y-C, Wang C-C, Nai Y-S, Peng M-H, Hsu J, Neoh K-B (2026) Genetics, cuticular hydrocarbon profiles, and bacterial endosymbionts are associated with the nestmate recognition in the invasive African big-headed ant, *Pheidole megacephala*, in Taiwan. *Myrmecological News* 36:59–72. DOI 10.25849/myrmecol.news_036:059（CC BY 4.0） | 全文文字（期刊 PDF）；圖與附表 S1–S4 未看 | **本種，臺中市**都市 8 群、森林 6 群（取樣點相距 ≥ 1 km），實驗室成對試驗 | 91 組群對各 5 次（5 cm 皿、5 分鐘），攻擊中位數 2.6～3（1–4 分）；作者推論臺中無超級群落；群平均 CHC 65 峰（C25–C40）；二甲基烷距離最能解釋攻擊（r² 0.40）；F_ST > 0.25 組較具攻擊性；攻擊與地理距離無關 | 50 隻合併萃取＝群平均，無個體變異；相關分析，無操作試驗；正文無同群對照；群間 ≥ 1 km，不代表花園尺度鄰巢；中位數不是「異巢必攻擊」；峰值不是本花園 profile |
+| R721 | Dejean A, Kenne M, Moreau CS (2007) Predatory abilities favour the success of the invasive ant *Pheidole megacephala* in an introduced area. *J. Appl. Entomol.* 131(9–10):625–629. DOI 10.1111/j.1439-0418.2007.01223.x | 全文文字（作者網站 PDF）；圖未看 | **本種**入侵族群，墨西哥 Quintana Roo（Puerto Morelos 附近海岸） | 偵察蟻未接觸白蟻即回巢做長距招募；空白蟻巢片（觸角探觸後）即可引發招募；大型白蟻兵蟻由 2～4 隻共同搬回 | 沒有短距警戒資料；入侵地海岸生境；招募數不可搬用 |
+
+**既有編號的附註**（新增，不改寫原有行）：
+- R98／R107（Dejean et al. 2007 *C R Biol*）2026-11-08 再讀全文文字：「警戒費洛蒙」只見於摘要與作者假設，**沒有化學分析**；方法句寫「第二隻工蟻從腹部末端釋放」，依上下文應為第一隻（原文筆誤，照錄）。
+- R141（Liu et al. 2022）：「相距 > 100 m 的群會攻擊」是正文一句初步結果，沒有方法或數據（2026-11-08 重讀）。
+- R113（Fournier et al. 2009）：Unpaywall 列的 Wiley PDF 回 403、ULB 典藏無檔案，仍**只讀摘要**。
+- R102（Saund & Friedman 2023）2026-11-08：**全文已讀**（通訊作者個人網站自存的出版社排版版 PDF，CC BY）。上方「僅查核摘要」各列以此為準。確認：式 1～4 與圖 3（`A(ph−B)^C` 冪次放大＋兩個 logistic 之積）、四條假設、參數任意單位且可互相權衡、無擬合品質指標、未與雙費洛蒙模型正式比較、§3 明言**不處理實驗 3**。只表示資料不足以區分單／雙費洛蒙，**不表示雙費洛蒙被推翻**。詳見 `docs/chem-evidence-saund-friedman-2023.md`。
+- R133（Vázquez, Koehler & Pereira 2020）2026-11-08：期刊、PMC、Zenodo、Figshare、Dryad、OSF、DataCite 與作者／學校頁面都**沒有**原始錄影或補充資料；論文只給「轉彎＝朝向或離開中線的左右修正動作」的文字定義，沒有角度或側移門檻。轉彎數的操作定義不完整。給作者的請求信草稿**未寄出**（對外聯絡需 Owner 授權），見 `docs/research-data-requests-2026-11.md`。
+- R720（Chiu et al. 2026）2026-11-08：期刊頁標示有附錄，但本環境看到的頁面沒有附錄下載連結，其他公開典藏也沒有；**附表 S2 未取得**，不得重建或推測其數值。見 `docs/research-data-requests-2026-11.md`。
+
+## 2026-11-08 CHEM-0 化學生態證據稽核（R700–R701；#131，`docs/chemical-ecology-engine.md`、`docs/research-pheromone-models-2026-11.md` §11）
+
+> 新編號從 R700 起，避開其他進行中工作包。閱讀程度只寫本次實際讀到的；他種只作候選機制，不提供本種數值。
+
+| ID | 文獻 | 閱讀程度 | 物種 | 支持的內容 | 不可外推之處 |
+|---|---|---|---|---|---|
+| R700 | Gellert HR, Halley DC, Sieb ZJ, Smith JC, Pask GM (2022) Microstructures at the distal tip of ant chemosensory sensilla. *Scientific Reports* 12:19328. DOI 10.1038/s41598-022-21507-7 | 開放 PDF 全文文字（pdftotext）；SEM 圖未看 | **非本種**：*Camponotus pennsylvanicus*、*Harpegnathos saltator*，另 6 種形態調查（不含 *Pheidole*） | 錐形感覺毛集中在觸角末端；作者認為 CHC 主要經接觸或近接觸偵測（B，形態學間接證據） | 作者明言仍不清楚是否**必須**接觸；不是行為實驗；沒有距離數值 |
+| R701 | Boissard E, Degond P, Motsch S (2013) Trail formation based on directed pheromone deposition. *J Math Biol* 66:1267–1301. DOI 10.1007/s00285-012-0529-6（讀的是 arXiv 1108.3495v1 預印本） | 預印本全文文字 | 數學模型；參數盡量取自 *Lasius niger*（**非本種**） | 個體沉積有方向的費洛蒙片段、路徑湧現；模型忽略擴散（C，建模框架） | 本種參數；期刊版可能與預印本不同 |
+
+**既有編號的附註**（新增，不改寫原有行）：
+- R21／R96／R152（Dussutour et al. 2009 JEB）2026-11-08 再以網頁擷取工具讀期刊頁（含 Discussion）：確認作者原句「未鑑定化學物質，不能提供使用兩種費洛蒙的決定性證據」、實驗 3 流量數字、λ 的 R²（0.79、0.65）。仍未讀 PDF、未看圖。
+- R102（Saund & Friedman 2023）2026-11-08：AntWiki 開放 PDF（#130 網址）與 ScienceDirect 均回 403，**仍只讀到摘要**。#130 轉述正文 §3 說明未處理 Experiment 3，Claude 未能自行核對。
+- R98／R107（Dejean et al. 2007）2026-11-08 以開放 PDF（pdftotext）重讀：短距招募 4 群 50 例、首隻 36.1±2.3 s 對第二隻 6.8±0.4 s、「至少 10 cm」、第二隻觸角碰首隻腹部末端（36 例，P<0.001）；「警戒費洛蒙」是作者推論，沒有化學分析。
+- R101／R110（Fournier et al. 2012）2026-11-08 以開放 PDF 讀全文文字：64 巢、8 族群、4 個超級群落；var. 1 攻擊與化學距離無關（Mantel r＝−0.054）。
+- R113（Fournier et al. 2009）2026-11-08：Wiley 全文 403，**只讀摘要**。
+- R36（van Oudenhove et al. 2012）2026-11-08：HAL 與 hdl 位置無法取得，**只讀摘要**（PubMed）；非本種。
+
 ## 2026-11-08 臺中花園植物、半翅目與寄主關係（R780–R786；Issue #149，`docs/research-taichung-plants-hemiptera.md`）
 
 > 研究文件，未改規則或世界檔。本次**沒有一篇讀到全文**；閱讀程度如實標記。分類欄位仍為 `unknown`，不從地點名稱推斷。
@@ -763,3 +817,18 @@ R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-
 | R784 | Navarrete B, McAuslane H, Deyrup M, Peña JE (2013) Ants (Hymenoptera: Formicidae) associated with *Diaphorina citri* (Hemiptera: Liviidae) and their role in its biological control. *Florida Entomologist* 96(2):590–597. DOI 10.1653/024.096.0225 | 摘要（經搜尋工具與 AGRIS；BioOne 頁面未能讀取） | **本種**在佛州月橘上與柑橘木蝨相伴，排除螞蟻後 *Tamarixia radiata* 寄生率上升 | **非臺灣**；*Brachymyrmex* 種名在各來源不一致 |
 | R785 | Win AT, Kinoshita T, Tsuji K (2018) The presence of an alternative food source changes the tending behavior of the big-headed ant, *Pheidole megacephala*, on *Dysmicoccus brevipes*. *Applied Entomology and Zoology* 53:253–258. DOI 10.1007/s13355-018-0553-0 | 摘要（ScaleNet 摘錄） | **本種**有替代糖或蛋白時照護頻率下降；未見攻擊或捕食粉介殼蟲 | 研究地點頁面未載明；實驗條件，非花園 |
 | R786 | Pacific Pests, Pathogens & Weeds fact sheet: Citrus aphids（lucidcentral.org） | 說明頁 | *Toxoptera aurantii* 寄主含柑橘、朱槿、茶等 | **非臺灣**、非同儕審查；兩種橘蚜的俗名在不同來源互相顛倒 |
+
+## 2026-11-08 P0-A2 24 小時個體行為（R760–R763；`docs/p0a2-24h-behaviour-design.md`，Issue #156）
+
+> 編號從 R760 起，避開其他進行中工作包。閱讀程度如實標記；他種只作候選機制（非本種）。
+
+| ID | 文獻 | 閱讀程度 | 物種 | 支持的內容 | 不可外推之處 |
+|---|---|---|---|---|---|
+| R760 | Leong CM, Tsang TPN, Guénard B (2022) Testing the reliability and ecological implications of ramping rates in the measurement of Critical Thermal maximum. *PLoS ONE* 17(3):e0265361. DOI 10.1371/journal.pone.0265361（PMC8920270） | 全文（Europe PMC XML）；圖 4 的 CTmax、FTmax 絕對值**未讀數**；補充資料未讀 | 27 種，**含本種**（香港、澳門） | 升溫 0.2／0.5／1.0°C/min 得到不同 CTmax；1°C/min 最接近野外最高覓食地表溫度（FTmax）。本種 \|FTmax−CTmax\| 約 7.7／6.3／3°C（表 2 第一區塊）。FTmax 來自 2015～2018 年 10:00～16:00 的香腸餌（>11 817 個），紅外線量地表溫度 | 表 2 第二區塊（1% top FT）的列序與第一區塊不一致，疑似排版錯位，數值只引用第一區塊並待核；餌只在白天，**沒有日夜資料**；FTmax 受競爭影響，不是生理門檻 |
+| R761 | Kaspari M, Clay NA, Lucas J, Yanoviak SP, Kay A (2015) Thermal adaptation generates a diversity of thermal limits in a rainforest ant community. *Global Change Biology* 21:1092–1102. DOI 10.1111/gcb.12750 | 摘要（Europe PMC） | **非本種**：巴拿馬 88 種 | 同一森林內曬到太陽的表面比落葉層高約 8°C；樹冠種 CTmax 比林下高 3.5～5°C；小型螞蟻 <10 s 達熱平衡 → 個體應讀微地點地表溫度 | 熱帶雨林；無本種；數值不用 |
+| R762 | Bujan J, Kaspari M (2017) Nutrition modifies critical thermal maximum of a dominant canopy ant. *J. Insect Physiol.* 102:1–6. DOI 10.1016/j.jinsphys.2017.08.007 | 摘要（Europe PMC） | **非本種**：*Azteca chartifex* | 只給水 10 h 後兩組差異消失；10% 蔗糖任食使 CTmax 升高約 5°C → 個體營養狀態影響熱耐受的候選機制 | 樹棲種；短期效應；數值不得套用本種 |
+| R763 | Martin RA, Chick LD, Yilmaz AR, Diamond SE (2019) Evolution, not transgenerational plasticity, explains the adaptive divergence of acorn ant thermal tolerance across an urban-rural temperature cline. *Evolutionary Applications*（卷頁未核）. DOI 10.1111/eva.12826（PMC6708418） | 摘要（Europe PMC） | **非本種**：*Temnothorax curvispinosus* | 都市族群耐熱較高、耐寒較低，以演化差異為主 | 與 R145 本種都市 CTmax 較低（1 群）方向相反 → 族群間差異的方向不可假設；不提供本種數值 |
+
+**既有編號的補充**（新增，不改寫原有行）：
+- R145（Chen & Neoh 2023）2026-11-08 再讀正文（Frontiers 網頁全文，圖 2 未重新量）：CTmax 方法為 25°C 起、每 2 分升 1°C 至 35°C、之後每 5 分升 1°C（約 0.5 → 0.2°C/min，屬 R760 所稱的慢速升溫）；以翻身後無法翻正判定；未量 CTmin。原文**沒有**本種日夜活動的統計檢定，第四角分析是性狀對環境；都市「人類廚餘時段」本次讀到約 11～18 時（舊筆記記 09～18 時，待核）。森林 CTmax 的「24 隻」是否為每群數量，原文表述不明確。
+- R146（Asfiya et al. 2016）2026-11-08 以 pdftotext 核對：餌站調查為上午 07:30～10:30 與下午 12:30～15:30，沒有夜間取樣。

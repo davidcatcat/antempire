@@ -219,6 +219,30 @@ V6 的共同原則：不為動畫流暢度修改生態決策或物理結果；�
 
 **仍待 Owner 決定**（不在 22 項內）：(23) PR #142 網格時刻之間開始的 agent 是否在自己的開始時刻決策；(24) PR #143 Pixel 7 4× 節流 29.1 fps 是否可接受；(25) PR #143 ≥1000 隻是否改用 WebGL／預先旋轉圖集。
 
+## 3d. P0-A2（Owner 2026-11-08 決策 28，Issue #156）
+
+24 小時個體行為，列為 P0。設計見 [`docs/p0a2-24h-behaviour-design.md`](p0a2-24h-behaviour-design.md)。只限非正式 Day0；不改 Day14、不推進 Day15、不建正式存檔；不得把本種固定為日行性或夜行性。
+
+| 階段 | 內容 | 狀態 |
+|---|---|---|
+| 一 | 文獻（R145 Chen & Neoh 2023 優先；R760～R763）與設計 | 本 PR |
+| 二 | 隔離原型：P0-A 世界事件時鐘＋日夜、逐時溫濕度輸入、個體生理、覓食／休息、巢內工作、育幼、局部資訊；活動時間分布由個體規則湧現 | 未開始 |
+| 三 | V6-2 Web Worker 持續運算：播放／暫停／速度／追蹤；同種子可重播；畫面不改命運；FPS 不改因果 | 未開始 |
+
+依賴：**V6-2a ← P0-A2 第二階段；V6-2b ← P0-A2 第三階段**；另依賴 #144（鏡頭不得改變命運）、#145（單一權威帳本）；移動時間之後由 #157（二維轉向）與 #158（出口與容量）取代。
+## 3e. SAVE：非正式實驗世界存檔（Owner 2026-11-08，P0）
+
+> 只保存非正式實驗世界；正式 Day14、`saves/`、`journal/` 與 Node 正式推進完全隔離。設計見 [`experimental-save-system.md`](experimental-save-system.md)；例外範圍見 CLAUDE.md §9 與 [`experimental-worker-boundary.md`](experimental-worker-boundary.md) §4b。
+
+| 階段 | 內容 | 依賴 | 狀態 |
+|---|---|---|---|
+| SAVE-0 | 快照信封、必須保存的內容、原子寫入與回復、遷移、自動存檔、多分頁、選單、驗收 A～E；schema 與契約測試 | #39 例外（3080e24） | 進行中 |
+| SAVE-1 | `web/src/experimental/save-store.ts`：IndexedDB 原子寫入、兩份以上回復點、遷移登錄、損壞偵測、型別化錯誤、Web Locks、匯出入、清單；以合成 payload 在 Chromium 實測 | SAVE-0 | 已實作（待審；未與 Worker 整合） |
+| SAVE-2 | Worker 在一致事件邊界產生快照與還原；驗收 A（48 h 連續 vs. 24 h＋存檔＋重啟＋24 h）、B、E | Worker runtime（PR 2）、SAVE-1 | 未開始 |
+| SAVE-3 | 選單（繼續／新遊戲／讀取／管理）、存檔狀態 UI、自動存檔接線、驗收 C／E 畫面部分 | V6-2 畫面整合（PR 3）、SAVE-2 | 未開始 |
+
+SAVE-1 只用合成 payload 測試，**不代表**已與 Worker 整合；存檔不得改變世界行為、時間或隨機串流（驗收 E）。
+
 ## 4. Issue #49 的處理狀態（2026-11-03）
 | 項目 | PR | 狀態 | 尚未完成 |
 |---|---|---|---|
