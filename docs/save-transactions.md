@@ -9,7 +9,7 @@
 | `saves/world-state.json` | 取代 | 世界與引擎狀態（`sim_engine_v2`） |
 | `saves/main.json` | 取代 | 蟻群主存檔；`simulation.latest_journal` 指向下列日誌 |
 | `journal/v2-day-NNNN.md` | **新建（不可覆寫）** | 引擎輸出的完整事件紀錄（每個事件一行）＋自動整理的當日摘要與守恆檢查結果 |
-| `saves/commit-log.json` | 取代／新建 | 已確認版本：每天四個檔案的 sha256、被取代的上一版 sha256、引擎版本、規則指紋 |
+| `saves/commit-log.json` | 取代／新建 | 已確認版本：每天四個檔案的 sha256、被取代的上一版 sha256、引擎版本、規則指紋（v1 `{engine, params}`；採用 v2 之後為 v2 紀錄） |
 
 四個檔案在同一筆交易中提交；不會出現「存檔已是 Day15、日誌卻不存在」而沒有錯誤的情況。
 
@@ -101,6 +101,7 @@
 
   一般推進遇到新版程式時，錯誤訊息會列出正確的 `--adopt-rules` 指令，但**不會自動切換**。
 - **已完成的日不會被新規則改寫**：切換只影響第 N 天以後；舊日的日誌與 commit log 都保留當時的版本與指紋。
+- **規則指紋 v2（Owner 決定 52）**：登錄項目可帶 `fingerprint_v2`（正式流程原始碼匯入閉包＋參數＋輸入資料的內容雜湊，LF 正規化，含 `schema` 版本）。存檔依凍結紀錄自己的格式比對（無 `schema`＝v1）；v2 只能隨下一個登錄版本以 `--adopt-rules` 從第 N 天起採用，之前各日的紀錄保留 v1。詳見 [`rules-fingerprint-v2.md`](rules-fingerprint-v2.md)。
 - **未做的事（待 Owner 決定）**：
   - 是否為每個核准版本打 git tag（`rules-v12` 等），方便取回舊版程式重播；
   - 存檔格式需要遷移時（例如新欄位），登錄項目的 `state_migration` 欄位目前都是 null，因為到 v12 為止的變更都不需要改寫既有欄位。

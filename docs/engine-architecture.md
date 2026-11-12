@@ -108,6 +108,6 @@ F03、F04 的陌生蟻群目前在 `world/xitun-garden.json#background_colonies`
 | `--root <dir>` | 對其他目錄（例如臨時副本）的 `saves/`、`journal/`、`data/` 操作；引擎與參數一律來自本 checkout |
 | `--summary-out <file>` | 另存當日事件摘要（Markdown） |
 
-- Day14→Day15 時先執行一次性遷移（`engine/migration.ts`），並把規則指紋凍結進 `sim_engine_v2.rules_fingerprint`；之後引擎或參數與指紋不符就拒絕推進。
+- Day14→Day15 時先執行一次性遷移（`engine/migration.ts`），並把規則指紋凍結進 `sim_engine_v2.rules_fingerprint`；之後引擎或參數與指紋不符就拒絕推進。指紋有兩種格式：v1（`engine/*.ts`＋參數檔）與 v2（正式流程匯入閉包＋參數＋輸入資料的內容雜湊，見 [`rules-fingerprint-v2.md`](rules-fingerprint-v2.md)）；存檔依凍結時的格式比對。
 - 寫入前檢查：日序、工蟻與幼體人數、`期初+採入−消耗−產卵−溢出=期末` 的糖與蛋白、嗉囊糖不超過總帳、殘骸批次守恆、死亡工蟻不復活、歷史紀錄不刪除、日誌與存檔描述同一天且列出全部事件、新日誌尚不存在、存檔是 commit log 的最後確認版本。
 - 測試：`tests/advance.test.ts`（臨時副本 Day14→Day20）、`tests/save-transaction.test.ts`（故障注入與復原、並行、重複推進）、`tests/history-integrity.test.ts`（Day1～14 歷史檔案雜湊）。

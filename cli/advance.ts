@@ -21,19 +21,20 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { loadBundle, readJson, REPO_ROOT } from './lib/load.ts';
 import { rulesFingerprint } from './lib/fingerprint.ts';
+import { fingerprintV2, isFingerprintV2, v2Record } from './lib/fingerprint-v2.ts';
 import { projectDaily, DEFAULT_REFS } from './lib/project-day.ts';
 import { checkJournal, checkSaves, checkTransition, type Check } from './lib/conservation.ts';
 import { daySummaryMarkdown } from './lib/day-summary.ts';
 import { COMMIT_LOG_REL, InjectedCrash, TransactionError, acquireLock, commitConsistency, commitDay, ioFromEnv, nowFromEnv, leftoverTempFiles, nextCommitLog, nodeIo, pendingTransactions, readCommitLog, readLock, recoverTransactions, sha256, type Io } from './lib/save-transaction.ts';
 import { ENGINE_VERSION, num } from '../engine/index.ts';
-import { byFingerprint, planAdoption, readRegistry, RulesError, type Fingerprint, type Registry } from './lib/rules-registry.ts';
+import { byFingerprint, byFrozen, planAdoption, readRegistry, RulesError, type CurrentRules, type FrozenFingerprint, type Registry } from './lib/rules-registry.ts';
 
 export interface AdvanceOptions {
   root: string; confirm: boolean; expectDay?: number; now?: string; summaryOut?: string; io?: Io;
   /** #11: switch the frozen rules to this registered version (Owner request only). */
   adoptRules?: string;
   /** Tests on temporary copies only: replace the checkout's fingerprint / the registry (refused for the real saves). */
-  testOverrides?: { fingerprint?: Fingerprint; registry?: Registry };
+  testOverrides?: { fingerprint?: CurrentRules; registry?: Registry };
 }
 export interface AdvanceResult { written: boolean; day: number; date: string; checks: Check[]; summary: string; journal: string; files: string[]; reason?: string }
 
@@ -49,6 +50,9 @@ function assertNoInterruptedState(root: string, io: Io, allowOwnLock: boolean) {
   if (!allowOwnLock) { const lock = readLock(root, io); if (lock) throw new TransactionError(lock.stale ? 'STALE_LOCK' : 'LOCKED', lock.stale ? `stale advance lock (pid ${lock.pid}); run: npm run advance -- --recover` : `another advance is running (pid ${lock.pid}); refusing`); }
 }
 
+/** The commit-log form of the fingerprint the new day was run under (v1 {engine, params} or the v2 record). */
+const frozenRecord = (frozen: unknown, fp: CurrentRules) => isFingerprintV2(frozen) ? v2Record(frozen) : { engine: fp.engine, params: fp.params };
+
 export function advance(opts: AdvanceOptions): AdvanceResult {
   const root = path.resolve(opts.root), io = opts.io ?? nodeIo, now = opts.now ?? new Date().toISOString();
   if (opts.confirm && !Number.isInteger(opts.expectDay)) throw Error('--confirm-advance requires --day <N> (the game day you intend to create), so a repeated command cannot advance twice');
@@ -62,17 +66,20 @@ export function advance(opts: AdvanceOptions): AdvanceResult {
     const consistency = commitConsistency(root, main, io).filter((c) => !c.ok && c.level === 'error');
     if (consistency.length) throw new TransactionError('CONFLICT', 'saves are not the last committed version: ' + consistency.map((c) => c.name).join('; '));
     if (opts.testOverrides && root === path.resolve(REPO_ROOT)) throw Error('test overrides are only allowed on a temporary copy (--root)');
-    const bundle = loadBundle(), fp = opts.testOverrides?.fingerprint ?? rulesFingerprint(), registry = opts.testOverrides?.registry ?? readRegistry();
-    const frozen = world.sim_engine_v2?.rules_fingerprint as Fingerprint | undefined;
+    // The running checkout is identified by both fingerprints: v1 (engine/*.ts + parameters) and v2 (content hash of
+    // the official pipeline's source, parameters and input data; docs/rules-fingerprint-v2.md). A frozen save is
+    // compared in its own format, so saves frozen with v1 keep verifying with v1.
+    const bundle = loadBundle(), fp: CurrentRules = opts.testOverrides?.fingerprint ?? { ...rulesFingerprint(), v2: v2Record(fingerprintV2()) }, registry = opts.testOverrides?.registry ?? readRegistry();
+    const frozen = world.sim_engine_v2?.rules_fingerprint as FrozenFingerprint | undefined;
     const adoption = opts.adoptRules ? planAdoption(registry, frozen, opts.adoptRules, fp) : undefined;
-    const currentVersion = byFingerprint(registry, fp), frozenVersion = frozen ? byFingerprint(registry, frozen) : undefined;
+    const currentVersion = byFingerprint(registry, fp), frozenVersion = frozen ? byFrozen(registry, frozen) : undefined;
     const frozenHint = currentVersion && frozenVersion && currentVersion.previous === frozenVersion.rules_version ? `The running engine is the next approved version ${currentVersion.rules_version} (frozen: ${frozenVersion.rules_version}); to switch, the Owner must request: npm run advance -- --adopt-rules ${currentVersion.rules_version} --confirm-advance --day N` : '';
     const before = { main: structuredClone(main), world: structuredClone(world) };
     const beforeChecks = checkSaves(main, world).filter((c) => !c.ok && c.level === 'error');
     if (beforeChecks.length) throw Error('Current saves fail conservation checks; refusing to advance: ' + beforeChecks.map((c) => c.name).join('; '));
     const climatology = world.sim_engine_v2 ? null : readJson('data/taichung-climatology-1991-2020.json', root);
     const expectedStart = world.sim_engine_v2 ? { sugar: world.sim_engine_v2.colony.sugar, protein: world.sim_engine_v2.colony.protein } : { sugar: num(bundle.world, 'day15_migration.starting_sugar'), protein: num(bundle.world, 'day15_migration.starting_protein') };
-    const run = projectDaily(main, world, climatology, bundle, fp, DEFAULT_REFS, now, { rulesVersion: currentVersion?.rules_version ?? null, adopt: adoption, frozenHint });
+    const run = projectDaily(main, world, climatology, bundle, fp, DEFAULT_REFS, now, { rulesVersion: currentVersion?.rules_version ?? null, adopt: adoption, frozenHint, freezeFormat: currentVersion?.fingerprint_v2 ? 'v2' : 'v1' });
     const day = run.report.day, journalRel: string = run.main.simulation.latest_journal;
     const checks = [...checkSaves(run.main, run.world), ...checkTransition(before, { main: run.main, world: run.world }, run.report, expectedStart)];
     const journal = run.journal + '\n' + daySummaryMarkdown(run.report, checks, { embedded: true });
@@ -89,7 +96,7 @@ export function advance(opts: AdvanceOptions): AdvanceResult {
 
     const prevLog = readCommitLog(root, io);
     const files = { [WORLD]: json(run.world), [MAIN]: json(run.main), [journalRel]: journal };
-    const entry = { day, date: run.report.summary.date, committed_at: now, engine_version: ENGINE_VERSION, rules_version: currentVersion?.rules_version ?? null, ...(adoption ? { rules_adopted: { from: adoption.from.rules_version, to: adoption.to.rules_version, effective_from_day: day } } : {}), rules_fingerprint: { engine: fp.engine, params: fp.params }, files: Object.fromEntries(Object.entries(files).map(([rel, text]) => [rel, sha256(text)])), previous: { [WORLD]: sha256(rawWorld), [MAIN]: sha256(rawMain), [journalRel]: null } };
+    const entry = { day, date: run.report.summary.date, committed_at: now, engine_version: ENGINE_VERSION, rules_version: currentVersion?.rules_version ?? null, ...(adoption ? { rules_adopted: { from: adoption.from.rules_version, to: adoption.to.rules_version, effective_from_day: day } } : {}), rules_fingerprint: frozenRecord(run.world.sim_engine_v2.rules_fingerprint, fp), files: Object.fromEntries(Object.entries(files).map(([rel, text]) => [rel, sha256(text)])), previous: { [WORLD]: sha256(rawWorld), [MAIN]: sha256(rawMain), [journalRel]: null } };
     const logText = json(nextCommitLog(prevLog, entry));
     const logAbs = path.join(root, COMMIT_LOG_REL), preLog = io.exists(logAbs) ? sha256(io.read(logAbs)) : null;
     commitDay(root, {
