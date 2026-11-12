@@ -79,7 +79,10 @@ export interface SolverEvent {
   /** contact_start / contact_end only: numerical root bracket [lo, hi] of the crossing of θ by the solver's gap function
    *  (t_s = hi), the width err_s of the crossing under a gap error of ±GAP_EVAL_ERR_MM on the incoming motion (s), whether
    *  that width was clamped at the start of the incoming motion, and the time at which the episode change was confirmed
-   *  (g reached θ ∓ SEP_RES_MM). exact: computed from the motion; usable_as_cause: may be read as a physical cause. */
+   *  (g reached θ ∓ SEP_RES_MM). exact: computed from the motion; usable_as_cause: may be read as a physical cause — but
+   *  only at or after confirmed_t_s: t_s is stamped back at the crossing, which is not known to be a contact change until
+   *  confirmed_t_s (before that it may be a sub-resolution excursion), so a decision layer must not act on it earlier or
+   *  back-date a decision to t_s (docs/physics-time-contract.md §3). */
   bracket_s?: [number, number]; err_s?: number; err_clamped?: boolean; confirmed_t_s?: number; exact?: boolean; usable_as_cause?: boolean;
   /** contact events only: which of the three contact kinds this is (docs/physics-time-contract.md §4). PH-3b emits only
    *  'geometric_contact' events; 'constraint_active' is reported as intervals (Solver2DResult.constraint_active) */
