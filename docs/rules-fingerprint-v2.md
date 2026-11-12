@@ -1,5 +1,7 @@
 # 規則指紋 v2：模擬相關程式碼的內容雜湊（Owner 決定 52）
 
+> **退役說明（Owner 2026-11-12，#194）**：舊版正式存檔與 `npm run advance` 已退役，本文中「在正式存檔凍結／採用指紋」的流程不再執行；指紋 v2 本身與規則版本登錄（`rules/registry.json`、`tests/fingerprint-v2.test.ts`、`tests/rules-registry.test.ts`）仍保留，新版正式世界如何凍結規則隨新版 Day0（R2）定義。
+
 > 狀態：**規則更新 PR**（另開 PR；合併需 Owner 另行授權）。本 PR **不登錄新規則版本、不改任何模擬輸出**（黃金測試逐位元組相同），也**不改寫任何存檔、日誌或 commit log**。實作：`cli/lib/fingerprint-v2.ts`；相容層：`cli/lib/rules-registry.ts`、`cli/lib/project-day.ts`、`cli/advance.ts`；測試：`tests/fingerprint-v2.test.ts`。
 
 ## 1. 為什麼需要 v2
