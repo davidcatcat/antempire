@@ -122,7 +122,9 @@ const vg = graph('web/src/v62.ts');
 ok(vg.includes('web/src/experimental/worker-client.ts') && vg.includes('web/src/render-canvas.ts'), 'experiment page uses the Worker client and the layered renderer');
 for (const f of vg) {
   const code = strip(fs.readFileSync(path.join(REPO_ROOT, f), 'utf8'));
-  ok(!/\bfetch\s*\(|XMLHttpRequest|['"`]\.?\/?data\/|saves\/|journal\/|indexedDB|localStorage/.test(code), `${f}: no fetch, no web/data / saves / journal path, no storage (experiment graph)`);
+  ok(!/\bfetch\s*\(|XMLHttpRequest|['"`]\.?\/?data\/|saves\/|journal\/|localStorage/.test(code), `${f}: no fetch, no web/data / saves / journal path, no localStorage (experiment graph)`);
+  // SAVE-2: browser persistence only in the boundary-listed save store (IndexedDB of non-official experiment worlds)
+  ok(f === 'web/src/experimental/save-store.ts' || !/indexedDB|navigator\s*\.\s*(storage|locks)/.test(code), `${f}: browser persistence only in the experimental save store`);
   ok(!/prototypes\/|engine\/|cli\//.test(runtimeImports(fs.readFileSync(path.join(REPO_ROOT, f), 'utf8')).join(' ')), `${f}: no engine / Worker / cli import (the simulation is not run on the main thread)`);
   ok(!/\bnew\s+Worker\s*\(/.test(code) || f === 'web/src/experimental/worker-client.ts', `${f}: only the client creates the Worker`);
 }

@@ -9,6 +9,10 @@
  * Nothing here runs the simulation, fetches web/data, reads saves/ or journal/, or writes anything.
  */
 import { ExperimentWorkerClient } from './experimental/worker-client.ts';
+import { ExperimentSaveStore } from './experimental/save-store.ts';
+import { ExperimentSession } from './experimental/session.ts';
+import type { SaveUiState } from './experimental/save-format.ts';
+import { Menu } from './v62-menu.ts';
 import type { EventMsg, FrameMsg, PacingMsg } from './experimental/worker-protocol.ts';
 import { LayeredRenderer } from './render-canvas.ts';
 import { antLengthPx, worldToScreen, type Camera } from './render-scene.ts';
@@ -18,13 +22,17 @@ import { ACTIVITY_LABEL, DEFAULT_SPEED, EventDigest, FPS_CAPS, LIGHT_LABEL, MODE
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const canvas = $<HTMLCanvasElement>('scene');
-const ui = { play: $<HTMLButtonElement>('play'), speed: $<HTMLSelectElement>('speed'), fpsCap: $<HTMLSelectElement>('fpsCap'), follow: $<HTMLSelectElement>('follow'), time: $('time'), status: $('status'), card: $('card'), badge: $('badge'), info: $<HTMLButtonElement>('infoBtn'), about: $('about'), logBtn: $<HTMLButtonElement>('logBtn'), log: $('log'), home: $<HTMLButtonElement>('homeBtn'), zoomIn: $<HTMLButtonElement>('zoomIn'), zoomOut: $<HTMLButtonElement>('zoomOut'), decor: $<HTMLInputElement>('decor') };
+const ui = { play: $<HTMLButtonElement>('play'), speed: $<HTMLSelectElement>('speed'), fpsCap: $<HTMLSelectElement>('fpsCap'), follow: $<HTMLSelectElement>('follow'), time: $('time'), status: $('status'), card: $('card'), badge: $('badge'), info: $<HTMLButtonElement>('infoBtn'), about: $('about'), logBtn: $<HTMLButtonElement>('logBtn'), log: $('log'), home: $<HTMLButtonElement>('homeBtn'), zoomIn: $<HTMLButtonElement>('zoomIn'), zoomOut: $<HTMLButtonElement>('zoomOut'), decor: $<HTMLInputElement>('decor'), saveBtn: $<HTMLButtonElement>('saveBtn'), menuBtn: $<HTMLButtonElement>('menuBtn'), saveStatus: $('saveStatus'), notice: $('notice'), ro: $('roBanner') };
 
 const R = new LayeredRenderer(canvas);
 const client = new ExperimentWorkerClient();
 let frame: FrameMsg | null = null, pacing: PacingMsg | null = null, frameAt = 0, followedView: unknown = null, lastDisplay: number | null = null;
 let poses: Pose[] = [], selected: string | null = null, following: string | null = null, arenaR = 60;
-const digest = new EventDigest(), recent: EventMsg[] = [], protocolErrors: string[] = [];
+let digest = new EventDigest(); const recent: EventMsg[] = [], protocolErrors: string[] = [];
+/** the throw-away world the session uses to read the Worker's runtime info is never drawn or counted */
+const PROBE = 'exp-runtime-probe';
+let session: ExperimentSession | null = null, menu: Menu | null = null, tempMode = false, active = false;
+let saveUi: SaveUiState | null = null;
 const cam = { x: 0, y: 0, s: 8 };
 const stats = { frames: 0, intervals: [] as number[], lastTs: 0, lastDraw: 0 };
 let fpsCap = 60, topBarPx = 0, bottomBarPx = 0;
@@ -33,8 +41,8 @@ const minAntPx = () => Math.max(28, Math.round(Math.min(canvas.clientWidth, canv
 const camera = (): Camera => ({ cx: cam.x, cy: cam.y, s: cam.s, w: canvas.clientWidth, h: canvas.clientHeight });
 const S2W = (sx: number, sy: number) => [cam.x + (sx - canvas.clientWidth / 2) / cam.s, cam.y - (sy - canvas.clientHeight / 2) / cam.s] as const;
 
-client.onEvents = (evs) => { for (const e of evs) { digest.add(e); recent.push(e); } if (recent.length > 60) recent.splice(0, recent.length - 60); if (!ui.log.hidden) renderLog(); };
-client.onState = (f, p, fol) => { frame = f; pacing = p; followedView = fol; frameAt = performance.now(); arenaR = f.arena_radius_cm; syncControls(); };
+client.onEvents = (evs) => { if (evs[0]?.world_id === PROBE) return; session?.markDirty(); for (const e of evs) { digest.add(e); recent.push(e); } if (recent.length > 60) recent.splice(0, recent.length - 60); if (!ui.log.hidden) renderLog(); };
+client.onState = (f, p, fol) => { if (f.world_id === PROBE) return; if (p.running && frame && f.t_sim !== frame.t_sim) session?.markDirty(); frame = f; pacing = p; followedView = fol; frameAt = performance.now(); arenaR = f.arena_radius_cm; syncControls(); };
 client.onProtocolError = (w) => { protocolErrors.push(w); ui.status.textContent = `協定錯誤：${w}`; };
 
 function setScene() {
@@ -55,7 +63,7 @@ function syncControls() {
 }
 async function playPause() {
   if (!pacing) return;
-  if (!pacing.started) await client.start(); else if (pacing.running) await client.pause(); else await client.resume();
+  if (!pacing.started) await client.start(); else if (pacing.running) { await client.pause(); void session?.request('pause'); } else await client.resume();
   lastDisplay = null; syncControls();
 }
 async function setFollow(id: string | null) {
@@ -141,7 +149,9 @@ function loop(now: number) {
   const fms = stats.lastDraw ? now - stats.lastDraw : null, dt = fms === null ? 0 : Math.min(0.1, fms / 1000);
   if (fms !== null) { stats.intervals.push(fms); if (stats.intervals.length > 600) stats.intervals.shift(); }
   stats.lastDraw = now; stats.frames++;
+  if (!active) return;
   drawFrame(dt, fms);
+  renderSave();
   const key = `${selected}|${following}|${frame?.seq}`; if (key !== cardKey) { cardKey = key; renderCard(); }
 }
 
@@ -161,21 +171,78 @@ async function init() {
   setupPointer();
   window.addEventListener('resize', () => { resize(); });
   resize();
-  const q = new URLSearchParams(location.search), seed = Number(q.get('seed') ?? '1');
-  const r = await client.init(`exp-v62-${seed}`, seed);
-  if (r.type === 'error') { ui.badge.textContent = `無法建立實驗世界：${r.code}`; return; }
-  ui.badge.textContent = `${MODE_LABEL}｜合成世界 ${frame?.world_id}｜種子 ${frame?.seed}｜規則指紋 ${frame?.rules_fingerprint.slice(0, 12)}…`;
-  await client.setSpeed(DEFAULT_SPEED);
-  setScene(); homeCamera(); R.warm(camera());
-  if (q.get('autostart') !== '0') await client.start();
-  syncControls();
+  ui.saveBtn.onclick = () => { void session?.request('manual'); };
+  ui.menuBtn.onclick = () => void toMenu();
+  // extra save attempts when the page is hidden or unloaded (mobile may kill the page first: not the only mechanism)
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') void session?.request('hidden'); });
+  window.addEventListener('pagehide', () => { void session?.request('pagehide'); });
+  const q = new URLSearchParams(location.search);
   requestAnimationFrame(loop);
+  if (q.has('seed')) { // temporary experiment (not saved): the P0-A2 PR 3 route, kept for the V6-2 tests
+    tempMode = true; const seed = Number(q.get('seed'));
+    const r = await client.init(`exp-v62-${seed}`, seed);
+    if (r.type === 'error') { ui.badge.textContent = `無法建立實驗世界：${r.code}`; return; }
+    await enterWorld(q.get('autostart') !== '0');
+    return;
+  }
+  const st = await ExperimentSaveStore.open();
+  session = st.ok ? new ExperimentSession(client, st.value) : null;
+  if (session) {
+    session.onWorldStart = () => { digest = new EventDigest(); recent.length = 0; frame = null; };
+    session.onRestored = (seq) => { digest.lastSeq = seq - 1; };
+    session.onSaveState = (s) => { saveUi = s; };
+    session.onLockLost = () => { ui.ro.hidden = false; ui.ro.textContent = session?.current?.readOnlyReason ?? '本分頁為唯讀'; };
+  }
+  menu = new Menu($('menu'), session, { enter: () => void enterWorld(true), message: (html, kind) => showNotice(html, kind) });
+  menu.show(st.ok ? undefined : `無法使用本地儲存（${st.code}）：${st.message}`, st.ok ? 'info' : 'error');
+
+}
+
+/** Show the world view for the world now in the Worker (new, loaded or temporary) and start it at 1×. */
+async function enterWorld(autostart: boolean) {
+  // the scene must exist before the first drawn frame (the renderer bakes chunks from it): set it up, THEN activate
+  setScene(); resize(); homeCamera();
+  active = true; $('menu').hidden = true;
+  selected = null; following = null; lastDisplay = null; ui.follow.length = 1; ui.card.hidden = true; ui.notice.hidden = true;
+  const cur = session?.current;
+  ui.ro.hidden = !cur || cur.writer; if (cur && !cur.writer) ui.ro.textContent = cur.readOnlyReason ?? '唯讀';
+  ui.saveBtn.hidden = ui.menuBtn.hidden = tempMode; ui.saveStatus.hidden = tempMode;
+  await client.setSpeed(DEFAULT_SPEED);
+  ui.badge.textContent = `${MODE_LABEL}｜${tempMode ? '臨時實驗（不存檔）' : `「${cur?.name ?? ''}」`}｜世界 ${frame?.world_id}｜種子 ${frame?.seed}｜規則指紋 ${frame?.rules_fingerprint.slice(0, 12)}…`;
+  R.warm(camera());
+  if (autostart) await client.start();
+  syncControls();
+}
+/** Back to the menu: pause, save (writer), release the lock. A failed save is reported, the last good save stays. */
+async function toMenu() {
+  if (!session) return;
+  ui.menuBtn.disabled = true;
+  const r = await session.leave(true);
+  ui.menuBtn.disabled = false; active = false; frame = null; pacing = null;
+  const failed = r && !r.ok ? r as { code: string; message: string } : null;
+  menu?.show(failed ? `離開前的儲存失敗（${failed.code}）：${failed.message}。上一個成功的存檔仍保留。` : r ? '已儲存並回到選單。' : undefined, failed ? 'error' : 'info');
+}
+function showNotice(html: string, kind: string = 'info') { ui.notice.innerHTML = `${html} <button type="button" id="noticeClose" aria-label="關閉">✕</button>`; ui.notice.dataset.kind = kind; ui.notice.hidden = false; $('noticeClose').onclick = () => { ui.notice.hidden = true; }; }
+const kb = (n: number) => n >= 1048576 ? `${(n / 1048576).toFixed(2)} MB` : `${(n / 1024).toFixed(1)} KB`;
+function renderSave() {
+  if (tempMode || !session?.current) return;
+  const s = saveUi, rc = session.lastReceipt, cur = session.current;
+  let t: string;
+  if (!cur.writer) t = '唯讀：本分頁不存檔';
+  else if (!s) t = '尚未儲存';
+  else {
+    const last = s.last_success_ms ? `上次成功儲存 ${new Date(s.last_success_ms).toLocaleTimeString('zh-TW', { hour12: false })}` : '尚無成功的儲存';
+    const size = rc ? `｜${kb(rc.bytes)}、${(rc.ms.hash + rc.ms.write + rc.ms.verify + rc.ms.promote).toFixed(0)} ms（${rc.kind === 'manual' ? '手動' : '自動'}）` : '';
+    t = s.status === 'saving' ? `正在儲存…｜${last}` : s.status === 'failed' ? `⚠ 儲存失敗（${s.last_error ?? ''}）— 上一個成功的存檔仍保留｜${last}` : s.status === 'saved' ? `已儲存｜${last}${size}` : `${s.text}｜${last}`;
+  }
+  if (ui.saveStatus.textContent !== t) { ui.saveStatus.textContent = t; ui.saveStatus.dataset.status = cur.writer ? s?.status ?? 'idle' : 'read_only'; }
+  ui.saveBtn.disabled = !cur.writer;
 }
 
 /** Read-only hooks for the browser tests and measurements. The client is exposed so the tests can send the SAME
  *  scheduling / observation commands the buttons send; nothing here can change rules, parameters or individuals. */
 (window as unknown as { __v62: unknown }).__v62 = {
-  client, protocolErrors,
+  client, protocolErrors, session: () => session, saveUi: () => saveUi, active: () => active,
   frame: () => frame, pacing: () => pacing, followed: () => followedView,
   digest: () => ({ value: digest.value(), count: digest.count, lastSeq: digest.lastSeq, gaps: digest.gaps }),
   recent: () => recent.slice(),
