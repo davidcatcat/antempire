@@ -1,0 +1,24 @@
+{
+  "schema": "antempire.local-steer-candidates.v1",
+  "status": "WP4 隔離實驗用的候選行為參數；不是物種參數檔，不進正式模擬。大頭家蟻屬（Pheidole）沒有窄道交通、迎面相遇、側移或讓路的研究（見 scenarios/physics/pheidole-megacephala.interaction-candidates.json 的 status）。下列每一個數值都是遊戲假設；repo 已記錄的非本種研究（R380 Lasius niger、R381 Atta colombica、R108 Linepithema humile）本 WP 未重讀原文，數值一律不採用，只當候選機制方向。",
+  "params": {
+    "sensing_radius_mm": { "value": null, "from_scenario": "body.contact_reach_mm", "assumption": true, "basis": "遊戲假設", "why": "感知範圍＝情境的觸角可及距離（interaction-candidates 的 contact_reach_mm：value null，候選範圍 0.5–1.5 mm，情境取中點 1.0 mm；只作敏感度，非量測）。視覺、化學遠距感知不建模。" },
+    "decision_interval_s": { "value": 0.05, "assumption": true, "basis": "遊戲假設", "why": "多久重新判斷一次：本種沒有資料。取 0.05 s 使自由速度 15.5–19 mm/s 在兩次判斷間最多走 0.95 mm ≤ 感知範圍 1.0 mm（一致性理由，不是觀測）。" },
+    "probe_angles_deg": { "value": [0, 15, 30, 45, 60, 75, 90], "assumption": true, "basis": "遊戲假設", "why": "候選行進方向（偏離行進方向的角度，兩側都試）。離散化是數值選擇；真實螞蟻的轉向分布未知。" },
+    "same_heading_max_deg": { "value": 60, "assumption": true, "basis": "遊戲假設", "why": "前方個體的身體軸與自己相差 ≤ 60° 視為同向同伴（B、C 跟隨、不超車）。單行跟隨在 interaction-candidates 是物理推論；『不超車』是假設。" },
+    "stall_window_s": { "value": 1.0, "assumption": true, "basis": "遊戲假設（診斷定義）", "why": "規則 D：多久沒有前進算『受阻』並回報。這是量測定義，不是行為參數。" },
+    "stall_progress_mm": { "value": 0.4, "assumption": true, "basis": "遊戲假設（診斷定義）", "why": "規則 D：在 stall_window_s 內沿通道前進少於碰撞寬的一半（0.4 mm）算沒有前進。" },
+    "p_wait": { "value": 0.3333333333333333, "assumption": true, "basis": "遊戲假設", "why": "B：碰到擋路的同伴時選擇等待的機率。本種無資料；三種反應取均勻（無資訊先驗），不是觀測。" },
+    "p_back": { "value": 0.3333333333333333, "assumption": true, "basis": "遊戲假設", "why": "B：選擇後退的機率（同上）。" },
+    "p_reroute": { "value": 0.3333333333333334, "assumption": true, "basis": "遊戲假設", "why": "B：選擇繞行的機率（同上）；局部幾何判定兩隻並排放不下時（規則 D）此項為 0、其餘重新正規化。" },
+    "wait_s": { "value": 0.5, "assumption": true, "basis": "遊戲假設", "why": "B：等待多久再重新判斷。interaction-candidates 的 contact_pause_s 是 null（不停頓）；此值只為讓等待有長度。" },
+    "back_distance_mm": { "value": 2.5, "assumption": true, "basis": "遊戲假設", "why": "B：一次後退一個體長（體長 2.5 mm 本身是文獻支持 R94，但『退一個體長』是假設）。後退時身體不轉向（不建模轉身）。" },
+    "reroute_max_s": { "value": 1.0, "assumption": true, "basis": "遊戲假設", "why": "B：繞行最多持續多久，之後回到一般判斷。" }
+  },
+  "conventions": [
+    "身體軸維持與通道平行（行進方向）；選擇的方向是平移（前、斜、側、後），速度＝自由速度。不建模轉身：幾何約定（遊戲假設）。",
+    "只處理直線通道；有轉折的通道拒絕（同 PH-3b 對偏移身體的處理）。",
+    "通道兩端也是牆（PH-3b 的端點不當牆；候選規則可以後退，所以加上端牆以免走出通道）。",
+    "抵達的個體留在原地當作障礙物（與 PH-3b 相同）。"
+  ]
+}

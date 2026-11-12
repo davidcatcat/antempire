@@ -5,18 +5,27 @@ import { poseAt, eventTimes, lastEventAt } from './motion.js';
 
 const $ = (id) => document.getElementById(id);
 const KIND = {
-  start: '出發', arrive: '抵達', contact_start: '接觸開始', contact_end: '接觸結束', stop: '停止', resume: '恢復', follow: '跟隨（減速）',
-  free: '恢復自由速度', pass: '錯身', turn: '轉向', turn_blocked: '轉向受阻', stalled: '卡住（時間終點）', unresolved: '未解', record: '原生運動紀錄',
+  start: '出發', arrive: '抵達', contact_start: '幾何接觸開始', contact_end: '幾何接觸結束', stop: '停止', resume: '恢復', follow: '跟隨（減速）',
+  free: '恢復自由速度', pass: '錯身', turn: '轉向', turn_blocked: '轉向受阻', stalled: '卡住（時間終點）', contact_end_unconfirmed: '幾何接觸結束未確認（時間終點；不能當原因）', unresolved: '未解', record: '原生運動紀錄',
   obstruction: '受阻', follow_start: '跟隨開始', follow_end: '跟隨結束', blocked: '受阻', yield_start: '讓路（候選規則）', yield_hold: '讓路等待（候選規則）',
   yield_resume: '讓路後恢復（候選規則）', cross_wait: '交叉等待（候選規則）', cross_resume: '交叉後恢復（候選規則）',
+  go: '前進（候選規則）', follow: '跟隨同向同伴（候選規則）', sidestep: '側移（候選規則）', wait: '等待（候選規則）', back_off: '後退（候選規則）',
+  reroute: '繞行（候選規則）', halt_geometry: '幾何封閉而停（規則 D）', blocked_report: '回報受阻（規則 D）', not_started: '尚未出發',
+  contact_end_estimated: '接觸結束（估計：個體離開道路，非物理分離）', exit: '離開道路（對照情境出口）', entry_blocked: '入口被占（對照情境）',
 };
+const evColor = (e) => (e.boundary ? '--c-boundary' : CLASS_VAR[e.class] ?? '--c-status');
+/** control runs: an agent is on the road inside [present_from_t_s, removed_t_s] (both inclusive; absent fields = whole run) */
+const onRoad = (a, t) => a.segments.length > 0 && (a.present_from_t_s === undefined || (a.present_from_t_s !== null && t >= a.present_from_t_s)) && (typeof a.removed_t_s !== 'number' || t <= a.removed_t_s);
+const runTag = (r) => r.solver === 'ph3b' ? 'PH-3b' : r.solver === 'steer' ? `${r.policy === 'N_no_yield' ? '控制組 N（不讓路）' : `候選 ${r.policy}`}${r.control ? `・對照 ${r.control.variant}` : ''}（非本種/假設）` : '原生 PH-2';
 const CLASS_VAR = { physical_contact: '--c-contact', physical_constraint: '--c-constraint', motion: '--c-motion', solver_status: '--c-status', behavioural_response: '--c-behaviour', native_motion_record: '--c-record' };
 const PALETTE = ['#2f7d4f', '#1b5fae', '#b0452f', '#8a5a00', '#6d3fa0', '#0f7c86', '#a03a6c', '#4f6b00'];
 const ROW_H = 26;
 
-const st = { index: null, runs: new Map(), run: null, t: 0, playing: false, rate: 1, sel: -1, selPinned: false, cam: null, times: [], drawn: [], hi: new Set(), lastFrame: 0 };
+const st = { index: null, runs: new Map(), run: null, t: 0, playing: false, rate: 1, sel: -1, selPinned: false, cam: null, times: [], drawn: [], ghosts: [], hi: new Set(), lastFrame: 0 };
 const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const fmtT = (t) => `${t.toFixed(6)} s`;  // display rounding only; the exact time is in the data
+/** contact events: the solver's error bound and the independent checker's interval (both from the data file) */
+const detailOf = (e) => [e.detail ?? '', e.err_s !== undefined ? `誤差界 ${e.err_s.toExponential(1)} s` : '', e.check_s ? `獨立檢查 [${e.check_s[0].toFixed(9)}, ${e.check_s[1].toFixed(9)}] s` : '', e.usable_as_cause === false ? '不能當原因' : ''].filter(Boolean).join('・');
 
 async function getJson(url) { const r = await fetch(url); if (!r.ok) throw new Error(`${url}: ${r.status}`); return r.json(); }
 
@@ -40,7 +49,8 @@ const currentRunId = () => $('solver').value;
 async function loadRun(id) {
   const meta = st.index.runs.find((r) => r.run_id === id);
   if (!st.runs.has(id)) st.runs.set(id, await getJson(meta.file));
-  st.run = st.runs.get(id); st.t = 0; st.playing = false; st.sel = -1; st.selPinned = false; st.times = eventTimes(st.run);
+  st.run = st.runs.get(id); $('badge').textContent = st.run.label || st.index.label;
+  $('scope').textContent = st.run.scope_note || ''; $('scope').hidden = !st.run.scope_note; st.t = 0; st.playing = false; st.sel = -1; st.selPinned = false; st.times = eventTimes(st.run);
   $('play').textContent = '播放';
   $('lenTxt').textContent = `${st.run.body.length_mm} mm`; $('widTxt').textContent = `${st.run.body.width_mm} mm`;
   fitAll(); renderAbout(); buildList(); syncSel(); draw();
@@ -62,6 +72,7 @@ function fitAll() {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   const add = (x, y) => { minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); };
   for (const a of r.agents) for (const g of a.segments) { add(g.x0, g.y0); add(g.x1, g.y1); }
+  if (minX === Infinity) { minX = minY = -1; maxX = maxY = 1; }
   const m = Math.max(3 * L, 0.06 * Math.max(maxX - minX, maxY - minY));
   minX -= m; minY -= m; maxX += m; maxY += m;
   // obstacles near the motion are part of the picture (the stone, the corridor walls)
@@ -73,7 +84,8 @@ function fitAll() {
   fitBox(minX, minY, maxX, maxY);
 }
 function focusHi() {
-  const ids = st.hi.size ? [...st.hi] : st.run.agents.map((a) => a.id), L = st.run.body.length_mm;
+  const ids = (st.hi.size ? [...st.hi] : st.run.agents.map((a) => a.id)).filter((id) => st.run.agents.find((a) => a.id === id).segments.length), L = st.run.body.length_mm;
+  if (!ids.length) return;
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const id of ids) { const p = poseAt(st.run.agents.find((a) => a.id === id), st.t); minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); }
   const pad = 2.5 * L; fitBox(minX - pad, minY - pad, maxX + pad, maxY + pad);
@@ -111,10 +123,20 @@ function draw() {
     ctx.fill();
   }
   // bodies
-  st.drawn = [];
+  st.drawn = []; st.ghosts = [];
   const L = r.body.length_mm, Wd = r.body.width_mm, showAll = st.cam.ppm * L > 18;
   r.agents.forEach((a, i) => {
-    const p = poseAt(a, st.t), hi = st.hi.has(a.id), col = PALETTE[i % PALETTE.length];
+    const hi = st.hi.has(a.id), col = PALETTE[i % PALETTE.length];
+    if (!onRoad(a, st.t)) {
+      // not on the road (before its entry / after its exit, control runs): nothing is drawn, except a dashed marker
+      // for an agent of the current event at its entry pose (before entry) or its exit pose (after exit) — a marker, not motion
+      if (!hi || !a.segments.length) return;
+      const before = a.present_from_t_s !== undefined && a.present_from_t_s !== null && st.t < a.present_from_t_s, g = a.segments[0];
+      const m = before ? { x: g.x0, y: g.y0, heading: g.heading } : { x: a.final.x, y: a.final.y, heading: a.final.heading };
+      st.ghosts.push({ id: a.id, x: m.x, y: m.y, heading: m.heading, before });   // painted after the bodies (on top)
+      return;
+    }
+    const p = poseAt(a, st.t);
     const { bx, by, ang, rp } = capsulePath(p.x, p.y, p.heading, L, Wd);
     ctx.globalAlpha = 0.85; ctx.fillStyle = col; ctx.fill(); ctx.globalAlpha = 1;
     if (hi) { ctx.lineWidth = 3; ctx.strokeStyle = css('--ink'); ctx.stroke(); }
@@ -125,8 +147,14 @@ function draw() {
     if (showAll || hi) { ctx.font = `${hi ? 600 : 500} 12px system-ui, sans-serif`; const lx = sx + 6, ly = sy - Math.max(8, rp + 4); ctx.fillStyle = css('--panel'); ctx.globalAlpha = 0.8; ctx.fillRect(lx - 2, ly - 11, ctx.measureText(a.id).width + 4, 14); ctx.globalAlpha = 1; ctx.fillStyle = css('--ink'); ctx.fillText(a.id, lx, ly); }
     st.drawn.push({ id: a.id, x: p.x, y: p.y, heading: p.heading, sx, sy, highlighted: hi });
   });
+  for (const g of st.ghosts) {
+    const { rp } = capsulePath(g.x, g.y, g.heading, L, Wd); ctx.setLineDash([4, 3]); ctx.lineWidth = 2; ctx.strokeStyle = css('--c-boundary'); ctx.stroke(); ctx.setLineDash([]);
+    const [sx, sy] = W2S(g.x, g.y), txt = `${g.id}（${g.before ? '尚未進場' : '已離開道路'}・位置標記）`; ctx.font = '600 12px system-ui, sans-serif';
+    const ly = sy + Math.max(14, rp + 16); ctx.fillStyle = css('--panel'); ctx.globalAlpha = 0.9; ctx.fillRect(sx - 4, ly - 12, ctx.measureText(txt).width + 8, 16); ctx.globalAlpha = 1;
+    ctx.fillStyle = css('--c-boundary'); ctx.fillText(txt, sx, ly);
+  }
   drawScale(w, h);
-  const lab = `${r.scenario.id}・${r.solver === 'ph3b' ? 'PH-3b' : '原生 PH-2'}・synthetic・非正式`;
+  const lab = `${r.scenario.id}・${runTag(r)}・synthetic・非正式`;
   ctx.font = '12px system-ui, sans-serif'; ctx.fillStyle = css('--panel'); ctx.globalAlpha = 0.9; ctx.fillRect(4, 4, ctx.measureText(lab).width + 8, 18); ctx.globalAlpha = 1;
   ctx.fillStyle = css('--ink'); ctx.fillText(lab, 8, 17);
   drawTimeline(); updateNow();
@@ -147,7 +175,7 @@ function drawTimeline() {
   tctx.setTransform(dpr, 0, 0, dpr, 0, 0); tctx.clearRect(0, 0, w, h);
   const H = st.run.horizon_s, X = (t) => 8 + (w - 16) * (t / H);
   tctx.fillStyle = css('--line'); tctx.fillRect(8, h / 2 - 2, w - 16, 4);
-  for (const e of st.run.events) { tctx.fillStyle = css(CLASS_VAR[e.class] ?? '--c-status'); tctx.fillRect(Math.round(X(e.t)) - 0.5, 6, 1.5, h - 16); }
+  for (const e of st.run.events) { tctx.fillStyle = css(evColor(e)); tctx.fillRect(Math.round(X(e.t)) - 0.5, 6, 1.5, h - 16); }
   tctx.fillStyle = css('--accent'); tctx.fillRect(X(st.t) - 1.5, 2, 3, h - 6);
   tctx.fillStyle = css('--muted'); tctx.font = '11px system-ui, sans-serif'; tctx.fillText('0', 8, h - 1); const ht = `${H} s`; tctx.fillText(ht, w - 8 - tctx.measureText(ht).width, h - 1);
 }
@@ -171,13 +199,14 @@ function renderRows() {
     const old = have.get(i);
     if (old) { old.classList.toggle('sel', i === st.sel); continue; }
     const e = E[i], d = document.createElement('div');
-    d.className = `ev${i === st.sel ? ' sel' : ''}`; d.style.top = `${i * ROW_H}px`; d.dataset.i = String(i);
-    d.title = `${fmtT(e.t)} ${e.kind} ${e.agents.join(', ')}${e.detail ? ` — ${e.detail}` : ''}`;
-    d.innerHTML = `<span class="t"></span><span class="kd"></span> <span class="ag"></span> <span class="dt"></span>`;
+    d.className = `ev${i === st.sel ? ' sel' : ''}${e.boundary ? ' bd' : ''}`; d.style.top = `${i * ROW_H}px`; d.dataset.i = String(i);
+    d.title = `${fmtT(e.t)} ${e.kind} ${e.agents.join(', ')}${detailOf(e) ? ` — ${detailOf(e)}` : ''}`;
+    d.innerHTML = `<span class="t"></span>${e.boundary ? `<span class="tag${e.usable_as_cause === false ? ' est' : ''}"></span>` : ''}<span class="kd"></span> <span class="ag"></span> <span class="dt"></span>`;
     d.querySelector('.t').textContent = e.t.toFixed(6);
-    const kd = d.querySelector('.kd'); kd.textContent = KIND[e.kind] ?? e.kind; kd.style.color = css(CLASS_VAR[e.class] ?? '--c-status');
+    if (e.boundary) { const tg = d.querySelector('.tag'); tg.textContent = e.usable_as_cause === false ? '估計・非原因' : '對照邊界'; tg.style.color = css('--c-boundary'); }
+    const kd = d.querySelector('.kd'); kd.textContent = KIND[e.kind] ?? e.kind; kd.style.color = css(evColor(e));
     d.querySelector('.ag').textContent = e.agents.join('・');
-    const dt = d.querySelector('.dt'); dt.textContent = e.detail ?? ''; dt.style.color = css('--muted');
+    const dt = d.querySelector('.dt'); dt.textContent = detailOf(e); dt.style.color = css('--muted');
     d.addEventListener('click', () => selectEvent(i));
     list.appendChild(d);
   }
@@ -255,14 +284,21 @@ function updateNow() {
   $('now').innerHTML = '';
   const p = document.createElement('div');
   p.innerHTML = e ? `<span class="k"></span> <span class="d"></span>` : '<span class="d"></span>';
-  if (e) { p.querySelector('.k').textContent = `目前事件 #${st.sel + 1}（${fmtT(e.t)}）：${KIND[e.kind] ?? e.kind}・${e.agents.join('・')}`; p.querySelector('.d').textContent = e.detail ? `— ${e.detail}` : ''; }
+  if (e) { p.querySelector('.k').textContent = `目前事件 #${st.sel + 1}（${fmtT(e.t)}）：${e.boundary ? (e.usable_as_cause === false ? '［估計・非原因］' : '［對照邊界］') : ''}${KIND[e.kind] ?? e.kind}・${e.agents.join('・')}`; p.querySelector('.d').textContent = detailOf(e) ? `— ${detailOf(e)}` : ''; }
   else p.querySelector('.d').textContent = '尚未有事件';
   const q = document.createElement('div'); q.className = 'sub';
   q.textContent = nextT === undefined ? '之後沒有事件：每隻都依最後一段運動（或靜止）到時間終點。' : `下一個事件在 ${fmtT(nextT)}（再 ${nextT - st.t >= 1e-6 ? (nextT - st.t).toFixed(6) : (nextT - st.t).toExponential(3)} s）；在那之前每隻都是直線等速或靜止。`;
   $('now').append(p, q);
+  if (r.control) {
+    // counts from the exported presence intervals (engine data), not from the picture
+    const on = r.agents.filter((a) => onRoad(a, st.t)).length, gone = r.agents.filter((a) => typeof a.removed_t_s === 'number' && st.t > a.removed_t_s).length;
+    const c = document.createElement('div'); c.className = 'sub';
+    c.textContent = `對照 ${r.control.variant}：此刻在道路上 ${on} 隻、已離開道路 ${gone} 隻、尚未進場 ${r.agents.length - on - gone} 隻（共 ${r.agents.length}）。`;
+    $('now').append(c);
+  }
   // agents table: highlighted ones, or all when few
   const ids = r.agents.length <= 8 ? r.agents.map((a) => a.id) : [...st.hi];
-  const rows = ids.map((id) => { const a = r.agents.find((x) => x.id === id), pz = poseAt(a, st.t); return [id, pz.moving ? '移動' : '靜止', pz.speed.toFixed(3), pz.s.toFixed(3), pz.u.toFixed(2), a.final_mode, a.arrival_t_s === null ? '—' : a.arrival_t_s.toFixed(3)]; });
+  const rows = ids.map((id) => { const a = r.agents.find((x) => x.id === id); if (!onRoad(a, st.t)) return [id, a.present_from_t_s !== undefined && (a.present_from_t_s === null || st.t < a.present_from_t_s) ? '尚未進場' : '已離開道路', '—', '—', '—', a.final_mode, a.arrival_t_s === null ? '—' : a.arrival_t_s.toFixed(3)]; const pz = poseAt(a, st.t); return [id, pz.moving ? '移動' : '靜止', pz.speed.toFixed(3), pz.s.toFixed(3), pz.u.toFixed(2), a.final_mode, a.arrival_t_s === null ? '—' : a.arrival_t_s.toFixed(3)]; });
   const tb = document.createElement('table');
   tb.innerHTML = '<thead><tr><th>個體</th><th>此刻</th><th>速度 mm/s</th><th>s mm</th><th>u mm</th><th>結束狀態</th><th>抵達 s</th></tr></thead><tbody></tbody>';
   for (const row of rows) { const tr = document.createElement('tr'); for (const c of row) { const td = document.createElement('td'); td.textContent = c; tr.appendChild(td); } if (st.hi.has(row[0])) tr.style.fontWeight = '600'; tb.tBodies[0].appendChild(tr); }
@@ -271,6 +307,9 @@ function updateNow() {
 function renderAbout() {
   const r = st.run, box = $('about'); box.innerHTML = '';
   const add = (tag, text) => { const el = document.createElement(tag); el.textContent = text; box.appendChild(el); return el; };
+  if (r.scope_note) add('p', r.scope_note).style.fontWeight = '600';
+  if (r.control) { const c = r.control; add('p', `對照情境 ${c.variant}（基準 ${c.base_scenario}）：${c.why} 依時間流入 ${c.spawn ? '是' : '否'}；出口 ${c.exit ? `容量 ${c.exit.capacity}、停留 ${c.exit.dwell_s} s` : '無（抵達者留在路上）'}。`).style.fontWeight = '600'; const ul = document.createElement('ul'); for (const n of c.params) { const li = document.createElement('li'); li.textContent = n; ul.appendChild(li); } box.appendChild(ul); }
+  if (r.contact_end_check) { const c = r.contact_end_check; add('p', `接觸結束時刻的獨立檢查（${c.checker}）：${c.episodes} 段接觸，${c.exact} 個精確結束全部落在解析區間內（違規 ${c.violations}），最大誤差界 ${c.max_err_s === null ? '—' : c.max_err_s.toExponential(2)} s（間距評估容差 ${c.delta_g_mm} mm），${c.open} 段到時間終點仍接觸。`); }
   add('p', `${r.scenario.title}（${r.scenario.id}，合成情境；檔案 ${r.scenario.source_file}）`);
   add('p', `情境值：${r.scenario.provenance.scenario_values}`);
   if (r.scenario.provenance.note) add('p', `說明：${r.scenario.provenance.note}`);
@@ -286,6 +325,6 @@ window.playback = {
   ready: init().then(() => true),
   load: async (id) => { const meta = st.index.runs.find((x) => x.run_id === id); $('scenario').value = meta.scenario; fillSolvers(); $('solver').value = id; await loadRun(id); },
   setTime: (t) => setTime(t, false), selectEvent, stepEvent, fitAll: () => { fitAll(); draw(); },
-  state: () => ({ run_id: st.run.run_id, t: st.t, sel: st.sel, drawn: st.drawn, highlighted: [...st.hi] }),
+  state: () => ({ run_id: st.run.run_id, t: st.t, sel: st.sel, drawn: st.drawn, ghosts: st.ghosts, highlighted: [...st.hi] }),
 };
 requestAnimationFrame(tick);

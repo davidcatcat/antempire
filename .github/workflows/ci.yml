@@ -26,8 +26,26 @@ jobs:
         run: npm run test:golden
       - name: Naturalism (no-god-mode checks; 216 under v2-review.20 to v2-review.31)
         run: npm run test:naturalism
-      - name: All other tests (params split, platform purity, foraging physics, migration, local ecology incl. orphan queen, scaling, multi-colony, v6 isolation proof vs sim/, nest temperature, rules isolation, simultaneous hunting, injury types, crop ledger, individual route memory, rules registry, multi-colony timeline prototype evidence, Day0 initialization and Day0->Day1 / 90-day audits, death diagnostics, individual activity timeline audit, evaluation-method checks, phase 2 sensitivity data validation + fixed-seed reruns)
-        run: npm run test:rest
+
+  tests:
+    # The remaining BLOCKING tests, split into parallel shards (tests/run-all.ts --shard k/n).
+    # The shards are a proven partition (tests/run-all-shards.test.ts): every test runs exactly once.
+    name: tests (shard ${{ matrix.shard }}/3)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: BLOCKING tests except golden/naturalism (shard ${{ matrix.shard }} of 3)
+        run: node tests/run-all.ts --except golden,naturalism --shard ${{ matrix.shard }}/3
 
   viewer-smoke:
     name: viewer browser tests + preview artifact (Playwright, Chromium)

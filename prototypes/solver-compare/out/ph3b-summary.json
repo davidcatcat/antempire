@@ -4,18 +4,18 @@
   "agents": 2,
   "horizon_s": 20,
   "cost": {
-   "wall_ms": 23.71590200000003,
-   "cpu_user_ms": 9.418,
-   "cpu_system_ms": 0.148,
-   "heap_used_delta_mb": 0.5103607177734375,
-   "rss_mb": 93.5546875
+   "wall_ms": 29.662999000000013,
+   "cpu_user_ms": 10.719,
+   "cpu_system_ms": 3.158,
+   "heap_used_delta_mb": 0.493194580078125,
+   "rss_mb": 91.0859375
   },
-  "peak_rss_mb": 95.59765625,
+  "peak_rss_mb": 95.63671875,
   "stats": {
    "batches": 2,
    "events_processed": 3,
-   "queue_pushes": 6,
-   "stale_pops": 3,
+   "queue_pushes": 12,
+   "stale_pops": 4,
    "pair_hit_evals": 1,
    "windows": 81,
    "candidate_pairs_total": 71,
@@ -25,6 +25,15 @@
    "max_same_instant_batches": 1,
    "contacts": 1,
    "releases": 0,
+   "contact_episodes": 1,
+   "contact_episode_ends": 0,
+   "sub_resolution_excursions": 0,
+   "episode_events": 5,
+   "episodes_open_at_horizon": 1,
+   "ends_unconfirmed_at_horizon": 0,
+   "constraint_outside_contact": 0,
+   "constraint_intervals": 1,
+   "constraint_intervals_binding": 1,
    "passes": 0,
    "turns": 0,
    "turn_blocked": 0,
@@ -51,15 +60,15 @@
    "stopped_by_contact": 2
   },
   "replay": {
-   "hash": "2c88dbc53de36815",
+   "hash": "ce9c487b6f893237",
    "input_order_reversed_identical": true,
    "variants_identical": true,
    "variants": {
-    "grid": "2c88dbc53de36815",
-    "sap": "2c88dbc53de36815",
-    "brute": "2c88dbc53de36815",
-    "window_0.05": "2c88dbc53de36815",
-    "window_1": "2c88dbc53de36815"
+    "grid": "ce9c487b6f893237",
+    "sap": "ce9c487b6f893237",
+    "brute": "ce9c487b6f893237",
+    "window_0.05": "ce9c487b6f893237",
+    "window_1": "ce9c487b6f893237"
    }
   },
   "broadphase": {
@@ -67,19 +76,19 @@
    "identical_candidate_sets": true,
    "cost": {
     "brute": {
-     "ms": 0.11831300000000056,
+     "ms": 0.11259200000006331,
      "pairs": 71
     },
     "grid_8mm": {
-     "ms": 0.4828499999999849,
+     "ms": 0.3379660000000513,
      "pairs": 71
     },
     "grid_2mm": {
-     "ms": 4.6922159999999735,
+     "ms": 3.0883039999999937,
      "pairs": 71
     },
     "sap": {
-     "ms": 0.3365259999999921,
+     "ms": 0.15248699999995097,
      "pairs": 71
     }
    },
@@ -91,6 +100,55 @@
    "packing_feasible_given_u_blocks": 0,
    "packing_unknown": 0
   },
+  "test_version": {
+   "git_head": "7ef8a61514041ff8aa1012cef576e9047e7197a8",
+   "worktree_clean": true,
+   "node": "v22.23.4"
+  },
+  "trajectory": {
+   "sha256": "18a2c31e8629945b48931a9cf57b9b59a84462a5208d31c3d42a1fdc3114c274",
+   "ref_83397c5": "18a2c31e8629945b48931a9cf57b9b59a84462a5208d31c3d42a1fdc3114c274",
+   "bit_identical_to_83397c5": true
+  },
+  "contact_kinds": {
+   "geometric_contact": {
+    "episodes": 1,
+    "ends_exact": 0,
+    "open_at_horizon": 1,
+    "unconfirmed": 0,
+    "checker_violations": 0,
+    "missed": 0,
+    "penetrations": 0,
+    "pairs_scanned": 1,
+    "max_end_err_s": null,
+    "median_end_err_s": null,
+    "max_start_err_s": 5.88862292261183e-13,
+    "max_dev_from_mid_s": null,
+    "problems": []
+   },
+   "constraint_active": {
+    "intervals": 1,
+    "binding": 1,
+    "inside_geometric_episode": 1,
+    "below_resolution": 0,
+    "open_at_horizon": 1,
+    "checker_violations": 0,
+    "problems": []
+   },
+   "antenna_contact": {
+    "supported": false,
+    "value": null,
+    "emitted": 0
+   },
+   "motion_records": {
+    "teleports": 0,
+    "speed_mismatch": 0,
+    "problems": []
+   },
+   "checker_cpu_ms": 2.034,
+   "checker_wall_ms": 2.039164000000028
+  },
+  "judge_cpu_ms": 5.854,
   "judge": {
    "overlap_pair_instants": 0,
    "overlap_between_instants": 0,
@@ -110,7 +168,7 @@
     "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
    },
    "instants": 3,
-   "judge_wall_ms": 5.08549099999999
+   "judge_wall_ms": 5.349287000000004
   }
  },
  {
@@ -118,18 +176,18 @@
   "agents": 8,
   "horizon_s": 120,
   "cost": {
-   "wall_ms": 139.28045799999995,
-   "cpu_user_ms": 42.485,
-   "cpu_system_ms": 4.257,
-   "heap_used_delta_mb": 2.1579132080078125,
-   "rss_mb": 94.703125
+   "wall_ms": 86.29000600000006,
+   "cpu_user_ms": 50.872,
+   "cpu_system_ms": 1.213,
+   "heap_used_delta_mb": 1.3021774291992188,
+   "rss_mb": 96.203125
   },
-  "peak_rss_mb": 95.21484375,
+  "peak_rss_mb": 101.50390625,
   "stats": {
    "batches": 17,
    "events_processed": 17,
-   "queue_pushes": 62,
-   "stale_pops": 45,
+   "queue_pushes": 128,
+   "stale_pops": 66,
    "pair_hit_evals": 56,
    "windows": 481,
    "candidate_pairs_total": 9109,
@@ -139,6 +197,15 @@
    "max_same_instant_batches": 1,
    "contacts": 8,
    "releases": 1,
+   "contact_episodes": 8,
+   "contact_episode_ends": 1,
+   "sub_resolution_excursions": 0,
+   "episode_events": 45,
+   "episodes_open_at_horizon": 7,
+   "ends_unconfirmed_at_horizon": 0,
+   "constraint_outside_contact": 0,
+   "constraint_intervals": 8,
+   "constraint_intervals_binding": 8,
    "passes": 0,
    "turns": 0,
    "turn_blocked": 0,
@@ -167,15 +234,15 @@
    "stopped_by_contact": 8
   },
   "replay": {
-   "hash": "c20d827087ec5a96",
+   "hash": "c1dff91dd6470bb6",
    "input_order_reversed_identical": true,
    "variants_identical": true,
    "variants": {
-    "grid": "c20d827087ec5a96",
-    "sap": "c20d827087ec5a96",
-    "brute": "c20d827087ec5a96",
-    "window_0.05": "c20d827087ec5a96",
-    "window_1": "c20d827087ec5a96"
+    "grid": "c1dff91dd6470bb6",
+    "sap": "c1dff91dd6470bb6",
+    "brute": "c1dff91dd6470bb6",
+    "window_0.05": "c1dff91dd6470bb6",
+    "window_1": "c1dff91dd6470bb6"
    }
   },
   "broadphase": {
@@ -183,19 +250,19 @@
    "identical_candidate_sets": true,
    "cost": {
     "brute": {
-     "ms": 3.3296609999999873,
+     "ms": 1.4068520000000717,
      "pairs": 9109
     },
     "grid_8mm": {
-     "ms": 2.931728000000021,
+     "ms": 1.9380959999998595,
      "pairs": 9109
     },
     "grid_2mm": {
-     "ms": 5.996808999999985,
+     "ms": 4.785118999999895,
      "pairs": 9109
     },
     "sap": {
-     "ms": 9.34711100000004,
+     "ms": 9.863804999999957,
      "pairs": 9109
     }
    },
@@ -207,6 +274,55 @@
    "packing_feasible_given_u_blocks": 0,
    "packing_unknown": 0
   },
+  "test_version": {
+   "git_head": "7ef8a61514041ff8aa1012cef576e9047e7197a8",
+   "worktree_clean": true,
+   "node": "v22.23.4"
+  },
+  "trajectory": {
+   "sha256": "b093f2d0525d92f7443d37325c926f85b4ab0cedc855737ab73f0e6db77b8bcf",
+   "ref_83397c5": "b093f2d0525d92f7443d37325c926f85b4ab0cedc855737ab73f0e6db77b8bcf",
+   "bit_identical_to_83397c5": true
+  },
+  "contact_kinds": {
+   "geometric_contact": {
+    "episodes": 8,
+    "ends_exact": 1,
+    "open_at_horizon": 7,
+    "unconfirmed": 0,
+    "checker_violations": 0,
+    "missed": 0,
+    "penetrations": 0,
+    "pairs_scanned": 13,
+    "max_end_err_s": 1.4650503032953566e-11,
+    "median_end_err_s": 1.4650503032953566e-11,
+    "max_start_err_s": 1.199040866595169e-12,
+    "max_dev_from_mid_s": 4.440892098500626e-16,
+    "problems": []
+   },
+   "constraint_active": {
+    "intervals": 8,
+    "binding": 8,
+    "inside_geometric_episode": 8,
+    "below_resolution": 0,
+    "open_at_horizon": 7,
+    "checker_violations": 0,
+    "problems": []
+   },
+   "antenna_contact": {
+    "supported": false,
+    "value": null,
+    "emitted": 0
+   },
+   "motion_records": {
+    "teleports": 0,
+    "speed_mismatch": 0,
+    "problems": []
+   },
+   "checker_cpu_ms": 7.745,
+   "checker_wall_ms": 7.750287000000071
+  },
+  "judge_cpu_ms": 13.671,
   "judge": {
    "overlap_pair_instants": 0,
    "overlap_between_instants": 0,
@@ -226,7 +342,7 @@
     "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
    },
    "instants": 18,
-   "judge_wall_ms": 17.04272000000003
+   "judge_wall_ms": 13.067945999999893
   }
  },
  {
@@ -234,13 +350,13 @@
   "agents": 2,
   "horizon_s": 40,
   "cost": {
-   "wall_ms": 16.270714999999996,
-   "cpu_user_ms": 11.399,
+   "wall_ms": 45.11047199999996,
+   "cpu_user_ms": 13.895,
    "cpu_system_ms": 0,
-   "heap_used_delta_mb": 0.49774932861328125,
-   "rss_mb": 93.8125
+   "heap_used_delta_mb": 0.5384674072265625,
+   "rss_mb": 86.89453125
   },
-  "peak_rss_mb": 95.65234375,
+  "peak_rss_mb": 95.10546875,
   "stats": {
    "batches": 3,
    "events_processed": 4,
@@ -255,6 +371,15 @@
    "max_same_instant_batches": 1,
    "contacts": 0,
    "releases": 0,
+   "contact_episodes": 0,
+   "contact_episode_ends": 0,
+   "sub_resolution_excursions": 0,
+   "episode_events": 0,
+   "episodes_open_at_horizon": 0,
+   "ends_unconfirmed_at_horizon": 0,
+   "constraint_outside_contact": 0,
+   "constraint_intervals": 0,
+   "constraint_intervals_binding": 0,
    "passes": 0,
    "turns": 0,
    "turn_blocked": 0,
@@ -295,19 +420,19 @@
    "identical_candidate_sets": true,
    "cost": {
     "brute": {
-     "ms": 0.1443970000000263,
+     "ms": 0.16858300000001236,
      "pairs": 0
     },
     "grid_8mm": {
-     "ms": 0.33859300000000303,
+     "ms": 0.23065100000007988,
      "pairs": 0
     },
     "grid_2mm": {
-     "ms": 0.524091999999996,
+     "ms": 0.5453139999999621,
      "pairs": 0
     },
     "sap": {
-     "ms": 0.2033620000000269,
+     "ms": 0.22590100000002167,
      "pairs": 0
     }
    },
@@ -319,6 +444,55 @@
    "packing_feasible_given_u_blocks": 0,
    "packing_unknown": 0
   },
+  "test_version": {
+   "git_head": "7ef8a61514041ff8aa1012cef576e9047e7197a8",
+   "worktree_clean": true,
+   "node": "v22.23.4"
+  },
+  "trajectory": {
+   "sha256": "339131b618d1e547ba28cf8ee9026b2cf3c214e8ca097a7572b9c6bded6c828b",
+   "ref_83397c5": "339131b618d1e547ba28cf8ee9026b2cf3c214e8ca097a7572b9c6bded6c828b",
+   "bit_identical_to_83397c5": true
+  },
+  "contact_kinds": {
+   "geometric_contact": {
+    "episodes": 0,
+    "ends_exact": 0,
+    "open_at_horizon": 0,
+    "unconfirmed": 0,
+    "checker_violations": 0,
+    "missed": 0,
+    "penetrations": 0,
+    "pairs_scanned": 0,
+    "max_end_err_s": null,
+    "median_end_err_s": null,
+    "max_start_err_s": null,
+    "max_dev_from_mid_s": null,
+    "problems": []
+   },
+   "constraint_active": {
+    "intervals": 0,
+    "binding": 0,
+    "inside_geometric_episode": 0,
+    "below_resolution": 0,
+    "open_at_horizon": 0,
+    "checker_violations": 0,
+    "problems": []
+   },
+   "antenna_contact": {
+    "supported": false,
+    "value": null,
+    "emitted": 0
+   },
+   "motion_records": {
+    "teleports": 0,
+    "speed_mismatch": 0,
+    "problems": []
+   },
+   "checker_cpu_ms": 1.295,
+   "checker_wall_ms": 1.3818279999999277
+  },
+  "judge_cpu_ms": 2.841,
   "judge": {
    "overlap_pair_instants": 0,
    "overlap_between_instants": 0,
@@ -338,7 +512,7 @@
     "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
    },
    "instants": 4,
-   "judge_wall_ms": 6.31402300000002
+   "judge_wall_ms": 6.208148000000051
   }
  },
  {
@@ -346,18 +520,18 @@
   "agents": 2,
   "horizon_s": 10,
   "cost": {
-   "wall_ms": 6.911448000000007,
-   "cpu_user_ms": 7.484,
-   "cpu_system_ms": 0,
-   "heap_used_delta_mb": 1.18505859375,
-   "rss_mb": 90.3203125
+   "wall_ms": 38.049780000000055,
+   "cpu_user_ms": 13.889,
+   "cpu_system_ms": 2.769,
+   "heap_used_delta_mb": 1.61236572265625,
+   "rss_mb": 94.80859375
   },
-  "peak_rss_mb": 94.16015625,
+  "peak_rss_mb": 96.109375,
   "stats": {
    "batches": 2,
    "events_processed": 3,
-   "queue_pushes": 5,
-   "stale_pops": 2,
+   "queue_pushes": 11,
+   "stale_pops": 3,
    "pair_hit_evals": 1,
    "windows": 41,
    "candidate_pairs_total": 30,
@@ -367,6 +541,15 @@
    "max_same_instant_batches": 1,
    "contacts": 1,
    "releases": 0,
+   "contact_episodes": 1,
+   "contact_episode_ends": 0,
+   "sub_resolution_excursions": 0,
+   "episode_events": 5,
+   "episodes_open_at_horizon": 1,
+   "ends_unconfirmed_at_horizon": 0,
+   "constraint_outside_contact": 0,
+   "constraint_intervals": 1,
+   "constraint_intervals_binding": 1,
    "passes": 0,
    "turns": 0,
    "turn_blocked": 0,
@@ -393,15 +576,15 @@
    "stopped_by_contact": 2
   },
   "replay": {
-   "hash": "f21a34b6333aeb5f",
+   "hash": "4084830888e729b5",
    "input_order_reversed_identical": true,
    "variants_identical": true,
    "variants": {
-    "grid": "f21a34b6333aeb5f",
-    "sap": "f21a34b6333aeb5f",
-    "brute": "f21a34b6333aeb5f",
-    "window_0.05": "f21a34b6333aeb5f",
-    "window_1": "f21a34b6333aeb5f"
+    "grid": "4084830888e729b5",
+    "sap": "4084830888e729b5",
+    "brute": "4084830888e729b5",
+    "window_0.05": "4084830888e729b5",
+    "window_1": "4084830888e729b5"
    }
   },
   "broadphase": {
@@ -409,19 +592,19 @@
    "identical_candidate_sets": true,
    "cost": {
     "brute": {
-     "ms": 0.10770399999995561,
+     "ms": 0.13829699999996592,
      "pairs": 30
     },
     "grid_8mm": {
-     "ms": 0.22807000000000244,
+     "ms": 0.19755899999995563,
      "pairs": 30
     },
     "grid_2mm": {
-     "ms": 6.251490999999987,
+     "ms": 7.043130000000019,
      "pairs": 30
     },
     "sap": {
-     "ms": 0.15065999999995938,
+     "ms": 0.14497800000003735,
      "pairs": 30
     }
    },
@@ -433,6 +616,55 @@
    "packing_feasible_given_u_blocks": 0,
    "packing_unknown": 0
   },
+  "test_version": {
+   "git_head": "7ef8a61514041ff8aa1012cef576e9047e7197a8",
+   "worktree_clean": true,
+   "node": "v22.23.4"
+  },
+  "trajectory": {
+   "sha256": "ee15e3672c29d1d4ead7d5f336efd3d400c50723e90a3bce69a0dff8d216b1c0",
+   "ref_83397c5": "ee15e3672c29d1d4ead7d5f336efd3d400c50723e90a3bce69a0dff8d216b1c0",
+   "bit_identical_to_83397c5": true
+  },
+  "contact_kinds": {
+   "geometric_contact": {
+    "episodes": 1,
+    "ends_exact": 0,
+    "open_at_horizon": 1,
+    "unconfirmed": 0,
+    "checker_violations": 0,
+    "missed": 0,
+    "penetrations": 0,
+    "pairs_scanned": 1,
+    "max_end_err_s": null,
+    "median_end_err_s": null,
+    "max_start_err_s": 8.313350008393172e-13,
+    "max_dev_from_mid_s": null,
+    "problems": []
+   },
+   "constraint_active": {
+    "intervals": 1,
+    "binding": 1,
+    "inside_geometric_episode": 1,
+    "below_resolution": 0,
+    "open_at_horizon": 1,
+    "checker_violations": 0,
+    "problems": []
+   },
+   "antenna_contact": {
+    "supported": false,
+    "value": null,
+    "emitted": 0
+   },
+   "motion_records": {
+    "teleports": 0,
+    "speed_mismatch": 0,
+    "problems": []
+   },
+   "checker_cpu_ms": 3.555,
+   "checker_wall_ms": 6.099503999999797
+  },
+  "judge_cpu_ms": 9.561,
   "judge": {
    "overlap_pair_instants": 0,
    "overlap_between_instants": 0,
@@ -452,7 +684,7 @@
     "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
    },
    "instants": 3,
-   "judge_wall_ms": 11.572746999999993
+   "judge_wall_ms": 26.08857899999998
   }
  },
  {
@@ -460,18 +692,18 @@
   "agents": 100,
   "horizon_s": 20,
   "cost": {
-   "wall_ms": 2426.8284790000002,
-   "cpu_user_ms": 1403.133,
-   "cpu_system_ms": 86.16,
-   "heap_used_delta_mb": 27.459503173828125,
-   "rss_mb": 156.390625
+   "wall_ms": 9623.971062999999,
+   "cpu_user_ms": 3081.121,
+   "cpu_system_ms": 115.888,
+   "heap_used_delta_mb": 46.69798278808594,
+   "rss_mb": 163.91015625
   },
-  "peak_rss_mb": 359.19140625,
+  "peak_rss_mb": 286.03125,
   "stats": {
    "batches": 20656,
    "events_processed": 20694,
-   "queue_pushes": 93234,
-   "stale_pops": 68370,
+   "queue_pushes": 198836,
+   "stale_pops": 117596,
    "pair_hit_evals": 100611,
    "windows": 81,
    "candidate_pairs_total": 55169,
@@ -481,6 +713,15 @@
    "max_same_instant_batches": 1,
    "contacts": 10261,
    "releases": 10172,
+   "contact_episodes": 97,
+   "contact_episode_ends": 8,
+   "sub_resolution_excursions": 10169,
+   "episode_events": 56376,
+   "episodes_open_at_horizon": 89,
+   "ends_unconfirmed_at_horizon": 0,
+   "constraint_outside_contact": 0,
+   "constraint_intervals": 10261,
+   "constraint_intervals_binding": 10261,
    "passes": 163,
    "turns": 0,
    "turn_blocked": 0,
@@ -492,18 +733,18 @@
   },
   "events_by_kind": {
    "start": 100,
-   "contact_start": 10261,
+   "contact_start": 97,
    "stop": 126,
    "pass": 163,
    "resume": 26,
-   "contact_end": 10172,
    "follow": 12306,
    "free": 11730,
+   "contact_end": 8,
    "stalled": 100
   },
   "events_by_class": {
    "motion": 263,
-   "physical_contact": 20433,
+   "physical_contact": 105,
    "physical_constraint": 24188,
    "solver_status": 100
   },
@@ -512,15 +753,15 @@
    "stopped_by_contact": 100
   },
   "replay": {
-   "hash": "d4c755b966c63304",
+   "hash": "1ebbbfb0864ec6ae",
    "input_order_reversed_identical": true,
    "variants_identical": true,
    "variants": {
-    "grid": "d4c755b966c63304",
-    "sap": "d4c755b966c63304",
-    "brute": "d4c755b966c63304",
-    "window_0.05": "d4c755b966c63304",
-    "window_1": "d4c755b966c63304"
+    "grid": "1ebbbfb0864ec6ae",
+    "sap": "1ebbbfb0864ec6ae",
+    "brute": "1ebbbfb0864ec6ae",
+    "window_0.05": "1ebbbfb0864ec6ae",
+    "window_1": "1ebbbfb0864ec6ae"
    }
   },
   "broadphase": {
@@ -528,19 +769,19 @@
    "identical_candidate_sets": true,
    "cost": {
     "brute": {
-     "ms": 34.77603199999794,
+     "ms": 27.267851999989944,
      "pairs": 55169
     },
     "grid_8mm": {
-     "ms": 30.32347999999911,
+     "ms": 22.5719320000062,
      "pairs": 55169
     },
     "grid_2mm": {
-     "ms": 54.30637399999978,
+     "ms": 73.99830900000234,
      "pairs": 55169
     },
     "sap": {
-     "ms": 44.268152000000555,
+     "ms": 55.39261699999042,
      "pairs": 55169
     }
    },
@@ -552,6 +793,55 @@
    "packing_feasible_given_u_blocks": 7,
    "packing_unknown": 0
   },
+  "test_version": {
+   "git_head": "7ef8a61514041ff8aa1012cef576e9047e7197a8",
+   "worktree_clean": true,
+   "node": "v22.23.4"
+  },
+  "trajectory": {
+   "sha256": "c6d70773a7ed0e1c8ceceb2fc8bd78d6a74628cf6627bb48f829fab753adefb0",
+   "ref_83397c5": "c6d70773a7ed0e1c8ceceb2fc8bd78d6a74628cf6627bb48f829fab753adefb0",
+   "bit_identical_to_83397c5": true
+  },
+  "contact_kinds": {
+   "geometric_contact": {
+    "episodes": 97,
+    "ends_exact": 8,
+    "open_at_horizon": 89,
+    "unconfirmed": 0,
+    "checker_violations": 0,
+    "missed": 0,
+    "penetrations": 0,
+    "pairs_scanned": 593,
+    "max_end_err_s": 5.075806441823261e-9,
+    "median_end_err_s": 1.922426662304133e-9,
+    "max_start_err_s": 2.05790939844519e-12,
+    "max_dev_from_mid_s": 7.752376518510573e-11,
+    "problems": []
+   },
+   "constraint_active": {
+    "intervals": 10261,
+    "binding": 10261,
+    "inside_geometric_episode": 10261,
+    "below_resolution": 0,
+    "open_at_horizon": 89,
+    "checker_violations": 0,
+    "problems": []
+   },
+   "antenna_contact": {
+    "supported": false,
+    "value": null,
+    "emitted": 0
+   },
+   "motion_records": {
+    "teleports": 0,
+    "speed_mismatch": 0,
+    "problems": []
+   },
+   "checker_cpu_ms": 1549.984,
+   "checker_wall_ms": 3126.016445999994
+  },
+  "judge_cpu_ms": 15210.932,
   "judge": {
    "overlap_pair_instants": 0,
    "overlap_between_instants": 0,
@@ -565,7 +855,7 @@
    "body_contacts_only_between_instants": 0,
    "occupancy2d": null,
    "instants": 20530,
-   "judge_wall_ms": 32361.18801
+   "judge_wall_ms": 31566.80255800001
   }
  },
  {
@@ -573,18 +863,18 @@
   "agents": 1000,
   "horizon_s": 20,
   "cost": {
-   "wall_ms": 6253.493375,
-   "cpu_user_ms": 3492.375,
-   "cpu_system_ms": 121.818,
-   "heap_used_delta_mb": 73.54737091064453,
-   "rss_mb": 201.76953125
+   "wall_ms": 13323.690058,
+   "cpu_user_ms": 7244.42,
+   "cpu_system_ms": 170.766,
+   "heap_used_delta_mb": 94.10559844970703,
+   "rss_mb": 220.27734375
   },
-  "peak_rss_mb": 573.98046875,
+  "peak_rss_mb": 656.734375,
   "stats": {
    "batches": 37945,
    "events_processed": 44021,
-   "queue_pushes": 231069,
-   "stale_pops": 173913,
+   "queue_pushes": 405822,
+   "stale_pops": 253519,
    "pair_hit_evals": 442070,
    "windows": 81,
    "candidate_pairs_total": 895722,
@@ -594,6 +884,15 @@
    "max_same_instant_batches": 1,
    "contacts": 17355,
    "releases": 16370,
+   "contact_episodes": 1001,
+   "contact_episode_ends": 16,
+   "sub_resolution_excursions": 16362,
+   "episode_events": 95147,
+   "episodes_open_at_horizon": 985,
+   "ends_unconfirmed_at_horizon": 0,
+   "constraint_outside_contact": 0,
+   "constraint_intervals": 17355,
+   "constraint_intervals_binding": 17355,
    "passes": 9296,
    "turns": 0,
    "turn_blocked": 0,
@@ -605,18 +904,18 @@
   },
   "events_by_kind": {
    "start": 1000,
-   "contact_start": 17355,
+   "contact_start": 1001,
    "stop": 2439,
    "resume": 1439,
    "pass": 9296,
-   "contact_end": 16370,
    "follow": 30562,
    "free": 28210,
+   "contact_end": 16,
    "stalled": 1000
   },
   "events_by_class": {
    "motion": 10296,
-   "physical_contact": 33725,
+   "physical_contact": 1017,
    "physical_constraint": 62650,
    "solver_status": 1000
   },
@@ -625,14 +924,14 @@
    "stopped_by_contact": 1000
   },
   "replay": {
-   "hash": "d772a522d23b0ef5",
+   "hash": "bd3870e60f4854f6",
    "input_order_reversed_identical": true,
    "variants_identical": true,
    "variants": {
-    "grid": "d772a522d23b0ef5",
-    "sap": "d772a522d23b0ef5",
-    "window_0.05": "d772a522d23b0ef5",
-    "window_1": "d772a522d23b0ef5"
+    "grid": "bd3870e60f4854f6",
+    "sap": "bd3870e60f4854f6",
+    "window_0.05": "bd3870e60f4854f6",
+    "window_1": "bd3870e60f4854f6"
    }
   },
   "broadphase": {
@@ -640,19 +939,19 @@
    "identical_candidate_sets": true,
    "cost": {
     "brute": {
-     "ms": 309.7051710000014,
+     "ms": 497.6331960000098,
      "pairs": 895722
     },
     "grid_8mm": {
-     "ms": 245.23990100000083,
+     "ms": 301.9950950000202,
      "pairs": 895722
     },
     "grid_2mm": {
-     "ms": 572.8697549999997,
+     "ms": 516.1864739999874,
      "pairs": 895722
     },
     "sap": {
-     "ms": 508.4514710000003,
+     "ms": 623.2636580000108,
      "pairs": 895722
     }
    },
@@ -664,6 +963,55 @@
    "packing_feasible_given_u_blocks": 9,
    "packing_unknown": 0
   },
+  "test_version": {
+   "git_head": "7ef8a61514041ff8aa1012cef576e9047e7197a8",
+   "worktree_clean": true,
+   "node": "v22.23.4"
+  },
+  "trajectory": {
+   "sha256": "d5f18bfca5ab902178795ba12aab822938116a5c8d5d93aa94c1b1d561c09d9b",
+   "ref_83397c5": "d5f18bfca5ab902178795ba12aab822938116a5c8d5d93aa94c1b1d561c09d9b",
+   "bit_identical_to_83397c5": true
+  },
+  "contact_kinds": {
+   "geometric_contact": {
+    "episodes": 1001,
+    "ends_exact": 16,
+    "open_at_horizon": 985,
+    "unconfirmed": 0,
+    "checker_violations": 0,
+    "missed": 0,
+    "penetrations": 0,
+    "pairs_scanned": 24857,
+    "max_end_err_s": 5.07474107180883e-9,
+    "median_end_err_s": 1.8359953557478548e-9,
+    "max_start_err_s": 2.62501131942372e-12,
+    "max_dev_from_mid_s": 9.91804860461798e-10,
+    "problems": []
+   },
+   "constraint_active": {
+    "intervals": 17355,
+    "binding": 17355,
+    "inside_geometric_episode": 17355,
+    "below_resolution": 0,
+    "open_at_horizon": 985,
+    "checker_violations": 0,
+    "problems": []
+   },
+   "antenna_contact": {
+    "supported": false,
+    "value": null,
+    "emitted": 0
+   },
+   "motion_records": {
+    "teleports": 0,
+    "speed_mismatch": 0,
+    "problems": []
+   },
+   "checker_cpu_ms": 4266.862,
+   "checker_wall_ms": 4289.9361619998235
+  },
+  "judge_cpu_ms": 818423.864,
   "judge": {
    "overlap_pair_instants": 0,
    "overlap_between_instants": 0,
@@ -677,7 +1025,7 @@
    "body_contacts_only_between_instants": 0,
    "occupancy2d": null,
    "instants": 34716,
-   "judge_wall_ms": 1203391.148408
+   "judge_wall_ms": 1475279.539746
   }
  }
 ]
