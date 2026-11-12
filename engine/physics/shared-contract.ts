@@ -173,3 +173,111 @@ export function runBoth(s: SharedScenario): { kin2d: SharedRunRecord; ph3b: Shar
   const ki = toKin2DInput(s), pi = toPH3bInput(s);
   return { kin2d: fromKin2D(s, ki, runKinematics(ki)), ph3b: fromPH3b(s, solve2D(pi)) };
 }
+
+// ================================================================ SHARED PHYSICAL CONTACT CONSTRAINT CONTRACT
+/**
+ * Owner decision 42 (docs/physics-contact-constraint.md). ONE physical principle for what happens when a body reaches
+ * another body or an obstacle, shared by KIN-2D and PH-3b (each keeps its current response as a comparison baseline):
+ *  1. no penetration: the gap g between any two touching shapes never becomes negative;
+ *  2. the contact response is a VELOCITY CONSTRAINT consistent with the local geometry: for every touching pair the
+ *     relative normal velocity at the closest points must not compress the contact (ġ ≥ 0);
+ *  3. the executed velocity is the constrained velocity CLOSEST to the commanded one (Euclidean projection in the
+ *     solver's velocity coordinates):
+ *       - if the command does not compress any contact, it is executed unchanged;
+ *       - if motion along the obstacle boundary is possible, the result slides (the tangential part is kept);
+ *       - if no motion direction is feasible, the result is zero (stop);
+ *  4. NO PUSHING: neither solver has masses or forces, so a body is never driven by another body. In a pair, only a body
+ *     whose own commanded motion closes the gap yields; it yields to the other body's EXECUTED motion (a follower may
+ *     match a leader's speed). If both bodies close the gap, each removes its own closing part (both treat the contact
+ *     as stationary). This is a physical non-penetration rule, NOT a social "following" behaviour.
+ * The rows below are the generic form: a·x ≥ b on a solver's velocity vector x. The reference projector solves
+ *   min ‖x − x₀‖²  s.t.  aᵢ·x ≥ bᵢ
+ * EXACTLY by enumerating active sets (KKT: multipliers ≥ 0, all rows satisfied). It is a REFERENCE (small row counts),
+ * not an optimised solver; above max_rows it refuses instead of approximating.
+ * PH-3b mapping (1-D lane speed): one row per follower, −v ≥ −v_leader, gives v = min(v_cmd, v_leader) — PH-3b's
+ * existing follow rule is exactly this projection (tested). KIN-2D mapping: engine/physics/kinematics2d-contact.ts.
+ */
+export interface ConstraintRow { id: string; a: number[]; b: number }
+export type ProjectionStatus = 'free' | 'constrained' | 'stopped' | 'infeasible' | 'too_many_rows';
+export interface ProjectionResult { x: number[]; status: ProjectionStatus; active: string[]; multipliers: number[]; max_violation: number; subsets_tried: number }
+export const PROJECTION_TOL = 1e-12;
+export const PROJECTION_MAX_ROWS = 12;
+const dot = (a: number[], b: number[]) => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; };
+/** Gaussian elimination with partial pivoting; null if (numerically) singular */
+function solveLinear(M: number[][], r: number[]): number[] | null {
+  const n = r.length, A = M.map((row, i) => [...row, r[i]]);
+  const scale = Math.max(1e-300, ...M.flat().map(Math.abs));
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let i = c + 1; i < n; i++) if (Math.abs(A[i][c]) > Math.abs(A[p][c])) p = i;
+    if (Math.abs(A[p][c]) <= 1e-12 * scale) return null;
+    [A[c], A[p]] = [A[p], A[c]];
+    for (let i = 0; i < n; i++) if (i !== c) { const f = A[i][c] / A[c][c]; for (let k = c; k <= n; k++) A[i][k] -= f * A[c][k]; }
+  }
+  return A.map((row, i) => row[n] / row[i]);
+}
+/** exact Euclidean projection of x0 onto {x : aᵢ·x ≥ bᵢ} (reference implementation; deterministic) */
+export function projectVelocity(x0: number[], rows: ConstraintRow[], opts: { max_rows?: number; tol?: number } = {}): ProjectionResult {
+  const tol = opts.tol ?? PROJECTION_TOL, maxRows = opts.max_rows ?? PROJECTION_MAX_ROWS, n = x0.length;
+  for (const r of rows) if (r.a.length !== n || !r.a.every(Number.isFinite) || !Number.isFinite(r.b)) throw new SharedRefused(`constraint row ${r.id}: bad dimension or value`);
+  const sorted = [...rows].sort((p, q) => (p.id < q.id ? -1 : p.id > q.id ? 1 : 0));
+  const viol = (x: number[]) => Math.max(0, ...sorted.map((r) => r.b - dot(r.a, x)));
+  const nx0 = Math.hypot(...x0), rowTol = (r: ConstraintRow) => tol * Math.max(1, Math.abs(r.b), Math.hypot(...r.a) * Math.max(1, nx0));
+  if (sorted.every((r) => dot(r.a, x0) >= r.b - rowTol(r))) return { x: [...x0], status: 'free', active: [], multipliers: [], max_violation: viol(x0), subsets_tried: 0 };
+  if (sorted.length > maxRows) return { x: x0.map(() => 0), status: 'too_many_rows', active: [], multipliers: [], max_violation: NaN, subsets_tried: 0 };
+  const m = sorted.length;
+  let best: { x: number[]; S: number[]; mu: number[]; d: number } | null = null, tried = 0;
+  // subsets in a fixed order: by size, then by bit pattern (deterministic)
+  const masks = Array.from({ length: (1 << m) - 1 }, (_, i) => i + 1).sort((p, q) => popcount(p) - popcount(q) || p - q);
+  for (const mask of masks) {
+    if (popcount(mask) > n) continue; // more active rows than dimensions are linearly dependent
+    const S = [...Array(m).keys()].filter((i) => mask & (1 << i)); tried++;
+    const G = S.map((i) => S.map((j) => dot(sorted[i].a, sorted[j].a))), rhs = S.map((i) => sorted[i].b - dot(sorted[i].a, x0));
+    const mu = solveLinear(G, rhs); if (!mu) continue;
+    if (mu.some((u) => u < -tol * Math.max(1, nx0))) continue;
+    const x = x0.map((v, k) => v + S.reduce((s, i, j) => s + mu[j] * sorted[i].a[k], 0));
+    if (!sorted.every((r) => dot(r.a, x) >= r.b - rowTol(r))) continue;
+    const d = Math.hypot(...x.map((v, k) => v - x0[k]));
+    if (!best || d < best.d - tol * Math.max(1, nx0)) best = { x, S, mu, d };
+  }
+  if (!best) return { x: x0.map(() => 0), status: 'infeasible', active: [], multipliers: [], max_violation: NaN, subsets_tried: tried };
+  const stopped = Math.hypot(...best.x) <= tol * Math.max(1, nx0);
+  return { x: stopped ? best.x.map(() => 0) : best.x, status: stopped ? 'stopped' : 'constrained', active: best.S.map((i) => sorted[i].id), multipliers: best.mu, max_violation: viol(best.x), subsets_tried: tried };
+}
+function popcount(x: number): number { let c = 0; while (x) { c += x & 1; x >>>= 1; } return c; }
+/** PH-3b form of the same rule (1-D lane speed): the follower's speed after projection onto v ≤ v_leader */
+export function laneFollowProjection(v_cmd: number, v_leader_exec: number): number { return projectVelocity([v_cmd], [{ id: 'leader', a: [-1], b: -v_leader_exec }]).x[0]; }
+
+/** which contact-response model a run used (the comparison keeps both KIN-2D responses) */
+export type ContactResponse = 'kin2d_freeze_baseline' | 'kin2d_projected' | 'ph3b_speed_follow';
+
+/** KIN-2D 'project' contact mode result → shared record. Arrival is read from the EXECUTED motion (a constrained body
+ *  may be slower than planned; it does not inherit the planned arrival time). Structural type: the module
+ *  kinematics2d-contact.ts imports this file, so only its result shape is named here. */
+export interface ProjectedKinLike { executed: KinResult['executed']; final: KinResult['final']; events: { t_s: number; kind: string; ids: string[]; bracket_s?: [number, number]; detail?: string }[]; stats: Record<string, number> }
+export function fromKin2DProjected(s: SharedScenario, input: KinInput, res: ProjectedKinLike): SharedRunRecord {
+  const lanes = new Map(s.lanes.map((l) => [l.id, l]));
+  const agents: SharedAgentOut[] = s.agents.map((g) => {
+    const ex = res.executed[g.id], last = ex.segs[ex.segs.length - 1], tr: Track = { id: g.id, body: ex.body, segs: [...ex.segs, { t0: last.t1, t1: Infinity, p0: res.final[g.id], tw: { v: 0, vl: 0, w: 0 }, label: 'hold' }] };
+    const times = [...new Set([0, ...ex.segs.flatMap((q) => [q.t0, q.t1]).filter((t) => Number.isFinite(t) && t <= s.time.horizon_s)])].sort((a, b) => a - b);
+    const samples = times.map((t) => { const p = poseAt(tr, t); return { t_s: t, x_mm: p.x, y_mm: p.y, heading_rad: p.th }; });
+    // progress along the (straight) lane direction; arrival = first executed time the goal distance is reached
+    const G = laneGeom(lanes.get(g.lane) as SharedLane) as NonNullable<ReturnType<typeof laneGeom>>, e2 = { x: G.t.x * g.dir, y: G.t.y * g.dir }, p0 = poseAt(tr, ex.segs[0].t0), need = Math.abs(g.goal_s_mm - g.s_mm);
+    const prog = (t: number) => { const p = poseAt(tr, t); return (p.x - p0.x) * e2.x + (p.y - p0.y) * e2.y; };
+    let arrival: number | null = null;
+    for (const q of ex.segs) {
+      if (!(q.t1 > q.t0) || prog(q.t1) < need - 1e-9) continue;
+      let lo = q.t0, hi = q.t1; if (prog(lo) >= need - 1e-9) { arrival = lo; break; }
+      for (let k = 0; k < 200; k++) { const m = lo + (hi - lo) / 2; if (!(m > lo && m < hi)) break; if (prog(m) >= need - 1e-9) hi = m; else lo = m; }
+      arrival = hi; break;
+    }
+    const planned = input.tracks.find((t) => t.id === g.id) as Track;
+    // not arrived: the first time a contact constraint stopped it (a later command end does not erase that stop)
+    const stop = res.events.find((e) => e.kind === 'stop_on_contact' && e.ids[0] === g.id);
+    return { id: g.id, layer: planned.layer ?? '', body: bodyOf(g), samples, arrival_t_s: arrival, stopped_at_s: arrival === null ? (stop ? stop.t_s : ex.stopped_at_s) : null };
+  });
+  const motion: SharedMotionEvent[] = [];
+  for (const a of agents) { const g = s.agents.find((x) => x.id === a.id) as SharedAgentSpec; motion.push({ t_s: g.start_t_s, agent: a.id, kind: 'start', detail: null }); if (a.arrival_t_s !== null) motion.push({ t_s: a.arrival_t_s, agent: a.id, kind: 'arrive', detail: null }); }
+  for (const e of res.events) if (e.kind === 'constrained' || e.kind === 'constraint_free') motion.push({ t_s: e.t_s, agent: e.ids[0], kind: e.kind === 'constrained' ? 'follow' : 'free', detail: e.detail ?? null });
+  const contacts: SharedContactEvent[] = res.events.filter((e) => e.kind === 'contact_start' || e.kind === 'contact_end' || e.kind === 'stop_on_contact').map((e) => ({ t_s: e.t_s, kind: e.kind as SharedContactEvent['kind'], ids: [...e.ids], bracket_s: e.bracket_s ?? null, detail: e.detail ?? null }));
+  return finish(s, 'kin2d', agents, motion, contacts, res.events.length);
+}

@@ -10,7 +10,7 @@
  *       ant's own remembered travel direction (local; 0 gain = exploration). No per-frame independent left/right draws,
  *       no fixed sine wave.
  *  - C: B + bilateral chemical sensing at two antenna-tip points of a SYNTHETIC field (until CHEM integration the field
- *       is synthetic and labelled so): ω += g_c·(c_L − c_R)/(c_L + c_R + c_floor) (tropotaxis candidate; mechanism from
+ *       is synthetic and labelled so; a scene without a chemical signal uses the explicit ZERO-signal control field): ω += g_c·(c_L − c_R)/(c_L + c_R + c_floor) (tropotaxis candidate; mechanism from
  *       other species only).
  *  - all models: obstacle sensing ONLY by antenna-tip contact (a tip inside an obstacle); candidate response: stop
  *    forward motion and turn in place away from the touching side until both tips are clear.
@@ -21,7 +21,7 @@
  */
 import { advancePose, capGap, capsuleAt, dimsOf, staticCaps, Kin2DRefused, type BodyDims, type Pose, type Seg, type Static, type Track, type Twist, type P2 } from './kinematics2d.ts';
 import { hash32, rng } from '../rng.ts';
-import { antennaTipPoints, antennaSensors, ridgeValue, sampleLocal, SyntheticChemicalField, type AntennaGeometry, type AssumptionTag, type LocalChemSampler, type SensingSource, type SyntheticRidge } from './local-sensing.ts';
+import { antennaTipPoints, antennaSensors, ridgeValue, sampleLocal, assertRealtime, SyntheticChemicalField, type AntennaGeometry, type AssumptionTag, type LocalChemSampler, type SensingSource, type SimTime, type SyntheticRidge, type SyntheticZero } from './local-sensing.ts';
 
 export type WalkModel = 'A' | 'B' | 'C';
 export interface WalkParams {
@@ -43,18 +43,24 @@ export interface WalkParams {
 }
 /** SYNTHETIC chemical field: Gaussian ridge around a polyline (no diffusion, no decay; NOT a pheromone model) */
 export type SyntheticField = SyntheticRidge;
+/** explicit zero-signal control field (no chemical signal in the scene; Owner decision 46) */
+export const ZERO_SIGNAL_FIELD: SyntheticZero = Object.freeze({ synthetic: true, kind: 'zero_signal' }) as SyntheticZero;
 export interface WalkSpec {
   id: string; body: BodyDims; start: Pose; t0_s: number; seed: number; params: WalkParams;
   /** heading the ant remembers as its travel direction (local memory) */
   goal_heading_rad: number;
   /** stop the plan when the centre first reaches x ≥ end_x_mm (trail end), or at t0 + max_duration_s */
   end_x_mm: number | null; max_duration_s: number;
-  statics: Static[]; field: SyntheticField | null; layer?: string;
+  statics: Static[]; field: SyntheticField | SyntheticZero | null; layer?: string;
   /** C: the local chemical sampler (docs/kin2d-local-sensing.md). Omitted: a SyntheticChemicalField built from `field`.
    *  Model C reads chemistry ONLY through sampleLocal() of this contract. */
   sampler?: LocalChemSampler; chem_channel?: string;
+  /** SCHEDULER (not the agent): commits the field's state of each control instant before the agent senses it. With the
+   *  default synthetic field the field itself is the scheduler; with an injected reader, the caller supplies it (or the
+   *  reader must already be committed exactly at each sensing instant, otherwise sensing is refused). */
+  scheduler?: { advance(to: SimTime): unknown };
 }
-export interface SensorSample { t: number; left: { x_mm: number; y_mm: number; c: number }; right: { x_mm: number; y_mm: number; c: number }; synthetic: boolean; source: SensingSource }
+export interface SensorSample { t: number; state_commit_seq: number; state_commit_t_s: number; left: { x_mm: number; y_mm: number; c: number }; right: { x_mm: number; y_mm: number; c: number }; synthetic: boolean; source: SensingSource }
 export interface WalkEvent { t: number; kind: string; detail: string }
 export interface WalkPlan {
   track: Track; sensor_samples: SensorSample[]; events: WalkEvent[]; clamps: { turn_rate: number; curvature: number }; arrival_t_s: number | null;
@@ -69,7 +75,7 @@ export const MODEL_C_SENSING_TAGS: readonly AssumptionTag[] = [
 ];
 
 /** synthetic ridge value (observer / test use; the controller reads chemistry only through sampleLocal) */
-export function fieldValue(f: SyntheticField, p: P2): number { return ridgeValue(f, p); }
+export function fieldValue(f: SyntheticField | SyntheticZero, p: P2): number { return f.kind === 'zero_signal' ? 0 : ridgeValue(f, p); }
 const wrapPi = (x: number) => { let y = x % (2 * Math.PI); if (y <= -Math.PI) y += 2 * Math.PI; if (y > Math.PI) y -= 2 * Math.PI; return y; };
 export const antennaGeometry = (body: BodyDims, p: WalkParams): AntennaGeometry => ({ body_length_mm: body.length_mm as number, antenna_len_mm: p.antenna_len_mm, antenna_half_angle_rad: p.antenna_half_angle_rad });
 export function antennaTips(pose: Pose, body: BodyDims, p: WalkParams): { left: P2; right: P2 } { return antennaTipPoints(pose, antennaGeometry(body, p)); }
@@ -98,7 +104,10 @@ export function planWalk(spec: WalkSpec): WalkPlan {
   const p = spec.params; validateParams(p); dimsOf(spec.body, spec.id);
   if (spec.params.model === 'C' && !spec.field && !spec.sampler) throw new Kin2DRefused(`${spec.id}: model C needs a (synthetic) field`);
   const geom = antennaGeometry(spec.body, p), layer = spec.layer ?? 'default', channel = spec.chem_channel ?? 'synthetic_trail';
-  const sampler: LocalChemSampler | null = p.model !== 'C' ? null : spec.sampler ?? new SyntheticChemicalField({ id: `${spec.id}:synthetic-ridge`, channel, layer, field: spec.field as SyntheticField, committed_through_s: spec.t0_s + spec.max_duration_s, max_range_mm: 0 });
+  const own = p.model === 'C' && !spec.sampler ? new SyntheticChemicalField({ id: `${spec.id}:synthetic-ridge`, channel, layer, field: spec.field as SyntheticField | SyntheticZero, max_range_mm: 0 }) : null;
+  // the agent holds only the real-time reader; committing states is the scheduler's job (own field, or the caller's)
+  const sampler: LocalChemSampler | null = p.model !== 'C' ? null : own ? own.realtimeReader() : (spec.sampler as LocalChemSampler);
+  const scheduler = own ?? spec.scheduler ?? null;
   const R = rng(hash32(`${spec.seed}|kin2d.walk|${spec.id}`));
   const segs: Seg[] = [], sensor: SensorSample[] = [], events: WalkEvent[] = [];
   const clamps = { turn_rate: 0, curvature: 0 };
@@ -123,10 +132,12 @@ export function planWalk(spec: WalkSpec): WalkPlan {
       if (p.model !== 'A') {
         w = zeta - p.heading_gain_per_s * wrapPi(pose.th - spec.goal_heading_rad);
         if (p.model === 'C') {
+          scheduler?.advance({ t_s: t, round: 0 }); // scheduler commits instant t before the sensing phase
           const r = sampleLocal(sampler as LocalChemSampler, { agent_id: spec.id, t_s: t, round: 0, pose, geometry: geom, sensors: antennaSensors(pose, geom), layer, channel, range_mm: 0, source: (sampler as LocalChemSampler).source, tags: [...MODEL_C_SENSING_TAGS] });
+          assertRealtime(r); // decisions use only the latest committed state (never a diagnostic historical read)
           const cL = r.values[0].value, cR = r.values[1].value;
           w += (p.chem_gain_rad_s * (cL - cR)) / (cL + cR + p.chem_floor);
-          sensor.push({ t, left: { x_mm: r.values[0].x_mm, y_mm: r.values[0].y_mm, c: cL }, right: { x_mm: r.values[1].x_mm, y_mm: r.values[1].y_mm, c: cR }, synthetic: r.synthetic, source: r.source });
+          sensor.push({ t, state_commit_seq: r.state_commit.seq, state_commit_t_s: r.state_commit.time.t_s, left: { x_mm: r.values[0].x_mm, y_mm: r.values[0].y_mm, c: cL }, right: { x_mm: r.values[1].x_mm, y_mm: r.values[1].y_mm, c: cR }, synthetic: r.synthetic, source: r.source });
         }
       }
       const cap = Math.min(p.max_turn_rate_rad_s, p.max_curvature_per_mm * v);
