@@ -12,7 +12,8 @@
  *    spatial support, perception rule and time rule.
  *  - individuals read only a bounded local sample (radius or contact) on their own layer at the closed horizon.
  *  - deposits are visible only once the store's horizon has been closed past them (deposit-before-sense);
- *    same-instant visibility is decided by (t_s, round), never by array order.
+ *    same-instant visibility follows the layered phase order CHEM_PHASES (sources -> commit -> update -> local sensing
+ *    -> behaviour) and (t_s, round), never array order.
  *  - it fixes no biological number. Every number in a channel is a candidate with provenance.
  */
 
@@ -78,7 +79,8 @@ export interface TimeRule {
   unit: 's';
   /** λ in 1/s; λ = 0 is the mandatory baseline */
   lambda_per_s: ParamProvenance | null;
-  /** deposit at (t, r) is visible to a sample at (t', r') iff (t, r) <= (t', r') AND the horizon has been closed to (t', r') */
+  /** deposit at (t, r) is visible to a sample at (t', r') iff (t, r) <= (t', r') AND the horizon has been closed to
+   *  (t', r') (phases 2+3 of that instant done) AND the sample is taken in phase 4 (CHEM_PHASES). */
   same_instant: 'visible_if_round_not_later';
 }
 
@@ -104,6 +106,21 @@ export interface ChannelSpec {
 /** Time on a named chemistry clock in seconds. Mapping to the layered world time (P0-A0/P0-A1): the clock is anchored
  *  at a world time, and engine/clock physicsNative(clock, anchor, t_s) -> exactOf gives the exact instant. */
 export interface ChemTime { clock: string; unit: 's'; t_s: number; round: number }
+
+/** Layered time contract of one instant (t_s, round), Owner decision on same-instant visibility. Phases run in this
+ *  order at every instant:
+ *   1 physics_and_sources  — that phase's physics finishes and emits source events; deposits are SUBMITTED (pending);
+ *   2 chemistry_commit     — every legal deposit of the instant is committed TOGETHER (canonical order, never array order);
+ *   3 chemistry_update     — the chemical state is updated (analytic decay to the instant);
+ *   4 local_sensing        — individuals take bounded local samples; deposits committed in phase 2 of the SAME
+ *                            instant are visible within the effective sensing range;
+ *   5 behaviour_decision   — behaviour reads only what phase 4 returned. Deposits it causes belong to a later
+ *                            (t_s, round): a committed instant is closed (LATE_DEPOSIT), so nothing is edited afterwards.
+ *  Store mapping: deposit() = submission in phase 1; advance(to) = phases 2+3 of `to`; sampleLocal() = phase 4 only. */
+export const CHEM_PHASES = ['physics_and_sources', 'chemistry_commit', 'chemistry_update', 'local_sensing', 'behaviour_decision'] as const;
+export type ChemPhase = typeof CHEM_PHASES[number];
+/** 1-based position of a phase in the instant (1..5); 0 for an unknown value */
+export const chemPhaseIndex = (p: unknown): number => CHEM_PHASES.indexOf(p as ChemPhase) + 1;
 export interface ChemClock { name: string; anchor: { day: number; minute: number } }
 
 export type Where =
@@ -136,7 +153,9 @@ export type Sensor =
   | { kind: 'edge'; edge_id: string; s_mm: number; radius_mm: number }
   | { kind: 'disc'; x_mm: number; y_mm: number; radius_mm: number };
 
-export interface SampleQuery { signal_id: string; agent_id: string; layer: string; time: ChemTime; sensor: Sensor }
+/** `phase` must be 'local_sensing': a sample declared in phases 1-3 of its instant is SAMPLE_BEFORE_COMMIT, one in
+ *  phase 5 is SAMPLE_OUTSIDE_SENSING_PHASE (behaviour uses the phase-4 reading, it does not re-read the field). */
+export interface SampleQuery { signal_id: string; agent_id: string; layer: string; time: ChemTime; phase: ChemPhase; sensor: Sensor }
 
 export interface EdgeDomain { backend: 'surface_edge'; edges: { id: string; length_mm: number; layer: string }[] }
 export interface PlaneDomain { backend: 'sparse_2d'; bounds_mm: { x0: number; y0: number; x1: number; y1: number }; layers: string[] }
@@ -282,6 +301,11 @@ export function validateSampleQuery(q: SampleQuery, c: ChannelSpec, clock: ChemC
   if (q.signal_id !== c.signal_id) e.push('WRONG_CHANNEL');
   if (!nonEmpty(q.layer)) e.push('MISSING:layer');
   e.push(...validateTime(q.time, clock));
+  const ph = chemPhaseIndex(q.phase);
+  if (q.phase === undefined) e.push('MISSING:phase');
+  else if (ph === 0) e.push('BAD:phase');
+  else if (ph < chemPhaseIndex('local_sensing')) e.push('SAMPLE_BEFORE_COMMIT');
+  else if (ph > chemPhaseIndex('local_sensing')) e.push('SAMPLE_OUTSIDE_SENSING_PHASE');
   const s = q.sensor, max = c.perception_rule.max_radius_mm;
   if (!s) { e.push('MISSING:sensor'); return e; }
   if (!(finite(s.radius_mm) && s.radius_mm >= 0)) e.push('UNBOUNDED_RADIUS');
