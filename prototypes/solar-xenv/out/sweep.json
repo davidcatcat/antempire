@@ -1,363 +1,190 @@
 {
- "schema": "antempire.solar-xenv.v1",
- "label": "調查用：跨環境浮點比較；非正式；不改引擎",
+ "schema": "antempire.solar-xenv.v2",
+ "label": "跨環境逐位元比較（#190 方案 A 驗證）；非正式；不改規則",
+ "history": "out/sweep-v1-math-builtin.json: first run with Math.* trigonometry (1–320 ulp differences), kept unchanged",
  "A": {
+  "algorithm": "engine/clock/detmath.ts (Owner decision #190, ruled in #193): IEEE basic operations + Math.sqrt only",
   "chromium": "153.0.8010.12",
   "node": "v22.23.4",
-  "node_ms": 1444,
+  "platform": "linux-x64",
+  "arm64": "未驗證（CI 無 ARM64 執行器）",
+  "node_ms": 5258,
+  "cases": 153301,
+  "differing_values_total": 0,
+  "bit_identical": true,
   "A1": {
-   "cases": 1461,
-   "values": 7305,
-   "equal_values": 7137,
-   "differing_values": 168,
-   "refusal_flips": 0,
-   "refused_both": 0,
-   "max_ulps": 2,
-   "max_abs_min": 2.2737367544323206e-13,
-   "max_exact_us": 0.000013642420526593924,
-   "tick_flips": 0,
-   "display_minute_flips": 0,
-   "display_ms_flips": 0,
-   "whole_minute_between": 0,
-   "light_state_flips_at_midnight": 0,
-   "examples": [
-    {
-     "site": {
-      "latitude_deg": 24.18,
-      "longitude_deg": 120.64
-     },
-     "date": "2026-03-28",
-     "key": "sunrise",
-     "node": 353.8220565627473,
-     "chromium": 353.82205656274726,
-     "ulps": 1,
-     "abs_min": 5.684341886080802e-14,
-     "exact_us": 0.000003410605131648481,
-     "tick_flip": false,
-     "display_minute_flip": false,
-     "display_ms_flip": false,
-     "whole_minute_between": false
-    },
-    {
-     "site": {
-      "latitude_deg": 24.18,
-      "longitude_deg": 120.64
-     },
-     "date": "2026-03-30",
-     "key": "civil_dawn",
-     "node": 329.0644252389628,
-     "chromium": 329.0644252389629,
-     "ulps": 1,
-     "abs_min": 5.684341886080802e-14,
-     "exact_us": 0.000003410605131648481,
-     "tick_flip": false,
-     "display_minute_flip": false,
-     "display_ms_flip": false,
-     "whole_minute_between": false
-    },
-    {
-     "site": {
-      "latitude_deg": 24.18,
-      "longitude_deg": 120.64
-     },
-     "date": "2026-04-15",
-     "key": "civil_dawn",
-     "node": 313.193122213034,
-     "chromium": 313.1931222130339,
-     "ulps": 1,
-     "abs_min": 5.684341886080802e-14,
-     "exact_us": 0.000003410605131648481,
-     "tick_flip": false,
-     "display_minute_flip": false,
-     "display_ms_flip": false,
-     "whole_minute_between": false
-    },
-    {
-     "site": {
-      "latitude_deg": 24.18,
-      "longitude_deg": 120.64
-     },
-     "date": "2026-04-18",
-     "key": "sunrise",
-     "node": 333.66639230467206,
-     "chromium": 333.666392304672,
-     "ulps": 1,
-     "abs_min": 5.684341886080802e-14,
-     "exact_us": 0.000003410605131648481,
-     "tick_flip": false,
-     "display_minute_flip": false,
-     "display_ms_flip": false,
-     "whole_minute_between": false
-    },
-    {
-     "site": {
-      "latitude_deg": 24.18,
-      "longitude_deg": 120.64
-     },
-     "date": "2026-05-02",
-     "key": "civil_dawn",
-     "node": 298.6091874882847,
-     "chromium": 298.60918748828465,
-     "ulps": 1,
-     "abs_min": 5.684341886080802e-14,
-     "exact_us": 0.000003410605131648481,
-     "tick_flip": false,
-     "display_minute_flip": false,
-     "display_ms_flip": false,
-     "whole_minute_between": false
-    },
-    {
-     "site": {
-      "latitude_deg": 24.18,
-      "longitude_deg": 120.64
-     },
-     "date": "2026-05-02",
-     "key": "sunrise",
-     "node": 322.4823974932988,
-     "chromium": 322.4823974932987,
-     "ulps": 1,
-     "abs_min": 5.684341886080802e-14,
-     "exact_us": 0.000003410605131648481,
-     "tick_flip": false,
-     "display_minute_flip": false,
-     "display_ms_flip": false,
-     "whole_minute_between": false
-    },
-    {
-     "site": {
-      "latitude_deg": 24.18,
-      "longitude_deg": 120.64
-     },
-     "date": "2026-05-05",
-     "key": "civil_dawn",
-     "node": 296.42759400244915,
-     "chromium": 296.4275940024491,
-     "ulps": 1,
-     "abs_min": 5.684341886080802e-14,
-     "exact_us": 0.000003410605131648481,
-     "tick_flip": false,
-     "display_minute_flip": false,
-     "display_ms_flip": false,
-     "whole_minute_between": false
-    },
-    {
-     "site": {
-      "latitude_deg": 24.18,
-      "longitude_deg": 120.64
-     },
-     "date": "2026-05-08",
-     "key": "sunrise",
-     "node": 318.54857401690305,
-     "chromium": 318.5485740169031,
-     "ulps": 1,
-     "abs_min": 5.684341886080802e-14,
-     "exact_us": 0.000003410605131648481,
-     "tick_flip": false,
-     "display_minute_flip": false,
-     "display_ms_flip": false,
-     "whole_minute_between": false
-    }
-   ],
-   "max_ulps_example": {
-    "site": {
-     "latitude_deg": 24.18,
-     "longitude_deg": 120.64
-    },
-    "date": "2027-09-03",
-    "key": "civil_dawn",
-    "node": 316.376855158667,
-    "chromium": 316.3768551586671,
-    "ulps": 2,
-    "abs_min": 1.1368683772161603e-13,
-    "exact_us": 0.000006821210263296962,
-    "tick_flip": false,
-    "display_minute_flip": false,
-    "display_ms_flip": false,
-    "whole_minute_between": false
+   "node_vs_chromium_page": {
+    "cases": 1461,
+    "values": 7305,
+    "equal_values": 7305,
+    "differing_values": 0,
+    "refusal_flips": 0,
+    "refused_both": 0,
+    "max_ulps": 0,
+    "max_abs_min": 0,
+    "max_exact_us": 0,
+    "tick_flips": 0,
+    "display_minute_flips": 0,
+    "display_ms_flips": 0,
+    "whole_minute_between": 0,
+    "light_state_flips_at_midnight": 0,
+    "examples": [],
+    "max_ulps_example": null,
+    "ulps_histogram": {}
    },
-   "ulps_histogram": {
-    "1": 165,
-    "2": 3
+   "node_vs_chromium_worker": {
+    "cases": 1461,
+    "values": 7305,
+    "equal_values": 7305,
+    "differing_values": 0,
+    "refusal_flips": 0,
+    "refused_both": 0,
+    "max_ulps": 0,
+    "max_abs_min": 0,
+    "max_exact_us": 0,
+    "tick_flips": 0,
+    "display_minute_flips": 0,
+    "display_ms_flips": 0,
+    "whole_minute_between": 0,
+    "light_state_flips_at_midnight": 0,
+    "examples": [],
+    "max_ulps_example": null,
+    "ulps_histogram": {}
+   },
+   "digest": {
+    "node": "5579ee55f8edacf99e19e63531874b5fc6453be44f28e5c3564f63e673f9d131",
+    "chromium_page": "5579ee55f8edacf99e19e63531874b5fc6453be44f28e5c3564f63e673f9d131",
+    "chromium_worker": "5579ee55f8edacf99e19e63531874b5fc6453be44f28e5c3564f63e673f9d131"
    }
   },
   "A2": {
-   "cases": 63510,
-   "values": 302960,
-   "equal_values": 290222,
-   "differing_values": 12738,
-   "refusal_flips": 0,
-   "refused_both": 2918,
-   "max_ulps": 320,
-   "max_abs_min": 1.1368683772161603e-12,
-   "max_exact_us": 0.00006821210263296962,
-   "tick_flips": 0,
-   "display_minute_flips": 0,
-   "display_ms_flips": 0,
-   "whole_minute_between": 0,
-   "light_state_flips_at_midnight": 0,
-   "examples": [
-    {
-     "site": {
-      "latitude_deg": -72,
-      "longitude_deg": -179.5
-     },
-     "date": "2026-02-20",
-     "key": "sunrise",
-     "node": 214.68964681968032,
-     "chromium": 214.6896468196802,
-     "ulps": 4,
-     "abs_min": 1.1368683772161603e-13,
-     "exact_us": 0.000006821210263296962,
-     "tick_flip": false,
-     "display_minute_flip": false,
-     "display_ms_flip": false,
-     "whole_minute_between": false
-    },
-    {
-     "site": {
-      "latitude_deg": -72,
-      "longitude_deg": -179.5
-     },
-     "date": "2026-03-17",
-     "key": "civil_dawn",
-     "node": 271.84886237203386,
-     "chromium": 271.8488623720338,
-     "ulps": 1,
-     "abs_min": 5.684341886080802e-14,
-     "exact_us": 0.000003410605131648481,
-     "tick_flip": false,
-     "display_minute_flip": false,
-     "display_ms_flip": false,
-     "whole_minute_between": false
-    },
-    {
-     "site": {
-      "latitude_deg": -72,
-      "longitude_deg": -179.5
-     },
-     "date": "2026-04-06",
-     "key": "sunrise",
-     "node": 433.2596244732699,
-     "chromium": 433.25962447327,
-     "ulps": 1,
-     "abs_min": 5.684341886080802e-14,
-     "exact_us": 0.000003410605131648481,
-     "tick_flip": false,
-     "display_minute_flip": false,
-     "display_ms_flip": false,
-     "whole_minute_between": false
-    },
-    {
-     "site": {
-      "latitude_deg": -72,
-      "longitude_deg": -179.5
-     },
-     "date": "2026-04-26",
-     "key": "civil_dawn",
-     "node": 450.75826455498833,
-     "chromium": 450.7582645549883,
-     "ulps": 1,
-     "abs_min": 5.684341886080802e-14,
-     "exact_us": 0.000003410605131648481,
-     "tick_flip": false,
-     "display_minute_flip": false,
-     "display_ms_flip": false,
-     "whole_minute_between": false
-    },
-    {
-     "site": {
-      "latitude_deg": -72,
-      "longitude_deg": -179.5
-     },
-     "date": "2026-08-04",
-     "key": "civil_dusk",
-     "node": 940.5681108678359,
-     "chromium": 940.568110867836,
-     "ulps": 1,
-     "abs_min": 1.1368683772161603e-13,
-     "exact_us": 0.000006821210263296962,
-     "tick_flip": false,
-     "display_minute_flip": false,
-     "display_ms_flip": false,
-     "whole_minute_between": false
-    },
-    {
-     "site": {
-      "latitude_deg": -72,
-      "longitude_deg": -179.5
-     },
-     "date": "2026-08-29",
-     "key": "civil_dawn",
-     "node": 394.0652505198891,
-     "chromium": 394.06525051988905,
-     "ulps": 1,
-     "abs_min": 5.684341886080802e-14,
-     "exact_us": 0.000003410605131648481,
-     "tick_flip": false,
-     "display_minute_flip": false,
-     "display_ms_flip": false,
-     "whole_minute_between": false
-    },
-    {
-     "site": {
-      "latitude_deg": -72,
-      "longitude_deg": -179.5
-     },
-     "date": "2026-10-23",
-     "key": "civil_dawn",
-     "node": 36.4915556932325,
-     "chromium": 36.491555693232726,
-     "ulps": 32,
-     "abs_min": 2.2737367544323206e-13,
-     "exact_us": 0.000013642420526593924,
-     "tick_flip": false,
-     "display_minute_flip": false,
-     "display_ms_flip": false,
-     "whole_minute_between": false
-    },
-    {
-     "site": {
-      "latitude_deg": -72,
-      "longitude_deg": -120
-     },
-     "date": "2026-02-25",
-     "key": "sunrise",
-     "node": 243.9348011673152,
-     "chromium": 243.93480116731507,
-     "ulps": 4,
-     "abs_min": 1.1368683772161603e-13,
-     "exact_us": 0.000006821210263296962,
-     "tick_flip": false,
-     "display_minute_flip": false,
-     "display_ms_flip": false,
-     "whole_minute_between": false
-    }
-   ],
-   "max_ulps_example": {
-    "site": {
-     "latitude_deg": -63,
-     "longitude_deg": 0
-    },
+   "node_vs_chromium_page": {
+    "cases": 63510,
+    "values": 302960,
+    "equal_values": 302960,
+    "differing_values": 0,
+    "refusal_flips": 0,
+    "refused_both": 2918,
+    "max_ulps": 0,
+    "max_abs_min": 0,
+    "max_exact_us": 0,
+    "tick_flips": 0,
+    "display_minute_flips": 0,
+    "display_ms_flips": 0,
+    "whole_minute_between": 0,
+    "light_state_flips_at_midnight": 0,
+    "examples": [],
+    "max_ulps_example": null,
+    "ulps_histogram": {}
+   },
+   "node_vs_chromium_worker": {
+    "cases": 63510,
+    "values": 302960,
+    "equal_values": 302960,
+    "differing_values": 0,
+    "refusal_flips": 0,
+    "refused_both": 2918,
+    "max_ulps": 0,
+    "max_abs_min": 0,
+    "max_exact_us": 0,
+    "tick_flips": 0,
+    "display_minute_flips": 0,
+    "display_ms_flips": 0,
+    "whole_minute_between": 0,
+    "light_state_flips_at_midnight": 0,
+    "examples": [],
+    "max_ulps_example": null,
+    "ulps_histogram": {}
+   },
+   "digest": {
+    "node": "d8d5f687b1ad952d359f48a67026112de890c680a02dd2dec890528847e1867c",
+    "chromium_page": "d8d5f687b1ad952d359f48a67026112de890c680a02dd2dec890528847e1867c",
+    "chromium_worker": "d8d5f687b1ad952d359f48a67026112de890c680a02dd2dec890528847e1867c"
+   }
+  },
+  "A3": {
+   "node_vs_chromium_page": {
+    "cases": 88330,
+    "values": 329360,
+    "equal_values": 329360,
+    "differing_values": 0,
+    "refusal_flips": 0,
+    "refused_both": 22458,
+    "max_ulps": 0,
+    "max_abs_min": 0,
+    "max_exact_us": 0,
+    "tick_flips": 0,
+    "display_minute_flips": 0,
+    "display_ms_flips": 0,
+    "whole_minute_between": 0,
+    "light_state_flips_at_midnight": 0,
+    "examples": [],
+    "max_ulps_example": null,
+    "ulps_histogram": {}
+   },
+   "node_vs_chromium_worker": {
+    "cases": 88330,
+    "values": 329360,
+    "equal_values": 329360,
+    "differing_values": 0,
+    "refusal_flips": 0,
+    "refused_both": 22458,
+    "max_ulps": 0,
+    "max_abs_min": 0,
+    "max_exact_us": 0,
+    "tick_flips": 0,
+    "display_minute_flips": 0,
+    "display_ms_flips": 0,
+    "whole_minute_between": 0,
+    "light_state_flips_at_midnight": 0,
+    "examples": [],
+    "max_ulps_example": null,
+    "ulps_histogram": {}
+   },
+   "digest": {
+    "node": "45c665603551b9bf030808bf097fd134ab899f9f961862062c8c98905f10ea80",
+    "chromium_page": "45c665603551b9bf030808bf097fd134ab899f9f961862062c8c98905f10ea80",
+    "chromium_worker": "45c665603551b9bf030808bf097fd134ab899f9f961862062c8c98905f10ea80"
+   }
+  },
+  "spotlight": [
+   {
+    "why": "C1/C3/C4 counterexample input (#181): experiment site, day 1 sunrise",
+    "lat": 24.18,
+    "lon": 120.64,
+    "date": "2026-03-27",
+    "key": "sunrise",
+    "found": true,
+    "node": 354.8291761906146,
+    "chromium_page": 354.8291761906146,
+    "chromium_worker": 354.8291761906146,
+    "bit_identical": true
+   },
+   {
+    "why": "A1 largest difference of the first run (2 ulp)",
+    "lat": 24.18,
+    "lon": 120.64,
+    "date": "2027-09-03",
+    "key": "civil_dawn",
+    "found": true,
+    "node": 316.376855158667,
+    "chromium_page": 316.376855158667,
+    "chromium_worker": 316.376855158667,
+    "bit_identical": true
+   },
+   {
+    "why": "A2 largest difference of the first run (320 ulp, |cos H| near 1)",
+    "lat": -63,
+    "lon": 0,
     "date": "2026-01-16",
     "key": "civil_dawn",
-    "node": 20.69769062717819,
-    "chromium": 20.697690627177053,
-    "ulps": 320,
-    "abs_min": 1.1368683772161603e-12,
-    "exact_us": 0.00006821210263296962,
-    "tick_flip": false,
-    "display_minute_flip": false,
-    "display_ms_flip": false,
-    "whole_minute_between": false
-   },
-   "ulps_histogram": {
-    "1": 10031,
-    "2": 743,
-    "3-16": 1949,
-    "17-128": 14,
-    ">128": 1
+    "found": true,
+    "node": 20.697690627176485,
+    "chromium_page": 20.697690627176485,
+    "chromium_worker": 20.697690627176485,
+    "bit_identical": true
    }
-  }
+  ]
  },
  "B": {
   "rows": [

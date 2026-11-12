@@ -8,7 +8,9 @@
  * for a representative point, and (b) an hourly air temperature taken from a hand-written 24-value profile
  * (synthetic: true). Neither feeds back into the ants.
  */
-export const ENGINE_VERSION = 'experiment-world-runtime/1';
+/** /2 (Owner decision #190, ruled in #193, 2026-11-12): light times now from engine/clock/detmath.ts (bit-identical across
+ *  environments; last digits differ from /1, which used Math.* trigonometry). Snapshots of /1 are refused (ENGINE_MISMATCH). */
+export const ENGINE_VERSION = 'experiment-world-runtime/2';
 export const SNAPSHOT_SCHEMA = 'antempire.experiment-world-snapshot.v1';
 export const SCHEMA_VERSION = 1;
 export const LABEL_ZH = '非正式實驗世界／不屬於正式遊戲歷史';

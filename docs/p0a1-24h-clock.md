@@ -1,7 +1,7 @@
 # P0-A1：24 小時事件時間契約與環境時鐘（隔離，非正式 Day0 實驗世界）
 
 > **地位**：工程與環境輸入的第一步。**沒有**任何螞蟻行為、任務分配或生物參數；**沒有**接入正式每日模擬、Day14、`cli/advance` 或存檔；不在規則指紋內；不推進遊戲日。正式引擎的 360 分鐘時窗**不變**。
-> **程式**：`engine/clock/time-frames.ts`（四種時間）、`engine/clock/solar.ts`（光照）、`engine/clock/weather-input.ts`（天氣輸入、氣溫／濕度重建、降雨事件）、`engine/clock/environment.ts`（排入 #116 排程器、日結算）。
+> **程式**：`engine/clock/time-frames.ts`（四種時間）、`engine/clock/solar.ts`（光照；三角函數用 `engine/clock/detmath.ts`，跨環境逐位元相同，#190，見 `docs/solar-cross-env-check.md` §7）、`engine/clock/weather-input.ts`（天氣輸入、氣溫／濕度重建、降雨事件）、`engine/clock/environment.ts`（排入 #116 排程器、日結算）。
 > **情境檔**：`scenarios/p0a1-clock/xitun-day0-clock.json`（標「非正式」）。**原型**：`prototypes/p0a1-24h-clock/day0-environment.ts`（只輸出到終端機，不寫檔）。
 > **測試（阻擋性）**：`tests/p0a1-24h-clock.test.ts`、`tests/clock-isolation.test.ts`、`tests/p0a1-multi-colony-axis.test.ts`（多蟻群共用時間軸，§7；實驗程式 `prototypes/p0a1-24h-clock/shared-resource.ts`）。
 > 建立在 #116（排程器）與 #117（原生時間／精確時刻）之上，沒有重寫排程器。科學設計見 `docs/research-design-p0a-24h-clock.md`。

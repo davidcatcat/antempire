@@ -10,8 +10,14 @@
  * The event times are found by iterating the hour-angle equation with the solar position evaluated AT the event
  * (not at noon), so the altitude at the returned instant equals the threshold to < 1e-6° (tested); the remaining error
  * is the model's own (~1 min). Pure functions: no colony, no random draw, no clock.
+ *
+ * CROSS-ENVIRONMENT DETERMINISM (Owner decision #190, ruled in #193, 2026-11-12; docs/solar-cross-env-check.md §7): all
+ * trigonometry goes through ./detmath.ts (IEEE basic operations + Math.sqrt only), never Math.sin / cos / tan / asin /
+ * acos / ** — those are implementation-approximated and differed by 1–320 ulp between Node and Chromium. The light times
+ * are therefore bit-identical in every conforming engine (verified Node vs Chromium, x86-64; ARM64 not verified).
  */
 import { type CalendarAnchor, clockFail, julianDayOf, parseDate } from './time-frames.ts';
+import { detAcos, detAsin, detCos, detSin, detTan } from './detmath.ts';
 
 const RAD = Math.PI / 180, DEG = 180 / Math.PI;
 const mod360 = (x: number) => ((x % 360) + 360) % 360;
@@ -28,14 +34,14 @@ export function solarPosition(jd: number): { declination_deg: number; equation_o
   const L0 = mod360(280.46646 + T * (36000.76983 + T * 0.0003032));
   const M = 357.52911 + T * (35999.05029 - 0.0001537 * T);
   const e = 0.016708634 - T * (0.000042037 + 0.0000001267 * T);
-  const C = Math.sin(M * RAD) * (1.914602 - T * (0.004817 + 0.000014 * T)) + Math.sin(2 * M * RAD) * (0.019993 - 0.000101 * T) + Math.sin(3 * M * RAD) * 0.000289;
+  const C = detSin(M * RAD) * (1.914602 - T * (0.004817 + 0.000014 * T)) + detSin(2 * M * RAD) * (0.019993 - 0.000101 * T) + detSin(3 * M * RAD) * 0.000289;
   const omega = 125.04 - 1934.136 * T;
-  const lambda = L0 + C - 0.00569 - 0.00478 * Math.sin(omega * RAD);
+  const lambda = L0 + C - 0.00569 - 0.00478 * detSin(omega * RAD);
   const eps0 = 23 + (26 + (21.448 - T * (46.815 + T * (0.00059 - T * 0.001813))) / 60) / 60;
-  const eps = eps0 + 0.00256 * Math.cos(omega * RAD);
-  const decl = Math.asin(Math.sin(eps * RAD) * Math.sin(lambda * RAD)) * DEG;
-  const y = Math.tan((eps / 2) * RAD) ** 2;
-  const eot = 4 * DEG * (y * Math.sin(2 * L0 * RAD) - 2 * e * Math.sin(M * RAD) + 4 * e * y * Math.sin(M * RAD) * Math.cos(2 * L0 * RAD) - 0.5 * y * y * Math.sin(4 * L0 * RAD) - 1.25 * e * e * Math.sin(2 * M * RAD));
+  const eps = eps0 + 0.00256 * detCos(omega * RAD);
+  const decl = detAsin(detSin(eps * RAD) * detSin(lambda * RAD)) * DEG;
+  const ty = detTan((eps / 2) * RAD), y = ty * ty;
+  const eot = 4 * DEG * (y * detSin(2 * L0 * RAD) - 2 * e * detSin(M * RAD) + 4 * e * y * detSin(M * RAD) * detCos(2 * L0 * RAD) - 0.5 * y * y * detSin(4 * L0 * RAD) - 1.25 * e * e * detSin(2 * M * RAD));
   return { declination_deg: decl, equation_of_time_min: eot };
 }
 
@@ -47,7 +53,7 @@ export function solarAltitude(site: SolarSite, a: CalendarAnchor, date: string, 
   const tst = minute + eot + 4 * site.longitude_deg - a.utc_offset_minutes; // true solar time (min)
   const ha = tst / 4 - 180;
   const phi = site.latitude_deg * RAD;
-  return Math.asin(Math.sin(phi) * Math.sin(d * RAD) + Math.cos(phi) * Math.cos(d * RAD) * Math.cos(ha * RAD)) * DEG;
+  return detAsin(detSin(phi) * detSin(d * RAD) + detCos(phi) * detCos(d * RAD) * detCos(ha * RAD)) * DEG;
 }
 
 /** local minute (may be < 0 or >= 1440 near the date line; not for Taichung) at which the sun crosses `altitude_deg`,
@@ -57,9 +63,9 @@ export function crossingMinute(site: SolarSite, a: CalendarAnchor, date: string,
   let m = 720; // first guess: local noon
   for (let i = 0; i < 6; i++) {
     const { declination_deg: d, equation_of_time_min: eot } = solarPosition(julianDayOf(a, { day, us: m * 60_000_000, us_lo: 0 }));
-    const cosH = (Math.sin(altitude_deg * RAD) - Math.sin(phi) * Math.sin(d * RAD)) / (Math.cos(phi) * Math.cos(d * RAD));
+    const cosH = (detSin(altitude_deg * RAD) - detSin(phi) * detSin(d * RAD)) / (detCos(phi) * detCos(d * RAD));
     if (!(cosH >= -1 && cosH <= 1)) return null;
-    const H = Math.acos(cosH) * DEG, noon = 720 - 4 * s.longitude_deg - eot + a.utc_offset_minutes;
+    const H = detAcos(cosH) * DEG, noon = 720 - 4 * s.longitude_deg - eot + a.utc_offset_minutes;
     m = noon + (rising ? -4 * H : 4 * H);
   }
   return m;
