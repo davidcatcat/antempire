@@ -3,9 +3,9 @@
  * FAILS (exit 1) on any failed check, page error or console error.
  *   npm run web:build && node cli/web-serve.ts 8781 &  node tests/browser/worker-runtime.check.cjs <outDir> http://localhost:8781/
  * Checks:
- *  - Node <-> Worker: the 48 h event sequence (ids, exact instants, data, every random draw) and the 48 h payload hash
- *    are compared with `node tests/lib/experiment-world-run.ts`. Byte identity is REPORTED, not assumed; if any number
- *    differs, the maximum absolute difference is recorded and must stay within a stated bound (1e-9 s / 1e-9 cm).
+ *  - Node <-> Worker: the 48 h event sequence (ids, exact instants, data, every random draw, light transitions) and the
+ *    48 h payload are compared with `node tests/lib/experiment-world-run.ts` and must be BYTE-IDENTICAL (no tolerance;
+ *    light times bit-identical since Owner decision #190, engine/clock/detmath.ts). Verified on x86-64 only.
  *  - same environment replay: two Worker runs identical; 24 h -> snapshot -> new Worker -> restore -> 24 h identical to
  *    48 h continuous; irregular chunks identical; paced run (start / speeds / pause / resume) then step to 48 h identical.
  *  - refusal: a tampered snapshot is refused and the Worker keeps its world; an unknown command is rejected.
@@ -77,36 +77,23 @@ const dirHash = (d) => { const h = crypto.createHash('sha256'); const walk = (p)
       protocolErrors: [A, A2, B, C, D, E].flatMap((x) => x.bad),
     };
   }, SEEDS);
-  // Node vs Worker comparison. Ant rules use only IEEE basic operations (detmath.ts), so ant and temperature events must
-  // be byte-identical. Light transition times come from engine/clock/solar.ts (Math trigonometry, implementation-
-  // approximated): those numbers are compared within a bound and every difference is recorded.
-  const LIGHT_BOUND_MIN = 1e-9, LIGHT_BOUND_US = 1e-3;
-  const cmp = { seeds: SEEDS, events: 0, identical_events: 0, light_events_differing: 0, strict_failures: [], max_light_minute_diff: 0, max_light_exact_us_diff: 0, payload_identical: 0, payload_identical_without_light: 0 };
-  const lightNums = (a, b, pth) => { if (typeof a === 'number' && typeof b === 'number') { if (pth.endsWith('.us') || pth.endsWith('.us_lo')) return; cmp.max_light_minute_diff = Math.max(cmp.max_light_minute_diff, Math.abs(a - b) * (pth.endsWith('t_sim') ? 1 / 60 : 1)); return; } if (a && b && typeof a === 'object') { for (const k of Object.keys(a)) lightNums(a[k], b[k], `${pth}.${k}`); return; } if (a !== b) cmp.strict_failures.push(`${pth}: ${a} vs ${b}`); };
-  const exactDiff = (a, b) => Math.abs((a.us - b.us) + (a.us_lo - b.us_lo) + (a.day - b.day) * 86400e6);
-  const noLight = (p) => { const q = JSON.parse(JSON.stringify(p)); q.env.light_times = null; q.scheduler.events = q.scheduler.events.filter((e) => e.kind !== 'light_change'); return q; };
+  // Node vs Worker comparison: STRICT byte identity, no tolerance. Ant rules use only IEEE basic operations
+  // (prototypes/continuous-world/worker/detmath.ts); since Owner decision #190 (ruled in #193, 2026-11-12) the light
+  // transition times of engine/clock/solar.ts do too (engine/clock/detmath.ts). Before that change the light times were
+  // compared within a bound and differed by 1 ulp (PR #169; docs/solar-cross-env-check.md) — that bound is removed.
+  const cmp = { seeds: SEEDS, events: 0, identical_events: 0, differing: [], payload_identical: 0 };
   const canon = (v) => (v === null || typeof v !== 'object') ? JSON.stringify(v) : Array.isArray(v) ? `[${v.map(canon).join(',')}]` : `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canon(v[k])}`).join(',')}}`;
   SEEDS.forEach((seed, si) => {
     const n = nodeRuns[si], w = res.xs[si];
-    if (n.events.length !== w.events.length) { cmp.strict_failures.push(`seed ${seed}: ${n.events.length} vs ${w.events.length} events`); return; }
+    if (n.events.length !== w.events.length) { cmp.differing.push(`seed ${seed}: ${n.events.length} vs ${w.events.length} events`); return; }
     for (let i = 0; i < n.events.length; i++) {
       cmp.events++;
-      const a = JSON.stringify(n.events[i]); if (a === w.events[i]) { cmp.identical_events++; continue; }
-      const A = n.events[i], B = JSON.parse(w.events[i]);
-      if (A.event_id !== B.event_id || !['light_change', 'env_day'].includes(A.kind)) { cmp.strict_failures.push(`seed ${seed} #${i} ${A.event_id} vs ${B.event_id}`); continue; }
-      cmp.light_events_differing++; cmp.max_light_exact_us_diff = Math.max(cmp.max_light_exact_us_diff, exactDiff(A.exact, B.exact));
-      lightNums({ ...A, exact: null }, { ...B, exact: null }, '');
+      if (JSON.stringify(n.events[i]) === w.events[i]) cmp.identical_events++; else cmp.differing.push(`seed ${seed} #${i} ${n.events[i].event_id} (${n.events[i].kind})`);
     }
-    if (canon(n.payload) === canon(w.payload)) cmp.payload_identical++;
-    if (canon(noLight(n.payload)) === canon(noLight(w.payload))) cmp.payload_identical_without_light++;
-    else cmp.strict_failures.push(`seed ${seed}: 48 h state differs outside the light times`);
-    lightNums(n.payload.env.light_times, w.payload.env.light_times, '.env.light_times');
-    const ln = n.payload.scheduler.events.filter((e) => e.kind === 'light_change'), lw = w.payload.scheduler.events.filter((e) => e.kind === 'light_change');
-    ln.forEach((e, i) => { if (!lw[i] || lw[i].id !== e.id) cmp.strict_failures.push(`seed ${seed}: pending light event ${e.id}`); else { cmp.max_light_exact_us_diff = Math.max(cmp.max_light_exact_us_diff, exactDiff(e.exact, lw[i].exact)); lightNums(e.native, lw[i].native, '.native'); } });
+    if (canon(n.payload) === canon(w.payload)) cmp.payload_identical++; else cmp.differing.push(`seed ${seed}: 48 h payload differs`);
   });
-  info.node_vs_worker = { node: node.platform, ...cmp, strict_failures: cmp.strict_failures.slice(0, 5), bound: { light_minutes: LIGHT_BOUND_MIN, light_exact_us: LIGHT_BOUND_US } };
-  check(cmp.strict_failures.length === 0, `Node vs Worker (seeds ${SEEDS}): same event ids and order; every ant, temperature and non-light value byte-identical; 48 h state identical apart from light times (${cmp.identical_events}/${cmp.events} events byte-identical, ${cmp.payload_identical}/${SEEDS.length} payloads byte-identical)`);
-  check(cmp.max_light_minute_diff <= LIGHT_BOUND_MIN && cmp.max_light_exact_us_diff <= LIGHT_BOUND_US, `Node vs Worker: light transition times within the bound (max ${cmp.max_light_minute_diff} min, ${cmp.max_light_exact_us_diff} µs)`);
+  info.node_vs_worker = { node: node.platform, ...cmp, differing: cmp.differing.slice(0, 5), differing_count: cmp.differing.length, arm64: 'not verified' };
+  check(cmp.differing.length === 0 && cmp.identical_events === cmp.events && cmp.events > 0 && cmp.payload_identical === SEEDS.length, `Node vs Worker (seeds ${SEEDS}): every event byte-identical, light transitions included (${cmp.identical_events}/${cmp.events}); 48 h payloads byte-identical (${cmp.payload_identical}/${SEEDS.length})`);
   check(res.same2, 'Worker: same seed twice -> identical events and state');
   check(res.restoredOk && res.splitSame, 'Worker: 24 h -> snapshot -> new Worker -> restore -> 24 h == 48 h continuous (events, draws, state hash)');
   check(res.chunkSame, `Worker: ${res.chunks} irregular step_until chunks -> identical`);
