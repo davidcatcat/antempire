@@ -12,8 +12,14 @@
  *    enters it, so how advance() is partitioned never changes any value (bitwise).
  *  - deposits wait in `pending` until advance(to) closes the horizon past them; they are then integrated in the
  *    canonical order (t_s, round, layer, where, amount, deposit_id) — input order and agent ids do not matter.
- *  - sampleLocal only at the closed horizon (no future, no stale read), only on the sensor's own layer, only cells that
- *    intersect a radius bounded by the channel (edge: the interval on the same edge; plane: the disc).
+ *  - sampleLocal only at the closed horizon (no future, no stale read), only on the sensor's own layer, only within a
+ *    radius bounded by the channel (edge: the bins of the interval on the same edge; plane: AREA-WEIGHTED over the exact
+ *    disc ∩ cell areas, engine/chemistry/sampling.ts — CHEM-1b, Owner decision 30).
+ *  - causal read contract (CHEM-1b, Owner decision 43): a real-time decision reads only the LATEST committed state
+ *    through sampleLocal (or the ChemRealtimeReader capability, which has nothing else); every sample records the state
+ *    commit (seq, instant of phases 2+3) separately from the individual's sensing time. Reading an older committed state
+ *    is a separate API, sampleHistorical, that needs an unforgeable ChemDiagnosticCapability and returns a
+ *    'diagnostic_history' result marked decision_use 'forbidden' (replay / diagnosis / reconstruction only).
  *  - layered phases of one instant (contract CHEM_PHASES): deposit() submits phase-1 source events; advance(to) is
  *    phases 2+3 of `to` (commit every due deposit together, canonically; update the state); sampleLocal() is phase 4
  *    and must declare phase 'local_sensing' at exactly the committed instant. A committed instant is closed: later
@@ -24,6 +30,7 @@ import {
   compareChemTime, validateChannel, validateDeposit, validateSampleQuery,
   type ChannelSpec, type ChemClock, type ChemTime, type DepositEvent, type Domain, type SampleQuery, type Where,
 } from './contract.ts';
+import { discCellWeights, type Grid2D } from './sampling.ts';
 
 export class ChemRefused extends Error {
   readonly codes: string[];
@@ -39,19 +46,94 @@ export interface DepositResult { deposit_id: string; accepted: boolean; reason: 
 interface Cell { key: string; layer: string; cx: number; cy: number; a: number; t_ref: number; decayed: number; contributors: string[] }
 interface Channel {
   spec: ChannelSpec; domain: Domain; lambda: number; size: number;
-  edges: Map<string, { length_mm: number; layer: string; bins: number }>; nx: number; ny: number;
+  edges: Map<string, { length_mm: number; layer: string; bins: number }>; nx: number; ny: number; grid: Grid2D | null;
   cells: Map<string, Cell>;
   pending: DepositEvent[];
+  /** every integrated deposit (own copies), in integration order: the source of historical reconstruction only */
+  committed: DepositEvent[];
   stats: { accepted_count: number; accepted_amount: number; integrated_count: number; integrated_amount: number; rejected: Record<RejectReason, { count: number; amount: number }> };
 }
 
 export interface CellView { key: string; layer: string; center_mm: [number, number] | number; value: number }
+/** a cell as read by a sensor; on sparse_2d also its exact area weights (sampling.ts) */
+export interface SampledCellView extends CellView {
+  /** |D ∩ c| / |D| (sparse_2d); null on surface_edge (whole-bin read) */
+  weight: number | null;
+  /** |D ∩ c| / |c|: fraction of the cell's value counted in `exposure` (sparse_2d); 1 on surface_edge */
+  cover: number;
+}
+/** One committed state: the instant (t_s, round) whose phases 2+3 (commit + update) produced it, and a monotone sequence
+ *  number of commits on this store. This is the STATE COMMIT TIME, distinct from any individual's sensing time. */
+export interface ChemCommit { seq: number; time: ChemTime }
+export type SamplingMethod = 'edge_whole_bin' | 'area_weighted_exact';
+interface Reading {
+  exposure: number; cells: SampledCellView[]; sampling: SamplingMethod;
+  mean_density_per_mm2: number | null; sensed_area_fraction: number | null;
+}
 export interface SampleResult {
-  view: 'agent_local'; signal_id: string; agent_id: string; time: ChemTime; layer: string;
-  /** sum of the values of the cells that intersect the sensor (cell resolution; no area weighting — assumption D) */
-  exposure: number; cells: CellView[];
-  /** null while the channel's threshold is null (no dose-response data) */
+  view: 'agent_local';
+  /** CHEM-1b: the only kind of read a real-time decision may use */
+  read_kind: 'realtime_latest_committed';
+  signal_id: string; agent_id: string;
+  /** = sensing_time (kept for CHEM-1 compatibility) */
+  time: ChemTime;
+  /** the individual's sensing instant (phase 4 'local_sensing' of that instant) */
+  sensing_time: ChemTime;
+  /** the committed state that was read; always the latest commit, and state_commit.time equals sensing_time */
+  state_commit: ChemCommit;
+  layer: string;
+  /** surface_edge: sum of the values of the bins intersecting the interval (whole bins, CHEM-1 unchanged).
+   *  sparse_2d: amount inside the disc, Σ value·cover with exact disc ∩ cell areas (CHEM-1b; 0 for r = 0). */
+  exposure: number;
+  /** sparse_2d: area-weighted mean density Σ weight·value/|cell| (per mm²; r = 0: the r -> 0 limit); null on edges */
+  mean_density_per_mm2: number | null;
+  /** sparse_2d: Σ weight over the domain = |D ∩ domain| / |D| (1 for an interior disc); null on edges */
+  sensed_area_fraction: number | null;
+  sampling: SamplingMethod;
+  cells: SampledCellView[];
+  /** null while the channel's threshold is null (no dose-response data); compared with `exposure` */
   detectable: boolean | null;
+}
+/** Historical query (replay / diagnosis / reconstruction only). It has no agent and no phase: it is not a sensing act. */
+export interface HistoricalSampleQuery {
+  signal_id: string; layer: string;
+  /** the past instant whose committed state is reconstructed; must be <= the closed horizon */
+  at: ChemTime;
+  sensor: SampleQuery['sensor'];
+  purpose: DiagnosticPurpose;
+}
+export type DiagnosticPurpose = 'replay' | 'diagnosis' | 'reconstruction';
+export interface HistoricalSampleResult {
+  view: 'diagnostic_history';
+  /** never an input to a biological decision (CLAUDE.md §2.1, §2.4; Owner decision 43) */
+  decision_use: 'forbidden';
+  purpose: DiagnosticPurpose;
+  signal_id: string; layer: string;
+  at: ChemTime;
+  /** the commit whose phases 2+3 first covered `at` (its time >= at); exact_commit_instant = its time equals `at` */
+  covered_by_commit: ChemCommit; exact_commit_instant: boolean;
+  /** the store's horizon when the query was made (diagnostic context) */
+  queried_at_horizon: ChemTime;
+  exposure: number; mean_density_per_mm2: number | null; sensed_area_fraction: number | null; sampling: SamplingMethod;
+  cells: SampledCellView[];
+}
+declare const DIAGNOSTIC_BRAND: unique symbol;
+/** Unforgeable token for historical reads: only createDiagnosticCapability() makes one (checked at run time by
+ *  identity; the brand makes a hand-written object literal a type error). Real-time decision code never receives it. */
+export interface ChemDiagnosticCapability { readonly kind: 'chem_diagnostic'; readonly purpose: DiagnosticPurpose; readonly [DIAGNOSTIC_BRAND]: true }
+const DIAGNOSTIC_CAPS = new WeakSet<object>();
+export function createDiagnosticCapability(purpose: DiagnosticPurpose): ChemDiagnosticCapability {
+  if (purpose !== 'replay' && purpose !== 'diagnosis' && purpose !== 'reconstruction') throw new ChemRefused(['BAD:diagnostic_purpose']);
+  const cap = Object.freeze({ kind: 'chem_diagnostic', purpose }) as ChemDiagnosticCapability;
+  DIAGNOSTIC_CAPS.add(cap);
+  return cap;
+}
+/** The ONLY chemistry view a real-time decision may hold: the latest committed state and a phase-4 local sample.
+ *  No historical read, no snapshot, no ledger, no provenance, no deposit or advance. */
+export interface ChemRealtimeReader {
+  readonly kind: 'chem_realtime_reader';
+  latestCommitted(): ChemCommit | null;
+  sampleLocal(q: SampleQuery): SampleResult;
 }
 export interface ChannelLedger {
   signal_id: string; quantity: string; horizon: ChemTime | null;
@@ -115,6 +197,7 @@ export class ChemStore {
   private readonly seenId = new Set<string>();
   private readonly seenOrigin = new Set<string>();
   private h: ChemTime | null = null;
+  private readonly commits: ChemCommit[] = [];
 
   constructor(cfg: StoreConfig) {
     this.clock = cfg.clock;
@@ -139,14 +222,21 @@ export class ChemStore {
         if (!(b.x1 > b.x0 && b.y1 > b.y0) || !domain.layers.length) errs.push(`${spec.signal_id}:BAD_BOUNDS`);
         nx = Math.max(1, Math.ceil((b.x1 - b.x0) / size)); ny = Math.max(1, Math.ceil((b.y1 - b.y0) / size));
       }
+      const grid: Grid2D | null = domain.backend === 'sparse_2d' ? { x0: domain.bounds_mm.x0, y0: domain.bounds_mm.y0, x1: domain.bounds_mm.x1, y1: domain.bounds_mm.y1, size, nx, ny } : null;
       const lambda = spec.time_rule.lambda_per_s!.value as number;
       const zero = () => ({ count: 0, amount: 0 });
-      this.ch.set(spec.signal_id, { spec, domain, lambda, size, edges, nx, ny, cells: new Map(), pending: [], stats: { accepted_count: 0, accepted_amount: 0, integrated_count: 0, integrated_amount: 0, rejected: { OUT_OF_BOUNDS: zero(), LATE_DEPOSIT: zero(), DUPLICATE_DEPOSIT_ID: zero(), DUPLICATE_ORIGIN_EVENT: zero() } } });
+      this.ch.set(spec.signal_id, { spec, domain, lambda, size, edges, nx, ny, grid, cells: new Map(), pending: [], committed: [], stats: { accepted_count: 0, accepted_amount: 0, integrated_count: 0, integrated_amount: 0, rejected: { OUT_OF_BOUNDS: zero(), LATE_DEPOSIT: zero(), DUPLICATE_DEPOSIT_ID: zero(), DUPLICATE_ORIGIN_EVENT: zero() } } });
     }
     if (errs.length) throw new ChemRefused(errs);
   }
 
   get horizon(): ChemTime | null { return this.h ? { ...this.h } : null; }
+  /** the latest committed state (null before the first advance) */
+  latestCommitted(): ChemCommit | null { const c = this.commits.at(-1); return c ? { seq: c.seq, time: { ...c.time } } : null; }
+  /** the capability handed to real-time decision code: latestCommitted + sampleLocal, nothing else (frozen) */
+  realtimeReader(): ChemRealtimeReader {
+    return Object.freeze({ kind: 'chem_realtime_reader' as const, latestCommitted: () => this.latestCommitted(), sampleLocal: (q: SampleQuery) => this.sampleLocal(q) });
+  }
   channels(): string[] { return [...this.ch.keys()].sort(lt); }
 
   private channel(id: string): Channel { const c = this.ch.get(id); if (!c) throw new ChemRefused([`UNKNOWN_CHANNEL:${id}`]); return c; }
@@ -189,68 +279,56 @@ export class ChemStore {
       const due = c.pending.filter((d) => compareChemTime(d.time, to) <= 0).sort(canonicalCompare);
       if (!due.length) continue;
       c.pending = c.pending.filter((d) => compareChemTime(d.time, to) > 0);
-      for (const d of due) this.integrate(c, d);
+      for (const d of due) { integrateInto(c, c.cells, d); c.committed.push(d); c.stats.integrated_count++; c.stats.integrated_amount += d.amount; }
     }
+    // a commit record per new instant (re-closing the same instant commits nothing new)
+    if (!this.h || compareChemTime(to, this.h) > 0) this.commits.push({ seq: this.commits.length + 1, time: { ...to } });
     this.h = { ...to };
   }
 
-  private integrate(c: Channel, d: DepositEvent): void {
-    const t = d.time.t_s;
-    const put = (key: string, layer: string, cx: number, cy: number, q: number) => {
-      let cell = c.cells.get(key);
-      if (!cell) { cell = { key, layer, cx, cy, a: 0, t_ref: t, decayed: 0, contributors: [] }; c.cells.set(key, cell); }
-      const kept = cell.a * Math.exp(-c.lambda * (t - cell.t_ref));
-      cell.decayed += cell.a - kept; cell.a = kept + q; cell.t_ref = t;
-      cell.contributors.push(d.deposit_id);
-    };
-    if (c.domain.backend === 'surface_edge') {
-      const w = d.where as Extract<Where, { edge_id: string }>, ed = c.edges.get(w.edge_id)!;
-      for (const [k, f] of edgeShares(w, c.size, ed.bins)) put(`${w.edge_id}#${k}`, ed.layer, (k + 0.5) * c.size, 0, d.amount * f);
-    } else {
-      const b = c.domain.bounds_mm;
-      for (const [i, j, f] of planeShares(d.where, b.x0, b.y0, c.size, c.nx, c.ny)) put(`${d.layer}|${i},${j}`, d.layer, b.x0 + (i + 0.5) * c.size, b.y0 + (j + 0.5) * c.size, d.amount * f);
-    }
-    c.stats.integrated_count++; c.stats.integrated_amount += d.amount;
-  }
+  private valueAt(c: Channel, cell: Cell, t: number): number { return valueAt(c, cell, t); }
 
-  private valueAt(c: Channel, cell: Cell, t: number): number { return cell.a * Math.exp(-c.lambda * (t - cell.t_ref)); }
-
-  /** An individual's local reading: only at the closed horizon, only its own layer, only cells within a bounded radius. */
+  /** REAL-TIME read (phase 4): an individual's local reading of the LATEST committed state only — the sensing time
+   *  must equal the latest commit (FUTURE_SAMPLE before it is committed, STALE_SAMPLE once a later state exists), only
+   *  its own layer, only within a bounded radius. Never returns provenance. */
   sampleLocal(q: SampleQuery): SampleResult {
     const c = this.channel(q?.signal_id), e = validateSampleQuery(q, c.spec, this.clock);
     if (!e.length) {
       if (!this.h || compareChemTime(q.time, this.h) > 0) e.push('FUTURE_SAMPLE');
       else if (compareChemTime(q.time, this.h) < 0) e.push('STALE_SAMPLE');
     }
-    const cells: Cell[] = [];
-    if (!e.length && q.sensor.kind === 'edge' && c.domain.backend === 'surface_edge') {
-      const s = q.sensor, ed = c.edges.get(s.edge_id);
-      if (!ed || !(s.s_mm >= 0 && s.s_mm <= ed.length_mm)) e.push('OUT_OF_BOUNDS:sensor');
-      else if (ed.layer !== q.layer) e.push('CROSS_LAYER_SAMPLE');
-      else {
-        const lo = Math.max(0, Math.floor((s.s_mm - s.radius_mm) / c.size)), hi = Math.min(ed.bins - 1, Math.floor((s.s_mm + s.radius_mm) / c.size));
-        for (let k = lo; k <= hi; k++) { const cell = c.cells.get(`${s.edge_id}#${k}`); if (cell) cells.push(cell); }
-      }
-    } else if (!e.length && q.sensor.kind === 'disc' && c.domain.backend === 'sparse_2d') {
-      const s = q.sensor, b = c.domain.bounds_mm;
-      if (!c.domain.layers.includes(q.layer)) e.push('CROSS_LAYER_SAMPLE');
-      else if (s.x_mm < b.x0 || s.x_mm > b.x1 || s.y_mm < b.y0 || s.y_mm > b.y1) e.push('OUT_OF_BOUNDS:sensor');
-      else {
-        const i0 = Math.max(0, Math.floor((s.x_mm - s.radius_mm - b.x0) / c.size)), i1 = Math.min(c.nx - 1, Math.floor((s.x_mm + s.radius_mm - b.x0) / c.size));
-        const j0 = Math.max(0, Math.floor((s.y_mm - s.radius_mm - b.y0) / c.size)), j1 = Math.min(c.ny - 1, Math.floor((s.y_mm + s.radius_mm - b.y0) / c.size));
-        for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) {
-          const cell = c.cells.get(`${q.layer}|${i},${j}`); if (!cell) continue;
-          // the square [i, i+1)×[j, j+1) intersects the disc
-          const ex = Math.max(b.x0 + i * c.size - s.x_mm, 0, s.x_mm - (b.x0 + (i + 1) * c.size)), ey = Math.max(b.y0 + j * c.size - s.y_mm, 0, s.y_mm - (b.y0 + (j + 1) * c.size));
-          if (ex * ex + ey * ey <= s.radius_mm * s.radius_mm) cells.push(cell);
-        }
-      }
-    }
+    if (!e.length) e.push(...sensorErrors(c, q.sensor, q.layer));
     if (e.length) throw new ChemRefused(e);
-    const t = this.h!.t_s;
-    const views = cells.map((cell) => this.view(c, cell, t)).sort((a, b) => lt(a.key, b.key));
-    const exposure = views.reduce((x, v) => x + v.value, 0), th = c.spec.perception_rule.threshold.value;
-    return { view: 'agent_local', signal_id: q.signal_id, agent_id: q.agent_id, time: { ...this.h! }, layer: q.layer, exposure, cells: views, detectable: th === null ? null : exposure >= th };
+    const r = readField(c, c.cells, q.sensor, q.layer, this.h!.t_s), th = c.spec.perception_rule.threshold.value;
+    return {
+      view: 'agent_local', read_kind: 'realtime_latest_committed', signal_id: q.signal_id, agent_id: q.agent_id, time: { ...this.h! }, sensing_time: { ...q.time },
+      state_commit: this.latestCommitted()!, layer: q.layer, exposure: r.exposure, mean_density_per_mm2: r.mean_density_per_mm2, sensed_area_fraction: r.sensed_area_fraction,
+      sampling: r.sampling, cells: r.cells, detectable: th === null ? null : r.exposure >= th,
+    };
+  }
+
+  /** HISTORICAL read (replay / diagnosis / reconstruction ONLY; Owner decision 43): the committed state at a past instant
+   *  `at` <= horizon, reconstructed from the committed deposits with time <= at in canonical order (bitwise equal to what
+   *  a real-time sample returned at that instant). Requires a ChemDiagnosticCapability; the result is marked
+   *  decision_use 'forbidden' and has no agent. Not part of ChemRealtimeReader. */
+  sampleHistorical(cap: ChemDiagnosticCapability, q: HistoricalSampleQuery): HistoricalSampleResult {
+    if (!cap || typeof cap !== 'object' || !DIAGNOSTIC_CAPS.has(cap)) throw new ChemRefused(['NO_DIAGNOSTIC_CAPABILITY']);
+    const c = this.channel(q?.signal_id), e: string[] = [];
+    if ('phase' in (q as object) || 'agent_id' in (q as object)) e.push('HISTORICAL_QUERY_IS_NOT_A_SENSING_ACT');
+    if (q.purpose !== cap.purpose) e.push('PURPOSE_MISMATCH');
+    e.push(...validateSampleQuery({ signal_id: q.signal_id, agent_id: 'diagnostic', layer: q.layer, time: q.at, phase: 'local_sensing', sensor: q.sensor }, c.spec, this.clock));
+    if (!e.length && (!this.h || compareChemTime(q.at, this.h) > 0)) e.push('FUTURE_SAMPLE');
+    if (!e.length) e.push(...sensorErrors(c, q.sensor, q.layer));
+    if (e.length) throw new ChemRefused(e);
+    // every deposit with time <= at was committed by the first commit whose time >= at; later commits add nothing <= at
+    const cells = new Map<string, Cell>();
+    for (const d of c.committed.filter((x) => compareChemTime(x.time, q.at) <= 0).sort(canonicalCompare)) integrateInto(c, cells, d);
+    const r = readField(c, cells, q.sensor, q.layer, q.at.t_s), cover = this.commits.find((k) => compareChemTime(k.time, q.at) >= 0)!;
+    return {
+      view: 'diagnostic_history', decision_use: 'forbidden', purpose: q.purpose, signal_id: q.signal_id, layer: q.layer, at: { ...q.at },
+      covered_by_commit: { seq: cover.seq, time: { ...cover.time } }, exact_commit_instant: compareChemTime(cover.time, q.at) === 0, queried_at_horizon: { ...this.h! },
+      exposure: r.exposure, mean_density_per_mm2: r.mean_density_per_mm2, sensed_area_fraction: r.sensed_area_fraction, sampling: r.sampling, cells: r.cells,
+    };
   }
 
   private view(c: Channel, cell: Cell, t: number): CellView {
@@ -283,6 +361,73 @@ export class ChemStore {
 }
 
 /** own copy of an accepted event (the caller may reuse its objects) */
+const valueAt = (c: Channel, cell: Cell, t: number): number => cell.a * Math.exp(-c.lambda * (t - cell.t_ref));
+
+/** add one deposit to a cell map (the live field or a historical reconstruction): analytic decay to the deposit time */
+function integrateInto(c: Channel, cells: Map<string, Cell>, d: DepositEvent): void {
+  const t = d.time.t_s;
+  const put = (key: string, layer: string, cx: number, cy: number, q: number) => {
+    let cell = cells.get(key);
+    if (!cell) { cell = { key, layer, cx, cy, a: 0, t_ref: t, decayed: 0, contributors: [] }; cells.set(key, cell); }
+    const kept = cell.a * Math.exp(-c.lambda * (t - cell.t_ref));
+    cell.decayed += cell.a - kept; cell.a = kept + q; cell.t_ref = t;
+    cell.contributors.push(d.deposit_id);
+  };
+  if (c.domain.backend === 'surface_edge') {
+    const w = d.where as Extract<Where, { edge_id: string }>, ed = c.edges.get(w.edge_id)!;
+    for (const [k, f] of edgeShares(w, c.size, ed.bins)) put(`${w.edge_id}#${k}`, ed.layer, (k + 0.5) * c.size, 0, d.amount * f);
+  } else {
+    const b = c.domain.bounds_mm;
+    for (const [i, j, f] of planeShares(d.where, b.x0, b.y0, c.size, c.nx, c.ny)) put(`${d.layer}|${i},${j}`, d.layer, b.x0 + (i + 0.5) * c.size, b.y0 + (j + 0.5) * c.size, d.amount * f);
+  }
+}
+
+/** sensor position / layer checks shared by the real-time and the historical read */
+function sensorErrors(c: Channel, s: SampleQuery['sensor'], layer: string): string[] {
+  if (s.kind === 'edge' && c.domain.backend === 'surface_edge') {
+    const ed = c.edges.get(s.edge_id);
+    if (!ed || !(s.s_mm >= 0 && s.s_mm <= ed.length_mm)) return ['OUT_OF_BOUNDS:sensor'];
+    if (ed.layer !== layer) return ['CROSS_LAYER_SAMPLE'];
+    return [];
+  }
+  if (s.kind === 'disc' && c.domain.backend === 'sparse_2d') {
+    const b = c.domain.bounds_mm;
+    if (!c.domain.layers.includes(layer)) return ['CROSS_LAYER_SAMPLE'];
+    if (s.x_mm < b.x0 || s.x_mm > b.x1 || s.y_mm < b.y0 || s.y_mm > b.y1) return ['OUT_OF_BOUNDS:sensor'];
+    return [];
+  }
+  return ['SENSOR_KIND_MISMATCH'];
+}
+
+const lt2 = (a: { key: string }, b: { key: string }) => lt(a.key, b.key);
+/** the bounded local read of a cell map at time t (no checks; callers validate first) */
+function readField(c: Channel, cells: Map<string, Cell>, s: SampleQuery['sensor'], layer: string, t: number): Reading {
+  const view = (cell: Cell, weight: number | null, cover: number): SampledCellView =>
+    ({ key: cell.key, layer: cell.layer, center_mm: c.domain.backend === 'surface_edge' ? cell.cx : [cell.cx, cell.cy], value: valueAt(c, cell, t), weight, cover });
+  if (s.kind === 'edge') {
+    // CHEM-1 unchanged: whole bins intersecting [s - r, s + r] on the same edge
+    const ed = c.edges.get(s.edge_id)!, out: SampledCellView[] = [];
+    const lo = Math.max(0, Math.floor((s.s_mm - s.radius_mm) / c.size)), hi = Math.min(ed.bins - 1, Math.floor((s.s_mm + s.radius_mm) / c.size));
+    for (let k = lo; k <= hi; k++) { const cell = cells.get(`${s.edge_id}#${k}`); if (cell) out.push(view(cell, null, 1)); }
+    out.sort(lt2);
+    return { exposure: out.reduce((x, v) => x + v.value, 0), cells: out, sampling: 'edge_whole_bin', mean_density_per_mm2: null, sensed_area_fraction: null };
+  }
+  // sparse_2d: exact area weights (sampling.ts); zero-area cells are never read
+  const g = c.grid!, ws = discCellWeights(g, s.x_mm, s.y_mm, s.radius_mm), out: SampledCellView[] = [];
+  let wsum = 0, density = 0;
+  const parts: { v: SampledCellView; area_c: number }[] = [];
+  for (const w of ws) {
+    wsum += w.weight;
+    const cell = cells.get(`${layer}|${w.i},${w.j}`); if (!cell) continue;
+    const v = view(cell, w.weight, w.cover), cx0 = g.x0 + w.i * g.size, cy0 = g.y0 + w.j * g.size;
+    parts.push({ v, area_c: (Math.min(g.x1, cx0 + g.size) - cx0) * (Math.min(g.y1, cy0 + g.size) - cy0) });
+  }
+  parts.sort((a, b) => lt2(a.v, b.v));
+  let exposure = 0;
+  for (const { v, area_c } of parts) { exposure += v.value * v.cover; density += v.weight! * (v.value / area_c); out.push(v); }
+  return { exposure, cells: out, sampling: 'area_weighted_exact', mean_density_per_mm2: density, sensed_area_fraction: wsum };
+}
+
 const copyEvent = (d: DepositEvent): DepositEvent => ({ ...d, time: { ...d.time }, where: { ...d.where }, units: { ...d.units } });
 function validateTimeOnly(t: ChemTime, clock: ChemClock): string[] {
   const e: string[] = [];
@@ -294,7 +439,8 @@ function validateTimeOnly(t: ChemTime, clock: ChemClock): string[] {
 }
 
 export type ChemOp = { op: 'deposit'; events: DepositEvent[] } | { op: 'advance'; to: ChemTime } | { op: 'sample'; query: SampleQuery };
-export interface ReplayResult { outputs: (DepositResult[] | SampleResult | { horizon: ChemTime } | { refused: string[] })[]; ledgers: ChannelLedger[]; snapshot: Snapshot }
+/** a replay record is diagnostic: it contains later states than any one sample saw and is never a decision input */
+export interface ReplayResult { view: 'replay_diagnostic'; outputs: (DepositResult[] | SampleResult | { horizon: ChemTime } | { refused: string[] })[]; ledgers: ChannelLedger[]; snapshot: Snapshot }
 /** Pure replay: the same config and ops always give the same result. A refused op is recorded, not thrown. */
 export function replayChem(cfg: StoreConfig, ops: readonly ChemOp[]): ReplayResult {
   const s = new ChemStore(cfg), outputs: ReplayResult['outputs'] = [];
@@ -305,5 +451,5 @@ export function replayChem(cfg: StoreConfig, ops: readonly ChemOp[]): ReplayResu
       else outputs.push(s.sampleLocal(o.query));
     } catch (err) { if (err instanceof ChemRefused) outputs.push({ refused: err.codes }); else throw err; }
   }
-  return { outputs, ledgers: s.channels().map((id) => s.ledger(id)), snapshot: s.snapshot() };
+  return { view: 'replay_diagnostic', outputs, ledgers: s.channels().map((id) => s.ledger(id)), snapshot: s.snapshot() };
 }

@@ -84,7 +84,8 @@ const eq = (q: Partial<SampleQuery> & { s_mm?: number; edge?: string; t?: number
   p.deposit([dep('in', 'p', 'w', T(1), { kind: 'point2d', x_mm: 51, y_mm: 52.5 }), dep('corner', 'p', 'w', T(1), { kind: 'point2d', x_mm: 55, y_mm: 55 }, 7)]);
   p.advance(T(1));
   const pr = p.sampleLocal({ signal_id: 'p', agent_id: 'w', layer: 'surface', time: T(1), phase: 'local_sensing', sensor: { kind: 'disc', x_mm: 51, y_mm: 51, radius_mm: 3 } });
-  ok(pr.exposure === 1 && pr.cells.length === 1, 'the disc excludes a diagonal cell 4.2 mm away (bounding-square read would include it)');
+  // CHEM-1b area weighting: the 'in' cell [50,52)x[52,54) is partly inside the disc -> its value times the covered fraction
+  ok(pr.cells.length === 1 && pr.cells[0].key === 'surface|25,26' && pr.cells[0].cover > 0.5 && pr.cells[0].cover < 1 && close(pr.exposure, pr.cells[0].cover), 'the disc excludes a diagonal cell 4.2 mm away (bounding-square read would include it); the partly covered cell is area-weighted');
 }
 { // duplicate deposits of the same source event
   const s = new ChemStore(edgeCfg());
@@ -283,17 +284,18 @@ const P = (id: string, t: number, round = 0, s_mm = 10, amount = 1, agent = 'w1'
     const q = (st: ChemStore) => st.sampleLocal({ signal_id: 'p', agent_id: 'r', layer: 'surface', time: T(9), phase: 'local_sensing', sensor: { kind: 'disc', x_mm: 51, y_mm: 51, radius_mm: 3 } });
     ok(Object.is(q(p).exposure, q(p0).exposure) && q(p).exposure === 1, `2d: same-instant deposits outside every cell that intersects the disc add exactly 0 (amount ${amount})`);
     const touch = new ChemStore(planeCfg()); touch.deposit([dep('t', 'p', 'w', T(9), { kind: 'point2d', x_mm: 55.9, y_mm: 51 }, amount)]); touch.advance(T(9));
-    ok(q(touch).exposure === amount, `2d: a deposit 4.9 mm away in a cell touching the 3 mm disc IS read (effective range = intersecting cells; cell-resolution assumption D)`);
+    // CHEM-1 read this deposit in full (whole cell touching the disc); CHEM-1b: the cell meets the disc in zero area -> exactly 0
+    ok(q(touch).exposure === 0 && q(touch).cells.length === 0, `2d: a deposit 4.9 mm away in a cell that only touches the 3 mm disc is NOT read (zero intersection area; CHEM-1b overreach removed)`);
   }
 }
-{ // grid / cell-size sensitivity and convergence of sparse_2d sampling (Owner decision 4: report, do not tune)
+{ // grid / cell-size sensitivity and convergence of sparse_2d sampling (Owner decisions 4 and 30: report, do not tune)
   const rows = gridSensitivity();
   ok(JSON.stringify(rows) === JSON.stringify(gridSensitivity()), 'grid sensitivity is deterministic');
-  ok(rows.every((r) => r.bound_violations === 0), 'every sample (aligned and half-cell-shifted grid) lies in [exact(r), exact(r + cell·√2)]');
-  ok(rows.every((r, i) => i === 0 || r.mean_band < rows[i - 1].mean_band) && rows.every((r) => r.mean_abs_err <= r.mean_band + 1e-12), 'the provable error band shrinks with the cell and bounds the mean error (convergence to the continuous reference)');
-  ok(rows.every((r) => r.rel_bias >= 0), 'cell-resolution reading never under-counts (bias >= 0)');
+  ok(rows.every((r) => r.bound_violations === 0), 'every area-weighted sample (aligned and half-cell-shifted grid) lies in [exact(r − cell·√2), exact(r + cell·√2)]');
+  ok(rows.every((r, i) => i === 0 || (r.mean_abs_err < rows[i - 1].mean_abs_err && r.mean_band < rows[i - 1].mean_band && r.mean_leak < rows[i - 1].mean_leak)), 'mean error, provable band and sub-cell leak all shrink monotonically with the cell (convergence)');
+  ok(rows.every((r) => r.mean_abs_err < r.legacy_mean_abs_err && Math.abs(r.rel_bias) < Math.abs(r.legacy_rel_bias)), 'area weighting is closer to the continuous reference than the CHEM-1 whole-cell rule at every cell size');
   const doc = fs.readFileSync(new URL('../docs/chemical-ecology-engine.md', import.meta.url), 'utf8');
-  ok(gridTableRows(rows).every((row) => doc.includes(row)) && GRID_CELLS_MM.length === rows.length, 'docs §14.5 records the computed grid table verbatim');
+  ok(gridTableRows(rows).every((row) => doc.includes(row)) && GRID_CELLS_MM.length === rows.length, 'docs §14.6 records the computed grid table verbatim');
 }
 
 // ======================= (3) synthetic examples
