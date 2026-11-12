@@ -14,5 +14,5 @@
     "skipLibCheck": true
   },
   "include": ["engine/**/*.ts", "cli/**/*.ts", "tests/**/*.ts", "prototypes/**/*.ts"],
-  "exclude": ["prototypes/art-preview/**", "prototypes/render-harness/**"]
+  "exclude": ["prototypes/art-preview/**", "prototypes/render-harness/**", "prototypes/natural-walk/natural-walk.ts", "prototypes/natural-walk/dist/**", "prototypes/natural-walk/compare/**"]
 }

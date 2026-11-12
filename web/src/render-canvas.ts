@@ -11,7 +11,8 @@
  * - Adaptive quality steps down (never up) when frames are slow: glints/décor LOD → DPR 1 → no ant shadows.
  */
 import { LAYERS, QUALITY, DECOR_CELL_CM, DECOR_REACH_CM, groundField, reliefHeight, antLengthPx, decorCell, engineRegistry, keepAtLod, nextQuality, planAnts, weatherState, worldToScreen, type AntDraw, type AntInput, type AntLook, type Camera, type DecorItem, type EngineObject, type Layer, type Obstacles, type WeatherState } from './render-scene.ts';
-import { bakeAntAtlas, drawAntSprite, drawList, pixelsToCanvas, type AntAtlas } from './art-raster.ts';
+import { bakeAntAtlas, bakeHeadSprite, drawAntDetail, drawAntParts, drawAntSprite, drawList, pixelsToCanvas, type AntAtlas, type HeadSprite } from './art-raster.ts';
+import { DisplayMotion, NEUTRAL_MICRO, type ContextSampler, type MicroState } from './display-motion.ts';
 import { PALETTE_VARIANTS, antGlintSpots, antPalette, magnification, walkCycles, walkFrame, framesOf, type Gait } from './art-ant.ts';
 import { SCHEMATIC_LIGHT, withLight, type LightState } from './art-core.ts';
 import { soilTile, leaf, twig, pebble, grassTuft, moss, debris, type Decal } from './art-ground.ts';
@@ -22,7 +23,16 @@ import { hash32 } from './game-model.ts';
 type Pos = Record<string, { x: number; y: number; known: boolean }>;
 type Sources = Record<string, { host_alive: boolean | null; hemipteran_colonies: number | null }>;
 export interface SceneInput { /** false = ground only (seam tests) */ decor?: boolean; seed: number; places: readonly Place[]; pos: Pos; routes: Obstacles['routes']; sources: Sources; weather: Parameters<typeof weatherState>[0]; light?: LightState }
-export interface FrameOptions { showRoutes?: boolean; highlightEngine?: boolean; labels?: boolean; /** minimum drawn ant length (CSS px); larger = more magnified (labelled ×N) */ minAntPx?: number; /** use the turning frames for the display ease toward recorded heading changes */ displayTurns?: boolean; /** per-ant colour variants (light … dark brown) */ colourVariants?: boolean; /** space kept free at the bottom for page controls (CSS px) */ uiBottom?: number }
+export interface FrameOptions { showRoutes?: boolean; highlightEngine?: boolean; labels?: boolean; /** minimum drawn ant length (CSS px); larger = more magnified (labelled ×N) */ minAntPx?: number; /** use the turning frames for the display ease toward recorded heading changes */ displayTurns?: boolean; /** per-ant colour variants (light … dark brown) */ colourVariants?: boolean; /** space kept free at the bottom for page controls (CSS px) */ uiBottom?: number;
+  /** display micro-motion (head yaw, independent antennae; display-motion.ts): display time τ in SIMULATED seconds,
+   *  amplitude damping (fast playback) and, per ant, a context sampler built from engine data only. Omitted = the
+   *  baked sprites as before. Never changes a position, heading, time or event. */
+  micro?: { tauS: number; damp?: number; context: (id: string) => ContextSampler };
+  /** allow the live vector detail drawing for few, large ants (continuous gait phase + walk/stand blend); default true */
+  detail?: boolean }
+/** detail drawing (live vectors) only when ants are drawn at least this long (CSS px) and at most DETAIL_MAX are on screen */
+export const DETAIL_MIN_PX = 60, DETAIL_MAX = 24;
+const PALETTES = Array.from({ length: PALETTE_VARIANTS }, (_, v) => antPalette(v));
 const CROWD = 300, CHUNK_PX = 256, SOIL_TILE_MM = 80, SOIL_TILE_PX = 512, MAX_CHUNKS = 120, MIN_ITEM_DEVICE_PX = 2.5;
 /** world-space ground field sampled on a (FIELD_N+1)² grid per chunk, samples exactly on the chunk edges, so bilinear
  *  upscaling is continuous across chunk boundaries */
@@ -54,6 +64,10 @@ export class LayeredRenderer {
   private soilSrc = new Map<string, HTMLCanvasElement>();
   private atlases = new Map<string, AntAtlas>();
   private look = new Map<string, AntLook>();
+  private motion = new DisplayMotion();
+  private micro = new Map<string, MicroState>();
+  private parts = new Map<string, { trunk: AntAtlas; head: HeadSprite }>();
+  private detailOn = false;
   private frameMs: number[] = [];
   private q = 0;
   private dpr = 1;
@@ -69,7 +83,7 @@ export class LayeredRenderer {
 
   /** New world: places, recorded routes, engine state and weather. Clears every cache. */
   setScene(s: SceneInput) {
-    this.scene = s; this.light = s.light ?? SCHEMATIC_LIGHT; this.chunks.clear(); this.objSprites.clear(); this.look.clear(); this.cells.clear();
+    this.scene = s; this.light = s.light ?? SCHEMATIC_LIGHT; this.chunks.clear(); this.objSprites.clear(); this.look.clear(); this.cells.clear(); this.motion.clear();
     this.setEngineState(s.sources, s.weather);
     this.obstacles = { places: this.registry.map((o) => ({ x: o.x, y: o.y, radiusCm: o.radiusCm })), routes: s.routes, plants: this.registry.filter((o) => o.kind === 'honeydew' || o.kind === 'nectar').map((o) => ({ x: o.x, y: o.y })) }; this.cells.clear();
   }
@@ -89,6 +103,12 @@ export class LayeredRenderer {
   }
   /** Forget the drawing-only motion state (heading ease, leg phase), e.g. after a time jump. */
   resetMotion() { this.look = new Map(); }
+  /** Forget the micro-motion memo (call when the context data change, e.g. a new day). The memo is transparent, so
+   *  this never changes what is drawn for a given τ. */
+  resetMicro() { this.motion.clear(); }
+  /** display micro-state per drawn ant in the last frame (tests / data panel) and whether the detail path was used */
+  lastMicro(): ReadonlyMap<string, MicroState> { return this.micro; }
+  detailUsed() { return this.detailOn; }
   engineObjects(): readonly EngineObject[] { return this.registry; }
   /** Screen x / y of the visible chunk boundaries at the current zoom (CSS px; seam tests). */
   chunkBoundaries(): { xs: number[]; ys: number[] } {
@@ -260,6 +280,13 @@ export class LayeredRenderer {
     return a;
   }
 
+  private partsFor(L: number, variant: number): { trunk: AntAtlas; head: HeadSprite } {
+    const Lq = Math.max(8, Math.round((L * this.dpr) / 4) * 4) / this.dpr, key = `${Lq}|${this.dpr}|${variant}`;
+    let a = this.parts.get(key);
+    if (!a) { const pal = antPalette(variant); a = { trunk: bakeAntAtlas(Lq, this.dpr, undefined, pal, 'trunk'), head: bakeHeadSprite(Lq, this.dpr, pal) }; this.parts.set(key, a); this.spritesBaked++; if (this.parts.size > PALETTE_VARIANTS * 2) this.parts.delete(this.parts.keys().next().value as string); }
+    return a;
+  }
+
   /** Draw one frame. `ants` are read only. Returns the ant draw records (screen positions) for picking. */
   frame(cam: Camera, ants: readonly AntInput[], dt: number, frameMs: number | null, opts: FrameOptions = {}): readonly AntDraw[] {
     // frames that followed a bake (chunks, object sprites, atlas) are not counted: quality reacts to steady-state cost only
@@ -269,6 +296,13 @@ export class LayeredRenderer {
     this.stats.planMs = this.stats.planMs * 0.95 + (performance.now() - tp) * 0.05;
     this.look = plan.look; this.draws = plan.draws;
     const L = antLengthPx(cam.s, opts.minAntPx), variantOf = (id: string) => (opts.colourVariants ? hash32(id) % PALETTE_VARIANTS : Math.floor(PALETTE_VARIANTS / 2)), atlas = this.atlasFor(L, variantOf(''));
+    // display micro-motion for the ants on screen (a pure function of τ and the engine-data context; drawing only)
+    const mo = opts.micro, onScreen = (d: AntDraw) => d.sx > -L && d.sy > -L && d.sx < cam.w + L && d.sy < cam.h + L;
+    this.micro = new Map();
+    const useMicro = !!mo && this.draws.length <= CROWD;
+    if (mo && useMicro) for (const d of this.draws) if (onScreen(d)) this.micro.set(d.id, this.motion.state(d.id, mo.tauS, mo.context(d.id), mo.damp ?? 1));
+    this.detailOn = useMicro && opts.detail !== false && L >= DETAIL_MIN_PX && this.micro.size <= DETAIL_MAX;
+    const microOf = (d: AntDraw) => this.micro.get(d.id) ?? NEUTRAL_MICRO(mo?.tauS ?? 0);
     g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     const frameOf = (d: AntDraw) => d.gait === 'idle' ? Math.floor(d.cycles * 4) % framesOf('idle') : walkFrame(d.cycles);
     withLight(this.light, () => {
@@ -279,13 +313,27 @@ export class LayeredRenderer {
         routes: () => { if (!opts.showRoutes) return; g.save(); g.setLineDash([4, 5]); g.strokeStyle = 'rgba(255,236,190,0.45)'; g.lineWidth = 1; for (const [a, b] of this.obstacles.routes) { const p = worldToScreen(cam, a.x, a.y), q = worldToScreen(cam, b.x, b.y); g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); g.stroke(); } g.restore(); },
         antShadows: () => {
           if (!Q.antShadows || this.light.intensity <= 0) return;
+          if (useMicro) {
+            const tr = this.partsFor(L, variantOf('')).trunk;
+            for (const d of this.draws) { if (this.detailOn && this.micro.has(d.id)) drawAntDetail(g, L, d.sx, d.sy, d.heading, d.gait as Gait, d.cycles, d.walkW, microOf(d), PALETTES[variantOf(d.id)], { part: 'shadow' }); else drawAntSprite(g, tr, this.dpr, d.sx, d.sy, d.heading, d.gait as Gait, frameOf(d), { part: 'shadow' }); }
+            return;
+          }
           if (this.draws.length <= CROWD) { for (const d of this.draws) drawAntSprite(g, atlas, this.dpr, d.sx, d.sy, d.heading, d.gait as Gait, frameOf(d), { part: 'shadow' }); return; }
           // crowd LOD: one batched path of soft body-shadow ellipses instead of one sprite per ant
           const o = this.light.shadow, h = L * 0.05; g.beginPath();
           for (const d of this.draws) g.ellipse(d.sx + o.x * h, d.sy + o.y * h, L * 0.42, L * 0.12, d.heading, 0, Math.PI * 2);
           g.fillStyle = 'rgba(24,14,6,0.28)'; g.fill();
         },
-        ants: () => { for (const d of this.draws) drawAntSprite(g, this.atlasFor(L, variantOf(d.id)), this.dpr, d.sx, d.sy, d.heading, d.gait as Gait, frameOf(d), { part: 'body', glints: false }); if (Q.glints) this.drawGlints(atlas.scale / this.dpr); },
+        ants: () => {
+          if (useMicro) {
+            for (const d of this.draws) {
+              const v = variantOf(d.id), pal = PALETTES[v];
+              if (this.detailOn && this.micro.has(d.id)) drawAntDetail(g, L, d.sx, d.sy, d.heading, d.gait as Gait, d.cycles, d.walkW, microOf(d), pal, { part: 'body' });
+              else { const pa = this.partsFor(L, v); drawAntParts(g, pa.trunk, pa.head, this.dpr, d.sx, d.sy, d.heading, d.gait as Gait, frameOf(d), microOf(d), pal); }
+            }
+            if (Q.glints) this.drawGlints(atlas.scale / this.dpr); return;
+          }
+          for (const d of this.draws) drawAntSprite(g, this.atlasFor(L, variantOf(d.id)), this.dpr, d.sx, d.sy, d.heading, d.gait as Gait, frameOf(d), { part: 'body', glints: false }); if (Q.glints) this.drawGlints(atlas.scale / this.dpr); },
         propsHigh: () => { this.blitChunks('high'); this.drawObjects('high'); },
         lighting: () => g.drawImage(this.overlayFor(cam.w, cam.h), 0, 0, cam.w, cam.h), // light grade + vignette (+ overcast day state, baked together)
         weather: () => {},                                                           // wet ground: tint in the ground layer; overcast: in the overlay

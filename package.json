@@ -8,7 +8,7 @@
     "node": ">=22.18.0"
   },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json && tsc -p engine/tsconfig.json && tsc -p web/tsconfig.json --noEmit && tsc -p prototypes/art-preview/tsconfig.json --noEmit && tsc -p prototypes/render-harness/tsconfig.json --noEmit && tsc -p prototypes/continuous-world/worker/tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json && tsc -p engine/tsconfig.json && tsc -p web/tsconfig.json --noEmit && tsc -p prototypes/art-preview/tsconfig.json --noEmit && tsc -p prototypes/render-harness/tsconfig.json --noEmit && tsc -p prototypes/natural-walk/tsconfig.json --noEmit && tsc -p prototypes/continuous-world/worker/tsconfig.json --noEmit",
     "test": "node tests/run-all.ts",
     "test:golden": "node tests/golden.test.ts",
     "test:naturalism": "node tests/naturalism.test.ts",
@@ -23,6 +23,8 @@
     "evaluate:phase2-sensitivity": "node cli/reports/phase2-sensitivity.ts --run 4",
     "check:phase2-sensitivity": "node cli/reports/phase2-sensitivity.ts --validate",
     "art:preview": "tsc -p prototypes/art-preview/tsconfig.json && node prototypes/art-preview/shoot.cjs",
+    "natural:placeholder": "node prototypes/natural-walk/make-placeholder.ts",
+    "natural:shoot": "tsc -p prototypes/natural-walk/tsconfig.json && npm run web:build && node prototypes/natural-walk/shoot.cjs",
     "render:bench": "tsc -p prototypes/render-harness/tsconfig.json && node prototypes/render-harness/bench.cjs"
   },
   "devDependencies": {
