@@ -22,6 +22,7 @@
  * event; this prototype keeps the same ordering contract and id rules (content-derived, never array positions) in a
  * small queue whose snapshot holds only live events. Merging the two is a phase-3 engineering question (document §7).
  */
+import { detLog } from '../../engine/clock/detmath.ts';
 import { hash32, rng } from '../../engine/rng.ts';
 import { sha256Hex } from '../../engine/sha256.ts';
 import { US_PER_DAY, type ExactTime } from '../../engine/scheduler/world-events.ts';
@@ -140,7 +141,7 @@ export class World {
         theta_forage: lerp(m.theta_forage), theta_brood: lerp(m.theta_brood), gain: lerp(m.gain), thermal_offset_c: 0, ctmax_c: m.ctmax_c,
         route: null, trip_loaded: false, empty_streak: 0, last_intake_t: null, forage_interval_ms: null, contacts: [], begging: [],
         empty_since: crop === 0 ? 0 : null, empty_ms: 0, max_empty_ms: 0, pending: null, n: 0 };
-      const w = workers[id], first = Math.max(1, Math.round(-m.rest_ms * Math.log(1 - g())));
+      const w = workers[id], first = Math.max(1, Math.round(-m.rest_ms * detLog(1 - g())));
       const eid = `${id}#${pad(w.n++, 8)}`, ev: QEvent = { t: first, r: 0, q: tieOf(seed, first, eid), id: eid, k: 'bout_end', a: id, p: {} };
       w.pending = ev.id; queue.push(ev);
     }
@@ -250,7 +251,7 @@ export class World {
     const ev: QEvent = { t: cause.t + delay, r: delay === 0 ? cause.r + 1 : 0, q: 0, id: `${w.id}#${pad(w.n++, 8)}`, k: kind, a: w.id, p: {} };
     w.pending = ev.id; this.#push(ev); return ev.id;
   }
-  #exp(g: () => number, mean: number): number { return Math.max(1, Math.round(-mean * Math.log(1 - g()))); }
+  #exp(g: () => number, mean: number): number { return Math.max(1, Math.round(-mean * detLog(1 - g()))); }
 
   /** book metabolism and the time budget of the worker's current state up to t (exact integer arithmetic) */
   #book(w: Worker, t: number): void {

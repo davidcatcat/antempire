@@ -1,16 +1,19 @@
 /**
  * P0-A2 phase 2 — INDIVIDUAL DECISIONS (design §4.4). Every function here receives ONLY one individual's own view, the
  * local view of its own location (or of one partner it actually touched), constants, and uniform draws. Nothing here
- * can reach colony totals, other individuals, the queue or the clock of day: this module imports types only, and the
- * world hands it guarded views (world.ts guardView) that throw on any field that is not a local signal.
- * tests/p0a2-24h-proto.test.ts checks this file statically (no colony-level identifier, type-only imports).
+ * can reach colony totals, other individuals, the queue or the clock of day: this module imports types only (plus the
+ * stateless deterministic power function of engine/clock/detmath.ts, rules update detmath-exp: `**` is
+ * implementation-approximated and differs between engines), and the world hands it guarded views (world.ts guardView)
+ * that throw on any field that is not a local signal. tests/p0a2-24h-proto.test.ts checks this file statically (no
+ * colony-level identifier, type-only imports except that one named math import).
  *
  * There is NO time-of-day input and no table from hour to activity: the activity time distribution is an output.
  */
+import { detPow } from '../../engine/clock/detmath.ts';
 import type { CarerView, DecisionConsts, DonorView, ExitChoice, LarvaView, NeedView, NestChoice, PartnerView, Retention, SelfView, SiteView, SourceView } from './types.ts';
 
 /** response threshold hill(s; θ, n) (mechanism: R234 etc., other species; form and values: game assumption) */
-export const hill = (s: number, theta: number, n: number): number => (s <= 0 ? 0 : s ** n / (s ** n + theta ** n));
+export const hill = (s: number, theta: number, n: number): number => (s <= 0 ? 0 : detPow(s, n) / (detPow(s, n) + detPow(theta, n)));
 
 /** exit temperature factor f_T: 0 at or below zero_low, rising linearly to 1 at peak, falling linearly to 0 at
  *  zero_high (anchors: R190 P. pallidula, other species; straight lines: game assumption); no anchors (null) => 1 */

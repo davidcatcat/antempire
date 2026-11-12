@@ -7,8 +7,9 @@
  *     Worker; the light times computed NOW in Node hash to the recorded Chromium digests (so a change of solar.ts /
  *     detmath.ts that alters any bit fails here until a new Chromium run is recorded). No tolerance anywhere.
  *     x86-64 only: ARM64 is NOT verified (no ARM64 runner).
- *  2. engine/clock/solar.ts and detmath.ts use no implementation-approximated Math function (sin, cos, tan, asin, acos,
- *     atan, exp, log, pow, **, ...): only IEEE basic operations and Math.sqrt.
+ *  2. engine/clock/solar.ts, detmath.ts and (rules update detmath-exp) weather-input.ts use no implementation-approximated
+ *     Math function (sin, cos, tan, asin, acos, atan, exp, log, pow, **, ...): only IEEE basic operations and Math.sqrt.
+ *     The whole Worker import graph is held to the same rule by tests/worker-boundary.test.ts.
  *  3. HISTORY (kept): with Math.* trigonometry the first run found 1–320 ulp differences (out/sweep-v1-math-builtin.json),
  *     and the COUNTEREXAMPLES below (the other environment's value stood in by the neighbouring double) show such a
  *     difference changes batching (C1), the 'tick' label (C3) and the light state at a boundary (C4) — so it is NOT
@@ -47,7 +48,7 @@ ok(A.spotlight.length === SPOTLIGHT.length && A.spotlight.every((s: { found: boo
 ok(/未驗證/.test(A.arm64), 'ARM64 is recorded as NOT verified');
 
 // 2. source: only basic operations and Math.sqrt
-for (const f of ['engine/clock/solar.ts', 'engine/clock/detmath.ts']) ok(!/Math\.(sin|cos|tan|asin|acos|atan|atan2|log|log2|log10|log1p|exp|expm1|pow|hypot|cbrt|sinh|cosh|tanh|fround)\b|\*\*/.test(strip(fs.readFileSync(path.join(REPO_ROOT, f), 'utf8'))), `${f}: no implementation-approximated Math function`);
+for (const f of ['engine/clock/solar.ts', 'engine/clock/detmath.ts', 'engine/clock/weather-input.ts']) ok(!/Math\.(sin|cos|tan|asin|acos|atan|atan2|log|log2|log10|log1p|exp|expm1|pow|hypot|cbrt|sinh|cosh|tanh|fround)\b|\*\*/.test(strip(fs.readFileSync(path.join(REPO_ROOT, f), 'utf8'))), `${f}: no implementation-approximated Math function`);
 
 // 3. history: earlier measurement and counterexamples
 const V1 = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'prototypes/solar-xenv/out/sweep-v1-math-builtin.json'), 'utf8'));

@@ -183,9 +183,15 @@ const VIEW_OF_NAME: Record<string, string> = { self: 'SelfView', site: 'SiteView
 const sameSet = (a: readonly string[], b: readonly string[]) => [...a].sort().join() === [...b].sort().join();
 const viewJson = (v: object) => canon(Object.fromEntries(Object.keys(v).sort().map((k) => [k, (v as any)[k]])));
 const FORBIDDEN = /\b(world|World|workers|larvae|sources|ledger|stats|colony|colonies|queue|stock|totals?|t_now|hourOfDay|Date|env|Environment|this|globalThis)\b/;
+const DETMATH_NAMES = ['detExp', 'detLog', 'detPow', 'detPowInt'];
 function decisionProblems(src: string): string[] {
   const p: string[] = [], code = strip(src);
-  for (const m of code.matchAll(/^\s*import\s+(type\s+)?[^;]*?from\s+'([^']+)'/gm)) if (!m[1] || m[2] !== './types.ts') p.push(`decision imports ${m[2]}${m[1] ? '' : ' (not type-only)'}`);
+  // type-only imports of ./types.ts, plus (rules update detmath-exp) named imports of the stateless deterministic math
+  // functions of engine/clock/detmath.ts — nothing else
+  for (const m of code.matchAll(/^\s*import\s+(type\s+)?([^;]*?)from\s+'([^']+)'/gm)) {
+    const detmath = !m[1] && m[3] === '../../engine/clock/detmath.ts' && /^\{[\s\w,]*\}\s*$/.test(m[2]) && m[2].replace(/[{}\s]/g, '').split(',').filter(Boolean).every((n) => DETMATH_NAMES.includes(n));
+    if (!detmath && (!m[1] || m[3] !== './types.ts')) p.push(`decision imports ${m[3]}${m[1] ? '' : ' (not type-only)'}`);
+  }
   const c = noStrings(code).replace(/^\s*import[^;]*;/gm, '');
   const hit = c.match(FORBIDDEN); if (hit) p.push(`decision code names colony-level / global state: ${hit[0]}`);
   if (/^(export\s+)?(let|var)\s/m.test(c)) p.push('decision module has module-level mutable state (top-level let / var)');
@@ -204,6 +210,9 @@ function decisionProblems(src: string): string[] {
     "import type { SelfView } from './types.ts';\nexport function bad(self: SelfView): number { return world.workers.length; }",
     "import type { SelfView } from './types.ts';\nexport function bad(self: SelfView, colony: { sugar: number }): number { return colony.sugar; }",
     "import { World } from './world.ts';\nexport function bad(self: SelfView): number { return 0; }",
+    "import { lightTimes } from '../../engine/clock/solar.ts';\nexport function bad(self: SelfView): number { return 0; }",
+    "import { DET_TRIG_MAX_ARG } from '../../engine/clock/detmath.ts';\nexport function bad(self: SelfView): number { return DET_TRIG_MAX_ARG; }",
+    "import * as M from '../../engine/clock/detmath.ts';\nexport function bad(self: SelfView): number { return 0; }",
     "import type { WorldState } from './types.ts';\nexport function bad(self: SelfView, s: WorldState): number { return 0; }",
     "export function bad(self: SelfView): number { return new Date().getHours(); }",
     "let seen = 0;\nexport function bad(self: SelfView): number { return ++seen; }",

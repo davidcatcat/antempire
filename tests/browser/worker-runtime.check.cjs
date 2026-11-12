@@ -10,7 +10,8 @@
  *    48 h continuous; irregular chunks identical; paced run (start / speeds / pause / resume) then step to 48 h identical.
  *  - refusal: a tampered snapshot is refused and the Worker keeps its world; an unknown command is rejected.
  *  - every reply and event carries 非正式實驗世界／不屬於正式遊戲歷史; the demo page shows the label and moving ants.
- *  - P0-A2 24 h world (#156 phase 3): Node (tests/lib/p0a2-world-run.ts) vs Worker, 48 h, two seeds; same-environment
+ *  - P0-A2 24 h world (#156 phase 3): Node (tests/lib/p0a2-world-run.ts) vs Worker, 48 h, two seeds, every event, the
+ *    log hash chain, the event-chain head and the whole payload BYTE-IDENTICAL (rules update detmath-exp); same-environment
  *    replay; 24 h -> snapshot -> terminate -> new Worker -> restore -> 24 h == 48 h; irregular chunks; paced run with
  *    speeds / follow / pause then step to 48 h (event-log hash); tampered and other-code snapshots refused.
  *  - saves/ and journal/ hashes unchanged.
@@ -149,31 +150,26 @@ const dirHash = (d) => { const h = crypto.createHash('sha256'); const walk = (p)
   }, P0SEEDS);
   {
     const canon = (v) => (v === null || typeof v !== 'object') ? JSON.stringify(v) : Array.isArray(v) ? `[${v.map(canon).join(',')}]` : `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canon(v[k])}`).join(',')}}`;
-    // Cross-environment: the P0-A2 environment logs relative humidity from engine/clock/weather-input.ts
-    // saturationVapourKPa (Math.exp, an implementation-approximated function), and the world's own rules use Math.log
-    // (exponential bout lengths) and ** (response threshold). Measured here, not assumed: every event must be
-    // byte-identical EXCEPT env_sample events whose only difference is rh_percent within 1e-9 %, and the complete state
-    // without the log hash chain (individuals, queue, food ledger, statistics) must be byte-identical. Any other
-    // difference fails. Byte identity of the whole log / payload across environments is NOT claimed (RH, 1 ulp).
-    const c = { seeds: P0SEEDS, events: 0, identical_events: 0, rh_only: 0, max_rh_diff: 0, other: [], payload_identical: 0, state_without_log_identical: 0 };
+    // Cross-environment (rules update detmath-exp, Owner #190 scheme A extended to exp / log / **): every module the
+    // P0-A2 world runs uses only IEEE-exact operations (engine/clock/detmath.ts detExp / detLog / detPow / detSin; the
+    // static rule in tests/worker-boundary.test.ts forbids Math.exp / log / ** and the other approximated functions in
+    // the Worker graph). So EVERY event, the log hash chain, the event-chain head and the whole payload must be
+    // byte-identical between Node and the Chromium Worker. No tolerance and no exception (the earlier rh_percent /
+    // chain.head exception, needed while weather-input.ts used Math.exp, is removed). x86-64 only; ARM64 not verified.
+    const c = { seeds: P0SEEDS, events: 0, identical_events: 0, differing: [], payload_identical: 0, chain_head_identical: 0, log_hash_identical: 0 };
     P0SEEDS.forEach((seed, i) => {
       const n = p0node[i], w = p0.xs[i];
-      if (n.events.length !== w.events.length) { c.other.push(`seed ${seed}: ${n.events.length} vs ${w.events.length} events`); return; }
+      if (n.events.length !== w.events.length) { c.differing.push(`seed ${seed}: ${n.events.length} vs ${w.events.length} events`); return; }
       for (let j = 0; j < n.events.length; j++) {
         c.events++; if (n.events[j] === w.events[j]) { c.identical_events++; continue; }
-        const a = JSON.parse(n.events[j]), b = JSON.parse(w.events[j]);
-        const ra = a.data.rh_percent, rb = b.data.rh_percent; delete a.data.rh_percent; delete b.data.rh_percent;
-        if (a.kind === 'env_sample' && canon(a) === canon(b) && typeof ra === 'number' && typeof rb === 'number' && Math.abs(ra - rb) < 1e-9) { c.rh_only++; c.max_rh_diff = Math.max(c.max_rh_diff, Math.abs(ra - rb)); }
-        else if (c.other.length < 20) c.other.push(`seed ${seed} #${j} ${a.event_id} (${a.kind})`);
+        if (c.differing.length < 20) { const a = JSON.parse(n.events[j]); c.differing.push(`seed ${seed} #${j} ${a.event_id} (${a.kind})`); }
       }
-      if (canon(n.payload) === canon(w.payload) && n.payload_sha256 === w.hash) c.payload_identical++;
-      // the event-chain head (payload schema 2, docs/save-format-v2.md §5b) is a hash over the same events, so it carries
-      // the same rh_percent difference as the log hash chain; its genesis and count are still compared
-      const strip = (p) => { const q = JSON.parse(JSON.stringify(p)); delete q.state.log; if (q.chain) delete q.chain.head; return canon(q); };
-      if (strip(n.payload) === strip(w.payload)) c.state_without_log_identical++; else c.other.push(`seed ${seed}: 48 h state (without the log hash chain) differs`);
+      if (canon(n.payload) === canon(w.payload) && n.payload_sha256 === w.hash) c.payload_identical++; else c.differing.push(`seed ${seed}: 48 h payload differs`);
+      if (n.payload.chain && w.payload.chain && n.payload.chain.head === w.payload.chain.head) c.chain_head_identical++;
+      if (n.payload.state.log.hash === w.payload.state.log.hash) c.log_hash_identical++;
     });
-    info.p0a2_node_vs_worker = { node: p0node[0].platform, ...c, other: c.other.slice(0, 5), arm64: 'not verified', note: 'rh_percent (logged only, read by no decision) differs by <= max_rh_diff; the log hash chain therefore differs; byte identity across environments not claimed' };
-    check(c.other.length === 0 && c.events > 0 && c.state_without_log_identical === P0SEEDS.length, `P0-A2 Node vs Worker (seeds ${P0SEEDS}, 48 h): ${c.identical_events}/${c.events} events byte-identical, ${c.rh_only} env_sample events differ ONLY in the logged rh_percent (max ${c.max_rh_diff.toExponential(1)} %); every worker / larva / source event and the full state without the log hash chain identical (${c.state_without_log_identical}/${P0SEEDS.length}); whole-payload identical ${c.payload_identical}/${P0SEEDS.length} (x86-64 only)`);
+    info.p0a2_node_vs_worker = { node: p0node[0].platform, ...c, differing: c.differing.slice(0, 5), arm64: 'not verified' };
+    check(c.differing.length === 0 && c.events > 0 && c.identical_events === c.events && c.payload_identical === P0SEEDS.length && c.chain_head_identical === P0SEEDS.length && c.log_hash_identical === P0SEEDS.length, `P0-A2 Node vs Chromium Worker (seeds ${P0SEEDS}, 48 h): ${c.identical_events}/${c.events} events byte-identical; log hash chain ${c.log_hash_identical}/${P0SEEDS.length}, event-chain head ${c.chain_head_identical}/${P0SEEDS.length}, whole payload ${c.payload_identical}/${P0SEEDS.length} identical (no tolerance; x86-64 only)`);
     info.p0a2 = { events_48h: p0.n48, log_hash_48h: p0.logHash, paced_pause_t: p0.tPaced, chunks: p0.chunks };
     check(p0.same2, 'P0-A2 Worker: same seed twice -> identical events and state');
     check(p0.restoredOk && p0.splitSame, 'P0-A2 Worker: 24 h -> snapshot -> terminate -> new Worker -> restore -> 24 h == 48 h continuous (every event and the full state, byte-identical)');

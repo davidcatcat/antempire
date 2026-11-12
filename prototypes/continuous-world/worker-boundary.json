@@ -116,5 +116,41 @@
     "commit-log",
     ".advance-tmp"
   ],
+  "deterministic_math_in_worker_graph": {
+    "decision": "Owner ruling #190 (scheme A: deterministic transcendental functions, ruled in #193, 2026-11-12), extended to exp / log / ** by the rules update detmath-exp: every module the Worker reaches must compute the same bits in every conforming ECMAScript engine, so the Node verifier (#200) reproduces a browser-advanced world.",
+    "allowed_math_members": [
+      "abs",
+      "ceil",
+      "clz32",
+      "floor",
+      "fround",
+      "imul",
+      "max",
+      "min",
+      "round",
+      "sign",
+      "sqrt",
+      "trunc",
+      "E",
+      "LN10",
+      "LN2",
+      "LOG10E",
+      "LOG2E",
+      "PI",
+      "SQRT1_2",
+      "SQRT2"
+    ],
+    "rule": "In every module of the Worker graph, Math may only appear as Math.<allowed member> (IEEE-exact operations and constants; Math.random is forbidden separately), and ** only with a non-negative integer literal exponent. Implementation-approximated functions (exp, log, pow, sin, cos, tan, atan, atan2, asin, acos, sinh, cosh, tanh, asinh, acosh, atanh, cbrt, hypot, expm1, log1p, log2, log10, and ** with any other exponent) go through engine/clock/detmath.ts (detExp, detLog, detPow, detPowInt, detSin, detCos, detTan, detAsin, detAcos).",
+    "exempt_unreached_functions": [
+      {
+        "file": "engine/rng.ts",
+        "functions": [
+          "normal",
+          "gamma"
+        ],
+        "reason": "Box–Muller / Marsaglia–Tsang samplers of the official daily engine (golden-pinned, not changed here). The Worker graph never imports them; the checker verifies that no Worker-graph module imports these names or the whole module as a namespace, and that the rest of engine/rng.ts does not call them."
+      }
+    ]
+  },
   "how_to_extend": "Adding an allowed prefix or file (e.g. a new pure P0-A2 module) is a rules change: edit this file in its own PR, list the module's purity checks (pure_module_prefixes applies forbidden_in_engine_modules to it; tests/worker-boundary.test.ts adds negative fixtures) and get Owner authorisation. The Owner authorisation of 2026-11-12 (#156 phase 3) replaces the earlier 'Codex fixed-SHA review' step for this kind of change; CLAUDE.md §9 B still names the Codex review and is left for the Owner to update."
 }
