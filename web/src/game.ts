@@ -55,8 +55,13 @@ async function init() {
   setupPointer(); setupReplayUx();
   window.addEventListener('resize', resize); resize();
   // the bars can re-wrap after fonts / options load: keep their measured heights current
-  new ResizeObserver(() => { bottomBarPx = $('bottom').getBoundingClientRect().height; topBarPx = $('top').getBoundingClientRect().height; }).observe(document.body);
-  for (const id of ['top', 'bottom']) new ResizeObserver(() => { bottomBarPx = $('bottom').getBoundingClientRect().height; topBarPx = $('top').getBoundingClientRect().height; }).observe($(id));
+  const barsChanged = () => {
+    const b = $('bottom').getBoundingClientRect().height, tp = $('top').getBoundingClientRect().height;
+    if (b === bottomBarPx && tp === topBarPx) return;
+    bottomBarPx = b; topBarPx = tp; if (exp && homeView && !following) { homeCamera(); R.warm(camera()); } // keep the opening framed above the controls
+  };
+  new ResizeObserver(barsChanged).observe(document.body);
+  for (const id of ['top', 'bottom']) new ResizeObserver(barsChanged).observe($(id));
   await openWorld(index.experiments[0].file);
   requestAnimationFrame(loop);
 }
@@ -107,16 +112,24 @@ function resetMicro() { ctxCache = new Map(); R.resetMicro(); }
 const jumped = () => R.resetMotion();
 
 /** Opening view: a macro view around the nest entrance, nudged toward the food site the opening walks go to, so the
- *  workers leaving and arriving are seen close up. The field adapts to the screen: its short side shows MACRO_CM. */
+ *  workers leaving and arriving are seen close up. The field adapts to the UNOBSCURED part of the canvas (between the
+ *  top bar and the bottom control panel): its short side shows MACRO_CM and the framed point sits at its centre, so the
+ *  nest and the opening walks are not hidden under the controls (drawing only; camera, not data). */
 const MACRO_CM = 24;
+/** the camera still shows the home view (no pan / zoom / fit / follow since): bar re-wraps then re-frame it */
+let homeView = false;
+const visibleBand = () => { const h = canvas.clientHeight, top = Math.min(topBarPx, h), bottom = Math.max(top + 1, h - bottomBarPx); return { top, bottom }; };
 function homeCamera() {
   const a = pos[NEST], b = pos[focusPlace]?.known ? pos[focusPlace] : a;
   if (!a) return;
-  const k = Math.min(0.3, 6 / Math.max(1e-9, Math.hypot(b.x - a.x, b.y - a.y)));
-  cam.x = a.x + (b.x - a.x) * k; cam.y = a.y + (b.y - a.y) * k;
-  cam.s = Math.min(canvas.clientWidth, canvas.clientHeight - bottomBarPx - 60) / MACRO_CM;
+  const k = Math.min(0.3, 6 / Math.max(1e-9, Math.hypot(b.x - a.x, b.y - a.y))), v = visibleBand(), h = canvas.clientHeight;
+  cam.s = Math.max(1e-6, Math.min(canvas.clientWidth, v.bottom - v.top)) / MACRO_CM;
+  cam.x = a.x + (b.x - a.x) * k;
+  cam.y = a.y + (b.y - a.y) * k - (h / 2 - (v.top + v.bottom) / 2) / cam.s; // framed point at the centre of the unobscured band
+  homeView = true;
 }
 function fitCamera() {
+  homeView = false;
   const w = canvas.clientWidth, h = canvas.clientHeight;
   cam.x = (bounds.x0 + bounds.x1) / 2; cam.y = (bounds.y0 + bounds.y1) / 2;
   cam.s = Math.min(w / (bounds.x1 - bounds.x0), h / (bounds.y1 - bounds.y0));
@@ -192,7 +205,7 @@ function renderCard() {
   const where = f.vis === 'walking' ? `行走中 ${f.place.replace('>', ' → ')}（畫面位置＝兩個引擎紀錄點之間的插值）` : f.vis === 'at_site' ? `在 ${f.place}（引擎紀錄點）` : f.vis === 'in_nest' ? '在巢內（地表看不到）' : `在位置未記錄的地點 ${f.place}（不畫在花園上）`;
   ui.card.hidden = false;
   ui.card.innerHTML = `<b>${selected}</b>　<span class="muted">熱帶大頭家蟻・小工蟻（引擎尚未模擬大工蟻）</span><br>現在：${ACTION_LABEL[f.action] ?? f.action}${f.segStart !== null ? `（本段 ${f.segStart.toFixed(1)}–${(f.segEnd as number).toFixed(1)} 分，引擎紀錄）` : ''}<br>位置：${where}<br>今日紀錄任務：${task ? `${TASK_LABEL[task.task] ?? task.task}；出巢 ${task.trips} 趟、成功 ${task.successes}` : '—'}<div class="row"><button id="followBtn" type="button">${following === selected ? '取消追蹤' : '鏡頭追蹤'}</button><a href="analysis.html">在分析模式查看完整紀錄</a><button id="closeCard" type="button" aria-label="關閉">✕</button></div>`;
-  $('followBtn').onclick = () => { following = following === selected ? null : selected; renderCard(); };
+  $('followBtn').onclick = () => { following = following === selected ? null : selected; homeView = false; renderCard(); };
   $('closeCard').onclick = () => { selected = null; following = null; renderCard(); };
 }
 let cardKey = '';
@@ -216,7 +229,7 @@ function setupPointer() {
   canvas.addEventListener('pointerdown', (e) => { canvas.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.offsetX, y: e.offsetY }); downAt = { x: e.offsetX, y: e.offsetY, t: performance.now() }; if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch0 = Math.hypot(a.x - b.x, a.y - b.y); s0 = cam.s; } });
   canvas.addEventListener('pointermove', (e) => {
     const p = pts.get(e.pointerId); if (!p) return;
-    if (pts.size === 1) { const dx = e.offsetX - p.x, dy = e.offsetY - p.y; if (Math.hypot(e.offsetX - downAt.x, e.offsetY - downAt.y) > 4) { following = null; cam.x -= dx / cam.s; cam.y += dy / cam.s; } }
+    if (pts.size === 1) { const dx = e.offsetX - p.x, dy = e.offsetY - p.y; if (Math.hypot(e.offsetX - downAt.x, e.offsetY - downAt.y) > 4) { following = null; homeView = false; cam.x -= dx / cam.s; cam.y += dy / cam.s; } }
     p.x = e.offsetX; p.y = e.offsetY;
     if (pts.size === 2 && pinch0 > 0) { const [a, b] = [...pts.values()]; zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, (s0 * Math.hypot(a.x - b.x, a.y - b.y)) / pinch0 / cam.s); }
   });
@@ -229,6 +242,7 @@ function setupPointer() {
   canvas.addEventListener('wheel', (e) => { e.preventDefault(); zoomAt(e.offsetX, e.offsetY, Math.exp(-e.deltaY * 0.0015)); }, { passive: false });
 }
 function zoomAt(sx: number, sy: number, k: number) {
+  homeView = false;
   const fitS = Math.min(canvas.clientWidth / (bounds.x1 - bounds.x0), canvas.clientHeight / (bounds.y1 - bounds.y0));
   const ns = Math.max(fitS * 0.6, Math.min(400, cam.s * k)); const [wx, wy] = S2W(sx, sy); cam.s = ns;
   if (!following) { const [nx, ny] = S2W(sx, sy); cam.x += wx - nx; cam.y += wy - ny; }
@@ -303,6 +317,8 @@ function setupReplayUx() {
 (window as unknown as { __game: unknown }).__game = {
   state: () => { const q = R.quality(); return { world: ui.world.value, day, t, playing, speed, skip, mode: replay.summary ? 'summary' : 'playback', selected, following, ended, cam: { ...cam }, low_res: q.dprCap === 1 && (window.devicePixelRatio || 1) > 1, quality: q.level, canvas_px: [canvas.width, canvas.height], min_ant_px: minAntPx(), focus: focusPlace }; },
   ants: () => frames.map((f) => ({ id: f.id, vis: f.vis, moving: f.moving, x: f.x, y: f.y, sx: f.sx ?? null, sy: f.sy ?? null, place: f.place, action: f.action })),
+  /** unobscured canvas band (CSS px, between the bars) and the screen points of the nest and the opening focus site */
+  view: () => { const v = visibleBand(), w = canvas.clientWidth, h = canvas.clientHeight, sc = (p: { x: number; y: number } | undefined) => (p ? [w / 2 + (p.x - cam.x) * cam.s, h / 2 - (p.y - cam.y) * cam.s] : null); return { w, h, top: v.top, bottom: v.bottom, home: homeView, nest: sc(pos[NEST]), focus: focusPlace, focus_xy: sc(pos[focusPlace]?.known ? pos[focusPlace] : undefined) }; },
   engineObjects: () => R.engineObjects().map((o) => ({ id: o.id, kind: o.kind, x: o.x, y: o.y, source: o.source })),
   layers: () => [...R.trace],
   /** display micro-motion of the last frame (示意 display animation; read only) */
