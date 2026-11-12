@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>實驗 Worker 示範</title>
+<style>
+  /* Minimal demo of the non-official experiment Worker (P0-A2 PR 2). Full V6-2 integration is PR 3. */
+  :root { --bg: #f4efe6; --ink: #241c12; --muted: #6b5d48; --panel: #ffffff; --line: #d8ccb6; --exp-bg: #f6e3d1; --exp-fg: #6b3410; --ant: #3a2410; --walk: #b0451c; --nest: #8c6a3f; --arena: #e7dcc6; color-scheme: light; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #1d1913; --ink: #efe6d4; --muted: #b9aa8e; --panel: #2a241b; --line: #4a4030; --exp-bg: #4a2a12; --exp-fg: #f6d9bd; --ant: #f0dcc0; --walk: #ff8a4c; --nest: #c49a62; --arena: #2f281e; color-scheme: dark; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, "Noto Sans TC", sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 12px 16px 24px; }
+  h1 { font-size: 18px; margin: 4px 0 8px; }
+  #badge { background: var(--exp-bg); color: var(--exp-fg); border-radius: 6px; padding: 6px 10px; font-size: 13px; line-height: 1.5; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0; }
+  button, select { font: inherit; font-size: 14px; min-height: 34px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+  button:disabled { opacity: 0.45; }
+  #view { width: 100%; max-width: 640px; aspect-ratio: 1 / 1; display: block; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+  .grid { display: grid; grid-template-columns: minmax(0, 640px) minmax(0, 1fr); gap: 12px; }
+  @media (max-width: 760px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+  .muted { color: var(--muted); }
+  #log { font-family: ui-monospace, monospace; font-size: 11px; max-height: 260px; overflow: auto; white-space: pre-wrap; }
+  #time { font-variant-numeric: tabular-nums; font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <h1>實驗 Worker 示範（P0-A2 PR 2）</h1>
+  <div id="badge">非正式實驗世界／不屬於正式遊戲歷史。這是<strong>合成</strong>的小世界：所有數值都是遊戲假設（assumption: true），不是螞蟻科學模型，不得引用為本種行為。模擬只在 Web Worker 內執行；本頁只顯示 Worker 送來的狀態與事件，不存檔、不寫入任何正式資料。</div>
+  <div class="row">
+    <button id="start">開始</button>
+    <button id="pause" disabled>暫停</button>
+    <button id="resume" disabled>繼續</button>
+    <label>速度 <select id="speed"><option value="1">1×（即時）</option><option value="10">10×</option><option value="60" selected>60×（1 分／秒）</option><option value="600">600×</option><option value="3600">3600×（1 時／秒）</option></select></label>
+    <label>追蹤 <select id="follow"><option value="">（不追蹤）</option></select></label>
+  </div>
+  <div class="grid">
+    <canvas id="view" width="640" height="640" aria-label="合成實驗世界的俯視圖"></canvas>
+    <div>
+      <div class="panel">
+        <div>實驗世界時間：<span id="time">—</span></div>
+        <div id="env" class="muted">—</div>
+        <div id="counts" class="muted">—</div>
+        <div id="ids" class="muted">—</div>
+      </div>
+      <div class="panel" style="margin-top:8px">
+        <div><strong>資料分類</strong></div>
+        <div>● 引擎事件：右下事件列表原樣顯示（Worker 送出的 seq、event_id、時間）。</div>
+        <div>● 顯示插值：螞蟻在兩個引擎紀錄點（線段起訖）之間的畫面位置，只供畫面使用、不回寫。</div>
+        <div>● 示範資料：無。</div>
+        <div class="muted">光照由一般方法（太陽位置公式）計算；氣溫是 synthetic: true 的手寫剖面，世界中沒有個體讀取它。</div>
+      </div>
+      <div class="panel" style="margin-top:8px"><div><strong>追蹤個體（只觀察）</strong></div><div id="followed" class="muted">—</div></div>
+      <div class="panel" style="margin-top:8px"><div><strong>最近的引擎事件</strong></div><div id="log"></div></div>
+    </div>
+  </div>
+</main>
+<script type="module" src="dist/experimental/demo.js"></script>
+</body>
+</html>
