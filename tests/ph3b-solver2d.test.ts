@@ -138,7 +138,10 @@ function denseCheck(inp: Solver2DInput, res: Solver2DResult, dt = 0.002) {
   const sc = loadScenario('head-on-2'), run = runPh3b(sc), j = judge(sc, run.tr, { occupancy2d: true, dense_dt_s: 0.002 });
   const a = sc.agents, tc = (a[1].s_mm - a[0].s_mm - L) / (a[0].free_speed_mm_s + a[1].free_speed_mm_s);
   const cs = kinds(run.res, 'contact_start');
-  ok(cs.length === 1 && Math.abs(cs[0].t_s - tc) < 1e-12, `one contact at the analytic time ${tc}`);
+  // contact = gap ≤ θ (docs/physics-time-contract.md §3): it starts θ/(closing speed) before the touch; the bodies stop at the touch
+  const tθ = tc - ACTIVE_TOL_MM / (a[0].free_speed_mm_s + a[1].free_speed_mm_s);
+  ok(cs.length === 1 && Math.abs(cs[0].t_s - tθ) < 1e-12, `one contact, starting at the analytic θ crossing ${tθ} (touch ${tc})`);
+  ok(kinds(run.res, 'stop').every((e) => Math.abs(e.t_s - tc) < 1e-12), 'both stop at the analytic touch');
   ok(kinds(run.res, 'stop').length === 2 && run.res.stats.stalled === 2, 'both stop (head-on: neither can advance without penetrating) and stay stalled: no yielding is decided by the solver');
   ok(j.overlap_pair_instants === 0 && j.overlap_between_instants === 0 && j.out_of_walkable_agent_instants === 0 && j.obstacle_violation_agent_instants === 0 && j.occupancy2d!.overlap === 0 && j.occupancy2d!.outside_lane === 0, 'common judge: no overlap at or between instants, no wall or lane violation');
   ok(run.res.events.every((e) => (e.class as string) !== 'behavioural_response'), 'no behavioural events at all');
@@ -181,7 +184,8 @@ function denseCheck(inp: Solver2DInput, res: Solver2DResult, dt = 0.002) {
   // guaranteed same instant: A and C start together, each already touching the stationary B
   const same: Solver2DInput = { lanes: [straight('P', 2)], obstacles: [], agents: [ag('A', 'P', 10, 0, 1, 90, 10, 1), ag('B', 'P', 10 + L, 0, 1, 90, 10, 50), ag('C', 'P', 10 + 2 * L, 0, -1, 2, 10, 1)], horizon_s: 3 };
   const rs = solve2D(same), cs = kinds(rs, 'contact_start');
-  ok(cs.length === 2 && cs[0].t_s === 1 && cs[1].t_s === 1 && kinds(rs, 'stop').length === 2 && rs.stats.batches === 1, 'two contacts start in the same instant (t = 1 s) and are resolved in one batch: both stop');
+  // the bodies touch from t = 0 (contact episodes start at 0); A and C start at t = 1 and both constraints act in one batch
+  ok(cs.length === 2 && cs[0].t_s === 0 && cs[1].t_s === 0 && kinds(rs, 'stop').length === 2 && kinds(rs, 'stop').every((e) => e.t_s === 1) && rs.stats.batches === 1, 'two touching pairs (contacts from t = 0); both constraints act in the same instant (t = 1 s) in one batch: both stop');
   for (const perm of [[2, 1, 0], [1, 0, 2], [0, 2, 1]]) ok(hashRes(solve2D({ ...same, agents: perm.map((i) => same.agents[i]) })) === hashRes(rs), `same-instant events permuted ${perm}: identical`);
   const d = denseCheck(inp, res);
   ok(d.overlap === 0 && d.outside === 0, 'independent dense check: no overlap, inside lanes');

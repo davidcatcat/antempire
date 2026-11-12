@@ -1,0 +1,845 @@
+{
+ "schema": "antempire.model-c-scenes.v1",
+ "label": "隔離物理實驗・非正式",
+ "generator": "prototypes/natural-walk/scenes-c.ts",
+ "notes": [
+  "隔離物理實驗・非正式。",
+  "每個場景的化學場都明確宣告；沒有化學訊號的場景用零訊號對照場，不為了讓 C 能跑而編造吸引訊號。",
+  "所有參數 assumption:true（候選參數檔，未調整）。",
+  "種子：試驗種子 × 100 + 場景代碼；與 §8／診斷的種子集合不同。"
+ ],
+ "scenes": [
+  {
+   "id": "trail",
+   "title": "人工路線（150 mm，R133 幾何）",
+   "scene_signal": "present",
+   "params_set": "baseline",
+   "end_x_mm": 150,
+   "max_duration_s": 60,
+   "obstacles": [],
+   "variants": [
+    {
+     "label": "A",
+     "model": "A",
+     "field": {
+      "kind": "absent",
+      "note": "模型 A／B 不感測化學"
+     },
+     "runs": 75,
+     "refused": 0,
+     "refusal_messages": [],
+     "metrics": {
+      "arrival_rate": 1,
+      "along_speed_mm_s": {
+       "mean": 18.5,
+       "ci95": 0,
+       "n": 75
+      },
+      "mean_abs_y_mm": {
+       "mean": 0.4923,
+       "ci95": 0.0681,
+       "n": 75
+      },
+      "path_mm": {
+       "mean": 150,
+       "ci95": 0,
+       "n": 75
+      },
+      "net_displacement_mm": {
+       "mean": 150,
+       "ci95": 0,
+       "n": 75
+      },
+      "turn_rate_rms_rad_s": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "antenna_pivots": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "body_contact_stops": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "sensed_signal_fraction": null
+     }
+    },
+    {
+     "label": "B",
+     "model": "B",
+     "field": {
+      "kind": "absent",
+      "note": "模型 A／B 不感測化學"
+     },
+     "runs": 75,
+     "refused": 0,
+     "refusal_messages": [],
+     "metrics": {
+      "arrival_rate": 1,
+      "along_speed_mm_s": {
+       "mean": 16.7902,
+       "ci95": 0.1733,
+       "n": 75
+      },
+      "mean_abs_y_mm": {
+       "mean": 13.8012,
+       "ci95": 1.9338,
+       "n": 75
+      },
+      "path_mm": {
+       "mean": 165.625,
+       "ci95": 1.7643,
+       "n": 75
+      },
+      "net_displacement_mm": {
+       "mean": 152.5387,
+       "ci95": 0.7249,
+       "n": 75
+      },
+      "turn_rate_rms_rad_s": {
+       "mean": 1.1768,
+       "ci95": 0.0239,
+       "n": 75
+      },
+      "antenna_pivots": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "body_contact_stops": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "sensed_signal_fraction": null
+     }
+    },
+    {
+     "label": "C／訊號存在",
+     "model": "C",
+     "field": {
+      "kind": "gaussian_ridge",
+      "note": "合成高斯脊（synthetic: true；不是費洛蒙模型）"
+     },
+     "runs": 75,
+     "refused": 0,
+     "refusal_messages": [],
+     "metrics": {
+      "arrival_rate": 1,
+      "along_speed_mm_s": {
+       "mean": 17.7633,
+       "ci95": 0.1405,
+       "n": 75
+      },
+      "mean_abs_y_mm": {
+       "mean": 3.4958,
+       "ci95": 1.2927,
+       "n": 75
+      },
+      "path_mm": {
+       "mean": 156.4197,
+       "ci95": 1.305,
+       "n": 75
+      },
+      "net_displacement_mm": {
+       "mean": 150.4989,
+       "ci95": 0.3329,
+       "n": 75
+      },
+      "turn_rate_rms_rad_s": {
+       "mean": 1.175,
+       "ci95": 0.0274,
+       "n": 75
+      },
+      "antenna_pivots": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "body_contact_stops": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "sensed_signal_fraction": {
+       "mean": 0.8131,
+       "ci95": 0.057,
+       "n": 75
+      }
+     }
+    },
+    {
+     "label": "C／零訊號",
+     "model": "C",
+     "field": {
+      "kind": "zero_signal",
+      "note": "明確的零訊號對照場（synthetic: true；處處為 0）"
+     },
+     "runs": 75,
+     "refused": 0,
+     "refusal_messages": [],
+     "metrics": {
+      "arrival_rate": 1,
+      "along_speed_mm_s": {
+       "mean": 16.7902,
+       "ci95": 0.1733,
+       "n": 75
+      },
+      "mean_abs_y_mm": {
+       "mean": 13.8012,
+       "ci95": 1.9338,
+       "n": 75
+      },
+      "path_mm": {
+       "mean": 165.625,
+       "ci95": 1.7643,
+       "n": 75
+      },
+      "net_displacement_mm": {
+       "mean": 152.5387,
+       "ci95": 0.7249,
+       "n": 75
+      },
+      "turn_rate_rms_rad_s": {
+       "mean": 1.1768,
+       "ci95": 0.0239,
+       "n": 75
+      },
+      "antenna_pivots": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "body_contact_stops": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "sensed_signal_fraction": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      }
+     }
+    },
+    {
+     "label": "C／無訊號",
+     "model": "C",
+     "field": {
+      "kind": "absent",
+      "note": "沒有任何化學場：模型 C 必須拒絕執行（不得退回）"
+     },
+     "runs": 75,
+     "refused": 75,
+     "refusal_messages": [
+      "KIN2D_REFUSED: ant-00: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-01: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-02: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-03: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-04: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-05: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-06: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-07: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-08: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-09: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-10: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-11: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-12: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-13: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-14: model C needs a (synthetic) field"
+     ],
+     "metrics": null
+    }
+   ],
+   "c_zero_vs_b_bit_identical": "75/75",
+   "c_signal_vs_b_differs": "75/75"
+  },
+  {
+   "id": "straight",
+   "title": "直線（150 mm，無化學訊號）",
+   "scene_signal": "none",
+   "params_set": "baseline",
+   "end_x_mm": 150,
+   "max_duration_s": 60,
+   "obstacles": [],
+   "variants": [
+    {
+     "label": "A",
+     "model": "A",
+     "field": {
+      "kind": "absent",
+      "note": "模型 A／B 不感測化學"
+     },
+     "runs": 75,
+     "refused": 0,
+     "refusal_messages": [],
+     "metrics": {
+      "arrival_rate": 1,
+      "along_speed_mm_s": {
+       "mean": 18.5,
+       "ci95": 0,
+       "n": 75
+      },
+      "mean_abs_y_mm": {
+       "mean": 0.477,
+       "ci95": 0.0633,
+       "n": 75
+      },
+      "path_mm": {
+       "mean": 150,
+       "ci95": 0,
+       "n": 75
+      },
+      "net_displacement_mm": {
+       "mean": 150,
+       "ci95": 0,
+       "n": 75
+      },
+      "turn_rate_rms_rad_s": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "antenna_pivots": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "body_contact_stops": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "sensed_signal_fraction": null
+     }
+    },
+    {
+     "label": "B",
+     "model": "B",
+     "field": {
+      "kind": "absent",
+      "note": "模型 A／B 不感測化學"
+     },
+     "runs": 75,
+     "refused": 0,
+     "refusal_messages": [],
+     "metrics": {
+      "arrival_rate": 1,
+      "along_speed_mm_s": {
+       "mean": 16.5838,
+       "ci95": 0.1704,
+       "n": 75
+      },
+      "mean_abs_y_mm": {
+       "mean": 14.1614,
+       "ci95": 2.041,
+       "n": 75
+      },
+      "path_mm": {
+       "mean": 167.6855,
+       "ci95": 1.7903,
+       "n": 75
+      },
+      "net_displacement_mm": {
+       "mean": 152.5193,
+       "ci95": 0.7057,
+       "n": 75
+      },
+      "turn_rate_rms_rad_s": {
+       "mean": 1.1854,
+       "ci95": 0.0238,
+       "n": 75
+      },
+      "antenna_pivots": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "body_contact_stops": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "sensed_signal_fraction": null
+     }
+    },
+    {
+     "label": "C／零訊號",
+     "model": "C",
+     "field": {
+      "kind": "zero_signal",
+      "note": "明確的零訊號對照場（synthetic: true；處處為 0）"
+     },
+     "runs": 75,
+     "refused": 0,
+     "refusal_messages": [],
+     "metrics": {
+      "arrival_rate": 1,
+      "along_speed_mm_s": {
+       "mean": 16.5838,
+       "ci95": 0.1704,
+       "n": 75
+      },
+      "mean_abs_y_mm": {
+       "mean": 14.1614,
+       "ci95": 2.041,
+       "n": 75
+      },
+      "path_mm": {
+       "mean": 167.6855,
+       "ci95": 1.7903,
+       "n": 75
+      },
+      "net_displacement_mm": {
+       "mean": 152.5193,
+       "ci95": 0.7057,
+       "n": 75
+      },
+      "turn_rate_rms_rad_s": {
+       "mean": 1.1854,
+       "ci95": 0.0238,
+       "n": 75
+      },
+      "antenna_pivots": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "body_contact_stops": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "sensed_signal_fraction": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      }
+     }
+    },
+    {
+     "label": "C／無訊號",
+     "model": "C",
+     "field": {
+      "kind": "absent",
+      "note": "沒有任何化學場：模型 C 必須拒絕執行（不得退回）"
+     },
+     "runs": 75,
+     "refused": 75,
+     "refusal_messages": [
+      "KIN2D_REFUSED: ant-00: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-01: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-02: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-03: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-04: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-05: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-06: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-07: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-08: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-09: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-10: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-11: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-12: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-13: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-14: model C needs a (synthetic) field"
+     ],
+     "metrics": null
+    }
+   ],
+   "c_zero_vs_b_bit_identical": "75/75",
+   "c_signal_vs_b_differs": null
+  },
+  {
+   "id": "exploration",
+   "title": "自由探索（12 s，探索參數，無化學訊號）",
+   "scene_signal": "none",
+   "params_set": "exploration",
+   "end_x_mm": null,
+   "max_duration_s": 12,
+   "obstacles": [],
+   "variants": [
+    {
+     "label": "A",
+     "model": "A",
+     "field": {
+      "kind": "absent",
+      "note": "模型 A／B 不感測化學"
+     },
+     "runs": 75,
+     "refused": 0,
+     "refusal_messages": [],
+     "metrics": {
+      "arrival_rate": 0,
+      "along_speed_mm_s": null,
+      "mean_abs_y_mm": {
+       "mean": 0.4276,
+       "ci95": 0.0616,
+       "n": 75
+      },
+      "path_mm": {
+       "mean": 222,
+       "ci95": 0,
+       "n": 75
+      },
+      "net_displacement_mm": {
+       "mean": 222,
+       "ci95": 0,
+       "n": 75
+      },
+      "turn_rate_rms_rad_s": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "antenna_pivots": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "body_contact_stops": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "sensed_signal_fraction": null
+     }
+    },
+    {
+     "label": "B",
+     "model": "B",
+     "field": {
+      "kind": "absent",
+      "note": "模型 A／B 不感測化學"
+     },
+     "runs": 75,
+     "refused": 0,
+     "refusal_messages": [],
+     "metrics": {
+      "arrival_rate": 0,
+      "along_speed_mm_s": null,
+      "mean_abs_y_mm": {
+       "mean": 26.7568,
+       "ci95": 3.3304,
+       "n": 75
+      },
+      "path_mm": {
+       "mean": 222,
+       "ci95": 0,
+       "n": 75
+      },
+      "net_displacement_mm": {
+       "mean": 69.0722,
+       "ci95": 7.7444,
+       "n": 75
+      },
+      "turn_rate_rms_rad_s": {
+       "mean": 1.9861,
+       "ci95": 0.0284,
+       "n": 75
+      },
+      "antenna_pivots": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "body_contact_stops": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "sensed_signal_fraction": null
+     }
+    },
+    {
+     "label": "C／零訊號",
+     "model": "C",
+     "field": {
+      "kind": "zero_signal",
+      "note": "明確的零訊號對照場（synthetic: true；處處為 0）"
+     },
+     "runs": 75,
+     "refused": 0,
+     "refusal_messages": [],
+     "metrics": {
+      "arrival_rate": 0,
+      "along_speed_mm_s": null,
+      "mean_abs_y_mm": {
+       "mean": 26.7568,
+       "ci95": 3.3304,
+       "n": 75
+      },
+      "path_mm": {
+       "mean": 222,
+       "ci95": 0,
+       "n": 75
+      },
+      "net_displacement_mm": {
+       "mean": 69.0722,
+       "ci95": 7.7444,
+       "n": 75
+      },
+      "turn_rate_rms_rad_s": {
+       "mean": 1.9861,
+       "ci95": 0.0284,
+       "n": 75
+      },
+      "antenna_pivots": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "body_contact_stops": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "sensed_signal_fraction": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      }
+     }
+    },
+    {
+     "label": "C／無訊號",
+     "model": "C",
+     "field": {
+      "kind": "absent",
+      "note": "沒有任何化學場：模型 C 必須拒絕執行（不得退回）"
+     },
+     "runs": 75,
+     "refused": 75,
+     "refusal_messages": [
+      "KIN2D_REFUSED: ant-00: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-01: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-02: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-03: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-04: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-05: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-06: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-07: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-08: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-09: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-10: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-11: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-12: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-13: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-14: model C needs a (synthetic) field"
+     ],
+     "metrics": null
+    }
+   ],
+   "c_zero_vs_b_bit_identical": "75/75",
+   "c_signal_vs_b_differs": null
+  },
+  {
+   "id": "obstacle",
+   "title": "前方障礙（圓石，終點 60 mm，無化學訊號）",
+   "scene_signal": "none",
+   "params_set": "baseline",
+   "end_x_mm": 60,
+   "max_duration_s": 15,
+   "obstacles": [
+    {
+     "id": "stone",
+     "kind": "disc",
+     "c": {
+      "x": 25,
+      "y": 0.6
+     },
+     "r": 3
+    }
+   ],
+   "variants": [
+    {
+     "label": "A",
+     "model": "A",
+     "field": {
+      "kind": "absent",
+      "note": "模型 A／B 不感測化學"
+     },
+     "runs": 75,
+     "refused": 0,
+     "refusal_messages": [],
+     "metrics": {
+      "arrival_rate": 1,
+      "along_speed_mm_s": {
+       "mean": 14.4012,
+       "ci95": 0.2332,
+       "n": 75
+      },
+      "mean_abs_y_mm": {
+       "mean": 12.24,
+       "ci95": 0.6469,
+       "n": 75
+      },
+      "path_mm": {
+       "mean": 73.1311,
+       "ci95": 1.1399,
+       "n": 75
+      },
+      "net_displacement_mm": {
+       "mean": 69.5013,
+       "ci95": 0.8813,
+       "n": 75
+      },
+      "turn_rate_rms_rad_s": {
+       "mean": 0.708,
+       "ci95": 0.0066,
+       "n": 75
+      },
+      "antenna_pivots": {
+       "mean": 3.6533,
+       "ci95": 0.1084,
+       "n": 75
+      },
+      "body_contact_stops": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      },
+      "sensed_signal_fraction": null
+     }
+    },
+    {
+     "label": "B",
+     "model": "B",
+     "field": {
+      "kind": "absent",
+      "note": "模型 A／B 不感測化學"
+     },
+     "runs": 75,
+     "refused": 0,
+     "refusal_messages": [],
+     "metrics": {
+      "arrival_rate": 0.88,
+      "along_speed_mm_s": {
+       "mean": 16.3274,
+       "ci95": 0.2848,
+       "n": 66
+      },
+      "mean_abs_y_mm": {
+       "mean": 7.2556,
+       "ci95": 1.0177,
+       "n": 75
+      },
+      "path_mm": {
+       "mean": 62.36,
+       "ci95": 3.4359,
+       "n": 75
+      },
+      "net_displacement_mm": {
+       "mean": 57.5575,
+       "ci95": 2.9438,
+       "n": 75
+      },
+      "turn_rate_rms_rad_s": {
+       "mean": 1.1807,
+       "ci95": 0.0441,
+       "n": 75
+      },
+      "antenna_pivots": {
+       "mean": 1.2933,
+       "ci95": 0.4319,
+       "n": 75
+      },
+      "body_contact_stops": {
+       "mean": 0.12,
+       "ci95": 0.074,
+       "n": 75
+      },
+      "sensed_signal_fraction": null
+     }
+    },
+    {
+     "label": "C／零訊號",
+     "model": "C",
+     "field": {
+      "kind": "zero_signal",
+      "note": "明確的零訊號對照場（synthetic: true；處處為 0）"
+     },
+     "runs": 75,
+     "refused": 0,
+     "refusal_messages": [],
+     "metrics": {
+      "arrival_rate": 0.88,
+      "along_speed_mm_s": {
+       "mean": 16.3274,
+       "ci95": 0.2848,
+       "n": 66
+      },
+      "mean_abs_y_mm": {
+       "mean": 7.2556,
+       "ci95": 1.0177,
+       "n": 75
+      },
+      "path_mm": {
+       "mean": 62.36,
+       "ci95": 3.4359,
+       "n": 75
+      },
+      "net_displacement_mm": {
+       "mean": 57.5575,
+       "ci95": 2.9438,
+       "n": 75
+      },
+      "turn_rate_rms_rad_s": {
+       "mean": 1.1807,
+       "ci95": 0.0441,
+       "n": 75
+      },
+      "antenna_pivots": {
+       "mean": 1.2933,
+       "ci95": 0.4319,
+       "n": 75
+      },
+      "body_contact_stops": {
+       "mean": 0.12,
+       "ci95": 0.074,
+       "n": 75
+      },
+      "sensed_signal_fraction": {
+       "mean": 0,
+       "ci95": 0,
+       "n": 75
+      }
+     }
+    },
+    {
+     "label": "C／無訊號",
+     "model": "C",
+     "field": {
+      "kind": "absent",
+      "note": "沒有任何化學場：模型 C 必須拒絕執行（不得退回）"
+     },
+     "runs": 75,
+     "refused": 75,
+     "refusal_messages": [
+      "KIN2D_REFUSED: ant-00: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-01: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-02: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-03: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-04: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-05: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-06: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-07: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-08: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-09: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-10: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-11: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-12: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-13: model C needs a (synthetic) field",
+      "KIN2D_REFUSED: ant-14: model C needs a (synthetic) field"
+     ],
+     "metrics": null
+    }
+   ],
+   "c_zero_vs_b_bit_identical": "75/75",
+   "c_signal_vs_b_differs": null
+  }
+ ]
+}

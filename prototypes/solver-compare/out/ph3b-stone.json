@@ -3,13 +3,13 @@
  "agents": 2,
  "horizon_s": 40,
  "cost": {
-  "wall_ms": 16.270714999999996,
-  "cpu_user_ms": 11.399,
+  "wall_ms": 45.11047199999996,
+  "cpu_user_ms": 13.895,
   "cpu_system_ms": 0,
-  "heap_used_delta_mb": 0.49774932861328125,
-  "rss_mb": 93.8125
+  "heap_used_delta_mb": 0.5384674072265625,
+  "rss_mb": 86.89453125
  },
- "peak_rss_mb": 95.65234375,
+ "peak_rss_mb": 95.10546875,
  "stats": {
   "batches": 3,
   "events_processed": 4,
@@ -24,6 +24,15 @@
   "max_same_instant_batches": 1,
   "contacts": 0,
   "releases": 0,
+  "contact_episodes": 0,
+  "contact_episode_ends": 0,
+  "sub_resolution_excursions": 0,
+  "episode_events": 0,
+  "episodes_open_at_horizon": 0,
+  "ends_unconfirmed_at_horizon": 0,
+  "constraint_outside_contact": 0,
+  "constraint_intervals": 0,
+  "constraint_intervals_binding": 0,
   "passes": 0,
   "turns": 0,
   "turn_blocked": 0,
@@ -64,19 +73,19 @@
   "identical_candidate_sets": true,
   "cost": {
    "brute": {
-    "ms": 0.1443970000000263,
+    "ms": 0.16858300000001236,
     "pairs": 0
    },
    "grid_8mm": {
-    "ms": 0.33859300000000303,
+    "ms": 0.23065100000007988,
     "pairs": 0
    },
    "grid_2mm": {
-    "ms": 0.524091999999996,
+    "ms": 0.5453139999999621,
     "pairs": 0
    },
    "sap": {
-    "ms": 0.2033620000000269,
+    "ms": 0.22590100000002167,
     "pairs": 0
    }
   },
@@ -88,6 +97,55 @@
   "packing_feasible_given_u_blocks": 0,
   "packing_unknown": 0
  },
+ "test_version": {
+  "git_head": "7ef8a61514041ff8aa1012cef576e9047e7197a8",
+  "worktree_clean": true,
+  "node": "v22.23.4"
+ },
+ "trajectory": {
+  "sha256": "339131b618d1e547ba28cf8ee9026b2cf3c214e8ca097a7572b9c6bded6c828b",
+  "ref_83397c5": "339131b618d1e547ba28cf8ee9026b2cf3c214e8ca097a7572b9c6bded6c828b",
+  "bit_identical_to_83397c5": true
+ },
+ "contact_kinds": {
+  "geometric_contact": {
+   "episodes": 0,
+   "ends_exact": 0,
+   "open_at_horizon": 0,
+   "unconfirmed": 0,
+   "checker_violations": 0,
+   "missed": 0,
+   "penetrations": 0,
+   "pairs_scanned": 0,
+   "max_end_err_s": null,
+   "median_end_err_s": null,
+   "max_start_err_s": null,
+   "max_dev_from_mid_s": null,
+   "problems": []
+  },
+  "constraint_active": {
+   "intervals": 0,
+   "binding": 0,
+   "inside_geometric_episode": 0,
+   "below_resolution": 0,
+   "open_at_horizon": 0,
+   "checker_violations": 0,
+   "problems": []
+  },
+  "antenna_contact": {
+   "supported": false,
+   "value": null,
+   "emitted": 0
+  },
+  "motion_records": {
+   "teleports": 0,
+   "speed_mismatch": 0,
+   "problems": []
+  },
+  "checker_cpu_ms": 1.295,
+  "checker_wall_ms": 1.3818279999999277
+ },
+ "judge_cpu_ms": 2.841,
  "judge": {
   "overlap_pair_instants": 0,
   "overlap_between_instants": 0,
@@ -107,6 +165,6 @@
    "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
   },
   "instants": 4,
-  "judge_wall_ms": 6.31402300000002
+  "judge_wall_ms": 6.208148000000051
  }
 }

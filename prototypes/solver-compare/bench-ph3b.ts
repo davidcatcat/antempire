@@ -19,6 +19,10 @@ import { bruteForcePairs, gridPairs2D, sweepAndPrunePairs, type AABB, type Broad
 import { lateralPacking } from '../../engine/physics/body2d.ts';
 import { usableWidth } from '../../engine/physics/collision.ts';
 import type { Trajectory } from './lib/traj.ts';
+import { checkContacts, checkConstraints, checkMotion, motionFromSamples } from '../physics-check/contact-check.ts';
+import { TRAJ_SHA256_83397C5 } from './lib/ph3b-ref.ts';
+
+const git = (...a: string[]) => { const p = spawnSync('git', a, { encoding: 'utf8', cwd: HERE }); return p.status === 0 ? p.stdout.trim() : null; };
 
 const SCEN = ['head-on-2', 'corridor-8', 'stone', 'crossing', 'crossing-traffic-100', 'crossing-traffic-1000'];
 const hash = (t: Trajectory) => createHash('sha256').update(JSON.stringify({ a: t.agents, e: t.events })).digest('hex').slice(0, 16);
@@ -42,7 +46,15 @@ function one(id: string, judge1000: boolean) {
     const d = sig.digest('hex'); if (ref === null) ref = d; else if (d !== ref) identical = false;
   }
   const doJudge = n < 1000 || judge1000;
+  const jc0 = process.cpuUsage();
   const j = doJudge ? judge(sc, r.tr, { occupancy2d: n <= 24 }) : null;
+  const jcpu = process.cpuUsage(jc0);
+  // contact kinds (issue #146): the INDEPENDENT checker on geometric episodes and constraint_active intervals
+  const kc0 = process.cpuUsage(), kw0 = performance.now();
+  const m = motionFromSamples(r.res.agents, r.res.events, { length_mm: sc.body.length_mm.value, width_mm: sc.body.width_mm.value }, sc.horizon_s);
+  const ck = checkContacts(m), cc = checkConstraints(m, r.res.constraint_active, ck), mc = checkMotion(m);
+  const kcpu = process.cpuUsage(kc0), kwall = performance.now() - kw0;
+  const trajSha = createHash('sha256').update(JSON.stringify(r.res.agents)).digest('hex');
   // stalls: is a head-on stall forced by the geometry (no lateral arrangement fits) or by the given offsets u?
   const stalls = { head_on_pairs: 0, packing_infeasible: 0, packing_feasible_given_u_blocks: 0, packing_unknown: 0 };
   const byId = new Map(sc.agents.map((a) => [a.id, a]));
@@ -67,6 +79,16 @@ function one(id: string, judge1000: boolean) {
     replay: { hash: h, input_order_reversed_identical: rev === h, variants_identical: Object.values(variants).every((x) => x === h), variants },
     broadphase: { windows: sets.length, identical_candidate_sets: identical, cost: bpCost, note: 'cost of the three methods on the solver\'s own window box sets; brute = O(N²) reference' },
     head_on_stalls: stalls,
+    test_version: { git_head: git('rev-parse', 'HEAD'), worktree_clean: git('status', '--porcelain', '--', '../../engine', 'bench-ph3b.ts', 'lib', 'scenarios', '../physics-check') === '', node: process.version },
+    trajectory: { sha256: trajSha, ref_83397c5: TRAJ_SHA256_83397C5[id] ?? null, bit_identical_to_83397c5: TRAJ_SHA256_83397C5[id] ? TRAJ_SHA256_83397C5[id] === trajSha : null },
+    contact_kinds: {
+      geometric_contact: { episodes: ck.episodes, ends_exact: ck.exact, open_at_horizon: ck.open, unconfirmed: ck.unconfirmed, checker_violations: ck.violations, missed: ck.missed, penetrations: ck.penetrations, pairs_scanned: ck.pairs_scanned, max_end_err_s: ck.max_err_s, median_end_err_s: ck.median_err_s, max_start_err_s: ck.max_start_err_s, max_dev_from_mid_s: ck.max_dev_from_mid_s, problems: ck.problems.slice(0, 5) },
+      constraint_active: { intervals: cc.intervals, binding: r.res.stats.constraint_intervals_binding, inside_geometric_episode: cc.inside_episode, below_resolution: cc.below_resolution, open_at_horizon: cc.open_at_horizon, checker_violations: cc.violations, problems: cc.problems.slice(0, 5) },
+      antenna_contact: { supported: false, value: r.res.antenna_contact, emitted: r.res.events.filter((e) => e.contact_kind === 'antenna_contact').length },
+      motion_records: { teleports: mc.teleports, speed_mismatch: mc.speed_mismatch, problems: mc.problems.slice(0, 5) },
+      checker_cpu_ms: (kcpu.user + kcpu.system) / 1000, checker_wall_ms: kwall,
+    },
+    judge_cpu_ms: doJudge ? (jcpu.user + jcpu.system) / 1000 : null,
     judge: j ? { overlap_pair_instants: j.overlap_pair_instants, overlap_between_instants: j.overlap_between_instants, max_penetration_mm: j.max_penetration_mm, max_penetration_between_mm: j.max_penetration_between_mm, out_of_walkable_agent_instants: j.out_of_walkable_agent_instants, max_out_of_walkable_mm: j.max_out_of_walkable_mm, obstacle_violation_agent_instants: j.obstacle_violation_agent_instants, max_obstacle_penetration_mm: j.max_obstacle_penetration_mm, body_contact_episodes: j.body_contact_episodes, body_contacts_only_between_instants: j.body_contacts_only_between_instants, occupancy2d: j.occupancy2d, instants: j.instants, judge_wall_ms: j.judge_wall_ms } : 'not run',
   };
 }
@@ -102,7 +124,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === me) {
       const r = JSON.parse(p.stdout.trim().split('\n').at(-1)!);
       fs.writeFileSync(path.join(out, `ph3b-${id}.json`), JSON.stringify(r, null, 1) + '\n');
       const j = r.judge;
-      console.log(`${id}: n=${r.agents} wall ${r.cost.wall_ms.toFixed(0)} ms cpu ${(r.cost.cpu_user_ms + r.cost.cpu_system_ms).toFixed(0)} ms peakRSS ${r.peak_rss_mb.toFixed(0)} MB batches ${r.stats.batches} events ${Object.values(r.events_by_kind as Record<string, number>).reduce((a, b) => a + b, 0)} arrived ${r.arrived} modes ${JSON.stringify(r.final_modes)} unresolved ${r.stats.unresolved} aborted ${r.stats.aborted} judge ${typeof j === 'string' ? j : `overlap ${j.overlap_pair_instants}/${j.overlap_between_instants} out ${j.out_of_walkable_agent_instants} obst ${j.obstacle_violation_agent_instants}`} replay-rev ${r.replay.input_order_reversed_identical} variants ${r.replay.variants_identical} bp ${JSON.stringify(r.broadphase.cost)} (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
+      console.log(`${id}: n=${r.agents} wall ${r.cost.wall_ms.toFixed(0)} ms cpu ${(r.cost.cpu_user_ms + r.cost.cpu_system_ms).toFixed(0)} ms peakRSS ${r.peak_rss_mb.toFixed(0)} MB batches ${r.stats.batches} events ${Object.values(r.events_by_kind as Record<string, number>).reduce((a, b) => a + b, 0)} arrived ${r.arrived} modes ${JSON.stringify(r.final_modes)} unresolved ${r.stats.unresolved} aborted ${r.stats.aborted} judge ${typeof j === 'string' ? j : `overlap ${j.overlap_pair_instants}/${j.overlap_between_instants} out ${j.out_of_walkable_agent_instants} obst ${j.obstacle_violation_agent_instants}`} traj=83397c5 ${r.trajectory.bit_identical_to_83397c5} geo ${r.contact_kinds.geometric_contact.episodes} (viol ${r.contact_kinds.geometric_contact.checker_violations}) constraint ${r.contact_kinds.constraint_active.intervals} (viol ${r.contact_kinds.constraint_active.checker_violations}) replay-rev ${r.replay.input_order_reversed_identical} variants ${r.replay.variants_identical} bp ${JSON.stringify(r.broadphase.cost)} (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
       summary.push(r);
     }
     fs.writeFileSync(path.join(out, 'ph3b-summary.json'), JSON.stringify(summary, null, 1) + '\n');
