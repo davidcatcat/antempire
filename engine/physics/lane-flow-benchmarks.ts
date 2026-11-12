@@ -37,6 +37,9 @@ export interface InflowSpec {
   lateral_half_band_mm: number;
   seed: number;
   provenance: InflowProvenance;
+  /** optional individual free-speed variation: speed = speed_mm_s + sd·z (z standard normal, seeded), clipped to
+   *  [0.5, 1.5]·speed_mm_s. No individual speed data exist for the species: needs provenance.speed_variation (遊戲假設). */
+  speed_variation?: { sd_mm_s: number; provenance: Prov };
 }
 export interface Scenario { family: TrafficFamily; agents: FlowAgentSpec[]; provenance: InflowProvenance | null; note: string }
 
@@ -59,7 +62,15 @@ export function timedInflowScenario(spec: InflowSpec): Scenario {
   const sEntry = L / 2, agents: FlowAgentSpec[] = [];
   const draw = (purpose: string, dir: number, k: number) => rng(hash32(`${spec.seed}|lane-flow.${purpose}|${dir}|${k}`))();
   const lateral = (purpose: string, dir: number, k: number) => (2 * draw(purpose, dir, k) - 1) * spec.lateral_half_band_mm;
-  const mk = (id: string, dir: 1 | -1, s: number, u: number, t: number): FlowAgentSpec => ({ id, dir, s_mm: s, u_mm: u, goal_s_mm: spec.goal_s_mm, start_t_s: t, free_speed_mm_s: spec.speed_mm_s, body, site: spec.site });
+  const SV = spec.speed_variation ?? null;
+  if (SV && (!(SV.sd_mm_s >= 0) || SV.provenance?.assumption !== true || SV.provenance.basis !== '遊戲假設')) throw new BenchmarkRefused('speed_variation needs sd ≥ 0 and provenance labelled assumption: true, 遊戲假設 (no individual speed data)');
+  const speedOf = (id: string) => {
+    if (!SV) return spec.speed_mm_s;
+    const u1 = rng(hash32(`${spec.seed}|lane-flow.speed1|${id}`))(), u2 = rng(hash32(`${spec.seed}|lane-flow.speed2|${id}`))();
+    const z = Math.sqrt(-2 * Math.log(1 - u1)) * Math.cos(2 * Math.PI * u2);
+    return Math.min(1.5 * spec.speed_mm_s, Math.max(0.5 * spec.speed_mm_s, spec.speed_mm_s + SV.sd_mm_s * z));
+  };
+  const mk = (id: string, dir: 1 | -1, s: number, u: number, t: number): FlowAgentSpec => ({ id, dir, s_mm: s, u_mm: u, goal_s_mm: spec.goal_s_mm, start_t_s: t, free_speed_mm_s: speedOf(id), body, site: spec.site });
   const xOf = (dir: number, s: number) => (dir > 0 ? s : lane.length_mm - s);
   const placed: { x: number; y: number; th: number }[] = [];
   const clear = (p: { x: number; y: number; th: number }) => placed.every((q) => capGap(capsuleAt(p, d), capsuleAt(q, d)).g > spec.initial.min_gap_mm);

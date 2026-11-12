@@ -65,6 +65,9 @@ export interface LaneFlowInput {
    *  contact response decides the mechanics). With contact_response 'stop' a stopped body holds until its next own
    *  decision instant and then decides again. No decision at the horizon (zero duration). */
   decision?: { interval_s: number; sensing_radius_mm: number; rule: 'go_unless_oncoming' };
+  /** DIAGNOSTIC only (ruling 6, chunk determinism): extra epoch cuts with no behavioural meaning. The model output
+   *  should not depend on them; how far it does (float rounding of restarted closed forms) is measured, not hidden. */
+  chunk_boundaries_s?: number[];
 }
 /** what a decision may read: bodies on the lane within the sensing radius at the decision instant (capsule and heading only) */
 export interface LocalView { t_s: number; self: { id: string; pose: Pose; dims: { h: number; r: number } }; sensed: { id: string; pose: Pose; dims: { h: number; r: number }; gap_mm: number }[] }
@@ -220,7 +223,7 @@ export function laneFlow(input: LaneFlowInput): LaneFlowResult {
   for (;;) {
     const tries = A.map((a) => a.nextTry).filter((x): x is number => x !== null && x > t);
     const decs = DEC ? A.map((a) => (a.present && a.arrived === null ? a.nextDec : null)).filter((x): x is number => x !== null && x > t) : [];
-    const next = Math.min(H, ...starts.filter((s) => s > t), ...tries, ...decs);
+    const next = Math.min(H, ...starts.filter((s) => s > t), ...tries, ...decs, ...(input.chunk_boundaries_s ?? []).filter((c) => c > t));
     const live = A.filter((a) => a.present);
     let tEnd = next;
     if (live.some(moving) && next > t) {

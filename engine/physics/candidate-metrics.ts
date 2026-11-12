@@ -91,6 +91,30 @@ export function auditContacts(gaps: GapSample[], episodes: EpisodeRec[], opt: { 
   return { samples: gaps.length, penetration: { count: pc, max_depth_mm: depth }, missed_contacts: { count: mc, pairs: [...missedPairs].sort(), first }, unsampled_episodes: episodes.length - sampled.size, phantom_samples: phantom };
 }
 
+/**
+ * Merges consecutive episodes of one pair that are numerical chatter of ONE contact: every observer gap sample strictly
+ * between them is ≤ max_gap_mm, or (no sample between them) the pause is ≤ max_pause_s. Reported next to the raw count,
+ * never instead of it.
+ */
+export function mergeEpisodes(episodes: EpisodeRec[], gaps: GapSample[], opt: { max_gap_mm: Threshold; max_pause_s: Threshold }): EpisodeRec[] {
+  const mg = thr(opt.max_gap_mm, 'max_gap_mm'), mp = thr(opt.max_pause_s, 'max_pause_s');
+  const byPair = new Map<string, EpisodeRec[]>(), gp = new Map<string, GapSample[]>();
+  for (const e of episodes) { const k = pairKey(e.agents[0], e.agents[1]); (byPair.get(k) ?? byPair.set(k, []).get(k)!).push(e); }
+  for (const g of gaps) { const k = pairKey(g.a, g.b); (gp.get(k) ?? gp.set(k, []).get(k)!).push(g); }
+  const out: EpisodeRec[] = [];
+  for (const [k, list] of [...byPair].sort((x, y) => strCmp(x[0], y[0]))) {
+    const xs = [...list].sort((a, b) => a.start_t_s - b.start_t_s), g = gp.get(k) ?? [];
+    let cur: EpisodeRec = { agents: xs[0].agents, start_t_s: xs[0].start_t_s, end_t_s: xs[0].end_t_s };
+    for (const e of xs.slice(1)) {
+      const between = cur.end_t_s === null ? [] : g.filter((q) => q.t > (cur.end_t_s as number) && q.t < e.start_t_s);
+      const chatter = cur.end_t_s !== null && (between.length ? between.every((q) => q.gap_mm <= mg) : e.start_t_s - cur.end_t_s <= mp);
+      if (chatter) cur = { ...cur, end_t_s: e.end_t_s }; else { out.push(cur); cur = { agents: e.agents, start_t_s: e.start_t_s, end_t_s: e.end_t_s }; }
+    }
+    out.push(cur);
+  }
+  return out.sort((x, y) => x.start_t_s - y.start_t_s || strCmp(pairKey(...x.agents), pairKey(...y.agents)));
+}
+
 // ---------------------------------------------------------------- 2. throughput
 export interface Throughput { count: number; window_s: [number, number]; per_s: number | null; definition: string }
 /** events (arrivals or ledger admissions) with t in [w0, w1] per second of the window */
