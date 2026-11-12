@@ -14,7 +14,9 @@
  *  6. fixed-seed replay; different seeds differ
  *  7. conservation: food (exact integers) and individual counts reconcile with the event log
  *  8. time contract: the log is in layered order and no batch merges distinct instants
- *  9. diagnostic (NOT a target): activity by hour, virtual entrance trap in 3-hour bins
+ *  9. diagnostic (NOT a target): activity by hour, virtual entrance trap in 3-hour bins, for every sensitivity variant
+ *     (f_T anchors null / R190 / alternative peak; give-up on) — the Owner decides which becomes the reference
+ * 10. pinned log / state hashes for seed 1 (update DELIBERATELY when behaviour changes)
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -22,8 +24,9 @@ import path from 'node:path';
 import { REPO_ROOT } from '../cli/lib/load.ts';
 import { sha256Hex } from '../engine/sha256.ts';
 import { evaluateContract } from '../engine/scheduler/time-contract.ts';
-import { World, guardView, LocalityError, exactOfMs, WORKER_KINDS, WORLD_KINDS, SOURCE_ID } from '../prototypes/p0a2-24h/world.ts';
+import { World, type WorldOptions, guardView, LocalityError, exactOfMs, tieOf, WORKER_KINDS, WORLD_KINDS, SOURCE_ID } from '../prototypes/p0a2-24h/world.ts';
 import { evidenceProblems, valueEntries, buildModel } from '../prototypes/p0a2-24h/params.ts';
+import { canon } from '../prototypes/p0a2-24h/canon.ts';
 import { chooseInNest } from '../prototypes/p0a2-24h/decision.ts';
 import { activityReport } from '../prototypes/p0a2-24h/observer.ts';
 
@@ -35,7 +38,7 @@ const clone = () => JSON.parse(JSON.stringify(RAW));
 const SC = 'taichung-march-ref', DAY = 86_400_000, H = 3_600_000;
 const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 const noStrings = (s: string) => s.replace(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/g, "''");
-const run = (seed: number, steps: number[], opts = { captureLog: true }) => { const w = World.create(RAW, SC, seed, opts); for (const t of steps) w.advanceTo(t); return w; };
+const run = (seed: number, steps: number[], opts: WorldOptions = { captureLog: true }) => { const w = World.create(RAW, SC, seed, opts); for (const t of steps) w.advanceTo(t); return w; };
 const stepsOf = (end: number, dt: number) => { const out: number[] = []; for (let t = dt; t < end; t += dt) out.push(t); out.push(end); return out; };
 const logSha = (lines: readonly string[]) => sha256Hex(lines.join('\n'));
 
@@ -55,6 +58,10 @@ const logSha = (lines: readonly string[]) => sha256Hex(lines.join('\n'));
   const b = clone(); delete b.parameters.forage_temp_peak_c.species; ok(evidenceProblems(b).some((x) => x.includes('forage_temp_peak_c')), 'other-species value without a species name is reported');
   const c = clone(); c.parameters.rest_bout_mean_s.assumption = false; ok(evidenceProblems(c).some((x) => x.includes('rest_bout_mean_s')), 'a game assumption without assumption: true is reported');
   const d = clone(); d.weather_scenarios[SC].synthetic = false; ok(evidenceProblems(d).some((x) => x.includes('synthetic')), 'synthetic weather without synthetic: true is reported');
+  const v1 = clone(); delete v1.sensitivity_variants['give-up-2'].overrides.give_up_empty_trips.evidence_class; ok(evidenceProblems(v1).some((x) => x.includes('give-up-2')), 'a sensitivity-variant override without evidence_class is reported');
+  for (const vn of Object.keys(RAW.sensitivity_variants).filter((k) => k !== '_note')) ok(buildModel(RAW, SC, vn).variant === vn, `sensitivity variant ${vn} builds`);
+  ok(buildModel(RAW, SC).give_up_empty_trips === null && buildModel(RAW, SC).consts.f_t !== null, 'reference: give-up off, M1 temperature gate on (design §5)');
+  ok(buildModel(RAW, SC, 'ft-flat').consts.f_t === null, 'ft-flat: no temperature anchors');
   const e = clone(); e.weather_scenarios[SC].hourly_temp_c[5] = null; assert.throws(() => buildModel(e, SC), /24 finite hourly/); checks++; // temperature null: refused, never filled
   const f = clone(); f.mechanisms.M5_rest_debt.enabled = true; assert.throws(() => buildModel(f, SC), /M5_rest_debt/); checks++;
   const g = clone(); g.parameters.light_factor_night.value = 0; assert.throws(() => buildModel(g, SC), /light_factor_night/); checks++;
@@ -102,12 +109,20 @@ function importProblems(src: string, fileRel: string): string[] {
 }
 
 // ------------------------------------------------------------------ 3. locality (static + runtime)
+const VIEW_FIELDS: Record<string, string[]> = {
+  SelfView: ['begging_recent', 'crop', 'crop_fill', 'crop_room', 'ctmax_c', 'gain', 'has_route', 'recruit_contacts_recent', 'theta_brood', 'theta_forage', 'thermal_offset_c'],
+  SiteView: ['light', 'temp_c'], SourceView: ['food_here', 'temp_c'], PartnerView: ['crop_room'], LarvaView: ['begging', 'room'],
+};
+const VIEW_OF_NAME: Record<string, string> = { self: 'SelfView', site: 'SiteView', source: 'SourceView', partner: 'PartnerView', larva: 'LarvaView' };
+const sameSet = (a: readonly string[], b: readonly string[]) => [...a].sort().join() === [...b].sort().join();
+const viewJson = (v: object) => canon(Object.fromEntries(Object.keys(v).sort().map((k) => [k, (v as any)[k]])));
 const FORBIDDEN = /\b(world|World|workers|larvae|sources|ledger|stats|colony|colonies|queue|stock|totals?|t_now|hourOfDay|Date|env|Environment|this|globalThis)\b/;
 function decisionProblems(src: string): string[] {
   const p: string[] = [], code = strip(src);
   for (const m of code.matchAll(/^\s*import\s+(type\s+)?[^;]*?from\s+'([^']+)'/gm)) if (!m[1] || m[2] !== './types.ts') p.push(`decision imports ${m[2]}${m[1] ? '' : ' (not type-only)'}`);
   const c = noStrings(code).replace(/^\s*import[^;]*;/gm, '');
   const hit = c.match(FORBIDDEN); if (hit) p.push(`decision code names colony-level / global state: ${hit[0]}`);
+  if (/^(export\s+)?(let|var)\s/m.test(c)) p.push('decision module has module-level mutable state (top-level let / var)');
   for (const m of c.matchAll(/export function \w+\(([^)]*)\)/g)) for (const prm of m[1].split(',')) {
     const ty = prm.split(':')[1]?.trim().replace(/\[''\]$/, '');
     if (ty && !['SelfView', 'SiteView', 'SourceView', 'PartnerView', 'LarvaView', 'DecisionConsts', 'number'].includes(ty)) p.push(`decision parameter type ${ty} is not a local view`);
@@ -125,13 +140,23 @@ function decisionProblems(src: string): string[] {
     "import { World } from './world.ts';\nexport function bad(self: SelfView): number { return 0; }",
     "import type { WorldState } from './types.ts';\nexport function bad(self: SelfView, s: WorldState): number { return 0; }",
     "export function bad(self: SelfView): number { return new Date().getHours(); }",
+    "let seen = 0;\nexport function bad(self: SelfView): number { return ++seen; }",
+    "export var memo: number[] = [];\nexport function bad(self: SelfView): number { return memo.length; }",
   ]) ok(decisionProblems(bad).length > 0, `static locality check catches: ${bad.split('\n').pop()}`);
   // the view types carry only individual / local fields
   const types = strip(fs.readFileSync(path.join(DIR, 'types.ts'), 'utf8'));
-  for (const v of ['SelfView', 'SiteView', 'SourceView', 'PartnerView', 'LarvaView']) {
-    const body = types.match(new RegExp(`export interface ${v} \\{([\\s\\S]*?)\\n\\}`))![1];
-    ok(!/colony|total|workers|larvae|queue|hour|time_of_day|clock/i.test(body), `${v} has no colony-level or time-of-day field`);
-  }
+  const fieldsOf = (src: string, v: string): string[] => { const m = src.match(new RegExp(`export interface ${v} \\{([\\s\\S]*?)\\n?\\}`)); return m ? [...m[1].matchAll(/(\w+)\s*:/g)].map((x) => x[1]).sort() : []; };
+  for (const v of Object.keys(VIEW_FIELDS)) ok(sameSet(fieldsOf(types, v), VIEW_FIELDS[v]), `${v} interface has exactly the pinned local fields (${fieldsOf(types, v).join(',')})`);
+  // negative fixture: Mutation A (a colony aggregate added to SelfView) fails the pin
+  const mutA = types.replace('  begging_recent: number;', '  begging_recent: number;\n  nest_mood: number;');
+  ok(mutA !== types && !sameSet(fieldsOf(mutA, 'SelfView'), VIEW_FIELDS.SelfView), 'pin check catches a field added to SelfView (nest_mood)');
+  // deep-frozen constants
+  const deepFrozen = (o: unknown): boolean => o === null || typeof o !== 'object' || (Object.isFrozen(o) && Object.values(o as object).every(deepFrozen));
+  const mc = buildModel(RAW, SC).consts;
+  ok(deepFrozen(mc), 'decision constants are deep-frozen');
+  assert.throws(() => { (mc as any).hill_n = 9; }, TypeError); checks++;
+  assert.throws(() => { (mc.f_t as any).peak = 9; }, TypeError); checks++;
+  ok(!deepFrozen(Object.freeze({ f_t: { peak: 1 } })), 'deep-freeze check catches a shallow freeze (negative fixture)');
   // runtime guard: reading anything that is not a local signal throws
   const selfV = guardView({ crop: 0, crop_room: 1, crop_fill: 0, theta_forage: 0.5, theta_brood: 1, gain: 1, thermal_offset_c: 0, ctmax_c: 42, has_route: false, recruit_contacts_recent: 0, begging_recent: 0 }, 'self');
   assert.throws(() => (selfV as any).colony_sugar, LocalityError); checks++;
@@ -163,6 +188,37 @@ ok(ref.lines!.length > 5000, `a 24 h run produces many events (${ref.lines!.leng
   assert.throws(() => ref.advanceTo(DAY - 1), /advanceTo/); checks++; // time never goes back
   const quiet = run(1, [DAY], { captureLog: false });
   ok(quiet.logHash === ref.logHash && quiet.stateHash() === refState, 'capturing the log for an observer does not change the world (observation does not feed back)');
+}
+
+// ------------------------------------------------------------------ 4b. locality at run time (the views world.ts really builds)
+{
+  const seen: Record<string, Set<string>> = {};
+  const insp = run(1, [DAY], { captureLog: false, inspectViews: (name: string, _a: string, _t: number, v: object) => { (seen[name] ??= new Set()).add(Object.keys(v).sort().join()); } });
+  ok(insp.logHash === ref.logHash && insp.stateHash() === refState, 'the view inspector does not change the world');
+  ok(Object.keys(seen).sort().join() === 'larva,partner,self,site,source', `every view kind is built in 24 h (${Object.keys(seen).join(',')})`);
+  for (const [name, sets] of Object.entries(seen)) ok(sets.size === 1 && sameSet([...sets][0].split(','), VIEW_FIELDS[VIEW_OF_NAME[name]]), `world.ts builds ${name} views with exactly the pinned fields (${[...sets].join(' | ')})`);
+  const keysCheck = (keys: string[], view: string) => sameSet(keys, VIEW_FIELDS[view]);
+  ok(!keysCheck([...VIEW_FIELDS.SelfView, 'nest_mood'], 'SelfView'), 'runtime pin catches an extra key in a built view (negative fixture)');
+
+  // behavioural independence: change a worker the decider never contacted and the source stock while the decider is in
+  // the nest; the decider's view at its next decision must not change
+  const NEST = new Set(['resting', 'idle', 'brood_care']);
+  let w = run(1, [6 * H], { captureLog: false }), pick: { snap: string; actor: string; t: number; other: string } | null = null;
+  for (let i = 0; i < 200 && !pick; i++) {
+    const sn = JSON.parse(w.snapshot()), first = sn.queue.find((e: any) => e.a in sn.workers)!;
+    const X = sn.workers[first.a];
+    const others = Object.values(sn.workers).filter((y: any) => y.id !== X.id && !X.contacts.some((c: any) => c.from === y.id) && sn.queue.find((e: any) => e.a === y.id).t > first.t);
+    if ((first.k === 'bout_end' || first.k === 'wake') && NEST.has(X.state) && others.length) pick = { snap: w.snapshot(), actor: X.id, t: first.t, other: (others[0] as any).id };
+    else w.advanceTo(first.t);
+  }
+  ok(pick !== null, 'found a nest decision to probe');
+  const mutate = (snap: string): string => { const sn = JSON.parse(snap), y = sn.workers[pick!.other]; y.crop = y.crop > 400_000 ? 0 : 800_000; sn.sources[SOURCE_ID].stock += 777_777; return canon(sn); };
+  const probeReal = (snap: string): string => { let h = ''; const x = World.restore(RAW, snap, { inspectViews: (name, a, t, v) => { if (!h && name === 'self' && a === pick!.actor && t === pick!.t) h = viewJson(v); } }); x.advanceTo(pick!.t); return h; };
+  const leaks = (probe: (snap: string) => string) => { const a = probe(pick!.snap), b = probe(mutate(pick!.snap)); assert.ok(a.length > 0 && b.length > 0, 'probe captured the view'); return a !== b; };
+  ok(!leaks(probeReal), `decider ${pick!.actor}'s view is unchanged when an uncontacted worker (${pick!.other}) and the source stock change`);
+  // negative fixture: a view builder that leaks a colony aggregate (Mutation A, nest_mood) is caught by the same probe
+  const probeLeaky = (snap: string): string => { const sn = JSON.parse(snap), X = sn.workers[pick!.actor], ws = Object.values(sn.workers) as any[]; return canon({ crop: X.crop, nest_mood: ws.reduce((s2, y) => s2 + y.crop, 0) / (ws.length * 800_000) }); };
+  ok(leaks(probeLeaky), 'behavioural probe catches a view that reads all workers (negative fixture)');
 }
 
 // ------------------------------------------------------------------ 5. snapshot / restore
@@ -212,14 +268,24 @@ let cont48: World;
   const snap = JSON.parse(w.snapshot());
   const live = new Map<string, number>(); for (const e of snap.queue) if (e.a in v.workers) live.set(e.a, (live.get(e.a) ?? 0) + 1);
   ok(Object.keys(v.workers).every((id) => live.get(id) === 1), 'every worker has exactly one live pending event (no lost or doubled individual)');
+  // a worker that declines at the entrance walks back (nest_transit) and is in the nest only on arrival (back_in)
+  const declines = evs.filter((e) => e.k === 'at_entrance' && e.p.choice !== 'exit').length, backIns = evs.filter((e) => e.k === 'back_in').length;
+  ok(declines > 0 && backIns > 0 && backIns <= declines, `declines walk back before entering the nest (${declines} declines, ${backIns} back_in)`);
+  ok(w.stats().occ.from_entrance.some((x) => x > 0), 'walking-back time is booked as its own state');
   ok(evs.filter((e) => e.k === 'env_sample').every((e) => e.p.synthetic === true && e.p.rain === null), 'every weather sample is labelled synthetic and rain stays unknown (null), never 0');
 }
 
 // ------------------------------------------------------------------ 8. time contract
 {
   const evs = cont48.lines!.map((l) => JSON.parse(l));
-  let mono = true; for (let i = 1; i < evs.length; i++) { const a = evs[i - 1], b = evs[i]; if (a.t > b.t || (a.t === b.t && (a.r > b.r || (a.r === b.r && a.id >= b.id)))) mono = false; }
-  ok(mono, 'the log is in layered order (exact instant, round, canonical id), each id once');
+  let mono = true; for (let i = 1; i < evs.length; i++) { const a = evs[i - 1], b = evs[i]; if (a.t > b.t || (a.t === b.t && (a.r > b.r || (a.r === b.r && (a.q > b.q || (a.q === b.q && a.id >= b.id)))))) mono = false; }
+  ok(mono, 'the log is in layered order (exact instant, round, seeded tie-break, canonical id), each id once');
+  ok(evs.every((e) => e.q === tieOf(1, e.t, e.id)), 'every tie-break is hash32(seed|t|id) (deterministic, chunk-invariant)');
+  // same-instant batches of several workers: the first processed is not always the lowest id (no systematic w001 bias)
+  const groups = new Map<string, any[]>(); for (const e of evs) if ((WORKER_KINDS as readonly string[]).includes(e.k)) { const k = `${e.t}|${e.r}`; groups.set(k, [...(groups.get(k) ?? []), e]); }
+  const multi = [...groups.values()].filter((g) => new Set(g.map((e) => e.a)).size > 1);
+  const lowestFirst = multi.filter((g) => g[0].a === [...g.map((e) => e.a)].sort()[0]).length;
+  ok(multi.length >= 5 && lowestFirst < multi.length, `same-instant worker batches are not ordered by id (${lowestFirst}/${multi.length} start with the lowest id)`);
   const r = evaluateContract(evs.map((e) => ({ id: e.id, exact: exactOfMs(e.t), entities: [e.a] })), { name: 'layered', kind: 'layered', ticks_per_us: null });
   ok(r.merged_batches === 0, 'no batch merges distinct exact instants (engine/scheduler/time-contract.ts, layered)');
   ok(evs.some((e) => e.t % 1000 !== 0), 'events fall between whole seconds (continuous time, not frame ticks)');
@@ -227,10 +293,16 @@ let cont48: World;
 
 // ------------------------------------------------------------------ 9. diagnostic (NOT a target, CLAUDE.md §7)
 const diag: Record<string, unknown> = {};
-for (const sc of ['taichung-march-ref', 'taichung-may-ref']) {
-  const w = World.create(RAW, sc, 1, { captureLog: true }); w.advanceTo(3 * DAY);
-  const r = activityReport(w.stats(), w.lines!, `${sc} seed 1, 3 days (diagnostic, synthetic weather)`);
-  ok(r.outside_share_by_hour.length === 24 && r.trap_3h.length === 8 && w.conservation().ok, `${sc}: diagnostic report built`);
-  diag[sc] = { outside_share_by_hour: r.outside_share_by_hour, exits_by_hour: r.exits_by_hour, declines_by_hour: r.declines_by_hour, trap_3h: r.trap_3h, exits_day: r.exits_day, exits_twilight_or_night: r.exits_twilight_or_night, same_instant_events: w.stats().same_instant_events };
+for (const variant of Object.keys(RAW.sensitivity_variants).filter((k) => k !== '_note')) for (const sc of ['taichung-march-ref', 'taichung-may-ref']) {
+  const w = World.create(RAW, sc, 1, { captureLog: true, variant }); w.advanceTo(2 * DAY);
+  const r = activityReport(w.stats(), w.lines!, `${variant} / ${sc} seed 1, 2 days (diagnostic, synthetic weather)`);
+  ok(r.outside_share_by_hour.length === 24 && r.trap_3h.length === 8 && w.conservation().ok, `${variant} / ${sc}: diagnostic report built, food conserved`);
+  const evs = w.lines!.map((l) => JSON.parse(l));
+  diag[`${variant} / ${sc}`] = { trap_3h: r.trap_3h, exits_by_hour: r.exits_by_hour, outside_share_by_hour: r.outside_share_by_hour, exits_day: r.exits_day, exits_twilight_or_night: r.exits_twilight_or_night, empty_arrivals: evs.filter((e) => e.p.take === 0).length, routes_forgotten: evs.filter((e) => e.p.forgot_route).length, same_instant_events: w.stats().same_instant_events };
 }
+// ------------------------------------------------------------------ 10. pinned hashes (seed 1, March reference, 24 h)
+// Update these DELIBERATELY (and say why in the PR) whenever behaviour changes; an unexplained change is a regression.
+const PINNED = { log: '7d6e43afca735b6416faf0b2a2e868284b485ae50734a65e9f1ab4b496187d85', state: 'eeae295c98db19c524b9dce2ef82b5f66b21b384838a1346873797f676e8582f' };
+ok(ref.logHash === PINNED.log, `pinned 24 h log hash (got ${ref.logHash})`);
+ok(refState === PINNED.state, `pinned 24 h state hash (got ${refState})`);
 console.log(JSON.stringify({ test: 'p0a2-24h-proto', checks, seconds: (Date.now() - T0) / 1000, events_24h_seed1: ref.lines!.length, log_sha_24h_seed1: ref.logHash, diagnostic_not_a_target: diag }));

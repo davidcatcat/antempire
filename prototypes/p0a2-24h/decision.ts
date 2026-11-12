@@ -13,8 +13,9 @@ import type { DecisionConsts, ExitChoice, LarvaView, NestChoice, PartnerView, Se
 export const hill = (s: number, theta: number, n: number): number => (s <= 0 ? 0 : s ** n / (s ** n + theta ** n));
 
 /** exit temperature factor f_T: 0 at or below zero_low, rising linearly to 1 at peak, falling linearly to 0 at
- *  zero_high (anchors: R190 P. pallidula, other species; straight lines: game assumption) */
+ *  zero_high (anchors: R190 P. pallidula, other species; straight lines: game assumption); no anchors (null) => 1 */
 export function fT(T: number, c: DecisionConsts['f_t']): number {
+  if (c === null) return 1;
   if (T <= c.zero_low || T >= c.zero_high) return 0;
   return T <= c.peak ? (T - c.zero_low) / (c.peak - c.zero_low) : (c.zero_high - T) / (c.zero_high - c.peak);
 }

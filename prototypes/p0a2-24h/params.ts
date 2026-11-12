@@ -21,6 +21,7 @@ export function valueEntries(raw: any): [string, Entry][] {
   for (const [k, v] of Object.entries(raw.parameters ?? {})) out.push([`parameters.${k}`, v as Entry]);
   for (const [k, v] of Object.entries(raw.site ?? {})) if (k !== 'zone') out.push([`site.${k}`, v as Entry]);
   for (const [s, sc] of Object.entries(raw.weather_scenarios ?? {})) out.push([`weather_scenarios.${s}.day0_date`, (sc as any).day0_date]);
+  for (const [n, va] of Object.entries(raw.sensitivity_variants ?? {})) if (n !== '_note') for (const [k, e] of Object.entries((va as any).overrides ?? {})) out.push([`sensitivity_variants.${n}.${k}`, e as Entry]);
   return out;
 }
 
@@ -64,6 +65,8 @@ export interface Model {
   theta_forage: [number, number]; theta_brood: [number, number]; gain: [number, number];
   window_ms: number; nest_contact_p: number; larva_contact_p: number; contact_wakes: boolean;
   rest_ms: number; idle_ms: number; brood_ms: number; search_ms: number; find_p: number;
+  /** null = give-up / route forgetting off (reference); K = forget the route after K consecutive empty arrivals */
+  give_up_empty_trips: number | null; variant: string;
   honeydew_ms: number; honeydew_amount: number; thermal_sd: number; ctmax_c: number; surface_offset_c: number;
   consts: DecisionConsts;
 }
@@ -72,8 +75,21 @@ export const UP_PER_PORTION = 1_000_000;
 const MECHANISMS_IMPLEMENTED: Record<string, boolean> = { M1_temperature_gate: true, M2_light_cue: false, M3_crop_satiety: true, M4_local_recruitment: true, M5_rest_debt: false, M6_food_time_memory: false, M7_nutrition_ctmax: false, M8_desiccation: false };
 
 /** validate and derive; refuses (never repairs) a parameter file the prototype cannot honour */
-export function buildModel(raw: any, scenario: string): Model {
-  const probs = evidenceProblems(raw); if (probs.length) fail(probs.join('; '));
+/** deep freeze (the constants handed to decisions can never be changed by a decision or a caller) */
+export function deepFreeze<T>(v: T): T { if (v && typeof v === 'object') { for (const x of Object.values(v as object)) deepFreeze(x); Object.freeze(v); } return v; }
+
+/** the parameter set of a sensitivity variant: the raw file with the variant's labelled overrides applied */
+export function applyVariant(raw: any, variant: string): any {
+  const va = raw.sensitivity_variants?.[variant];
+  if (!va || variant === '_note') fail(`unknown sensitivity variant ${variant}`);
+  const out = JSON.parse(JSON.stringify(raw));
+  for (const [k, e] of Object.entries(va.overrides ?? {})) { if (!(k in out.parameters)) fail(`variant ${variant} overrides unknown parameter ${k}`); out.parameters[k] = JSON.parse(JSON.stringify(e)); }
+  return out;
+}
+
+export function buildModel(rawFile: any, scenario: string, variant = 'reference'): Model {
+  const probs = evidenceProblems(rawFile); if (probs.length) fail(probs.join('; '));
+  const raw = applyVariant(rawFile, variant);
   for (const [m, on] of Object.entries(MECHANISMS_IMPLEMENTED)) if (raw.mechanisms?.[m]?.enabled !== on) fail(`mechanism ${m} must be ${on ? 'enabled' : 'disabled'}: the prototype implements only the reference combination (design §5)`);
   const P = raw.parameters, v = (k: string): any => { if (!(k in P)) fail(`missing parameter ${k}`); return P[k].value; };
   const num = (k: string, lo = 0): number => { const x = v(k); if (typeof x !== 'number' || !Number.isFinite(x) || x < lo) fail(`${k} must be a number >= ${lo}`); return x; };
@@ -83,17 +99,20 @@ export function buildModel(raw: any, scenario: string): Model {
   const sc = raw.weather_scenarios?.[scenario]; if (!sc) fail(`unknown weather scenario ${scenario}`);
   if (sc.rain !== null) fail('rain timing input is not supported by the prototype (rain effects are 尚未模擬)');
   const lightNight = num('light_factor_night'); if (lightNight !== 1) fail('M2 is off: light_factor_night must be 1 (Owner 2026-11-02 reference)');
-  const f_t = { zero_low: num('forage_temp_zero_low_c', -50), peak: num('forage_temp_peak_c', -50), zero_high: num('forage_temp_zero_high_c', -50) };
-  if (!(f_t.zero_low < f_t.peak && f_t.peak < f_t.zero_high)) fail('need forage_temp_zero_low_c < forage_temp_peak_c < forage_temp_zero_high_c');
+  const ftKeys = ['forage_temp_zero_low_c', 'forage_temp_peak_c', 'forage_temp_zero_high_c'], ftNull = ftKeys.map((k) => v(k) === null);
+  if (ftNull.some((x) => x) && !ftNull.every((x) => x)) fail('f_T anchors must be all numbers or all null');
+  const f_t = ftNull[0] ? null : { zero_low: num('forage_temp_zero_low_c', -50), peak: num('forage_temp_peak_c', -50), zero_high: num('forage_temp_zero_high_c', -50) };
+  if (f_t && !(f_t.zero_low < f_t.peak && f_t.peak < f_t.zero_high)) fail('need forage_temp_zero_low_c < forage_temp_peak_c < forage_temp_zero_high_c');
+  const gu = v('give_up_empty_trips'); if (!(gu === null || (Number.isInteger(gu) && gu >= 1))) fail('give_up_empty_trips must be null or an integer >= 1');
   const workers = num('colony_workers', 1), larvae = num('colony_larvae');
   if (!Number.isInteger(workers) || !Number.isInteger(larvae) || workers > 999 || larvae > 99) fail('colony sizes must be integers (workers <= 999, larvae <= 99)');
   if (num('individual_thermal_offset_sd_c') !== 0) fail('individual thermal offsets are not drawn in this prototype (sd must be 0)');
   const speed = num('trail_walking_speed_mm_s'); if (!(speed > 0)) fail('speed must be > 0');
   const ms = (k: string) => { const x = Math.round(num(k) * 1000); if (!(x >= 1)) fail(`${k} must be >= 1 ms`); return x; };
   const S = raw.site;
-  const consts: DecisionConsts = { hill_n: num('hill_n'), recruit_contact_weight: num('recruit_contact_weight'), idle_probability: prob('idle_probability'), f_t, light_factor_night: lightNight, transfer_max: up('transfer_max_portions'), feed_bolus: up('feed_bolus_portions'), begging_threshold: prob('larva_begging_threshold') };
+  const consts: DecisionConsts = deepFreeze({ hill_n: num('hill_n'), recruit_contact_weight: num('recruit_contact_weight'), idle_probability: prob('idle_probability'), f_t, light_factor_night: lightNight, transfer_max: up('transfer_max_portions'), feed_bolus: up('feed_bolus_portions'), begging_threshold: prob('larva_begging_threshold') });
   return {
-    params_sha: sha256Hex(canon(raw)), scenario,
+    params_sha: sha256Hex(canon(rawFile)), scenario, variant, give_up_empty_trips: gu,
     anchor: checkAnchor({ day0_date: sc.day0_date.value, utc_offset_minutes: S.utc_offset_minutes.value, zone: S.zone }),
     site: checkSite({ latitude_deg: S.latitude_deg.value, longitude_deg: S.longitude_deg.value }),
     hourly_temp_c: [...sc.hourly_temp_c], rh_mean_percent: typeof sc.rh_mean_percent === 'number' ? sc.rh_mean_percent : null, synthetic: true, weather_generator: sc.generator,

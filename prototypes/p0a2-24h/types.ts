@@ -13,8 +13,8 @@ export const EVIDENCE_CLASSES: readonly EvidenceClass[] = ['this_species', 'othe
 export type Json = null | boolean | number | string | Json[] | { [k: string]: Json };
 
 /** activity state of one worker (design §4.3, reduced: no cleaning / repair, no sheltering — 尚未模擬) */
-export type WorkerState = 'resting' | 'idle' | 'brood_care' | 'to_entrance' | 'outbound' | 'searching' | 'feeding' | 'returning';
-export const WORKER_STATES: readonly WorkerState[] = ['resting', 'idle', 'brood_care', 'to_entrance', 'outbound', 'searching', 'feeding', 'returning'];
+export type WorkerState = 'resting' | 'idle' | 'brood_care' | 'to_entrance' | 'from_entrance' | 'outbound' | 'searching' | 'feeding' | 'returning';
+export const WORKER_STATES: readonly WorkerState[] = ['resting', 'idle', 'brood_care', 'to_entrance', 'from_entrance', 'outbound', 'searching', 'feeding', 'returning'];
 /** where a worker is: inside the nest (contactable by nestmates), moving inside the nest, or outside the nest */
 export type Loc = 'nest' | 'nest_transit' | 'outside';
 
@@ -41,6 +41,8 @@ export interface Worker {
   route: string | null;
   /** whether the current / last trip filled the crop to the recruitment level (only meaningful while returning) */
   trip_loaded: boolean;
+  /** consecutive arrivals at its remembered source that found nothing (own experience; used only by the give-up switch) */
+  empty_streak: number;
   contacts: ContactRec[]; begging: BegRec[];
   /** id of this worker's one live event (others in the queue are stale and skipped) */
   pending: string | null;
@@ -50,8 +52,9 @@ export interface Worker {
 export interface Larva { id: string; gut: number; last: number; carry: number; consumed: number; deficit: number }
 export interface Source { id: string; stock: number; produced: number; taken: number; n: number }
 
-/** a queued event: exact instant t (ms), round r (causal depth inside one instant), canonical id, kind, actor, payload */
-export interface QEvent { t: number; r: number; id: string; k: string; a: string; p: { [k: string]: Json } }
+/** a queued event: exact instant t (ms), round r (causal depth inside one instant), seeded tie-break q = hash32(seed|t|id)
+ *  (orders same-instant, same-round events without favouring low ids), canonical id, kind, actor, payload */
+export interface QEvent { t: number; r: number; q: number; id: string; k: string; a: string; p: { [k: string]: Json } }
 
 export interface Stats {
   /** time spent in each state per local hour of day (ms, all days pooled) — colony-level STATISTICS only */
@@ -65,7 +68,7 @@ export interface Stats {
 }
 
 export interface WorldState {
-  schema: string; official: false; params_sha: string; scenario: string; seed: number;
+  schema: string; official: false; params_sha: string; scenario: string; variant: string; seed: number;
   /** the instant the world has been advanced to (every event with t <= t_now has run) */
   t_now: number;
   workers: Record<string, Worker>; larvae: Record<string, Larva>; sources: Record<string, Source>;
@@ -101,7 +104,8 @@ export interface LarvaView { begging: number; room: number }
 /** species / scenario constants handed to decisions (not colony state) */
 export interface DecisionConsts {
   hill_n: number; recruit_contact_weight: number; idle_probability: number;
-  f_t: { zero_low: number; peak: number; zero_high: number }; light_factor_night: number;
+  /** null = no temperature anchors (sensitivity variant 'ft-flat'): f_T = 1; the CTmax heat rule still applies */
+  f_t: { zero_low: number; peak: number; zero_high: number } | null; light_factor_night: number;
   transfer_max: number; feed_bolus: number; begging_threshold: number;
 }
 export type NestChoice = 'forage' | 'brood' | 'idle' | 'rest';

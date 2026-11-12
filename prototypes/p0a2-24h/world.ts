@@ -4,7 +4,7 @@
  * official code, is not in the rules fingerprint, never touches saves/ or journal/.
  *
  * Time: continuous event time. Every event happens at an exact instant t (integer ms since experiment Day0 00:00 local)
- * and is processed in the 'layered' order of docs/p0a0-time-contract.md: (exact instant, round, canonical id). A child
+ * and is processed in the 'layered' order of docs/p0a0-time-contract.md: (exact instant, round, then a seeded tie-break hash32(seed|t|id), then canonical id). A child
  * at its cause's instant runs in the next round. Delays are drawn in the producer's own time and added exactly (integer
  * ms). There are no frames or ticks: advanceTo(T) runs every event with t <= T, so how the caller chunks time (1 s,
  * 37 s, 1 h, 24 h at once, or a snapshot / restore in between) cannot change what happens.
@@ -34,12 +34,16 @@ import { type Json, type Larva, type Loc, type QEvent, type SelfView, type Stats
 export const STATE_SCHEMA = 'antempire.p0a2-24h-proto.state.v1';
 export const LOG_GENESIS = 'antempire.p0a2-24h-proto.log.v1';
 export const SOURCE_ID = 'hemiptera-A';
-export const WORKER_KINDS = ['bout_end', 'wake', 'at_entrance', 'arrive_source', 'feed_end', 'search_end', 'arrive_nest'] as const;
+export const WORKER_KINDS = ['bout_end', 'wake', 'at_entrance', 'back_in', 'arrive_source', 'feed_end', 'search_end', 'arrive_nest'] as const;
 export const WORLD_KINDS = ['env_day', 'env_light', 'env_sample', 'produce'] as const;
 
 const fail = (m: string): never => { throw Error(`P0A2: ${m}`); };
 const pad = (n: number, w: number) => String(n).padStart(w, '0');
-const cmp = (a: QEvent, b: QEvent) => a.t - b.t || a.r - b.r || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+/** order: exact instant, round, seeded tie-break q (so same-instant events of different actors are not ordered by id,
+ *  which would systematically favour w001 over w030), canonical id (only if q collides) */
+const cmp = (a: QEvent, b: QEvent) => a.t - b.t || a.r - b.r || a.q - b.q || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+/** the seeded tie-break of an event: a pure function of seed, instant and id (deterministic and chunk-invariant) */
+export const tieOf = (seed: number, t: number, id: string): number => hash32(`${seed}|${t}|${id}`);
 
 /** an exact instant of the shared world axis (engine/scheduler ExactTime) for a prototype instant — for phase 3 */
 export const exactOfMs = (t: number): ExactTime => ({ day: dayOf(t), us: (t - dayOf(t) * MS_PER_DAY) * 1000, us_lo: 0 });
@@ -77,7 +81,15 @@ const emptyStats = (): Stats => ({
   temp_unavailable: 0, heat_refusals: 0, searches_found: 0, searches_failed: 0, trophallaxis_events: 0, larva_feeds: 0, same_instant_events: 0,
 });
 
-export interface WorldOptions { /** keep every log line in memory (tests, observers); the hash chain is kept regardless */ captureLog?: boolean }
+export interface WorldOptions {
+  /** keep every log line in memory (tests, observers); the hash chain is kept regardless */
+  captureLog?: boolean;
+  /** sensitivity variant of params.json (default 'reference'); stored in the state */
+  variant?: string;
+  /** TEST INSTRUMENTATION ONLY: called with every guarded view handed to a decision (read-only, frozen); cannot change
+   *  anything and does not change results (tests check the hashes with and without it). Not offered to any UI. */
+  inspectViews?: (view: string, actor: string, t: number, v: object) => void;
+}
 
 export class World {
   readonly m: Model; readonly env: Environment;
@@ -85,9 +97,10 @@ export class World {
   readonly lines: string[] | null;
   #s: WorldState; #heap = new Heap();
   #workerIds: string[]; #larvaIds: string[];
+  readonly #inspect: WorldOptions['inspectViews'] | null;
 
   private constructor(m: Model, s: WorldState, opts: WorldOptions) {
-    this.m = m; this.env = new Environment(m); this.#s = s; this.lines = opts.captureLog ? [] : null;
+    this.m = m; this.env = new Environment(m); this.#s = s; this.lines = opts.captureLog ? [] : null; this.#inspect = opts.inspectViews ?? null;
     for (const e of s.queue) this.#heap.push(e);
     s.queue = [];
     this.#workerIds = Object.keys(s.workers).sort(); this.#larvaIds = Object.keys(s.larvae).sort();
@@ -96,7 +109,7 @@ export class World {
   /** a fresh experiment world at Day0 00:00 (t = 0) */
   static create(rawParams: unknown, scenario: string, seed: number, opts: WorldOptions = {}): World {
     if (!Number.isSafeInteger(seed) || seed < 0) fail('seed must be a non-negative integer');
-    const m = buildModel(rawParams, scenario);
+    const variant = opts.variant ?? 'reference', m = buildModel(rawParams, scenario, variant);
     const workers: Record<string, Worker> = {}, larvae: Record<string, Larva> = {}, queue: QEvent[] = [];
     let initial = 0;
     for (let i = 1; i <= m.workers; i++) {
@@ -105,9 +118,9 @@ export class World {
       const lerp = (r: [number, number]) => r[0] + g() * (r[1] - r[0]);
       workers[id] = { id, state: 'resting', loc: 'nest', since: 0, crop, last: 0, carry: 0, consumed: 0, debt: 0,
         theta_forage: lerp(m.theta_forage), theta_brood: lerp(m.theta_brood), gain: lerp(m.gain), thermal_offset_c: 0, ctmax_c: m.ctmax_c,
-        route: null, trip_loaded: false, contacts: [], begging: [], pending: null, n: 0 };
+        route: null, trip_loaded: false, empty_streak: 0, contacts: [], begging: [], pending: null, n: 0 };
       const w = workers[id], first = Math.max(1, Math.round(-m.rest_ms * Math.log(1 - g())));
-      const ev: QEvent = { t: first, r: 0, id: `${id}#${pad(w.n++, 8)}`, k: 'bout_end', a: id, p: {} };
+      const eid = `${id}#${pad(w.n++, 8)}`, ev: QEvent = { t: first, r: 0, q: tieOf(seed, first, eid), id: eid, k: 'bout_end', a: id, p: {} };
       w.pending = ev.id; queue.push(ev);
     }
     for (let i = 1; i <= m.larvae; i++) {
@@ -115,10 +128,11 @@ export class World {
       const gut = Math.floor(g() * m.init_gut_max * m.gut_cap); initial += gut;
       larvae[id] = { id, gut, last: 0, carry: 0, consumed: 0, deficit: 0 };
     }
-    queue.push({ t: 0, r: 0, id: 'env:d00000:day', k: 'env_day', a: 'env', p: { day: 0 } });
-    queue.push({ t: m.honeydew_ms, r: 0, id: `${SOURCE_ID}#${pad(0, 8)}`, k: 'produce', a: SOURCE_ID, p: {} });
+    queue.push({ t: 0, r: 0, q: tieOf(seed, 0, 'env:d00000:day'), id: 'env:d00000:day', k: 'env_day', a: 'env', p: { day: 0 } });
+    const pid = `${SOURCE_ID}#${pad(0, 8)}`;
+    queue.push({ t: m.honeydew_ms, r: 0, q: tieOf(seed, m.honeydew_ms, pid), id: pid, k: 'produce', a: SOURCE_ID, p: {} });
     const s: WorldState = {
-      schema: STATE_SCHEMA, official: false, params_sha: m.params_sha, scenario, seed, t_now: 0,
+      schema: STATE_SCHEMA, official: false, params_sha: m.params_sha, scenario, variant, seed, t_now: 0,
       workers, larvae, sources: { [SOURCE_ID]: { id: SOURCE_ID, stock: 0, produced: 0, taken: 0, n: 1 } },
       ledger: { initial, produced: 0 }, log: { count: 0, hash: sha256Hex(LOG_GENESIS) }, stats: emptyStats(), queue, last_key: null,
     };
@@ -129,7 +143,7 @@ export class World {
   static restore(rawParams: unknown, snapshot: string, opts: WorldOptions = {}): World {
     const s = JSON.parse(snapshot) as WorldState;
     if (s.schema !== STATE_SCHEMA || s.official !== false) fail('snapshot schema mismatch (or not an experiment world)');
-    const m = buildModel(rawParams, s.scenario);
+    const m = buildModel(rawParams, s.scenario, s.variant);
     if (m.params_sha !== s.params_sha) fail('snapshot was taken under another parameter file');
     if (canon(s) !== snapshot) fail('snapshot is not in canonical form');
     return new World(m, s, opts);
@@ -183,6 +197,7 @@ export class World {
         case 'bout_end': out = { from: w.state, ...(w.state === 'idle' ? { larvae: this.#touchLarvae(w, e.t, g, false) } : {}), ...this.#decideInNest(w, e, g) }; break;
         case 'wake': out = { from: w.state, ...this.#decideInNest(w, e, g) }; break;
         case 'at_entrance': out = this.#atEntrance(w, e, g); break;
+        case 'back_in': this.#set(w, e.t, 'resting', 'nest'); this.#next(w, e, 'bout_end', this.#exp(g, this.m.rest_ms)); out = { to: 'resting' }; break;
         case 'arrive_source': out = this.#arriveSource(w, e, g); break;
         case 'feed_end': w.trip_loaded = w.crop / this.m.crop_cap >= this.m.recruit_min_fill; this.#set(w, e.t, 'returning', 'outside'); this.#next(w, e, 'arrive_nest', this.m.travel_ms); out = { crop: w.crop, loaded: w.trip_loaded }; break;
         case 'search_end': out = this.#searchEnd(w, e, g); break;
@@ -193,22 +208,25 @@ export class World {
     } else if (e.k === 'produce') {
       const src = s.sources[e.a], amt = this.m.honeydew_amount;
       src.stock += amt; src.produced += amt; s.ledger.produced += amt;
-      this.#push({ t: e.t + this.m.honeydew_ms, r: 0, id: `${src.id}#${pad(src.n++, 8)}`, k: 'produce', a: src.id, p: {} });
+      this.#push({ t: e.t + this.m.honeydew_ms, r: 0, q: 0, id: `${src.id}#${pad(src.n++, 8)}`, k: 'produce', a: src.id, p: {} });
       out = { amount: amt, stock: src.stock, source_kind: 'hemipteran honeydew (scenario)', synthetic: true };
     } else if (e.k === 'env_day') out = this.#envDay(e);
     else if (e.k === 'env_light') out = { to: e.p.to, date: e.p.date, minute_local: e.p.minute_local };
     else if (e.k === 'env_sample') out = { temp_c: this.env.airTemp(e.t), rh_percent: this.env.rh(e.t), rain: null, synthetic: true, assumption: true };
     else return fail(`unknown event kind ${e.k}`);
-    const line = canon({ t: e.t, r: e.r, id: e.id, k: e.k, a: e.a, p: out });
+    const line = canon({ t: e.t, r: e.r, q: e.q, id: e.id, k: e.k, a: e.a, p: out });
     s.log.hash = sha256Hex(s.log.hash + line); s.log.count++;
     this.lines?.push(line);
   }
 
-  #push(e: QEvent) { if (e.t < this.#s.t_now) fail(`${e.id} scheduled before the clock`); this.#heap.push(e); }
+  /** queue an event; its tie-break is always recomputed here from (seed, t, id) */
+  #push(e: QEvent) { if (e.t < this.#s.t_now) fail(`${e.id} scheduled before the clock`); e.q = tieOf(this.#s.seed, e.t, e.id); this.#heap.push(e); }
+  /** a guarded view for a decision; the test inspector (if any) sees the same frozen view */
+  #gv<T extends object>(o: T, name: string, actor: string, t: number): T { const v = guardView(o, name); this.#inspect?.(name, actor, t, v); return v; }
   /** schedule the worker's one next event `delay` ms after the cause (round + 1 when at the same instant) */
   #next(w: Worker, cause: QEvent, kind: string, delay: number): string {
     if (!Number.isSafeInteger(delay) || delay < 0) fail(`delay ${delay}`);
-    const ev: QEvent = { t: cause.t + delay, r: delay === 0 ? cause.r + 1 : 0, id: `${w.id}#${pad(w.n++, 8)}`, k: kind, a: w.id, p: {} };
+    const ev: QEvent = { t: cause.t + delay, r: delay === 0 ? cause.r + 1 : 0, q: 0, id: `${w.id}#${pad(w.n++, 8)}`, k: kind, a: w.id, p: {} };
     w.pending = ev.id; this.#push(ev); return ev.id;
   }
   #exp(g: () => number, mean: number): number { return Math.max(1, Math.round(-mean * Math.log(1 - g()))); }
@@ -235,13 +253,13 @@ export class World {
   #self(w: Worker, t: number): SelfView {
     const from = t - this.m.window_ms;
     w.contacts = w.contacts.filter((c) => c.t >= from); w.begging = w.begging.filter((b) => b.t >= from);
-    return guardView<SelfView>({
+    return this.#gv<SelfView>({
       crop: w.crop, crop_room: this.m.crop_cap - w.crop, crop_fill: w.crop / this.m.crop_cap,
       theta_forage: w.theta_forage, theta_brood: w.theta_brood, gain: w.gain, thermal_offset_c: w.thermal_offset_c, ctmax_c: w.ctmax_c,
       has_route: w.route !== null,
       recruit_contacts_recent: w.contacts.filter((c) => c.loaded).length,
       begging_recent: w.begging.filter((b) => b.signal >= this.m.consts.begging_threshold).length,
-    }, 'self');
+    }, 'self', w.id, t);
   }
 
   #decideInNest(w: Worker, e: QEvent, g: () => number): { [k: string]: Json } {
@@ -262,7 +280,7 @@ export class World {
       w.begging.push({ t, larva: id, signal });
       let fed = 0;
       if (feed) {
-        fed = decideFeedLarva(this.#self(w, t), guardView({ begging: signal, room: this.m.gut_cap - l.gut }, 'larva'), this.m.consts);
+        fed = decideFeedLarva(this.#self(w, t), this.#gv({ begging: signal, room: this.m.gut_cap - l.gut }, 'larva', w.id, t), this.m.consts);
         if (fed > 0) { l.gut += fed; w.crop -= fed; this.#s.stats.larva_feeds++; }
       }
       out.push({ larva: id, signal, fed });
@@ -272,7 +290,7 @@ export class World {
 
   #atEntrance(w: Worker, e: QEvent, g: () => number): { [k: string]: Json } {
     const temp = this.env.siteTemp(e.t), light = this.env.light(e.t), h = hourOfDay(e.t), st = this.#s.stats;
-    const ch = decideExit(this.#self(w, e.t), guardView({ temp_c: temp, light }, 'site'), this.m.consts, g());
+    const ch = decideExit(this.#self(w, e.t), this.#gv({ temp_c: temp, light }, 'site', w.id, e.t), this.m.consts, g());
     if (ch === 'exit') {
       st.exits_by_hour[h]++;
       if (w.route) { this.#set(w, e.t, 'outbound', 'outside'); this.#next(w, e, 'arrive_source', this.m.travel_ms); }
@@ -282,21 +300,30 @@ export class World {
     if (ch === 'temp_unavailable') st.temp_unavailable++;
     if (ch === 'heat') st.heat_refusals++;
     st.declines_by_hour[h]++;
-    this.#set(w, e.t, 'resting', 'nest');
-    this.#next(w, e, 'bout_end', this.m.move_ms + this.#exp(g, this.m.rest_ms));
+    // walks back inside: it is in the nest (contactable) only once it arrives (back_in)
+    this.#set(w, e.t, 'from_entrance', 'nest_transit');
+    this.#next(w, e, 'back_in', this.m.move_ms);
     return { choice: ch, temp_c: temp, light };
   }
 
   #arriveSource(w: Worker, e: QEvent, _g: () => number): { [k: string]: Json } {
     const src = this.#s.sources[w.route!], temp = this.env.siteTemp(e.t);
-    const d = decideAtSource(this.#self(w, e.t), guardView({ food_here: src.stock, temp_c: temp }, 'source'));
+    const d = decideAtSource(this.#self(w, e.t), this.#gv({ food_here: src.stock, temp_c: temp }, 'source', w.id, e.t));
     if (d.heat) {
       this.#s.stats.heat_refusals++; w.trip_loaded = w.crop / this.m.crop_cap >= this.m.recruit_min_fill;
       this.#set(w, e.t, 'returning', 'outside'); this.#next(w, e, 'arrive_nest', this.m.travel_ms);
       return { source: src.id, heat: true, temp_c: temp };
     }
     const take = Math.min(d.take, src.stock);
-    if (take <= 0) { w.trip_loaded = false; this.#set(w, e.t, 'returning', 'outside'); this.#next(w, e, 'arrive_nest', this.m.travel_ms); return { source: src.id, take: 0, seen: src.stock }; }
+    if (take <= 0) {
+      // own experience only: consecutive empty arrivals; the give-up switch (off in the reference) forgets the route
+      w.empty_streak++;
+      const forgot = this.m.give_up_empty_trips !== null && src.stock === 0 && w.empty_streak >= this.m.give_up_empty_trips;
+      if (forgot) { w.route = null; w.empty_streak = 0; }
+      w.trip_loaded = false; this.#set(w, e.t, 'returning', 'outside'); this.#next(w, e, 'arrive_nest', this.m.travel_ms);
+      return { source: src.id, take: 0, seen: src.stock, ...(forgot ? { forgot_route: true } : {}) };
+    }
+    w.empty_streak = 0;
     src.stock -= take; src.taken += take; w.crop += take;
     this.#set(w, e.t, 'feeding', 'outside');
     this.#next(w, e, 'feed_end', Math.max(1, Math.round((this.m.fill_ms_full * take) / this.m.crop_cap)));
@@ -323,7 +350,7 @@ export class World {
     const loaded = w.trip_loaded, touched: Json[] = [];
     for (const { id } of met.slice(0, this.m.max_trophallaxis)) {
       const J = s.workers[id]; this.#book(J, t);
-      const amt = decideTransfer(this.#self(w, t), guardView({ crop_room: this.m.crop_cap - J.crop }, 'partner'), this.m.consts);
+      const amt = decideTransfer(this.#self(w, t), this.#gv({ crop_room: this.m.crop_cap - J.crop }, 'partner', w.id, t), this.m.consts);
       if (amt > 0) { J.crop += amt; w.crop -= amt; s.stats.trophallaxis_events++; }
       J.contacts.push({ t, from: w.id, loaded, route: loaded ? w.route : null });
       if (loaded && w.route && J.route === null) J.route = w.route;
@@ -337,7 +364,7 @@ export class World {
 
   #envDay(e: QEvent): { [k: string]: Json } {
     const d = e.p.day as number, base = d * MS_PER_DAY, L = this.env.lightTimes(d), tag = `env:d${pad(d, 5)}`;
-    const child = (t: number, id: string, k: string, p: { [k: string]: Json }) => this.#push({ t, r: t === e.t ? e.r + 1 : 0, id, k, a: 'env', p });
+    const child = (t: number, id: string, k: string, p: { [k: string]: Json }) => this.#push({ t, r: t === e.t ? e.r + 1 : 0, q: 0, id, k, a: 'env', p });
     // the event instant is the transition minute rounded to the ms (display / log); `to` names the state it starts
     for (const [name, minute, to] of [['civil_dawn', L.civil_dawn, 'civil_twilight'], ['sunrise', L.sunrise, 'day'], ['sunset', L.sunset, 'civil_twilight'], ['civil_dusk', L.civil_dusk, 'night']] as const) child(base + Math.round(minute * 60_000), `${tag}:light_${name}`, 'env_light', { date: L.date, to, minute_local: minute });
     for (let h = 0; h < 24; h++) child(base + h * MS_PER_HOUR, `${tag}:sample_h${pad(h, 2)}`, 'env_sample', {});
