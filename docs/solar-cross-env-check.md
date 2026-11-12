@@ -50,6 +50,20 @@ PR #169（P0-A2 Worker 執行環境，`docs/experimental-worker-runtime.md` §6�
 - `tests/solar-xenv.test.ts`（阻擋性，只用 Node）：B（種子 1–3 × 10 天）的最小距離 ≫ 量到的差；C1、C3、C4 反例可重現；光照時刻的使用者清單固定（新增使用者時測試會失敗，需對照本文件審查）；頂層 `engine/*.ts` 不引用 `engine/clock`。
 - 沒有修改 `engine/clock/solar.ts`、排程器、實驗世界核心或任何規則。
 
+### 5a. 新使用者審查：P0-A2 24 小時原型（#186，2026-11-12）
+
+`prototypes/p0a2-24h/environment.ts` 與 `world.ts` 新增為光照時刻的使用者。依本文件審查如下：
+
+- **用途**：
+  - 每日四個光照轉換事件，時刻是 `Math.round(minute × 60000)` 整數毫秒，等於方案 B 的量化，格寬 1 ms；
+  - 工蟻出巢決策在自己位置讀到的光照狀態 `lightStateAt`。
+- **暴露**：
+  - Node 與 Chromium 的光照時刻相差 1 ulp（約 10⁻¹³ 分）。只有當捨入前的值落在毫秒格界 ±1 ulp 內，事件時刻才會翻轉；機率約 10⁻¹³ ÷ (1/60000) ≈ 6×10⁻⁹／轉換。
+  - `lightStateAt` 的 C4 型反例（在轉換值本身上狀態不同）只在事件時刻正好等於轉換分鐘值時發生。
+  - 兩者都不為零，所以**不能**宣稱 Node 與 Worker 逐位元相同。
+- **目前影響**：原型只在 Node 執行，正式歷史與 Day14 不受影響，Node 內的重播決定性不受影響。
+- **第三階段要求**：接入實驗 Worker 之前，必須先依 §6 的 Owner 裁示（方案 A 或 A+B）解決，並以 Node 對 Chromium 的逐位元比較驗證，不得改用容許值。
+
 ## 6. 規則 PR 提案（待 Owner 裁示，本分支不實作）
 
 目標：光照時刻在任何符合 ECMAScript 的環境（Node 各版本、瀏覽器 Worker、x86-64／ARM64）都**逐位元相同**，不放寬任何決定性要求。
