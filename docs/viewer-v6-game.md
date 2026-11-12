@@ -25,7 +25,7 @@
 - 最終版本量測時，同一台 4 核心機器上有其他工作的測試同時在跑（`ps` 可見），數值偏低且波動大；另以獨立腳本量得桌面 46.0、Pixel 7 56.1、4× 降速 24.8（同樣受干擾）。**請以 CI 或空機重新量測為準**；目標（桌面 ≥ 55、Pixel 7 ≥ 50、4× ≥ 30）在空機上的達成與否尚未確認。
 - 最終版本比前一版多了：每隻螞蟻的體色變體（5 張圖集）、較大的螞蟻（畫面短邊 8%）、巢口近景（每 cm 的像素更多，地面分塊更多）。
 
-CI 閘門仍為桌面 ≥ 30 FPS。截圖：`reports/viewer-v6-art/screenshots/`（開場、圖層、追蹤；桌面與 Pixel 7）。
+CI 閘門仍為桌面 ≥ 30 FPS。截圖（開場、圖層、追蹤；桌面與 Pixel 7）由 `node reports/viewer-v6-art/shoot.cjs <url>` 產生到 `reports/viewer-v6-art/screenshots/`；該目錄在 `.gitignore` 中，**不提交**（本機產生或作為 CI artifact）。
 
 ## 1. 開啟方式
 
