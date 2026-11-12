@@ -1,7 +1,7 @@
 /**
  * Issue #158 — traffic metrics over a generic trajectory / event format (isolated; solver-agnostic).
  *
- * Any 2D producer (WP4 local-steer, kinematics2d, PH-3b) can feed this by exporting:
+ * Any 2D producer (WP4 steer2D, kinematics2d, PH-3b) can feed this by exporting:
  *   - samples: position records { agent, t, x_mm, y_mm } at whatever times it has (no fixed frame rate);
  *   - gaps (preferred): exact surface gaps between body pairs { t, a, b, gap_mm } (negative = penetration);
  *     if absent, gaps are approximated from disks (disk_radius_mm) at shared sample instants and flagged approximate;

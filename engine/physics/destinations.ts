@@ -2,7 +2,7 @@
  * Issue #158 — destinations, capacity-limited sites and an occupancy ledger (isolated; solver-agnostic).
  *
  * Status: isolated physics experiment interface. NOT imported by the daily loop, Day0, cli/ or web/
- * (tests/physics-isolation.test.ts). It does not move bodies: a 2D producer (WP4 local-steer, kinematics2d, PH-3b)
+ * (tests/physics-isolation.test.ts). It does not move bodies: a 2D producer (WP4 steer2D, kinematics2d, PH-3b)
  * decides WHEN an agent reaches a site; this module decides, from site geometry-derived capacity, occupancy and dwell,
  * what happens next (admitted / queued / turned away / released) and checks that any producer's event stream obeys
  * conservation. Every capacity, dwell and queue limit is a candidate boundary value (assumption: true); there is no

@@ -271,7 +271,7 @@ for (const id of ['corridor-8', 'stone', 'crossing']) for (const p of STEER_POLI
       ok(a.arrival_t_s === ph.agents.A.arrival_t_s, `${lbl}: arrival ${a.arrival_t_s} = PH-3b ${ph.agents.A.arrival_t_s}`);
       ok(res.events.filter((e) => e.kind === 'arrive' && e.agents[0] === 'A').length === (ph.agents.A.arrival_t_s === null ? 0 : 1), `${lbl}: arrival recorded once (or never)`);
       if (ph.agents.A.final_mode === 'arrived') ok(a.final_mode === 'arrived' || (control && a.final_mode === 'exited'), `${lbl}: final mode arrived (${a.final_mode})`);
-      if (st === H && goal !== s0) ok(a.final_mode === (p === 'none' ? 'moving' : 'started_at_horizon') && a.samples.every((x) => x[4] === s0), `${lbl}: started at the horizon without motion (${a.final_mode})`);
+      if (st === H && goal !== s0) ok(a.final_mode === 'started_at_horizon' && a.final_mode === ph.agents.A.final_mode && a.samples.every((x) => x[4] === s0), `${lbl}: started at the horizon without motion (${a.final_mode}; none = PH-3b, which reports started_at_horizon since #139)`);
       if (st > H) ok(a.final_mode === 'not_started' && a.arrival_t_s === null, `${lbl}: not started`);
       timingInvariants(inp, res, lbl);
     }

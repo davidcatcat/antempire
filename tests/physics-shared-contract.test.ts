@@ -14,8 +14,10 @@ import { scenarios, compare, comparisonTable, capabilityTable } from '../prototy
 
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
 const sha = (p: string) => crypto.createHash('sha256').update(fs.readFileSync(path.join(REPO_ROOT, p))).digest('hex');
-// PH-3b unchanged (hash of engine/physics/solver2d.ts on origin/main 6864974)
-ok(sha('engine/physics/solver2d.ts') === '3726d1d50c34bad0e3a44ef52bbf58c34cfe3d814f094f2d1ff297650b85bc26', 'solver2d.ts byte-identical to main');
+// PH-3b not modified by the KIN-2D work: hash of engine/physics/solver2d.ts as PH-3b ships it. Was main 6864974
+// (3726d1d5…); re-pinned on the integration branch after #139 (PH-3b contact times) and its review fixes, which are
+// PH-3b's own changes, not KIN-2D's.
+ok(sha('engine/physics/solver2d.ts') === '6391856acb70dd49d3f0ed73e89339faaae8f7482a8f19109d6b67b4dcddda12', 'solver2d.ts byte-identical to the PH-3b reference (main + #139)');
 for (const f of ['engine/physics/solver2d.ts', 'engine/physics/kinematics2d.ts']) ok(!/shared-contract/.test(fs.readFileSync(path.join(REPO_ROOT, f), 'utf8')), `${f} does not depend on the shared contract`);
 
 const list = scenarios();

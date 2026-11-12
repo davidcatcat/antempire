@@ -57,7 +57,7 @@ const dot = (a: number[], b: number[]) => a.reduce((s, v, i) => s + v * b[i], 0)
 {
   const sha = crypto.createHash('sha256').update(fs.readFileSync(path.join(REPO_ROOT, 'engine/physics/kinematics2d.ts'))).digest('hex');
   ok(sha === '7225ee217b2e16456d320230444c3b12f64f83c87021c801b3db822d4adc2730', 'kinematics2d.ts byte-identical to PR #163/#167 (freeze response kept as baseline)');
-  ok(crypto.createHash('sha256').update(fs.readFileSync(path.join(REPO_ROOT, 'engine/physics/solver2d.ts'))).digest('hex') === '3726d1d50c34bad0e3a44ef52bbf58c34cfe3d814f094f2d1ff297650b85bc26', 'solver2d.ts (PH-3b) byte-identical to main');
+  ok(crypto.createHash('sha256').update(fs.readFileSync(path.join(REPO_ROOT, 'engine/physics/solver2d.ts'))).digest('hex') === '6391856acb70dd49d3f0ed73e89339faaae8f7482a8f19109d6b67b4dcddda12', 'solver2d.ts (PH-3b) byte-identical to the PH-3b reference (main + #139; was 3726d1d5… before #139)');
 }
 
 // ---------------------------------------------------------------- independent non-penetration check (sampled + Lipschitz)

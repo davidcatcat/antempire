@@ -1,9 +1,10 @@
 /**
  * Physics event time-boundary contract (Owner's unified contract; docs/wp4-local-avoidance.md §2b 時間契約), BLOCKING.
  * The solver-agnostic checks (tests/lib/physics-time-contract-wp4.ts) are applied to PH-3b (solve2D, the reference) and to
- * every WP4 local-steer policy, without and with the spawn control rule, on two decision intervals. PH-3b's one known
- * difference ('moving' for an agent that starts exactly at the horizon) is PINNED as pending: it flips — and the pending
- * entry must be removed — when the separate PH-3b fix lands. Then local-steer specifics: exact control-time arithmetic,
+ * every WP4 local-steer policy, without and with the spawn control rule, on two decision intervals. PH-3b's former known
+ * difference ('moving' for an agent that starts exactly at the horizon) was pinned as pending until the PH-3b fix (#139)
+ * landed; with #139 merged PH-3b reports 'started_at_horizon' and no adapter carries a pending entry. Then local-steer
+ * specifics: exact control-time arithmetic,
  * exit dwell, blocked entry retry, first decision at an entry instant.
  */
 import assert from 'node:assert/strict';
@@ -14,14 +15,13 @@ import { checkPhysicsTimeContract, TC_BODY, type PhysicsTimeAdapter, type TCRun 
 
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
 const params = { sensing_radius_mm: 0.5, decision_interval_s: 0.1, probe_angles_deg: [0, 90], same_heading_max_deg: 20, stall_window_s: 1, stall_progress_mm: 0.01, p_wait: 0.5, p_back: 0.25, p_reroute: 0.25, wait_s: 0.5, back_distance_mm: 0.5, reroute_max_s: 0.5 };
-const PH3B_PENDING = { startedAtHorizon: { final_mode: 'moving' } };   // fixed by PR #139: remove when merged
 
 const fromSteer = (r: SteerResult): TCRun => ({
   events: r.events.map((e) => ({ t_s: e.t_s, kind: e.kind, agents: e.agents, class: e.class })),
   agents: Object.fromEntries(Object.entries(r.agents).map(([id, a]) => [id, { samples: a.samples, arrival_t_s: a.arrival_t_s, final_mode: a.final_mode, final_speed_mm_s: a.final_speed_mm_s, entered_t_s: a.present_from_t_s ?? null }])),
 });
 const adapters: PhysicsTimeAdapter[] = [{
-  name: 'PH-3b solve2D', grid: null, decisionClasses: [], spawn: false, pending: PH3B_PENDING,
+  name: 'PH-3b solve2D', grid: null, decisionClasses: [], spawn: false,
   run: (inp: Solver2DInput) => { const r = solve2D(inp); return { events: r.events.map((e) => ({ t_s: e.t_s, kind: e.kind, agents: e.agents, class: e.class })), agents: Object.fromEntries(Object.entries(r.agents).map(([id, a]) => [id, { samples: a.samples, arrival_t_s: a.arrival_t_s, final_mode: a.final_mode, final_speed_mm_s: a.final_speed_mm_s, entered_t_s: null }])) }; },
 }];
 for (const p of STEER_POLICIES) for (const [dt, q] of [[0.1, 10], [0.05, 20]] as const) for (const spawn of [false, true]) {
@@ -29,12 +29,11 @@ for (const p of STEER_POLICIES) for (const [dt, q] of [[0.1, 10], [0.05, 20]] as
   const control: SteerControl | undefined = spawn ? { spawn: true } : undefined;
   adapters.push({
     name: `local-steer ${p} dt ${dt}${spawn ? ' spawn' : ''}`, grid: p === 'none' ? null : { p: 1, q }, decisionClasses: ['behavioural_response'], spawn,
-    pending: p === 'none' ? PH3B_PENDING : undefined,
     run: (inp) => fromSteer(steer2D({ ...inp, policy: p as SteerPolicyId, params: { ...params, decision_interval_s: dt }, seed: 1, control })),
   });
 }
 const summaries = adapters.map((ad) => checkPhysicsTimeContract(ad, ok));
-ok(summaries.filter((s) => s.pending_pinned.includes('started_at_horizon')).map((s) => s.adapter).join(',') === 'PH-3b solve2D,local-steer none dt 0.1', 'only PH-3b (and none = PH-3b) carry the pending started_at_horizon difference');
+ok(summaries.every((s) => s.pending_pinned.length === 0), 'no adapter carries a pending difference (PH-3b started_at_horizon fixed by #139; none = PH-3b)');
 
 // ---- exact control-time arithmetic (engine/physics/exact-time.ts)
 ok(gridTime(3, 0.1) === 0.3 && 3 * 0.1 !== 0.3, 'grid 3 × 0.1 = 0.3 exactly (the binary product is 0.30000000000000004)');
