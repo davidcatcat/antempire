@@ -10,6 +10,7 @@
 | `index.html`、`app.js`、`motion.js` | 靜態播放頁（Canvas 2D，無外部相依）；**只 fetch `./data`，不匯入 `engine/`、不執行模擬、不寫入** |
 | `browser-check.cjs` | Chromium／Playwright 檢查與截圖（`screenshots/`） |
 | `tests/physics-playback.test.ts` | BLOCKING 測試 |
+| WP4 候選（`*--steer-A/B/C.json`） | 隔離物理實驗・候選行為規則（非本種/假設）：`engine/physics/local-steer.ts` 的 A／B／C 候選，見 `docs/wp4-local-avoidance.md` |
 
 ## 2. 畫面上的每個變化都是引擎事件
 - **運動**：PH-3b 在兩個事件之間讓每個身體直線等速平移，且只在速度或朝向改變時記錄姿態。匯出的每一段 `[t0, t1]` 帶兩端的精確姿態；畫面直接計算這段運動。這**就是解算器的運動，不是取樣點的插值**；沒有任何平滑。播放速度、縮放、平移只改變觀看方式。

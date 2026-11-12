@@ -1,0 +1,696 @@
+{
+ "schema": "antempire.wp4-controls.v1",
+ "label": "隔離物理實驗・對照情境（遊戲假設，非本種）・非正式",
+ "node": "v22.23.4",
+ "params": {
+  "inflow_rate_per_arm_per_s": {
+   "value": 2,
+   "assumption": true,
+   "basis": "遊戲假設",
+   "why": "每個方向每秒進場 2 隻（四個方向共 8 隻/s）。大頭家蟻的蟻道流量沒有本種資料；只用於讓密度隨時間建立。"
+  },
+  "entry_gap_mm": {
+   "value": 50,
+   "assumption": true,
+   "basis": "遊戲假設",
+   "why": "入口在交叉點前 50 mm（身體中心再退半個體長），橫向位置沿用格狀基準的同一欄位（k mod 欄數），只改變時間。"
+  },
+  "exit_capacity": {
+   "value": 2,
+   "assumption": true,
+   "basis": "遊戲假設",
+   "why": "每個目標端（通道×方向）的出口同時最多容納 2 隻。"
+  },
+  "exit_dwell_s": {
+   "value": 1,
+   "assumption": true,
+   "basis": "遊戲假設",
+   "why": "每隻進入出口後占用 1 s 才離開出口區。出口最大通量＝容量/停留＝2 隻/s，與流入率相同（刻意讓出口接近飽和而非無限）。"
+  },
+  "horizon_s": {
+   "value": {
+    "100": 30,
+    "1000": 140
+   },
+   "assumption": true,
+   "basis": "遊戲假設（量測窗）",
+   "why": "100 隻：流入最後一隻在約 12.5 s 進場，加上約 5 s 行程與餘裕。1000 隻：最後一隻約 125 s 進場。"
+  }
+ },
+ "variants": {
+  "K0_lattice_stay": {
+   "inflow": false,
+   "exit": false,
+   "why": "密集基準本身（格狀起點、抵達者留在路上），時間終點延長到與其他對照相同，作為對照的參照。"
+  },
+  "K1_lattice_exit": {
+   "inflow": false,
+   "exit": true,
+   "why": "(i) 有限容量出口：抵達者離開道路進入出口；出口滿了就在目標處等（仍是障礙物）。"
+  },
+  "K2_inflow_stay": {
+   "inflow": true,
+   "exit": false,
+   "why": "(ii) 依時間流入：個體在入口依時間表進場（入口被占就在路外等），不是一開始就排成密集格狀；抵達者留在路上。"
+  },
+  "K3_inflow_exit": {
+   "inflow": true,
+   "exit": true,
+   "why": "(i)+(ii) 同時。"
+  }
+ },
+ "note": "CPU 是單次量測（機器同時有其他工作，只看數量級）；抵達只是一欄，不是選擇標準；沒有調參；N 沒有亂數抽取，各種子結果相同（測試確認），只跑種子 1",
+ "rows": [
+  {
+   "variant": "K2_inflow_stay",
+   "policy": "A_free_direction",
+   "seed": 1,
+   "m": {
+    "agents": 1000,
+    "horizon_s": 140,
+    "arrived": 74,
+    "arrival_s": {
+     "min": 6.742585837411226,
+     "p10": 7.785670204549769,
+     "median": 11.732413876173538,
+     "p90": 15.761889728352921,
+     "max": 20.89602867123329
+    },
+    "transit_s": {
+     "min": 6.544117647058771,
+     "median": 6.663320030497795,
+     "p90": 6.83868056825531,
+     "max": 7.7212496319447474
+    },
+    "time_to_clear_s": null,
+    "exited": 0,
+    "never_entered": 611,
+    "entry_delay_s": {
+     "median": 0.02499999999999858,
+     "max": 0.3000000000000007
+    },
+    "stalled": 315,
+    "deadlock": {
+     "stalled": 315,
+     "clusters": 4,
+     "agents_in_clusters": 315,
+     "largest": 102
+    },
+    "final_modes": {
+     "arrived": 74,
+     "stalled": 315,
+     "not_entered": 611
+    },
+    "blocked_reports": {
+     "blocked_by_nestmates": 320
+    },
+    "contacts": 374,
+    "contact_ends_exact": 362,
+    "contact_ends_estimated": 0,
+    "stops_contact": 708,
+    "stops_conservative": 8,
+    "contact_end_check": {
+     "episodes": 374,
+     "exact": 362,
+     "estimated": 0,
+     "open": 12,
+     "violations": 0,
+     "problems": [],
+     "max_err_s": 2.352970795982401e-7,
+     "median_err_s": 4.517648477531111e-10,
+     "max_dev_from_mid_s": 2.941504817499663e-10,
+     "tol_mm": 1e-7,
+     "delta_g_mm": 1e-9,
+     "outside_bracket": 0
+    },
+    "verify": {
+     "min_pair_gap_mm": -2.3170354523927017e-13,
+     "pair_penetrations": 0,
+     "max_pair_penetration_mm": 0,
+     "min_static_gap_mm": -2.275957200481571e-14,
+     "static_penetrations": 0,
+     "max_static_penetration_mm": 0,
+     "pieces": 759841,
+     "ternary_searches": 6573,
+     "tol_mm": 1e-9
+    },
+    "fallback_intervals": 0,
+    "unresolved": 0,
+    "events": 12953,
+    "cpu_ms": 269210.315
+   }
+  },
+  {
+   "variant": "K2_inflow_stay",
+   "policy": "B_contact_decision",
+   "seed": 1,
+   "m": {
+    "agents": 1000,
+    "horizon_s": 140,
+    "arrived": 55,
+    "arrival_s": {
+     "min": 7.423787823788847,
+     "p10": 8.808762307999503,
+     "median": 19.04411764705874,
+     "p90": 33.62601535862324,
+     "max": 38.31559210088745
+    },
+    "transit_s": {
+     "min": 6.544117647058735,
+     "median": 7.945440231793638,
+     "p90": 14.796505879529008,
+     "max": 23.808232062581602
+    },
+    "time_to_clear_s": null,
+    "exited": 0,
+    "never_entered": 249,
+    "entry_delay_s": {
+     "median": 0.025000000000000355,
+     "max": 1.7250000000000014
+    },
+    "stalled": 682,
+    "deadlock": {
+     "stalled": 684,
+     "clusters": 25,
+     "agents_in_clusters": 678,
+     "largest": 554
+    },
+    "final_modes": {
+     "arrived": 55,
+     "moving": 12,
+     "stalled": 682,
+     "not_entered": 249,
+     "waiting_or_stopped": 2
+    },
+    "blocked_reports": {
+     "way_ahead_free": 490,
+     "blocked_by_nestmates": 1614
+    },
+    "contacts": 1001,
+    "contact_ends_exact": 397,
+    "contact_ends_estimated": 0,
+    "stops_contact": 22070,
+    "stops_conservative": 311,
+    "contact_end_check": {
+     "episodes": 1001,
+     "exact": 397,
+     "estimated": 0,
+     "open": 604,
+     "violations": 0,
+     "problems": [],
+     "max_err_s": 2.3529710801994952e-7,
+     "median_err_s": 2.483595551439066e-10,
+     "max_dev_from_mid_s": 2.941717980320391e-10,
+     "tol_mm": 1e-7,
+     "delta_g_mm": 1e-9,
+     "outside_bracket": 0
+    },
+    "verify": {
+     "min_pair_gap_mm": -9.514611321037592e-14,
+     "pair_penetrations": 0,
+     "max_pair_penetration_mm": 0,
+     "min_static_gap_mm": -2.275957200481571e-14,
+     "static_penetrations": 0,
+     "max_static_penetration_mm": 0,
+     "pieces": 1301486,
+     "ternary_searches": 22410,
+     "tol_mm": 1e-9
+    },
+    "fallback_intervals": 0,
+    "unresolved": 0,
+    "events": 56167,
+    "cpu_ms": 120735.108
+   }
+  },
+  {
+   "variant": "K2_inflow_stay",
+   "policy": "C_sidestep",
+   "seed": 1,
+   "m": {
+    "agents": 1000,
+    "horizon_s": 140,
+    "arrived": 50,
+    "arrival_s": {
+     "min": 6.9441176470588255,
+     "p10": 7.893044749732895,
+     "median": 11.996544321508816,
+     "p90": 24.703188694995944,
+     "max": 54.315823491448995
+    },
+    "transit_s": {
+     "min": 6.544117647058825,
+     "median": 6.803095745135785,
+     "p90": 7.5293303995875664,
+     "max": 8.278666870629253
+    },
+    "time_to_clear_s": null,
+    "exited": 0,
+    "never_entered": 514,
+    "entry_delay_s": {
+     "median": 0.02499999999999858,
+     "max": 0.125
+    },
+    "stalled": 436,
+    "deadlock": {
+     "stalled": 436,
+     "clusters": 11,
+     "agents_in_clusters": 436,
+     "largest": 128
+    },
+    "final_modes": {
+     "arrived": 50,
+     "stalled": 436,
+     "not_entered": 514
+    },
+    "blocked_reports": {
+     "blocked_by_nestmates": 493
+    },
+    "contacts": 1040,
+    "contact_ends_exact": 628,
+    "contact_ends_estimated": 0,
+    "stops_contact": 1512,
+    "stops_conservative": 854,
+    "contact_end_check": {
+     "episodes": 1040,
+     "exact": 628,
+     "estimated": 0,
+     "open": 412,
+     "violations": 0,
+     "problems": [],
+     "max_err_s": 2.3529710801994952e-7,
+     "median_err_s": 4.5071146814734675e-10,
+     "max_dev_from_mid_s": 2.941789034593967e-10,
+     "tol_mm": 1e-7,
+     "delta_g_mm": 1e-9,
+     "outside_bracket": 0
+    },
+    "verify": {
+     "min_pair_gap_mm": -5.224509713741554e-11,
+     "pair_penetrations": 0,
+     "max_pair_penetration_mm": 0,
+     "min_static_gap_mm": -2.275957200481571e-14,
+     "static_penetrations": 0,
+     "max_static_penetration_mm": 0,
+     "pieces": 749620,
+     "ternary_searches": 14201,
+     "tol_mm": 1e-9
+    },
+    "fallback_intervals": 0,
+    "unresolved": 0,
+    "events": 14173,
+    "cpu_ms": 92259.849
+   }
+  },
+  {
+   "variant": "K2_inflow_stay",
+   "policy": "N_no_yield",
+   "seed": 1,
+   "m": {
+    "agents": 1000,
+    "horizon_s": 140,
+    "arrived": 0,
+    "arrival_s": {
+     "min": null,
+     "p10": null,
+     "median": null,
+     "p90": null,
+     "max": null
+    },
+    "transit_s": {
+     "min": null,
+     "median": null,
+     "p90": null,
+     "max": null
+    },
+    "time_to_clear_s": null,
+    "exited": 0,
+    "never_entered": 0,
+    "entry_delay_s": {
+     "median": 0.02499999999999858,
+     "max": 0.025000000000005684
+    },
+    "stalled": 1000,
+    "deadlock": {
+     "stalled": 1000,
+     "clusters": 1,
+     "agents_in_clusters": 1000,
+     "largest": 1000
+    },
+    "final_modes": {
+     "stalled": 1000
+    },
+    "blocked_reports": {
+     "blocked_by_nestmates": 1000
+    },
+    "contacts": 991,
+    "contact_ends_exact": 12,
+    "contact_ends_estimated": 0,
+    "stops_contact": 81019,
+    "stops_conservative": 41,
+    "contact_end_check": {
+     "episodes": 991,
+     "exact": 12,
+     "estimated": 0,
+     "open": 979,
+     "violations": 0,
+     "problems": [],
+     "max_err_s": 2.352970849273106e-7,
+     "median_err_s": 2.3529707249281273e-7,
+     "max_dev_from_mid_s": 2.9413271818157227e-10,
+     "tol_mm": 1e-7,
+     "delta_g_mm": 1e-9,
+     "outside_bracket": 0
+    },
+    "verify": {
+     "min_pair_gap_mm": -3.6126213132092744e-11,
+     "pair_penetrations": 0,
+     "max_pair_penetration_mm": 0,
+     "min_static_gap_mm": -2.275957200481571e-14,
+     "static_penetrations": 0,
+     "max_static_penetration_mm": 0,
+     "pieces": 2694909,
+     "ternary_searches": 3539,
+     "tol_mm": 1e-9
+    },
+    "fallback_intervals": 0,
+    "unresolved": 0,
+    "events": 166143,
+    "cpu_ms": 383793.238
+   }
+  },
+  {
+   "variant": "K3_inflow_exit",
+   "policy": "A_free_direction",
+   "seed": 1,
+   "m": {
+    "agents": 1000,
+    "horizon_s": 140,
+    "arrived": 677,
+    "arrival_s": {
+     "min": 6.742585837411226,
+     "p10": 15.262858764080015,
+     "median": 50.18864031360589,
+     "p90": 91.99944439015066,
+     "max": 109.55963982663495
+    },
+    "transit_s": {
+     "min": 6.544117647058732,
+     "median": 6.753853007111026,
+     "p90": 7.167545917844478,
+     "max": 9.844331891274315
+    },
+    "time_to_clear_s": null,
+    "exited": 677,
+    "never_entered": 0,
+    "entry_delay_s": {
+     "median": 0.02499999999999858,
+     "max": 0.7000000000000028
+    },
+    "stalled": 323,
+    "deadlock": {
+     "stalled": 323,
+     "clusters": 1,
+     "agents_in_clusters": 323,
+     "largest": 323
+    },
+    "final_modes": {
+     "exited": 677,
+     "stalled": 323
+    },
+    "blocked_reports": {
+     "blocked_by_nestmates": 341
+    },
+    "contacts": 848,
+    "contact_ends_exact": 835,
+    "contact_ends_estimated": 0,
+    "stops_contact": 1595,
+    "stops_conservative": 30,
+    "contact_end_check": {
+     "episodes": 848,
+     "exact": 835,
+     "estimated": 0,
+     "open": 13,
+     "violations": 0,
+     "problems": [],
+     "max_err_s": 2.3529710801994952e-7,
+     "median_err_s": 4.990425850337488e-10,
+     "max_dev_from_mid_s": 2.942215360235423e-10,
+     "tol_mm": 1e-7,
+     "delta_g_mm": 1e-9,
+     "outside_bracket": 0
+    },
+    "verify": {
+     "min_pair_gap_mm": -1.2456702336294256e-13,
+     "pair_penetrations": 0,
+     "max_pair_penetration_mm": 0,
+     "min_static_gap_mm": -2.275957200481571e-14,
+     "static_penetrations": 0,
+     "max_static_penetration_mm": 0,
+     "pieces": 342338,
+     "ternary_searches": 14306,
+     "tol_mm": 1e-9
+    },
+    "fallback_intervals": 0,
+    "unresolved": 0,
+    "events": 18047,
+    "cpu_ms": 125428.961
+   }
+  },
+  {
+   "variant": "K3_inflow_exit",
+   "policy": "B_contact_decision",
+   "seed": 1,
+   "m": {
+    "agents": 1000,
+    "horizon_s": 140,
+    "arrived": 116,
+    "arrival_s": {
+     "min": 7.423787823788847,
+     "p10": 10.983342882222509,
+     "median": 21.80081637686961,
+     "p90": 36.02937117954104,
+     "max": 44.126479028245676
+    },
+    "transit_s": {
+     "min": 6.544117647058735,
+     "median": 7.562163319781348,
+     "p90": 11.709910036244349,
+     "max": 20.70304248286945
+    },
+    "time_to_clear_s": null,
+    "exited": 116,
+    "never_entered": 21,
+    "entry_delay_s": {
+     "median": 0.02499999999999858,
+     "max": 0.375
+    },
+    "stalled": 863,
+    "deadlock": {
+     "stalled": 863,
+     "clusters": 1,
+     "agents_in_clusters": 863,
+     "largest": 863
+    },
+    "final_modes": {
+     "exited": 116,
+     "stalled": 863,
+     "not_entered": 21
+    },
+    "blocked_reports": {
+     "way_ahead_free": 357,
+     "blocked_by_nestmates": 1923
+    },
+    "contacts": 1069,
+    "contact_ends_exact": 282,
+    "contact_ends_estimated": 19,
+    "stops_contact": 1475,
+    "stops_conservative": 317,
+    "contact_end_check": {
+     "episodes": 1069,
+     "exact": 282,
+     "estimated": 19,
+     "open": 768,
+     "violations": 0,
+     "problems": [],
+     "max_err_s": 2.3529710801994952e-7,
+     "median_err_s": 2.353033323743148e-10,
+     "max_dev_from_mid_s": 2.941558108204845e-10,
+     "tol_mm": 1e-7,
+     "delta_g_mm": 1e-9,
+     "outside_bracket": 0
+    },
+    "verify": {
+     "min_pair_gap_mm": -4.877209747178313e-13,
+     "pair_penetrations": 0,
+     "max_pair_penetration_mm": 0,
+     "min_static_gap_mm": -2.275957200481571e-14,
+     "static_penetrations": 0,
+     "max_static_penetration_mm": 0,
+     "pieces": 1410280,
+     "ternary_searches": 19118,
+     "tol_mm": 1e-9
+    },
+    "fallback_intervals": 0,
+    "unresolved": 0,
+    "events": 15090,
+    "cpu_ms": 213325.12
+   }
+  },
+  {
+   "variant": "K3_inflow_exit",
+   "policy": "C_sidestep",
+   "seed": 1,
+   "m": {
+    "agents": 1000,
+    "horizon_s": 140,
+    "arrived": 473,
+    "arrival_s": {
+     "min": 6.9441176470588255,
+     "p10": 12.788632579965038,
+     "median": 36.50335380272422,
+     "p90": 66.71241833577487,
+     "max": 81.04450116781416
+    },
+    "transit_s": {
+     "min": 6.544117647058734,
+     "median": 6.826575162110588,
+     "p90": 7.547626008521561,
+     "max": 8.873989576598788
+    },
+    "time_to_clear_s": null,
+    "exited": 473,
+    "never_entered": 0,
+    "entry_delay_s": {
+     "median": 0.02499999999999858,
+     "max": 0.32500000000000284
+    },
+    "stalled": 527,
+    "deadlock": {
+     "stalled": 527,
+     "clusters": 1,
+     "agents_in_clusters": 527,
+     "largest": 527
+    },
+    "final_modes": {
+     "exited": 473,
+     "stalled": 527
+    },
+    "blocked_reports": {
+     "blocked_by_nestmates": 550,
+     "way_ahead_free": 1
+    },
+    "contacts": 1202,
+    "contact_ends_exact": 675,
+    "contact_ends_estimated": 84,
+    "stops_contact": 19329,
+    "stops_conservative": 120,
+    "contact_end_check": {
+     "episodes": 1202,
+     "exact": 675,
+     "estimated": 84,
+     "open": 443,
+     "violations": 0,
+     "problems": [],
+     "max_err_s": 2.3529710091452216e-7,
+     "median_err_s": 4.5142201088310685e-10,
+     "max_dev_from_mid_s": 2.941646926046815e-10,
+     "tol_mm": 1e-7,
+     "delta_g_mm": 1e-9,
+     "outside_bracket": 0
+    },
+    "verify": {
+     "min_pair_gap_mm": -8.637535131583718e-14,
+     "pair_penetrations": 0,
+     "max_pair_penetration_mm": 0,
+     "min_static_gap_mm": -2.275957200481571e-14,
+     "static_penetrations": 0,
+     "max_static_penetration_mm": 0,
+     "pieces": 783912,
+     "ternary_searches": 16098,
+     "tol_mm": 1e-9
+    },
+    "fallback_intervals": 0,
+    "unresolved": 0,
+    "events": 53811,
+    "cpu_ms": 165094.321
+   }
+  },
+  {
+   "variant": "K3_inflow_exit",
+   "policy": "N_no_yield",
+   "seed": 1,
+   "m": {
+    "agents": 1000,
+    "horizon_s": 140,
+    "arrived": 0,
+    "arrival_s": {
+     "min": null,
+     "p10": null,
+     "median": null,
+     "p90": null,
+     "max": null
+    },
+    "transit_s": {
+     "min": null,
+     "median": null,
+     "p90": null,
+     "max": null
+    },
+    "time_to_clear_s": null,
+    "exited": 0,
+    "never_entered": 0,
+    "entry_delay_s": {
+     "median": 0.02499999999999858,
+     "max": 0.025000000000005684
+    },
+    "stalled": 1000,
+    "deadlock": {
+     "stalled": 1000,
+     "clusters": 1,
+     "agents_in_clusters": 1000,
+     "largest": 1000
+    },
+    "final_modes": {
+     "stalled": 1000
+    },
+    "blocked_reports": {
+     "blocked_by_nestmates": 1000
+    },
+    "contacts": 991,
+    "contact_ends_exact": 12,
+    "contact_ends_estimated": 0,
+    "stops_contact": 81019,
+    "stops_conservative": 41,
+    "contact_end_check": {
+     "episodes": 991,
+     "exact": 12,
+     "estimated": 0,
+     "open": 979,
+     "violations": 0,
+     "problems": [],
+     "max_err_s": 2.352970849273106e-7,
+     "median_err_s": 2.3529707249281273e-7,
+     "max_dev_from_mid_s": 2.9413271818157227e-10,
+     "tol_mm": 1e-7,
+     "delta_g_mm": 1e-9,
+     "outside_bracket": 0
+    },
+    "verify": {
+     "min_pair_gap_mm": -3.6126213132092744e-11,
+     "pair_penetrations": 0,
+     "max_pair_penetration_mm": 0,
+     "min_static_gap_mm": -2.275957200481571e-14,
+     "static_penetrations": 0,
+     "max_static_penetration_mm": 0,
+     "pieces": 2694909,
+     "ternary_searches": 3539,
+     "tol_mm": 1e-9
+    },
+    "fallback_intervals": 0,
+    "unresolved": 0,
+    "events": 166143,
+    "cpu_ms": 394260.238
+   }
+  }
+ ]
+}

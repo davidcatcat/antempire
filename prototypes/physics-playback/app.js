@@ -9,6 +9,9 @@ const KIND = {
   free: '恢復自由速度', pass: '錯身', turn: '轉向', turn_blocked: '轉向受阻', stalled: '卡住（時間終點）', contact_end_unconfirmed: '幾何接觸結束未確認（時間終點；不能當原因）', unresolved: '未解', record: '原生運動紀錄',
   obstruction: '受阻', follow_start: '跟隨開始', follow_end: '跟隨結束', blocked: '受阻', yield_start: '讓路（候選規則）', yield_hold: '讓路等待（候選規則）',
   yield_resume: '讓路後恢復（候選規則）', cross_wait: '交叉等待（候選規則）', cross_resume: '交叉後恢復（候選規則）',
+  go: '前進（候選規則）', follow: '跟隨同向同伴（候選規則）', sidestep: '側移（候選規則）', wait: '等待（候選規則）', back_off: '後退（候選規則）',
+  reroute: '繞行（候選規則）', halt_geometry: '幾何封閉而停（規則 D）', blocked_report: '回報受阻（規則 D）', not_started: '尚未出發',
+  contact_end_estimated: '接觸結束（估計：個體離開道路，非物理分離）', exit: '離開道路（對照情境出口）', entry_blocked: '入口被占（對照情境）',
 };
 const CLASS_VAR = { physical_contact: '--c-contact', physical_constraint: '--c-constraint', motion: '--c-motion', solver_status: '--c-status', behavioural_response: '--c-behaviour', native_motion_record: '--c-record' };
 const PALETTE = ['#2f7d4f', '#1b5fae', '#b0452f', '#8a5a00', '#6d3fa0', '#0f7c86', '#a03a6c', '#4f6b00'];
@@ -42,7 +45,8 @@ const currentRunId = () => $('solver').value;
 async function loadRun(id) {
   const meta = st.index.runs.find((r) => r.run_id === id);
   if (!st.runs.has(id)) st.runs.set(id, await getJson(meta.file));
-  st.run = st.runs.get(id); st.t = 0; st.playing = false; st.sel = -1; st.selPinned = false; st.times = eventTimes(st.run);
+  st.run = st.runs.get(id); $('badge').textContent = st.run.label || st.index.label;
+  $('scope').textContent = st.run.scope_note || ''; $('scope').hidden = !st.run.scope_note; st.t = 0; st.playing = false; st.sel = -1; st.selPinned = false; st.times = eventTimes(st.run);
   $('play').textContent = '播放';
   $('lenTxt').textContent = `${st.run.body.length_mm} mm`; $('widTxt').textContent = `${st.run.body.width_mm} mm`;
   fitAll(); renderAbout(); buildList(); syncSel(); draw();
@@ -128,7 +132,7 @@ function draw() {
     st.drawn.push({ id: a.id, x: p.x, y: p.y, heading: p.heading, sx, sy, highlighted: hi });
   });
   drawScale(w, h);
-  const lab = `${r.scenario.id}・${r.solver === 'ph3b' ? 'PH-3b' : '原生 PH-2'}・synthetic・非正式`;
+  const lab = `${r.scenario.id}・${r.solver === 'ph3b' ? 'PH-3b' : r.solver === 'steer' ? `候選 ${r.policy}（非本種/假設）` : '原生 PH-2'}・synthetic・非正式`;
   ctx.font = '12px system-ui, sans-serif'; ctx.fillStyle = css('--panel'); ctx.globalAlpha = 0.9; ctx.fillRect(4, 4, ctx.measureText(lab).width + 8, 18); ctx.globalAlpha = 1;
   ctx.fillStyle = css('--ink'); ctx.fillText(lab, 8, 17);
   drawTimeline(); updateNow();
@@ -273,6 +277,8 @@ function updateNow() {
 function renderAbout() {
   const r = st.run, box = $('about'); box.innerHTML = '';
   const add = (tag, text) => { const el = document.createElement(tag); el.textContent = text; box.appendChild(el); return el; };
+  if (r.scope_note) add('p', r.scope_note).style.fontWeight = '600';
+  if (r.contact_end_check) { const c = r.contact_end_check; add('p', `接觸結束時刻的獨立檢查（${c.checker}）：${c.episodes} 段接觸，${c.exact} 個精確結束全部落在解析區間內（違規 ${c.violations}），最大誤差界 ${c.max_err_s === null ? '—' : c.max_err_s.toExponential(2)} s（間距評估容差 ${c.delta_g_mm} mm），${c.open} 段到時間終點仍接觸。`); }
   add('p', `${r.scenario.title}（${r.scenario.id}，合成情境；檔案 ${r.scenario.source_file}）`);
   add('p', `情境值：${r.scenario.provenance.scenario_values}`);
   if (r.scenario.provenance.note) add('p', `說明：${r.scenario.provenance.note}`);
