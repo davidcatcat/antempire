@@ -7,8 +7,8 @@
  * Modes:
  *   ?mode=replay        real experiment replay (web/data, read only): positions via game-model.antFrame (= model.poseAt),
  *                       game-view frame options (colour variants, display turns, min ant px from the screen)
- *   ?mode=stress&n=N    N synthetic sprites on circles (示意 synthetic positions, NOT engine data), 60 cm view
- *   ?mode=probe         24 isolated synthetic sprites at fixed positions / headings for pixel sampling (示意)
+ *   ?mode=stress&n=N    N synthetic sprites on circles (示範 synthetic positions, NOT engine data), 60 cm view
+ *   ?mode=probe         24 isolated synthetic sprites at fixed positions / headings for pixel sampling (示範)
  * The animation advances by a FIXED step per frame (1/60 s), so frame k has identical inputs in A, B and C; the
  * renderer never feeds anything back (input hash per frame is exposed and compared by bench.cjs).
  */
@@ -110,7 +110,7 @@ async function replay() {
 }
 
 function stress() {
-  const places = [{ id: 'N00', name: '示意巢', bearing: null, distance_cm: null, kind: null, layout: null }];
+  const places = [{ id: 'N00', name: '示範巢', bearing: null, distance_cm: null, kind: null, layout: null }];
   R.setScene({ seed: 4242, places, pos: { N00: { x: 0, y: 0, known: true } }, routes: [], sources: {}, weather: null });
   fit(0, 0, Math.min(canvas.clientWidth, canvas.clientHeight) / 60); R.warm(cam);
   const r = mulberry32(99), ants = Array.from({ length: N }, (_, i) => ({ id: `S${i}`, cx: (r() - 0.5) * 50, cy: (r() - 0.5) * 50, rad: 2 + r() * 8, w: (0.2 + r() * 0.4) * (r() < 0.5 ? -1 : 1), p0: r() * 6.283 }));
@@ -119,7 +119,7 @@ function stress() {
     tt += STEP; fit(0, 0, cam.s);
     const input: AntInput[] = ants.map((a) => { const ang = a.p0 + a.w * tt; return { id: a.id, x: a.cx + Math.cos(ang) * a.rad, y: a.cy + Math.sin(ang) * a.rad, vis: 'walking', moving: true, heading: ang + Math.sign(a.w) * Math.PI / 2 }; });
     const draws = measured(now, input, { colourVariants: true, minAntPx: 26 }, (id) => { const a = input[Number(id.slice(1))]; return worldToScreen(cam, a.x, a.y); });
-    hud.textContent = `繪圖比較 ${which}・${draws.length} 個合成精靈（示意 synthetic，非引擎資料）`;
+    hud.textContent = `繪圖比較 ${which}・${draws.length} 個合成精靈（示範 synthetic，非引擎資料）`;
     st.ready = st.intervals.length > 30; requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
@@ -128,7 +128,7 @@ function stress() {
 /** isolated sprites for pixel sampling: frame 0 without ants, frame 1 with ants (dt 0: drawn heading = input) */
 let probeOut: unknown = null;
 function probe() {
-  const places = [{ id: 'N00', name: '示意巢', bearing: null, distance_cm: null, kind: null, layout: null }];
+  const places = [{ id: 'N00', name: '示範巢', bearing: null, distance_cm: null, kind: null, layout: null }];
   R.setScene({ seed: 4242, places, pos: { N00: { x: -1000, y: -1000, known: true } }, routes: [], sources: {}, weather: null, decor: false });
   fit(0, 0, Math.min(canvas.clientWidth, canvas.clientHeight) / 40); R.warm(cam);
   const r = mulberry32(159), cols = 6, rows = 4, L = 48, ants: AntInput[] = [];
