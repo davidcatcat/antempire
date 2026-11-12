@@ -149,7 +149,7 @@ const dirHash = (d) => { const h = crypto.createHash('sha256'); const walk = (p)
   // ======================= D: corrupt latest → recover previous; all corrupt → refused =======================
   const wC = JSON.parse(await idbDump(page, C2.world_id)).w;
   const prevGen = wC.slots[1], prevT = JSON.parse(await idbDump(page, C2.world_id)).s.find((x) => x.gen === prevGen).header.t_sim;
-  await idbEdit(page, C2.world_id, (w, snaps) => { const s0 = snaps.find((x) => x.gen === w.slots[0]); s0.payload_json = s0.payload_json.replace('"x":', '"x" :'); return { snaps: [s0] }; });
+  await idbEdit(page, C2.world_id, (w, snaps) => { const s0 = snaps.find((x) => x.gen === w.slots[0]); s0.payload_json = s0.payload_json.replace('"seed":', '"seed" :'); return { snaps: [s0] }; });
   await page.click('#mLoad'); await page.waitForTimeout(300);
   await page.click(`[data-act=load][data-id="${C2.world_id}"]`); await page.waitForFunction(() => window.__v62.active() && !document.querySelector('#notice').hidden);
   s = await S(page);
