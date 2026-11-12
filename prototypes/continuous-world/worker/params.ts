@@ -12,7 +12,9 @@
  *  environments; last digits differ from /1, which used Math.* trigonometry). Snapshots of /1 are refused (ENGINE_MISMATCH). */
 export const ENGINE_VERSION = 'experiment-world-runtime/2';
 export const SNAPSHOT_SCHEMA = 'antempire.experiment-world-snapshot.v1';
-export const SCHEMA_VERSION = 1;
+/** payload schema 2 (Owner ruling #200): payload.save_meta + payload.chain (event-chain commitment). Snapshots of
+ *  schema 1 are refused (no chain; kept unchanged). docs/save-format-v2.md. */
+export const SCHEMA_VERSION = 2;
 export const LABEL_ZH = '非正式實驗世界／不屬於正式遊戲歷史';
 
 export interface Labelled { assumption: true; basis: '遊戲假設' | '一般方法'; note: string }

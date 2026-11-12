@@ -37,7 +37,7 @@ Worker runtime 與儲存模組共用此信封，欄位不得增減（新增欄�
 | `seed` | 整數 0～2³²−1 | 世界種子（新種子或使用者指定；Worker runtime 只接受此範圍的整數，使用者輸入的文字種子由選單先轉成整數並顯示） |
 | `rules_fingerprint` | 字串 | 引擎＋參數指紋；不同指紋表示規則不同，不能接續 |
 | `engine_version` | 字串 | Worker runtime 版本 |
-| `schema_version` | 正整數 | **payload** 結構版本（目前 1）；遷移以此為準 |
+| `schema_version` | 正整數 | **payload** 結構版本（目前 2，含事件鏈承諾；見 [`save-format-v2.md`](save-format-v2.md)）；遷移以此為準 |
 | `t_sim` | 非負數 | 模擬時間：實驗 Day0 00:00 起算的**秒數**（與 Worker runtime 事件的 `t_sim` 相同；畫面顯示第 ⌊t/86400⌋ 日與當日時刻） |
 | `seq` | 非負整數 | Worker 事件序號；快照位於第 `seq` 個事件提交之後 |
 | `payload` | JSON 物件 | 世界完整狀態（§3），對儲存模組不透明 |
@@ -208,3 +208,12 @@ SAVE-1 只用**合成 payload**（Worker runtime 尚未合併），不得宣稱�
 Node 端：`tests/save2-session.test.ts`（阻擋性）—標準 JSON 往返後還原與連續世界逐位元相同（4 個切點）、每拍取快照不改結果、清單個體數取自快照且不捏造蟻后、種子轉換（與 node:crypto 交叉驗證）、匯入大小限制、副本驗證、手動存檔不被清理、選單不用 `confirm()`、名稱經過跳脫、不執行匯入內容。
 
 **不能誠實做到的**：手機作業系統在背景直接終止頁面無法在此環境重現；B 用桌面 Chromium 的 SIGKILL 代替。Pixel 7 是模擬視窗與觸控，不是實機。存檔大小與耗時是無頭 Chromium 在測試機上的數字。
+
+## SAVE-O：存檔格式 v2、事件鏈承諾與 Node 驗證（Owner 裁示 #200）
+
+詳見 [`save-format-v2.md`](save-format-v2.md)。摘要：
+
+- payload 結構升為 2：新增 `save_meta`（世界種類、受信任的初始條件與種子、物種與環境的版本與指紋、fork 紀錄）與 `chain`（`antempire.event-chain.v1` 事件鏈承諾：head＋count）。信封與匯出容器不變。結構 1 的存檔無法接續（沒有事件鏈），原檔保留、可匯出。
+- `cli/verify-save.ts`（`npm run verify:save`）以同一核心由受信任的初始條件重算，比對事件鏈與狀態雜湊；只讀不寫。
+- 三種狀態：「本機可玩」「完整性檢查通過」（瀏覽器）、「Node 已重算驗證」（只由驗證器）；瀏覽器目前一律顯示「未經 Node 驗證」。
+- 原子提交：§5 的先驗證再提升＋回復點等同雙槽；寫入交易改為 `durability: 'strict'`。

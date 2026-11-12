@@ -29,6 +29,7 @@ ok(p0Allowed.length > 0 && p0Allowed.every((p) => /^prototypes\/p0a2-24h\/[a-z0-
 ok(B.denied_import_prefixes.includes(`${P0}tools/`) && B.denied_import_prefixes.includes(`${P0}out/`), 'P0-A2 tools/ and out/ are denied');
 ok((B.pure_module_prefixes ?? []).includes('engine/') && (B.pure_module_prefixes ?? []).includes(P0), 'engine/ and the P0-A2 core are held to the purity rules');
 ok(/Owner/.test(B.how_to_extend as string) && /2026-11-12/.test(B.how_to_extend as string), 'how_to_extend records the Owner authorisation that replaces the Codex fixed-SHA step');
+ok(B.node_verifier !== undefined && JSON.stringify(B.node_verifier.files) === '["cli/verify-save.ts"]' && ['writeFile', 'child_process', 'fetch('].every((x) => B.node_verifier!.forbidden_in_files.includes(x)), 'Node verifier exception (#200): exactly cli/verify-save.ts, read-only');
 ok(B.experimental_save_store.files.every((f) => f.startsWith('web/src/experimental/')) && B.experimental_save_store.database_name_prefix === 'antempire-experiment-', 'save store is confined to web/src/experimental and experiment-prefixed databases');
 
 // 1. specifier extraction catches every import form.
@@ -48,7 +49,7 @@ const base = (): Map<string, string> => new Map([
   ['web/src/game.ts', "import { start } from './experimental/worker-client.ts';"],
   ['cli/advance.ts', "export const advance = 1;"],
 ]);
-const clean = checkBoundary(base(), B);
+const clean = checkBoundary(new Map([...base(), ['cli/verify-save.ts', "import fs from 'node:fs';\nimport { step } from '../prototypes/continuous-world/worker/core.ts';\nconst t = fs.readFileSync(process.argv[2], 'utf8');"]]), B);
 ok(clean.violations.length === 0, `clean fixture passes (${JSON.stringify(clean.violations)})`);
 ok(clean.reached.includes('engine/rng.ts') && clean.reached.includes('engine/scheduler/world-events.ts'), 'transitive graph reaches the allowlisted engine modules');
 const cases: [string, (m: Map<string, string>) => void, string][] = [
@@ -78,6 +79,11 @@ const cases: [string, (m: Map<string, string>) => void, string][] = [
   ['Math.random in engine module', (m) => m.set('engine/rng.ts', 'export const makeRng = () => Math.random();'), 'engine-impurity'],
   ['worker outside client', (m) => m.set('web/src/game.ts', "const w = new Worker('w.js');"), 'worker-outside-client'],
   ['official imports worker', (m) => m.set('cli/advance.ts', "import { step } from '../prototypes/continuous-world/worker/core.ts';"), 'official-imports-worker'],
+  ['other cli file imports worker (only the listed verifier may)', (m) => m.set('cli/check-saves.ts', "import { step } from '../prototypes/continuous-world/worker/core.ts';"), 'official-imports-worker'],
+  ['verifier writes a file', (m) => m.set('cli/verify-save.ts', "import fs from 'node:fs';\nimport { step } from '../prototypes/continuous-world/worker/core.ts';\nfs.writeFileSync('r.json', '');"), 'verifier-writes'],
+  ['verifier spawns a process', (m) => m.set('cli/verify-save.ts', "import { execFileSync } from 'node:child_process';\nimport { step } from '../prototypes/continuous-world/worker/core.ts';"), 'verifier-writes'],
+  ['verifier names official saves', (m) => m.set('cli/verify-save.ts', "import { step } from '../prototypes/continuous-world/worker/core.ts';\nconst p = 'saves/main.json';"), 'official-path-string'],
+  ['verifier imports official tooling', (m) => m.set('cli/verify-save.ts', "import { step } from '../prototypes/continuous-world/worker/core.ts';\nimport { advance } from './advance.ts';"), 'verifier-import'],
   ['web/src imports worker dir', (m) => m.set('web/src/game.ts', "import { step } from '../../prototypes/continuous-world/worker/core.ts';"), 'official-imports-worker'],
   ['IndexedDB outside the save store', (m) => m.set('web/src/game.ts', "indexedDB.open('antempire-experiment-x');"), 'storage-outside-store'],
   ['Web Locks outside the save store', (m) => m.set('web/src/game.ts', "navigator.locks.request('w', () => 1);"), 'storage-outside-store'],

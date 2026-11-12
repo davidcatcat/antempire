@@ -22,6 +22,8 @@ import {
 export const DB_NAME = 'antempire-experiment-worlds';
 const DB_VERSION = 1;
 const W = 'worlds', S = 'snapshots';
+/** durability of the save transactions (see commit()); IDBTransactionOptions, ignored where unsupported */
+const STRICT: IDBTransactionOptions = { durability: 'strict' };
 
 // ---------- IndexedDB plumbing ----------
 
@@ -183,9 +185,11 @@ export class ExperimentSaveStore {
     const key = lock.world_id;
     const header = headerOf(env); let gen = 0; const t1 = ms(); let tx: IDBTransaction | undefined;
     const abandon = () => { try { tx?.abort(); } catch { /* already finished */ } };
-    // 1. write pending (allocate a generation; the latest pointer is untouched)
+    // 1. write pending (allocate a generation; the latest pointer is untouched). Both writing transactions ask for
+    //    durability 'strict' (#200: complete only after the data reached durable storage where the browser supports
+    //    it; an unsupported option is ignored and the browser default applies).
     try {
-      tx = this.db.transaction([W, S], 'readwrite'); const ws = tx.objectStore(W);
+      tx = this.db.transaction([W, S], 'readwrite', STRICT); const ws = tx.objectStore(W);
       const w = await req(ws.get(key) as IDBRequest<WorldRecord | undefined>);
       if (!w) { tx.abort(); return errR('unknown_world', `world ${key} does not exist`); }
       if (simIdOf(w) !== env.world_id) { tx.abort(); return errR('not_writer', `snapshot of world ${env.world_id} cannot be saved into ${key}`); }
@@ -208,7 +212,7 @@ export class ExperimentSaveStore {
     // 3. promote: optimistic pointer check, move pointer, mark verified, sweep
     try {
       if (!lock.held) return errR('not_writer', 'writer lock lost before promote; the previous snapshot stays the latest');
-      tx = this.db.transaction([W, S], 'readwrite'); const ws = tx.objectStore(W), ss = tx.objectStore(S);
+      tx = this.db.transaction([W, S], 'readwrite', STRICT); const ws = tx.objectStore(W), ss = tx.objectStore(S);
       const w = await req(ws.get(key) as IDBRequest<WorldRecord | undefined>);
       if (!w) { tx.abort(); return errR('unknown_world', 'world deleted during save'); }
       const head = w.slots[0] ?? null;
@@ -248,7 +252,7 @@ export class ExperimentSaveStore {
       const env = { ...rec!.header, payload: JSON.parse(rec!.payload_json) } as SnapshotEnvelope;
       const compat = compatibility(env, rt, this.migrations);
       if (compat === 'unknown_schema' || compat === 'newer_schema' || compat === 'rules_mismatch') return errR(compat, `generation ${gen}: ${compat} (saved: rules ${env.rules_fingerprint.slice(0, 12)}…, engine ${env.engine_version}, schema v${env.schema_version}; this runtime: rules ${rt.rules_fingerprint.slice(0, 12)}…, engine ${rt.engine_version}, schema v${rt.schema_version}); the save is kept unchanged and can still be exported`);
-      if (compat === 'no_migration_path') return errR('migration_failed', `generation ${gen}: no migration from schema v${env.schema_version}`);
+      if (compat === 'no_migration_path') return errR('migration_failed', `generation ${gen}: no migration from payload schema v${env.schema_version} to v${rt.schema_version}${env.schema_version === 1 ? ' (schema v1 has no event-chain commitment)' : ''}; the save is kept unchanged and can still be exported`);
       let out = env, migrated_from: number | null = null;
       if (compat === 'migratable') {
         const m = await this.migrations.migrate(env);

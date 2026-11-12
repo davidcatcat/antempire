@@ -5,7 +5,7 @@
  * The menu never runs or changes a world; it calls the session (Worker + store) and the page's enter/leave hooks.
  */
 import { ExperimentSaveStore, type WorldListing } from './experimental/save-store.ts';
-import { MAX_IMPORT_BYTES, simDayTime } from './experimental/save-format.ts';
+import { MAX_IMPORT_BYTES, simDayTime, verificationOf } from './experimental/save-format.ts';
 import type { ExperimentSession } from './experimental/session.ts';
 import type { RuntimeInfo } from './experimental/save-format.ts';
 import type { WorldKind } from './experimental/worker-protocol.ts';
@@ -16,9 +16,12 @@ const kb = (n: number) => n >= 1048576 ? `${(n / 1048576).toFixed(2)} MB` : `${(
 const simTime = (t: number | null) => { const d = simDayTime(t); return d ? `實驗第 ${d.day} 天 ${d.clock}` : '—'; };
 const COMPAT: Record<string, string> = { compatible: '相容', migratable: '可遷移（舊版結構）', no_snapshot: '沒有已驗證的存檔', newer_schema: '存檔來自較新版本，無法讀取', unknown_schema: '未知格式，無法讀取', rules_mismatch: '規則不同，無法繼續', no_migration_path: '沒有遷移路徑，無法讀取' };
 export const loadable = (w: WorldListing) => w.compat === 'compatible' || w.compat === 'migratable';
-function versionDiff(w: WorldListing, rt: { rules_fingerprint: string; engine_version: string }) {
-  return `存檔：規則指紋 ${esc(w.rules_fingerprint.slice(0, 12))}…、引擎 ${esc(w.engine_version)}、結構 v${w.schema_version}；目前：規則指紋 ${esc(rt.rules_fingerprint.slice(0, 12))}…、引擎 ${esc(rt.engine_version)}`;
+function versionDiff(w: WorldListing, rt: { rules_fingerprint: string; engine_version: string; schema_version?: number }) {
+  const old = w.compat === 'no_migration_path' && w.schema_version === 1 ? '（v1 存檔沒有事件鏈承諾，無法遷移）' : '';
+  return `存檔：規則指紋 ${esc(w.rules_fingerprint.slice(0, 12))}…、引擎 ${esc(w.engine_version)}、結構 v${w.schema_version}；目前：規則指紋 ${esc(rt.rules_fingerprint.slice(0, 12))}…、引擎 ${esc(rt.engine_version)}${rt.schema_version !== undefined ? `、結構 v${rt.schema_version}` : ''}${old}`;
 }
+/** Owner ruling #200: the list never re-hashes, so a loadable save is only 「本機可玩」; never 「Node 已重算驗證」 here. */
+const verification = (w: WorldListing) => `<span class="vstatus" data-verification="${esc(verificationOf({ loadable: loadable(w), integrity_checked: false }).level ?? 'none')}">${esc(verificationOf({ loadable: loadable(w), integrity_checked: false }).text)}</span>`;
 function individuals(w: WorldListing) {
   const s = w.summary ?? {};
   if (s.workers !== null && s.workers !== undefined) return `工蟻 ${s.workers}${s.larvae !== null && s.larvae !== undefined ? `、幼蟲 ${s.larvae}` : ''}（${esc(s.note ?? '')}）`;
@@ -92,13 +95,13 @@ export class Menu {
   private newForm() {
     return `<h3>開始新遊戲</h3><div class="mrow"><label>世界名稱 <input id="nName" maxlength="200" placeholder="（可留空）"></label><br><label>種子 <input id="nSeed" placeholder="留空＝隨機；整數 0～4294967295 或任意文字"></label><br><label>世界 <select id="nWorld" aria-label="世界種類"><option value="p0a2" selected>P0-A2 24 小時個體行為世界（候選／實驗世界，非正式）</option><option value="synthetic">合成測試世界（不是螞蟻科學模型）</option></select></label><br><span class="muted">新世界 ID 以 exp- 開頭、永不覆寫其他世界；從實驗 Day0（第 0 天 00:00）開始，建立後立即存入初始快照。P0-A2 世界：30 隻小工蟻、8 隻幼蟲、一個情境蜜露源、合成天氣；<b>不是正式 Day0</b>（Owner #201：未經 Owner 核准不建立正式 Day0）。文字種子以 SHA-256 前 4 位元組轉成整數並顯示。</span><br><button type="button" class="primary" data-act="create">建立並開始</button></div>`;
   }
-  private row(w: WorldListing, rt: { rules_fingerprint: string; engine_version: string }) {
+  private row(w: WorldListing, rt: { rules_fingerprint: string; engine_version: string; schema_version?: number }) {
     const id = esc(w.world_id), ok = loadable(w);
     const prov = w.provenance ? `<br><span class="muted">副本：來源世界 ${esc(w.provenance.source_world_id)}（${esc(w.provenance.source_name)}）、來源快照 SHA-256 ${esc(w.provenance.source_payload_sha256.slice(0, 12))}…、匯入於 ${when(w.provenance.imported_at)}；${esc(w.provenance.verification)}</span>` : '';
     const ver = w.compat === 'rules_mismatch' || w.compat === 'newer_schema' || w.compat === 'unknown_schema' || w.compat === 'no_migration_path' ? `<br><span class="warn">${COMPAT[w.compat]}：${versionDiff(w, rt)}。存檔保持原樣，可以匯出備份。</span>` : '';
     const last = w.last_save ? `｜上次存檔大小 ${kb(w.last_save.bytes)}、耗時 ${w.last_save.ms} ms` : '';
     const manual = w.manual.length ? `<br>手動存檔（不被自動存檔輪替）：${w.manual.slice().reverse().map((m) => `<button type="button" data-act="loadgen" data-id="${id}" data-gen="${m.gen}"${ok ? '' : ' disabled'}>${esc(simTime(m.t_sim))}</button>`).join(' ')}` : '';
-    const head = `<b>${esc(w.name)}</b> <span class="flag">非正式</span><br><span class="muted">${id}${w.sim_world_id !== w.world_id ? `（快照內世界 ${esc(w.sim_world_id)}）` : ''}｜種子 ${w.seed}｜${simTime(w.t_sim)}｜上次儲存 ${when(w.last_saved_at)}${last}｜${individuals(w)}｜回復點 ${w.verified_snapshots}${w.quarantined ? `、隔離 ${w.quarantined}` : ''}｜${COMPAT[w.compat] ?? w.compat}</span>${prov}${ver}`;
+    const head = `<b>${esc(w.name)}</b> <span class="flag">非正式</span><br><span class="muted">${id}${w.sim_world_id !== w.world_id ? `（快照內世界 ${esc(w.sim_world_id)}）` : ''}｜種子 ${w.seed}｜${simTime(w.t_sim)}｜上次儲存 ${when(w.last_saved_at)}${last}｜${individuals(w)}｜回復點 ${w.verified_snapshots}${w.quarantined ? `、隔離 ${w.quarantined}` : ''}｜${COMPAT[w.compat] ?? w.compat}｜${verification(w)}</span>${prov}${ver}`;
     if (this.view === 'load') return `<div class="mrow" data-world="${id}">${head}<br><button type="button" class="primary" data-act="load" data-id="${id}"${ok ? '' : ' disabled'}>讀取最新存檔</button>${manual}</div>`;
     const del = this.pendingDelete?.world_id === w.world_id
       ? `<span class="warn">確定刪除「${esc(w.name)}」與它的全部存檔？此動作無法復原。</span> <button type="button" class="danger" data-act="delete2" data-id="${id}">確定刪除</button> <button type="button" data-act="delcancel">取消</button>`
