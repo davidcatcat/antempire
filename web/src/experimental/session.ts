@@ -102,10 +102,12 @@ export class ExperimentSession {
   markDirty() { this.autosave?.markDirty(); }
   /** Save one snapshot taken at the Worker's event boundary. Read-only tabs never write. */
   private async saveNow(reason: SaveReason): Promise<Result<unknown>> {
-    if (!this.current || !this.lock || !this.current.writer) return errR('not_writer', this.current?.readOnlyReason ?? '沒有開啟的世界');
+    // capture the lock before any await: leave() may clear this.lock while the snapshot is being taken
+    const lock = this.lock;
+    if (!this.current || !lock || !this.current.writer) return errR('not_writer', this.current?.readOnlyReason ?? '沒有開啟的世界');
     const snap = await this.client.snapshot();
     if (snap.type !== 'snapshot') return errR('invalid_snapshot', snap.type === 'error' ? `${snap.code}: ${snap.message}` : 'no snapshot');
-    const r = await this.store.saveSnapshot(this.lock, snap.snapshot, summaryOf(snap.snapshot), reason === 'manual' ? 'manual' : 'auto');
+    const r = await this.store.saveSnapshot(lock, snap.snapshot, summaryOf(snap.snapshot), reason === 'manual' ? 'manual' : 'auto');
     if (r.ok) this.lastReceipt = r.value;
     return r;
   }
@@ -117,6 +119,8 @@ export class ExperimentSession {
     let r: Result<unknown> | null = null;
     const p = await this.client.pause(); void p; // NOT_RUNNING is fine
     if (save && this.current.writer) r = await (this.autosave?.request('menu') ?? Promise.resolve(null));
+    // never release the writer lock while a save (in flight or queued) can still write with it
+    await this.autosave?.settled();
     this.lock?.release(); this.lock = null; this.current = null; this.autosave = null;
     return r;
   }

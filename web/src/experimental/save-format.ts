@@ -270,6 +270,7 @@ const STATUS_TEXT: Record<SaveStatus, string> = { idle: '尚未儲存', saving: 
  */
 export class AutosaveController {
   private dirty = false; private inFlight: Promise<Result<unknown>> | null = null; private pending: SaveReason | null = null;
+  private waiters: ((r: Result<unknown>) => void)[] = [];
   private lastAttemptMs: number; state: SaveUiState = { status: 'idle', text: STATUS_TEXT.idle, last_success_ms: null, last_error: null, reason: null };
   readonly intervalMs: number; private readonly now: () => number; private readonly save: (r: SaveReason) => Promise<Result<unknown>>; private readonly onState: (s: SaveUiState) => void;
   constructor(o: { intervalMs?: number; now: () => number; save: (r: SaveReason) => Promise<Result<unknown>>; onState?: (s: SaveUiState) => void }) {
@@ -283,8 +284,25 @@ export class AutosaveController {
   request(reason: SaveReason): Promise<Result<unknown>> | null {
     const optional = reason === 'interval' || reason === 'hidden' || reason === 'pagehide';
     if (optional && !this.dirty) return null;
-    if (this.inFlight) { if (!this.pending || !optional) this.pending = reason; return this.inFlight; }
+    if (this.inFlight) {
+      if (!this.pending || !optional) this.pending = reason;
+      if (optional) return this.inFlight;
+      // A non-optional request (menu, manual, pause, ...) made while another save is in flight must resolve with the
+      // result of the follow-up save that covers it, not the older in-flight save: otherwise a caller such as
+      // session.leave() would report the world as saved and release the lock before the covering save ran.
+      return new Promise((res) => { this.waiters.push(res); });
+    }
     return this.run(reason);
+  }
+  /** Resolves once no save is in flight and none is queued (the last result, or null when nothing ran). */
+  async settled(): Promise<Result<unknown> | null> {
+    let last: Result<unknown> | null = null;
+    while (this.inFlight) {
+      last = await this.inFlight;
+      // the follow-up save (if any) starts inside the resolved promise's handler; give it a turn to register
+      await Promise.resolve();
+    }
+    return last;
   }
   private run(reason: SaveReason): Promise<Result<unknown>> {
     this.lastAttemptMs = this.now(); const wasDirty = this.dirty; this.dirty = false;
@@ -293,8 +311,10 @@ export class AutosaveController {
       this.inFlight = null;
       if (r.ok) this.set({ status: 'saved', last_success_ms: this.now(), last_error: null });
       else { this.dirty = this.dirty || wasDirty; this.set({ status: 'failed', last_error: `${r.code}: ${r.message}` }); }
-      const next = this.pending; this.pending = null;
-      if (next) void this.request(next);
+      const next = this.pending, waiters = this.waiters; this.pending = null; this.waiters = [];
+      const follow = next ? this.request(next) : null;
+      if (follow) void follow.then((fr) => { for (const w of waiters) w(fr); });
+      else for (const w of waiters) w(r);
       return r;
     });
     this.inFlight = p; return p;
