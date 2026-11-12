@@ -293,14 +293,12 @@ function jumpToNextActivity() {
   toast(`下一段活動：引擎紀錄的行走${gap > 1e-9 ? `在 ${Math.round(gap * 60)} 秒後` : '在此刻'}開始（${r.walksStarting} 段）${step}；${skipped}${cut}`, now, '跳轉（非連續播放）', 3200);
   showJumpHintOnce();
 }
-// Q1 (Issue #191): the first explicit jump in this browser shows how the three landing steps work (inline hint; the
-// button tooltip says the same). Remembered per viewer in localStorage (a convenience only; failures are ignored).
-const HINT_KEY = 'antempire.v6.jumpHintSeen';
-let hintTimer = 0;
+// Q1 (Issue #191): the first explicit jump of this page view shows how the three landing steps work (inline hint; the
+// button tooltip says the same). Kept in memory only: the game view writes no browser storage.
+let hintTimer = 0, hintShown = false;
 function showJumpHintOnce() {
-  let seen = false; try { seen = localStorage.getItem(HINT_KEY) === '1'; } catch { /* storage unavailable: show it */ }
-  if (seen || !$('jumpHint').hidden) return;
-  try { localStorage.setItem(HINT_KEY, '1'); } catch { /* ignore */ }
+  if (hintShown) return;
+  hintShown = true;
   $('jumpHintText').textContent = JUMP_HINT; $('jumpHint').hidden = false;
   clearTimeout(hintTimer); hintTimer = window.setTimeout(() => { $('jumpHint').hidden = true; }, 15000);
 }
