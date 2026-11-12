@@ -1,0 +1,19 @@
+{
+  "name": "antempire-rapier-pixi-witness",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "verify": "node scripts/benchmark.mjs",
+    "dev": "npm run verify && vite --host 0.0.0.0",
+    "build": "npm run verify && vite build",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@dimforge/rapier2d-deterministic-compat": "0.21.0",
+    "pixi.js": "8.22.0"
+  },
+  "devDependencies": {
+    "vite": "8.3.6"
+  }
+}
