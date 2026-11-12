@@ -2,10 +2,11 @@
  * V6 art scene screenshots (game view, read-only replay): opening view, analysis layers on, follow — desktop 1280x800
  * and Pixel 7. Usage: npm run web:build && node cli/web-serve.ts 8781 &  node reports/viewer-v6-art/shoot.cjs http://localhost:8781/
  */
-const path = require('node:path');
+const path = require('node:path'), fs = require('node:fs');
 const { chromium, devices } = require('playwright');
 (async () => {
   const base = process.argv[2] || 'http://localhost:8781/', out = path.join(__dirname, 'screenshots'), errors = [];
+  fs.mkdirSync(out, { recursive: true }); // git-ignored output folder: screenshots are generated, not committed
   const browser = await chromium.launch();
   for (const [tag, opt] of [['desktop', { viewport: { width: 1280, height: 800 } }], ['pixel7', { ...devices['Pixel 7'] }]]) {
     const ctx = await browser.newContext(opt), page = await ctx.newPage();

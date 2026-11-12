@@ -1,0 +1,81 @@
+{
+  "schema": "antempire.worker-boundary.v1",
+  "decision": "Owner decision #39 (2026-11-08): limited CLAUDE.md §9 exception for the non-official experiment Worker (P0-A2 phase 3, #156); Owner SAVE requirement (2026-11-08): minimal exception for local IndexedDB saves of non-official experiment worlds",
+  "mode": "non_official_experiment_only",
+  "label_zh": "非正式實驗世界／不屬於正式遊戲歷史",
+  "worker_entry_dir": "prototypes/continuous-world/worker",
+  "worker_client_files": [
+    "web/src/experimental/worker-client.ts"
+  ],
+  "experimental_save_store": {
+    "files": [
+      "web/src/experimental/save-store.ts"
+    ],
+    "allowed_apis": [
+      "indexedDB",
+      "navigator.storage.persist",
+      "navigator.storage.estimate",
+      "navigator.storage.persisted",
+      "navigator.locks"
+    ],
+    "database_name_prefix": "antempire-experiment-",
+    "rule": "Only these files may touch IndexedDB / StorageManager / Web Locks, only for databases whose name starts with the prefix, and only to store non-official experiment-world snapshots received from the Worker. They import only ./ viewer modules, never fetch or write anything else, and never touch saves/ or journal/."
+  },
+  "allowed_import_prefixes": [
+    "prototypes/continuous-world/worker/",
+    "engine/clock/",
+    "engine/scheduler/",
+    "engine/rng.ts",
+    "engine/sha256.ts"
+  ],
+  "denied_import_prefixes": [
+    "cli/",
+    "saves/",
+    "journal/",
+    "tests/",
+    "web/",
+    "sim/",
+    "engine/index.ts",
+    "engine/day.ts",
+    "engine/legacy.ts",
+    "engine/migration.ts"
+  ],
+  "forbidden_globals_in_worker_graph": [
+    "indexedDB",
+    "caches",
+    "localStorage",
+    "sessionStorage",
+    "fetch",
+    "XMLHttpRequest",
+    "WebSocket",
+    "EventSource",
+    "navigator",
+    "importScripts",
+    "BroadcastChannel",
+    "SharedWorker",
+    "showSaveFilePicker",
+    "showOpenFilePicker",
+    "showDirectoryPicker",
+    "FileSystemHandle",
+    "FileReaderSync",
+    "require",
+    "process",
+    "Buffer"
+  ],
+  "forbidden_in_engine_modules": [
+    "Math.random",
+    "Date.now",
+    "new Date(",
+    "performance.",
+    "requestAnimationFrame",
+    "setTimeout",
+    "setInterval"
+  ],
+  "forbidden_path_strings_in_worker_graph": [
+    "saves/",
+    "journal/",
+    "commit-log",
+    ".advance-tmp"
+  ],
+  "how_to_extend": "Adding an allowed prefix (e.g. a new pure P0-A2 module) is a rules change: edit this file in its own PR, list the module's purity checks, and pass Codex fixed-SHA review before the Worker may import it."
+}

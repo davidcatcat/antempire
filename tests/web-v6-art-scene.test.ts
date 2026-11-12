@@ -6,7 +6,8 @@
  *  2. game.ts imports only viewer modules, uses the renderer, the fixed schematic light, no ω, no rain streaks, no
  *     unseeded randomness, creates no events;
  *  3. index.html: analysis aids are optional layers, all off by default; the data panel, analysis link and labels
- *     (顯示插值 / 示意 / 放大顯示) are present; ant size and the opening field derive from the screen.
+ *     (顯示插值 / 示意 / 放大顯示) are present; ant size and the opening field derive from the screen; the About text marks
+ *     the uncited antenna segment count 待核對; screenshots are generated, git-ignored, not committed.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -42,4 +43,7 @@ const html = fs.readFileSync(path.join(REPO_ROOT, 'web', 'index.html'), 'utf8');
 for (const id of ['layerEngine', 'layerLabels', 'layerRoutes', 'layerIds', 'layerChips']) ok(new RegExp(`id="${id}"(?![^>]*checked)`).test(html), `layer ${id} exists and is off by default`);
 ok(/<div id="layers" hidden>/.test(html) && /<div id="weather" class="chip" hidden>/.test(html) && /<div id="counts" class="chip" hidden>/.test(html), 'analysis panels do not cover the scene by default');
 ok(/id="infoBtn"/.test(html) && /href="analysis\.html"/.test(html) && /顯示插值/.test(html) && /示意/.test(html) && /放大顯示/.test(html), 'data panel, analysis link and data-class labels present');
+ok(!/12 節膝狀觸角含 3 節棍棒、/.test(game) && /12 節膝狀[^。]{0,80}待核對/.test(game), 'About text does not state the uncited 12-segment / 3-club antenna as species fact; it is marked 待核對');
+const v6shoot = fs.readFileSync(path.join(REPO_ROOT, 'reports', 'viewer-v6-art', 'shoot.cjs'), 'utf8');
+ok(/^reports\/viewer-v6-art\/screenshots\/$/m.test(fs.readFileSync(path.join(REPO_ROOT, '.gitignore'), 'utf8')) && /mkdirSync\(out/.test(v6shoot), 'art-scene screenshots are generated into the git-ignored reports/viewer-v6-art/screenshots/, not committed');
 console.log(JSON.stringify({ test: 'web-v6-art-scene', passed: true, checks }));

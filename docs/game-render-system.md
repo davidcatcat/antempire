@@ -9,7 +9,7 @@
 |---|---|
 | `web/src/render-scene.ts`（純函式，Node 可測） | 11 層順序 `LAYERS`；仿射相機 `worldToScreen`／`screenToWorld`；引擎物件登錄 `engineRegistry`；紀錄路段 `recordedRoutes`；每 10 cm 格的示意裝飾 `decorCell`（避開地點與路段）；螞蟻規劃 `planAnts`；當日天氣狀態 `weatherState`；畫質階梯 `QUALITY`／`nextQuality` |
 | `web/src/render-canvas.ts`（瀏覽器） | `LayeredRenderer`：分塊烘焙地面、引擎物件精靈、螞蟻圖集、光線疊層、畫質自動調整 |
-| `prototypes/render-harness/` | 獨立測試頁＋Playwright 量測（`npm run render:bench`），`results.json`、`screenshots/` |
+| `prototypes/render-harness/` | 獨立測試頁＋Playwright 量測（`npm run render:bench`）：寫出 `results.json`（已提交的快照，見 §4 的過期說明）與 `screenshots/`（在 `.gitignore` 中，**不提交**；本機產生或作為 CI artifact） |
 
 ## 2. 圖層（每幀依序）
 
@@ -35,6 +35,8 @@
 - **引擎物件登錄**：只列有紀錄座標的引擎地點與其引擎狀態（群數、寄主存活）；蚜蟲或介殼蟲目前由地點名稱判斷（待 Owner 決定）。
 
 ## 4. 效能（Playwright＋headless Chromium，軟體繪圖，暖機 6 秒後量 6 秒；非實機）
+
+> **快照已過期**：下表與已提交的 `prototypes/render-harness/results.json` 是本 PR 建立繪圖器時的量測快照，之後疊上的美術與繪圖器修改（例如螞蟻比例調整、後續 PR 的場景接線）**沒有重新量測**。數值隨執行機器與負載大幅波動（同一容器在負載下重跑時，4× 降速重播只有約 2 FPS），只能當當時的參考，不是目前程式的效能結論；要比較請在同一台機器上重跑 `npm run render:bench`。
 
 | 設定 | 重播（實驗世界 A1，預設視角） | 合成 100 隻 | 合成 1000 隻 |
 |---|---|---|---|

@@ -125,7 +125,7 @@
 
 ## 8. 資料分類與介面
 
-- 畫面元素依 CLAUDE.md §8 分三類並標示：引擎事件／顯示插值／示意（含示意場景、示意光源、放大顯示）。實驗世界標「非正式」。
+- 畫面元素依 CLAUDE.md §8 分三類並標示：引擎事件／顯示插值／示範資料（mock 頁、壓力測試與預覽中的合成位置、路線、數量、ω 與太陽位置一律標「示範」）；畫法本身的不確定（示意場景、示意光源、示意外形、放大顯示、方位＋約距離的示意座標）標「示意」。實驗世界標「非正式」。
 - 科學分析介面（現行 `analysis.html`）在 PR C 改為可切換的面板，**切換時不打斷主遊戲畫面**的播放與鏡頭。
 
 ## 9. 資產清單（PR A）
@@ -138,7 +138,7 @@
 | `web/src/art-props.ts` | 巢口、寄主植物（活／死、蚜蟲／介殼蟲簇）、蚜蟲、介殼蟲、花、昆蟲屍體／碎片 |
 | `web/src/art-fx.ts` | 暗角、光源洗色、light grade、陰天、濕地、水漬、陰影章、雨滴／水花（未接線） |
 | `web/src/art-raster.ts` | 瀏覽器端點陣化、螞蟻圖集烘焙與繪製 |
-| `prototypes/art-preview/` | 預覽頁與截圖（`npx tsc -p prototypes/art-preview/tsconfig.json && node prototypes/art-preview/shoot.cjs`） |
+| `prototypes/art-preview/` | 預覽頁；截圖由 `npm run art:preview`（`shoot.cjs`）產生到 `prototypes/art-preview/screenshots/`，該目錄在 `.gitignore` 中，**不提交**（本機產生或作為 CI artifact） |
 
 全部是純函式、以種子決定（不使用無種子亂數）、只匯入 `./` 模組；`tests/game-art-assets.test.ts` 驗證。授權見 `docs/licensing.md` §5。生成成本（Node）：512 px 土壤磚約 90 ms；68 幀螞蟻向量約 55 ms。
 

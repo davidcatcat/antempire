@@ -6,6 +6,7 @@
 const http = require('node:http'), fs = require('node:fs'), path = require('node:path');
 const { chromium, devices } = require('playwright');
 const ROOT = __dirname, OUT = path.join(ROOT, 'screenshots'), TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css' };
+fs.mkdirSync(OUT, { recursive: true }); // git-ignored output folder: screenshots are generated, not committed
 const server = http.createServer((req, res) => {
   const f = path.normalize(path.join(ROOT, decodeURIComponent(req.url.split('?')[0]) === '/' ? 'index.html' : decodeURIComponent(req.url.split('?')[0])));
   if (!f.startsWith(ROOT) || !fs.existsSync(f) || !fs.statSync(f).isFile()) { res.writeHead(404); res.end(); return; }

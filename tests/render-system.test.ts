@@ -134,6 +134,7 @@ const game = fs.readFileSync(path.join(SRC, 'game.ts'), 'utf8');
 ok(/from '\.\/render-canvas\.ts'/.test(game) && /R\.frame\(/.test(game) && !/omega/.test(game), 'the game view draws through the renderer and supplies no ω (replay: walk / idle only)');
 const H = path.join(REPO_ROOT, 'prototypes', 'render-harness');
 ok(fs.existsSync(path.join(H, 'harness.ts')) && fs.existsSync(path.join(H, 'bench.cjs')), 'standalone harness exists');
+ok(/^prototypes\/render-harness\/screenshots\/$/m.test(fs.readFileSync(path.join(REPO_ROOT, '.gitignore'), 'utf8')) && /mkdirSync\(OUT/.test(fs.readFileSync(path.join(H, 'bench.cjs'), 'utf8')), 'bench screenshots are generated into the git-ignored screenshots/ folder, not committed');
 const res = JSON.parse(fs.readFileSync(path.join(H, 'results.json'), 'utf8'));
 ok(['desktop', 'pixel7', 'pixel7-cpu4x'].every((p) => ['replay', 'stress100', 'stress1000'].every((m) => res.rows.some((r: { profile: string; mode: string; fps_mean: number }) => r.profile === p && r.mode === m && r.fps_mean > 0))), 'measured results for 3 profiles × 3 modes are committed');
 ok(Array.isArray(res.seams) && res.seams.length >= 4 && res.seams.every((x: { max_seam_ratio: number; ordinary_column_p99_ratio: number; periodic_amp: number; seams: number }) => x.seams > 0 && x.max_seam_ratio <= 1.6 && x.max_seam_ratio <= x.ordinary_column_p99_ratio + 0.2 && x.periodic_amp <= 0.04), 'browser seam check: chunk boundaries are no steeper than ordinary columns and no visible periodic repeat');
