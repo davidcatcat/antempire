@@ -25,6 +25,8 @@ const { chromium, devices } = require('playwright');
     const ctx = await browser.newContext(opt), page = await ctx.newPage(), touch = tag === 'android';
     page.on('pageerror', (e) => errors.push(`${tag}: ${e}`)); page.on('console', (m) => { if (m.type() === 'error') errors.push(`${tag}: ${m.text()}`); });
     const shot = async (n) => { const f = path.join(out, `${tag}-game-${n}.png`); await page.screenshot({ path: f }); shots.push(path.basename(f)); };
+    // Issue #191 Q5: on narrow screens (Pixel 7, 412 px) panorama / skip / info / analysis live in the 「更多」 panel
+    const more = async () => { if (await page.evaluate(() => window.__game.more().narrow && !window.__game.more().open)) await page.click('#moreBtn'); };
     await page.goto(base);
     await page.waitForFunction(() => window.__game && window.__game.ants().length > 0, null, { timeout: 20000 });
     check(await page.$('#scene') !== null && await page.$('#mode') === null, `${tag}: the start page is the game view (garden canvas), not the analysis view`);
@@ -80,30 +82,30 @@ const { chromium, devices } = require('playwright');
     await page.mouse.move(300, 400); await page.mouse.down(); await page.mouse.move(200, 330, { steps: 5 }); await page.mouse.up();
     const s2c = (await page.evaluate(() => window.__game.state())).cam;
     check(Math.abs(s2c.x - s1c.x) > 0.1 && Math.abs(s2c.y - s1c.y) > 0.1, `${tag}: drag pans the camera`);
-    await page.click('#fit'); await page.waitForTimeout(100);
+    await more(); await page.click('#fit'); await page.waitForTimeout(100);
     // speed: 60× advances ≈ 1 simulated minute per real second (allow wide tolerance; skip off so idle time counts)
-    await page.uncheck('#skip'); await page.selectOption('#speed', '60');
+    await more(); await page.uncheck('#skip'); await page.selectOption('#speed', '60');
     const ta = (await page.evaluate(() => window.__game.state())).t; await page.waitForTimeout(1000); const tb = (await page.evaluate(() => window.__game.state())).t;
     check(tb - ta > 0.6 && tb - ta < 1.4, `${tag}: 60× advances ≈1 simulated minute per second (${(tb - ta).toFixed(2)})`);
-    await page.check('#skip'); await page.selectOption('#speed', '20');
+    await more(); await page.check('#skip'); await page.selectOption('#speed', '20');
     // the data-source panel
-    await page.click('#infoBtn'); const about = await page.textContent('#about');
+    await more(); await page.click('#infoBtn'); const about = await page.textContent('#about');
     check(['引擎紀錄', '顯示插值', '示意場景', '非正式'].every((w) => about.includes(w)), `${tag}: data panel names engine record / display interpolation / schematic scene / non-official`);
-    await shot('03-about'); await page.click('#infoBtn');
+    await shot('03-about'); await more(); await page.click('#infoBtn');
     check(await page.evaluate(() => { const e = document.querySelector('#bottom #motionTag'); return !!e && e.offsetParent !== null && e.getBoundingClientRect().height > 0 && /頭與觸角動作＝示意動畫（引擎尚未模擬）/.test(e.textContent); }), `${tag}: the persistent bottom legend says head/antenna motion is display-only animation, not simulated`);
     check(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), `${tag}: no horizontal scroll`);
     // R13-01: play to the end of the replay, then 「重新播放」 must show Day 1 with Day 1's own roster
     { const meta = await page.evaluate(() => window.__game.state());
       const last = await page.evaluate(async (s) => (await (await fetch('data/' + s.world)).json()).days.length, meta);
       await page.evaluate((n) => window.__game.gotoDay(n), last);
-      await page.uncheck('#skip'); await page.selectOption('#speed', '300');
+      await more(); await page.uncheck('#skip'); await page.selectOption('#speed', '300');
       await page.evaluate(() => { const c = document.getElementById('clock'); c.value = String(Number(c.max) - 0.02); c.dispatchEvent(new Event('input')); });
       if (!(await page.evaluate(() => window.__game.state().playing))) await page.click('#play');
       await page.waitForFunction(() => window.__game.state().ended, null, { timeout: 20000 });
       await page.click('#play'); await page.waitForTimeout(150);
       const after = await page.evaluate(async () => { const s = window.__game.state(), gm = await import('./dist/game-model.js'), exp = await (await fetch('data/' + s.world)).json(); return { day: s.day, ended: s.ended, playing: s.playing, ids: window.__game.ants().map((a) => a.id).sort(), expected: gm.rosterAtStart(exp, 1) }; });
       check(after.day === 1 && !after.ended && after.playing && JSON.stringify(after.ids) === JSON.stringify(after.expected), `${tag}: replay ended → 重新播放 shows Day 1 with Day 1's roster (${after.ids.length}/${after.expected.length} ants)`);
-      await page.check('#skip'); await page.selectOption('#speed', '20'); }
+      await more(); await page.check('#skip'); await page.keyboard.press('Escape'); await page.selectOption('#speed', '20'); }
     // frame rate while playing (10 s), then 4× CPU throttling on the Android profile
     const measure = async (label) => { await page.evaluate(() => window.__game.resetFps()); await page.waitForTimeout(10000); fps[label] = await page.evaluate(() => ({ ...window.__game.fps(), low_res: window.__game.state().low_res, canvas_px: window.__game.state().canvas_px })); };
     await measure(`${tag}`);
@@ -111,7 +113,7 @@ const { chromium, devices } = require('playwright');
     if (tag === 'desktop') check(fps.desktop.fps_mean >= 30, `desktop: mean frame rate ≥ 30 fps while playing (${fps.desktop.fps_mean.toFixed(1)})`);
     await shot('04-playing');
     // analysis mode link
-    await page.click('a[href="analysis.html"]'); await page.waitForFunction(() => document.getElementById('badge') && document.getElementById('badge').textContent.includes('Day14'), null, { timeout: 15000 });
+    await more(); await page.click('a.btn[href="analysis.html"]'); await page.waitForFunction(() => document.getElementById('badge') && document.getElementById('badge').textContent.includes('Day14'), null, { timeout: 15000 });
     check(page.url().endsWith('analysis.html'), `${tag}: the analysis link opens the V5 analysis view`);
     await ctx.close();
   }

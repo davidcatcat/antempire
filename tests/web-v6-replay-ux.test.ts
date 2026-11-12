@@ -18,12 +18,12 @@ import path from 'node:path';
 import { REPO_ROOT } from '../cli/lib/load.ts';
 import { isTimed, windowOf, type Experiment } from '../web/src/model.ts';
 import { walkIntervals } from '../web/src/game-model.ts';
-import { JUMP_LEAD_MIN, daySummary, minuteAtFraction, nextActivityJump, summaryHtml, timelineMarks } from '../web/src/replay-ux.ts';
+import { JUMP_HINT, JUMP_LEAD_MIN, dayRecordSummary, daySummary, figText, jumpNote, minuteAtFraction, nextActivityJump, summaryHtml, timelineMarks } from '../web/src/replay-ux.ts';
 
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
 const WEB = path.join(REPO_ROOT, 'web'), DATA = path.join(WEB, 'data');
 const index = JSON.parse(fs.readFileSync(path.join(DATA, 'index.json'), 'utf8'));
-let days = 0, marks = 0, jumps = 0, presses = 0, dayLevel = 0, timed = 0;
+let days = 0, marks = 0, jumps = 0, presses = 0, dayLevel = 0, timed = 0, figures = 0, unrecorded = 0, taskRows = 0, notes = 0;
 
 for (const meta of index.experiments) {
   const exp = JSON.parse(fs.readFileSync(path.join(DATA, meta.file), 'utf8')) as Experiment;
@@ -82,7 +82,62 @@ for (const meta of index.experiments) {
     assert.ok(s.walks === walks.length && s.settlement.deaths === d.worker_deaths && s.settlement.eggs === d.eggs_laid && s.settlement.eclosions === d.eclosions, `${meta.id} D${d.day}: summary totals copied from the record`);
     const html = summaryHtml(s);
     ok(html.includes('日摘要，非連續播放') && html.includes('日層級事件'), `${meta.id} D${d.day}: summary html carries the non-continuous label`);
+    // 5. Issue #191 Q4: record figures, recomputed here independently from the raw record (no fabricated value)
+    const rec = dayRecordSummary(exp, d.day, meta.file), want = expectedFigures(exp, d.day);
+    const figs = rec.sections.flatMap((x) => x.figs);
+    assert.deepEqual(figs.map((f) => f.key).sort(), [...want.keys()].sort(), `${meta.id} D${d.day}: the summary shows exactly the expected record figures`);
+    for (const f of figs) {
+      const w = want.get(f.key);
+      assert.ok(w !== undefined && (typeof w === 'number' && typeof f.value === 'number' ? Math.abs(w - f.value) < 1e-9 : w === f.value), `${meta.id} D${d.day}: figure ${f.key} = record (${f.value} vs ${w})`);
+      assert.ok(f.src.length > 0 && (f.value !== null || /沒有|null/.test(f.src)), `${meta.id} D${d.day}: figure ${f.key} names its source`);
+      assert.ok(figText(f.value) === (f.value === null ? '引擎未記錄' : typeof f.value === 'number' ? String(Number(f.value.toFixed(6))) : f.value), `${meta.id} D${d.day}: figure ${f.key} printed as recorded`);
+      figures++; if (f.value === null) unrecorded++;
+    }
+    if (d.tasks) {
+      assert.equal(rec.tasks?.length, Object.keys(d.tasks).length, `${meta.id} D${d.day}: one task row per ant in the record`);
+      for (const r of rec.tasks ?? []) { const x = d.tasks[r.id]; assert.ok(x && x.task === r.task && x.trips === r.trips && x.successes === r.successes && x.stop_reason === r.stop_reason, `${meta.id} D${d.day}: task row ${r.id} = record`); taskRows++; }
+    } else assert.equal(rec.tasks, null, `${meta.id} D${d.day}: no task record → no task rows`);
+    const rh = summaryHtml(s, 30, rec);
+    for (const f of figs) assert.ok(rh.includes(`data-fig="${f.key}" data-value="${f.value === null ? '' : String(f.value)}"`) && rh.includes(f.src.replace(/"/g, '&quot;')), `${meta.id} D${d.day}: html row ${f.key} carries its value and source`);
+    ok((rh.match(/>引擎未記錄<\/td>/g) ?? []).length === figs.filter((f) => f.value === null).length, `${meta.id} D${d.day}: 「引擎未記錄」 cells only for quantities the record does not hold`);
+    // jumpNote: walks in progress counted from the record
+    for (const w of walks.slice(0, 20)) {
+      const tm = (w.start + w.end) / 2, r = nextActivityJump(walks, d, tm);
+      if (r.kind !== 'jump') continue;
+      const n = jumpNote(walks, tm, r);
+      assert.ok(n.inProgress === walks.filter((x) => x.start <= tm && x.end > tm).length && n.inProgress >= (w.end > tm ? 1 : 0) && Math.abs(n.skippedMin - (r.target - tm)) < 1e-12 && n.stage === (r.walkStart - r.target > 1e-9 ? 'lead' : 'start'), `${meta.id} D${d.day}: jumpNote at ${tm}`);
+      notes++;
+    }
   }
+}
+ok(figures > 0 && taskRows > 0 && notes > 0, `record figures ${figures} (unrecorded ${unrecorded}), task rows ${taskRows}, jump notes ${notes}`);
+{ // the three landing steps (Q1) from a walk start that is not within the lead: before → on the start → before the next
+  const d = { day: 1, date: 'x', window_minutes: 10, events: [] } as unknown as Experiment['days'][number], w = [{ start: 2, end: 3 }, { start: 5, end: 6 }];
+  const a = nextActivityJump(w, d, 0) as { target: number; walkStart: number }, b = nextActivityJump(w, d, a.target) as { target: number; walkStart: number }, c = nextActivityJump(w, d, b.target) as { target: number; walkStart: number };
+  ok(jumpNote(w, 0, a).stage === 'lead' && jumpNote(w, a.target, b).stage === 'start' && b.target === 2 && jumpNote(w, b.target, c).stage === 'lead' && c.walkStart === 5 && jumpNote(w, 2.5, nextActivityJump(w, d, 2.5) as { target: number; walkStart: number }).inProgress === 1, 'three landing steps: lead → start → next lead; a walk in progress is counted');
+  ok(/約 3 秒/.test(JUMP_HINT) && /再按一次到行走開始/.test(JUMP_HINT) && /跳轉/.test(JUMP_HINT), 'the inline hint describes the three steps and says it is a jump');
+}
+
+/** Independent recomputation of every Q4 figure from the raw record (not using replay-ux). */
+function expectedFigures(exp: Experiment, day: number): Map<string, number | string | null> {
+  const d = exp.days[day - 1], S = day === 1 ? exp.day0.state : exp.days[day - 2].end_state, E = d.end_state, m = new Map<string, number | string | null>();
+  const n = (type: string) => d.events.filter((e) => e.type === type).length, sum = (xs: number[]) => Number(xs.reduce((a, x) => a + x, 0).toFixed(6));
+  m.set('workers_start', S.workers.length); m.set('workers_end', E.workers.length);
+  m.set('queen_start', S.queen_alive ? '存活' : '未存活'); m.set('queen_end', E.queen_alive ? '存活' : '未存活');
+  for (const st of new Set([...S.brood, ...E.brood].map((b) => b.stage))) { m.set(`brood_${st}_start`, S.brood.filter((b) => b.stage === st).length); m.set(`brood_${st}_end`, E.brood.filter((b) => b.stage === st).length); }
+  const castes = E.workers.map((w) => (w as unknown as Record<string, unknown>).caste);
+  if (castes.length && castes.every((c) => typeof c === 'string')) for (const c of new Set(castes as string[])) m.set(`caste_${c}`, castes.filter((x) => x === c).length); else m.set('caste', null);
+  m.set('worker_deaths', d.worker_deaths); m.set('worker_death_events', n('worker_death')); m.set('brood_death_events', n('brood_death')); m.set('queen_death_events', n('queen_death')); m.set('eclosions', d.eclosions); m.set('eclosion_events', n('eclosion'));
+  for (const e of d.events) if (e.type === 'eclosion' && typeof e.caste === 'string') m.set(`eclosion_caste_${e.caste}`, ((m.get(`eclosion_caste_${e.caste}`) as number) ?? 0) + 1);
+  m.set('eggs_laid', d.eggs_laid); m.set('egg_laid_events', n('egg_laid')); m.set('hatch_events', n('hatch')); m.set('pupation_events', n('pupation'));
+  const T = d.tasks ? Object.values(d.tasks) : null;
+  m.set('foragers', T ? T.filter((x) => x.task === 'forage').length : null); m.set('trips', T ? T.reduce((a, x) => a + x.trips, 0) : null); m.set('successes', T ? T.reduce((a, x) => a + x.successes, 0) : null);
+  for (const t of ['food_collected', 'food_delivered', 'discovery', 'local_recruitment', 'trophallaxis']) m.set(t, n(t));
+  for (const t of ['food_collected', 'food_delivered']) for (const mac of new Set(d.events.filter((e) => e.type === t && typeof e.macro === 'string' && typeof e.portions === 'number').map((e) => e.macro as string)))
+    m.set(`${t}_${mac}`, sum(d.events.filter((e) => e.type === t && e.macro === mac && typeof e.portions === 'number').map((e) => e.portions as number)));
+  m.set('income_sugar', d.income.sugar); m.set('income_protein', d.income.protein);
+  for (const mac of ['sugar', 'protein'] as const) { m.set(`store_${mac}_start`, S.stores[mac]); m.set(`store_${mac}_end`, E.stores[mac]); m.set(`store_${mac}_delta`, Number((E.stores[mac] - S.stores[mac]).toFixed(6))); m.set(`consumed_${mac}`, d.consumed[mac]); }
+  return m;
 }
 ok(days > 0 && marks > 0 && jumps > 0 && dayLevel > 0 && timed > 0, `days ${days}, marks ${marks}, jumps ${jumps}, presses ${presses}, day-level ${dayLevel}, timed ${timed}`);
 // synthetic edge cases: a walk starting inside the lead; no walks at all
@@ -105,5 +160,11 @@ ok(!/Math\.random|document\.|window\.|events\.push|\.events\s*=/.test(code), 're
 const html = fs.readFileSync(path.join(WEB, 'index.html'), 'utf8'), game = fs.readFileSync(path.join(WEB, 'src', 'game.ts'), 'utf8');
 ok(html.includes('id="nextAct"') && html.includes('id="modeBtn"') && html.includes('id="marks"') && html.includes('id="summary"') && /引擎紀錄的行走時段/.test(html), 'index.html has the jump button, mode toggle, walk marks with legend, summary panel');
 ok(/nextActivityJump/.test(game) && /timelineMarks/.test(game) && /daySummary/.test(game) && /e\.key === 'n'/.test(game), 'game.ts wires the jump (button + N), the marks and the summary');
+// Issue #191 wiring: hint (Q1), jump label (Q2), shortcut S without modifiers and not in form controls (Q3), record
+// summary (Q4), the narrow-screen 更多 panel (Q5)
+ok(html.includes('id="jumpHint"') && /showJumpHintOnce/.test(game) && /跳轉（非連續播放）/.test(game) && /jumpNote/.test(game), 'game.ts shows the first-use hint and labels jumps 跳轉');
+ok(/e\.key === 's'/.test(game) && /e\.ctrlKey \|\| e\.metaKey \|\| e\.altKey/.test(game) && /tag === 'INPUT'/.test(game) && html.includes('aria-keyshortcuts="S"'), 'shortcut S: no Ctrl/Cmd/Alt combination, ignored in form controls, declared on the button');
+ok(/dayRecordSummary\(exp, day/.test(game), 'game.ts renders the record summary');
+ok(html.includes('id="moreBtn"') && html.includes('id="morePanel"') && ['fit', 'homeBtn', 'layersBtn', 'infoBtn', 'world', 'prevDay', 'nextDay'].every((id) => new RegExp(`id="${id}"[^>]*data-more=`).test(html)), 'index.html: 更多 panel and the collapsible controls are marked data-more');
 
-console.log(JSON.stringify({ test: 'web-v6-replay-ux', passed: true, checks, days, marks, jumps, presses, day_level_events: dayLevel, timed_events: timed }));
+console.log(JSON.stringify({ test: 'web-v6-replay-ux', passed: true, checks, days, marks, jumps, presses, day_level_events: dayLevel, timed_events: timed, record_figures: figures, unrecorded_figures: unrecorded, task_rows: taskRows, jump_notes: notes }));
