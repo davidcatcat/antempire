@@ -118,7 +118,7 @@ const RC = path.join(REPO_ROOT, 'prototypes', 'render-compare');
   ok(!/https?:\/\//.test(html), 'no external URL in the page');
   const copy = src.slice(src.indexOf("$('copy').addEventListener('click'"), src.indexOf('// automation hook'));
   ok(/navigator\.clipboard\.writeText\(text\)/.test(copy) && /\.select\(\)/.test(copy) && !/download/i.test(src), 'clipboard in the click handler, select-text fallback, no download');
-  ok(/示意/.test(src) && /非正式/.test(src), 'synthetic positions labelled 示意; replay labelled 非正式');
+  ok(/示範/.test(src) && !/示意合成|示意 positions/.test(src) && /非正式/.test(src), 'synthetic positions labelled 示範 (CLAUDE.md §8 demo data); replay labelled 非正式');
   const game = fs.readFileSync(path.join(REPO_ROOT, 'web', 'src', 'game.ts'), 'utf8'), rc = fs.readFileSync(path.join(REPO_ROOT, 'web', 'src', 'render-canvas.ts'), 'utf8');
   ok(/new LayeredRenderer\(canvas\)/.test(game) && !/cacheStatic|cullOffscreen|maxDpr|decorLod:|setDprCap/.test(game), 'game view keeps every new option off');
   ok(/this\.opts\.cacheStatic/.test(rc) && /this\.opts\.cullOffscreen/.test(rc) && !/Math\.random|Date\.now/.test(rc), 'options are explicit; no unseeded randomness or clock');

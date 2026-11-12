@@ -1,7 +1,7 @@
 /**
  * Device bench page (Owner decisions 49 / 50). One static page, opened on a real phone / desktop browser: "開始量測"
  * runs
- *   1. the matrix renderer A / B / C × {100, 1000, 5000} synthetic ants (示意 positions, NOT engine data) × DPR
+ *   1. the matrix renderer A / B / C × {100, 1000, 5000} synthetic ants (示範 positions, NOT engine data) × DPR
  *      {device, 1} × speed {1×, fast 10×} — same scene, camera and fixed-step animation for A, B and C;
  *   2. the game-view bottleneck breakdown: the experiment replay (read-only engine record, 非正式) drawn as the game
  *      view draws it, per-layer ms from the LayeredRenderer, for the baseline and five presentation-only mitigations
@@ -57,13 +57,13 @@ function probeDevice() {
 interface Scene { kind: 'stress' | 'replay'; label: string; setup(R: LayeredRenderer): Camera; frame(k: number): AntInput[]; opts: FrameOptions; dt: number; onFrame?(R: LayeredRenderer): void }
 const fitCam = (cx: number, cy: number, s: number): Camera => ({ cx, cy, s, w: canvas.clientWidth, h: canvas.clientHeight });
 
-/** N synthetic sprites on circles in a 60 cm view (示意 positions); fast = the animation time advances FAST_FACTOR× */
+/** N synthetic sprites on circles in a 60 cm view (示範 positions); fast = the animation time advances FAST_FACTOR× */
 function stressScene(n: number, speed: number): Scene {
   const r = mulberry32(99), ants = Array.from({ length: n }, (_, i) => ({ id: `S${i}`, cx: (r() - 0.5) * 50, cy: (r() - 0.5) * 50, rad: 2 + r() * 8, w: (0.2 + r() * 0.4) * (r() < 0.5 ? -1 : 1), p0: r() * 6.283 }));
   return {
-    kind: 'stress', label: `${n} 隻示意合成精靈`, opts: { colourVariants: true, minAntPx: 26 }, dt: STEP * speed,
+    kind: 'stress', label: `${n} 隻示範合成精靈`, opts: { colourVariants: true, minAntPx: 26 }, dt: STEP * speed,
     setup(R) {
-      R.setScene({ seed: 4242, places: [{ id: 'N00', name: '示意巢', bearing: null, distance_cm: null, kind: null, layout: null }], pos: { N00: { x: 0, y: 0, known: true } }, routes: [], sources: {}, weather: null });
+      R.setScene({ seed: 4242, places: [{ id: 'N00', name: '示範巢', bearing: null, distance_cm: null, kind: null, layout: null }], pos: { N00: { x: 0, y: 0, known: true } }, routes: [], sources: {}, weather: null });
       return fitCam(0, 0, Math.min(canvas.clientWidth, canvas.clientHeight) / 60);
     },
     frame(k) { const tt = k * STEP * speed; return ants.map((a) => { const ang = a.p0 + a.w * tt; return { id: a.id, x: a.cx + Math.cos(ang) * a.rad, y: a.cy + Math.sin(ang) * a.rad, vis: 'walking', moving: true, heading: ang + Math.sign(a.w) * Math.PI / 2 }; }); },
@@ -191,7 +191,7 @@ async function loadExperiment(): Promise<Experiment | null> {
 async function runAll(mode: S.BenchMode) {
   const T = S.TIMING[mode], device = probeDevice(), cells = S.buildMatrix();
   const exp = await loadExperiment();
-  // the replay draws what the engine recorded (often only a few ants on screen); the same garden with 1000 示意 ants
+  // the replay draws what the engine recorded (often only a few ants on screen); the same garden with 1000 示範 ants
   // shows where the time goes under load
   const bdScenes: ['replay' | 'stress1000', () => Scene | null][] = [['replay', () => (exp ? replayScene(exp) : null)], ['stress1000', () => stressScene(1000, 1)]];
   const total = cells.length + bdScenes.length * S.BREAKDOWN_CONFIGS.length + 1; let done = 0;
@@ -199,7 +199,7 @@ async function runAll(mode: S.BenchMode) {
   const report = {
     schema: S.REPORT_SCHEMA, bench_version: BENCH_VERSION, generated_at: new Date().toISOString(), mode,
     measurement_class: device.software_rendering || device.automation ? 'software-or-automation: NOT a device result' : 'device',
-    notes: ['壓力場景（matrix、stress1000）的螞蟻位置是示意合成資料，不是引擎資料。', '遊戲畫面場景重播非正式實驗世界的引擎紀錄（唯讀）。', '減負方案只改畫法；畫出的螞蟻、位置與事件不變。', 'CPU 以主執行緒 JavaScript 時間與 long task 估計，不是處理程序 CPU。', '軟體繪圖（SwiftShader 等）或自動化瀏覽器的數字不可當作手機效能。'],
+    notes: ['壓力場景（matrix、stress1000）的螞蟻位置是示範合成資料，不是引擎資料。', '遊戲畫面場景重播非正式實驗世界的引擎紀錄（唯讀）。', '減負方案只改畫法；畫出的螞蟻、位置與事件不變。', 'CPU 以主執行緒 JavaScript 時間與 long task 估計，不是處理程序 CPU。', '軟體繪圖（SwiftShader 等）或自動化瀏覽器的數字不可當作手機效能。'],
     definitions: { fps_p1_low: '1000 / p99 frame interval', fps_p5_low: '1000 / p95 frame interval', busy_ratio: 'sum of JS ms in the frame callback / wall ms', longtask_ratio: 'sum of long-task ms / wall ms', fast: `animation time × ${S.FAST_FACTOR} per frame`, other_non_js: 'mean frame interval − mean JS ms (compositing, GPU, vsync wait)' },
     timing: T, device,
     matrix: [] as Record<string, unknown>[], breakdown: [] as Record<string, unknown>[],
@@ -208,7 +208,7 @@ async function runAll(mode: S.BenchMode) {
   };
   for (const c of cells) {
     if (abort) break;
-    const label = `${c.renderer}・${c.n} 隻・DPR ${c.dpr === 'device' ? '裝置' : '1'}・${c.speed === 'fast' ? `快轉 ${S.FAST_FACTOR}×` : '1×'}・示意合成位置`;
+    const label = `${c.renderer}・${c.n} 隻・DPR ${c.dpr === 'device' ? '裝置' : '1'}・${c.speed === 'fast' ? `快轉 ${S.FAST_FACTOR}×` : '1×'}・示範合成位置`;
     let row: Record<string, unknown>;
     try { row = await measure({ renderer: c.renderer, scene: stressScene(c.n, c.speed === 'fast' ? S.FAST_FACTOR : 1), maxDpr: c.dpr === '1' ? 1 : undefined, toggles: S.NO_TOGGLES, warmS: T.warmS, measureS: T.measureS, label, progress: prog }); delete row.windows; }
     catch (e) { row = { error: String((e as Error).message ?? e), gpu: { status: 'error', ms_mean: null }, memory: { status: 'error' } }; }
@@ -224,7 +224,7 @@ async function runAll(mode: S.BenchMode) {
   }
   if (!abort) {
     const sc = exp ? replayScene(exp) : stressScene(1000, 1);
-    try { const r = await measure({ renderer: 'A', scene: sc, toggles: S.NO_TOGGLES, warmS: T.warmS, measureS: T.stabilityS, windowS: T.stabilityWindowS, label: `長時間穩定性（${T.stabilityS} 秒）`, progress: prog }); const ws = r.windows; report.stability = { scene: exp ? 'replay (game view), renderer A, baseline' : 'stress 1000 (示意), renderer A', secs: T.stabilityS, windows: ws, drift: S.drift(ws), fps_mean: r.fps_mean, frame_ms: r.frame_ms, interrupted: r.interrupted }; }
+    try { const r = await measure({ renderer: 'A', scene: sc, toggles: S.NO_TOGGLES, warmS: T.warmS, measureS: T.stabilityS, windowS: T.stabilityWindowS, label: `長時間穩定性（${T.stabilityS} 秒）`, progress: prog }); const ws = r.windows; report.stability = { scene: exp ? 'replay (game view), renderer A, baseline' : 'stress 1000 (示範), renderer A', secs: T.stabilityS, windows: ws, drift: S.drift(ws), fps_mean: r.fps_mean, frame_ms: r.frame_ms, interrupted: r.interrupted }; }
     catch (e) { report.stability = { error: String(e), windows: [], drift: S.drift([]) }; }
     done++;
   }
@@ -247,7 +247,7 @@ function render(report: Awaited<ReturnType<typeof runAll>>) {
   for (const m of report.matrix) { const key = `${m.n}|${m.dpr}|${m.speed}`; if (!rows.has(key)) rows.set(key, {}); (rows.get(key) as Record<string, Record<string, unknown>>)[m.renderer as string] = m; }
   const cell = (m?: Record<string, unknown>) => !m ? '<td>—</td>' : m.error ? '<td class="warn">錯誤</td>' : `<td${(m.fps_mean as number) < 30 ? ' class="warn"' : ''}>${f1(m.fps_mean)} / ${f1(m.fps_p5_low)}</td>`;
   $('matrixTable').innerHTML = '<thead><tr><th>條件</th><th>A 目前</th><th>B 圖集</th><th>C WebGL</th></tr></thead><tbody>' + [...rows].map(([k, r]) => { const [n, dpr, sp] = k.split('|'); return `<tr><td>${Number(n).toLocaleString()} 隻・DPR ${dpr === 'device' ? '裝置' : '1'}・${sp === 'fast' ? '快轉' : '1×'}</td>${cell(r.A)}${cell(r.B)}${cell(r.C)}</tr>`; }).join('') + '</tbody>';
-  $('breakdownTable').innerHTML = '<thead><tr><th>方案</th><th>fps</th><th>p95 ms</th><th>地面</th><th>裝飾/物件</th><th>螞蟻</th><th>疊加層</th><th>其他 JS</th><th>其餘</th></tr></thead><tbody>' + report.breakdown.map((b) => { const l = (b.layers_ms ?? {}) as Record<string, number>, fm = (b.frame_ms ?? {}) as Record<string, number>; return b.error ? `<tr><td>${esc(String(b.label))}</td><td class="warn" colspan="8">${esc(String(b.error))}</td></tr>` : `<tr><td>${b.scene === 'replay' ? '' : '[1000 示意] '}${esc(String(b.label))}</td><td>${f1(b.fps_mean)}</td><td>${f1(fm.p95)}</td><td>${l.ground_chunks?.toFixed(2)}</td><td>${l.decor_and_objects?.toFixed(2)}</td><td>${l.ants?.toFixed(2)}</td><td>${l.overlays?.toFixed(2)}</td><td>${l.plan_and_other_js?.toFixed(2)}</td><td>${l.other_non_js?.toFixed(2)}</td></tr>`; }).join('') + '</tbody>';
+  $('breakdownTable').innerHTML = '<thead><tr><th>方案</th><th>fps</th><th>p95 ms</th><th>地面</th><th>裝飾/物件</th><th>螞蟻</th><th>疊加層</th><th>其他 JS</th><th>其餘</th></tr></thead><tbody>' + report.breakdown.map((b) => { const l = (b.layers_ms ?? {}) as Record<string, number>, fm = (b.frame_ms ?? {}) as Record<string, number>; return b.error ? `<tr><td>${esc(String(b.label))}</td><td class="warn" colspan="8">${esc(String(b.error))}</td></tr>` : `<tr><td>${b.scene === 'replay' ? '' : '[1000 示範] '}${esc(String(b.label))}</td><td>${f1(b.fps_mean)}</td><td>${f1(fm.p95)}</td><td>${l.ground_chunks?.toFixed(2)}</td><td>${l.decor_and_objects?.toFixed(2)}</td><td>${l.ants?.toFixed(2)}</td><td>${l.overlays?.toFixed(2)}</td><td>${l.plan_and_other_js?.toFixed(2)}</td><td>${l.other_non_js?.toFixed(2)}</td></tr>`; }).join('') + '</tbody>';
   const st = report.stability as Record<string, unknown>, dr = (st.drift ?? {}) as S.Drift;
   $('stabilityKv').innerHTML = ([['時間', `${st.secs ?? '—'} 秒（${dr.windows} 個區段）`], ['fps 開始 → 結束', `${f1(dr.fps_first)} → ${f1(dr.fps_last)}（${dr.fps_change_pct ?? '—'}%）`], ['fps 漂移', `${dr.fps_drift_per_min ?? '—'} fps／分鐘`], ['記憶體成長', dr.heap_status === 'measured' ? `${dr.heap_first_mb} → ${dr.heap_last_mb} MB（${dr.heap_growth_mb_per_min} MB／分鐘）` : '無法取得（瀏覽器不提供）']] as [string, string][]).map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('');
   ($<HTMLTextAreaElement>('json')).value = JSON.stringify(report, null, 1);

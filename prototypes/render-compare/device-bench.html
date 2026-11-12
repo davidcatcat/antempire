@@ -67,7 +67,7 @@
       <label class="opt"><input type="radio" name="mode" id="modeFull" value="full"><span><b>完整</b>（約 12 分鐘）<br><span class="muted">每個條件量 6 秒，加 5 分鐘長時間穩定性</span></span></label>
     </fieldset>
     <div class="row"><button class="primary" id="start" type="button">開始量測</button><span class="muted" id="startNote"></span></div>
-    <p class="muted">量測內容：繪圖方式 A（目前 Canvas 2D）、B（預旋轉圖集）、C（PixiJS／WebGL）× 100／1,000／5,000 隻 × 解析度（裝置 DPR、DPR 1）× 速度（1×、快轉 10×），以及遊戲畫面各圖層耗時與五種減負方案。壓力場景的螞蟻位置是<b>示意（合成）</b>，不是引擎資料；遊戲畫面場景重播的是非正式實驗世界的引擎紀錄。</p>
+    <p class="muted">量測內容：繪圖方式 A（目前 Canvas 2D）、B（預旋轉圖集）、C（PixiJS／WebGL）× 100／1,000／5,000 隻 × 解析度（裝置 DPR、DPR 1）× 速度（1×、快轉 10×），以及遊戲畫面各圖層耗時與五種減負方案。壓力場景的螞蟻位置是<b>示範（合成）</b>，不是引擎資料；遊戲畫面場景重播的是非正式實驗世界的引擎紀錄。</p>
   </section>
 
   <section class="card" id="results" hidden>
@@ -75,7 +75,7 @@
     <div id="envFlag" class="flag"></div>
     <dl class="kv" id="deviceKv"></dl>
     <h2>A／B／C 對照（平均 fps ／ 5% 低 fps）</h2>
-    <p class="muted">示意合成位置的壓力場景。數字越高越順；60 左右表示跟上螢幕更新。</p>
+    <p class="muted">示範合成位置的壓力場景。數字越高越順；60 左右表示跟上螢幕更新。</p>
     <div class="scroll"><table id="matrixTable"></table></div>
     <h2>遊戲畫面瓶頸（每幀毫秒）</h2>
     <p class="muted">「其餘」= 幀間隔減去 JavaScript 繪圖時間，包含瀏覽器合成、GPU 與等待螢幕更新，無法再細分。減負方案只改畫法，畫出的螞蟻與事件完全相同。</p>
