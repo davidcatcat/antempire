@@ -101,7 +101,13 @@
 
 ## 8. 執行環境
 
-- **正式推進只在 Node 執行**（固定 Node 版本、固定種子）；新版正式世界的執行環境由 R2 門檻定義前，沿用此原則。
+- **正式世界的執行位置（Owner 2026-11-12，[#200](https://github.com/davidcatcat/antempire/issues/200) 採 C）**：正式遊戲世界由瀏覽器 **Web Worker** 持續推進，IndexedDB 負責本機自動存檔、繼續、新遊戲與中斷恢復；**Node 是獨立、可重現的驗證器**，玩家不必連線到 Node 伺服器。
+  - Worker 與 Node 必須共用同一份明確版本化的模擬規則與決定性核心，**不得維護兩套科學邏輯**。渲染 FPS、動畫、視角與模擬時間步進解耦，任何 UI 行為不得改變事件結果。
+  - 存檔狀態分三種，不得混用：「**本機可玩**」「**完整性檢查通過**」「**Node 已重算驗證**」。沒有 Node 重算就不得宣稱已驗證，但也不得因此讓離線玩家無法繼續遊戲。驗證失敗時保留診斷資料，不得自動改寫歷史。使用者自填的雜湊不視為科學驗證。
+  - 逐位元一致的聲明**只限實際證明過的環境**（目前：x86-64 的 Node 與 Chromium 頁面／Worker，見 #190、#197）；ARM64、其他瀏覽器在證明前一律標示「未驗證」。跨平台浮點不一致時，先處理決定性數學或定義相容界線，不得宣稱普遍一致。
+  - 規則更新以明確的版本邊界與遷移／fork 管理，既有歷史不回溯改寫。
+  - **新版正式 Day0 啟用前**（須依 [#201](https://github.com/davidcatcat/antempire/issues/201) 經 Owner 最後批准），所有 Worker 世界都是「**候選／實驗世界**」，不得建立或宣稱正式歷史。
+- Node 端的研究、回歸與批次實驗（Day0 多種子、golden、naturalism 等）照常在 Node 執行（固定 Node 版本、固定種子）。
 - 網頁觀察器（`web/`）**只讀取結果**，不產生正式歷史，也不寫回 `saves/` 或 `journal/`。
 - 觀察器上的資料必須分成三類並清楚標示：
   1. **引擎事件**：原樣顯示；
@@ -119,12 +125,12 @@
 - `cli/`：Node 工具（讀檔、規則指紋、規則版本登錄、報告產生器、觀察器資料匯出）。舊版正式推進與存檔檢查工具已退役（#194）。
 - `web/`：唯讀觀察器。`cli/web-export.ts` 由引擎與花園情境地理（`data/xitun-garden-geography.json`，唯讀）產生 `web/data/` 的實驗重播；目前沒有正式世界，所以不匯出正式快照；`web/src/` 不得匯入 `engine/` 或 `cli/`、不得執行模擬、不得寫入。引擎輸出改變時要重新執行 `npm run web:export` 並提交 `web/data/`（`tests/web.test.ts` 檢查）。
 - **觀察器的兩種模式（Owner 決策 #39，2026-11-08；本節唯一的有限例外）**：
-  - **A. 觀察模式（唯讀）**：上一條規則全部保留。`web/src/` 不得匯入 `engine/`、不得執行模擬、不得修改 `saves/`／`journal/`，只讀取 Node 端引擎產生的資料；正式推進只在 Node 執行。
-  - **B. 非正式實驗模式**：只有實驗 Worker 入口 `prototypes/continuous-world/worker/`（獨立入口、獨立建置設定）可以匯入**白名單**內的純 TypeScript 模擬核心；白名單與禁止清單記在 [`prototypes/continuous-world/worker-boundary.json`](prototypes/continuous-world/worker-boundary.json)，擴充白名單屬規則修改，要另開 PR 並經 Codex 固定 SHA 審查。`web/src/` 只能經由清單中的 Worker client 檔以 `postMessage` 連接 Worker，不得直接匯入 `engine/` 或 Worker 目錄，畫面主執行緒不得執行生態模擬。
+  - **A. 觀察模式（唯讀）**：上一條規則全部保留。`web/src/` 不得匯入 `engine/`、不得執行模擬、不得修改 `saves/`／`journal/`，只讀取 Node 端引擎產生的資料。
+  - **B. 非正式實驗模式**：只有實驗 Worker 入口 `prototypes/continuous-world/worker/`（獨立入口、獨立建置設定）可以匯入**白名單**內的純 TypeScript 模擬核心；白名單與禁止清單記在 [`prototypes/continuous-world/worker-boundary.json`](prototypes/continuous-world/worker-boundary.json)，擴充白名單屬規則修改，要另開 PR，依 Owner 2026-11-12 授權由 Claude 自審並附邊界測試證據（Codex 恢復後另安排獨立審查）。`web/src/` 只能經由清單中的 Worker client 檔以 `postMessage` 連接 Worker，不得直接匯入 `engine/` 或 Worker 目錄，畫面主執行緒不得執行生態模擬。
   - Worker 不得匯入 `cli/`、存檔讀寫、日誌產生、正式歷史提交與遷移工具，也不得透過 IndexedDB、Cache API、localStorage、檔案系統、網路寫入或任何其他方式繞過隔離。
   - **實驗世界本地存檔（Owner SAVE 需求，2026-11-08；最小例外）**：只有清單中的實驗儲存模組（`web/src/experimental/save-store.ts`）可以使用 IndexedDB、`navigator.storage`（persist／estimate）與 Web Locks，且只能開啟名稱以 `antempire-experiment-` 開頭的資料庫，只保存由 Worker 在一致事件邊界產生、標示「非正式」的世界快照。此例外不開放 `saves/`、`journal/` 或 Node 正式推進流程的任何寫入，存檔動作不得改變世界的行為、時間或隨機串流。設計見 [`docs/experimental-save-system.md`](docs/experimental-save-system.md)（SAVE-0）。
   - Worker 必須使用 P0-A 模擬時間契約：不得以 `requestAnimationFrame` 或牆鐘時間差決定行為，不得因降速、暫停、縮放、拖曳或追蹤個體而跳過事件或改變同一模擬時刻的結果；播放速度只改排程。訊息順序、事件 ID、時間戳、版本、種子與參數指紋必須可追溯，同環境可重播，並與 Node 執行結果交叉比對（跨環境浮點差異要記錄並驗證誤差界，未證明不得宣稱逐位元組相同）。
-  - 所有 Worker 結果標示「非正式實驗世界／不屬於正式遊戲歷史」；不得寫入正式存檔或日誌、自動升級為正式世界、載入已退役的舊版 Day14 狀態、混用正式存檔與實驗初始化狀態、或讓畫面插值回寫引擎。
+  - 新版正式 Day0 經 Owner 批准啟用之前，所有 Worker 結果標示「非正式實驗世界／不屬於正式遊戲歷史」（啟用後的正式世界依 §8 的三種存檔狀態標示）；不得寫入正式存檔或日誌、自動升級為正式世界、載入已退役的舊版 Day14 狀態、混用正式存檔與實驗初始化狀態、或讓畫面插值回寫引擎。
   - #144（鏡頭不得改變命運）與 #145（單一權威帳本）未通過前，不得宣稱觀察不影響結果或背景帳本已正確整合。
   - 邊界由 `tests/worker-boundary.test.ts`（靜態匯入圖＋負面樣本）檢查；架構見 [`docs/experimental-worker-boundary.md`](docs/experimental-worker-boundary.md)。
 - `npm ci`、`npm run typecheck`、`npm test`、`npm run test:golden`、`npm run web:export`、`npm run web:build`（Node 版本固定於 `.nvmrc`，原生執行 `.ts`）。CI（`.github/workflows/ci.yml`）在每次 push 與 PR 執行。
