@@ -40,6 +40,20 @@ export const HIT_TOL_MM = 1e-10;
 export const ACTIVE_TOL_MM = 1e-7;
 /** |n·e| below this counts as tangential (dimensionless; numerical) */
 export const NORMAL_EPS = 1e-12;
+/**
+ * Contact EPISODES (docs/physics-ph3b-solver2d.md §2.6, docs/physics-time-contract.md): the physical contact events
+ * contact_start / contact_end are computed from the continuous gap g(t) of the two bodies' piecewise motion, separately
+ * from the constraint bookkeeping of the velocity solve. A pair is in contact while g ≤ θ (θ = the contact tolerance,
+ * active_tol_mm). An excursion of g above θ that comes back to ≤ θ before reaching θ + SEP_RES_MM is below the
+ * resolution and is NOT a separation (the piecewise-constant sliding approximation re-solves a sliding contact each time g
+ * opens by θ; those re-solves are not separations). contact_end = the last up-crossing of θ before g reaches θ + SEP_RES_MM;
+ * contact_start = the last down-crossing of θ before g reaches θ − SEP_RES_MM. Numerical, not a model parameter.
+ */
+export const SEP_RES_MM = 1e-9;
+/** stated bound on the floating-point evaluation error of a gap (mm); sets each episode event's err_s (numerical) */
+export const GAP_EVAL_ERR_MM = 1e-11;
+/** an event computed within this of the horizon (rounding of t = t0 + d/v) is at the horizon (s; relative, numerical) */
+export const horizonSnap = (H: number) => 8 * Number.EPSILON * Math.max(1, Math.abs(H));
 
 export class Solver2DRefused extends Error { constructor(m: string) { super(`SOLVER2D_REFUSED: ${m}`); this.name = 'Solver2DRefused'; } }
 
@@ -60,14 +74,69 @@ export interface Solver2DInput {
 }
 export type Sample = [t: number, x: number, y: number, heading: number, s: number, u: number];
 export type EventClass = 'physical_contact' | 'physical_constraint' | 'motion' | 'solver_status';
-export interface SolverEvent { t_s: number; kind: string; agents: string[]; class: EventClass; detail: string | null }
+export interface SolverEvent {
+  t_s: number; kind: string; agents: string[]; class: EventClass; detail: string | null;
+  /** contact_start / contact_end only: numerical root bracket [lo, hi] of the crossing of θ by the solver's gap function
+   *  (t_s = hi), the width err_s of the crossing under a gap error of ±GAP_EVAL_ERR_MM on the incoming motion (s), whether
+   *  that width was clamped at the start of the incoming motion, and the time at which the episode change was confirmed
+   *  (g reached θ ∓ SEP_RES_MM). exact: computed from the motion; usable_as_cause: may be read as a physical cause — but
+   *  only at or after confirmed_t_s: t_s is stamped back at the crossing, which is not known to be a contact change until
+   *  confirmed_t_s (before that it may be a sub-resolution excursion), so a decision layer must not act on it earlier or
+   *  back-date a decision to t_s (docs/physics-time-contract.md §3). */
+  bracket_s?: [number, number]; err_s?: number; err_clamped?: boolean; confirmed_t_s?: number; exact?: boolean; usable_as_cause?: boolean;
+  /** contact events only: which of the three contact kinds this is (docs/physics-time-contract.md §4). PH-3b emits only
+   *  'geometric_contact' events; 'constraint_active' is reported as intervals (Solver2DResult.constraint_active) */
+  contact_kind?: ContactKind;
+}
+/**
+ * The three contact kinds (Owner decision 2026-11-08, issue #146). None is derivable from another:
+ *  - geometric_contact: the two body capsules are within the contact tolerance θ (gap ≤ θ); episodes contact_start /
+ *    contact_end with root brackets and error bounds (events of class 'physical_contact');
+ *  - constraint_active: the solver's non-penetration constraint dg/dt ≥ 0 of the pair is in the velocity solve
+ *    (Solver2DResult.constraint_active intervals); a geometric contact need not have an active constraint (e.g. a graze
+ *    within θ that never reaches the touch), and an active constraint need not bind (change any velocity);
+ *  - antenna_contact: antenna–body contact for chemical perception / CHC recognition. PH-3b has NO antenna geometry, so it
+ *    is never emitted (Solver2DResult.antenna_contact = null); a later antenna geometry model (CHEM / CHC, #135) must
+ *    define it. A body contact is not an antenna contact.
+ * No contact kind implies trophallaxis, recruitment, attack or any other behaviour; behaviour models must name the contact
+ * kind they read.
+ */
+export type ContactKind = 'geometric_contact' | 'constraint_active' | 'antenna_contact';
+export const CONTACT_KINDS_EMITTED: readonly ContactKind[] = ['geometric_contact', 'constraint_active'];
+/** one interval during which a pair's contact constraint was in the velocity solve (solver state, not a gap crossing).
+ *  start_t_s / end_t_s are the event instants at which the solver added / removed the constraint: exact instants of the
+ *  solver's piecewise model, NOT roots of g = θ (the constraint starts at the touch g ≈ 0, which follows the geometric
+ *  contact_start; it ends at the first floating-point time with g > θ, release bisection bracket in end_bracket_s).
+ *  binding_t_s: first velocity solve in the interval in which this constraint limited a velocity (null: never bound). */
+export interface ConstraintActiveInterval {
+  agents: [string, string]; start_t_s: number; start_trigger: 'contact_event' | 'membership_check';
+  end_t_s: number | null; end_trigger: 'release_event' | 'membership_check' | null; end_bracket_s: [number, number] | null;
+  binding_t_s: number | null; binding_solves: number; contact_kind: 'constraint_active';
+}
+/** final_mode: arrived | not_started (start time > horizon) | started_at_horizon (start event at the horizon itself: zero
+ *  duration, no displacement; final_speed_mm_s is the speed solved at that instant) | moving | stopped_by_geometry |
+ *  waiting_at_joint | stopped_by_contact (docs/physics-time-contract.md) */
 export interface AgentOut { lane: string; layer: string; samples: Sample[]; arrival_t_s: number | null; final_mode: string; final_speed_mm_s: number; stop_cause: string | null; geometry_stop_s_mm: number | null }
 export interface Solver2DResult {
   agents: Record<string, AgentOut>; events: SolverEvent[];
+  /** constraint_active intervals ordered by (start, pair); an interval still active at the horizon has end_t_s null */
+  constraint_active: ConstraintActiveInterval[];
+  /** antenna_contact: unsupported in PH-3b (no antenna geometry) — always null, never invented */
+  antenna_contact: null;
   stats: {
     batches: number; events_processed: number; queue_pushes: number; stale_pops: number; pair_hit_evals: number; windows: number;
     candidate_pairs_total: number; candidate_pairs_max: number; velocity_solves: number; max_component: number; max_same_instant_batches: number;
-    contacts: number; releases: number; passes: number; turns: number; turn_blocked: number; stalled: number; arrived: number; unresolved: number;
+    /** constraint activations / releases of the velocity solve (numerical bookkeeping, depend on active_tol_mm) */
+    contacts: number; releases: number;
+    /** physical contact episodes (confirmed starts / confirmed ends), sub-resolution excursions merged into an episode,
+     *  episode crossing events processed, episodes still open and ends still unconfirmed at the horizon */
+    contact_episodes: number; contact_episode_ends: number; sub_resolution_excursions: number; episode_events: number; episodes_open_at_horizon: number; ends_unconfirmed_at_horizon: number;
+    /** batches after which a constraint was active for a pair that was neither in a contact episode nor at g ≤ θ pending
+     *  its confirmation (consistency check of the two bookkeepings; expected 0) */
+    constraint_outside_contact: number;
+    /** constraint_active intervals (closed + open at the horizon) and how many of them ever bound a velocity */
+    constraint_intervals: number; constraint_intervals_binding: number;
+    passes: number; turns: number; turn_blocked: number; stalled: number; arrived: number; unresolved: number;
     aborted: string | null; t_end_s: number;
   };
 }
@@ -80,6 +149,25 @@ function psd(p: Vec2, a: Vec2, b: Vec2): number {
   const abx = b.x - a.x, aby = b.y - a.y, L2 = abx * abx + aby * aby;
   const u = L2 === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * abx + (p.y - a.y) * aby) / L2));
   return Math.hypot(p.x - (a.x + u * abx), p.y - (a.y + u * aby));
+}
+/** distance between segments p1q1 and p2q2, allocation-free (Ericson §5.1.9; same construction as closestSegSeg) */
+function segSegDist(p1x: number, p1y: number, q1x: number, q1y: number, p2x: number, p2y: number, q2x: number, q2y: number): number {
+  const d1x = q1x - p1x, d1y = q1y - p1y, d2x = q2x - p2x, d2y = q2y - p2y, rx = p1x - p2x, ry = p1y - p2y;
+  const a = d1x * d1x + d1y * d1y, e = d2x * d2x + d2y * d2y, f = d2x * rx + d2y * ry;
+  let s: number, t: number;
+  if (a === 0 && e === 0) return Math.hypot(rx, ry);
+  if (a === 0) { s = 0; t = Math.max(0, Math.min(1, f / e)); }
+  else {
+    const c = d1x * rx + d1y * ry;
+    if (e === 0) { t = 0; s = Math.max(0, Math.min(1, -c / a)); }
+    else {
+      const b = d1x * d2x + d1y * d2y, den = a * e - b * b;
+      s = den !== 0 ? Math.max(0, Math.min(1, (b * f - c * e) / den)) : 0;
+      t = (b * s + f) / e;
+      if (t < 0) { t = 0; s = Math.max(0, Math.min(1, -c / a)); } else if (t > 1) { t = 1; s = Math.max(0, Math.min(1, (b - c) / a)); }
+    }
+  }
+  return Math.hypot(rx + d1x * s - d2x * t, ry + d1y * s - d2y * t);
 }
 /** closest points of segments p1q1 and p2q2 (Ericson, Real-Time Collision Detection §5.1.9) */
 function closestSegSeg(p1: Vec2, q1: Vec2, p2: Vec2, q2: Vec2): [Vec2, Vec2] {
@@ -151,6 +239,32 @@ export function pairFirstHit(P: Capsule, vP: Vec2, Q: Capsule, vQ: Vec2, tolHit 
   return best === null ? null : { tau: best, overlapping: false };
 }
 
+/** bisection to floating-point resolution between lo (pred false) and hi (pred true) */
+const bis = (lo: number, hi: number, pred: (t: number) => boolean): [number, number] => {
+  for (let k = 0; k < 400; k++) { const m = lo + (hi - lo) / 2; if (m <= lo || m >= hi) break; if (pred(m)) hi = m; else lo = m; }
+  return [lo, hi];
+};
+
+/**
+ * Down-crossing bracket of a pair's gap through a threshold th after `from` (used by the episode scheduler; exported for
+ * the unit test only). `h` is pairFirstHit of the two capsules inflated by th/2, `below(t)` ⇔ the solver's own gap
+ * function g(t) ≤ th, `argmin(a, b)` the minimiser of the convex g on [a, b]. The caller only asks for a down-crossing
+ * when g(from) > th.
+ *
+ * The two distance computations (pairFirstHit's capsule distance and the solver's gap function) can disagree by about
+ * 1e-16 mm, so pairFirstHit may report `overlapping` while g(from) > th. Returning the empty bracket [from, from] in that
+ * case would schedule an episode event at `from` that crosses nothing (reconciliation finds the same band) and is
+ * re-scheduled at the same instant forever. So `overlapping` is believed only when the gap function agrees
+ * (below(from)); otherwise the search continues as for a touch at τ = 0: a crossing strictly after `from`, or none.
+ */
+export function downCrossingBracket(from: number, h: { tau: number; overlapping: boolean } | null, below: (t: number) => boolean, argmin: (a: number, b: number) => number): [number, number] | null {
+  if (!h) return null;
+  if (h.overlapping && below(from)) return [from, from];
+  let b = from + h.tau;
+  if (!below(b)) { b = argmin(from, from + 2 * h.tau + 1e-12 * Math.max(1, from)); if (!below(b)) return null; }
+  return bis(from, b, below);
+}
+
 // ---------------------------------------------------------------- lanes
 interface Seg { a: Vec2; t: Vec2; n: Vec2; s0: number; len: number }
 function laneSegs(cl: Vec2[], id: string): Seg[] {
@@ -211,6 +325,9 @@ interface RT {
   k: number; id: string; spec: SolverAgent; laneIdx: number; layer: number; segs: Seg[]; u: number; dir: 1 | -1; v0: number;
   goal: number; start: number; hw: number; r: number; half: number;
   seg: number; sRef: number; tRef: number; v: number; mode: Mode;
+  /** time anchor of the current velocity (set only when v changes, NOT at a joint): own event times are computed from it
+   *  in one expression, t = tA + (target − sA)·dir / v, so joints never accumulate rounding into an event time */
+  tA: number; sA: number;
   /** first route position where the body would touch static geometry (precomputed), with its cause */
   geoStop: { s: number; cause: string } | null;
   capped: string | null;
@@ -218,9 +335,10 @@ interface RT {
   ver: number; samples: Sample[]; arrival: number | null; stopCause: string | null; started: boolean; justStarted: boolean;
 }
 
-type QKind = 'start' | 'goal' | 'geo' | 'vertex' | 'retry' | 'contact' | 'release' | 'pass';
-const KIND_RANK: Record<QKind, number> = { start: 0, goal: 1, geo: 2, vertex: 3, retry: 4, release: 5, contact: 6, pass: 7 };
-interface QE { t: number; kind: QKind; a: number; b: number; va: number; vb: number; vp: number }
+type QKind = 'start' | 'goal' | 'geo' | 'vertex' | 'retry' | 'contact' | 'release' | 'pass' | 'ep';
+const KIND_RANK: Record<QKind, number> = { start: 0, goal: 1, geo: 2, vertex: 3, retry: 4, release: 5, contact: 6, pass: 7, ep: 8 };
+/** queue entry; for 'ep' (an episode threshold crossing) lo is the other side of the root bracket and th the threshold */
+interface QE { t: number; kind: QKind; a: number; b: number; va: number; vb: number; vp: number; lo?: number; th?: number }
 const qLess = (x: QE, y: QE) => x.t < y.t || (x.t === y.t && (KIND_RANK[x.kind] < KIND_RANK[y.kind] || (KIND_RANK[x.kind] === KIND_RANK[y.kind] && (x.a < y.a || (x.a === y.a && x.b < y.b)))));
 class Heap {
   h: QE[] = [];
@@ -283,7 +401,7 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
     if (sp.u_mm !== 0 && segs.some((g, i) => i > 0 && g.s0 > lo && g.s0 < hi)) throw new Solver2DRefused(`${sp.id}: u = ${sp.u_mm} ≠ 0 and the route crosses a lane joint; following a bend with a lateral offset is not modelled (lateral steering model unknown)`);
     // at a joint the body already faces the segment it moves into
     const seg = sp.dir < 0 ? segAt(segs, sp.s_mm) : (() => { for (let i = segs.length - 1; i >= 0; i--) if (sp.s_mm >= segs[i].s0) return i; return 0; })();
-    return { k, id: sp.id, spec: sp, laneIdx: li, layer: ln.layer, segs, u: sp.u_mm, dir: sp.dir, v0: sp.free_speed_mm_s, goal: sp.goal_s_mm, start: sp.start_t_s, hw, r, half: L / 2, seg, sRef: sp.s_mm, tRef: 0, v: 0, mode: 'waiting', geoStop: null, capped: null, turnBlocked: null, ver: 0, samples: [], arrival: null, stopCause: null, started: false, justStarted: false };
+    return { k, id: sp.id, spec: sp, laneIdx: li, layer: ln.layer, segs, u: sp.u_mm, dir: sp.dir, v0: sp.free_speed_mm_s, goal: sp.goal_s_mm, start: sp.start_t_s, hw, r, half: L / 2, seg, sRef: sp.s_mm, tRef: 0, v: 0, mode: 'waiting', tA: 0, sA: sp.s_mm, geoStop: null, capped: null, turnBlocked: null, ver: 0, samples: [], arrival: null, stopCause: null, started: false, justStarted: false };
   });
   const headingOf = (a: RT, seg = a.seg) => Math.atan2(a.segs[seg].t.y * a.dir, a.segs[seg].t.x * a.dir);
   const eOf = (a: RT, seg = a.seg): Vec2 => ({ x: a.segs[seg].t.x * a.dir, y: a.segs[seg].t.y * a.dir });
@@ -341,14 +459,20 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
 
   // ---- event machinery
   const events: SolverEvent[] = [];
-  const stats: Solver2DResult['stats'] = { batches: 0, events_processed: 0, queue_pushes: 0, stale_pops: 0, pair_hit_evals: 0, windows: 0, candidate_pairs_total: 0, candidate_pairs_max: 0, velocity_solves: 0, max_component: 0, max_same_instant_batches: 0, contacts: 0, releases: 0, passes: 0, turns: 0, turn_blocked: 0, stalled: 0, arrived: 0, unresolved: 0, aborted: null, t_end_s: 0 };
+  const stats: Solver2DResult['stats'] = { batches: 0, events_processed: 0, queue_pushes: 0, stale_pops: 0, pair_hit_evals: 0, windows: 0, candidate_pairs_total: 0, candidate_pairs_max: 0, velocity_solves: 0, max_component: 0, max_same_instant_batches: 0, contacts: 0, releases: 0, contact_episodes: 0, contact_episode_ends: 0, sub_resolution_excursions: 0, episode_events: 0, episodes_open_at_horizon: 0, ends_unconfirmed_at_horizon: 0, constraint_outside_contact: 0, constraint_intervals: 0, constraint_intervals_binding: 0, passes: 0, turns: 0, turn_blocked: 0, stalled: 0, arrived: 0, unresolved: 0, aborted: null, t_end_s: 0 };
   const ev = (t: number, kind: string, ids: number[], cls: EventClass, detail: string | null = null) => events.push({ t_s: t, kind, agents: ids.map((i) => A[i].id), class: cls, detail });
   const heap = new Heap();
-  const push = (e: QE) => { heap.push(e); stats.queue_pushes++; };
+  const SNAP = horizonSnap(H);
+  // an event computed within SNAP after the horizon is AT the horizon: rounding must never push a scheduled event past it
+  const push = (e: QE) => { if (e.t > H && e.t - H <= SNAP) e.t = H; heap.push(e); stats.queue_pushes++; };
   const pkey = (i: number, j: number) => (i < j ? i * N + j : j * N + i);
   const pairVer = new Map<number, number>(), active = new Set<number>(), activeAdj: Set<number>[] = A.map(() => new Set());
   let cand = new Set<number>(), nb: number[][] = A.map(() => []);
   const processedContacts = new Set<string>();
+  // constraint_active intervals: read-only bookkeeping of the active set (never feeds back into the motion)
+  interface CIv { start: number; trig: ConstraintActiveInterval['start_trigger']; bind: number | null; solves: number }
+  const cOpen = new Map<number, CIv>(), cDone: { key: number; iv: CIv; end: number | null; endTrig: ConstraintActiveInterval['end_trigger']; br: [number, number] | null }[] = [];
+  const relBr = new Map<number, [number, number]>();
   const sample = (a: RT, t: number) => {
     const c = centreAt(a, t), s = sAt(a, t), h = headingOf(a), last = a.samples[a.samples.length - 1];
     if (last && last[0] === t && last[1] === c.x && last[2] === c.y && last[3] === h) return;
@@ -367,7 +491,7 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
     let best: [number, QKind] | null = null;
     for (const [s, kind] of targets) { const d = (s - a.sRef) * a.dir; if (d < 0) continue; if (!best || d < (best[0] - a.sRef) * a.dir || (d === (best[0] - a.sRef) * a.dir && KIND_RANK[kind] < KIND_RANK[best[1]])) best = [s, kind]; }
     if (!best) return;
-    push({ t: a.tRef + ((best[0] - a.sRef) * a.dir) / a.v, kind: best[1], a: a.k, b: -1, va: a.ver, vb: 0, vp: 0 });
+    push({ t: a.tA + ((best[0] - a.sA) * a.dir) / a.v, kind: best[1], a: a.k, b: -1, va: a.ver, vb: 0, vp: 0 });
   };
   /** pair events: contact (inactive), release (active), pass (same lane); all from the two motion records only */
   const pairEvents = (i: number, j: number, now: number) => {
@@ -384,7 +508,7 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
       if (G(hi) <= 0) return;
       for (let m = 0; m < 200 && hi - lo > 1e-15 * Math.max(1, hi); m++) { const x = (lo + hi) / 2; if (G(x) <= 0) lo = x; else hi = x; }
       let tr = hi; for (let m = 0; G(tr) <= 0 && m < 64; m++) tr = nextUp(tr);
-      if (tr >= now) push({ t: tr, kind: 'release', a: i, b: j, va: P.ver, vb: Q.ver, vp });
+      if (tr >= now) { push({ t: tr, kind: 'release', a: i, b: j, va: P.ver, vb: Q.ver, vp }); relBr.set(key, [lo, tr]); }
     } else {
       stats.pair_hit_evals++;
       const h = pairFirstHit(cP, vP, cQ, vQ);
@@ -399,6 +523,113 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
       if (rate !== 0 && d0 !== 0) { const tau = -d0 / rate; if (tau > 0) { const tp = T0 + tau; if (tp >= now) push({ t: tp, kind: 'pass', a: i, b: j, va: P.ver, vb: Q.ver, vp }); } }
     }
   };
+  // ---- contact episodes: physical contact events from the continuous gap of the two motions (not from the constraint
+  // bookkeeping, not from any grid). The gap g of a pair is tracked by its BAND among the thresholds
+  //   TB = [θ − ρ, θ − ε, θ, θ + ε, θ + ρ]   (θ contact tolerance, ρ = SEP_RES_MM, ε = GAP_EVAL_ERR_MM),
+  // band = #{k : g > TB[k]} ∈ 0..5. Between two motion changes both bodies translate, so g is convex in time and the next
+  // band change is a threshold crossing found by bisection with an explicit bracket. Episode logic on band changes:
+  //  out: mark = last down-crossing of θ; confirmed (contact_start at mark) when g ≤ θ − ρ; error interval [last time
+  //       g > θ + ε before the mark, last down-crossing of θ − ε before the confirmation];
+  //  in : mark = last up-crossing of θ; an excursion back to ≤ θ before g reaches θ + ρ is merged (sub-resolution);
+  //       confirmed (contact_end at mark) when g > θ + ρ; error interval [last time g ≤ θ − ε before the mark, last
+  //       up-crossing of θ + ε before the confirmation].
+  const TB = [ACT - SEP_RES_MM, ACT - GAP_EVAL_ERR_MM, ACT, ACT + GAP_EVAL_ERR_MM, ACT + SEP_RES_MM];
+  interface Ep { inC: boolean; band: number; ver: number; mark: number | null; markBr: [number, number]; errLo: number; errHi: number | null; edge: number }
+  const eps = new Map<number, Ep>();
+  /** gap of the two capsules at t on their current motion records (allocation-free; same geometry as capAt + capsuleGap) */
+  const pg = (P: RT, Q: RT, t: number) => {
+    const gP = P.segs[P.seg], gQ = Q.segs[Q.seg], sP = sAt(P, t) - gP.s0, sQ = sAt(Q, t) - gQ.s0;
+    const cx = gP.a.x + gP.t.x * sP + gP.n.x * P.u, cy = gP.a.y + gP.t.y * sP + gP.n.y * P.u;
+    const dx = gQ.a.x + gQ.t.x * sQ + gQ.n.x * Q.u, dy = gQ.a.y + gQ.t.y * sQ + gQ.n.y * Q.u;
+    const ex = gP.t.x * P.dir * P.hw, ey = gP.t.y * P.dir * P.hw, fx = gQ.t.x * Q.dir * Q.hw, fy = gQ.t.y * Q.dir * Q.hw;
+    return segSegDist(cx - ex, cy - ey, cx + ex, cy + ey, dx - fx, dy - fy, dx + fx, dy + fy) - P.r - Q.r;
+  };
+  const bandOf = (g: number) => { let b = 0; for (const x of TB) if (g > x) b++; return b; };
+  /** minimiser of the convex g on [a, b] (golden section) */
+  const argminG = (P: RT, Q: RT, a: number, b: number) => {
+    const r = (Math.sqrt(5) - 1) / 2;
+    let x1 = b - r * (b - a), x2 = a + r * (b - a), f1 = pg(P, Q, x1), f2 = pg(P, Q, x2);
+    for (let k = 0; k < 200 && b - a > 1e-15 * Math.max(1, Math.abs(b)); k++) {
+      if (f1 <= f2) { b = x2; x2 = x1; f2 = f1; x1 = b - r * (b - a); f1 = pg(P, Q, x1); } else { a = x1; x1 = x2; f1 = f2; x2 = a + r * (b - a); f2 = pg(P, Q, x2); }
+    }
+    return f1 <= f2 ? x1 : x2;
+  };
+  /** next crossing after `from` of threshold th: up (g > th, given g(from) ≤ th) or down (g ≤ th, given g(from) > th);
+   *  [lo, hi] with the old side at lo; null when the current motions never cross it at or before the horizon.
+   *  The search intervals depend only on `from` and the two motions, never on H (with a nearly tangential crossing the
+   *  floating-point gap is noisy at 1e-16 mm and an H-dependent bracket would pick a different root: horizon-dependent) */
+  const crossing = (P: RT, Q: RT, from: number, th: number, up: boolean): [number, number] | null => {
+    if (from >= H) return null;
+    const vP = velOf(P), vQ = velOf(Q);
+    if (vP.x === vQ.x && vP.y === vQ.y) return null;                // relative rest: g constant
+    let r: [number, number] | null = null;
+    if (up) {
+      // the sublevel set {g ≤ th} is an interval containing `from`: exponential search for a time beyond it, then bisection
+      const above = (t: number) => pg(P, Q, t) > th;
+      let lo = from, step = 1e-9 * Math.max(1, Math.abs(from));
+      for (;;) { const hi = from + step; if (above(hi)) { r = bis(lo, hi, above); break; } if (hi >= H) return null; lo = hi; step *= 2; }
+    } else {
+      // the sublevel set is an interval after `from` or empty: exact first touch of the capsules inflated by th/2
+      // (pairFirstHit), then the root of the gap itself between `from` and a point inside the sublevel set
+      const below = (t: number) => pg(P, Q, t) <= th;
+      const cP = capAt(P, from), cQ = capAt(Q, from), h = pairFirstHit({ ...cP, r: cP.r + th / 2 }, vP, { ...cQ, r: cQ.r + th / 2 }, vQ, 0);
+      r = downCrossingBracket(from, h, below, (a, b) => argminG(P, Q, a, b));
+      if (!r) return null;
+    }
+    return r[1] <= H + horizonSnap(H) ? r : null;
+  };
+  const schedEp = (key: number, t: number) => {
+    const ep = eps.get(key)!, i = Math.floor(key / N), j = key % N, P = A[i], Q = A[j];
+    let best: [number, number, number] | null = null;
+    if (ep.band < 5) { const c = crossing(P, Q, t, TB[ep.band], true); if (c) best = [c[1], c[0], TB[ep.band]]; }
+    if (ep.band > 0) { const c = crossing(P, Q, t, TB[ep.band - 1], false); if (c && (!best || c[1] < best[0])) best = [c[1], c[0], TB[ep.band - 1]]; }
+    if (best) push({ t: best[0], kind: 'ep', a: i, b: j, va: P.ver, vb: Q.ver, vp: ep.ver, lo: best[1], th: best[2] });
+  };
+  const epEvent = (i: number, j: number, kind: 'contact_start' | 'contact_end', ep: Ep, t: number) => {
+    events.push({ t_s: ep.mark!, kind, agents: [A[i].id, A[j].id], class: 'physical_contact', detail: null, bracket_s: ep.markBr, err_s: Math.max(0, (ep.errHi ?? t) - ep.errLo), confirmed_t_s: t, exact: true, usable_as_cause: true, contact_kind: 'geometric_contact' });
+  };
+  /** one boundary crossing of TB[k] (up or down) at time t with bracket br; episode bookkeeping */
+  const crossBoundary = (key: number, ep: Ep, k: number, up: boolean, br: [number, number], t: number) => {
+    const i = Math.floor(key / N), j = key % N;
+    if (!ep.inC) {
+      if (!up && k === 3) ep.edge = br[0];                                        // last time g > θ + ε
+      if (!up && k === 2) { ep.mark = br[1]; ep.markBr = br; ep.errLo = ep.edge; ep.errHi = null; }
+      if (up && k === 2) ep.mark = null;                                          // back above θ: no contact
+      if (ep.mark !== null && k === 1) ep.errHi = up ? null : br[1];              // last down-crossing of θ − ε
+      if (!up && k === 0 && ep.mark !== null) { epEvent(i, j, 'contact_start', ep, t); stats.contact_episodes++; ep.inC = true; ep.mark = null; ep.edge = br[0]; }
+    } else {
+      if (up && k === 1) ep.edge = br[0];                                         // last time g ≤ θ − ε
+      if (up && k === 2) { ep.mark = br[1]; ep.markBr = br; ep.errLo = ep.edge; ep.errHi = null; }
+      if (!up && k === 2 && ep.mark !== null) { ep.mark = null; stats.sub_resolution_excursions++; }
+      if (ep.mark !== null && k === 3) ep.errHi = up ? br[1] : null;              // last up-crossing of θ + ε
+      if (up && k === 4 && ep.mark !== null) { epEvent(i, j, 'contact_end', ep, t); stats.contact_episode_ends++; ep.inC = false; ep.mark = null; ep.edge = br[0]; }
+    }
+  };
+  /** bring the episode of a pair to the gap at t (a crossing event, a jump at a joint turn, or a new candidate pair) */
+  const reconcileEp = (key: number, t: number, e: QE | null) => {
+    const i = Math.floor(key / N), j = key % N;
+    if (A[i].layer !== A[j].layer) return;
+    let ep = eps.get(key);
+    const nb2 = bandOf(pg(A[i], A[j], t));
+    if (!ep) {
+      // first sight of the pair: before it, the pair was never within the broad-phase reach, so it was out of contact;
+      // if it is already close (only possible at t = 0) the crossing is at t itself
+      ep = { inC: false, band: 5, ver: 0, mark: null, markBr: [t, t], errLo: t, errHi: null, edge: t };
+      eps.set(key, ep);
+      if (nb2 < 5 && t > 0) { stats.unresolved++; ev(t, 'unresolved', [i, j], 'solver_status', 'pair entered the broad-phase candidates already within the contact resolution'); }
+    }
+    if (nb2 !== ep.band) {
+      const up = nb2 > ep.band;
+      for (let b = ep.band; b !== nb2; b += up ? 1 : -1) {
+        const k = up ? b : b - 1;
+        const br: [number, number] = e && e.th === TB[k] && Math.abs(nb2 - ep.band) === 1 ? [e.lo!, t] : [t, t];
+        crossBoundary(key, ep, k, up, br, t);
+      }
+      ep.band = nb2; ep.ver++;
+    }
+    schedEp(key, t);
+  };
+
   /** conservative swept box of an agent over [tw, tw + WIN]: its centre path at up to free speed, inflated by L/2 */
   const boxOf = (a: RT, tw: number): AABB => {
     const s0 = sAt(a, tw);
@@ -432,7 +663,7 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
     stats.candidate_pairs_total += next.size; stats.candidate_pairs_max = Math.max(stats.candidate_pairs_max, next.size);
     const added = pairs.filter((k) => !cand.has(k));
     cand = next; nb = nnb;
-    for (const key of added) { pairVer.set(key, (pairVer.get(key) ?? 0) + 1); pairEvents(Math.floor(key / N), key % N, tw); }
+    for (const key of added) { pairVer.set(key, (pairVer.get(key) ?? 0) + 1); pairEvents(Math.floor(key / N), key % N, tw); reconcileEp(key, tw, null); }
   };
 
   // ---- velocity solve: greatest velocities with v ≤ free speed and dg/dt ≥ 0 for every touching pair
@@ -469,6 +700,14 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
         if (rounds > 4 * comp.length + 10) { stats.unresolved++; ev(t, 'unresolved', comp.slice(0, 5), 'solver_status', 'velocity solve did not settle'); break; }
         ch = relax();
       }
+      // constraint_active bookkeeping (read-only): a pair constraint binds when it attains the solved velocity of x below
+      // x's cap (the same test as the reported cause)
+      const bound = new Set<number>();
+      for (const k of cons) {
+        const vx = v.get(k.x)!; if (!(vx < cap.get(k.x)!)) continue;
+        if (k.y < 0 ? vx === 0 : k.c * v.get(k.y)! === vx) bound.add(pkey(k.x, k.o));
+      }
+      for (const key of bound) { const iv = cOpen.get(key); if (iv) { if (iv.bind === null) iv.bind = t; iv.solves++; } }
       const causeOf = (x: number): string | null => {
         const a = A[x], nv = v.get(x)!;
         if (nv >= a.v0) return null;
@@ -485,7 +724,7 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
           if (a.justStarted && nv === 0) { a.stopCause = causeOf(x); ev(t, 'stop', [x], 'physical_constraint', `cannot move at its start: ${a.stopCause}`); }
           a.justStarted = false; continue;
         }
-        const old = a.v; a.sRef = sAt(a, t); a.tRef = t; a.v = nv; a.ver++; sample(a, t); changed.push(x);
+        const old = a.v; a.sRef = sAt(a, t); a.tRef = t; a.tA = t; a.sA = a.sRef; a.v = nv; a.ver++; sample(a, t); changed.push(x);
         const why = causeOf(x);
         if (nv === 0) { a.stopCause = why; ev(t, 'stop', [x], 'physical_constraint', why); }
         else if (old === 0 && a.started) ev(t, 'resume', [x], 'physical_constraint', nv < a.v0 ? `at ${nv} mm/s, ${why}` : null);
@@ -542,9 +781,18 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
   // ---- main loop
   windowUpdate(0);
   for (const a of A) ownEvent(a);
-  let nextWin = WIN, lastT = -1, sameCount = 0;
-  const processBatch = (t: number, batch: QE[]) => {
+  let nextWin = WIN, lastT = -1, sameCount = 0, epLastT = -1, epSameCount = 0;
+  /** episode reconciliation after a batch: pairs whose crossing event fired and every candidate pair of an agent whose
+   *  motion record changed (its gap function changed; a joint turn may make it jump) */
+  const reconcileAfter = (t: number, fired: QE[], moved: number[]) => {
+    const evOf = new Map<number, QE>(); for (const e of fired) evOf.set(pkey(e.a, e.b), e);
+    const keys = new Set<number>(evOf.keys()); for (const x of moved) for (const y of nb[x]) keys.add(pkey(x, y));
+    for (const key of [...keys].sort((p, q) => p - q)) if (cand.has(key)) reconcileEp(key, t, evOf.get(key) ?? null);
+    for (const key of active) { const ep = eps.get(key); if (!ep || !(ep.inC || ep.mark !== null)) stats.constraint_outside_contact++; }
+  };
+  const processBatch = (t: number, batch: QE[], epFired: QE[]) => {
     const affected = new Set<number>(), turners: number[] = [], retries = new Set<number>(), firedPairs: number[] = [];
+    const firedContact = new Set<number>(), firedRelease = new Set<number>();
     const ver0 = new Map<number, number>();
     for (const e of batch) { ver0.set(e.a, A[e.a].ver); if (e.b >= 0) ver0.set(e.b, A[e.b].ver); }
     batch.sort((x, y) => (qLess(x, y) ? -1 : qLess(y, x) ? 1 : 0));
@@ -560,9 +808,9 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
         case 'contact': {
           const k = `${e.a}|${e.b}|${pairVer.get(pkey(e.a, e.b))}|${e.va}|${e.vb}`;
           if (processedContacts.has(k)) throw Error(`SOLVER2D: contact ${k} executed twice (defect)`);
-          processedContacts.add(k); affected.add(e.a); affected.add(e.b); firedPairs.push(pkey(e.a, e.b)); break;
+          processedContacts.add(k); affected.add(e.a); affected.add(e.b); firedPairs.push(pkey(e.a, e.b)); firedContact.add(pkey(e.a, e.b)); break;
         }
-        case 'release': affected.add(e.a); affected.add(e.b); firedPairs.push(pkey(e.a, e.b)); break;
+        case 'release': affected.add(e.a); affected.add(e.b); firedPairs.push(pkey(e.a, e.b)); firedRelease.add(pkey(e.a, e.b)); break;
         case 'pass': { stats.passes++; ev(t, 'pass', [e.a, e.b], 'motion', `lateral offsets ${A[e.a].u} / ${A[e.b].u} mm`); break; }
       }
     }
@@ -590,8 +838,9 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
         const key = pkey(x, y), g = capsuleGap(cx, capAt(A[y], t)), on = g <= ACT, was = active.has(key);
         if (on === was) continue;
         const i = Math.min(x, y), j = Math.max(x, y);
-        if (on) { active.add(key); activeAdj[i].add(j); activeAdj[j].add(i); stats.contacts++; ev(t, 'contact_start', [i, j], 'physical_contact', g < -OCC_TOL_MM ? `overlap ${-g} mm (defect)` : null); if (g < -OCC_TOL_MM) stats.unresolved++; }
-        else { active.delete(key); activeAdj[i].delete(j); activeAdj[j].delete(i); stats.releases++; ev(t, 'contact_end', [i, j], 'physical_contact'); }
+        // constraint bookkeeping only: the physical contact events are the episodes (reconcileEp), not these toggles
+        if (on) { cOpen.set(key, { start: t, trig: firedContact.has(key) ? 'contact_event' : 'membership_check', bind: null, solves: 0 }); active.add(key); activeAdj[i].add(j); activeAdj[j].add(i); stats.contacts++; if (g < -OCC_TOL_MM) { stats.unresolved++; ev(t, 'unresolved', [i, j], 'solver_status', `overlap ${-g} mm when the contact constraint became active (defect)`); } }
+        else { const rb = relBr.get(key), viaRel = firedRelease.has(key); cDone.push({ key, iv: cOpen.get(key)!, end: t, endTrig: viaRel ? 'release_event' : 'membership_check', br: viaRel && rb && rb[1] === t ? rb : null }); cOpen.delete(key); active.delete(key); activeAdj[i].delete(j); activeAdj[j].delete(i); stats.releases++; }
         pairVer.set(key, (pairVer.get(key) ?? 0) + 1); membershipChanged.push(key);
       }
     }
@@ -605,6 +854,7 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
     const redo = new Set<number>([...membershipChanged, ...firedPairs]);
     for (const x of moved) { ownEvent(A[x]); for (const y of nb[x]) redo.add(pkey(x, y)); }
     for (const key of [...redo].sort((p, q) => p - q)) pairEvents(Math.floor(key / N), key % N, t);
+    reconcileAfter(t, epFired, moved);
     // a blocked turn retries when one of its blockers changes its motion
     if (moved.length && turnBlockedSet.size) {
       const ch = new Set(moved);
@@ -618,30 +868,53 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
     const tNext = top ? top.t : Infinity;
     if (nextWin <= H && nextWin <= tNext) { windowUpdate(nextWin); nextWin = (stats.windows) * WIN; continue; }
     if (!top || top.t > H) break;
-    const t = top.t, batch: QE[] = [];
+    const t = top.t, batch: QE[] = [], epFired: QE[] = [];
     const inBatch = new Set<string>();
     while (heap.size && heap.peek()!.t === t) {
       const e = heap.pop()!, a = A[e.a];
       let valid = e.va === a.ver;
-      if (e.b >= 0) { const b = A[e.b], key = pkey(e.a, e.b); valid = valid && e.vb === b.ver && e.vp === (pairVer.get(key) ?? 0) && cand.has(key); }
+      if (e.b >= 0) { const b = A[e.b], key = pkey(e.a, e.b); valid = valid && e.vb === b.ver && e.vp === (e.kind === 'ep' ? eps.get(key)?.ver : (pairVer.get(key) ?? 0)) && cand.has(key); }
+      if (e.kind === 'ep') { const bk = `ep|${e.a}|${e.b}`; if (valid && !inBatch.has(bk)) { inBatch.add(bk); epFired.push(e); stats.episode_events++; } else stats.stale_pops++; continue; }
       if (e.kind === 'retry') valid = !!a.turnBlocked;
       if (e.kind === 'start') valid = valid && a.mode === 'waiting';
       const bk = `${e.kind}|${e.a}|${e.b}`;
       if (valid && !inBatch.has(bk)) { inBatch.add(bk); batch.push(e); } else stats.stale_pops++;
     }
-    if (!batch.length) continue;
+    if (!batch.length) {
+      // episode-only batch: no motion changes, but it still counts against the same-instant (Zeno) guard: a crossing
+      // re-scheduled at the same t forever would otherwise loop without ever reaching the guard (or max_batches)
+      if (t === epLastT) { if (++epSameCount > maxSame) { stats.aborted = `more than ${maxSame} episode-only batches at t = ${t} (Zeno guard)`; break; } } else { epLastT = t; epSameCount = 0; }
+      if (epFired.length) reconcileAfter(t, epFired, []);
+      continue;
+    }
     if (t === lastT) { if (++sameCount > maxSame) { stats.aborted = `more than ${maxSame} batches at t = ${t} (Zeno guard)`; break; } } else { lastT = t; sameCount = 0; }
     stats.max_same_instant_batches = Math.max(stats.max_same_instant_batches, sameCount + 1);
     stats.batches++;
-    processBatch(t, batch);
+    processBatch(t, batch, epFired);
   }
   stats.t_end_s = H;
+  // episodes at the horizon: an open contact stays open (no end is invented); an end whose separation is not confirmed
+  // (g above θ but not yet θ + ρ) is reported as such, never as an exact contact_end
+  for (const key of [...eps.keys()].sort((p, q) => p - q)) {
+    const ep = eps.get(key)!; if (!ep.inC) continue;
+    const i = Math.floor(key / N), j = key % N;
+    if (ep.mark === null) stats.episodes_open_at_horizon++;
+    else { stats.ends_unconfirmed_at_horizon++; events.push({ t_s: H, kind: 'contact_end_unconfirmed', agents: [A[i].id, A[j].id], class: 'solver_status', detail: `gap above the contact tolerance since ${ep.mark} s but below the separation resolution (${SEP_RES_MM} mm) at the horizon: separation undetermined`, exact: false, usable_as_cause: false, contact_kind: 'geometric_contact' }); }
+  }
   const agents: Record<string, AgentOut> = {};
   for (const a of A) {
     sample(a, H);
-    const mode = a.mode === 'arrived' ? 'arrived' : a.mode === 'waiting' ? 'not_started' : a.v > 0 ? 'moving' : a.capped ? 'stopped_by_geometry' : a.turnBlocked ? 'waiting_at_joint' : 'stopped_by_contact';
+    const mode = a.mode === 'arrived' ? 'arrived' : a.mode === 'waiting' ? 'not_started' : a.start === H ? 'started_at_horizon' : a.v > 0 ? 'moving' : a.capped ? 'stopped_by_geometry' : a.turnBlocked ? 'waiting_at_joint' : 'stopped_by_contact';
     if (mode.startsWith('stopped') || mode === 'waiting_at_joint') { stats.stalled++; ev(H, 'stalled', [a.k], 'solver_status', `${mode}${a.stopCause ? `: ${a.stopCause}` : ''}`); }
     agents[a.id] = { lane: a.spec.lane, layer: input.lanes[a.laneIdx].layer, samples: a.samples, arrival_t_s: a.arrival, final_mode: mode, final_speed_mm_s: a.v, stop_cause: a.stopCause, geometry_stop_s_mm: a.geoStop ? a.geoStop.s : null };
   }
-  return { agents, events, stats };
+  // episode events are emitted when confirmed, with the time of the crossing: order the list by time (stable)
+  const ordered = events.map((e, k) => [e, k] as const).sort((p, q) => p[0].t_s - q[0].t_s || p[1] - q[1]).map(([e]) => e);
+  for (const [key, iv] of cOpen) cDone.push({ key, iv, end: null, endTrig: null, br: null });
+  const ids = (key: number): [string, string] => { const x = A[Math.floor(key / N)].id, y = A[key % N].id; return x < y ? [x, y] : [y, x]; };
+  const constraint_active: ConstraintActiveInterval[] = cDone
+    .map((d) => ({ agents: ids(d.key), start_t_s: d.iv.start, start_trigger: d.iv.trig, end_t_s: d.end, end_trigger: d.endTrig, end_bracket_s: d.br, binding_t_s: d.iv.bind, binding_solves: d.iv.solves, contact_kind: 'constraint_active' as const }))
+    .sort((p, q) => p.start_t_s - q.start_t_s || (p.agents[0] < q.agents[0] ? -1 : p.agents[0] > q.agents[0] ? 1 : 0) || (p.agents[1] < q.agents[1] ? -1 : p.agents[1] > q.agents[1] ? 1 : 0));
+  stats.constraint_intervals = constraint_active.length; stats.constraint_intervals_binding = constraint_active.filter((c) => c.binding_t_s !== null).length;
+  return { agents, events: ordered, constraint_active, antenna_contact: null, stats };
 }

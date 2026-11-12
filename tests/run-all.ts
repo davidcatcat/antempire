@@ -2,21 +2,36 @@
  * Runs every test script in its own Node process and prints a summary table.
  *   node tests/run-all.ts            -> all blocking tests (exit 1 if any fails)
  *   node tests/run-all.ts --except a,b -> skip the named tests (CI runs those as separate steps)
+ *   node tests/run-all.ts --shard k/n  -> run only shard k of n (CI runs the n shards as parallel jobs).
+ *     The shards are a deterministic partition of the selected tests: every test is in exactly one shard
+ *     (tests/run-all-shards.test.ts proves it), so sharding never skips or duplicates a test. Weights are
+ *     approximate seconds used only to balance wall-clock time; they do not affect what is tested.
  */
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { REPO_ROOT } from '../cli/lib/load.ts';
 
-export const BLOCKING = ['params-split', 'platform-purity', 'naturalism', 'foraging-physics', 'migration', 'local-ecology', 'scaling', 'multi-colony', 'golden', 'differential', 'advance', 'nest-temperature', 'save-transaction', 'history-integrity', 'save-counters', 'rules-isolation', 'hunting', 'injury', 'crop-ledger', 'navigation', 'rules-registry', 'multi-colony-timeline', 'day0', 'death-diagnostics', 'activity', 'eval-methods', 'web', 'web-serve', 'issue43-timeline', 'issue44-locality', 'phase2-sensitivity', 'reproduction-measures', 'p0a-rain-allocation', 'issue51-input-manifest', 'issue50-brood-order', 'compartments', 'c2-engine-transfers', 'issue56-worker-order', 'issue61-trail-deposit', 'math-contracts', 'ph1-geometry', 'physics-isolation', 'mv1-kinematics', 'ph2-collision', 'physics-two-ant', 'me1-invariants', 'c3a-queen-feeding', 'source-flows-v26', 'rh-offsets-v27', 'c4a-a0-defect', 'c4a-larva-feeding', 'c3a-feed-rule', 'c4a-begging-prior', 'c4b-larva-development', 'c4b-form-properties', 'nurse-cue-local-v31', 'c4-causal-chain', 'physics-event-fixes', 'physics-p2d', 'physics-p2e', 'physics-2d-occupancy', 'solver-compare', 'ph3b-solver2d', 'physics-playback', 'web-v3-follow', 'web-v4-stats', 'web-v5-observer', 'p0a0-world-scheduler', 'scheduler-isolation', 'p0a0-time-contract', 'p0b-life-history', 'wp6-c4-next', 'clock-isolation', 'p0a1-24h-clock', 'p0a1-multi-colony-axis', 'web-v6-game', 'wp5-mixed-precision', 'worker-boundary', 'save-contract', 'save-format', 'game-art-assets', 'render-system', 'web-v6-art-scene', 'worker-runtime', 'web-v62-experiment', 'save2-session', 'render-atlas', 'device-bench', 'display-motion', 'fingerprint-v2', 'solar-xenv', 'wp5-cohort-lifetime', 'wp5-camera-invariance', 'chem0-contract', 'chemistry-isolation', 'chem1-core', 'chem1b-sampling', 'web-v6-replay-ux'];
+export const BLOCKING = ['params-split', 'platform-purity', 'naturalism', 'foraging-physics', 'migration', 'local-ecology', 'scaling', 'multi-colony', 'golden', 'differential', 'advance', 'nest-temperature', 'save-transaction', 'history-integrity', 'save-counters', 'rules-isolation', 'hunting', 'injury', 'crop-ledger', 'navigation', 'rules-registry', 'multi-colony-timeline', 'day0', 'death-diagnostics', 'activity', 'eval-methods', 'web', 'web-serve', 'issue43-timeline', 'issue44-locality', 'phase2-sensitivity', 'reproduction-measures', 'p0a-rain-allocation', 'issue51-input-manifest', 'issue50-brood-order', 'compartments', 'c2-engine-transfers', 'issue56-worker-order', 'issue61-trail-deposit', 'math-contracts', 'ph1-geometry', 'physics-isolation', 'mv1-kinematics', 'ph2-collision', 'physics-two-ant', 'me1-invariants', 'c3a-queen-feeding', 'source-flows-v26', 'rh-offsets-v27', 'c4a-a0-defect', 'c4a-larva-feeding', 'c3a-feed-rule', 'c4a-begging-prior', 'c4b-larva-development', 'c4b-form-properties', 'nurse-cue-local-v31', 'c4-causal-chain', 'physics-event-fixes', 'physics-p2d', 'physics-p2e', 'physics-2d-occupancy', 'solver-compare', 'ph3b-solver2d', 'physics-playback', 'web-v3-follow', 'web-v4-stats', 'web-v5-observer', 'p0a0-world-scheduler', 'scheduler-isolation', 'p0a0-time-contract', 'p0b-life-history', 'wp6-c4-next', 'clock-isolation', 'p0a1-24h-clock', 'p0a1-multi-colony-axis', 'web-v6-game', 'wp5-mixed-precision', 'fingerprint-v2', 'worker-boundary', 'worker-runtime', 'solar-xenv', 'save-contract', 'save-format', 'wp5-cohort-lifetime', 'wp5-camera-invariance', 'chem0-contract', 'chemistry-isolation', 'chem1-core', 'chem1b-sampling', 'web-v6-replay-ux', 'p0a2-24h-proto', 'ph3b-crossing-guard', 'kin2d-kinematics', 'natural-walk', 'r133-observer', 'kin2d-diagnosis', 'local-sensing', 'physics-shared-contract', 'antenna-geometry', 'physics-contact-constraint', 'kin2d-model-c-scenes', 'wp4-local-steer', 'physics-time-contract-wp4', 'wp4-individual-time', 'ph3b-contact-time', 'ph3b-contact-kinds', 'physics-destinations', 'run-all-shards', 'rules-isolation', 'wp4-local-steer', 'physics-playback', 'physics-p2e', 'ph3b-solver2d', 'ph2-collision', 'c4-causal-chain', 'issue50-brood-order', 'physics-p2d', 'death-diagnostics', 'phase2-sensitivity', 'crop-ledger', 'source-flows-v26', 'p0a2-24h-proto', 'game-art-assets', 'render-system', 'web-v6-art-scene', 'web-v62-experiment', 'save2-session', 'render-atlas', 'device-bench', 'display-motion'];
 
 const run = (name: string) => {
   const t = Date.now();
   const r = spawnSync(process.execPath, [path.join(REPO_ROOT, 'tests', `${name}.test.ts`)], { encoding: 'utf8' });
   return { name, ok: r.status === 0, seconds: ((Date.now() - t) / 1000).toFixed(1), output: (r.stdout + r.stderr).trim() };
 };
+const isMain = process.argv[1] !== undefined && path.resolve(process.argv[1]) === path.resolve(REPO_ROOT, 'tests', 'run-all.ts');
+if (isMain) {
 const exceptArg = process.argv.find((a, i) => process.argv[i - 1] === '--except');
 const except = new Set((exceptArg ?? '').split(',').filter(Boolean));
-const results = BLOCKING.filter((n) => !except.has(n)).map(run);
+const shardArg = process.argv.find((a, i) => process.argv[i - 1] === '--shard');
+let selected = BLOCKING.filter((n) => !except.has(n));
+if (shardArg) {
+  const m = /^(\d+)\/(\d+)$/.exec(shardArg); if (!m) throw new Error(`--shard expects k/n, got ${shardArg}`);
+  const k = Number(m[1]), n = Number(m[2]); if (k < 1 || k > n) throw new Error(`--shard ${shardArg} out of range`);
+  selected = shardPlan(selected, n)[k - 1];
+  console.log(`shard ${k}/${n}: ${selected.length} tests`);
+}
+const results = selected.map(run);
 for (const r of results) console.log(`${r.ok ? 'PASS' : 'FAIL'}  ${r.name.padEnd(28)} ${r.seconds}s`);
 for (const r of results.filter((x) => !x.ok)) console.log(`\n--- ${r.name} ---\n${r.output.slice(-4000)}`);
 if (results.some((x) => !x.ok)) process.exitCode = 1;
+}

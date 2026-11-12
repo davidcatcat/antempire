@@ -1,0 +1,92 @@
+{
+  "schema": "antempire.antenna-candidates.v1",
+  "species_id": "pheidole-megacephala",
+  "status": "ANTENNA-GEO（#172）隔離幾何實驗用。不是物種參數檔（species/*.json），不進正式模擬，不接生物決策。物種量測與候選值分開：species_params 是物種模式（未知一律 null，物種模式因此拒絕執行）；candidate_minor 是候選模式（全部 assumption: true）。",
+  "sources": {
+    "R99": "Sarnat, Fischer, Guénard & Economo (2015) ZooKeys 543:1–109, P. megacephala 條目 pp. 32–38（引用 Fischer & Fisher 2013）。DOI 10.3897/zookeys.543.6050",
+    "R870": "Eguchi (2008) Zootaxa 1902:1–118, P. megacephala 條目 pp. 55–59（越南北部標本）。DOI 10.11646/zootaxa.1902.1.1",
+    "R871": "Warner & Scheffrahn (2007) Bigheaded ant, Pheidole megacephala. UF/IFAS Featured Creatures EENY-369（2007 年 1 月發布）"
+  },
+  "species_measurements": {
+    "minor": {
+      "head_width_mm": [
+        { "range": [0.50, 0.61], "n": 20, "source": "R99（Fischer & Fisher 2013 之數值，二手引用）" },
+        { "range": [0.55, 0.65], "n": 5, "source": "R870" }
+      ],
+      "head_length_mm": [
+        { "range": [0.57, 0.68], "n": 20, "source": "R99（Fischer & Fisher 2013，二手）" },
+        { "range": [0.62, 0.72], "n": 5, "source": "R870" }
+      ],
+      "scape_length_mm": [
+        { "range": [0.61, 0.72], "n": 20, "source": "R99（Fischer & Fisher 2013，二手）" },
+        { "range": [0.67, 0.73], "n": 5, "source": "R870" }
+      ],
+      "scape_index_SI": [
+        { "range": [114, 122], "n": 20, "source": "R99（SI = SL/HW×100）" },
+        { "range": [111, 121], "n": 5, "source": "R870" }
+      ],
+      "scape_vs_head_margin": { "text": "柄節超出頭後緣，約與複眼等長（R99）；超出後側緣至少觸角第 II 節長度的兩倍（R870）", "source": "R99, R870" },
+      "body_length_mm": { "value": 2, "note": "約 2 mm（R871）；R94 為約 2.5 mm（kinematics2d 候選檔沿用 R94）", "source": "R871, R94" }
+    },
+    "major": {
+      "head_width_mm": [ { "range": [1.10, 1.54], "n": 19, "source": "R99" }, { "range": [1.25, 1.45], "n": 5, "source": "R870" } ],
+      "head_length_mm": [ { "range": [1.04, 1.59], "n": 19, "source": "R99" }, { "range": [1.28, 1.45], "n": 5, "source": "R870" } ],
+      "scape_length_mm": [ { "range": [0.59, 0.76], "n": 19, "source": "R99" }, { "range": [0.71, 0.76], "n": 5, "source": "R870" } ],
+      "scape_index_SI": [ { "range": [47, 58], "n": 19, "source": "R99" }, { "range": [52, 57], "n": 5, "source": "R870" } ]
+    },
+    "antenna_segments": { "value": 12, "club_segments": 3, "source": "R871（12 節、3 節棒）；R870（3 節棒）" },
+    "not_found": ["鞭節（funiculus）長度", "觸角窩（torulus）在頭部的位置", "觸角直徑", "柄節與肘關節的活動範圍", "觸角擺動頻率、振幅、左右相位", "頭部相對身體的轉動"],
+    "limits": "分類學標本（乾燥、針插）範圍，不是本巢實測；n 很小；FL 在 R870 是後腿股節長，不是鞭節長；SL 是柄節直線長（不含基部髁），平面模型中的投影長度只會 ≤ SL。"
+  },
+  "species_params": {
+    "head_origin_x_mm": { "value": null, "assumption": false, "basis": null, "source": null, "note": "觸角窩在頭部的縱向位置未查到" },
+    "head_yaw_rad": { "value": null, "assumption": false, "basis": null, "source": null, "note": "頭部相對身體的轉動未查到" },
+    "torulus_halfspan_mm": { "value": null, "assumption": false, "basis": null, "source": null, "note": "觸角窩間距未查到（只知道頭寬）" },
+    "scape_length_mm": { "value": null, "assumption": false, "basis": null, "source": null, "note": "只有標本範圍（R99、R870），沒有個體值；物種模式不從範圍挑值" },
+    "funiculus_length_mm": { "value": null, "assumption": false, "basis": null, "source": null, "note": "未查到；不得用他種數值" },
+    "antenna_radius_mm": { "value": null, "assumption": false, "basis": null, "source": null, "note": "未查到" },
+    "scape_angle_min_rad": { "value": null, "assumption": false, "basis": null, "source": null, "note": "活動範圍未查到" },
+    "scape_angle_max_rad": { "value": null, "assumption": false, "basis": null, "source": null, "note": "活動範圍未查到" },
+    "elbow_angle_min_rad": { "value": null, "assumption": false, "basis": null, "source": null, "note": "活動範圍未查到" },
+    "elbow_angle_max_rad": { "value": null, "assumption": false, "basis": null, "source": null, "note": "活動範圍未查到" },
+    "scan_scape_centre_rad": { "value": null, "assumption": false, "basis": null, "source": null, "note": "擺動模式未查到（R810 為非本種，只有定性）" },
+    "scan_scape_amplitude_rad": { "value": null, "assumption": false, "basis": null, "source": null, "note": "未查到" },
+    "scan_elbow_centre_rad": { "value": null, "assumption": false, "basis": null, "source": null, "note": "未查到" },
+    "scan_elbow_amplitude_rad": { "value": null, "assumption": false, "basis": null, "source": null, "note": "未查到" },
+    "scan_frequency_hz": { "value": null, "assumption": false, "basis": null, "source": null, "note": "未查到" },
+    "scan_phase_left_rad": { "value": null, "assumption": false, "basis": null, "source": null, "note": "未查到" },
+    "scan_phase_right_rad": { "value": null, "assumption": false, "basis": null, "source": null, "note": "未查到" },
+    "scan_elbow_phase_offset_rad": { "value": null, "assumption": false, "basis": null, "source": null, "note": "未查到" }
+  },
+  "candidate_minor": {
+    "body": { "length_mm": 2.5, "width_mm": 0.5, "note": "與 kinematics2d-candidates.json 相同（體長 R94 文獻支持；寬為候選下限，遊戲假設）" },
+    "params": {
+      "head_origin_x_mm": { "value": 1.0, "assumption": true, "basis": "遊戲假設", "source": null, "note": "觸角窩中點在身體中心前 1.0 mm（體長 2.5 mm 的前緣在 1.25 mm）；受約束：須落在頭部範圍 [L/2 − HL_max, L/2]" },
+      "head_yaw_rad": { "value": 0, "assumption": true, "basis": "遊戲假設", "source": null, "note": "頭部不轉動（未建模）" },
+      "torulus_halfspan_mm": { "value": 0.1, "assumption": true, "basis": "遊戲假設", "source": null, "note": "受約束：≤ 最小頭寬的一半（0.25 mm）" },
+      "scape_length_mm": { "value": 0.69, "assumption": true, "basis": "文獻支持", "source": "R99, R870", "note": "機制與範圍：文獻支持（兩個標本範圍的交集 0.67–0.72 mm）；個體取值 0.69：遊戲假設" },
+      "funiculus_length_mm": { "value": 0.85, "assumption": true, "basis": "遊戲假設", "source": null, "note": "本種無鞭節量測；未用他種數值，也未由追跡成功率反推；敏感度 0.5–1.2 mm" },
+      "antenna_radius_mm": { "value": 0.02, "assumption": true, "basis": "遊戲假設", "source": null, "note": "接觸用半徑；無量測" },
+      "scape_angle_min_rad": { "value": 0.1, "assumption": true, "basis": "遊戲假設", "source": null, "note": "平面投影的活動範圍；無量測" },
+      "scape_angle_max_rad": { "value": 1.6, "assumption": true, "basis": "遊戲假設", "source": null, "note": "無量測" },
+      "elbow_angle_min_rad": { "value": -1.8, "assumption": true, "basis": "遊戲假設", "source": null, "note": "負＝鞭節往內（中線）彎；無量測" },
+      "elbow_angle_max_rad": { "value": 0.3, "assumption": true, "basis": "遊戲假設", "source": null, "note": "無量測" }
+    },
+    "scan": {
+      "scan_scape_centre_rad": { "value": 0.9, "assumption": true, "basis": "遊戲假設", "source": null, "note": "運動學擺動模型（不是畫面動畫、不是知覺）" },
+      "scan_scape_amplitude_rad": { "value": 0.3, "assumption": true, "basis": "遊戲假設", "source": null, "note": "無量測" },
+      "scan_elbow_centre_rad": { "value": -0.8, "assumption": true, "basis": "遊戲假設", "source": null, "note": "無量測" },
+      "scan_elbow_amplitude_rad": { "value": 0.2, "assumption": true, "basis": "遊戲假設", "source": null, "note": "無量測" },
+      "scan_frequency_hz": { "value": 2, "assumption": true, "basis": "遊戲假設", "source": null, "note": "無量測；R810（非本種）只支持『有多種取樣模式』" },
+      "scan_phase_left_rad": { "value": 0, "assumption": true, "basis": "遊戲假設", "source": null, "note": "無量測" },
+      "scan_phase_right_rad": { "value": 3.141592653589793, "assumption": true, "basis": "遊戲假設", "source": null, "note": "左右反相只是候選；R810 不支持套到本種" },
+      "scan_elbow_phase_offset_rad": { "value": 0, "assumption": true, "basis": "遊戲假設", "source": null, "note": "無量測" }
+    }
+  },
+  "constraints_minor": [
+    { "id": "SL_range", "param": "scape_length_mm", "min": 0.61, "max": 0.73, "source_ids": ["R99", "R870"], "note": "兩個標本範圍的聯集" },
+    { "id": "torulus_within_head", "param": "torulus_halfspan_mm", "min": 0, "max": 0.25, "source_ids": ["R99"], "note": "觸角窩必須在頭寬之內：≤ 最小頭寬 0.50 mm 的一半" },
+    { "id": "head_origin_in_head", "param": "head_origin_x_mm", "min": 0.53, "max": 1.25, "source_ids": ["R870", "R94"], "note": "體長 2.5 mm（R94）時頭部在 [L/2 − HL_max(0.72), L/2]" }
+  ],
+  "do_not": ["不得把他種觸角長度當成本種數值", "不得由追跡成功率反推觸角長度", "不得把候選值寫成量測值", "不得把畫面動畫參數當成知覺參數", "不得用於其他物種（CLAUDE.md §4）"]
+}

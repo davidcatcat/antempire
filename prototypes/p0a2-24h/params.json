@@ -1,0 +1,819 @@
+{
+  "schema": "antempire.p0a2-24h-proto.params.v1",
+  "status": "非正式：P0-A2 第二階段隔離原型（Issue #156）的參數。只供 Day0 實驗世界的隔離測試；不是正式參數，不在規則指紋內，不接入每日模擬，不寫存檔或日誌。",
+  "official": false,
+  "reference_variant": "ft-flat",
+  "evidence_classes": {
+    "this_species": "本種（Pheidole megacephala）文獻；數值仍可能需要外推（見 extrapolation_limit）",
+    "other_species_extrapolated": "非本種文獻的數值，外推到本種；必須寫出物種名",
+    "game_assumption": "遊戲假設（含情境設定與工程選擇）；不是量測"
+  },
+  "parameters": {
+    "colony_workers": {
+      "value": 30,
+      "unit": "隻",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "隔離原型的小實驗群（只有小工蟻）；不是任何 founding 情境（A1～A5）、不是野外巢的大小"
+    },
+    "colony_larvae": {
+      "value": 8,
+      "unit": "隻",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "只為了讓育幼工作有局部刺激；幼蟲不發育、不死亡（尚未模擬）"
+    },
+    "initial_crop_fill_max": {
+      "value": 1,
+      "unit": "嗉囊容量比例",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "起始嗉囊量每隻在 [0, 此值 × 容量] 均勻抽樣（起始狀態，不是量測）"
+    },
+    "initial_larva_gut_fill_max": {
+      "value": 1,
+      "unit": "幼蟲腸容量比例",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "同上，幼蟲"
+    },
+    "crop_capacity_portions": {
+      "value": 0.8,
+      "unit": "遊戲份",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "取自 species/pheidole-megacephala.json trophallaxis.crop_capacity（遊戲假設，原樣沿用，未依結果挑選）"
+    },
+    "worker_sugar_daily_portions": {
+      "value": 0.1,
+      "unit": "遊戲份／日",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "取自 species 檔 nutrition.worker_sugar_daily（遊戲假設）。原型不套用 Q10：巢溫尚未模擬，代謝為常數"
+    },
+    "larva_sugar_daily_portions": {
+      "value": 0.025,
+      "unit": "遊戲份／日",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "取自 species 檔 nutrition.larva_sugar_daily（遊戲假設）"
+    },
+    "larva_gut_capacity_portions": {
+      "value": 0.025,
+      "unit": "遊戲份",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "幼蟲一次能存的糖＝一口（larval_feeding.feed_bolus_sugar_portions，一口＝一隻幼蟲一日需求）；本種無資料"
+    },
+    "feed_bolus_portions": {
+      "value": 0.025,
+      "unit": "遊戲份",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設（機制：文獻支持，非本種）",
+      "sources": [
+        "R210"
+      ],
+      "species_of_mechanism": "Solenopsis invicta",
+      "note": "取自 species 檔 larval_feeding.feed_bolus_sugar_portions；每口量固定的機制方向來自 R210（S. invicta，非本種），數值為遊戲假設"
+    },
+    "larva_begging_threshold": {
+      "value": 0.3,
+      "unit": "0..1",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設（機制：文獻支持，非本種）",
+      "sources": [
+        "R210"
+      ],
+      "species_of_mechanism": "Solenopsis invicta",
+      "note": "取自 species 檔 larval_feeding.feed_begging_threshold；幼蟲求食訊號＝1−腸內量／腸容量（遊戲假設）"
+    },
+    "transfer_max_portions": {
+      "value": 0.28,
+      "unit": "遊戲份／次",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設（機制：文獻支持，非本種）",
+      "sources": [
+        "R147"
+      ],
+      "species_of_mechanism": "Camponotus sanctus",
+      "note": "取自 species 檔 trophallaxis.transfer_max_portions"
+    },
+    "forager_retention": {
+      "value": null,
+      "unit": "保留公式（null＝關）",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設（機制方向：文獻，非本種，僅候選）",
+      "sources": [
+        "R147"
+      ],
+      "species_of_mechanism": "Camponotus sanctus",
+      "note": "Q2 候選機制「覓食者保留自身所需」（Owner #188 Q2、#193 裁示）：參考情境為 null＝關，正式交哺上限 transfer_max_portions 不變。開啟時（只在 q2_retention_variants 隔離實驗中），回巢覓食者交哺時不把自己的嗉囊交到低於『自己預期到下次取食前的代謝需求』；這個需求只由它自己的狀態計算（自己的代謝率；own_interval 另用自己最近兩次在食源取食的間隔），不讀全巢存糧、同伴或幼蟲。R147（Camponotus sanctus，非本種）只提供『覓食者不把嗉囊全部交出』的機制方向；R147 的『交出約一半』比例不採用，也不把任何固定比例當作本種數值。保留公式與數值全為遊戲假設"
+    },
+    "max_trophallaxis_contacts": {
+      "value": 3,
+      "unit": "隻／次回巢",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "取自 species 檔 trophallaxis.max_trophallaxis_contacts"
+    },
+    "recruit_min_crop_fill": {
+      "value": 0.5,
+      "unit": "嗉囊容量比例",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設（機制：文獻支持，非本種）",
+      "sources": [
+        "R149"
+      ],
+      "species_of_mechanism": "Lasius niger",
+      "note": "取自 species 檔 activity.recruit_min_crop_fill_fraction；只有裝到這個比例的回巢者，接觸時才傳遞招募（路線）訊號"
+    },
+    "liquid_fill_minutes_full_crop": {
+      "value": 3,
+      "unit": "分鐘",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "取自 species 檔 activity.liquid_fill_minutes_full_crop；實際取食時間依載量比例"
+    },
+    "trail_walking_speed_mm_s": {
+      "value": 17,
+      "unit": "mm/s",
+      "evidence_class": "this_species",
+      "assumption": true,
+      "basis": "文獻支持",
+      "sources": [
+        "R133"
+      ],
+      "species": "Pheidole megacephala",
+      "extrapolation_limit": "實驗室平滑人工路徑、試驗溫度未報告；花園土面與不同溫度下的速度未知。原型不做速度的溫度依賴（R143 為非本種，未採用）"
+    },
+    "source_distance_mm": {
+      "value": 2000,
+      "unit": "mm",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "情境：單一蜜露源距巢口 2 m；不是花園幾何（#157、#158 之後取代移動時間）"
+    },
+    "in_nest_move_s": {
+      "value": 30,
+      "unit": "秒",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "巢內到巢口（或回巢內）的移動時間；巢的空間結構尚未模擬"
+    },
+    "forage_temp_zero_low_c": {
+      "value": null,
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設（Owner 決定的參考情境）",
+      "sources": [],
+      "note": "參考情境 ft-flat：錨點 null＝f_T≡1。暫定、未校準的參考（Owner #188 Q1＝B，#193 裁示）：f_T≡1 只表示「本種沒有可用的溫度—出巢錨點，所以不依溫度調整出巢機率」；不代表實測的日夜活動相同，模型輸出的日夜分布未經科學驗證。CTmax 熱傷害規則（R145，本種）仍適用。R190（Pheidole pallidula，非本種）的錨點只留在敏感度情境 ft-r190／ft-peak-30"
+    },
+    "forage_temp_peak_c": {
+      "value": null,
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設（Owner 決定的參考情境）",
+      "sources": [],
+      "note": "參考情境 ft-flat：錨點 null＝f_T≡1。暫定、未校準的參考（Owner #188 Q1＝B，#193 裁示）：f_T≡1 只表示「本種沒有可用的溫度—出巢錨點，所以不依溫度調整出巢機率」；不代表實測的日夜活動相同，模型輸出的日夜分布未經科學驗證。CTmax 熱傷害規則（R145，本種）仍適用。R190（Pheidole pallidula，非本種）的錨點只留在敏感度情境 ft-r190／ft-peak-30"
+    },
+    "forage_temp_zero_high_c": {
+      "value": null,
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設（Owner 決定的參考情境）",
+      "sources": [],
+      "note": "參考情境 ft-flat：錨點 null＝f_T≡1。暫定、未校準的參考（Owner #188 Q1＝B，#193 裁示）：f_T≡1 只表示「本種沒有可用的溫度—出巢錨點，所以不依溫度調整出巢機率」；不代表實測的日夜活動相同，模型輸出的日夜分布未經科學驗證。CTmax 熱傷害規則（R145，本種）仍適用。R190（Pheidole pallidula，非本種）的錨點只留在敏感度情境 ft-r190／ft-peak-30"
+    },
+    "ctmax_c": {
+      "value": 42,
+      "unit": "°C",
+      "evidence_class": "this_species",
+      "assumption": true,
+      "basis": "文獻支持",
+      "sources": [
+        "R145",
+        "R760"
+      ],
+      "species": "Pheidole megacephala",
+      "extrapolation_limit": "R145 都市族群 1 群 31 隻、慢速升溫的熱昏迷溫度；R760 指出慢升溫 CTmax 與野外覓食上限差最多。只作熱傷害參考：位於巢口或巢外、所在地溫度 ≥ 此值時不出巢／立即返巢；熱死亡尚未模擬。所有個體同值（個體分布為 null，Owner 問題 3）"
+    },
+    "individual_thermal_offset_sd_c": {
+      "value": 0,
+      "unit": "°C",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "設計 §6 為 null；原型取 0（不做個體熱耐受差異），不是宣稱沒有差異"
+    },
+    "surface_offset_c": {
+      "value": 0,
+      "unit": "°C",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "微地點地表溫度＝氣溫＋此偏移；花園未量測，參考情境 0（Owner 2026-11-02）"
+    },
+    "light_factor_night": {
+      "value": 1,
+      "unit": "倍率",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "Owner 決定（參考情境）",
+      "sources": [],
+      "note": "M2 光線索關閉：夜間與曙暮光時的出巢係數＝1（Owner 2026-11-02 允許夜間）。0 只作對照情境"
+    },
+    "hill_n": {
+      "value": 2,
+      "unit": "無因次",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設（機制：文獻支持，非本種）",
+      "sources": [
+        "R234"
+      ],
+      "note": "反應門檻 hill(s;θ,n)；本種無資料"
+    },
+    "threshold_forage_range": {
+      "value": [
+        0.2,
+        0.8
+      ],
+      "unit": "刺激單位",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設（機制：文獻支持，非本種）",
+      "sources": [
+        "R234",
+        "R151",
+        "R197"
+      ],
+      "note": "個體覓食門檻，均勻分布；門檻差異的機制來自他種，分布與範圍是遊戲假設"
+    },
+    "threshold_brood_range": {
+      "value": [
+        0.5,
+        2.5
+      ],
+      "unit": "接觸次數",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [
+        "R234"
+      ],
+      "note": "個體育幼門檻（以最近視窗內實際碰到的求食幼蟲次數為刺激），均勻分布"
+    },
+    "response_gain_range": {
+      "value": [
+        0.5,
+        1
+      ],
+      "unit": "機率倍率",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "個體反應增益，均勻分布"
+    },
+    "contact_window_s": {
+      "value": 600,
+      "unit": "秒",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設（機制：文獻支持，非本種）",
+      "sources": [
+        "R195",
+        "R200"
+      ],
+      "species_of_mechanism": "Pogonomyrmex barbatus",
+      "note": "只計算最近此時段內自己實際經歷的接觸"
+    },
+    "recruit_contact_weight": {
+      "value": 0.5,
+      "unit": "刺激單位／次",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設（機制：文獻支持，非本種）",
+      "sources": [
+        "R195"
+      ],
+      "species_of_mechanism": "Pogonomyrmex barbatus",
+      "note": "每次被滿載回巢者實際接觸，覓食刺激增加的量"
+    },
+    "nest_contact_probability": {
+      "value": 0.1,
+      "unit": "機率／同伴",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "回巢者抵達巢內時，與當時在巢內的每一隻同伴相遇的機率（空間尚未模擬）"
+    },
+    "larva_contact_probability": {
+      "value": 0.5,
+      "unit": "機率／幼蟲",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "巢內走動或育幼時，碰到每一隻幼蟲的機率"
+    },
+    "contact_wakes_rester": {
+      "value": true,
+      "unit": "開關",
+      "evidence_class": "other_species_extrapolated",
+      "assumption": true,
+      "basis": "文獻支持（非本種，機制）",
+      "sources": [
+        "R233"
+      ],
+      "species": "Solenopsis invicta",
+      "extrapolation_limit": "R233：S. invicta 的睡眠可被接觸打斷（1 個小實驗群，27°C）。只採用機制方向；本原型讓滿載回巢者的接觸必定打斷休息（必定＝遊戲假設）"
+    },
+    "idle_probability": {
+      "value": 0.3,
+      "unit": "機率",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "沒有開始任何工作時，選擇巢內走動（而非休息）的機率"
+    },
+    "rest_bout_mean_s": {
+      "value": 600,
+      "unit": "秒",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [
+        "R233"
+      ],
+      "note": "休息段長指數分布平均；本種無資料（設計 §3）"
+    },
+    "idle_bout_mean_s": {
+      "value": 300,
+      "unit": "秒",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "巢內走動段長平均"
+    },
+    "brood_bout_mean_s": {
+      "value": 600,
+      "unit": "秒",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "育幼段長平均；設計 §6 nest_task_bout_min 為 null"
+    },
+    "search_bout_mean_s": {
+      "value": 600,
+      "unit": "秒",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "不知道路線的工蟻出巢搜尋一段的平均長度"
+    },
+    "give_up_empty_trips": {
+      "value": null,
+      "unit": "次",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "放棄／遺忘路線開關：null＝關（參考情境，設計 §5）。給整數 K 時，工蟻連續 K 次親身抵達記憶中的食源都沒有食物，就忘掉這條路線（只用自己的經歷）。只在敏感度變體中使用"
+    },
+    "search_find_probability": {
+      "value": 0.2,
+      "unit": "機率／段",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "一段搜尋找到食源的機率（空間搜尋尚未模擬）"
+    },
+    "honeydew_interval_s": {
+      "value": 900,
+      "unit": "秒",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "情境食源（半翅目蜜露，來源 ID hemiptera-A）的產出事件間隔；整天固定，不依蟻群狀態。蜜露的日夜變化未知（未模擬）"
+    },
+    "honeydew_amount_portions": {
+      "value": 0.05,
+      "unit": "遊戲份／次",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "每次產出量；未依結果挑選，也沒有為了活動型態調整"
+    }
+  },
+  "site": {
+    "latitude_deg": {
+      "value": 24.17,
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "西屯區代表點（約略值，示意），同 scenarios/p0a1-clock/xitun-day0-clock.json"
+    },
+    "longitude_deg": {
+      "value": 120.64,
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [],
+      "note": "同上"
+    },
+    "utc_offset_minutes": {
+      "value": 480,
+      "evidence_class": "game_assumption",
+      "assumption": false,
+      "basis": "定義",
+      "sources": [],
+      "note": "臺灣標準時間 UTC+08:00（定義，不是量測）"
+    },
+    "zone": "Asia/Taipei"
+  },
+  "weather_scenarios": {
+    "taichung-march-ref": {
+      "day0_date": {
+        "value": "2026-03-26",
+        "evidence_class": "game_assumption",
+        "assumption": true,
+        "basis": "遊戲假設",
+        "sources": [
+          "R145"
+        ],
+        "note": "情境日期；月日對應 R145 都市取樣起日（2019-03-26），年份無意義"
+      },
+      "synthetic": true,
+      "assumption": true,
+      "evidence_class": "game_assumption",
+      "kind": "synthetic_scenario_hourly",
+      "generator": "手寫線性剖面：06:00＝月平均日最低溫、14:00＝月平均日最高溫，兩點間直線，每日相同",
+      "source_data": "data/taichung-climatology-1991-2020.json 3 月（臺中站 1991–2020 平年值：日最高 25.2、日最低 16.4°C、相對濕度 74.6%）；平年值是實測統計，用作情境先驗時標 assumption: true",
+      "hourly_temp_c": [
+        19.7,
+        19.15,
+        18.6,
+        18.05,
+        17.5,
+        16.95,
+        16.4,
+        17.5,
+        18.6,
+        19.7,
+        20.8,
+        21.9,
+        23.0,
+        24.1,
+        25.2,
+        24.65,
+        24.1,
+        23.55,
+        23.0,
+        22.45,
+        21.9,
+        21.35,
+        20.8,
+        20.25
+      ],
+      "rh_mean_percent": 74.6,
+      "rain": null,
+      "rain_note": "雨的時刻未知：不產生雨事件、不套用雨效應，也不當作無雨（設計 §4.2）"
+    },
+    "taichung-may-ref": {
+      "day0_date": {
+        "value": "2026-05-11",
+        "evidence_class": "game_assumption",
+        "assumption": true,
+        "basis": "遊戲假設",
+        "sources": [
+          "R145"
+        ],
+        "note": "情境日期；月日對應 R145 森林取樣起日（2019-05-11）；氣溫仍是臺中站平年值，不是森林"
+      },
+      "synthetic": true,
+      "assumption": true,
+      "evidence_class": "game_assumption",
+      "kind": "synthetic_scenario_hourly",
+      "generator": "手寫線性剖面：06:00＝月平均日最低溫、14:00＝月平均日最高溫，兩點間直線，每日相同",
+      "source_data": "data/taichung-climatology-1991-2020.json 5 月（日最高 30.7、日最低 23.1°C、相對濕度 75.7%）",
+      "hourly_temp_c": [
+        25.95,
+        25.48,
+        25.0,
+        24.53,
+        24.05,
+        23.58,
+        23.1,
+        24.05,
+        25.0,
+        25.95,
+        26.9,
+        27.85,
+        28.8,
+        29.75,
+        30.7,
+        30.22,
+        29.75,
+        29.27,
+        28.8,
+        28.32,
+        27.85,
+        27.38,
+        26.9,
+        26.43
+      ],
+      "rh_mean_percent": 75.7,
+      "rain": null,
+      "rain_note": "同上"
+    }
+  },
+  "mechanisms": {
+    "M1_temperature_gate": {
+      "enabled": true,
+      "note": "設計 §5：開；參考情境 f_T 錨點 null（f_T≡1，Owner #193 Q1＝B，暫定未校準），只留 CTmax 熱傷害與溫度 null 時拒絕出巢（temp_unavailable）"
+    },
+    "M2_light_cue": {
+      "enabled": false,
+      "note": "關；light_factor_night＝1"
+    },
+    "M3_crop_satiety": {
+      "enabled": true,
+      "note": "只用自己的嗉囊"
+    },
+    "M4_local_recruitment": {
+      "enabled": true,
+      "note": "只有實際接觸"
+    },
+    "M5_rest_debt": {
+      "enabled": false,
+      "note": "尚未模擬"
+    },
+    "M6_food_time_memory": {
+      "enabled": false,
+      "note": "尚未模擬"
+    },
+    "M7_nutrition_ctmax": {
+      "enabled": false,
+      "note": "尚未模擬"
+    },
+    "M8_desiccation": {
+      "enabled": false,
+      "note": "尚未模擬：相對濕度只計算並記錄，不進入決策（設計 §5 原為開；原型第一版關閉，見文件限制）"
+    }
+  },
+  "sensitivity_variants": {
+    "_note": "參考情境由 reference_variant 指定（Owner #188 Q1＝B，#193 裁示：ft-flat）。其他是明示的敏感度情境或預設關的假設變體，只供診斷比較；變體不得用來挑選好看的結果。",
+    "ft-flat": {
+      "label": "參考：f_T 錨點 null（不依溫度調整出巢；只保留本種 CTmax 42°C 熱傷害，R145）；放棄機制關；Q2 保留機制關",
+      "status": "參考（暫定、未校準的參考（Owner #188 Q1＝B，#193 裁示）：f_T≡1 只表示「本種沒有可用的溫度—出巢錨點，所以不依溫度調整出巢機率」；不代表實測的日夜活動相同，模型輸出的日夜分布未經科學驗證。CTmax 熱傷害規則（R145，本種）仍適用）",
+      "overrides": {}
+    },
+    "ft-r190": {
+      "label": "敏感度：f_T 錨點 R190（Pheidole pallidula，非本種）10／24／46°C",
+      "status": "敏感度情境（非參考，只供診斷比較；不得用來挑選好看的結果）；錨點為非本種外推（R190 Pheidole pallidula）",
+      "overrides": {
+        "forage_temp_zero_low_c": {
+          "value": 10,
+          "unit": "°C",
+          "evidence_class": "other_species_extrapolated",
+          "assumption": true,
+          "basis": "文獻支持（非本種）",
+          "sources": [
+            "R190",
+            "R167"
+          ],
+          "species": "Pheidole pallidula",
+          "extrapolation_limit": "R190 的 P. pallidula 在地表 10～46°C 有活動（地中海氣候、地表溫度）；本種 R167 也記約 10°C 失能（極小樣本），方向一致。此處用作出巢溫度係數 f_T 降到 0 的點；本原型輸入的是氣溫＋地點偏移（參考情境偏移 0），不是 R190 的地表溫度。敏感度情境專用（Owner #193 Q1＝B：不再是參考）"
+        },
+        "forage_temp_peak_c": {
+          "value": 24,
+          "unit": "°C",
+          "evidence_class": "other_species_extrapolated",
+          "assumption": true,
+          "basis": "文獻支持（非本種）",
+          "sources": [
+            "R190"
+          ],
+          "species": "Pheidole pallidula",
+          "extrapolation_limit": "R190：P. pallidula 地表 24°C 活動最高。本種沒有活動峰值溫度資料（設計 §3）；同屬不等於同種。敏感度情境專用（Owner #193 Q1＝B：不再是參考）"
+        },
+        "forage_temp_zero_high_c": {
+          "value": 46,
+          "unit": "°C",
+          "evidence_class": "other_species_extrapolated",
+          "assumption": true,
+          "basis": "文獻支持（非本種）",
+          "sources": [
+            "R190"
+          ],
+          "species": "Pheidole pallidula",
+          "extrapolation_limit": "R190 活動上限 46°C 高於本種 CTmax（R145：42／44°C，慢升溫）；實際上本原型在 ctmax_c 就以熱傷害規則停止出巢。f_T 在峰值兩側用直線（升得快、降得慢的方向與 R190 一致；直線形狀本身是遊戲假設）。敏感度情境專用（Owner #193 Q1＝B：不再是參考）"
+        }
+      }
+    },
+    "ft-peak-30": {
+      "label": "敏感度：f_T 峰值 30°C（遊戲假設；低端 10、高端 46 取 R190 Pheidole pallidula，非本種）",
+      "status": "敏感度情境（非參考，只供診斷比較；不得用來挑選好看的結果）；峰值為遊戲假設、兩端為非本種外推",
+      "overrides": {
+        "forage_temp_zero_low_c": {
+          "value": 10,
+          "unit": "°C",
+          "evidence_class": "other_species_extrapolated",
+          "assumption": true,
+          "basis": "文獻支持（非本種）",
+          "sources": [
+            "R190",
+            "R167"
+          ],
+          "species": "Pheidole pallidula",
+          "extrapolation_limit": "R190 的 P. pallidula 在地表 10～46°C 有活動（地中海氣候、地表溫度）；本種 R167 也記約 10°C 失能（極小樣本），方向一致。此處用作出巢溫度係數 f_T 降到 0 的點；本原型輸入的是氣溫＋地點偏移（參考情境偏移 0），不是 R190 的地表溫度。敏感度情境專用（Owner #193 Q1＝B：不再是參考）"
+        },
+        "forage_temp_peak_c": {
+          "value": 30,
+          "evidence_class": "game_assumption",
+          "assumption": true,
+          "basis": "遊戲假設",
+          "sources": [
+            "R190"
+          ],
+          "note": "敏感度情境：峰值改為 30°C，只為檢查診斷對峰值的敏感度；不是依據任何本種資料"
+        },
+        "forage_temp_zero_high_c": {
+          "value": 46,
+          "unit": "°C",
+          "evidence_class": "other_species_extrapolated",
+          "assumption": true,
+          "basis": "文獻支持（非本種）",
+          "sources": [
+            "R190"
+          ],
+          "species": "Pheidole pallidula",
+          "extrapolation_limit": "R190 活動上限 46°C 高於本種 CTmax（R145：42／44°C，慢升溫）；實際上本原型在 ctmax_c 就以熱傷害規則停止出巢。f_T 在峰值兩側用直線（升得快、降得慢的方向與 R190 一致；直線形狀本身是遊戲假設）。敏感度情境專用（Owner #193 Q1＝B：不再是參考）"
+        }
+      }
+    },
+    "give-up-2": {
+      "label": "假設變體：放棄機制開，連續 2 次空手就忘掉路線（遊戲假設）；其他同參考",
+      "status": "預設關的假設變體（Owner #193 Q3：維持預設關；K＝2 為遊戲假設，本種無資料）",
+      "overrides": {
+        "give_up_empty_trips": {
+          "value": 2,
+          "evidence_class": "game_assumption",
+          "assumption": true,
+          "basis": "遊戲假設",
+          "sources": [],
+          "note": "敏感度變體：K＝2 是遊戲假設；放棄／遺忘的機制本種無資料"
+        }
+      }
+    }
+  },
+  "q2_retention_variants": {
+    "_note": "Q2 隔離實驗（Owner #188 Q2、#193 裁示）：候選機制「覓食者保留自身所需」的多種公式，預設關（參考 forager_retention＝null）。只在 prototypes/p0a2-24h/tools/q2-retention-sensitivity.ts 與測試中使用；不是參考情境，不接入正式引擎。",
+    "q2-h1": {
+      "label": "Q2：保留自己 1 小時的代謝需求",
+      "status": "Q2 隔離實驗（非參考、預設關；保留公式與數值為遊戲假設，機制方向 R147 Camponotus sanctus 非本種僅候選）",
+      "overrides": {
+        "forager_retention": {
+          "value": {
+            "kind": "horizon",
+            "hours": 1
+          },
+          "unit": "保留公式",
+          "evidence_class": "game_assumption",
+          "assumption": true,
+          "basis": "遊戲假設（機制方向：文獻，非本種，僅候選）",
+          "sources": [
+            "R147"
+          ],
+          "species_of_mechanism": "Camponotus sanctus",
+          "note": "Q2 敏感度：保留量＝自己的代謝率 ×（固定預期間隔 1 小時）。數值為遊戲假設，不是本種量測；不採用 R147 的『交出一半』比例"
+        }
+      }
+    },
+    "q2-h6": {
+      "label": "Q2：保留自己 6 小時的代謝需求",
+      "status": "Q2 隔離實驗（非參考、預設關；保留公式與數值為遊戲假設，機制方向 R147 Camponotus sanctus 非本種僅候選）",
+      "overrides": {
+        "forager_retention": {
+          "value": {
+            "kind": "horizon",
+            "hours": 6
+          },
+          "unit": "保留公式",
+          "evidence_class": "game_assumption",
+          "assumption": true,
+          "basis": "遊戲假設（機制方向：文獻，非本種，僅候選）",
+          "sources": [
+            "R147"
+          ],
+          "species_of_mechanism": "Camponotus sanctus",
+          "note": "Q2 敏感度：保留量＝自己的代謝率 ×（固定預期間隔 6 小時）。數值為遊戲假設，不是本種量測；不採用 R147 的『交出一半』比例"
+        }
+      }
+    },
+    "q2-h24": {
+      "label": "Q2：保留自己 24 小時的代謝需求",
+      "status": "Q2 隔離實驗（非參考、預設關；保留公式與數值為遊戲假設，機制方向 R147 Camponotus sanctus 非本種僅候選）",
+      "overrides": {
+        "forager_retention": {
+          "value": {
+            "kind": "horizon",
+            "hours": 24
+          },
+          "unit": "保留公式",
+          "evidence_class": "game_assumption",
+          "assumption": true,
+          "basis": "遊戲假設（機制方向：文獻，非本種，僅候選）",
+          "sources": [
+            "R147"
+          ],
+          "species_of_mechanism": "Camponotus sanctus",
+          "note": "Q2 敏感度：保留量＝自己的代謝率 ×（固定預期間隔 24 小時）。數值為遊戲假設，不是本種量測；不採用 R147 的『交出一半』比例"
+        }
+      }
+    },
+    "q2-int1": {
+      "label": "Q2：保留自己 1 × 最近取食間隔的代謝需求",
+      "status": "Q2 隔離實驗（非參考、預設關；保留公式與數值為遊戲假設，機制方向 R147 Camponotus sanctus 非本種僅候選）",
+      "overrides": {
+        "forager_retention": {
+          "value": {
+            "kind": "own_interval",
+            "factor": 1
+          },
+          "unit": "保留公式",
+          "evidence_class": "game_assumption",
+          "assumption": true,
+          "basis": "遊戲假設（機制方向：文獻，非本種，僅候選）",
+          "sources": [
+            "R147"
+          ],
+          "species_of_mechanism": "Camponotus sanctus",
+          "note": "Q2 敏感度：保留量＝自己的代謝率 ×（1 × 自己最近兩次在食源取食的間隔；尚無兩次取食經歷時保留 0）。數值為遊戲假設，不是本種量測；不採用 R147 的『交出一半』比例"
+        }
+      }
+    },
+    "q2-int2": {
+      "label": "Q2：保留自己 2 × 最近取食間隔的代謝需求",
+      "status": "Q2 隔離實驗（非參考、預設關；保留公式與數值為遊戲假設，機制方向 R147 Camponotus sanctus 非本種僅候選）",
+      "overrides": {
+        "forager_retention": {
+          "value": {
+            "kind": "own_interval",
+            "factor": 2
+          },
+          "unit": "保留公式",
+          "evidence_class": "game_assumption",
+          "assumption": true,
+          "basis": "遊戲假設（機制方向：文獻，非本種，僅候選）",
+          "sources": [
+            "R147"
+          ],
+          "species_of_mechanism": "Camponotus sanctus",
+          "note": "Q2 敏感度：保留量＝自己的代謝率 ×（2 × 自己最近兩次在食源取食的間隔；尚無兩次取食經歷時保留 0）。數值為遊戲假設，不是本種量測；不採用 R147 的『交出一半』比例"
+        }
+      }
+    }
+  }
+}

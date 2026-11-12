@@ -3,18 +3,18 @@
  "agents": 1000,
  "horizon_s": 20,
  "cost": {
-  "wall_ms": 6253.493375,
-  "cpu_user_ms": 3492.375,
-  "cpu_system_ms": 121.818,
-  "heap_used_delta_mb": 73.54737091064453,
-  "rss_mb": 201.76953125
+  "wall_ms": 13323.690058,
+  "cpu_user_ms": 7244.42,
+  "cpu_system_ms": 170.766,
+  "heap_used_delta_mb": 94.10559844970703,
+  "rss_mb": 220.27734375
  },
- "peak_rss_mb": 573.98046875,
+ "peak_rss_mb": 656.734375,
  "stats": {
   "batches": 37945,
   "events_processed": 44021,
-  "queue_pushes": 231069,
-  "stale_pops": 173913,
+  "queue_pushes": 405822,
+  "stale_pops": 253519,
   "pair_hit_evals": 442070,
   "windows": 81,
   "candidate_pairs_total": 895722,
@@ -24,6 +24,15 @@
   "max_same_instant_batches": 1,
   "contacts": 17355,
   "releases": 16370,
+  "contact_episodes": 1001,
+  "contact_episode_ends": 16,
+  "sub_resolution_excursions": 16362,
+  "episode_events": 95147,
+  "episodes_open_at_horizon": 985,
+  "ends_unconfirmed_at_horizon": 0,
+  "constraint_outside_contact": 0,
+  "constraint_intervals": 17355,
+  "constraint_intervals_binding": 17355,
   "passes": 9296,
   "turns": 0,
   "turn_blocked": 0,
@@ -35,18 +44,18 @@
  },
  "events_by_kind": {
   "start": 1000,
-  "contact_start": 17355,
+  "contact_start": 1001,
   "stop": 2439,
   "resume": 1439,
   "pass": 9296,
-  "contact_end": 16370,
   "follow": 30562,
   "free": 28210,
+  "contact_end": 16,
   "stalled": 1000
  },
  "events_by_class": {
   "motion": 10296,
-  "physical_contact": 33725,
+  "physical_contact": 1017,
   "physical_constraint": 62650,
   "solver_status": 1000
  },
@@ -55,14 +64,14 @@
   "stopped_by_contact": 1000
  },
  "replay": {
-  "hash": "d772a522d23b0ef5",
+  "hash": "bd3870e60f4854f6",
   "input_order_reversed_identical": true,
   "variants_identical": true,
   "variants": {
-   "grid": "d772a522d23b0ef5",
-   "sap": "d772a522d23b0ef5",
-   "window_0.05": "d772a522d23b0ef5",
-   "window_1": "d772a522d23b0ef5"
+   "grid": "bd3870e60f4854f6",
+   "sap": "bd3870e60f4854f6",
+   "window_0.05": "bd3870e60f4854f6",
+   "window_1": "bd3870e60f4854f6"
   }
  },
  "broadphase": {
@@ -70,19 +79,19 @@
   "identical_candidate_sets": true,
   "cost": {
    "brute": {
-    "ms": 309.7051710000014,
+    "ms": 497.6331960000098,
     "pairs": 895722
    },
    "grid_8mm": {
-    "ms": 245.23990100000083,
+    "ms": 301.9950950000202,
     "pairs": 895722
    },
    "grid_2mm": {
-    "ms": 572.8697549999997,
+    "ms": 516.1864739999874,
     "pairs": 895722
    },
    "sap": {
-    "ms": 508.4514710000003,
+    "ms": 623.2636580000108,
     "pairs": 895722
    }
   },
@@ -94,6 +103,55 @@
   "packing_feasible_given_u_blocks": 9,
   "packing_unknown": 0
  },
+ "test_version": {
+  "git_head": "7ef8a61514041ff8aa1012cef576e9047e7197a8",
+  "worktree_clean": true,
+  "node": "v22.23.4"
+ },
+ "trajectory": {
+  "sha256": "d5f18bfca5ab902178795ba12aab822938116a5c8d5d93aa94c1b1d561c09d9b",
+  "ref_83397c5": "d5f18bfca5ab902178795ba12aab822938116a5c8d5d93aa94c1b1d561c09d9b",
+  "bit_identical_to_83397c5": true
+ },
+ "contact_kinds": {
+  "geometric_contact": {
+   "episodes": 1001,
+   "ends_exact": 16,
+   "open_at_horizon": 985,
+   "unconfirmed": 0,
+   "checker_violations": 0,
+   "missed": 0,
+   "penetrations": 0,
+   "pairs_scanned": 24857,
+   "max_end_err_s": 5.07474107180883e-9,
+   "median_end_err_s": 1.8359953557478548e-9,
+   "max_start_err_s": 2.62501131942372e-12,
+   "max_dev_from_mid_s": 9.91804860461798e-10,
+   "problems": []
+  },
+  "constraint_active": {
+   "intervals": 17355,
+   "binding": 17355,
+   "inside_geometric_episode": 17355,
+   "below_resolution": 0,
+   "open_at_horizon": 985,
+   "checker_violations": 0,
+   "problems": []
+  },
+  "antenna_contact": {
+   "supported": false,
+   "value": null,
+   "emitted": 0
+  },
+  "motion_records": {
+   "teleports": 0,
+   "speed_mismatch": 0,
+   "problems": []
+  },
+  "checker_cpu_ms": 4266.862,
+  "checker_wall_ms": 4289.9361619998235
+ },
+ "judge_cpu_ms": 818423.864,
  "judge": {
   "overlap_pair_instants": 0,
   "overlap_between_instants": 0,
@@ -107,6 +165,6 @@
   "body_contacts_only_between_instants": 0,
   "occupancy2d": null,
   "instants": 34716,
-  "judge_wall_ms": 1203391.148408
+  "judge_wall_ms": 1475279.539746
  }
 }
