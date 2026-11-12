@@ -1,0 +1,72 @@
+{
+  "schema": "antempire.physics-destination-candidates.v1",
+  "issue": 158,
+  "synthetic": true,
+  "status": "隔離實驗的邊界候選值；不是物種參數，不是生態實測，不進正式模擬。大頭家蟻沒有巢口容量、食源同時取食隻數、停留時間或交通流量的資料。`value` 一律 null；`candidate_values` 只供隔離實驗掃描，不得宣稱為真實生態。",
+  "parameters": {
+    "nest_mouth_capacity": {
+      "value": null,
+      "candidate_values": [1, 2, 4],
+      "assumption": true,
+      "basis": "遊戲假設",
+      "unknown_reason": "本種巢口開口寬度與同時通過隻數未量測；R95 只記載有多個出入口。",
+      "reasoning": "幾何上限可由『開口寬 ÷ 身體碰撞寬度』估計（合成場景 nest-entrance 開口 1.6 mm）；候選值涵蓋單行到少量並行。"
+    },
+    "nest_mouth_dwell_s": {
+      "value": null,
+      "candidate_values": [0.5, 1, 2],
+      "assumption": true,
+      "basis": "遊戲假設",
+      "unknown_reason": "沒有本種通過巢口所需時間資料。",
+      "reasoning": "1 s 與 WP4 K1／K3 對照的出口占用相同，方便比較。"
+    },
+    "nest_mouth_queue_max": {
+      "value": null,
+      "candidate_values": [0, 5, 20],
+      "assumption": true,
+      "basis": "遊戲假設",
+      "unknown_reason": "排隊是否存在、隊伍多長都沒有資料；0 表示到了滿的巢口就不等（交給運動模型繼續移動）。",
+      "reasoning": "掃描用。"
+    },
+    "food_site_capacity": {
+      "value": null,
+      "candidate_values": [1, 3, 8],
+      "assumption": true,
+      "basis": "遊戲假設",
+      "unknown_reason": "同一食物周圍能同時取食的隻數取決於食物大小與形狀，本種沒有量測。",
+      "reasoning": "R34（Lasius niger，非本種）只支持『食源擁擠會改變行為（減少沉積）』的方向，沒有容量數值。"
+    },
+    "food_site_dwell_s": {
+      "value": null,
+      "candidate_values": null,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "unknown_reason": "取食停留由嗉囊填充與行為決定（`dwell_s: null` ＝ 由個體決定何時離開），固定值只用於對照。",
+      "reasoning": "不設固定候選，避免把行為時間寫死。"
+    },
+    "road_exit_capacity": {
+      "value": null,
+      "candidate_values": [2],
+      "assumption": true,
+      "basis": "遊戲假設",
+      "unknown_reason": "對照情境的路段邊界，不是螞蟻行為。",
+      "reasoning": "與 WP4 K1／K3 出口（容量 2、占用 1 s）一致。"
+    },
+    "road_exit_dwell_s": {
+      "value": null,
+      "candidate_values": [1],
+      "assumption": true,
+      "basis": "遊戲假設",
+      "unknown_reason": "同上。",
+      "reasoning": "同上。"
+    },
+    "timed_inflow_interval_s": {
+      "value": null,
+      "candidate_values": [0.5, 1, 2],
+      "assumption": true,
+      "basis": "遊戲假設",
+      "unknown_reason": "本種路線流量沒有量測（R152 只有大群招募流量的時間形狀，未採用數值）。",
+      "reasoning": "0.5 s ＝ 每臂每秒 2 隻，與 WP4 K2／K3 相同。"
+    }
+  }
+}
