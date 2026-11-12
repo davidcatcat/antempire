@@ -3,18 +3,18 @@
  "agents": 8,
  "horizon_s": 120,
  "cost": {
-  "wall_ms": 139.28045799999995,
-  "cpu_user_ms": 42.485,
-  "cpu_system_ms": 4.257,
-  "heap_used_delta_mb": 2.1579132080078125,
-  "rss_mb": 94.703125
+  "wall_ms": 86.29000600000006,
+  "cpu_user_ms": 50.872,
+  "cpu_system_ms": 1.213,
+  "heap_used_delta_mb": 1.3021774291992188,
+  "rss_mb": 96.203125
  },
- "peak_rss_mb": 95.21484375,
+ "peak_rss_mb": 101.50390625,
  "stats": {
   "batches": 17,
   "events_processed": 17,
-  "queue_pushes": 62,
-  "stale_pops": 45,
+  "queue_pushes": 128,
+  "stale_pops": 66,
   "pair_hit_evals": 56,
   "windows": 481,
   "candidate_pairs_total": 9109,
@@ -24,6 +24,15 @@
   "max_same_instant_batches": 1,
   "contacts": 8,
   "releases": 1,
+  "contact_episodes": 8,
+  "contact_episode_ends": 1,
+  "sub_resolution_excursions": 0,
+  "episode_events": 45,
+  "episodes_open_at_horizon": 7,
+  "ends_unconfirmed_at_horizon": 0,
+  "constraint_outside_contact": 0,
+  "constraint_intervals": 8,
+  "constraint_intervals_binding": 8,
   "passes": 0,
   "turns": 0,
   "turn_blocked": 0,
@@ -52,15 +61,15 @@
   "stopped_by_contact": 8
  },
  "replay": {
-  "hash": "c20d827087ec5a96",
+  "hash": "c1dff91dd6470bb6",
   "input_order_reversed_identical": true,
   "variants_identical": true,
   "variants": {
-   "grid": "c20d827087ec5a96",
-   "sap": "c20d827087ec5a96",
-   "brute": "c20d827087ec5a96",
-   "window_0.05": "c20d827087ec5a96",
-   "window_1": "c20d827087ec5a96"
+   "grid": "c1dff91dd6470bb6",
+   "sap": "c1dff91dd6470bb6",
+   "brute": "c1dff91dd6470bb6",
+   "window_0.05": "c1dff91dd6470bb6",
+   "window_1": "c1dff91dd6470bb6"
   }
  },
  "broadphase": {
@@ -68,19 +77,19 @@
   "identical_candidate_sets": true,
   "cost": {
    "brute": {
-    "ms": 3.3296609999999873,
+    "ms": 1.4068520000000717,
     "pairs": 9109
    },
    "grid_8mm": {
-    "ms": 2.931728000000021,
+    "ms": 1.9380959999998595,
     "pairs": 9109
    },
    "grid_2mm": {
-    "ms": 5.996808999999985,
+    "ms": 4.785118999999895,
     "pairs": 9109
    },
    "sap": {
-    "ms": 9.34711100000004,
+    "ms": 9.863804999999957,
     "pairs": 9109
    }
   },
@@ -92,6 +101,55 @@
   "packing_feasible_given_u_blocks": 0,
   "packing_unknown": 0
  },
+ "test_version": {
+  "git_head": "7ef8a61514041ff8aa1012cef576e9047e7197a8",
+  "worktree_clean": true,
+  "node": "v22.23.4"
+ },
+ "trajectory": {
+  "sha256": "b093f2d0525d92f7443d37325c926f85b4ab0cedc855737ab73f0e6db77b8bcf",
+  "ref_83397c5": "b093f2d0525d92f7443d37325c926f85b4ab0cedc855737ab73f0e6db77b8bcf",
+  "bit_identical_to_83397c5": true
+ },
+ "contact_kinds": {
+  "geometric_contact": {
+   "episodes": 8,
+   "ends_exact": 1,
+   "open_at_horizon": 7,
+   "unconfirmed": 0,
+   "checker_violations": 0,
+   "missed": 0,
+   "penetrations": 0,
+   "pairs_scanned": 13,
+   "max_end_err_s": 1.4650503032953566e-11,
+   "median_end_err_s": 1.4650503032953566e-11,
+   "max_start_err_s": 1.199040866595169e-12,
+   "max_dev_from_mid_s": 4.440892098500626e-16,
+   "problems": []
+  },
+  "constraint_active": {
+   "intervals": 8,
+   "binding": 8,
+   "inside_geometric_episode": 8,
+   "below_resolution": 0,
+   "open_at_horizon": 7,
+   "checker_violations": 0,
+   "problems": []
+  },
+  "antenna_contact": {
+   "supported": false,
+   "value": null,
+   "emitted": 0
+  },
+  "motion_records": {
+   "teleports": 0,
+   "speed_mismatch": 0,
+   "problems": []
+  },
+  "checker_cpu_ms": 7.745,
+  "checker_wall_ms": 7.750287000000071
+ },
+ "judge_cpu_ms": 13.671,
  "judge": {
   "overlap_pair_instants": 0,
   "overlap_between_instants": 0,
@@ -111,6 +169,6 @@
    "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
   },
   "instants": 18,
-  "judge_wall_ms": 17.04272000000003
+  "judge_wall_ms": 13.067945999999893
  }
 }
