@@ -58,5 +58,5 @@
 ## 5. 待辦（PR C 與之後）
 
 1. PR C：`game.ts` 改用 `LayeredRenderer`；資料面板列出引擎物件；分析介面改為可切換面板，不打斷主畫面。
-2. 大量螞蟻：預先旋轉的圖集或 WebGL 路徑（需另行量測與決定）。
+2. 大量螞蟻：預先旋轉的圖集（選項 B）與 WebGL（C）已量測，見 [`render-comparison.md`](render-comparison.md)（#159）；正式畫面仍用 A。
 3. 4× 降速仍在 30 FPS 邊緣：可考慮依裝置預設較低畫質（需 Owner 同意這類預設）。

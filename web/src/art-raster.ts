@@ -106,6 +106,12 @@ export function drawAntennaeLocal(g: CanvasRenderingContext2D, m: MicroPose, pal
  *  the caller's (engine or physics); this only draws. */
 export function drawAntParts(g: CanvasRenderingContext2D, trunk: AntAtlas, head: HeadSprite, dpr: number, x: number, y: number, heading: number, kind: Gait, frame: number, micro: MicroPose, palette: AntPalette) {
   drawAntSprite(g, trunk, dpr, x, y, heading, kind, frame, { part: 'body', glints: false });
+  drawAntHeadLive(g, trunk, head, dpr, x, y, heading, micro, palette);
+}
+/** The live part of drawAntParts: the head sprite turned by the micro head yaw about the neck, and the antennae, drawn
+ *  over a trunk already on the canvas at (x, y, heading) (the live trunk sprite, or a pre-rotated trunk blit whose
+ *  bucket heading is passed here). `trunk` only supplies the scale. Drawing only. */
+export function drawAntHeadLive(g: CanvasRenderingContext2D, trunk: AntAtlas, head: HeadSprite, dpr: number, x: number, y: number, heading: number, micro: MicroPose, palette: AntPalette) {
   const k = 1 / dpr, u = trunk.scale / dpr;
   g.save(); g.translate(x, y); g.rotate(heading);
   g.save(); g.translate(NECK[0] * u, NECK[1] * u); g.rotate(micro.headYaw); g.translate(-NECK[0] * u, -NECK[1] * u);

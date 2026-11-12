@@ -9,11 +9,16 @@
  *   authoritative ω. Input frames are never mutated; the renderer creates no events and writes nothing.
  * - Light: the active LightState (replay: SCHEMATIC_LIGHT). Weather: daily day state only (no rain streaks).
  * - Adaptive quality steps down (never up) when frames are slow: glints/décor LOD → DPR 1 → no ant shadows.
+ * - Options (drawing only, positions unchanged): `antSprites: 'prerotated'` blits walk / idle frames from pre-rotated
+ *   sheets (heading bucketed to 2π/n, n chosen under a texture budget; render-scene planRotatedAtlas) instead of a
+ *   rotated drawImage per ant; `externalAnts` hands the two ant layers to another drawer (e.g. a WebGL overlay, used by
+ *   prototypes/render-compare) and draws the layers above the ants on its `above` context; `fixedQuality` pins the
+ *   quality level (comparisons).
  */
-import { LAYERS, QUALITY, DECOR_CELL_CM, DECOR_REACH_CM, groundField, reliefHeight, antLengthPx, decorCell, engineRegistry, keepAtLod, nextQuality, planAnts, weatherState, worldToScreen, type AntDraw, type AntInput, type AntLook, type Camera, type DecorItem, type EngineObject, type Layer, type Obstacles, type WeatherState } from './render-scene.ts';
-import { bakeAntAtlas, bakeHeadSprite, drawAntDetail, drawAntParts, drawAntSprite, drawList, pixelsToCanvas, type AntAtlas, type HeadSprite } from './art-raster.ts';
+import { LAYERS, QUALITY, PREROTATED_GAITS, ROT_ATLAS_BUDGET, ROT_SHEET_PX, bucketAngle, chooseBuckets, headingBucket, planRotatedAtlas, rotCellIndex, rotDrawRect, rotatedAtlasBytes, type RotPlan, DECOR_CELL_CM, DECOR_REACH_CM, groundField, reliefHeight, antLengthPx, decorCell, engineRegistry, keepAtLod, nextQuality, planAnts, weatherState, worldToScreen, type AntDraw, type AntInput, type AntLook, type Camera, type DecorItem, type EngineObject, type Layer, type Obstacles, type WeatherState } from './render-scene.ts';
+import { bakeAntAtlas, bakeHeadSprite, drawAntDetail, drawAntHeadLive, drawAntParts, drawAntSprite, drawList, pixelsToCanvas, type AntAtlas, type HeadSprite } from './art-raster.ts';
 import { DisplayMotion, NEUTRAL_MICRO, type ContextSampler, type MicroState } from './display-motion.ts';
-import { PALETTE_VARIANTS, antGlintSpots, antPalette, magnification, walkCycles, walkFrame, framesOf, type Gait } from './art-ant.ts';
+import { ANT_BODY_HEIGHT, PALETTE_VARIANTS, antGlintSpots, antPalette, magnification, walkCycles, walkFrame, framesOf, type Gait } from './art-ant.ts';
 import { SCHEMATIC_LIGHT, withLight, type LightState } from './art-core.ts';
 import { soilTile, leaf, twig, pebble, grassTuft, moss, debris, type Decal } from './art-ground.ts';
 import { nestEntrance, hostPlant, flower, insectCarcass } from './art-props.ts';
@@ -33,6 +38,25 @@ export interface FrameOptions { showRoutes?: boolean; highlightEngine?: boolean;
 /** detail drawing (live vectors) only when ants are drawn at least this long (CSS px) and at most DETAIL_MAX are on screen */
 export const DETAIL_MIN_PX = 60, DETAIL_MAX = 24;
 const PALETTES = Array.from({ length: PALETTE_VARIANTS }, (_, v) => antPalette(v));
+/** Options of the layered renderer. All of them change drawing only. */
+export interface RendererOptions {
+  /** 'rotate' (default): one rotated atlas blit per ant. 'prerotated': walk / idle from pre-rotated sheets. */
+  antSprites?: 'rotate' | 'prerotated';
+  /** texture budget (bytes) of the pre-rotated sheets for all colour variants + the shared shadow set */
+  atlasBudgetBytes?: number;
+  /** pin the quality level (no adaptive steps); for like-for-like comparisons */
+  fixedQuality?: 0 | 1 | 2 | 3;
+  /** another drawer for the antShadows / ants layers; the layers after 'ants' are then drawn on `above` */
+  externalAnts?: ExternalAnts;
+  /** maximum side (device px) of one pre-rotated sheet (default ROT_SHEET_PX) */
+  rotSheetPx?: number;
+  /** keep the destination anchor of every ant blit of the last frame (tests) */
+  recordBlits?: boolean;
+}
+export interface AntLayerInfo { L: number; dpr: number; cam: Camera; shadows: boolean; crowd: boolean; light: LightState; atlasFor: (variant: number) => AntAtlas; variantOf: (id: string) => number; frameOf: (d: AntDraw) => number; shadowLift: number }
+export interface ExternalAnts { draw(layer: 'antShadows' | 'ants', draws: readonly AntDraw[], info: AntLayerInfo): void; above: CanvasRenderingContext2D }
+/** one pre-rotated set: plan + sheets per colour variant (lazily baked) + the shared shadow sheets */
+interface RotAtlas { plan: RotPlan; key: string; body: Map<number, (HTMLCanvasElement | ImageBitmap)[]>; shadow: (HTMLCanvasElement | ImageBitmap)[] | null }
 const CROWD = 300, CHUNK_PX = 256, SOIL_TILE_MM = 80, SOIL_TILE_PX = 512, MAX_CHUNKS = 120, MIN_ITEM_DEVICE_PX = 2.5;
 /** world-space ground field sampled on a (FIELD_N+1)² grid per chunk, samples exactly on the chunk edges, so bilinear
  *  upscaling is continuous across chunk boundaries */
@@ -78,8 +102,16 @@ export class LayeredRenderer {
   private bakedLast = true;
   private spritesBaked = 0;
 
+  private rot = new Map<string, RotAtlas | null>();
+  /** ant blits of the last frame: id, anchor (CSS px), drawn heading, bucket (−1 = live rotation) — tests only */
+  blits: { id: string; ax: number; ay: number; heading: number; bucket: number; n: number }[] = [];
+  antStats = { prerotated: 0, rotated: 0, buckets: 0 as number | null, rotBytes: 0, rotBakeMs: 0 };
+  /** current drawing target (the main context, or ExternalAnts.above for the layers above the ants) */
+  private tg: CanvasRenderingContext2D;
+
   readonly canvas: HTMLCanvasElement;
-  constructor(canvas: HTMLCanvasElement) { this.canvas = canvas; this.g = ctxOf(canvas); }
+  readonly opts: RendererOptions;
+  constructor(canvas: HTMLCanvasElement, opts: RendererOptions = {}) { this.canvas = canvas; this.g = ctxOf(canvas); this.tg = this.g; this.opts = opts; if (opts.fixedQuality !== undefined) this.q = opts.fixedQuality; }
 
   /** New world: places, recorded routes, engine state and weather. Clears every cache. */
   setScene(s: SceneInput) {
@@ -212,7 +244,7 @@ export class LayeredRenderer {
   warm(cam: Camera) { this.cam = cam; const b = this.bucket(cam.s); for (const [i, j] of this.visibleChunks(b)) if (!this.chunks.has(this.chunkKey(b, i, j))) this.bakeChunk(b, i, j); }
 
   private blitChunks(which: 'low' | 'high') {
-    const b = this.bucket(this.cam.s), cm = CHUNK_PX / b, g = this.g, size = cm * this.cam.s;
+    const b = this.bucket(this.cam.s), cm = CHUNK_PX / b, g = this.tg, size = cm * this.cam.s;
     for (const [i, j] of this.visibleChunks(b)) {
       const key = this.chunkKey(b, i, j); let ch = this.chunks.get(key);
       if (!ch && which === 'low' && this.stats.bakedThisFrame < QUALITY[this.q].maxBakesPerFrame) { this.bakeChunk(b, i, j); ch = this.chunks.get(key); }
@@ -244,7 +276,7 @@ export class LayeredRenderer {
     for (const o of this.registry) {
       const [x, y] = worldToScreen(this.cam, o.x, o.y), sp = this.objSprite(o), img = which === 'low' ? sp.low : sp.high, half = sp.half * this.cam.s;
       if (x < -half || y < -half || x > this.cam.w + half || y > this.cam.h + half || !img) continue;
-      this.g.drawImage(img, x - half, y - half, half * 2, half * 2); // centred exactly on the engine position
+      this.tg.drawImage(img, x - half, y - half, half * 2, half * 2); // centred exactly on the engine position
     }
   }
 
@@ -264,7 +296,7 @@ export class LayeredRenderer {
   }
   private drawGlints(u: number) {
     if (!this.glint) { this.glint = mk(64, 64); const g = ctxOf(this.glint), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,246,232,1)'); gr.addColorStop(0.35, 'rgba(255,236,210,0.38)'); gr.addColorStop(1, 'rgba(255,236,210,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); }
-    const g = this.g; g.save(); g.globalCompositeOperation = 'screen';
+    const g = this.tg; g.save(); g.globalCompositeOperation = 'screen';
     for (const d of this.draws) {
       const c = Math.cos(d.heading), s = Math.sin(d.heading);
       for (const p of antGlintSpots(d.heading)) { const x = d.sx + (p.x * c - p.y * s) * u, y = d.sy + (p.x * s + p.y * c) * u, r = p.r * u; g.globalAlpha = p.a; g.drawImage(this.glint, x - r, y - r, r * 2, r * 2); }
@@ -286,13 +318,46 @@ export class LayeredRenderer {
     if (!a) { const pal = antPalette(variant); a = { trunk: bakeAntAtlas(Lq, this.dpr, undefined, pal, 'trunk'), head: bakeHeadSprite(Lq, this.dpr, pal) }; this.parts.set(key, a); this.spritesBaked++; if (this.parts.size > PALETTE_VARIANTS * 2) this.parts.delete(this.parts.keys().next().value as string); }
     return a;
   }
+  /** Pre-rotated set for this drawn length (null = over budget: live rotation). Sheets are baked from the same
+   *  unrotated atlas the live path blits, rotated once per bucket, so both paths show the same frame art. With display
+   *  micro-motion the set is baked from the TRUNK atlas (no head / antennae): the head and antennae are then drawn live
+   *  on top at the bucket heading (drawAntHeadLive), exactly as drawAntParts draws them over the live trunk. */
+  private rotFor(L: number, parts: 'all' | 'trunk' = 'all'): RotAtlas | null {
+    const Lq = Math.max(8, Math.round((L * this.dpr) / 4) * 4) / this.dpr, key = `${Lq}|${this.dpr}|${parts}`;
+    if (this.rot.has(key)) return this.rot.get(key) as RotAtlas | null;
+    const n = chooseBuckets(Lq, this.dpr, PALETTE_VARIANTS, this.opts.atlasBudgetBytes ?? ROT_ATLAS_BUDGET);
+    const sp = this.opts.rotSheetPx ?? ROT_SHEET_PX, r: RotAtlas | null = n === null ? null : { plan: planRotatedAtlas(Lq, this.dpr, n, undefined, 1, sp, sp), key, body: new Map(), shadow: null };
+    this.rot.set(key, r); if (this.rot.size > 4) { const k0 = this.rot.keys().next().value as string; this.rot.delete(k0); }
+    return r;
+  }
+  private bakeRot(r: RotAtlas, src: AntAtlas, part: 'body' | 'shadow'): (HTMLCanvasElement | ImageBitmap)[] {
+    const t0 = performance.now(), sheets = r.plan.sheets.map((s) => mk(s.w, s.h)), img = part === 'body' ? src.canvas : src.shadow;
+    for (const c of r.plan.cells) {
+      const g = ctxOf(sheets[c.sheet]), row = Math.max(0, src.rows.indexOf(c.gait)), th = bucketAngle(c.bucket, r.plan.n), co = Math.cos(th), si = Math.sin(th);
+      g.setTransform(co, si, -si, co, c.x + c.ax, c.y + c.ay); // same transform as the live path at heading θ_k (device px)
+      g.drawImage(img, (c.frame % framesOf(c.gait)) * src.cellW, row * src.cellH, src.cellW, src.cellH, -src.ox, -src.oy, src.cellW, src.cellH);
+    }
+    this.spritesBaked++; this.antStats.rotBakeMs += performance.now() - t0;
+    // swap each sheet to an ImageBitmap when ready (as the live atlas does): same pixels, cheaper blits in software
+    const out: (HTMLCanvasElement | ImageBitmap)[] = sheets;
+    if (typeof createImageBitmap === 'function') sheets.forEach((c, i) => { void createImageBitmap(c).then((b) => { out[i] = b; }); });
+    return out;
+  }
+  /** Estimated RGBA bytes of the ant textures held now (live atlases + pre-rotated sheets). */
+  antTextureBytes(): number {
+    let b = 0; for (const a of this.atlases.values()) b += 2 * a.cellW * a.cellH * Math.max(a.walk, a.idle) * a.rows.length * 4;
+    for (const r of this.rot.values()) if (r) b += r.plan.bytesPerSet * (r.body.size + (r.shadow ? 1 : 0));
+    return b;
+  }
+  /** Estimated RGBA bytes of the baked ground chunks held now. */
+  chunkBytes(): number { let b = 0; for (const c of this.chunks.values()) b += (c.low.width * c.low.height + (c.high ? c.high.width * c.high.height : 0)) * 4; return b; }
 
   /** Draw one frame. `ants` are read only. Returns the ant draw records (screen positions) for picking. */
   frame(cam: Camera, ants: readonly AntInput[], dt: number, frameMs: number | null, opts: FrameOptions = {}): readonly AntDraw[] {
     // frames that followed a bake (chunks, object sprites, atlas) are not counted: quality reacts to steady-state cost only
-    if (frameMs !== null && !this.bakedLast) { this.frameMs.push(frameMs); if (this.frameMs.length > 240) this.frameMs.shift(); const nq = nextQuality(this.q, this.frameMs); if (nq !== this.q) { this.q = nq; this.frameMs = []; this.resize(); } }
+    if (frameMs !== null && !this.bakedLast && this.opts.fixedQuality === undefined) { this.frameMs.push(frameMs); if (this.frameMs.length > 240) this.frameMs.shift(); const nq = nextQuality(this.q, this.frameMs); if (nq !== this.q) { this.q = nq; this.frameMs = []; this.resize(); } }
     this.stats.quality = this.q; this.stats.bakedThisFrame = 0; this.stats.missing = 0; this.cam = cam; this.trace = [];
-    const tp = performance.now(), g = this.g, Q = QUALITY[this.q], plan = planAnts(cam, ants, this.look, dt, walkCycles, opts.minAntPx, opts.displayTurns ?? false);
+    this.tg = this.g; let g = this.g; const tp = performance.now(), Q = QUALITY[this.q], plan = planAnts(cam, ants, this.look, dt, walkCycles, opts.minAntPx, opts.displayTurns ?? false);
     this.stats.planMs = this.stats.planMs * 0.95 + (performance.now() - tp) * 0.05;
     this.look = plan.look; this.draws = plan.draws;
     const L = antLengthPx(cam.s, opts.minAntPx), variantOf = (id: string) => (opts.colourVariants ? hash32(id) % PALETTE_VARIANTS : Math.floor(PALETTE_VARIANTS / 2)), atlas = this.atlasFor(L, variantOf(''));
@@ -305,6 +370,24 @@ export class LayeredRenderer {
     const microOf = (d: AntDraw) => this.micro.get(d.id) ?? NEUTRAL_MICRO(mo?.tauS ?? 0);
     g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     const frameOf = (d: AntDraw) => d.gait === 'idle' ? Math.floor(d.cycles * 4) % framesOf('idle') : walkFrame(d.cycles);
+    const ext = this.opts.externalAnts, rec = this.opts.recordBlits, rot = this.opts.antSprites === 'prerotated' && !ext ? this.rotFor(L, useMicro ? 'trunk' : 'all') : null;
+    this.blits = []; this.antStats.prerotated = 0; this.antStats.rotated = 0; this.antStats.buckets = rot ? rot.plan.n : this.opts.antSprites === 'prerotated' ? null : 0;
+    this.antStats.rotBytes = rot ? rotatedAtlasBytes(rot.plan, PALETTE_VARIANTS) : 0;
+    const info = (): AntLayerInfo => ({ L, dpr: this.dpr, cam, shadows: Q.antShadows && this.light.intensity > 0, crowd: this.draws.length > CROWD, light: this.light, atlasFor: (v) => this.atlasFor(L, v), variantOf, frameOf, shadowLift: ANT_BODY_HEIGHT * atlas.scale / this.dpr });
+    /** pre-rotated blit (B) of one ant; returns the drawn (bucket) heading, or null = no pre-rotated sheet for this
+     *  gait (live rotation). Under display micro-motion the sheets hold the trunk only (head / antennae drawn live). */
+    const rotBlit = (d: AntDraw, part: 'body' | 'shadow'): number | null => {
+      if (!rot || !PREROTATED_GAITS.includes(d.gait)) return null;
+      const k = headingBucket(d.heading, rot.plan.n), c = rot.plan.cells[rotCellIndex(rot.plan, d.gait, frameOf(d), k)];
+      let sheets: (HTMLCanvasElement | ImageBitmap)[];
+      if (part === 'body') { const v = variantOf(d.id); sheets = rot.body.get(v) ?? (() => { const s = this.bakeRot(rot, useMicro ? this.partsFor(L, v).trunk : this.atlasFor(L, v), 'body'); rot.body.set(v, s); return s; })(); }
+      else sheets = rot.shadow ?? (rot.shadow = this.bakeRot(rot, useMicro ? this.partsFor(L, variantOf('')).trunk : atlas, 'shadow'));
+      let x = d.sx, y = d.sy;
+      if (part === 'shadow') { const h = ANT_BODY_HEIGHT * atlas.scale / this.dpr, Ls = this.light; x += Ls.shadow.x * h; y += Ls.shadow.y * h; g.globalAlpha = Math.min(1, 0.35 + Ls.intensity); }
+      const r = rotDrawRect(c, this.dpr, x, y); g.drawImage(sheets[c.sheet], c.x, c.y, c.w, c.h, r.dx, r.dy, r.dw, r.dh); g.globalAlpha = 1;
+      if (part === 'body') { this.antStats.prerotated++; if (rec) this.blits.push({ id: d.id, ax: r.dx + c.ax / this.dpr, ay: r.dy + c.ay / this.dpr, heading: bucketAngle(k, rot.plan.n), bucket: k, n: rot.plan.n }); }
+      return bucketAngle(k, rot.plan.n);
+    };
     withLight(this.light, () => {
       const draw: Record<Layer, () => void> = {
         ground: () => { this.blitChunks('low'); if (this.weather.wet) { g.fillStyle = 'rgba(22,16,10,0.3)'; g.fillRect(0, 0, cam.w, cam.h); } }, // baked: soil + decals + shadows + low props; wet day = darkened ground (日值)
@@ -312,28 +395,43 @@ export class LayeredRenderer {
         propsLow: () => this.drawObjects('low'),
         routes: () => { if (!opts.showRoutes) return; g.save(); g.setLineDash([4, 5]); g.strokeStyle = 'rgba(255,236,190,0.45)'; g.lineWidth = 1; for (const [a, b] of this.obstacles.routes) { const p = worldToScreen(cam, a.x, a.y), q = worldToScreen(cam, b.x, b.y); g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); g.stroke(); } g.restore(); },
         antShadows: () => {
+          if (ext) { ext.draw('antShadows', this.draws, info()); return; }
           if (!Q.antShadows || this.light.intensity <= 0) return;
           if (useMicro) {
             const tr = this.partsFor(L, variantOf('')).trunk;
-            for (const d of this.draws) { if (this.detailOn && this.micro.has(d.id)) drawAntDetail(g, L, d.sx, d.sy, d.heading, d.gait as Gait, d.cycles, d.walkW, microOf(d), PALETTES[variantOf(d.id)], { part: 'shadow' }); else drawAntSprite(g, tr, this.dpr, d.sx, d.sy, d.heading, d.gait as Gait, frameOf(d), { part: 'shadow' }); }
+            for (const d of this.draws) { if (this.detailOn && this.micro.has(d.id)) drawAntDetail(g, L, d.sx, d.sy, d.heading, d.gait as Gait, d.cycles, d.walkW, microOf(d), PALETTES[variantOf(d.id)], { part: 'shadow' }); else if (rotBlit(d, 'shadow') === null) drawAntSprite(g, tr, this.dpr, d.sx, d.sy, d.heading, d.gait as Gait, frameOf(d), { part: 'shadow' }); }
             return;
           }
-          if (this.draws.length <= CROWD) { for (const d of this.draws) drawAntSprite(g, atlas, this.dpr, d.sx, d.sy, d.heading, d.gait as Gait, frameOf(d), { part: 'shadow' }); return; }
+          if (this.draws.length <= CROWD) { for (const d of this.draws) if (rotBlit(d, 'shadow') === null) drawAntSprite(g, atlas, this.dpr, d.sx, d.sy, d.heading, d.gait as Gait, frameOf(d), { part: 'shadow' }); return; }
           // crowd LOD: one batched path of soft body-shadow ellipses instead of one sprite per ant
           const o = this.light.shadow, h = L * 0.05; g.beginPath();
           for (const d of this.draws) g.ellipse(d.sx + o.x * h, d.sy + o.y * h, L * 0.42, L * 0.12, d.heading, 0, Math.PI * 2);
           g.fillStyle = 'rgba(24,14,6,0.28)'; g.fill();
         },
         ants: () => {
+          if (ext) {
+            ext.draw('ants', this.draws, info());
+            // the layers above the ants go to the overlay context (cleared each frame), so the stacking order is kept
+            g = ext.above; this.tg = g; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, g.canvas.width, g.canvas.height); g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); return;
+          }
           if (useMicro) {
             for (const d of this.draws) {
               const v = variantOf(d.id), pal = PALETTES[v];
-              if (this.detailOn && this.micro.has(d.id)) drawAntDetail(g, L, d.sx, d.sy, d.heading, d.gait as Gait, d.cycles, d.walkW, microOf(d), pal, { part: 'body' });
-              else { const pa = this.partsFor(L, v); drawAntParts(g, pa.trunk, pa.head, this.dpr, d.sx, d.sy, d.heading, d.gait as Gait, frameOf(d), microOf(d), pal); }
+              if (this.detailOn && this.micro.has(d.id)) { drawAntDetail(g, L, d.sx, d.sy, d.heading, d.gait as Gait, d.cycles, d.walkW, microOf(d), pal, { part: 'body' }); continue; }
+              const pa = this.partsFor(L, v), th = rotBlit(d, 'body');
+              // opt-in pre-rotated trunk + live head / antennae at the same (bucket) heading; default: live trunk + head
+              if (th !== null) drawAntHeadLive(g, pa.trunk, pa.head, this.dpr, d.sx, d.sy, th, microOf(d), pal);
+              else { drawAntParts(g, pa.trunk, pa.head, this.dpr, d.sx, d.sy, d.heading, d.gait as Gait, frameOf(d), microOf(d), pal); this.antStats.rotated++; if (rec) this.blits.push({ id: d.id, ax: d.sx, ay: d.sy, heading: d.heading, bucket: -1, n: 0 }); }
             }
             if (Q.glints) this.drawGlints(atlas.scale / this.dpr); return;
           }
-          for (const d of this.draws) drawAntSprite(g, this.atlasFor(L, variantOf(d.id)), this.dpr, d.sx, d.sy, d.heading, d.gait as Gait, frameOf(d), { part: 'body', glints: false }); if (Q.glints) this.drawGlints(atlas.scale / this.dpr); },
+          for (const d of this.draws) {
+            if (rotBlit(d, 'body') !== null) continue;
+            drawAntSprite(g, this.atlasFor(L, variantOf(d.id)), this.dpr, d.sx, d.sy, d.heading, d.gait as Gait, frameOf(d), { part: 'body', glints: false }); this.antStats.rotated++;
+            if (rec) this.blits.push({ id: d.id, ax: d.sx, ay: d.sy, heading: d.heading, bucket: -1, n: 0 });
+          }
+          if (Q.glints) this.drawGlints(atlas.scale / this.dpr);
+        },
         propsHigh: () => { this.blitChunks('high'); this.drawObjects('high'); },
         lighting: () => g.drawImage(this.overlayFor(cam.w, cam.h), 0, 0, cam.w, cam.h), // light grade + vignette (+ overcast day state, baked together)
         weather: () => {},                                                           // wet ground: tint in the ground layer; overcast: in the overlay
