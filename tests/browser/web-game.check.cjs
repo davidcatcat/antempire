@@ -90,6 +90,7 @@ const { chromium, devices } = require('playwright');
     await page.click('#infoBtn'); const about = await page.textContent('#about');
     check(['引擎紀錄', '顯示插值', '示意場景', '非正式'].every((w) => about.includes(w)), `${tag}: data panel names engine record / display interpolation / schematic scene / non-official`);
     await shot('03-about'); await page.click('#infoBtn');
+    check(await page.evaluate(() => { const e = document.querySelector('#bottom #motionTag'); return !!e && e.offsetParent !== null && e.getBoundingClientRect().height > 0 && /頭與觸角動作＝示意動畫（引擎尚未模擬）/.test(e.textContent); }), `${tag}: the persistent bottom legend says head/antenna motion is display-only animation, not simulated`);
     check(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), `${tag}: no horizontal scroll`);
     // R13-01: play to the end of the replay, then 「重新播放」 must show Day 1 with Day 1's own roster
     { const meta = await page.evaluate(() => window.__game.state());
@@ -110,7 +111,7 @@ const { chromium, devices } = require('playwright');
     if (tag === 'desktop') check(fps.desktop.fps_mean >= 30, `desktop: mean frame rate ≥ 30 fps while playing (${fps.desktop.fps_mean.toFixed(1)})`);
     await shot('04-playing');
     // analysis mode link
-    await page.click('a[href="analysis.html"]'); await page.waitForFunction(() => document.getElementById('badge') && document.getElementById('badge').textContent.includes('Day14'), null, { timeout: 15000 });
+    await page.click('a[href="analysis.html"]'); await page.waitForFunction(() => window.antempireViewer && document.getElementById('badge') && document.getElementById('badge').textContent.includes('非正式'), null, { timeout: 15000 });
     check(page.url().endsWith('analysis.html'), `${tag}: the analysis link opens the V5 analysis view`);
     await ctx.close();
   }

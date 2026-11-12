@@ -12,7 +12,7 @@
  *  - event jump: a timed event -> the recorded minute exactly, camera on the recorded place, actor selected; an event
  *    without a clock time -> that day's settlement step (no minute shown); an event without a recorded place, or at a
  *    place without recorded coordinates -> 「位置未知」 and the camera stays; clicking a row while playing works;
- *  - official Day14 vs experimental Day0: the official snapshot cannot be followed or jumped, and switching worlds
+ *  - world isolation: there is no official world (legacy Day14 retired, #194); switching between experiment worlds
  *    clears following, selection and the jump (nothing of one world remains in the other);
  *  - no page errors; no horizontal page scroll on the phone.
  * Writes screenshots and results.json to <outDir>.
@@ -64,13 +64,9 @@ const KNOWN = (exp) => new Set(exp.map.places.filter((p) => p.layout).map((p) =>
     const choose = async (id, at) => { if (at) await tap(at.x, at.y); if ((await V(() => window.antempireViewer.selected())) === id) return 'tap'; await page.selectOption('#who', id); return (await V(() => window.antempireViewer.selected())) === id ? 'picker' : 'failed'; };
     const play = async (ms) => { await press('#play'); await page.waitForTimeout(ms); await press('#play'); };
     const st = () => V(() => ({ ...window.antempireViewer.state(), following: window.antempireViewer.following(), note: window.antempireViewer.followNote(), cam: window.antempireViewer.camera(), jump: window.antempireViewer.lastJump(), selected: window.antempireViewer.selected() }));
-    await page.goto(new URL('analysis.html', base).href); await page.waitForFunction(() => document.getElementById('badge').textContent.includes('Day14'));
-
-    // official snapshot: can be selected, cannot be followed, has no event timeline
-    const off = await V(() => window.antempireViewer.antsOnScreen());
-    await tap(off[0].x, off[0].y);
-    check((await page.$eval('#follow', (b) => b.disabled)) && (await page.$eval('#followMsg', (e) => e.textContent)).includes('無法追蹤'), `${name}: an official Day14 ant cannot be followed (no minute-level positions)`);
-    check((await page.$$('#events button.ev')).length === 0, `${name}: the official snapshot has no clickable engine events`);
+    await page.goto(new URL('analysis.html', base).href); await page.waitForFunction((id) => window.antempireViewer && window.antempireViewer.state().mode === id, exps[0].meta.id);
+    // no official world (#194): the world list holds only the experiment replays
+    check(JSON.stringify(await page.$$eval('#mode option', (os) => os.map((o) => o.value))) === JSON.stringify(exps.map((x) => x.meta.id)), `${name}: only experiment worlds are offered (no official world)`);
 
     // ── select + follow during playback (A1, day 2, an ant walking between recorded points) ──
     const A = exps[0];
@@ -178,9 +174,9 @@ const KNOWN = (exp) => new Set(exp.map.places.filter((p) => p.layout).map((p) =>
     check(mine.length > 0 && mine.every((i) => names(unknownCase.d.events[i])), `${name}: 「只看所選個體」 lists only ${unknownCase.e.worker}'s events`);
     await page.uncheck('#evMine');
 
-    // ── official vs experiment isolation: switching clears follow, selection and jump ──
-    await press('#follow'); await mode('official'); s = await st();
-    check(s.official && s.following === null && s.selected === null && s.jump === null && (await page.$eval('#jump', (e) => e.hidden)) && (await page.$eval('#timeline', (e) => e.hidden)), `${name}: switching to the official snapshot clears following, selection and the event jump`);
+    // ── world isolation: switching to another experiment clears follow, selection and jump ──
+    await press('#follow'); await mode(exps[1].meta.id); s = await st();
+    check(!s.official && s.following === null && s.selected === null && s.jump === null && (await page.$eval('#jump', (e) => e.hidden)) && s.day === 1, `${name}: switching to another world clears following, selection and the event jump`);
     if (touch) check(await V(() => document.documentElement.scrollWidth <= window.innerWidth), `${name}: no horizontal page scroll on the phone`);
     if (touch) { await mode(A.meta.id); await setDay(2, walker.m); await page.screenshot({ path: `${out}/${name}-experiment.png` }); }
     results[name] = { viewport: opts.viewport, isMobile: !!opts.isMobile, hasTouch: touch, userAgent: opts.userAgent ?? null };

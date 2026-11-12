@@ -1,0 +1,118 @@
+{
+  "schema": "antempire.garden-geography.v1",
+  "note": "臺中西屯虛構別墅花園的情境地理（地點名稱、方位文字、約距離）。只供觀察器排版與日後空間資料使用，不是蟻群狀態、不是遊戲進度。",
+  "assumption": true,
+  "basis": "遊戲假設（情境設定的敘事近似值，非測量；CLAUDE.md §2.6、§8：地圖座標為示意）",
+  "provenance": {
+    "extracted_from": "tests/fixtures/legacy-day14/world-state.json#/world_map（已退役舊版 Day14 狀態；原路徑 saves/world-state.json）",
+    "source_sha256": "820e627d893ba8c3de81c71e47b1062b3dfe27ff5f3f3f3d42ff4c9ce0013e23",
+    "fields_copied_verbatim": [
+      "id",
+      "name",
+      "bearing",
+      "distance_cm"
+    ],
+    "decision": "#194 R1：舊版正式存檔退役後，觀察器的花園地理改由本檔提供；內容逐字複製，不新增、不改值。"
+  },
+  "coordinate_origin": "N00入口",
+  "distance_unit": "cm",
+  "precision": "敘事近似值非實測",
+  "locations": [
+    {
+      "id": "N00",
+      "name": "現任花盆土丘主巢",
+      "bearing": "中心",
+      "distance_cm": 0
+    },
+    {
+      "id": "N01",
+      "name": "原石板下",
+      "bearing": "未定",
+      "distance_cm": null
+    },
+    {
+      "id": "N02",
+      "name": "草根高地舊巢",
+      "bearing": "未定",
+      "distance_cm": null
+    },
+    {
+      "id": "F01",
+      "name": "東北葉背蚜蟲",
+      "bearing": "東北",
+      "distance_cm": 48
+    },
+    {
+      "id": "F02",
+      "name": "西南植物傷口",
+      "bearing": "西南",
+      "distance_cm": 38
+    },
+    {
+      "id": "F03",
+      "name": "東側破損落果",
+      "bearing": "東",
+      "distance_cm": 64
+    },
+    {
+      "id": "F04",
+      "name": "北側石牆介殼蟲",
+      "bearing": "北",
+      "distance_cm": 92
+    },
+    {
+      "id": "F05",
+      "name": "東南矮草蚜蟲",
+      "bearing": "東南",
+      "distance_cm": 73
+    },
+    {
+      "id": "F06",
+      "name": "東南潮濕石縫",
+      "bearing": "東南",
+      "distance_cm": 23
+    },
+    {
+      "id": "F07",
+      "name": "東側石塊與枯葉",
+      "bearing": "東",
+      "distance_cm": 31
+    },
+    {
+      "id": "F08",
+      "name": "西北小白花",
+      "bearing": "西北",
+      "distance_cm": 83
+    },
+    {
+      "id": "F09",
+      "name": "東南野草斷莖",
+      "bearing": "東南",
+      "distance_cm": 19
+    },
+    {
+      "id": "F10",
+      "name": "南側根際吸汁昆蟲",
+      "bearing": "南",
+      "distance_cm": 42
+    },
+    {
+      "id": "F11",
+      "name": "南側腐葉堆",
+      "bearing": "南",
+      "distance_cm": 35
+    },
+    {
+      "id": "U00",
+      "name": "未探索的住宅花園",
+      "bearing": "未知",
+      "distance_cm": null
+    },
+    {
+      "id": "U01",
+      "name": "U00外緣相鄰的落葉底小石縫",
+      "bearing": "未知（近U00已走過的草根線）",
+      "distance_cm": null
+    }
+  ]
+}

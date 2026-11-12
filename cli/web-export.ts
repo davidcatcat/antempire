@@ -2,23 +2,23 @@
  * Read-only data export for the web viewer (web/). Writes ONLY web/data/*.json; never writes saves/, journal/,
  * reports/ or any engine input. The viewer only draws what is in these files.
  *
- *  1. official-day14.json — a snapshot of the OFFICIAL game at its last completed day, copied from
- *     saves/main.json + saves/world-state.json (read-only, with their sha256). The official Day1–14 history has no
- *     minute-level engine timeline, so this is a STATIC snapshot: per-worker status, last recorded site sequence and
- *     narrative activity, queen, brood, map locations and recorded route links.
- *  2. experiment-<id>.json — an EXPERIMENTAL Day0 world (not the official game) simulated by the current engine
- *     with a fixed scenario and seed. Per day: weather, the colony at the end of the day, every worker's activity
- *     segments (start/end minute, place, action) and the ecological / colony events the engine emitted. The viewer
- *     may interpolate positions between recorded segment endpoints for drawing only.
+ *  experiment-<id>.json — an EXPERIMENTAL Day0 world (not an official game) simulated by the current engine
+ *  with a fixed scenario and seed. Per day: weather, the colony at the end of the day, every worker's activity
+ *  segments (start/end minute, place, action) and the ecological / colony events the engine emitted. The viewer
+ *  may interpolate positions between recorded segment endpoints for drawing only.
  *
- * Map layout: the world records each place by compass bearing + approximate distance from the nest entrance
- * ("敘事近似值非實測"). Display coordinates are derived from those two values only (layoutOf) and labelled as a
- * schematic; places without a recorded bearing/distance are listed as "位置未知", not given invented positions.
+ * There is NO official world today: the legacy Day14 game saves were retired by the Owner on 2026-11-12 (#194),
+ * so the former official-day14.json snapshot is no longer exported. index.json says so (official: null) until a new
+ * official Day0 world passes its integration gate (R2).
+ *
+ * Map layout: the garden scenario records each place by compass bearing + approximate distance from the nest
+ * entrance ("敘事近似值非實測"; data/xitun-garden-geography.json). Display coordinates are derived from those two
+ * values only (layoutOf) and labelled as a schematic; places without a recorded bearing/distance are listed as
+ * "位置未知", not given invented positions.
  *   node cli/web-export.ts            (writes web/data/)
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import crypto from 'node:crypto';
 import { simulateWorldDay, resolveBundle, ENGINE_VERSION, type WorldState, type SimEvent } from '../engine/index.ts';
 import { loadBundle, readJson, REPO_ROOT } from './lib/load.ts';
 import { buildDay0, seasonStart, type FoundingId, type Season } from './lib/day0.ts';
@@ -26,7 +26,6 @@ import { rulesFingerprint } from './lib/fingerprint.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 export const WEB_DATA_DIR = 'web/data';
-const sha = (f: string) => crypto.createHash('sha256').update(fs.readFileSync(path.join(REPO_ROOT, f))).digest('hex');
 
 /** Compass words used in the world record -> degrees clockwise from north. */
 const BEARING_DEG: Record<string, number> = { 北: 0, 東北: 45, 東: 90, 東南: 135, 南: 180, 西南: 225, 西: 270, 西北: 315 };
@@ -39,27 +38,10 @@ export function layoutOf(bearing: string | null | undefined, distanceCm: number 
   return { x: Math.round(Math.sin(rad) * distanceCm * 100) / 100, y: Math.round(Math.cos(rad) * distanceCm * 100) / 100, basis: `bearing「${bearing}」+ 約 ${distanceCm} cm（敘事近似值，非測量）` };
 }
 
-function placesFromWorldRecord(world: Any): Any[] {
-  return world.world_map.locations.map((l: Any) => ({ id: l.id, name: l.name ?? l.id, bearing: l.bearing ?? null, distance_cm: l.distance_cm ?? null, kind: l.resource_class ?? null, layout: layoutOf(l.bearing, l.distance_cm) }));
-}
-
-export function exportOfficial(root = REPO_ROOT): Any {
-  const main = readJson('saves/main.json', root), world = readJson('saves/world-state.json', root);
-  const col = main.colony, clock = world.time?.scientific_clock ?? {};
-  const workers = col.workers.individuals.map((w: Any) => {
-    const v = w.v2_latest ?? {};
-    return { id: w.id, status: w.status, cause_of_death: w.cause ?? null, last_recorded_day: v.day ?? null, location_at_day_end: v.current_location_at_day_end ?? (w.status === 'alive' ? null : null), site_sequence: v.site_sequence ?? [], activity: v.activity ?? [], injured_preexisting: v.preexisting_injury_preserved ?? null, new_injury: v.new_injury ?? null };
-  });
-  return {
-    schema: 'antempire.web.official-snapshot.v1', kind: 'official', read_only: true,
-    note: '正式遊戲最後完成日的唯讀快照。Day1～14 的正式歷史沒有逐分鐘的引擎時間軸，所以這裡只顯示當日結束時的狀態與紀錄的活動敘述，不顯示動畫。',
-    day: main.simulation?.latest_completed_day ?? clock.day ?? null, calendar_date: clock.calendar_date ?? null, elapsed_sim_hours: clock.elapsed_sim_hours ?? null,
-    sources: { files: { 'saves/main.json': sha('saves/main.json'), 'saves/world-state.json': sha('saves/world-state.json') } },
-    map: { origin: world.world_map.coordinate_origin, unit: world.world_map.distance_unit, precision: world.world_map.precision, places: placesFromWorldRecord(world), links: (world.world_map.route_edges ?? []).map((e: Any) => ({ from: e.from, to: e.to, approx_cm: e.legacy_approx_distance_cm ?? null, verified_cm: e.verified_route_length_cm ?? null, substrate: e.substrate ?? null })) },
-    queen: { id: col.queen?.id ?? null, status: col.queen?.status ?? null, latest: col.queen?.v2_latest ?? null },
-    workers,
-    brood: (col.brood?.individuals ?? []).map((b: Any) => ({ id: b.id, stage: b.stage, living: b.living !== false, laid_on_sim_day: b.laid_on_sim_day ?? null })),
-  };
+/** Garden scenario geography (place names, bearing words, approximate distances); read-only, no colony data. */
+export const GEOGRAPHY_FILE = 'data/xitun-garden-geography.json';
+function placesFromGeography(geo: Any): Any[] {
+  return geo.locations.map((l: Any) => ({ id: l.id, name: l.name ?? l.id, bearing: l.bearing ?? null, distance_cm: l.distance_cm ?? null, layout: layoutOf(l.bearing, l.distance_cm) }));
 }
 
 const KEEP_EVENTS = new Set(['worker_activity', 'route_step', 'discovery', 'scouted_empty', 'exploration_step', 'exploration_found_nothing', 'food_collected', 'food_delivered', 'trophallaxis', 'local_recruitment', 'hunt_recruitment', 'live_prey_encounter', 'insect_predation', 'prey_escaped', 'joint_prey_transport', 'worker_death', 'brood_death', 'queen_death', 'egg_laid', 'hatch', 'pupation', 'eclosion', 'forager_stopped', 'action_cancelled_no_time', 'insect_natural_death', 'host_plant_death', 'hemipteran_colony_change']);
@@ -75,15 +57,15 @@ export const EXPERIMENTS: ExperimentSpec[] = [
   { id: 'day0-A4-autumn-20270001', founding: 'A4', season: 'autumn', seed: 20270001, days: 30 },
 ];
 export const DEFAULT_EXPERIMENT = EXPERIMENTS[0];
+/** Shown by the viewer: there is no official world (#194). */
+export const OFFICIAL_NOTE = '目前沒有正式世界：舊版 Day14 存檔已依 Owner 裁示退役（#194）；新版 Day0 通過正式化門檻前，所有世界都是非正式實驗。';
 
 export function exportExperiment(spec: ExperimentSpec = DEFAULT_EXPERIMENT): Any {
   const bundle = loadBundle(), rp = resolveBundle(bundle), init = buildDay0(spec.founding, spec.seed, seasonStart(spec.season), bundle);
-  // Garden GEOGRAPHY only (place names, bearing words, approximate distances) is read from the official world record,
-  // read-only, because it is the only place the garden layout is recorded; NO colony, individual, store or event data
-  // of the official world enters an experiment file (tests/web.test.ts checks this). P1-B will move the geography into
-  // shared spatial data used by both worlds.
-  const world = readJson('saves/world-state.json');
-  const recorded = new Map(placesFromWorldRecord(world).map((p: Any) => [p.id, p]));
+  // Garden GEOGRAPHY only (place names, bearing words, approximate distances), read-only from the scenario geography
+  // file. It was copied verbatim from the retired legacy Day14 world record (#194); NO colony, individual, store or
+  // event data of that record enters an experiment file (tests/web.test.ts checks this).
+  const recorded = new Map(placesFromGeography(readJson(GEOGRAPHY_FILE)).map((p: Any) => [p.id, p]));
   const nodes = [...new Set(rp.world.routes.edges.flat())].sort();
   const places = nodes.map((id) => { const r = recorded.get(id) as Any; return { id, name: r?.name ?? id, bearing: r?.bearing ?? null, distance_cm: r?.distance_cm ?? null, kind: init.state.sources[id]?.type ?? (id === init.state.colonies[0].nest_node ? 'nest' : null), layout: r?.layout ?? null }; });
   const links = rp.world.routes.edges.map(([a, b]) => { const k = [a, b].sort().join(':'); return { from: a, to: b, length_cm: rp.world.routes.edge_length_cm[k] ?? null, legacy_minutes_if_unknown: rp.world.routes.edge_length_cm[k] === undefined ? rp.world.routes.route_edge_minutes : null }; });
@@ -121,21 +103,20 @@ export function exportExperiment(spec: ExperimentSpec = DEFAULT_EXPERIMENT): Any
     schema: 'antempire.web.experiment-replay.v1', kind: 'experiment', official: false,
     note: '實驗世界（Day0 科學初始化），不是正式遊戲，也不會寫入正式存檔。所有個體、行動與事件都由目前的模擬引擎產生；畫面上兩個記錄點之間的移動是顯示用插值。',
     spec, engine_version: ENGINE_VERSION, rules_fingerprint: { engine: fp.engine, params: fp.params },
-    map: { unit: 'cm', layout_basis: '方位文字＋約距離（世界設定的敘事近似值），非測量；沒有記錄的地點列為位置未知', geography_source: 'saves/world-state.json#world_map.locations（只讀花園地理：名稱、方位、約距離；不含正式世界的蟻群、個體、存糧或事件）', places, links },
+    map: { unit: 'cm', layout_basis: '方位文字＋約距離（世界設定的敘事近似值），非測量；沒有記錄的地點列為位置未知', geography_source: 'data/xitun-garden-geography.json#locations（只讀花園情境地理：名稱、方位、約距離；逐字取自已退役舊版 Day14 的 world_map.locations，不含其蟻群、個體、存糧或事件）', places, links },
     day0, days,
   };
 }
 
 if (import.meta.main) {
   const dir = path.join(REPO_ROOT, WEB_DATA_DIR); fs.mkdirSync(dir, { recursive: true });
-  const off = exportOfficial();
-  fs.writeFileSync(path.join(dir, 'official-day14.json'), JSON.stringify(off) + '\n');
+  fs.rmSync(path.join(dir, 'official-day14.json'), { force: true }); // retired with the legacy Day14 saves (#194)
   const list: Any[] = [];
   for (const spec of EXPERIMENTS) {
     const exp = exportExperiment(spec);
     fs.writeFileSync(path.join(dir, `experiment-${spec.id}.json`), JSON.stringify(exp) + '\n');
     list.push({ id: spec.id, file: `experiment-${spec.id}.json`, title: `實驗世界：Day0 ${spec.founding} 秋季 種子 ${spec.seed}（${exp.days.length} 日）`, founding: spec.founding, season: spec.season, seed: spec.seed });
   }
-  fs.writeFileSync(path.join(dir, 'index.json'), JSON.stringify({ schema: 'antempire.web.index.v1', official: 'official-day14.json', experiments: list }) + '\n');
+  fs.writeFileSync(path.join(dir, 'index.json'), JSON.stringify({ schema: 'antempire.web.index.v2', official: null, official_note: OFFICIAL_NOTE, experiments: list }) + '\n');
   for (const f of fs.readdirSync(dir)) console.log(f, (fs.statSync(path.join(dir, f)).size / 1024).toFixed(0) + ' KB');
 }

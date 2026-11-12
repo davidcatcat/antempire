@@ -2,10 +2,10 @@
  * V5 browser E2E + screenshots of the read-only viewer, desktop (1280x800, mouse) and a Pixel-like phone (412x915,
  * touch, DPR 2; Chromium emulation, not a physical phone). Expectations come from web/data, read here independently of
  * the page. FAILS (exit 1) on any failed check, page error or console error. One screenshot per feature and profile:
- *   <profile>-v5-01-follow, -02-timeline, -03-stats, -03b-flows, -04-route, -05-event-map, -05b-nest, -06-official,
- *   -06b-experiment.  (profile = desktop | phone)
+ *   <profile>-v5-01-follow, -02-timeline, -03-stats, -03b-flows, -04-route, -05-event-map, -05b-nest,
+ *   -06b-experiment.  (-06-official was removed with the retired legacy Day14 world, #194)  (profile = desktop | phone)
  * Checks:
- *  - world separation: the canvas itself carries the world mark (official / 非正式); official has no filter, route or series;
+ *  - world mark: the canvas itself carries 「實驗世界・非正式」; there is no official world (legacy Day14 retired, #194);
  *  - follow: select a walking worker, follow while playing (camera centred);
  *  - recorded route: every leg = an edge of a recorded walk; every shown arrival minute is an engine route_step minute;
  *  - timeline: scope 全部日子 + category filter lists exactly the matching engine events of all days; jumping to a death
@@ -47,12 +47,10 @@ const listed = (e) => e.type !== 'worker_activity' && e.type !== 'route_step';
       await page.waitForTimeout(150); const f = `${out}/${name}-v5-${tag}.png`; await page.screenshot({ path: f }); shots.push(path.basename(f));
     };
     const chip = async (cat) => press(`#evCats button[data-cat="${cat}"]`);
-    await page.goto(new URL('analysis.html', base).href); await page.waitForFunction(() => document.getElementById('badge').textContent.includes('Day14'));
+    await page.goto(new URL('analysis.html', base).href); await page.waitForFunction((id) => window.antempireViewer && window.antempireViewer.state().mode === id, index.experiments[0].id);
 
-    // ── 6. official snapshot: world mark on the canvas; no filter chips, no route, no series ──
-    check((await V(() => window.antempireViewer.worldMark())) === '正式 Day14・唯讀快照', `${name}: the official canvas carries 「正式 Day14・唯讀快照」`);
-    check((await page.$$('#evCats button')).length === 0 && (await page.$eval('#route', (e) => e.textContent)).includes('正式快照') && (await page.$eval('#flows', (e) => e.textContent)).includes('沒有每日序列'), `${name}: the official snapshot has no event filter, no recorded route and no daily flows`);
-    await shot('06-official');
+    // ── 6. no official world (#194): only experiments are offered; the canvas carries the experiment mark ──
+    check(index.official === null && (await page.$$('#mode option[value="official"]')).length === 0, `${name}: no official world is offered`);
     await mode(A1.id);
     check((await V(() => window.antempireViewer.worldMark())) === '實驗世界・非正式' && (await page.$eval('#badge', (e) => e.className)).includes('experiment'), `${name}: the experiment canvas carries 「實驗世界・非正式」 and the experiment badge`);
     await shot('06b-experiment');
