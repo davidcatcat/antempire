@@ -138,3 +138,31 @@ cd ../.. && npm run web:build && node prototypes/render-compare/game-bench.cjs 1
 ```
 
 比較頁網址參數：`?r=A|B|C&mode=replay|stress|probe&n=N&q=0..3&budget=MB&sheet=px`。`tests/render-atlas.test.ts`（BLOCKING）檢查分桶、圖集規劃、錨點、預算與上述結果檔。
+
+## 8. 實機量測頁（Owner 決策 49、50）
+
+WebGL 是否採用（49）與遊戲畫面瓶頸（50）**以實機數據決定**。`prototypes/render-compare/device-bench.html`（`src/device-bench.ts`，純計算在 `src/bench-stats.ts`）是一頁靜態頁：在手機或桌機瀏覽器打開、按「開始量測」、等待，就得到結果面板與可複製的 JSON。全部用相對路徑、不連外網；手機寬度不會橫向捲動。只量畫面，不執行模擬、不寫任何檔。
+
+**量測內容**
+
+| 部分 | 內容 |
+|---|---|
+| 對照矩陣 | 繪圖 A／B／C × 100／1,000／5,000 隻 × DPR｛裝置、1｝× 速度｛1×、快轉 10×｝＝ 36 格。壓力場景位置為**示範（合成）**，不是引擎資料；A／B／C 同場景、同鏡頭、同固定步長動畫，A／B／C 在最內層交錯。 |
+| 遊戲畫面瓶頸 | 以遊戲畫面的畫法重播非正式實驗世界（唯讀），另加同一花園 1,000 隻示範螞蟻；每層毫秒取自 LayeredRenderer：地面 chunk、裝飾／物件（propsLow＋propsHigh）、螞蟻（影子＋本體）、疊加層（路線、光線、天氣、UI）、其他 JS（規劃等）、其餘（幀間隔 − JS：瀏覽器合成、GPU、等垂直同步，無法再細分）。 |
+| 減負方案 | 基準、地面／裝飾整幅預合成（`cacheStatic`）、畫面外剔除（`cullOffscreen`）、裝飾 LOD（`decorLod: 1`）、動態 DPR（`setDprCap`）、預旋轉圖集（`antSprites: 'prerotated'`）、全部開啟。**只改畫法**：畫出的螞蟻、位置與事件相同；剔除只跳過畫面外的貼圖，規劃與回傳的 draws 不變。全部預設關閉，遊戲畫面（`web/src/game.ts`）未使用。 |
+| 長時間 | 遊戲畫面重播、A、基準；快速 20 秒（5 秒一窗）、完整 300 秒（10 秒一窗）：fps 漂移（fps／分）與 JS heap 成長（MB／分，以最小平方法斜率）。 |
+
+**報告欄位**（`antempire.device-bench.v1`）：平均 fps、p1／p5 低 fps（＝1000／p99、p95 幀間隔）、幀時間 p50／p95／p99／max；CPU 以瀏覽器可量的代理值：回呼內 JS 時間、busy ratio（JS 時間／牆鐘時間）、long task 總時間與比例（不是處理程序 CPU）；GPU 只在瀏覽器提供 `EXT_disjoint_timer_query_webgl2` 時量 C 的 WebGL 螞蟻圖層，否則寫 `unavailable`（Canvas 2D 沒有 GPU 計時）；記憶體只在有 `performance.memory`（Chromium）時記錄 JS heap，否則 `unavailable`，另附螞蟻貼圖與地面 chunk 的估計位元組。裝置資訊：userAgent、DPR、螢幕、hardwareConcurrency、deviceMemory、WebGL renderer（`WEBGL_debug_renderer_info`）。
+
+**軟體繪圖一律標示**：renderer 字串含 SwiftShader、llvmpipe、softpipe、Software、Microsoft Basic Render、lavapipe，或無法建立 WebGL，或自動化（webdriver／HeadlessChrome）時，`measurement_class` 寫「NOT a device result」，結果面板顯示紅色警告；schema 檢查拒絕把軟體繪圖標成實機結果。
+
+**DPR**：「裝置」＝裝置 DPR，但渲染器品質等級上限是 2（例如 Pixel 7 的 2.625 實際畫在 2）；報告的 `dpr_actual` 是實際值。
+
+**無頭驗證（不是實機結果）**：`node device-bench-verify.cjs` 以無頭 Chromium（桌面 1280×800 與 Pixel 7 模擬，WebGL 為 SwiftShader 軟體繪圖）跑完快速模式，檢查 schema、沒有頁面錯誤、沒有向外請求、沒有橫向捲動、頁面標示為非實機。樣本存在 `device-bench-headless.json`，**只證明頁面能跑完與報告格式，數字不可當作手機或桌機效能**。在這個軟體環境裡也看到動態 DPR 在低 fps 下一步步降 DPR，每次都重烘螞蟻圖集，短時間內反而更慢；實機上是否值得要看實機數據。
+
+```sh
+cd prototypes/render-compare && npm ci && node build.mjs     # dist/device-bench/：index.html、fragment.html、device-bench.js、data/
+node device-bench-verify.cjs                                  # 無頭驗證（軟體繪圖，非實機）
+```
+
+`tests/device-bench.test.ts`（BLOCKING）檢查百分位、低百分位 fps、漂移、動態 DPR 控制、軟體繪圖判定、矩陣、報告 schema、提交的無頭樣本標示，以及頁面只用相對路徑、不匯入 engine／cli、複製按鈕在點擊處理中呼叫 clipboard 並有選取全文的退路。
