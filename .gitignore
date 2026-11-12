@@ -6,3 +6,7 @@ reports/phase2-sensitivity*/.work/
 web/dist/
 prototypes/art-preview/dist/
 prototypes/render-harness/dist/
+prototypes/art-preview/screenshots/
+prototypes/render-harness/screenshots/
+web/worker-dist/
+reports/viewer-v6-art/screenshots/
