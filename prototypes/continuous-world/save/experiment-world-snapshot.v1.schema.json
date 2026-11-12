@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "antempire.experiment-world-snapshot.v1",
+  "title": "Non-official experiment world snapshot envelope (SAVE-0)",
+  "description": "Produced by the experiment Worker at a consistent event boundary; stored by web/src/experimental/save-store.ts. payload is opaque to the store. t_sim is seconds since experiment Day0 00:00; seed is an integer in [0, 2^32) as in the Worker runtime. payload_sha256 = SHA-256 of UTF-8 canonical JSON (sorted keys, no whitespace) of payload. See docs/experimental-save-system.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "label", "official", "world_id", "seed", "rules_fingerprint", "engine_version", "schema_version", "t_sim", "seq", "payload", "payload_sha256"],
+  "properties": {
+    "schema": { "const": "antempire.experiment-world-snapshot.v1" },
+    "label": { "const": "非正式實驗世界／不屬於正式遊戲歷史" },
+    "official": { "const": false },
+    "world_id": { "type": "string", "pattern": "^exp-[A-Za-z0-9._-]{1,60}$" },
+    "seed": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+    "rules_fingerprint": { "type": "string", "minLength": 1 },
+    "engine_version": { "type": "string", "minLength": 1 },
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "t_sim": { "type": "number", "minimum": 0 },
+    "seq": { "type": "integer", "minimum": 0 },
+    "payload": { "type": "object" },
+    "payload_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}
