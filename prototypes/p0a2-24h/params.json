@@ -2,6 +2,7 @@
   "schema": "antempire.p0a2-24h-proto.params.v1",
   "status": "非正式：P0-A2 第二階段隔離原型（Issue #156）的參數。只供 Day0 實驗世界的隔離測試；不是正式參數，不在規則指紋內，不接入每日模擬，不寫存檔或日誌。",
   "official": false,
+  "reference_variant": "ft-flat",
   "evidence_classes": {
     "this_species": "本種（Pheidole megacephala）文獻；數值仍可能需要外推（見 extrapolation_limit）",
     "other_species_extrapolated": "非本種文獻的數值，外推到本種；必須寫出物種名",
@@ -116,6 +117,18 @@
       "species_of_mechanism": "Camponotus sanctus",
       "note": "取自 species 檔 trophallaxis.transfer_max_portions"
     },
+    "forager_retention": {
+      "value": null,
+      "unit": "保留公式（null＝關）",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設（機制方向：文獻，非本種，僅候選）",
+      "sources": [
+        "R147"
+      ],
+      "species_of_mechanism": "Camponotus sanctus",
+      "note": "Q2 候選機制「覓食者保留自身所需」（Owner #188 Q2、#193 裁示）：參考情境為 null＝關，正式交哺上限 transfer_max_portions 不變。開啟時（只在 q2_retention_variants 隔離實驗中），回巢覓食者交哺時不把自己的嗉囊交到低於『自己預期到下次取食前的代謝需求』；這個需求只由它自己的狀態計算（自己的代謝率；own_interval 另用自己最近兩次在食源取食的間隔），不讀全巢存糧、同伴或幼蟲。R147（Camponotus sanctus，非本種）只提供『覓食者不把嗉囊全部交出』的機制方向；R147 的『交出約一半』比例不採用，也不把任何固定比例當作本種數值。保留公式與數值全為遊戲假設"
+    },
     "max_trophallaxis_contacts": {
       "value": 3,
       "unit": "隻／次回巢",
@@ -177,41 +190,28 @@
       "note": "巢內到巢口（或回巢內）的移動時間；巢的空間結構尚未模擬"
     },
     "forage_temp_zero_low_c": {
-      "value": 10,
-      "unit": "°C",
-      "evidence_class": "other_species_extrapolated",
+      "value": null,
+      "evidence_class": "game_assumption",
       "assumption": true,
-      "basis": "文獻支持（非本種）",
-      "sources": [
-        "R190",
-        "R167"
-      ],
-      "species": "Pheidole pallidula",
-      "extrapolation_limit": "R190 的 P. pallidula 在地表 10～46°C 有活動（地中海氣候、地表溫度）；本種 R167 也記約 10°C 失能（極小樣本），方向一致。此處用作出巢溫度係數 f_T 降到 0 的點；本原型輸入的是氣溫＋地點偏移（參考情境偏移 0），不是 R190 的地表溫度"
+      "basis": "遊戲假設（Owner 決定的參考情境）",
+      "sources": [],
+      "note": "參考情境 ft-flat：錨點 null＝f_T≡1。暫定、未校準的參考（Owner #188 Q1＝B，#193 裁示）：f_T≡1 只表示「本種沒有可用的溫度—出巢錨點，所以不依溫度調整出巢機率」；不代表實測的日夜活動相同，模型輸出的日夜分布未經科學驗證。CTmax 熱傷害規則（R145，本種）仍適用。R190（Pheidole pallidula，非本種）的錨點只留在敏感度情境 ft-r190／ft-peak-30"
     },
     "forage_temp_peak_c": {
-      "value": 24,
-      "unit": "°C",
-      "evidence_class": "other_species_extrapolated",
+      "value": null,
+      "evidence_class": "game_assumption",
       "assumption": true,
-      "basis": "文獻支持（非本種）",
-      "sources": [
-        "R190"
-      ],
-      "species": "Pheidole pallidula",
-      "extrapolation_limit": "R190：P. pallidula 地表 24°C 活動最高。本種沒有活動峰值溫度資料（設計 §3）；同屬不等於同種"
+      "basis": "遊戲假設（Owner 決定的參考情境）",
+      "sources": [],
+      "note": "參考情境 ft-flat：錨點 null＝f_T≡1。暫定、未校準的參考（Owner #188 Q1＝B，#193 裁示）：f_T≡1 只表示「本種沒有可用的溫度—出巢錨點，所以不依溫度調整出巢機率」；不代表實測的日夜活動相同，模型輸出的日夜分布未經科學驗證。CTmax 熱傷害規則（R145，本種）仍適用。R190（Pheidole pallidula，非本種）的錨點只留在敏感度情境 ft-r190／ft-peak-30"
     },
     "forage_temp_zero_high_c": {
-      "value": 46,
-      "unit": "°C",
-      "evidence_class": "other_species_extrapolated",
+      "value": null,
+      "evidence_class": "game_assumption",
       "assumption": true,
-      "basis": "文獻支持（非本種）",
-      "sources": [
-        "R190"
-      ],
-      "species": "Pheidole pallidula",
-      "extrapolation_limit": "R190 活動上限 46°C 高於本種 CTmax（R145：42／44°C，慢升溫）；實際上本原型在 ctmax_c 就以熱傷害規則停止出巢。f_T 在峰值兩側用直線（升得快、降得慢的方向與 R190 一致；直線形狀本身是遊戲假設）"
+      "basis": "遊戲假設（Owner 決定的參考情境）",
+      "sources": [],
+      "note": "參考情境 ft-flat：錨點 null＝f_T≡1。暫定、未校準的參考（Owner #188 Q1＝B，#193 裁示）：f_T≡1 只表示「本種沒有可用的溫度—出巢錨點，所以不依溫度調整出巢機率」；不代表實測的日夜活動相同，模型輸出的日夜分布未經科學驗證。CTmax 熱傷害規則（R145，本種）仍適用。R190（Pheidole pallidula，非本種）的錨點只留在敏感度情境 ft-r190／ft-peak-30"
     },
     "ctmax_c": {
       "value": 42,
@@ -571,7 +571,7 @@
   "mechanisms": {
     "M1_temperature_gate": {
       "enabled": true,
-      "note": "設計 §5：開；溫度 null 時拒絕出巢並記錄 temp_unavailable"
+      "note": "設計 §5：開；參考情境 f_T 錨點 null（f_T≡1，Owner #193 Q1＝B，暫定未校準），只留 CTmax 熱傷害與溫度 null 時拒絕出巢（temp_unavailable）"
     },
     "M2_light_cue": {
       "enabled": false,
@@ -603,43 +603,72 @@
     }
   },
   "sensitivity_variants": {
-    "_note": "敏感度變體（非正式，只供診斷比較）。參考情境（reference）照設計 §5：M1 開（錨點目前為 R190 非本種外推）、放棄機制關。哪一個成為參考由 Owner 決定；變體不得用來挑選好看的結果。",
-    "reference": {
-      "label": "參考：f_T 錨點 R190（Pheidole pallidula，非本種）10／24／46°C；放棄機制關",
+    "_note": "參考情境由 reference_variant 指定（Owner #188 Q1＝B，#193 裁示：ft-flat）。其他是明示的敏感度情境或預設關的假設變體，只供診斷比較；變體不得用來挑選好看的結果。",
+    "ft-flat": {
+      "label": "參考：f_T 錨點 null（不依溫度調整出巢；只保留本種 CTmax 42°C 熱傷害，R145）；放棄機制關；Q2 保留機制關",
+      "status": "參考（暫定、未校準的參考（Owner #188 Q1＝B，#193 裁示）：f_T≡1 只表示「本種沒有可用的溫度—出巢錨點，所以不依溫度調整出巢機率」；不代表實測的日夜活動相同，模型輸出的日夜分布未經科學驗證。CTmax 熱傷害規則（R145，本種）仍適用）",
       "overrides": {}
     },
-    "ft-flat": {
-      "label": "f_T 錨點 null（不依溫度調整出巢；只保留 CTmax 熱傷害）",
+    "ft-r190": {
+      "label": "敏感度：f_T 錨點 R190（Pheidole pallidula，非本種）10／24／46°C",
+      "status": "敏感度情境（非參考，只供診斷比較；不得用來挑選好看的結果）；錨點為非本種外推（R190 Pheidole pallidula）",
       "overrides": {
         "forage_temp_zero_low_c": {
-          "value": null,
-          "evidence_class": "game_assumption",
+          "value": 10,
+          "unit": "°C",
+          "evidence_class": "other_species_extrapolated",
           "assumption": true,
-          "basis": "遊戲假設",
-          "sources": [],
-          "note": "敏感度變體：錨點 null＝不依溫度調整出巢機率（f_T≡1）；CTmax 熱傷害規則仍適用。不是宣稱溫度無影響"
+          "basis": "文獻支持（非本種）",
+          "sources": [
+            "R190",
+            "R167"
+          ],
+          "species": "Pheidole pallidula",
+          "extrapolation_limit": "R190 的 P. pallidula 在地表 10～46°C 有活動（地中海氣候、地表溫度）；本種 R167 也記約 10°C 失能（極小樣本），方向一致。此處用作出巢溫度係數 f_T 降到 0 的點；本原型輸入的是氣溫＋地點偏移（參考情境偏移 0），不是 R190 的地表溫度。敏感度情境專用（Owner #193 Q1＝B：不再是參考）"
         },
         "forage_temp_peak_c": {
-          "value": null,
-          "evidence_class": "game_assumption",
+          "value": 24,
+          "unit": "°C",
+          "evidence_class": "other_species_extrapolated",
           "assumption": true,
-          "basis": "遊戲假設",
-          "sources": [],
-          "note": "敏感度變體：錨點 null＝不依溫度調整出巢機率（f_T≡1）；CTmax 熱傷害規則仍適用。不是宣稱溫度無影響"
+          "basis": "文獻支持（非本種）",
+          "sources": [
+            "R190"
+          ],
+          "species": "Pheidole pallidula",
+          "extrapolation_limit": "R190：P. pallidula 地表 24°C 活動最高。本種沒有活動峰值溫度資料（設計 §3）；同屬不等於同種。敏感度情境專用（Owner #193 Q1＝B：不再是參考）"
         },
         "forage_temp_zero_high_c": {
-          "value": null,
-          "evidence_class": "game_assumption",
+          "value": 46,
+          "unit": "°C",
+          "evidence_class": "other_species_extrapolated",
           "assumption": true,
-          "basis": "遊戲假設",
-          "sources": [],
-          "note": "敏感度變體：錨點 null＝不依溫度調整出巢機率（f_T≡1）；CTmax 熱傷害規則仍適用。不是宣稱溫度無影響"
+          "basis": "文獻支持（非本種）",
+          "sources": [
+            "R190"
+          ],
+          "species": "Pheidole pallidula",
+          "extrapolation_limit": "R190 活動上限 46°C 高於本種 CTmax（R145：42／44°C，慢升溫）；實際上本原型在 ctmax_c 就以熱傷害規則停止出巢。f_T 在峰值兩側用直線（升得快、降得慢的方向與 R190 一致；直線形狀本身是遊戲假設）。敏感度情境專用（Owner #193 Q1＝B：不再是參考）"
         }
       }
     },
     "ft-peak-30": {
-      "label": "f_T 另一個峰值 30°C（遊戲假設；低端 10、高端 46 仍取 R190）",
+      "label": "敏感度：f_T 峰值 30°C（遊戲假設；低端 10、高端 46 取 R190 Pheidole pallidula，非本種）",
+      "status": "敏感度情境（非參考，只供診斷比較；不得用來挑選好看的結果）；峰值為遊戲假設、兩端為非本種外推",
       "overrides": {
+        "forage_temp_zero_low_c": {
+          "value": 10,
+          "unit": "°C",
+          "evidence_class": "other_species_extrapolated",
+          "assumption": true,
+          "basis": "文獻支持（非本種）",
+          "sources": [
+            "R190",
+            "R167"
+          ],
+          "species": "Pheidole pallidula",
+          "extrapolation_limit": "R190 的 P. pallidula 在地表 10～46°C 有活動（地中海氣候、地表溫度）；本種 R167 也記約 10°C 失能（極小樣本），方向一致。此處用作出巢溫度係數 f_T 降到 0 的點；本原型輸入的是氣溫＋地點偏移（參考情境偏移 0），不是 R190 的地表溫度。敏感度情境專用（Owner #193 Q1＝B：不再是參考）"
+        },
         "forage_temp_peak_c": {
           "value": 30,
           "evidence_class": "game_assumption",
@@ -648,12 +677,25 @@
           "sources": [
             "R190"
           ],
-          "note": "敏感度變體：峰值改為 30°C，只為檢查診斷對峰值的敏感度；不是依據任何本種資料"
+          "note": "敏感度情境：峰值改為 30°C，只為檢查診斷對峰值的敏感度；不是依據任何本種資料"
+        },
+        "forage_temp_zero_high_c": {
+          "value": 46,
+          "unit": "°C",
+          "evidence_class": "other_species_extrapolated",
+          "assumption": true,
+          "basis": "文獻支持（非本種）",
+          "sources": [
+            "R190"
+          ],
+          "species": "Pheidole pallidula",
+          "extrapolation_limit": "R190 活動上限 46°C 高於本種 CTmax（R145：42／44°C，慢升溫）；實際上本原型在 ctmax_c 就以熱傷害規則停止出巢。f_T 在峰值兩側用直線（升得快、降得慢的方向與 R190 一致；直線形狀本身是遊戲假設）。敏感度情境專用（Owner #193 Q1＝B：不再是參考）"
         }
       }
     },
     "give-up-2": {
-      "label": "放棄機制開：連續 2 次空手就忘掉路線（遊戲假設）；其他同參考",
+      "label": "假設變體：放棄機制開，連續 2 次空手就忘掉路線（遊戲假設）；其他同參考",
+      "status": "預設關的假設變體（Owner #193 Q3：維持預設關；K＝2 為遊戲假設，本種無資料）",
       "overrides": {
         "give_up_empty_trips": {
           "value": 2,
@@ -662,6 +704,114 @@
           "basis": "遊戲假設",
           "sources": [],
           "note": "敏感度變體：K＝2 是遊戲假設；放棄／遺忘的機制本種無資料"
+        }
+      }
+    }
+  },
+  "q2_retention_variants": {
+    "_note": "Q2 隔離實驗（Owner #188 Q2、#193 裁示）：候選機制「覓食者保留自身所需」的多種公式，預設關（參考 forager_retention＝null）。只在 prototypes/p0a2-24h/tools/q2-retention-sensitivity.ts 與測試中使用；不是參考情境，不接入正式引擎。",
+    "q2-h1": {
+      "label": "Q2：保留自己 1 小時的代謝需求",
+      "status": "Q2 隔離實驗（非參考、預設關；保留公式與數值為遊戲假設，機制方向 R147 Camponotus sanctus 非本種僅候選）",
+      "overrides": {
+        "forager_retention": {
+          "value": {
+            "kind": "horizon",
+            "hours": 1
+          },
+          "unit": "保留公式",
+          "evidence_class": "game_assumption",
+          "assumption": true,
+          "basis": "遊戲假設（機制方向：文獻，非本種，僅候選）",
+          "sources": [
+            "R147"
+          ],
+          "species_of_mechanism": "Camponotus sanctus",
+          "note": "Q2 敏感度：保留量＝自己的代謝率 ×（固定預期間隔 1 小時）。數值為遊戲假設，不是本種量測；不採用 R147 的『交出一半』比例"
+        }
+      }
+    },
+    "q2-h6": {
+      "label": "Q2：保留自己 6 小時的代謝需求",
+      "status": "Q2 隔離實驗（非參考、預設關；保留公式與數值為遊戲假設，機制方向 R147 Camponotus sanctus 非本種僅候選）",
+      "overrides": {
+        "forager_retention": {
+          "value": {
+            "kind": "horizon",
+            "hours": 6
+          },
+          "unit": "保留公式",
+          "evidence_class": "game_assumption",
+          "assumption": true,
+          "basis": "遊戲假設（機制方向：文獻，非本種，僅候選）",
+          "sources": [
+            "R147"
+          ],
+          "species_of_mechanism": "Camponotus sanctus",
+          "note": "Q2 敏感度：保留量＝自己的代謝率 ×（固定預期間隔 6 小時）。數值為遊戲假設，不是本種量測；不採用 R147 的『交出一半』比例"
+        }
+      }
+    },
+    "q2-h24": {
+      "label": "Q2：保留自己 24 小時的代謝需求",
+      "status": "Q2 隔離實驗（非參考、預設關；保留公式與數值為遊戲假設，機制方向 R147 Camponotus sanctus 非本種僅候選）",
+      "overrides": {
+        "forager_retention": {
+          "value": {
+            "kind": "horizon",
+            "hours": 24
+          },
+          "unit": "保留公式",
+          "evidence_class": "game_assumption",
+          "assumption": true,
+          "basis": "遊戲假設（機制方向：文獻，非本種，僅候選）",
+          "sources": [
+            "R147"
+          ],
+          "species_of_mechanism": "Camponotus sanctus",
+          "note": "Q2 敏感度：保留量＝自己的代謝率 ×（固定預期間隔 24 小時）。數值為遊戲假設，不是本種量測；不採用 R147 的『交出一半』比例"
+        }
+      }
+    },
+    "q2-int1": {
+      "label": "Q2：保留自己 1 × 最近取食間隔的代謝需求",
+      "status": "Q2 隔離實驗（非參考、預設關；保留公式與數值為遊戲假設，機制方向 R147 Camponotus sanctus 非本種僅候選）",
+      "overrides": {
+        "forager_retention": {
+          "value": {
+            "kind": "own_interval",
+            "factor": 1
+          },
+          "unit": "保留公式",
+          "evidence_class": "game_assumption",
+          "assumption": true,
+          "basis": "遊戲假設（機制方向：文獻，非本種，僅候選）",
+          "sources": [
+            "R147"
+          ],
+          "species_of_mechanism": "Camponotus sanctus",
+          "note": "Q2 敏感度：保留量＝自己的代謝率 ×（1 × 自己最近兩次在食源取食的間隔；尚無兩次取食經歷時保留 0）。數值為遊戲假設，不是本種量測；不採用 R147 的『交出一半』比例"
+        }
+      }
+    },
+    "q2-int2": {
+      "label": "Q2：保留自己 2 × 最近取食間隔的代謝需求",
+      "status": "Q2 隔離實驗（非參考、預設關；保留公式與數值為遊戲假設，機制方向 R147 Camponotus sanctus 非本種僅候選）",
+      "overrides": {
+        "forager_retention": {
+          "value": {
+            "kind": "own_interval",
+            "factor": 2
+          },
+          "unit": "保留公式",
+          "evidence_class": "game_assumption",
+          "assumption": true,
+          "basis": "遊戲假設（機制方向：文獻，非本種，僅候選）",
+          "sources": [
+            "R147"
+          ],
+          "species_of_mechanism": "Camponotus sanctus",
+          "note": "Q2 敏感度：保留量＝自己的代謝率 ×（2 × 自己最近兩次在食源取食的間隔；尚無兩次取食經歷時保留 0）。數值為遊戲假設，不是本種量測；不採用 R147 的『交出一半』比例"
         }
       }
     }

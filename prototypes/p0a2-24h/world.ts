@@ -26,7 +26,7 @@ import { hash32, rng } from '../../engine/rng.ts';
 import { sha256Hex } from '../../engine/sha256.ts';
 import { US_PER_DAY, type ExactTime } from '../../engine/scheduler/world-events.ts';
 import { canon } from './canon.ts';
-import { chooseInNest, decideAtSource, decideExit, decideFeedLarva, decideTransfer } from './decision.ts';
+import { chooseInNest, decideAtSource, decideExit, decideFeedLarva, decideTransfer, ownReserve } from './decision.ts';
 import { Environment, MS_PER_DAY, MS_PER_HOUR, dayOf, hourOfDay } from './environment.ts';
 import { type Model, buildModel } from './params.ts';
 import { type Json, type Larva, type Loc, type QEvent, type SelfView, type Stats, type Worker, type WorkerState, type WorldState, WORKER_STATES } from './types.ts';
@@ -42,7 +42,9 @@ const pad = (n: number, w: number) => String(n).padStart(w, '0');
 /** order: exact instant, round, seeded tie-break q (so same-instant events of different actors are not ordered by id,
  *  which would systematically favour w001 over w030), canonical id (only if q collides) */
 const cmp = (a: QEvent, b: QEvent) => a.t - b.t || a.r - b.r || a.q - b.q || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
-/** the seeded tie-break of an event: a pure function of seed, instant and id (deterministic and chunk-invariant) */
+/** the seeded tie-break of an event: a pure function of seed, instant and id (deterministic and chunk-invariant).
+ *  A transitional ENGINEERING arbitration (Owner #193 Q4), NOT a claimed natural competition rule; its fairness (no id
+ *  bias in first-served position), chunk invariance and replay are verified in tests/p0a2-24h-proto.test.ts §8b. */
 export const tieOf = (seed: number, t: number, id: string): number => hash32(`${seed}|${t}|${id}`);
 
 /** an exact instant of the shared world axis (engine/scheduler ExactTime) for a prototype instant — for phase 3 */
@@ -84,7 +86,7 @@ const emptyStats = (): Stats => ({
 export interface WorldOptions {
   /** keep every log line in memory (tests, observers); the hash chain is kept regardless */
   captureLog?: boolean;
-  /** sensitivity variant of params.json (default 'reference'); stored in the state */
+  /** variant of params.json (default: its reference_variant, 'ft-flat' — Owner #193 Q1 = B); stored in the state */
   variant?: string;
   /** TEST INSTRUMENTATION ONLY: called with every guarded view handed to a decision (read-only, frozen); cannot change
    *  anything and does not change results (tests check the hashes with and without it). Not offered to any UI. */
@@ -109,7 +111,7 @@ export class World {
   /** a fresh experiment world at Day0 00:00 (t = 0) */
   static create(rawParams: unknown, scenario: string, seed: number, opts: WorldOptions = {}): World {
     if (!Number.isSafeInteger(seed) || seed < 0) fail('seed must be a non-negative integer');
-    const variant = opts.variant ?? 'reference', m = buildModel(rawParams, scenario, variant);
+    const m = buildModel(rawParams, scenario, opts.variant), variant = m.variant;
     const workers: Record<string, Worker> = {}, larvae: Record<string, Larva> = {}, queue: QEvent[] = [];
     let initial = 0;
     for (let i = 1; i <= m.workers; i++) {
@@ -118,7 +120,7 @@ export class World {
       const lerp = (r: [number, number]) => r[0] + g() * (r[1] - r[0]);
       workers[id] = { id, state: 'resting', loc: 'nest', since: 0, crop, last: 0, carry: 0, consumed: 0, debt: 0,
         theta_forage: lerp(m.theta_forage), theta_brood: lerp(m.theta_brood), gain: lerp(m.gain), thermal_offset_c: 0, ctmax_c: m.ctmax_c,
-        route: null, trip_loaded: false, empty_streak: 0, contacts: [], begging: [], pending: null, n: 0 };
+        route: null, trip_loaded: false, empty_streak: 0, last_intake_t: null, forage_interval_ms: null, contacts: [], begging: [], pending: null, n: 0 };
       const w = workers[id], first = Math.max(1, Math.round(-m.rest_ms * Math.log(1 - g())));
       const eid = `${id}#${pad(w.n++, 8)}`, ev: QEvent = { t: first, r: 0, q: tieOf(seed, first, eid), id: eid, k: 'bout_end', a: id, p: {} };
       w.pending = ev.id; queue.push(ev);
@@ -259,6 +261,7 @@ export class World {
       has_route: w.route !== null,
       recruit_contacts_recent: w.contacts.filter((c) => c.loaded).length,
       begging_recent: w.begging.filter((b) => b.signal >= this.m.consts.begging_threshold).length,
+      forage_interval_ms: w.forage_interval_ms,
     }, 'self', w.id, t);
   }
 
@@ -324,6 +327,9 @@ export class World {
       return { source: src.id, take: 0, seen: src.stock, ...(forgot ? { forgot_route: true } : {}) };
     }
     w.empty_streak = 0;
+    // own experience only (read by the Q2 retention candidate, default off): interval between its own source intakes
+    if (w.last_intake_t !== null) w.forage_interval_ms = e.t - w.last_intake_t;
+    w.last_intake_t = e.t;
     src.stock -= take; src.taken += take; w.crop += take;
     this.#set(w, e.t, 'feeding', 'outside');
     this.#next(w, e, 'feed_end', Math.max(1, Math.round((this.m.fill_ms_full * take) / this.m.crop_cap)));
@@ -359,7 +365,10 @@ export class World {
       touched.push({ worker: id, amount: amt, woke });
     }
     w.trip_loaded = false;
-    return { loaded, touched, ...this.#decideInNest(w, e, g) };
+    // Q2 candidate on (isolated experiment only): log the forager's own reserve and what it kept, so tests can verify
+    // the rule from the event log; with retention off (reference) nothing is added and the log is unchanged
+    const kept: { [k: string]: Json } = this.m.consts.retention === null ? {} : { reserve: ownReserve(this.#self(w, t), this.m.consts), crop_left: w.crop };
+    return { loaded, touched, ...kept, ...this.#decideInNest(w, e, g) };
   }
 
   #envDay(e: QEvent): { [k: string]: Json } {
