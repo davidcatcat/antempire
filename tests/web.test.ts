@@ -85,8 +85,8 @@ try {
     checks += 4;
   }
   // 6. separation
-  // recursive: web/src/experimental/ (Worker client, experiment save store) obeys the same rules
-  const srcFiles = (d: string): string[] => fs.readdirSync(path.join(REPO_ROOT, 'web/src', d), { withFileTypes: true }).flatMap((e) => e.isDirectory() ? srcFiles(path.join(d, e.name)) : [path.join(d, e.name)]);
+  // recursive: sub-directories such as web/src/experimental/ are checked too
+  const srcFiles = (d: string): string[] => fs.readdirSync(path.join(REPO_ROOT, 'web/src', d), { withFileTypes: true }).flatMap((e) => e.isDirectory() ? srcFiles(path.posix.join(d, e.name)) : [path.posix.join(d, e.name)]);
   for (const f of srcFiles('')) {
     const code = fs.readFileSync(path.join(REPO_ROOT, 'web/src', f), 'utf8');
     for (const m of code.matchAll(/from\s+'([^']+)'/g)) ok(m[1].startsWith('./'), `web/src/${f} imports only viewer modules (${m[1]})`);

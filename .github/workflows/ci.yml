@@ -67,6 +67,8 @@ jobs:
         run: node tests/browser/worker-runtime.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/
       - name: V6 replay navigation E2E (next-activity jump, walk marks, day-summary mode; desktop 1280x800; 400px phone touch)
         run: node tests/browser/web-replay-ux.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/
+      - name: SAVE-1 experiment-world save store in Chromium (synthetic payloads; atomicity, recovery, kill, locks, isolation, browser restart, migrations, export/import, save cost)
+        run: node tests/browser/save-store.check.cjs "$RUNNER_TEMP/viewer-shots"
       - name: Assemble the static preview (page + compiled script + data + screenshots + test results + instructions)
         if: always()
         run: |

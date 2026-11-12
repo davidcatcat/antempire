@@ -237,7 +237,7 @@ V6 的共同原則：不為動畫流暢度修改生態決策或物理結果；�
 | 階段 | 內容 | 依賴 | 狀態 |
 |---|---|---|---|
 | SAVE-0 | 快照信封、必須保存的內容、原子寫入與回復、遷移、自動存檔、多分頁、選單、驗收 A～E；schema 與契約測試 | #39 例外（3080e24） | 進行中 |
-| SAVE-1 | `web/src/experimental/save-store.ts`：IndexedDB 原子寫入、兩份以上回復點、遷移登錄、損壞偵測、型別化錯誤、Web Locks、匯出入、清單；以合成 payload 在 Chromium 實測 | SAVE-0 | 進行中 |
+| SAVE-1 | `web/src/experimental/save-store.ts`：IndexedDB 原子寫入、兩份以上回復點、遷移登錄、損壞偵測、型別化錯誤、Web Locks、匯出入、清單；以合成 payload 在 Chromium 實測 | SAVE-0 | 已實作（待審；未與 Worker 整合） |
 | SAVE-2 | Worker 在一致事件邊界產生快照與還原；驗收 A（48 h 連續 vs. 24 h＋存檔＋重啟＋24 h）、B、E | Worker runtime（PR 2）、SAVE-1 | 未開始 |
 | SAVE-3 | 選單（繼續／新遊戲／讀取／管理）、存檔狀態 UI、自動存檔接線、驗收 C／E 畫面部分 | V6-2 畫面整合（PR 3）、SAVE-2 | 未開始 |
 

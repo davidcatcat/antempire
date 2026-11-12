@@ -155,6 +155,14 @@ SAVE-1 只用**合成 payload**（Worker runtime 尚未合併），不得宣稱�
 | SAVE-2 | Worker 快照產生與還原、一致事件邊界、驗收 A／B／E | Worker runtime（PR 2）、SAVE-1 |
 | SAVE-3 | 選單、存檔狀態 UI、自動存檔接線、驗收 C／E 的畫面部分 | V6-2 畫面整合（PR 3）、SAVE-2 |
 
+## 12b. SAVE-1 實作與量測（合成 payload）
+
+- `web/src/experimental/save-format.ts`：純邏輯（canonical JSON、SHA-256、信封檢查、相容性、遷移登錄、匯出入檢查、保留規則、自動存檔狀態機），`tests/save-format.test.ts` 在 Node 測試。
+- `web/src/experimental/save-store.ts`：唯一使用 IndexedDB／Web Locks／`navigator.storage` 的模組。寫入者必須先 `createWorld` 或以鎖 `loadLatest`，才能 `saveSnapshot`（樂觀並行檢查需要知道目前的最新指標）。
+- `tests/browser/save-store.check.cjs`：真實 Chromium（CI viewer-smoke job）。涵蓋：寫入中與提升中中止、注入配額錯誤、在 3.7 MB 存檔的不同時點關閉頁面或讓 renderer 崩潰（10 次，舊快照保留 5、新快照提交 5，皆無半寫）、損壞偵測與回復、全部損壞時 `no_valid_snapshot`、兩分頁搶鎖與 `steal`、世界 A 在建立與推進世界 B 後逐位元組不變、關閉瀏覽器後重新啟動繼續、遷移與失敗遷移、匯出入、兩步刪除。
+- 寫入成本（headless 桌面 Chromium，三次中位數；**不是手機量測**）：約 0.07 MB 12 ms、0.72 MB 70 ms、3.7 MB 250 ms（其中雜湊約 40%）。30 秒週期在此量級下負擔很小；真實 payload 大小要等 SAVE-2 才知道。
+- **尚未整合**：Worker runtime 未合併，所有 payload 都是合成資料；驗收 A、E 與 UI 尚未進行。
+
 ## 13. 待協調事項
 
 - `t_sim`（秒）、`seed`（0～2³²−1 整數）、`world_id`（`exp-` 開頭）已與 Worker runtime（`docs/experimental-worker-runtime.md` §4、`prototypes/continuous-world/worker/core.ts`）對齊。
