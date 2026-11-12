@@ -47,12 +47,17 @@ export interface Worker {
    *  (own experience; read only by the Q2 retention candidate, default off) */
   last_intake_t: number | null; forage_interval_ms: number | null;
   contacts: ContactRec[]; begging: BegRec[];
+  /** HUNGER DIAGNOSTICS (statistics only; never in any decision view): start of the current empty-crop spell (null =
+   *  crop not empty), total and longest continuous time with an empty crop (ms). Starvation death is NOT modelled */
+  empty_since: number | null; empty_ms: number; max_empty_ms: number;
   /** id of this worker's one live event (others in the queue are stale and skipped) */
   pending: string | null;
   /** counter for canonical event ids of this worker */
   n: number;
 }
-export interface Larva { id: string; gut: number; last: number; carry: number; consumed: number; deficit: number }
+/** a larva: own gut (µP), metabolism booking, unmet need (`deficit`), food received from carers (`received`, the growth
+ *  proxy — development is NOT modelled) and the same hunger diagnostics as workers (statistics only; no death modelled) */
+export interface Larva { id: string; gut: number; last: number; carry: number; consumed: number; deficit: number; received: number; empty_since: number | null; empty_ms: number; max_empty_ms: number }
 export interface Source { id: string; stock: number; produced: number; taken: number; n: number }
 
 /** a queued event: exact instant t (ms), round r (causal depth inside one instant), seeded tie-break q = hash32(seed|t|id)
@@ -107,19 +112,37 @@ export interface SourceView { food_here: number; temp_c: number | null }
 export interface PartnerView { crop_room: number }
 /** what a worker perceives of a larva it actually touched */
 export interface LarvaView { begging: number; room: number }
+/** process (2) adult–adult trophallaxis: what a returning forager knows of ITSELF when it offers food to a nestmate it
+ *  touched (its own crop and its own experienced interval between intakes — nothing else) */
+export interface DonorView { crop: number; forage_interval_ms: number | null }
+/** process (3) adult→brood feeding: what a carer knows of ITSELF when it feeds a larva it touched (its own crop, its own
+ *  crop fill and its own experienced interval between intakes — nothing else; no colony store, no other larva) */
+export interface CarerView { crop: number; crop_fill: number; forage_interval_ms: number | null }
+/** process (1) own metabolism: the only input of the own-need computation (its own experienced intake interval) */
+export interface NeedView { forage_interval_ms: number | null }
 
-/** species / scenario constants handed to decisions (not colony state) */
+/** an own-need formulation (process 1) that a giving process may keep back from its own crop: null = keep nothing;
+ *  'horizon': own metabolic need for need_ms; 'own_interval': for factor × its own last experienced intake interval.
+ *  Each giving process (2) and (3) has its OWN independent setting (Owner #188, 2026-11-12: no shared cap or ratio) */
+export type Retention = { kind: 'horizon'; need_ms: number } | { kind: 'own_interval'; factor: number } | null;
+
+/** species / scenario constants handed to decisions (not colony state). The three food processes are kept apart
+ *  (Owner #188 supplementary ruling 2026-11-12): (1) own metabolism, (2) adult–adult trophallaxis, (3) adult→brood
+ *  feeding — each with its own parameters; (2) and (3) never share a cap or a retention setting */
 export interface DecisionConsts {
   hill_n: number; recruit_contact_weight: number; idle_probability: number;
   /** null = no temperature anchors (the reference 'ft-flat', Owner #193 Q1 = B; provisional, uncalibrated): f_T = 1;
    *  the CTmax heat rule still applies. Numbers = sensitivity scenarios only (ft-r190, ft-peak-30) */
   f_t: { zero_low: number; peak: number; zero_high: number } | null; light_factor_night: number;
-  transfer_max: number; feed_bolus: number; begging_threshold: number;
-  /** Q2 candidate 'forager keeps what it needs' (Owner #188 / #193): null = OFF (reference). 'horizon': keep its own
-   *  metabolic need for need_ms; 'own_interval': for factor x its own last experienced interval between intakes */
-  retention: { kind: 'horizon'; need_ms: number } | { kind: 'own_interval'; factor: number } | null;
-  /** the worker's own metabolic rate (µP / day; the same for every worker in this prototype) and the day length (ms) */
-  metabolic_rate_per_day: number; day_ms: number;
+  /** (1) own metabolism: the worker's own metabolic rate (µP / day; the same for every worker here) and the day (ms) */
+  own: { metabolic_rate_per_day: number; day_ms: number };
+  /** (2) adult–adult trophallaxis by a returning forager: per-contact cap and the Q2 candidate 'forager keeps what it
+   *  needs' (Owner #188 / #193; null = OFF, reference) */
+  trophallaxis: { transfer_max: number; retention: Retention };
+  /** (3) adult→brood feeding: bolus per feed, the begging trigger ('threshold': feed when the perceived signal reaches
+   *  begging_threshold — reference; 'graded': feed with probability = perceived signal), the carer's OWN retention
+   *  (null = OFF, reference) and the carer's own minimum crop fill to feed (null = OFF, reference) */
+  brood: { feed_bolus: number; begging_threshold: number; trigger: 'threshold' | 'graded'; retention: Retention; min_own_crop_fill: number | null };
 }
 export type NestChoice = 'forage' | 'brood' | 'idle' | 'rest';
 export type ExitChoice = 'exit' | 'declined' | 'temp_unavailable' | 'heat';
