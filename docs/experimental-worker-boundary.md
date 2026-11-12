@@ -1,6 +1,6 @@
 # 非正式實驗 Worker 邊界（Owner 決策 #39）
 
-> 狀態：規則與保護測試（PR 1／3）。Worker 本身（PR 2）與 V6-2 畫面整合（PR 3）尚未實作。
+> 狀態：規則與保護測試（PR 1／3）；Worker 執行環境（PR 2）見 [`experimental-worker-runtime.md`](experimental-worker-runtime.md)；V6-2 畫面整合（PR 3）尚未實作。
 > 本文件說明 CLAUDE.md §9「觀察器的兩種模式」的有限例外；若兩者不一致，以 CLAUDE.md 與較嚴格者為準。
 
 ## 1. 為什麼要例外
