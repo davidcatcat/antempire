@@ -108,11 +108,15 @@ const COUNT_WORKERS = () => { window.__workerCount = 0; const W = window.Worker;
     // follow + info screenshots
     await page.selectOption('#speed', '60'); await page.click('#play');
     await page.waitForTimeout(800);
+    // pause before reading the ant's screen position, so the tap lands where the ant is drawn (at 60× an ant moves
+    // between reading draws() and the tap; that race, not the selection, made this check flaky); resume afterwards
+    await page.click('#play'); await page.waitForFunction(() => !window.__v62.pacing().running); await page.waitForTimeout(150);
     const pick = await page.evaluate(() => window.__v62.draws()[0] || null);
     if (pick) { if (tag === 'pixel7') await page.tap('#scene', { position: { x: pick.sx, y: pick.sy } }); else await page.mouse.click(pick.sx, pick.sy); }
     await page.waitForTimeout(300);
     const sel = await page.evaluate(() => window.__v62.state().selected);
     check(pick === null || sel === pick.id, `${tag}: tapping an ant selects it (${sel})`);
+    await page.click('#play'); await page.waitForFunction(() => window.__v62.pacing().running);
     if (sel) { await page.click('#followBtn'); await page.waitForTimeout(1500); await shot(page, '3-follow'); }
     const fol = await page.evaluate(() => ({ s: window.__v62.state(), f: window.__v62.followed() }));
     check(!sel || (fol.s.following === sel && fol.f && fol.f.id === sel), `${tag}: follow attaches the Worker's read-only copy of the ant`);
