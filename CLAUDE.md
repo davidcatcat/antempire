@@ -114,6 +114,15 @@
 - `engine/`：純模擬核心（TypeScript，無 DOM／Node API）。`species/<id>.json` 物種參數、`world/<id>.json` 世界參數；程式中不寫死數值、不用物種名稱判斷。架構見 [`docs/engine-architecture.md`](docs/engine-architecture.md)。
 - `cli/`：Node 工具（讀檔、規則指紋、存檔映射、報告產生器）。
 - `web/`：唯讀觀察器。`cli/web-export.ts` 由存檔（唯讀）與引擎產生 `web/data/`；`web/src/` 不得匯入 `engine/` 或 `cli/`、不得執行模擬、不得寫入。引擎輸出改變時要重新執行 `npm run web:export` 並提交 `web/data/`（`tests/web.test.ts` 檢查）。
+- **觀察器的兩種模式（Owner 決策 #39，2026-11-08；本節唯一的有限例外）**：
+  - **A. 正式觀察模式**：上一條規則全部保留。`web/src/` 不得匯入 `engine/`、不得執行模擬、不得修改 `saves/`／`journal/`，只讀取正式引擎產生的資料；正式推進只在 Node 執行。
+  - **B. 非正式實驗模式**：只有實驗 Worker 入口 `prototypes/continuous-world/worker/`（獨立入口、獨立建置設定）可以匯入**白名單**內的純 TypeScript 模擬核心；白名單與禁止清單記在 [`prototypes/continuous-world/worker-boundary.json`](prototypes/continuous-world/worker-boundary.json)，擴充白名單屬規則修改，要另開 PR 並經 Codex 固定 SHA 審查。`web/src/` 只能經由清單中的 Worker client 檔以 `postMessage` 連接 Worker，不得直接匯入 `engine/` 或 Worker 目錄，畫面主執行緒不得執行生態模擬。
+  - Worker 不得匯入 `cli/`、存檔讀寫、日誌產生、正式歷史提交與遷移工具，也不得透過 IndexedDB、Cache API、localStorage、檔案系統、網路寫入或任何其他方式繞過隔離。
+  - **實驗世界本地存檔（Owner SAVE 需求，2026-11-08；最小例外）**：只有清單中的實驗儲存模組（`web/src/experimental/save-store.ts`）可以使用 IndexedDB、`navigator.storage`（persist／estimate）與 Web Locks，且只能開啟名稱以 `antempire-experiment-` 開頭的資料庫，只保存由 Worker 在一致事件邊界產生、標示「非正式」的世界快照。此例外不開放 `saves/`、`journal/` 或 Node 正式推進流程的任何寫入，存檔動作不得改變世界的行為、時間或隨機串流。設計見 [`docs/experimental-save-system.md`](docs/experimental-save-system.md)（SAVE-0）。
+  - Worker 必須使用 P0-A 模擬時間契約：不得以 `requestAnimationFrame` 或牆鐘時間差決定行為，不得因降速、暫停、縮放、拖曳或追蹤個體而跳過事件或改變同一模擬時刻的結果；播放速度只改排程。訊息順序、事件 ID、時間戳、版本、種子與參數指紋必須可追溯，同環境可重播，並與 Node 執行結果交叉比對（跨環境浮點差異要記錄並驗證誤差界，未證明不得宣稱逐位元組相同）。
+  - 所有 Worker 結果標示「非正式實驗世界／不屬於正式遊戲歷史」；不得修改 Day14、推進正式 Day15、寫入正式存檔或日誌、自動升級為正式世界、混用正式存檔與實驗初始化狀態、或讓畫面插值回寫引擎。
+  - #144（鏡頭不得改變命運）與 #145（單一權威帳本）未通過前，不得宣稱觀察不影響結果或背景帳本已正確整合。
+  - 邊界由 `tests/worker-boundary.test.ts`（靜態匯入圖＋負面樣本）檢查；架構見 [`docs/experimental-worker-boundary.md`](docs/experimental-worker-boundary.md)。
 - `npm ci`、`npm run typecheck`、`npm test`、`npm run check:saves`、`npm run advance`（Node 版本固定於 `.nvmrc`，原生執行 `.ts`）。CI（`.github/workflows/ci.yml`）在每次 push 與 PR 執行。
 - 純重構必須通過 `tests/golden.test.ts`（逐位元組）；改變輸出就是規則更新，要另開規則更新 PR。
 

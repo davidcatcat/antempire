@@ -8,7 +8,7 @@
     "node": ">=22.18.0"
   },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json && tsc -p engine/tsconfig.json && tsc -p web/tsconfig.json --noEmit && tsc -p prototypes/art-preview/tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json && tsc -p engine/tsconfig.json && tsc -p web/tsconfig.json --noEmit && tsc -p prototypes/continuous-world/worker/tsconfig.json --noEmit && tsc -p prototypes/art-preview/tsconfig.json --noEmit",
     "test": "node tests/run-all.ts",
     "test:golden": "node tests/golden.test.ts",
     "test:naturalism": "node tests/naturalism.test.ts",
@@ -18,7 +18,7 @@
     "evaluate:day0": "node cli/reports/day0-evaluation.ts",
     "evaluate:day0-extremes": "node cli/reports/day0-extremes.ts",
     "web:export": "node cli/web-export.ts",
-    "web:build": "tsc -p web/tsconfig.json",
+    "web:build": "tsc -p web/tsconfig.json && tsc -p prototypes/continuous-world/worker/tsconfig.json",
     "web": "npm run web:build && node cli/web-serve.ts",
     "evaluate:phase2-sensitivity": "node cli/reports/phase2-sensitivity.ts --run 4",
     "check:phase2-sensitivity": "node cli/reports/phase2-sensitivity.ts --validate",
