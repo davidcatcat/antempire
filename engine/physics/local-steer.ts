@@ -31,7 +31,17 @@
  * held where they are and the perceived static pieces, hits nothing (exact continuous test, solver2d.pairFirstHit).
  * No global map, no other agent's intention, no colony quantity.
  *
- * Motion and physics (between decision instants — a common grid k·decision_interval_s, plus each agent's start time):
+ * Time contract (docs/wp4-local-avoidance.md §2b 時間契約): decision instants are the common grid g_k = k·decision_interval_s
+ * evaluated EXACTLY on the decimal interval (exact-time.ts: g_3 = 0.3 for 0.1, never 3 * 0.1 = 0.30000000000000004), plus
+ * each agent's exact start instant (under the spawn rule: its entry instant) — its first decision, with or without the
+ * spawn rule (Owner decision 23); no other agent decides there; later decisions are on the common grid. Control-time
+ * sums (exit dwell, B wait / re-route limits, stall window) are exact on the decimals too. Scheduled inputs are never
+ * snapped to the grid. The horizon H is an instant with no positive duration left (see below).
+ * final_mode = the state at H after the events at H: 'started_at_horizon' = started exactly at H, not on its goal, zero
+ * elapsed time, no displacement (its reported speed is 0: no decision at H); 'moving' = started before H, not arrived, free to move at H.
+ * (PH-3b on this branch still reports 'moving' for a start at H — fixed by PR #139 — pinned in tests/physics-time-contract-wp4.test.ts.)
+ *
+ * Motion and physics (between decision instants — the grid, entry instants, plus each agent's start time):
  *  - the body axis stays parallel to its lane in its travel direction (geometric convention: no body-rotation model);
  *    a chosen direction is a translation (forward, diagonal, sideways or backwards) at the agent's free speed;
  *  - straight lanes only (a bend is refused, as PH-3b refuses offset bodies at joints);
@@ -57,10 +67,11 @@
  *  - a stop computed against another body's planned path that turns out not to touch (that body stopped earlier) is a
  *    `conservative stop` (stats.stops_conservative), never a contact stop.
  * Control scenario boundaries (input.control, scenario rules, NOT ant behaviour; default off):
- *  - spawn: an agent is absent from the road until it enters at its entry pose (s_mm, u_mm) at the first decision
- *    instant ≥ its scheduled start_t_s at which that pose is free (gap > CONTACT_TOL_MM to every present body; ties by
- *    id); absent agents are not perceived and are no obstacle.
- *  - exit: an arrived agent leaves the road (removed) at the first decision instant at which the exit of its goal end
+ *  - spawn: an agent is absent from the road until it enters at its entry pose (s_mm, u_mm) at EXACTLY its scheduled
+ *    start_t_s if that pose is free then (gap > CONTACT_TOL_MM to every present body; ties by schedule, then id), else at
+ *    the first later grid instant (or H) at which it is free; it makes its first decision at its entry instant (other
+ *    agents keep their decisions until the next grid instant); absent agents are not perceived and are no obstacle.
+ *  - exit: an arrived agent leaves the road (removed) at the first grid instant (or H) at which the exit of its goal end
  *    (lane, direction) holds fewer than `capacity` agents; each removed agent occupies the exit for `dwell_s`; until then
  *    it stays at its goal as an obstacle. Order: arrival time, then id.
  * Determinism: agents in id order; decisions read only the state at the decision instant and named RNG streams keyed by
@@ -72,6 +83,10 @@ import { type Capsule, capsuleGap, laneBoundary, OCC_TOL_MM } from './body2d.ts'
 import { solve2D, pairFirstHit, Solver2DRefused, HIT_TOL_MM, ACTIVE_TOL_MM, type Solver2DInput, type Solver2DResult, type Sample } from './solver2d.ts';
 import { type AABB, broadphasePairs } from './broadphase.ts';
 import { hash32, rng } from '../rng.ts';
+import { gridTime, addTime, exactSum, cmpExact } from './exact-time.ts';
+
+/** RNG key of a decision: the grid index k, or `k|entry` for a first decision at an off-grid start / entry instant after grid instant k */
+type Epoch = number | string;
 
 export const STEER_POLICIES = ['none', 'A_free_direction', 'B_contact_decision', 'C_sidestep', 'N_no_yield'] as const;
 export type SteerPolicyId = (typeof STEER_POLICIES)[number];
@@ -197,6 +212,9 @@ interface Ag {
   present: boolean; sched: number; entered: number | null; removed: number | null; entryBlocked: boolean;
   /** started exactly at the horizon (no decision, no motion by the horizon) */
   atHorizonStart: boolean;
+  /** the decision in effect until the agent's next decision instant ('goal': it starts on its goal); held = stopped by a
+   *  contact / static piece since that decision (inelastic: it waits for its next decision instant) */
+  cur: Decision | 'goal' | null; held: boolean;
 }
 
 /** policy params the policy needs (null → refused) */
@@ -237,7 +255,7 @@ function runPolicy(input: SteerInput): SteerResult {
   const STALL_K = Math.max(1, Math.round(P.stall_window_s! / DT)), STALL_MM = P.stall_progress_mm!;
   const CTL = input.control ?? {}, SPAWN = CTL.spawn === true, EXIT = CTL.exit ?? null;
   if (EXIT && (!Number.isInteger(EXIT.capacity) || EXIT.capacity < 1 || !(EXIT.dwell_s > 0) || !Number.isFinite(EXIT.dwell_s))) throw new SteerRefused('exit control: capacity must be an integer >= 1 and dwell_s a positive finite number');
-  const draw = (stream: string, id: string, epoch: number, extra = '') => rng(hash32(`${input.seed}|steer.${policy}.${stream}|${id}|${epoch}|${extra}`))();
+  const draw = (stream: string, id: string, epoch: Epoch, extra = '') => rng(hash32(`${input.seed}|steer.${policy}.${stream}|${id}|${epoch}|${extra}`))();
 
   // ---- lanes (straight only) and layers
   const layerIds = new Map<string, number>(), laneMap = new Map<string, { a0: Vec2; t: Vec2; n: Vec2; len: number; W: number; layer: number; layerName: string; bnd: Piece[] }>();
@@ -280,7 +298,7 @@ function runPolicy(input: SteerInput): SteerResult {
       hw: Math.max(0, L - w) / 2, r: w / 2, half: L / 2, statics: [...ln.bnd, ...(obsByLayer.get(ln.layer) ?? [])],
       c, started: false, arrived: null, eff: ZERO, lastKey: '', samples: [], stopCause: null, halted: false,
       mode: 'go', until: 0, backLeft: 0, side: 0, sideSince: 0, progress: [], stalledSince: null, reported: false, reports: 0,
-      present: !SPAWN, sched: sp.start_t_s, entered: SPAWN ? null : 0, removed: null, entryBlocked: false, atHorizonStart: false,
+      present: !SPAWN, sched: sp.start_t_s, entered: SPAWN ? null : 0, removed: null, entryBlocked: false, atHorizonStart: false, cur: null, held: false,
     };
   });
   const capOf = (a: Ag, c = a.c): Capsule => ({ a: add(c, a.f, -a.hw), b: add(c, a.f, a.hw), r: a.r });
@@ -327,7 +345,7 @@ function runPolicy(input: SteerInput): SteerResult {
     return best;
   };
   /** the most forward free direction: candidates by increasing |angle|; both sides of an angle free → named RNG draw (or a preferred side) */
-  const freeDir = (a: Ag, pc: Percept, epoch: number, minAng: number, pref: 1 | -1 | 0, stream: string): { ang: number; d: Vec2 } | null => {
+  const freeDir = (a: Ag, pc: Percept, epoch: Epoch, minAng: number, pref: 1 | -1 | 0, stream: string): { ang: number; d: Vec2 } | null => {
     for (const g of ANG) {
       if (g < minAng) continue;
       if (g === 0) { if (!probe(a, pc, a.f, RHO)) return { ang: 0, d: a.f }; continue; }
@@ -356,7 +374,7 @@ function runPolicy(input: SteerInput): SteerResult {
   };
 
   // ---- decisions
-  const decide = (a: Ag, pc: Percept, t0: number, epoch: number): Decision => {
+  const decide = (a: Ag, pc: Percept, t0: number, epoch: Epoch): Decision => {
     const v = a.v0, wv = (d: Vec2) => ({ x: d.x * v, y: d.y * v });
     if (a.halted) return { kind: 'halt_geometry', w: ZERO, detail: 'static geometry closes every direction within the sensing radius (rule D)' };
     const ahead = probe(a, pc, a.f, RHO);
@@ -383,7 +401,7 @@ function runPolicy(input: SteerInput): SteerResult {
       a.mode = 'go';
     }
     if (a.mode === 'side') {
-      if (!ahead || t0 - a.sideSince >= P.reroute_max_s!) { a.mode = 'go'; a.side = 0; }
+      if (!ahead || cmpExact([[1, t0]], [[1, a.sideSince], [1, P.reroute_max_s!]]) >= 0) { a.mode = 'go'; a.side = 0; }
       else { const fd = freeDir(a, pc, epoch, ANG.find((g) => g > 0) ?? 0, a.side, 'side'); if (fd) return { kind: 'reroute', w: wv(fd.d), detail: `re-routing ${fd.ang}° around ${ahead.what} ${ahead.id}` }; a.mode = 'go'; a.side = 0; }
     }
     if (!ahead) return { kind: 'go', w: wv(a.f), detail: 'straight ahead is free' };
@@ -394,7 +412,7 @@ function runPolicy(input: SteerInput): SteerResult {
     const pw = P.p_wait!, pb = P.p_back!, pr = narrow ? 0 : P.p_reroute!, x = draw('action', a.id, epoch) * (pw + pb + pr);
     if (pw + pb + pr > 0 && x >= pw + pb) { const s = startSide(); if (s) return s; }
     if (pw + pb + pr > 0 && x >= pw && x < pw + pb) { a.mode = 'back'; a.backLeft = P.back_distance_mm!; const rear = { x: -a.f.x, y: -a.f.y }; if (!probe(a, pc, rear, Math.min(RHO, a.backLeft))) return { kind: 'back_off', w: wv(rear), detail: `contact with ${ahead.id}: back off ${P.back_distance_mm} mm${narrow ? ' (too narrow to pass)' : ''}` }; a.mode = 'go'; }
-    a.mode = 'wait'; a.until = t0 + P.wait_s!;
+    a.mode = 'wait'; a.until = addTime(t0, P.wait_s!);
     return { kind: 'wait', w: ZERO, detail: `contact with ${ahead.id}: wait ${P.wait_s} s${narrow ? ' (too narrow to pass)' : ''}` };
   };
 
@@ -415,30 +433,47 @@ function runPolicy(input: SteerInput): SteerResult {
     return null;
   };
 
-  let epoch = 0;
-  // the horizon itself is the last instant of the grid (PH-3b processes every event with t <= horizon): at t0 = H the
-  // boundary rules, starts and zero-distance arrivals are applied; no decision, no motion (zero-length interval)
-  for (let t0 = 0; t0 <= H; epoch++) {
-    const final = t0 >= H, t1 = final ? H : Math.min(H, (epoch + 1) * DT), span = t1 - t0;
-    if (!final) stats.decision_instants++;
-    // control boundaries at the decision instant t0: exits first (they free road space), then entries
-    if (EXIT) {
+  // ---- the time line (docs/wp4-local-avoidance.md §2b 時間契約): the decision grid g_k = k · decision_interval_s, evaluated
+  // exactly on the decimal interval (exact-time.ts: 3 × 0.1 = 0.3, never 0.30000000000000004), plus — with the spawn rule —
+  // every scheduled entry instant at its exact value, plus the horizon H as a final zero-length instant (PH-3b processes
+  // every event with t <= H): at H the boundary rules, starts and zero-distance arrivals are applied; no decision, no motion.
+  const grid = (k: number) => gridTime(k, DT);
+  // Owner decision 23: every agent's FIRST decision is at its actual start instant (with the spawn rule: its scheduled
+  // entry instant; without it: its start_t_s), never at an earlier grid instant (which would be before it exists on its
+  // path) nor a later one. Off-grid start / entry instants are therefore instants of the time line; only the agents that
+  // start there decide there. After that first decision every agent decides on the common grid g_k (the next one after
+  // its start) — 遊戲假設: one shared grid for all agents, no per-agent phase.
+  const schedTimes = [...new Set(A.map((a) => (SPAWN ? a.sched : a.start)).filter((t) => t < H))].sort((x, y) => x - y);
+  let kNext = 0, si = 0;   // next grid index to process; next entry instant
+  for (let t0 = 0; ;) {
+    const final = t0 >= H, isGrid = !final && t0 === grid(kNext);
+    // RNG key of decisions at this instant: the grid index, or (first decision at an entry instant) the preceding one + 'entry'
+    const epoch: Epoch = isGrid ? kNext : `${kNext - 1}|entry`;
+    if (isGrid) { kNext++; stats.decision_instants++; }
+    while (si < schedTimes.length && schedTimes[si] <= t0) si++;
+    const gEnd = Math.min(H, grid(kNext));   // end of the current decision period
+    const t1 = final ? H : Math.min(gEnd, si < schedTimes.length ? schedTimes[si] : Infinity), span = t1 - t0;
+    if (!final && !(t1 > t0)) throw new SteerRefused(`decision interval ${DT} s is below the time resolution at t = ${t0} s`);
+    // control boundaries: exits at decision-grid instants and at H (they free road space), then entries — each agent tries
+    // at its own exact scheduled instant; one whose entry pose is occupied retries at the following grid instants and at H
+    if (EXIT && (isGrid || final)) {
       const out = A.filter((a) => a.present && a.arrived !== null).sort((p, q) => p.arrived! - q.arrived! || (p.id < q.id ? -1 : p.id > q.id ? 1 : 0));
       for (const a of out) {
         const xk = `${a.lane}|${a.dir}`, held = exitLog.get(xk) ?? []; exitLog.set(xk, held);
-        const occ = held.filter((t) => t + EXIT.dwell_s > t0).length;
+        // a slot taken at t is occupied while t + dwell_s > t0 (exact on the decimals: 0.1 + 0.2 frees the slot at 0.3)
+        const occ = held.filter((t) => cmpExact([[1, t], [1, EXIT.dwell_s]], [[1, t0]]) > 0).length;
         if (occ >= EXIT.capacity) continue;
         held.push(t0); a.present = false; a.removed = t0; stats.exited++;
         ev(t0, 'exit', [a.k], 'motion', `left the road into the exit ${xk} (occupancy ${occ + 1}/${EXIT.capacity}, dwell ${EXIT.dwell_s} s; control scenario boundary, assumption)`);
         for (const [ck] of [...activeContacts].sort((p, q) => p[0] - q[0])) {
           const i = Math.floor(ck / N), j = ck % N; if (i !== a.k && j !== a.k) continue;
           activeContacts.delete(ck); stats.contact_ends_estimated++;
-          events.push({ t_s: t0, kind: 'contact_end_estimated', agents: [A[i].id, A[j].id], class: 'physical_contact', detail: `${a.id} left the road by the exit rule at this decision instant: not a physical separation (control boundary; not usable as a biological cause)`, usable_as_cause: false });
+          events.push({ t_s: t0, kind: 'contact_end_estimated', agents: [A[i].id, A[j].id], class: 'physical_contact', detail: `${a.id} left the road by the exit rule at this instant: not a physical separation (control boundary; not usable as a biological cause)`, usable_as_cause: false });
         }
       }
     }
     if (SPAWN) {
-      const due = A.filter((a) => !a.present && a.entered === null && a.sched <= t0).sort((p, q) => p.sched - q.sched || (p.id < q.id ? -1 : p.id > q.id ? 1 : 0));
+      const due = A.filter((a) => !a.present && a.entered === null && (a.sched === t0 || (a.sched < t0 && (isGrid || final)))).sort((p, q) => p.sched - q.sched || (p.id < q.id ? -1 : p.id > q.id ? 1 : 0));
       const tried = new Set<string>();
       for (const a of due) {
         const pk = `${a.layer}|${a.c.x}|${a.c.y}`, me = capOf(a);
@@ -450,7 +485,8 @@ function runPolicy(input: SteerInput): SteerResult {
       }
     }
     if (final) {
-      // agents starting exactly at the horizon are started (as in PH-3b); one already on its goal arrives at H, once
+      // agents starting exactly at the horizon are started (as in PH-3b); one already on its goal arrives at H, once; one not
+      // on its goal ends as 'started_at_horizon' (zero elapsed time: no decision, no displacement)
       for (const a of A) {
         if (!a.present || a.arrived !== null || a.start > H) continue;
         if (!a.started) { a.started = true; ev(a.start, 'start', [a.k], 'motion', SPAWN ? `entered the road at its entry pose (scheduled ${a.sched} s; control scenario boundary)` : null); a.atHorizonStart = true; }
@@ -458,25 +494,37 @@ function runPolicy(input: SteerInput): SteerResult {
       }
       break;
     }
-    // agents that exist as moving deciders in this interval: on the road, started (or starting before t1), not arrived
-    const live = A.filter((a) => a.present && a.arrived === null && a.start < t1);
     // neighbour candidates: boxes covering perception and the largest possible motion in this interval
     const boxes: AABB[] = A.map((a) => { const m = a.half + RHO + (a.arrived === null ? a.v0 * span : 0); return { minX: a.c.x - m, minY: a.c.y - m, maxX: a.c.x + m, maxY: a.c.y + m }; });
     const pairs = broadphasePairs('grid', boxes, A.map((a) => a.layer), 8).filter((key) => A[Math.floor(key / N)].present && A[key % N].present);
     const nb: number[][] = A.map(() => []);
     for (const key of pairs) { const i = Math.floor(key / N), j = key % N; nb[i].push(j); nb[j].push(i); }
-    // decisions (read the state at t0 only)
+    // decisions (read the state at t0 only): at a grid instant every agent on the road that has started by t0; at an
+    // off-grid start / entry instant only the agents that start (enter) now — their first decision; everyone else keeps the
+    // decision in effect (a held agent stays stopped until its next decision instant). An agent that starts after t0 has
+    // not decided yet and does not move before its own start instant (Owner decision 23).
+    const deciders = A.filter((a) => a.present && a.arrived === null && (isGrid ? a.start <= t0 : a.start === t0));
+    for (const a of deciders) {
+      a.held = false;
+      // zero remaining distance (only possible for an agent that starts on its goal: an arrival inside or at the end of an
+      // interval is recorded there): it arrives at its start instant, without a decision
+      if (a.goal * a.dir - fwdOf(a) <= 0) { a.cur = 'goal'; continue; }
+      const d = decide(a, perceive(a, nb[a.k]), t0, epoch);
+      a.cur = d; stats.decisions[d.kind] = (stats.decisions[d.kind] ?? 0) + 1;
+    }
+    // agents that move (or arrive) in this interval: on the road, a decision in effect, started (or starting before t1)
+    const live = A.filter((a) => a.present && a.arrived === null && a.cur !== null && a.start < t1);
     const w: Vec2[] = A.map(() => ZERO), aT = A.map(() => 0), bT = A.map(() => 0), dec: (Decision | null)[] = A.map(() => null);
     const atGoal: boolean[] = A.map(() => false);
+    /** absolute instants of the interval: the start offset is the agent's exact start time; the full span ends at exactly t1 */
+    const absA = (x: number) => (A[x].start > t0 ? A[x].start : t0);
+    const absT = (x: number, tau: number) => (tau === span ? t1 : tau === aT[x] ? absA(x) : t0 + tau);
     for (const a of live) {
       const x = a.k;
       aT[x] = Math.max(0, a.start - t0);
-      // zero remaining distance (only possible for an agent that starts on its goal: an arrival inside or at the end of an
-      // interval is recorded there): it arrives at its start instant, without a decision
-      if (a.goal * a.dir - fwdOf(a) <= 0) { atGoal[x] = true; bT[x] = aT[x]; continue; }
-      const d = decide(a, perceive(a, nb[x]), t0, epoch);
-      dec[x] = d; w[x] = d.w; bT[x] = sameVec(d.w, ZERO) ? aT[x] : span;
-      stats.decisions[d.kind] = (stats.decisions[d.kind] ?? 0) + 1;
+      if (a.cur === 'goal') { atGoal[x] = true; bT[x] = aT[x]; continue; }
+      const d = a.cur as Decision;
+      dec[x] = d; w[x] = a.held ? ZERO : d.w; bT[x] = sameVec(w[x], ZERO) ? aT[x] : span;
     }
     const c0 = A.map((a) => a.c);
     // static geometry and goal
@@ -528,7 +576,7 @@ function runPolicy(input: SteerInput): SteerResult {
     };
     const bodyStops: [number, number, number][] = [];   // (agent, other body, stop time) of this interval
     for (const a of live) {
-      const x = a.k, tA = t0 + aT[x];
+      const x = a.k, tA = absA(x);
       if (!a.started) { a.started = true; ev(a.start, 'start', [x], 'motion', SPAWN ? `entered the road at its entry pose (scheduled ${a.sched} s; control scenario boundary)` : null); }
       if (atGoal[x]) { sample(a, tA); a.eff = ZERO; a.arrived = tA; stats.arrived++; ev(tA, 'arrive', [x], 'motion'); continue; }
       const d = dec[x]!, moved = bT[x] > aT[x];
@@ -546,7 +594,7 @@ function runPolicy(input: SteerInput): SteerResult {
       a.eff = vStart;
       if (moved) {
         a.c = add(c0[x], d.w, bT[x] - aT[x]);
-        const tb = t0 + bT[x];
+        const tb = absT(x, bT[x]);
         // the goal reached inside the interval OR exactly at its end (incl. the horizon): arrival, recorded once
         if (causeKind[x] === 'goal') { sample(a, tb); a.eff = ZERO; a.arrived = tb; stats.arrived++; ev(tb, 'arrive', [x], 'motion'); }
         else if (bT[x] < span) {
@@ -557,13 +605,15 @@ function runPolicy(input: SteerInput): SteerResult {
           if (causeKind[x] === 'body' && causeJ[x] >= 0 && !sw.conservative) bodyStops.push([x, causeJ[x], tb]);
         }
       } else if (causeKind[x] === 'goal') { sample(a, tA); a.eff = ZERO; a.arrived = tA; stats.arrived++; ev(tA, 'arrive', [x], 'motion'); }
+      // stopped short of its decided motion: held (inelastic) until its next decision instant
+      if (a.arrived === null && !sameVec(w[x], ZERO) && sameVec(a.eff, ZERO)) a.held = true;
     }
     // contacts: the exact first separation time from the piecewise motion of both bodies in this interval
     /** first t in [from, t1] at which the gap of i and j exceeds CONTACT_TOL_MM, with its bisection bracket [lo, hi]
      *  (gap <= tol at lo, > tol at hi; t = hi); null if it never does in this interval */
     const firstSeparation = (i: number, j: number, from: number): { t: number; lo: number; hi: number } | null => {
       const gapAt = (t: number) => capsuleGap(capOf(A[i], posAt(i, t)), capOf(A[j], posAt(j, t)));
-      const pts = [...new Set([from, t1, ...[i, j].flatMap((x) => [t0 + aT[x], t0 + bT[x]]).filter((p) => p > from && p < t1)])].sort((p, q) => p - q);
+      const pts = [...new Set([from, t1, ...[i, j].flatMap((x) => [absA(x), absT(x, bT[x])]).filter((p) => p > from && p < t1)])].sort((p, q) => p - q);
       for (let k = 0; k + 1 < pts.length; k++) {
         const p = pts[k], q = pts[k + 1], mid = (p + q) / 2;
         const still = (x: number) => !(mid - t0 > aT[x] && mid - t0 < bT[x]);
@@ -599,18 +649,18 @@ function runPolicy(input: SteerInput): SteerResult {
     }
     // 3) contacts started in this interval that already separate in it
     for (const key of fresh.sort((p, q) => p - q)) endContact(key, activeContacts.get(key)!);
-    // rule D: progress over the stall window, local diagnosis, report once per episode
-    for (const a of live) {
-      if (a.arrived !== null || !a.started) continue;
+    // rule D (at the end of each decision period): progress over the stall window, local diagnosis, report once per episode
+    if (t1 === gEnd) for (const a of A) {
+      if (!a.present || a.arrived !== null || !a.started) continue;
       a.progress.push(fwdOf(a)); if (a.progress.length > STALL_K + 1) a.progress.shift();
       if (a.progress.length <= STALL_K) continue;
       const prog = a.progress[a.progress.length - 1] - a.progress[0];
       if (prog >= STALL_MM) { a.stalledSince = null; a.reported = false; continue; }
-      if (a.stalledSince === null) a.stalledSince = t1 - STALL_K * DT;
+      if (a.stalledSince === null) a.stalledSince = exactSum([1, t1], [-STALL_K, DT]);
       if (!a.reported) {
         const pc = perceive(a, nb[a.k]), ahead = probe(a, pc, a.f, RHO), why = diagnose(a, pc, ahead);
         a.reported = true; a.reports++; stats.blocked_reports[why] = (stats.blocked_reports[why] ?? 0) + 1;
-        ev(t1, 'blocked_report', [a.k], 'solver_status', `${why}: forward progress ${prog.toFixed(4)} mm in ${STALL_K * DT} s${ahead ? ` (${ahead.what} ${ahead.id} ahead)` : ''}`);
+        ev(t1, 'blocked_report', [a.k], 'solver_status', `${why}: forward progress ${prog.toFixed(4)} mm in ${gridTime(STALL_K, DT)} s${ahead ? ` (${ahead.what} ${ahead.id} ahead)` : ''}`);
         if (why === 'static_closed' && !a.halted) { a.halted = true; stats.geometry_halts++; }
       }
     }

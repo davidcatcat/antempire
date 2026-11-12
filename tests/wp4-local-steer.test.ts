@@ -276,15 +276,17 @@ for (const id of ['corridor-8', 'stone', 'crossing']) for (const p of STEER_POLI
       timingInvariants(inp, res, lbl);
     }
   }
-  // control spawn (scenario rule, no PH-3b counterpart): entry at the first grid instant >= schedule, the horizon included;
-  // on the goal → arrives exactly once at the entry instant; a schedule after the horizon never enters
+  // control spawn (scenario rule, no PH-3b counterpart): entry at exactly the scheduled instant (time contract: never
+  // snapped to the decision grid), the horizon included; on the goal → arrives exactly once at the entry instant; a
+  // schedule after the horizon never enters
   for (const p of STEER_POLICIES.filter((x) => x !== 'none')) for (const control of [{ spawn: true }, { spawn: true, exit: { capacity: 1, dwell_s: 0.5 } }]) {
-    for (const [label, st, goal, H, entry] of [['scheduled = horizon, on goal', 0.4, 10, 0.4, 0.4], ['scheduled = horizon (off grid), on goal', 0.35, 10, 0.35, 0.35], ['scheduled = horizon, not on goal', 0.4, 14, 0.4, 0.4], ['scheduled between the last grid instant and the horizon, on goal', 0.37, 10, 0.4, 0.4], ['scheduled after the horizon', 0.5, 10, 0.4, null]] as const) {
+    for (const [label, st, goal, H, entry] of [['scheduled = horizon, on goal', 0.4, 10, 0.4, 0.4], ['scheduled = horizon (off grid), on goal', 0.35, 10, 0.35, 0.35], ['scheduled = horizon, not on goal', 0.4, 14, 0.4, 0.4], ['scheduled between the last grid instant and the horizon, on goal', 0.37, 10, 0.4, 0.37], ['scheduled after the horizon', 0.5, 10, 0.4, null]] as const) {
       const inp: SteerInput = { lanes, obstacles: [], agents: [ag('A', 10, st, goal)], horizon_s: H, policy: p, params, seed: 1, control }, res = steer2D(inp), a = res.agents.A, lbl = `horizon spawn: ${label}/${p}${control.exit ? '/exit' : ''}`;
       ok(a.present_from_t_s === entry, `${lbl}: entered at ${entry} (${a.present_from_t_s})`);
+      // an agent that entered (and arrived) before H leaves by the exit rule at the horizon instant (exits are processed at H)
       const atGoal = goal === 10 && entry !== null;
       ok(se(res.events) === (entry === null ? '' : `start:A@${entry}${atGoal ? `,arrive:A@${entry}` : ''}`), `${lbl}: events ${se(res.events)}`);
-      ok(a.arrival_t_s === (atGoal ? entry : null) && a.final_mode === (entry === null ? 'not_entered' : atGoal ? 'arrived' : 'started_at_horizon'), `${lbl}: arrival ${a.arrival_t_s}, mode ${a.final_mode}`);
+      ok(a.arrival_t_s === (atGoal ? entry : null) && a.final_mode === (entry === null ? 'not_entered' : atGoal ? (control.exit && entry < H ? 'exited' : 'arrived') : 'started_at_horizon'), `${lbl}: arrival ${a.arrival_t_s}, mode ${a.final_mode}`);
       timingInvariants(inp, res, lbl);
     }
   }
@@ -330,7 +332,7 @@ const bracketStats = { episodes: 0, exact: 0, max_err_s: 0 };
   // the exported playback files (the segments the page draws) pass the same check
   for (const f of fs.readdirSync(DATA_DIR).filter((n) => /--steer-/.test(n))) {
     const run = JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf8'));
-    const c = checkContacts({ horizon_s: run.horizon_s, body: run.body, agents: run.agents.map((a: { id: string; segments: CkMotion['agents'][number]['segments']; final: { x: number; y: number; heading: number } }) => ({ id: a.id, segments: a.segments, final: a.final, present_from: 0, present_until: null })), events: run.events });
+    const c = checkContacts({ horizon_s: run.horizon_s, body: run.body, agents: run.agents.map((a: { id: string; segments: CkMotion['agents'][number]['segments']; final: { x: number; y: number; heading: number } | null; present_from_t_s?: number | null; removed_t_s?: number | null }) => ({ id: a.id, segments: a.segments, final: a.final, present_from: a.present_from_t_s === undefined ? 0 : a.present_from_t_s === null ? Infinity : a.present_from_t_s, present_until: a.removed_t_s ?? null })), events: run.events });
     ok(c.violations === 0 && run.contact_end_check?.violations === 0 && run.events.filter((e: { kind: string; check_s?: number[] }) => e.kind === 'contact_end').every((e: { t: number; check_s?: number[] }) => e.check_s && e.check_s[0] <= e.t && e.t <= e.check_s[1]), `playback ${f}: every contact_end inside the recorded independent bracket`);
   }
   // positive controls: a contact_end moved by 1 ms, a deleted contact_end (the contact claimed open), a removed flag

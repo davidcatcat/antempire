@@ -59,7 +59,7 @@
    "why": "(i)+(ii) 同時。"
   }
  },
- "note": "CPU 是單次量測（機器同時有其他工作，只看數量級）；抵達只是一欄，不是選擇標準；沒有調參；N 沒有亂數抽取，各種子結果相同（測試確認），只跑種子 1",
+ "note": "CPU 是單次量測（機器同時有其他工作，只看數量級）；抵達只是一欄，不是選擇標準；沒有調參",
  "rows": [
   {
    "variant": "K2_inflow_stay",
@@ -70,74 +70,74 @@
     "horizon_s": 140,
     "arrived": 74,
     "arrival_s": {
-     "min": 6.742585837411226,
-     "p10": 7.785670204549769,
-     "median": 11.732413876173538,
-     "p90": 15.761889728352921,
-     "max": 20.89602867123329
+     "min": 6.8971399062813346,
+     "p10": 7.717525681952066,
+     "median": 11.827520085555026,
+     "p90": 16.069018875901083,
+     "max": 21.17468523733915
     },
     "transit_s": {
-     "min": 6.544117647058771,
-     "median": 6.663320030497795,
-     "p90": 6.83868056825531,
-     "max": 7.7212496319447474
+     "min": 6.544117647058732,
+     "median": 6.719123329355007,
+     "p90": 7.184443232823655,
+     "max": 9.580841661590235
     },
     "time_to_clear_s": null,
     "exited": 0,
-    "never_entered": 611,
+    "never_entered": 592,
     "entry_delay_s": {
-     "median": 0.02499999999999858,
-     "max": 0.3000000000000007
+     "median": 0,
+     "max": 0.1999999999999993
     },
-    "stalled": 315,
+    "stalled": 334,
     "deadlock": {
-     "stalled": 315,
+     "stalled": 334,
      "clusters": 4,
-     "agents_in_clusters": 315,
-     "largest": 102
+     "agents_in_clusters": 334,
+     "largest": 105
     },
     "final_modes": {
      "arrived": 74,
-     "stalled": 315,
-     "not_entered": 611
+     "stalled": 334,
+     "not_entered": 592
     },
     "blocked_reports": {
-     "blocked_by_nestmates": 320
+     "blocked_by_nestmates": 338
     },
-    "contacts": 374,
-    "contact_ends_exact": 362,
+    "contacts": 479,
+    "contact_ends_exact": 472,
     "contact_ends_estimated": 0,
-    "stops_contact": 708,
-    "stops_conservative": 8,
+    "stops_contact": 915,
+    "stops_conservative": 16,
     "contact_end_check": {
-     "episodes": 374,
-     "exact": 362,
+     "episodes": 479,
+     "exact": 472,
      "estimated": 0,
-     "open": 12,
+     "open": 7,
      "violations": 0,
      "problems": [],
-     "max_err_s": 2.352970795982401e-7,
-     "median_err_s": 4.517648477531111e-10,
-     "max_dev_from_mid_s": 2.941504817499663e-10,
+     "max_err_s": 2.3529706361102853e-7,
+     "median_err_s": 4.525446684056078e-10,
+     "max_dev_from_mid_s": 2.9412561275421467e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
     },
     "verify": {
-     "min_pair_gap_mm": -2.3170354523927017e-13,
+     "min_pair_gap_mm": -5.118128143521972e-13,
      "pair_penetrations": 0,
      "max_pair_penetration_mm": 0,
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 759841,
-     "ternary_searches": 6573,
+     "pieces": 794879,
+     "ternary_searches": 7117,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 12953,
-    "cpu_ms": 269210.315
+    "events": 15668,
+    "cpu_ms": 284113.525
    }
   },
   {
@@ -147,79 +147,78 @@
    "m": {
     "agents": 1000,
     "horizon_s": 140,
-    "arrived": 55,
+    "arrived": 50,
     "arrival_s": {
-     "min": 7.423787823788847,
-     "p10": 8.808762307999503,
-     "median": 19.04411764705874,
-     "p90": 33.62601535862324,
-     "max": 38.31559210088745
+     "min": 7.588624973592715,
+     "p10": 8.91911764705883,
+     "median": 16.169117647058794,
+     "p90": 29.765936999524314,
+     "max": 32.825373992820765
     },
     "transit_s": {
-     "min": 6.544117647058735,
-     "median": 7.945440231793638,
-     "p90": 14.796505879529008,
-     "max": 23.808232062581602
+     "min": 6.544117647058721,
+     "median": 7.943912851141089,
+     "p90": 14.499585129496964,
+     "max": 24.930192270247957
     },
     "time_to_clear_s": null,
     "exited": 0,
-    "never_entered": 249,
+    "never_entered": 189,
     "entry_delay_s": {
-     "median": 0.025000000000000355,
-     "max": 1.7250000000000014
+     "median": 0,
+     "max": 0.7250000000000014
     },
-    "stalled": 682,
+    "stalled": 757,
     "deadlock": {
-     "stalled": 684,
-     "clusters": 25,
-     "agents_in_clusters": 678,
-     "largest": 554
+     "stalled": 757,
+     "clusters": 16,
+     "agents_in_clusters": 748,
+     "largest": 643
     },
     "final_modes": {
-     "arrived": 55,
-     "moving": 12,
-     "stalled": 682,
-     "not_entered": 249,
-     "waiting_or_stopped": 2
+     "arrived": 50,
+     "stalled": 757,
+     "moving": 4,
+     "not_entered": 189
     },
     "blocked_reports": {
-     "way_ahead_free": 490,
-     "blocked_by_nestmates": 1614
+     "way_ahead_free": 451,
+     "blocked_by_nestmates": 1361
     },
-    "contacts": 1001,
-    "contact_ends_exact": 397,
+    "contacts": 1029,
+    "contact_ends_exact": 345,
     "contact_ends_estimated": 0,
-    "stops_contact": 22070,
-    "stops_conservative": 311,
+    "stops_contact": 12418,
+    "stops_conservative": 235,
     "contact_end_check": {
-     "episodes": 1001,
-     "exact": 397,
+     "episodes": 1029,
+     "exact": 345,
      "estimated": 0,
-     "open": 604,
+     "open": 684,
      "violations": 0,
      "problems": [],
-     "max_err_s": 2.3529710801994952e-7,
-     "median_err_s": 2.483595551439066e-10,
-     "max_dev_from_mid_s": 2.941717980320391e-10,
+     "max_err_s": 2.3529710091452216e-7,
+     "median_err_s": 2.5293189764852286e-10,
+     "max_dev_from_mid_s": 2.941504817499663e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
     },
     "verify": {
-     "min_pair_gap_mm": -9.514611321037592e-14,
+     "min_pair_gap_mm": -1.2656542480726785e-13,
      "pair_penetrations": 0,
      "max_pair_penetration_mm": 0,
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 1301486,
-     "ternary_searches": 22410,
+     "pieces": 1357068,
+     "ternary_searches": 16548,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 56167,
-    "cpu_ms": 120735.108
+    "events": 35434,
+    "cpu_ms": 127634.973
    }
   },
   {
@@ -229,76 +228,77 @@
    "m": {
     "agents": 1000,
     "horizon_s": 140,
-    "arrived": 50,
+    "arrived": 43,
     "arrival_s": {
-     "min": 6.9441176470588255,
-     "p10": 7.893044749732895,
-     "median": 11.996544321508816,
-     "p90": 24.703188694995944,
-     "max": 54.315823491448995
+     "min": 6.999883620065837,
+     "p10": 7.755085837411213,
+     "median": 10.266083678122705,
+     "p90": 17.034131803263705,
+     "max": 27.774240534318462
     },
     "transit_s": {
-     "min": 6.544117647058825,
-     "median": 6.803095745135785,
-     "p90": 7.5293303995875664,
-     "max": 8.278666870629253
+     "min": 6.544117647058831,
+     "median": 6.766083678122705,
+     "p90": 7.566438316461735,
+     "max": 7.853557723263403
     },
     "time_to_clear_s": null,
     "exited": 0,
-    "never_entered": 514,
+    "never_entered": 456,
     "entry_delay_s": {
-     "median": 0.02499999999999858,
-     "max": 0.125
+     "median": 0,
+     "max": 0.14999999999999858
     },
-    "stalled": 436,
+    "stalled": 501,
     "deadlock": {
-     "stalled": 436,
-     "clusters": 11,
-     "agents_in_clusters": 436,
-     "largest": 128
+     "stalled": 501,
+     "clusters": 15,
+     "agents_in_clusters": 499,
+     "largest": 301
     },
     "final_modes": {
-     "arrived": 50,
-     "stalled": 436,
-     "not_entered": 514
+     "arrived": 43,
+     "stalled": 501,
+     "not_entered": 456
     },
     "blocked_reports": {
-     "blocked_by_nestmates": 493
+     "blocked_by_nestmates": 511,
+     "way_ahead_free": 2
     },
-    "contacts": 1040,
-    "contact_ends_exact": 628,
+    "contacts": 1095,
+    "contact_ends_exact": 661,
     "contact_ends_estimated": 0,
-    "stops_contact": 1512,
-    "stops_conservative": 854,
+    "stops_contact": 11421,
+    "stops_conservative": 261,
     "contact_end_check": {
-     "episodes": 1040,
-     "exact": 628,
+     "episodes": 1095,
+     "exact": 661,
      "estimated": 0,
-     "open": 412,
+     "open": 434,
      "violations": 0,
      "problems": [],
-     "max_err_s": 2.3529710801994952e-7,
-     "median_err_s": 4.5071146814734675e-10,
-     "max_dev_from_mid_s": 2.941789034593967e-10,
+     "max_err_s": 2.3529709558545164e-7,
+     "median_err_s": 5.88329385209363e-11,
+     "max_dev_from_mid_s": 2.941646926046815e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
     },
     "verify": {
-     "min_pair_gap_mm": -5.224509713741554e-11,
+     "min_pair_gap_mm": -9.533263067851294e-11,
      "pair_penetrations": 0,
      "max_pair_penetration_mm": 0,
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 749620,
-     "ternary_searches": 14201,
+     "pieces": 941843,
+     "ternary_searches": 21414,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 14173,
-    "cpu_ms": 92259.849
+    "events": 37426,
+    "cpu_ms": 155692.62
    }
   },
   {
@@ -326,8 +326,8 @@
     "exited": 0,
     "never_entered": 0,
     "entry_delay_s": {
-     "median": 0.02499999999999858,
-     "max": 0.025000000000005684
+     "median": 0,
+     "max": 0
     },
     "stalled": 1000,
     "deadlock": {
@@ -342,40 +342,40 @@
     "blocked_reports": {
      "blocked_by_nestmates": 1000
     },
-    "contacts": 991,
+    "contacts": 997,
     "contact_ends_exact": 12,
     "contact_ends_estimated": 0,
-    "stops_contact": 81019,
-    "stops_conservative": 41,
+    "stops_contact": 19211,
+    "stops_conservative": 65,
     "contact_end_check": {
-     "episodes": 991,
+     "episodes": 997,
      "exact": 12,
      "estimated": 0,
-     "open": 979,
+     "open": 985,
      "violations": 0,
      "problems": [],
      "max_err_s": 2.352970849273106e-7,
-     "median_err_s": 2.3529707249281273e-7,
+     "median_err_s": 2.3529707338099115e-7,
      "max_dev_from_mid_s": 2.9413271818157227e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
     },
     "verify": {
-     "min_pair_gap_mm": -3.6126213132092744e-11,
+     "min_pair_gap_mm": -9.506018194826993e-11,
      "pair_penetrations": 0,
      "max_pair_penetration_mm": 0,
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 2694909,
-     "ternary_searches": 3539,
+     "pieces": 2242791,
+     "ternary_searches": 3651,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 166143,
-    "cpu_ms": 383793.238
+    "events": 42569,
+    "cpu_ms": 389822.982
    }
   },
   {
@@ -385,75 +385,75 @@
    "m": {
     "agents": 1000,
     "horizon_s": 140,
-    "arrived": 677,
+    "arrived": 614,
     "arrival_s": {
-     "min": 6.742585837411226,
-     "p10": 15.262858764080015,
-     "median": 50.18864031360589,
-     "p90": 91.99944439015066,
-     "max": 109.55963982663495
+     "min": 6.8971399062813346,
+     "p10": 14.170821355744309,
+     "median": 45.02325688845238,
+     "p90": 80.12379542332904,
+     "max": 96.33801374609408
     },
     "transit_s": {
      "min": 6.544117647058732,
-     "median": 6.753853007111026,
-     "p90": 7.167545917844478,
-     "max": 9.844331891274315
+     "median": 6.761117403976556,
+     "p90": 7.123346868605168,
+     "max": 8.981656295933604
     },
     "time_to_clear_s": null,
-    "exited": 677,
+    "exited": 614,
     "never_entered": 0,
     "entry_delay_s": {
-     "median": 0.02499999999999858,
-     "max": 0.7000000000000028
+     "median": 0,
+     "max": 0.2750000000000057
     },
-    "stalled": 323,
+    "stalled": 386,
     "deadlock": {
-     "stalled": 323,
+     "stalled": 386,
      "clusters": 1,
-     "agents_in_clusters": 323,
-     "largest": 323
+     "agents_in_clusters": 386,
+     "largest": 386
     },
     "final_modes": {
-     "exited": 677,
-     "stalled": 323
+     "exited": 614,
+     "stalled": 386
     },
     "blocked_reports": {
-     "blocked_by_nestmates": 341
+     "blocked_by_nestmates": 393
     },
-    "contacts": 848,
-    "contact_ends_exact": 835,
-    "contact_ends_estimated": 0,
-    "stops_contact": 1595,
-    "stops_conservative": 30,
+    "contacts": 786,
+    "contact_ends_exact": 771,
+    "contact_ends_estimated": 1,
+    "stops_contact": 1505,
+    "stops_conservative": 31,
     "contact_end_check": {
-     "episodes": 848,
-     "exact": 835,
-     "estimated": 0,
-     "open": 13,
+     "episodes": 786,
+     "exact": 771,
+     "estimated": 1,
+     "open": 14,
      "violations": 0,
      "problems": [],
      "max_err_s": 2.3529710801994952e-7,
-     "median_err_s": 4.990425850337488e-10,
-     "max_dev_from_mid_s": 2.942215360235423e-10,
+     "median_err_s": 5.541798131503128e-10,
+     "max_dev_from_mid_s": 2.941789034593967e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
     },
     "verify": {
-     "min_pair_gap_mm": -1.2456702336294256e-13,
+     "min_pair_gap_mm": -5.571099137569036e-13,
      "pair_penetrations": 0,
      "max_pair_penetration_mm": 0,
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 342338,
-     "ternary_searches": 14306,
+     "pieces": 399368,
+     "ternary_searches": 14181,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 18047,
-    "cpu_ms": 125428.961
+    "events": 18326,
+    "cpu_ms": 140700.183
    }
   },
   {
@@ -463,77 +463,76 @@
    "m": {
     "agents": 1000,
     "horizon_s": 140,
-    "arrived": 116,
+    "arrived": 178,
     "arrival_s": {
-     "min": 7.423787823788847,
-     "p10": 10.983342882222509,
-     "median": 21.80081637686961,
-     "p90": 36.02937117954104,
-     "max": 44.126479028245676
+     "min": 7.588624973592715,
+     "p10": 11.842108681814947,
+     "median": 30.494167137217435,
+     "p90": 46.91697241409555,
+     "max": 61.293880153093724
     },
     "transit_s": {
-     "min": 6.544117647058735,
-     "median": 7.562163319781348,
-     "p90": 11.709910036244349,
-     "max": 20.70304248286945
+     "min": 6.544117647058721,
+     "median": 8.982498333152613,
+     "p90": 28.04705882352941,
+     "max": 48.700738699702605
     },
     "time_to_clear_s": null,
-    "exited": 116,
-    "never_entered": 21,
+    "exited": 178,
+    "never_entered": 0,
     "entry_delay_s": {
-     "median": 0.02499999999999858,
-     "max": 0.375
+     "median": 0,
+     "max": 1.4249999999999972
     },
-    "stalled": 863,
+    "stalled": 822,
     "deadlock": {
-     "stalled": 863,
+     "stalled": 822,
      "clusters": 1,
-     "agents_in_clusters": 863,
-     "largest": 863
+     "agents_in_clusters": 822,
+     "largest": 822
     },
     "final_modes": {
-     "exited": 116,
-     "stalled": 863,
-     "not_entered": 21
+     "exited": 178,
+     "stalled": 822
     },
     "blocked_reports": {
-     "way_ahead_free": 357,
-     "blocked_by_nestmates": 1923
+     "way_ahead_free": 445,
+     "blocked_by_nestmates": 1807
     },
-    "contacts": 1069,
-    "contact_ends_exact": 282,
-    "contact_ends_estimated": 19,
-    "stops_contact": 1475,
-    "stops_conservative": 317,
+    "contacts": 1193,
+    "contact_ends_exact": 410,
+    "contact_ends_estimated": 45,
+    "stops_contact": 18283,
+    "stops_conservative": 149,
     "contact_end_check": {
-     "episodes": 1069,
-     "exact": 282,
-     "estimated": 19,
-     "open": 768,
+     "episodes": 1193,
+     "exact": 410,
+     "estimated": 45,
+     "open": 738,
      "violations": 0,
      "problems": [],
-     "max_err_s": 2.3529710801994952e-7,
-     "median_err_s": 2.353033323743148e-10,
-     "max_dev_from_mid_s": 2.941558108204845e-10,
+     "max_err_s": 2.3529710091452216e-7,
+     "median_err_s": 2.5783108981158875e-10,
+     "max_dev_from_mid_s": 2.941682453183603e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
     },
     "verify": {
-     "min_pair_gap_mm": -4.877209747178313e-13,
+     "min_pair_gap_mm": -1.4943601911454607e-13,
      "pair_penetrations": 0,
      "max_pair_penetration_mm": 0,
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 1410280,
-     "ternary_searches": 19118,
+     "pieces": 1396317,
+     "ternary_searches": 21852,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 15090,
-    "cpu_ms": 213325.12
+    "events": 49348,
+    "cpu_ms": 124865.244
    }
   },
   {
@@ -543,76 +542,76 @@
    "m": {
     "agents": 1000,
     "horizon_s": 140,
-    "arrived": 473,
+    "arrived": 401,
     "arrival_s": {
-     "min": 6.9441176470588255,
-     "p10": 12.788632579965038,
-     "median": 36.50335380272422,
-     "p90": 66.71241833577487,
-     "max": 81.04450116781416
+     "min": 6.999883620065837,
+     "p10": 11.788990449574987,
+     "median": 31.974228773115424,
+     "p90": 58.24604310041609,
+     "max": 71.25807635938568
     },
     "transit_s": {
-     "min": 6.544117647058734,
-     "median": 6.826575162110588,
-     "p90": 7.547626008521561,
-     "max": 8.873989576598788
+     "min": 6.544117647058767,
+     "median": 6.823402662711786,
+     "p90": 7.3823725843911205,
+     "max": 8.180302931455955
     },
     "time_to_clear_s": null,
-    "exited": 473,
+    "exited": 401,
     "never_entered": 0,
     "entry_delay_s": {
-     "median": 0.02499999999999858,
-     "max": 0.32500000000000284
+     "median": 0,
+     "max": 0.25
     },
-    "stalled": 527,
+    "stalled": 599,
     "deadlock": {
-     "stalled": 527,
+     "stalled": 599,
      "clusters": 1,
-     "agents_in_clusters": 527,
-     "largest": 527
+     "agents_in_clusters": 599,
+     "largest": 599
     },
     "final_modes": {
-     "exited": 473,
-     "stalled": 527
+     "exited": 401,
+     "stalled": 599
     },
     "blocked_reports": {
-     "blocked_by_nestmates": 550,
-     "way_ahead_free": 1
+     "blocked_by_nestmates": 609,
+     "way_ahead_free": 2
     },
-    "contacts": 1202,
-    "contact_ends_exact": 675,
-    "contact_ends_estimated": 84,
-    "stops_contact": 19329,
-    "stops_conservative": 120,
+    "contacts": 1094,
+    "contact_ends_exact": 505,
+    "contact_ends_estimated": 76,
+    "stops_contact": 15725,
+    "stops_conservative": 188,
     "contact_end_check": {
-     "episodes": 1202,
-     "exact": 675,
-     "estimated": 84,
-     "open": 443,
+     "episodes": 1094,
+     "exact": 505,
+     "estimated": 76,
+     "open": 513,
      "violations": 0,
      "problems": [],
-     "max_err_s": 2.3529710091452216e-7,
-     "median_err_s": 4.5142201088310685e-10,
-     "max_dev_from_mid_s": 2.941646926046815e-10,
+     "max_err_s": 2.3529710801994952e-7,
+     "median_err_s": 4.538875941761944e-10,
+     "max_dev_from_mid_s": 2.941504817499663e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
     },
     "verify": {
-     "min_pair_gap_mm": -8.637535131583718e-14,
+     "min_pair_gap_mm": -5.002664948960955e-13,
      "pair_penetrations": 0,
      "max_pair_penetration_mm": 0,
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 783912,
-     "ternary_searches": 16098,
+     "pieces": 901981,
+     "ternary_searches": 13352,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 53811,
-    "cpu_ms": 165094.321
+    "events": 44928,
+    "cpu_ms": 175425.594
    }
   },
   {
@@ -640,8 +639,8 @@
     "exited": 0,
     "never_entered": 0,
     "entry_delay_s": {
-     "median": 0.02499999999999858,
-     "max": 0.025000000000005684
+     "median": 0,
+     "max": 0
     },
     "stalled": 1000,
     "deadlock": {
@@ -656,40 +655,40 @@
     "blocked_reports": {
      "blocked_by_nestmates": 1000
     },
-    "contacts": 991,
+    "contacts": 997,
     "contact_ends_exact": 12,
     "contact_ends_estimated": 0,
-    "stops_contact": 81019,
-    "stops_conservative": 41,
+    "stops_contact": 19211,
+    "stops_conservative": 65,
     "contact_end_check": {
-     "episodes": 991,
+     "episodes": 997,
      "exact": 12,
      "estimated": 0,
-     "open": 979,
+     "open": 985,
      "violations": 0,
      "problems": [],
      "max_err_s": 2.352970849273106e-7,
-     "median_err_s": 2.3529707249281273e-7,
+     "median_err_s": 2.3529707338099115e-7,
      "max_dev_from_mid_s": 2.9413271818157227e-10,
      "tol_mm": 1e-7,
      "delta_g_mm": 1e-9,
      "outside_bracket": 0
     },
     "verify": {
-     "min_pair_gap_mm": -3.6126213132092744e-11,
+     "min_pair_gap_mm": -9.506018194826993e-11,
      "pair_penetrations": 0,
      "max_pair_penetration_mm": 0,
      "min_static_gap_mm": -2.275957200481571e-14,
      "static_penetrations": 0,
      "max_static_penetration_mm": 0,
-     "pieces": 2694909,
-     "ternary_searches": 3539,
+     "pieces": 2242791,
+     "ternary_searches": 3651,
      "tol_mm": 1e-9
     },
     "fallback_intervals": 0,
     "unresolved": 0,
-    "events": 166143,
-    "cpu_ms": 394260.238
+    "events": 42569,
+    "cpu_ms": 333282.73
    }
   }
  ]

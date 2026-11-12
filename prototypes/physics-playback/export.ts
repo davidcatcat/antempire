@@ -26,9 +26,10 @@ import { laneFrames, poseOn } from '../solver-compare/lib/traj.ts';
 import { solve2D, type Solver2DResult } from '../../engine/physics/solver2d.ts';
 import { simulate } from '../../engine/physics/collision.ts';
 import { checkContacts, checkConstraints, checkMotion, CONTRACT } from '../physics-check/contact-check.ts';
-import { STEER_POLICIES, type SteerPolicyId, type SteerResult } from '../../engine/physics/local-steer.ts';
-import { runSteer, steerParams, loadCandidates, CANDIDATE_LABEL, POLICY_LABEL, DENSE_BENCHMARK_SCOPE, isDenseBenchmark } from '../local-steer/lib.ts';
+import { STEER_POLICIES, steer2D, type SteerPolicyId, type SteerResult, type SteerControl } from '../../engine/physics/local-steer.ts';
+import { steerInput, steerParams, loadCandidates, CANDIDATE_LABEL, POLICY_LABEL, DENSE_BENCHMARK_SCOPE, isDenseBenchmark } from '../local-steer/lib.ts';
 import { checkContacts as checkSteerContacts, DELTA_G_MM } from '../local-steer/contact-check.ts';
+import { controlScenario, loadControls } from '../local-steer/controls.ts';
 
 export const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const DATA_DIR = path.join(HERE, 'data');
@@ -48,9 +49,22 @@ export const SCENARIOS: { id: string; from: 'solver-compare' | 'playback'; nativ
 /** WP4 candidate behaviour runs (engine/physics/local-steer.ts, seed 1): every playback scenario plus the 100-agent crossing
  *  (whose PH-3b run, 45k events, is too large for the page; its baseline is in the WP4 comparison table) */
 export const STEER_SCENARIOS: { id: string; from: 'solver-compare' | 'playback' }[] = [...SCENARIOS.map((s) => ({ id: s.id, from: s.from })), { id: 'crossing-traffic-100', from: 'solver-compare' }];
-/** the candidate behaviours A–C (the no-yield control N is in the comparison tables only, not on the page) */
-export const STEER_RUN_POLICIES = STEER_POLICIES.filter((p) => p === 'A_free_direction' || p === 'B_contact_decision' || p === 'C_sidestep') as Exclude<SteerPolicyId, 'none' | 'N_no_yield'>[];
+/** the candidate behaviours A–C and the no-yield control N (Owner decision 9: the control is on the page too) */
+export type SteerRunPolicy = Exclude<SteerPolicyId, 'none'>;
+export const STEER_RUN_POLICIES = STEER_POLICIES.filter((p) => p !== 'none') as SteerRunPolicy[];
 export const steerRunId = (scenario: string, p: SteerPolicyId) => `${scenario}--steer-${p.split('_')[0]}`;
+/** WP4 control scenarios on the page (prototypes/local-steer/controls.ts, docs/wp4-local-avoidance.md §5b): the 100-agent
+ *  crossing under K0–K3 for A, B, C and N, seed 1 only (seeds 2–5 and the 1000-agent runs stay in the comparison tables;
+ *  16 runs keep the page data at a few MB) */
+export const CONTROL_BASE = 'crossing-traffic-100';
+export const CONTROL_VARIANTS = ['K0_lattice_stay', 'K1_lattice_exit', 'K2_inflow_stay', 'K3_inflow_exit'] as const;
+export const controlRunId = (base: string, variant: string, p: SteerPolicyId) => `${base}-${variant.split('_')[0]}--steer-${p.split('_')[0]}`;
+/** label of every run that is a control (the no-yield control N, or a control scenario K0–K3) */
+export const CONTROL_LABEL = '隔離物理實驗・候選行為規則／控制組（非本種／假設）・非正式';
+/** what the control runs are and are NOT valid for (shown on the page instead of the dense-benchmark note) */
+export const CONTROL_SCOPE = '適用範圍（對照情境 K0–K3，遊戲假設，非生物情境）：同一個 100 隻交叉口，只改起點（格狀／依時間流入）與抵達後的處理（留在路上／有限容量出口）。只用來檢查密集基準的結果有多少來自情境設計，而不是候選規則本身；流入率、入口位置、出口容量、停留時間與時間終點都是遊戲假設（prototypes/local-steer/control-scenarios.json），不是本種資料。入口、出口與「接觸結束（估計）」是情境邊界規則，不是物理也不是行為，不能當生物原因。不適用於：推論交通流量、抵達率、清空時間或任何規則的生物合理性。只顯示種子 1。';
+/** event kinds that are control-scenario boundary rules, not physics or behaviour */
+const isBoundaryEvent = (e: { kind: string; detail: string | null }) => e.kind === 'exit' || e.kind === 'entry_blocked' || e.kind === 'contact_end_estimated' || (e.kind === 'start' && /control scenario boundary/.test(e.detail ?? ''));
 
 export interface Segment { t0: number; t1: number; x0: number; y0: number; x1: number; y1: number; heading: number; speed_mm_s: number; s0: number; s1: number; u: number; /** steer runs: u at t1 (u changes along a side step) */ u1?: number }
 export interface PbEvent {
@@ -62,6 +76,8 @@ export interface PbEvent {
   bracket_s?: [number, number]; err_s?: number; confirmed_t_s?: number; exact?: boolean; usable_as_cause?: boolean; check_s?: [number, number]; check_err_s?: number;
   /** contact events: 'geometric_contact' (the only contact kind PH-3b emits as events) */
   contact_kind?: string;
+  /** control-scenario boundary rule (entry, exit, entry blocked, estimated contact end): not physics, not behaviour */
+  boundary?: true;
 }
 /** the three contact kinds of a PH-3b run (docs/physics-time-contract.md §4): geometric episodes are the contact events;
  *  constraint_active intervals are the solver's constraint state (rows in `columns` order); antenna_contact is
@@ -74,12 +90,17 @@ export interface PbContactKinds {
 }
 export interface PbAgent {
   id: string; lane: string; layer: string; dir: 1 | -1; u_mm: number; start_t_s: number; goal_s_mm: number; free_speed_mm_s: number; speed_source: string;
-  segments: Segment[]; final: { t: number; x: number; y: number; heading: number }; arrival_t_s: number | null; final_mode: string; stop_cause: string | null;
+  segments: Segment[]; final: { t: number; x: number; y: number; heading: number } | null; arrival_t_s: number | null; final_mode: string; stop_cause: string | null;
+  /** control runs: on the road from present_from_t_s (null = never entered) until removed_t_s (null = still there); the
+   *  page draws the body only inside [from, until] (both inclusive, as the independent contact checker) */
+  scheduled_start_t_s?: number; present_from_t_s?: number | null; removed_t_s?: number | null;
 }
 export interface PbRun {
   schema: string; run_id: string; solver: 'ph3b' | 'native' | 'steer'; solver_label: string; solver_notes: string[];
   /** steer runs: the candidate policy and the page badge for this run */
   policy?: SteerPolicyId; label?: string; seed?: number;
+  /** control runs: the variant (K0–K3) and its boundary rules, parameters as in control-scenarios.json */
+  control?: { variant: string; base_scenario: string; spawn: boolean; exit: { capacity: number; dwell_s: number } | null; why: string; params: string[] };
   /** what this scenario is and is not valid for (dense benchmark) */
   scope_note?: string;
   /** steer runs: independent contact_end check over this file's segments */
@@ -204,9 +225,14 @@ export function nativeRun(sc: Scenario, file: string): PbRun {
   };
 }
 
-/** WP4 candidate policy (seed 1): segments between consecutive motion records; each boundary checked against the events */
-export function steerRun(sc: Scenario, file: string, policy: Exclude<SteerPolicyId, 'none' | 'N_no_yield'>): { run: PbRun; res: SteerResult } {
-  const res = runSteer(sc, policy, { seed: 1 }).res, H = res.stats.t_end_s;
+/** a control variant of the base scenario (same geometry, bodies, speeds, goals; start poses / times, horizon and the
+ *  boundary rules from control-scenarios.json) */
+export function controlFor(sc: Scenario, variant: string): { sc: Scenario; control: SteerControl } { return controlScenario(sc, variant); }
+
+/** WP4 candidate / control policy (seed 1): segments between consecutive motion records; each boundary checked against
+ *  the events. With `ctl`, `sc` is the control scenario and its boundary rules are applied. */
+export function steerRun(sc: Scenario, file: string, policy: SteerRunPolicy, ctl?: { variant: string; control: SteerControl }): { run: PbRun; res: SteerResult } {
+  const res = steer2D({ ...steerInput(sc, policy, { seed: 1 }), ...(ctl ? { control: ctl.control } : {}) }), H = res.stats.t_end_s;
   const evTimes = new Map<string, Set<number>>();
   for (const e of res.events) for (const id of e.agents) { if (!evTimes.has(id)) evTimes.set(id, new Set()); evTimes.get(id)!.add(e.t_s); }
   const agents: PbAgent[] = [];
@@ -220,13 +246,19 @@ export function steerRun(sc: Scenario, file: string, policy: Exclude<SteerPolicy
     }
     const ok = evTimes.get(a.id) ?? new Set<number>();
     for (const g of segs) for (const t of [g.t0, g.t1]) if (!(t === 0 || t === H || ok.has(t))) throw Error(`PLAYBACK: ${sc.id}/${policy}/${a.id}: segment boundary ${t} s is not an engine event time of this agent`);
-    const last = S[S.length - 1];
-    agents.push({ id: a.id, lane: a.passage, layer: a.layer, dir: a.dir, u_mm: a.u_mm, start_t_s: a.start_t_s, goal_s_mm: a.goal_s_mm, free_speed_mm_s: a.free_speed_mm_s, speed_source: a.speed_source, segments: segs, final: { t: last[0], x: last[1], y: last[2], heading: last[3] }, arrival_t_s: o.arrival_t_s, final_mode: o.final_mode, stop_cause: o.stop_cause });
+    const last = S.length ? S[S.length - 1] : null;
+    agents.push({ id: a.id, lane: a.passage, layer: a.layer, dir: a.dir, u_mm: a.u_mm, start_t_s: a.start_t_s, goal_s_mm: a.goal_s_mm, free_speed_mm_s: a.free_speed_mm_s, speed_source: a.speed_source, segments: segs, final: last ? { t: last[0], x: last[1], y: last[2], heading: last[3] } : null, arrival_t_s: o.arrival_t_s, final_mode: o.final_mode, stop_cause: o.stop_cause,
+      ...(o.scheduled_start_t_s !== undefined ? { scheduled_start_t_s: o.scheduled_start_t_s, present_from_t_s: o.present_from_t_s ?? null } : {}), ...(o.removed_t_s !== undefined ? { removed_t_s: o.removed_t_s } : {}) });
   }
-  const prov = steerParams(sc).provenance, cand = loadCandidates();
+  const prov = steerParams(sc).provenance, cand = loadCandidates(), isControl = policy === 'N_no_yield' || !!ctl;
+  const C = ctl ? loadControls() : null, v = ctl ? C!.variants[ctl.variant] : null;
   const run: PbRun = {
-    schema: PLAYBACK_SCHEMA, run_id: steerRunId(sc.id, policy), solver: 'steer', solver_label: POLICY_LABEL[policy], policy, label: CANDIDATE_LABEL, seed: 1,
+    schema: PLAYBACK_SCHEMA, run_id: ctl ? controlRunId(CONTROL_BASE, ctl.variant, policy) : steerRunId(sc.id, policy), solver: 'steer',
+    solver_label: ctl ? `${ctl.variant.split('_')[0]}・${POLICY_LABEL[policy]}` : POLICY_LABEL[policy], policy, label: isControl ? CONTROL_LABEL : CANDIDATE_LABEL, seed: 1,
+    ...(ctl ? { control: { variant: ctl.variant, base_scenario: CONTROL_BASE, spawn: ctl.control.spawn === true, exit: ctl.control.exit ?? null, why: v!.why, params: Object.entries(C!.params).map(([k, e]) => `${k} = ${JSON.stringify(e.value)} [${e.basis}] ${e.why}`) } } : {}),
     solver_notes: [
+      ...(policy === 'N_no_yield' ? ['控制組 N：不讓路（永遠直走、碰到就停到下一個決策時刻），用來對照 A–C 有多少差別來自規則本身；不是候選行為，也不是本種行為（大頭家蟻沒有讓路文獻）。'] : []),
+      ...(ctl ? [`對照情境 ${ctl.variant}（遊戲假設，非本種，非正式）：${v!.why} 入口／出口是情境邊界規則，不是物理也不是行為；「離開道路」與「接觸結束（估計）」不能當生物原因。種子 1（種子 2–5 與 1000 隻版本只在比較表）。`] : []),
       `${CANDIDATE_LABEL}：WP4 候選局部行為規則（engine/physics/local-steer.ts），物理約束沿用 PH-3b 的膠囊與精確連續碰撞。大頭家蟻沒有任何讓路、側移或窄道交通研究；這不是本種行為，也沒有為抵達調參。`,
       ...cand.conventions,
       ...Object.entries(prov).map(([k, v]) => `參數 ${k} = ${v}`),
@@ -234,12 +266,12 @@ export function steerRun(sc: Scenario, file: string, policy: Exclude<SteerPolicy
       `解算狀態：fallback ${res.stats.fallback_intervals}、unresolved ${res.stats.unresolved}；受阻回報 ${JSON.stringify(res.stats.blocked_reports)}`,
     ],
     ...common(sc, file), status: res.stats.fallback_intervals || res.stats.unresolved ? `completed with fallback ${res.stats.fallback_intervals} / unresolved ${res.stats.unresolved}` : 'completed',
-    ...(isDenseBenchmark(sc.id) ? { scope_note: DENSE_BENCHMARK_SCOPE } : {}),
-    agents, events: res.events.map((e) => ({ t: e.t_s, kind: e.kind, class: e.class, agents: e.agents, detail: e.detail, ...(e.bracket_s ? { bracket_s: e.bracket_s } : {}), ...(e.usable_as_cause === false ? { usable_as_cause: false as const } : {}) })),
+    ...(ctl ? { scope_note: CONTROL_SCOPE } : isDenseBenchmark(sc.id) ? { scope_note: DENSE_BENCHMARK_SCOPE } : {}),
+    agents, events: res.events.map((e) => ({ t: e.t_s, kind: e.kind, class: e.class, agents: e.agents, detail: e.detail, ...(e.bracket_s ? { bracket_s: e.bracket_s } : {}), ...(e.usable_as_cause === false ? { usable_as_cause: false as const } : {}), ...(isBoundaryEvent(e) ? { boundary: true as const } : {}) })),
     motion_note: '每一段是候選規則選定的方向在兩個事件之間的直線等速平移（兩端是解算紀錄的精確姿態）；身體軸維持與通道平行（幾何約定）。畫面上的位置就是這個運動，不是插值，沒有平滑。',
   };
   // independent check of every contact_end from the exported segments themselves (not from the solver's internals)
-  const ck = checkSteerContacts({ horizon_s: H, body: { length_mm: run.body.length_mm, width_mm: run.body.width_mm }, agents: run.agents.map((a) => ({ id: a.id, segments: a.segments, final: a.final, present_from: 0, present_until: null })), events: run.events });
+  const ck = checkSteerContacts({ horizon_s: H, body: { length_mm: run.body.length_mm, width_mm: run.body.width_mm }, agents: run.agents.map((a) => ({ id: a.id, segments: a.segments, final: a.final, present_from: a.present_from_t_s === undefined ? 0 : a.present_from_t_s === null ? Infinity : a.present_from_t_s, present_until: a.removed_t_s ?? null })), events: run.events });
   const byEnd = new Map(ck.list.filter((e) => e.end_kind === 'contact_end').map((e) => [`${e.pair.join('|')}@${e.t_end}`, e]));
   for (const e of run.events) if (e.kind === 'contact_end') { const c = byEnd.get(`${[...e.agents].sort().join('|')}@${e.t}`); if (c && c.lo !== null && c.hi !== null) { e.check_s = [c.lo, c.hi]; e.err_s = c.err_s!; } }
   run.contact_end_check = { checker: 'prototypes/local-steer/contact-check.ts（獨立程式：自己的膠囊距離、分段凸性、二分法；只讀本檔的分段運動）', episodes: ck.episodes, exact: ck.exact, estimated: ck.estimated, open: ck.open, violations: ck.violations, max_err_s: ck.max_err_s, delta_g_mm: DELTA_G_MM };
@@ -250,11 +282,14 @@ export function steerRun(sc: Scenario, file: string, policy: Exclude<SteerPolicy
 const stable = (o: unknown) => JSON.stringify(o) + '\n';
 
 /** every output file (name → content); deterministic: no timestamps, no machine data */
-export function buildAll(): Map<string, string> {
-  const files = new Map<string, string>(), index: unknown[] = [];
+export function buildAll(): Map<string, string> { return buildAllWithResults().files; }
+/** the files plus each run's solver result (so the test checks the export against the solve that produced it) */
+export function buildAllWithResults(): { files: Map<string, string>; results: Map<string, Solver2DResult | SteerResult> } {
+  const files = new Map<string, string>(), index: unknown[] = [], results = new Map<string, Solver2DResult | SteerResult>();
   for (const s of SCENARIOS) {
     const file = scenarioFile(s), sc = loadScenario(JSON.parse(fs.readFileSync(file, 'utf8')) as ScenarioFile);
-    const runs = [ph3bRun(sc, file).run, ...(s.native ? [nativeRun(sc, file)] : [])];
+    const ph = ph3bRun(sc, file); results.set(ph.run.run_id, ph.res);
+    const runs = [ph.run, ...(s.native ? [nativeRun(sc, file)] : [])];
     for (const r of runs) {
       files.set(`${r.run_id}.json`, stable(r));
       index.push({ run_id: r.run_id, file: `data/${r.run_id}.json`, scenario: r.scenario.id, title: r.scenario.title, solver: r.solver, solver_label: r.solver_label, agents: r.agents.length, events: r.events.length, arrived: r.agents.filter((a) => a.arrival_t_s !== null).length, synthetic: true });
@@ -263,13 +298,24 @@ export function buildAll(): Map<string, string> {
   for (const s of STEER_SCENARIOS) {
     const file = scenarioFile(s), sc = loadScenario(JSON.parse(fs.readFileSync(file, 'utf8')) as ScenarioFile);
     for (const p of STEER_RUN_POLICIES) {
-      const r = steerRun(sc, file, p).run;
+      const { run: r, res } = steerRun(sc, file, p); results.set(r.run_id, res);
       files.set(`${r.run_id}.json`, stable(r));
       index.push({ run_id: r.run_id, file: `data/${r.run_id}.json`, scenario: r.scenario.id, title: r.scenario.title, solver: r.solver, solver_label: r.solver_label, label: r.label, ...(r.scope_note ? { scope_note: r.scope_note } : {}), agents: r.agents.length, events: r.events.length, arrived: r.agents.filter((a) => a.arrival_t_s !== null).length, synthetic: true });
     }
   }
-  files.set('index.json', stable({ schema: PLAYBACK_SCHEMA, label: '隔離物理實驗・非正式・不是生物行為（讓路／側移決策尚未建模）', candidate_label: CANDIDATE_LABEL, runs: index }));
-  return files;
+  {
+    const base = STEER_SCENARIOS.find((s) => s.id === CONTROL_BASE)!, file = scenarioFile(base), sc0 = loadScenario(JSON.parse(fs.readFileSync(file, 'utf8')) as ScenarioFile);
+    for (const variant of CONTROL_VARIANTS) {
+      const { sc, control } = controlFor(sc0, variant);
+      for (const p of STEER_RUN_POLICIES) {
+        const { run: r, res } = steerRun(sc, file, p, { variant, control }); results.set(r.run_id, res);
+        files.set(`${r.run_id}.json`, stable(r));
+        index.push({ run_id: r.run_id, file: `data/${r.run_id}.json`, scenario: r.scenario.id, title: `${r.scenario.title}（對照 ${variant}）`, solver: r.solver, solver_label: r.solver_label, label: r.label, control: variant, ...(r.scope_note ? { scope_note: r.scope_note } : {}), agents: r.agents.length, events: r.events.length, arrived: r.agents.filter((a) => a.arrival_t_s !== null).length, exited: r.agents.filter((a) => typeof a.removed_t_s === 'number').length, synthetic: true });
+      }
+    }
+  }
+  files.set('index.json', stable({ schema: PLAYBACK_SCHEMA, label: '隔離物理實驗・非正式・不是生物行為（讓路／側移決策尚未建模）', candidate_label: CANDIDATE_LABEL, control_label: CONTROL_LABEL, runs: index }));
+  return { files, results };
 }
 
 const me = fileURLToPath(import.meta.url);
