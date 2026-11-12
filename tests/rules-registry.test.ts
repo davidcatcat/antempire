@@ -21,6 +21,7 @@ import crypto from 'node:crypto';
 import assert from 'node:assert/strict';
 import { advance, recover } from '../cli/advance.ts';
 import { rulesFingerprint } from '../cli/lib/fingerprint.ts';
+import { fingerprintV2, v2Record } from '../cli/lib/fingerprint-v2.ts';
 import { REPO_ROOT, readJson } from '../cli/lib/load.ts';
 import { readRegistry, registryProblems, type Registry } from '../cli/lib/rules-registry.ts';
 import { faultyIo, pendingTransactions, readCommitLog, LOCK_REL } from '../cli/lib/save-transaction.ts';
@@ -34,7 +35,7 @@ const journalBefore = listDir(path.join(REPO_ROOT, 'journal'));
 const NOW = '2026-11-02T00:00:00.000Z';
 
 // 1. CI guard on the real registry
-const reg = readRegistry(), fp = rulesFingerprint();
+const reg = readRegistry(), fp = { ...rulesFingerprint(), v2: v2Record(fingerprintV2()) };
 const problems = registryProblems(reg, fp, ENGINE_VERSION, (rel) => fs.existsSync(path.join(REPO_ROOT, rel)));
 ok(problems.length === 0, 'registry consistent with the checkout: ' + problems.join('; '));
 ok(registryProblems(reg, { engine: 'f'.repeat(64), params: fp.params }, ENGINE_VERSION, () => true).some((p) => p.includes('not registered')), 'an unregistered engine change is detected');
