@@ -28,8 +28,8 @@ export const TRIPOD_A: LegId[] = ['L1', 'R2', 'L3'];
 export const TRIPOD_B: LegId[] = ['R1', 'L2', 'R3'];
 export const tripodSet = (leg: LegId): 'A' | 'B' => (TRIPOD_A.includes(leg) ? 'A' : 'B');
 
-/** Ant palette (示意: colours follow the coordinator's description of a minor worker — yellowish- to reddish-brown head
- *  and mesosoma, darker smooth shiny gaster; not yet checked against a cited species description). */
+/** Base ant palette (a mid "light brown" worker). Colour: R99 (Sarnat et al. 2015, P. megacephala account) describes
+ *  the species as "light brown to dark brown"; individual variants come from antPalette(). Exact tones are 示意. */
 export const ANT_PALETTE = {
   outline: 'rgba(38,18,6,0.9)',
   head: ['#d29257', '#a95f2b', '#6d3514'], // highlight, base, rim
@@ -38,6 +38,18 @@ export const ANT_PALETTE = {
   gaster: ['#6a4027', '#3c2213', '#1c0f07'],
   limb: '#b97d45', limbDark: '#7c4a22', eye: '#1a0e08', mandible: '#8a4a1f',
 } as const;
+export type AntPalette = { outline: string; head: readonly string[]; meso: readonly string[]; waist: readonly string[]; gaster: readonly string[]; limb: string; limbDark: string; eye: string; mandible: string };
+/** number of deterministic colour variants (one atlas each) */
+export const PALETTE_VARIANTS = 5;
+const hexShade = (hex: string, k: number, warm: number) => { const n = parseInt(hex.slice(1), 16), c = [(n >> 16) & 255, (n >> 8) & 255, n & 255]; const o = [c[0] * k + warm * 6, c[1] * k, c[2] * k - warm * 4].map((v) => Math.max(0, Math.min(255, Math.round(v)))); return '#' + o.map((v) => v.toString(16).padStart(2, '0')).join(''); };
+/** Colour variant v ∈ [0, PALETTE_VARIANTS): light brown (0) … dark brown (last), within the species' documented
+ *  light-to-dark-brown range [R99]; the mapping of an individual to a variant is drawing only (示意). */
+export function antPalette(v: number): AntPalette {
+  const u = Math.max(0, Math.min(1, v / (PALETTE_VARIANTS - 1))), k = 1.12 - u * 0.5, kg = 1.08 - u * 0.3, warm = 1 - u;
+  const m = (a: readonly string[], kk: number) => a.map((h) => hexShade(h, kk, warm));
+  return { ...ANT_PALETTE, head: m(ANT_PALETTE.head, k), meso: m(ANT_PALETTE.meso, k), waist: m(ANT_PALETTE.waist, k), gaster: m(ANT_PALETTE.gaster, kg), limb: hexShade(ANT_PALETTE.limb, 0.9 + (k - 0.62) * 0.4, warm), limbDark: hexShade(ANT_PALETTE.limbDark, 0.9 + (k - 0.62) * 0.4, warm), mandible: hexShade(ANT_PALETTE.mandible, k, warm) };
+}
+let PAL: AntPalette = ANT_PALETTE;
 
 interface Leg { id: LegId; side: -1 | 1; base: [number, number]; coxa: number; femur: number; tibia: number; tarsus: number; foot: [number, number]; tarsDir: [number, number]; w: number }
 /** coxal insertions on the mesosoma (fore, mid, hind) and neutral foot placement (right side; left mirrors y) */
@@ -116,7 +128,7 @@ const FUN_FORESHORTEN = 0.8;
 export const ANTENNA_SEGMENTS = 1 + FUNICULUS.length; // scape + 11 = 12
 export const ANTENNA_CLUB = 3;
 function antenna(side: number, scapeAng: number, funAng: number): [number, number][] {
-  const root: [number, number] = [40, 3.4 * side], scape = 18; // scape ≈ head length (reaches the back of the head when laid back)
+  const root: [number, number] = [40, 3.4 * side], scape = 25.5; // SL ≈ 1.06 × HL (R99 minor: SL 0.61–0.72 mm, HL 0.57–0.68 mm; scapes surpass the head margin)
   const elbow: [number, number] = [root[0] + Math.cos(scapeAng) * scape, root[1] + Math.sin(scapeAng) * scape * side];
   const pts: [number, number][] = [root, elbow]; let a = funAng, x = elbow[0], y = elbow[1];
   for (let i = 0; i < FUNICULUS.length; i++) { a += -0.075; const l = FUNICULUS[i] * FUN_FORESHORTEN; x += Math.cos(a) * l; y += Math.sin(a) * l * side; pts.push([x, y]); }
@@ -163,13 +175,13 @@ const dorsal = (cx: number, cy: number, rx: number, ry: number, c: readonly stri
 /** cylinder shading across a limb segment: dark rims, light core (symmetric, rotation-safe) */
 function cyl(x0: number, y0: number, x1: number, y1: number, w: number, base: string, core: string): Shape['fill'] {
   const L = Math.hypot(x1 - x0, y1 - y0) || 1, nx = -(y1 - y0) / L, ny = (x1 - x0) / L, mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
-  return { lin: [mx - nx * w / 2, my - ny * w / 2, mx + nx * w / 2, my + ny * w / 2], stops: [[0, '#8a5427'], [0.4, core], [0.62, base], [1, '#8a5427']] };
+  return { lin: [mx - nx * w / 2, my - ny * w / 2, mx + nx * w / 2, my + ny * w / 2], stops: [[0, PAL.limbDark], [0.4, core], [0.62, base], [1, PAL.limbDark]] };
 }
 function legShapes(lp: LegPose): DrawList {
   const lg = LEGS.find((l) => l.id === lp.id) as Leg, [b, ce, k, t, f] = lp.pts, out: DrawList = [];
-  const base = lp.lift > 0.05 ? '#c99158' : ANT_PALETTE.limb, core = '#e2b07a'; // a raised leg catches a little more light
+  const base = lp.lift > 0.05 ? hexShade(PAL.limb, 1.08, 0) : PAL.limb, core = hexShade(PAL.limb, 1.22, 0); // a raised leg catches a little more light
   const seg = (p: [number, number], q: [number, number], w0: number, w1: number, lw = 0.5) => out.push(OUT(taper(p[0], p[1], q[0], q[1], w0, w1), cyl(p[0], p[1], q[0], q[1], Math.max(w0, w1), base, core), lw));
-  out.push(OUT(taper(b[0], b[1], ce[0], ce[1], lg.w + 1.4, lg.w + 0.8), cyl(b[0], b[1], ce[0], ce[1], lg.w + 1.4, '#a5672f', '#c98c52')));
+  out.push(OUT(taper(b[0], b[1], ce[0], ce[1], lg.w + 1.4, lg.w + 0.8), cyl(b[0], b[1], ce[0], ce[1], lg.w + 1.4, hexShade(PAL.limb, 0.9, 0), hexShade(PAL.limb, 1.08, 0))));
   // femur: clubbed in its distal half
   const fm: [number, number] = [ce[0] + (k[0] - ce[0]) * 0.55, ce[1] + (k[1] - ce[1]) * 0.55];
   seg(ce, fm, lg.w * 0.85, lg.w * 1.3); seg(fm, k, lg.w * 1.3, lg.w * 0.8);
@@ -185,18 +197,18 @@ function legShapes(lp: LegPose): DrawList {
 
 function antennaShapes(pts: [number, number][]): DrawList {
   const out: DrawList = [], [r, e] = pts;
-  out.push(OUT(taper(r[0], r[1], e[0], e[1], 1.1, 2.0), cyl(r[0], r[1], e[0], e[1], 2, ANT_PALETTE.limb, '#ddab74'), 0.45)); // scape, thickening toward the elbow
+  out.push(OUT(taper(r[0], r[1], e[0], e[1], 1.1, 2.0), cyl(r[0], r[1], e[0], e[1], 2, PAL.limb, hexShade(PAL.limb, 1.2, 0)), 0.45)); // scape, thickening toward the elbow
   for (let i = 0; i < FUNICULUS.length; i++) {
     const a = pts[i + 1], b = pts[i + 2], club = i >= FUNICULUS.length - ANTENNA_CLUB;
     const cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2, ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
-    out.push(OUT(ellipse(cx, cy, FUNICULUS[i] * FUN_FORESHORTEN * 0.6, FUN_W[i] / 2, ang), { rad: [cx, cy, 0, cx, cy, FUN_W[i]], stops: [[0, club ? '#c48650' : '#d6a46e'], [1, club ? '#87501f' : '#9a6331']] }, 0.32));
+    out.push(OUT(ellipse(cx, cy, FUNICULUS[i] * FUN_FORESHORTEN * 0.6, FUN_W[i] / 2, ang), { rad: [cx, cy, 0, cx, cy, FUN_W[i]], stops: [[0, hexShade(PAL.limb, club ? 1.06 : 1.16, 0)], [1, hexShade(PAL.limbDark, club ? 1.0 : 1.12, 0)]] }, 0.32));
   }
   return out;
 }
 
 /** Body outline pieces (head, mesosoma etc.) for a pose; `yaw` rotations sway head and gaster. */
 function bodyShapes(pose: AntPose, silhouette = false): DrawList {
-  const P_ = ANT_PALETTE, out: DrawList = [];
+  const P_ = PAL, out: DrawList = [];
   const S = (d: string, fill: Shape['fill'], lw?: number) => out.push(silhouette ? { d, fill: '#000' } : OUT(d, fill, lw));
   // gaster (pivot at the postpetiole), smooth and shiny
   const gpts = rotAbout(Array.from({ length: 18 }, (_, i) => { const a = (i / 18) * Math.PI * 2, rx = 13.4, ry = 9.2; const k = Math.cos(a) > 0 ? 1 - 0.16 * Math.cos(a) ** 3 : 1; return [-34 + Math.cos(a) * rx, Math.sin(a) * ry * k] as [number, number]; }), -21, 0, pose.gasterYaw);
@@ -221,13 +233,13 @@ function bodyShapes(pose: AntPose, silhouette = false): DrawList {
   for (const sd of [-1, 1]) {
     // closed triangular mandibles, apical teeth meeting just past the midline
     const m = hp([[41.6, 5.8 * sd], [46.4, 4.8 * sd], [49.8, 1.9 * sd], [50.6, -0.7 * sd], [49.2, -0.5 * sd], [46.8, 1.3 * sd], [43.4, 2.2 * sd]]);
-    S(new P().M(m[0][0], m[0][1]).Q(m[1][0], m[1][1], m[2][0], m[2][1]).L(m[3][0], m[3][1]).L(m[4][0], m[4][1]).L(m[5][0], m[5][1]).L(m[6][0], m[6][1]).Z().toString(), { rad: [45, 2.6 * sd, 0, 45, 2.6 * sd, 5], stops: [[0, '#b0672f'], [1, '#6e3412']] }, 0.4);
+    S(new P().M(m[0][0], m[0][1]).Q(m[1][0], m[1][1], m[2][0], m[2][1]).L(m[3][0], m[3][1]).L(m[4][0], m[4][1]).L(m[5][0], m[5][1]).L(m[6][0], m[6][1]).Z().toString(), { rad: [45, 2.6 * sd, 0, 45, 2.6 * sd, 5], stops: [[0, hexShade(PAL.mandible, 1.3, 0)], [1, hexShade(PAL.mandible, 0.8, 0)]] }, 0.4);
     if (!silhouette) for (let i = 0; i < 3; i++) { const q = hp([[46.6 + i * 0.95, (1.0 - i * 0.55) * sd]])[0]; out.push({ d: ellipse(q[0], q[1], 0.32, 0.28), fill: 'rgba(40,18,6,0.85)' }); } // teeth
   }
   // Pheidole minor head: about as long as broad, sides convex, posterior margin rounded, clypeus narrowing to the front
-  const hpts = hp(Array.from({ length: 22 }, (_, i) => { const a = (i / 22) * Math.PI * 2, c = Math.cos(a), s = Math.sin(a); const rx = 11, ry = 10.2 * (c > 0 ? 1 - 0.22 * c * c : 1 - 0.06 * c * c); return [33 + c * rx, s * ry] as [number, number]; }));
-  const hc = hp([[33, 0]])[0];
-  S(smoothClosed(hpts), dorsal(hc[0], hc[1], 11, 10.2, P_.head), 0.6);
+  const hpts = hp(Array.from({ length: 22 }, (_, i) => { const a = (i / 22) * Math.PI * 2, c = Math.cos(a), s = Math.sin(a); const rx = 12, ry = 10.6 * (c > 0 ? 1 - 0.22 * c * c : 1 - 0.06 * c * c); return [32.5 + c * rx, s * ry] as [number, number]; }));
+  const hc = hp([[32.5, 0]])[0];
+  S(smoothClosed(hpts), dorsal(hc[0], hc[1], 12, 10.6, P_.head), 0.6); // HL 24, HW 21.2 units: CI ≈ 88 (R99 minor CI 86–92)
   if (silhouette) return out;
   // frontal carinae, clypeal margin, eyes (moderately small, set at the sides forward of mid-length)
   for (const sd of [-1, 1]) { const c = hp([[37.5, 2.3 * sd], [41.5, 3.5 * sd]]); out.push({ d: new P().M(c[0][0], c[0][1]).L(c[1][0], c[1][1]).toString(), stroke: 'rgba(70,32,10,0.55)', lw: 0.4 }); }
@@ -244,7 +256,10 @@ function bodyShapes(pose: AntPose, silhouette = false): DrawList {
 }
 
 /** Draw list for one frame: { shadow, body }. The shadow is the silhouette; draw it offset in screen space. */
-export function antFrameDrawList(kind: Gait, frame: number): { shadow: DrawList; body: DrawList } {
+export function antFrameDrawList(kind: Gait, frame: number, palette: AntPalette = ANT_PALETTE): { shadow: DrawList; body: DrawList } {
+  const prev = PAL; PAL = palette; try { return frameList(kind, frame); } finally { PAL = prev; }
+}
+function frameList(kind: Gait, frame: number): { shadow: DrawList; body: DrawList } {
   const pose = antPose(kind, frame), body: DrawList = [], shadow: DrawList = [];
   // legs under the body; far tripod first (draw order is fixed so frames do not flicker)
   for (const lp of pose.legs) body.push(...legShapes(lp));

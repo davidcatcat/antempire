@@ -12,7 +12,7 @@
  * Nothing here creates an engine event or reads any engine module.
  */
 import { hash32, mulberry32 } from './game-model.ts';
-import { selectGait, type Gait } from './art-ant.ts';
+import { PIVOT_RAD_PER_CYCLE, selectGait, type Gait } from './art-ant.ts';
 import { LEAF_KINDS, type LeafKind } from './art-ground.ts';
 import type { Experiment, ExperimentDay, Place } from './model.ts';
 
@@ -79,6 +79,8 @@ export function valueNoise(seed: number, x: number, y: number, period: number): 
 }
 /** Ground field at a world point: tone (0 dark … 1 pale), moisture (0 … 1), litter density (0 bare … 1 thick),
  *  grass (0 … 1), gravel (0 … 1). Periods 0.6–4.5 m (遊戲假設 composition, not a survey). */
+/** Micro-relief height (cm-scale undulation of the soil surface, 示意) at a world point. */
+export const reliefHeight = (seed: number, x: number, y: number) => 0.6 * valueNoise(seed + 104729, x, y, 26) + 0.4 * valueNoise(seed + 130363, x, y, 9);
 export function groundField(seed: number, x: number, y: number) {
   const n = (k: number, p: number) => valueNoise(seed + k * 7919, x, y, p);
   const tone = 0.5 * n(1, 450) + 0.3 * n(2, 160) + 0.2 * n(3, 60);
@@ -135,7 +137,7 @@ export function decorCell(seed: number, i: number, j: number, ob: Obstacles): De
     if (r() < 0.5) add({ kind: 'debris', x: px, y: py, rot: 0, sizeMm: 6 + r() * 8 });
   }
   // a rare large stone with a gravel apron
-  if (r() < 0.035 + f.gravel * 0.06) {
+  if (r() < 0.045 + f.gravel * 0.08) {
     const sx = x0 + r() * DECOR_CELL_CM, sy = y0 + r() * DECOR_CELL_CM, R = 8 + r() * 14;
     add({ kind: 'pebble', x: sx, y: sy, rot: 0, sizeMm: R });
     for (let k = 0, nk = 6 + Math.floor(r() * 14); k < nk; k++) { const a = r() * Math.PI * 2, d = (R * 1.2 + r() * R * 1.6) / 10; add({ kind: 'pebble', x: sx + Math.cos(a) * d, y: sy + Math.sin(a) * d, rot: 0, sizeMm: 0.8 + 2.2 * r() ** 2 }); }
@@ -143,7 +145,7 @@ export function decorCell(seed: number, i: number, j: number, ob: Obstacles): De
   // gravel patches and sparse pebbles (size skewed small)
   for (let k = 0, nk = poisson(r, 0.25 + f.gravel * 6); k < nk; k++) add({ kind: 'pebble', x: x0 + r() * DECOR_CELL_CM, y: y0 + r() * DECOR_CELL_CM, rot: 0, sizeMm: 0.9 + 5 * r() ** 3 });
   // grass clumps: tufts grouped together where the grass field is high
-  for (let c = 0, nc = poisson(r, f.grass * 1.1); c < nc; c++) {
+  for (let c = 0, nc = poisson(r, f.grass * 1.1 + near * 0.5); c < nc; c++) {
     const gx = x0 + r() * DECOR_CELL_CM, gy = y0 + r() * DECOR_CELL_CM;
     for (let k = 0, nk = 2 + Math.floor(r() * 4); k < nk; k++) add({ kind: 'grass', x: gx + (r() - 0.5) * 3, y: gy + (r() - 0.5) * 3, rot: 0, sizeMm: 18 + 26 * r(), dry: 0.15 + litter * 0.4 });
   }
@@ -164,13 +166,17 @@ export interface AntInput {
   displayOffset?: { dx: number; dy: number; heading?: number };
 }
 export interface AntLook { h: number; phase: number; sx: number; sy: number }
-export interface AntDraw { id: string; sx: number; sy: number; ex: number; ey: number; heading: number; gait: Gait; cycles: number }
+export interface AntDraw { id: string; sx: number; sy: number; ex: number; ey: number; heading: number; gait: Gait; cycles: number;
+  /** the turning frames show the display ease toward a RECORDED heading change (顯示插值), not a physics result */
+  turnDisplay: boolean }
+/** heading difference (rad) above which the display ease uses the turning frames */
+export const TURN_DISPLAY_MIN = 0.08;
 export const MIN_ANT_PX = 26, MINOR_LEN_CM = 0.25, MAX_TURN_RATE = 8;
 /** drawn ant length: true length (2.5 mm) at this zoom, magnified to at least `minPx` (labelled 放大顯示 ×N) */
 export const antLengthPx = (s: number, minPx = MIN_ANT_PX) => Math.max(minPx, MINOR_LEN_CM * s);
 /** Plan one frame of ants. Pure: returns new draw records and a NEW look map; `ants` and `prev` are not mutated.
  *  ex/ey = the exact affine image of the engine position; sx/sy = ex/ey + the caller's display offset. */
-export function planAnts(cam: Camera, ants: readonly AntInput[], prev: ReadonlyMap<string, AntLook>, dt: number, walkCycles: (distPx: number, lenPx: number) => number, minAntPx = MIN_ANT_PX): { draws: AntDraw[]; look: Map<string, AntLook> } {
+export function planAnts(cam: Camera, ants: readonly AntInput[], prev: ReadonlyMap<string, AntLook>, dt: number, walkCycles: (distPx: number, lenPx: number) => number, minAntPx = MIN_ANT_PX, displayTurns = false): { draws: AntDraw[]; look: Map<string, AntLook> } {
   const L = antLengthPx(cam.s, minAntPx), draws: AntDraw[] = [], look = new Map<string, AntLook>();
   for (const a of ants) {
     if (a.vis !== 'walking' && a.vis !== 'at_site') continue;
@@ -181,9 +187,19 @@ export function planAnts(cam: Camera, ants: readonly AntInput[], prev: ReadonlyM
     if (p) { const dh = Math.atan2(Math.sin(target - p.h), Math.cos(target - p.h)), m = MAX_TURN_RATE * dt; h = p.h + Math.max(-m, Math.min(m, dh)); } // display ease only
     const moved = p ? Math.hypot(sx - p.sx, sy - p.sy) : 0;
     if (a.moving && p) phase += walkCycles(moved, L);
-    const gait = selectGait({ moving: a.moving, omega: a.omega ?? null, speedBL: dt > 0 ? moved / dt / L : 0 });
+    let gait = selectGait({ moving: a.moving, omega: a.omega ?? null, speedBL: dt > 0 ? moved / dt / L : 0 }), turnDisplay = false;
+    // display-only turning frames: while the drawn heading eases toward a heading the RECORD changed to (a new edge,
+    // or the arrangement heading at a site); positions, times and events are untouched
+    if (displayTurns && p && (a.omega === undefined || a.omega === null)) {
+      const rest = Math.atan2(Math.sin(target - h), Math.cos(target - h)), turned = Math.atan2(Math.sin(h - p.h), Math.cos(h - p.h));
+      if (Math.abs(rest) > TURN_DISPLAY_MIN || Math.abs(turned) > 1e-6) {
+        const dir = (Math.abs(turned) > 1e-6 ? turned : rest) > 0;
+        gait = a.moving ? (dir ? 'curveR' : 'curveL') : (dir ? 'pivotR' : 'pivotL'); turnDisplay = true;
+        if (!a.moving) phase += Math.abs(turned) / PIVOT_RAD_PER_CYCLE;
+      }
+    }
     look.set(a.id, { h, phase, sx, sy });
-    draws.push({ id: a.id, sx, sy, ex, ey, heading: h, gait, cycles: phase });
+    draws.push({ id: a.id, sx, sy, ex, ey, heading: h, gait, cycles: phase, turnDisplay });
   }
   return { draws, look };
 }

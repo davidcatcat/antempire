@@ -10,18 +10,19 @@
  * - Light: the active LightState (replay: SCHEMATIC_LIGHT). Weather: daily day state only (no rain streaks).
  * - Adaptive quality steps down (never up) when frames are slow: glints/décor LOD → DPR 1 → no ant shadows.
  */
-import { LAYERS, QUALITY, DECOR_CELL_CM, DECOR_REACH_CM, groundField, antLengthPx, decorCell, engineRegistry, keepAtLod, nextQuality, planAnts, weatherState, worldToScreen, type AntDraw, type AntInput, type AntLook, type Camera, type DecorItem, type EngineObject, type Layer, type Obstacles, type WeatherState } from './render-scene.ts';
+import { LAYERS, QUALITY, DECOR_CELL_CM, DECOR_REACH_CM, groundField, reliefHeight, antLengthPx, decorCell, engineRegistry, keepAtLod, nextQuality, planAnts, weatherState, worldToScreen, type AntDraw, type AntInput, type AntLook, type Camera, type DecorItem, type EngineObject, type Layer, type Obstacles, type WeatherState } from './render-scene.ts';
 import { bakeAntAtlas, drawAntSprite, drawList, pixelsToCanvas, type AntAtlas } from './art-raster.ts';
-import { antGlintSpots, magnification, walkCycles, walkFrame, framesOf, type Gait } from './art-ant.ts';
+import { PALETTE_VARIANTS, antGlintSpots, antPalette, magnification, walkCycles, walkFrame, framesOf, type Gait } from './art-ant.ts';
 import { SCHEMATIC_LIGHT, withLight, type LightState } from './art-core.ts';
 import { soilTile, leaf, twig, pebble, grassTuft, moss, debris, type Decal } from './art-ground.ts';
 import { nestEntrance, hostPlant, flower, insectCarcass } from './art-props.ts';
 import type { Place } from './model.ts';
+import { hash32 } from './game-model.ts';
 
 type Pos = Record<string, { x: number; y: number; known: boolean }>;
 type Sources = Record<string, { host_alive: boolean | null; hemipteran_colonies: number | null }>;
 export interface SceneInput { /** false = ground only (seam tests) */ decor?: boolean; seed: number; places: readonly Place[]; pos: Pos; routes: Obstacles['routes']; sources: Sources; weather: Parameters<typeof weatherState>[0]; light?: LightState }
-export interface FrameOptions { showRoutes?: boolean; highlightEngine?: boolean; labels?: boolean; /** minimum drawn ant length (CSS px); larger = more magnified (labelled ×N) */ minAntPx?: number }
+export interface FrameOptions { showRoutes?: boolean; highlightEngine?: boolean; labels?: boolean; /** minimum drawn ant length (CSS px); larger = more magnified (labelled ×N) */ minAntPx?: number; /** use the turning frames for the display ease toward recorded heading changes */ displayTurns?: boolean; /** per-ant colour variants (light … dark brown) */ colourVariants?: boolean; /** space kept free at the bottom for page controls (CSS px) */ uiBottom?: number }
 const CROWD = 300, CHUNK_PX = 256, SOIL_TILE_MM = 80, SOIL_TILE_PX = 512, MAX_CHUNKS = 120, MIN_ITEM_DEVICE_PX = 2.5;
 /** world-space ground field sampled on a (FIELD_N+1)² grid per chunk, samples exactly on the chunk edges, so bilinear
  *  upscaling is continuous across chunk boundaries */
@@ -51,7 +52,7 @@ export class LayeredRenderer {
   private objSprites = new Map<string, { low: HTMLCanvasElement; high: HTMLCanvasElement | null; half: number; scale: number }>();
   private tiles = new Map<string, HTMLCanvasElement>();
   private soilSrc = new Map<string, HTMLCanvasElement>();
-  private atlas: { key: string; a: AntAtlas } | null = null;
+  private atlases = new Map<string, AntAtlas>();
   private look = new Map<string, AntLook>();
   private frameMs: number[] = [];
   private q = 0;
@@ -86,6 +87,8 @@ export class LayeredRenderer {
     for (const o of engineRegistry(this.scene.places, this.scene.pos, sources)) this.objSprite(o);
     const w = this.weather; this.weather = weatherState(weather); this.overlayFor(this.cam.w, this.cam.h); this.weather = w;
   }
+  /** Forget the drawing-only motion state (heading ease, leg phase), e.g. after a time jump. */
+  resetMotion() { this.look = new Map(); }
   engineObjects(): readonly EngineObject[] { return this.registry; }
   /** Screen x / y of the visible chunk boundaries at the current zoom (CSS px; seam tests). */
   chunkBoundaries(): { xs: number[]; ys: number[] } {
@@ -106,7 +109,8 @@ export class LayeredRenderer {
   }
 
   // ------------------------------------------------------------ chunk baking
-  private bucket(s: number) { return Math.min(128, Math.max(1, 2 ** Math.round(Math.log2(s * this.dpr)))); }
+  /** zoom bucket from the device's own DPR (not the quality-capped one), so a quality step never forces a rebake */
+  private bucket(s: number) { return Math.min(128, Math.max(1, 2 ** Math.round(Math.log2(s * Math.min(2, window.devicePixelRatio || 1))))); }
   private soilTileAt(px: number): HTMLCanvasElement {
     const k = `${this.scene?.seed}|${this.light.label}|${px}`; let t = this.tiles.get(k); if (t) return t;
     const sk = this.light.label; let src = this.soilSrc.get(sk);
@@ -116,10 +120,16 @@ export class LayeredRenderer {
   }
   /** World-space ground field (colour / damp variation, periods 0.6–4.5 m) for one chunk as a multiply image. */
   private fieldImage(seed: number, x0: number, y1: number, cm: number): HTMLCanvasElement {
-    const n = FIELD_N + 3, c = mk(n, n), g = ctxOf(c), img = g.createImageData(n, n), step = cm / FIELD_N; // samples −1 … N+1 (one beyond each edge)
+    // soft-light image (128 = no change): large-scale tone / damp variation plus a lit micro-relief (hillshade of a
+    // world-space height field, key light from the active LightState). Samples −1 … N+1, one beyond each edge.
+    const n = FIELD_N + 3, c = mk(n, n), g = ctxOf(c), img = g.createImageData(n, n), step = cm / FIELD_N, e = Math.max(0.25, step * 0.5);
+    const L = this.light, dl = Math.hypot(L.dir.x, L.dir.y) || 1, lx = -L.dir.x / dl, ly = L.dir.y / dl; // toward the light, world frame (y north)
     for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
-      const f = groundField(seed, x0 + (i - 1) * step, y1 - (j - 1) * step), k = Math.min(1, 0.74 + 0.3 * f.tone - 0.2 * f.moist), q = (j * n + i) * 4;
-      img.data[q] = 255 * k; img.data[q + 1] = 255 * k * 0.985; img.data[q + 2] = 255 * k * 0.96; img.data[q + 3] = 255;
+      const x = x0 + (i - 1) * step, y = y1 - (j - 1) * step, f = groundField(seed, x, y);
+      const gx = (reliefHeight(seed, x + e, y) - reliefHeight(seed, x - e, y)) / (2 * e), gy = (reliefHeight(seed, x, y + e) - reliefHeight(seed, x, y - e)) / (2 * e);
+      const shade = Math.max(-1, Math.min(1, -(gx * lx + gy * ly) * 9 * L.intensity));
+      const v = Math.max(0, Math.min(1, 0.5 + 0.3 * shade + 0.32 * (f.tone - 0.5) - 0.16 * f.moist)), q = (j * n + i) * 4;
+      img.data[q] = 255 * v; img.data[q + 1] = 255 * v * 0.98; img.data[q + 2] = 255 * v * 0.95; img.data[q + 3] = 255;
     }
     g.putImageData(img, 0, 0); return c;
   }
@@ -148,7 +158,7 @@ export class LayeredRenderer {
       pat.setTransform(base.scale(k0)); g.fillStyle = pat; g.fillRect(-GUTTER, -GUTTER, CHUNK_PX + 2 * GUTTER, CHUNK_PX + 2 * GUTTER);
       const pat2 = g.createPattern(tile, 'repeat') as CanvasPattern; pat2.setTransform(base.rotate(37).scale(k0 * 1.618));
       g.save(); g.globalAlpha = 0.5; g.fillStyle = pat2; g.fillRect(-GUTTER, -GUTTER, CHUNK_PX + 2 * GUTTER, CHUNK_PX + 2 * GUTTER); g.restore();
-      g.save(); g.globalCompositeOperation = 'multiply'; g.imageSmoothingEnabled = true; g.drawImage(this.fieldImage(s.seed, x0, y1, cm), -FIELD_STEP * 1.5, -FIELD_STEP * 1.5, (FIELD_N + 3) * FIELD_STEP, (FIELD_N + 3) * FIELD_STEP); g.restore();
+      g.save(); g.globalCompositeOperation = 'soft-light'; g.imageSmoothingEnabled = true; g.drawImage(this.fieldImage(s.seed, x0, y1, cm), -FIELD_STEP * 1.5, -FIELD_STEP * 1.5, (FIELD_N + 3) * FIELD_STEP, (FIELD_N + 3) * FIELD_STEP); g.restore();
       // décor of all cells that can overlap this chunk, in mm relative to the chunk's top-left corner
       const items: DecorItem[] = [], c0 = Math.floor((x0 - DECOR_REACH_CM) / DECOR_CELL_CM), c1 = Math.floor((x0 + cm + DECOR_REACH_CM) / DECOR_CELL_CM), r0 = Math.floor((y0 - DECOR_REACH_CM) / DECOR_CELL_CM), r1 = Math.floor((y1 + DECOR_REACH_CM) / DECOR_CELL_CM);
       for (let ci = c0; ci <= c1; ci++) for (let cj = r0; cj <= r1; cj++) for (const it of (s.decor === false ? [] : this.cell(s.seed, ci, cj))) if (keepAtLod(it, lod) && (it.sizeMm / 10) * bucket >= MIN_ITEM_DEVICE_PX) items.push(it); // zoom LOD: skip items under ~2.5 device px
@@ -243,10 +253,11 @@ export class LayeredRenderer {
   }
 
   // ------------------------------------------------------------ ants
-  private atlasFor(L: number): AntAtlas {
-    const Lq = Math.max(8, Math.round((L * this.dpr) / 4) * 4) / this.dpr, key = `${Lq}|${this.dpr}`;
-    if (this.atlas?.key !== key) { this.atlas = { key, a: bakeAntAtlas(Lq, this.dpr) }; this.spritesBaked++; }
-    return this.atlas.a;
+  private atlasFor(L: number, variant: number): AntAtlas {
+    const Lq = Math.max(8, Math.round((L * this.dpr) / 4) * 4) / this.dpr, key = `${Lq}|${this.dpr}|${variant}`;
+    let a = this.atlases.get(key);
+    if (!a) { a = bakeAntAtlas(Lq, this.dpr, undefined, antPalette(variant)); this.atlases.set(key, a); this.spritesBaked++; if (this.atlases.size > PALETTE_VARIANTS * 2) this.atlases.delete(this.atlases.keys().next().value as string); }
+    return a;
   }
 
   /** Draw one frame. `ants` are read only. Returns the ant draw records (screen positions) for picking. */
@@ -254,10 +265,10 @@ export class LayeredRenderer {
     // frames that followed a bake (chunks, object sprites, atlas) are not counted: quality reacts to steady-state cost only
     if (frameMs !== null && !this.bakedLast) { this.frameMs.push(frameMs); if (this.frameMs.length > 240) this.frameMs.shift(); const nq = nextQuality(this.q, this.frameMs); if (nq !== this.q) { this.q = nq; this.frameMs = []; this.resize(); } }
     this.stats.quality = this.q; this.stats.bakedThisFrame = 0; this.stats.missing = 0; this.cam = cam; this.trace = [];
-    const tp = performance.now(), g = this.g, Q = QUALITY[this.q], plan = planAnts(cam, ants, this.look, dt, walkCycles, opts.minAntPx);
+    const tp = performance.now(), g = this.g, Q = QUALITY[this.q], plan = planAnts(cam, ants, this.look, dt, walkCycles, opts.minAntPx, opts.displayTurns ?? false);
     this.stats.planMs = this.stats.planMs * 0.95 + (performance.now() - tp) * 0.05;
     this.look = plan.look; this.draws = plan.draws;
-    const L = antLengthPx(cam.s, opts.minAntPx), atlas = this.atlasFor(L);
+    const L = antLengthPx(cam.s, opts.minAntPx), variantOf = (id: string) => (opts.colourVariants ? hash32(id) % PALETTE_VARIANTS : Math.floor(PALETTE_VARIANTS / 2)), atlas = this.atlasFor(L, variantOf(''));
     g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     const frameOf = (d: AntDraw) => d.gait === 'idle' ? Math.floor(d.cycles * 4) % framesOf('idle') : walkFrame(d.cycles);
     withLight(this.light, () => {
@@ -274,13 +285,13 @@ export class LayeredRenderer {
           for (const d of this.draws) g.ellipse(d.sx + o.x * h, d.sy + o.y * h, L * 0.42, L * 0.12, d.heading, 0, Math.PI * 2);
           g.fillStyle = 'rgba(24,14,6,0.28)'; g.fill();
         },
-        ants: () => { for (const d of this.draws) drawAntSprite(g, atlas, this.dpr, d.sx, d.sy, d.heading, d.gait as Gait, frameOf(d), { part: 'body', glints: false }); if (Q.glints) this.drawGlints(atlas.scale / this.dpr); },
+        ants: () => { for (const d of this.draws) drawAntSprite(g, this.atlasFor(L, variantOf(d.id)), this.dpr, d.sx, d.sy, d.heading, d.gait as Gait, frameOf(d), { part: 'body', glints: false }); if (Q.glints) this.drawGlints(atlas.scale / this.dpr); },
         propsHigh: () => { this.blitChunks('high'); this.drawObjects('high'); },
         lighting: () => g.drawImage(this.overlayFor(cam.w, cam.h), 0, 0, cam.w, cam.h), // light grade + vignette (+ overcast day state, baked together)
         weather: () => {},                                                           // wet ground: tint in the ground layer; overcast: in the overlay
         ui: () => {
           const n = magnification(L, cam.s); // drawn length ÷ (2.5 mm × px per mm)
-          if (n > 1.05) { const t = `螞蟻放大顯示 ×${n.toFixed(1)}`; g.font = '12px system-ui'; const w = g.measureText(t).width + 12; g.fillStyle = 'rgba(20,12,6,0.7)'; g.fillRect(8, cam.h - 28, w, 20); g.fillStyle = '#f6e7cf'; g.fillText(t, 14, cam.h - 14); }
+          if (n > 1.05) { const t = `螞蟻放大顯示 ×${n.toFixed(1)}`, yb = cam.h - (opts.uiBottom ?? 0); g.font = '12px system-ui'; const w = g.measureText(t).width + 12; g.fillStyle = 'rgba(20,12,6,0.7)'; g.fillRect(8, yb - 28, w, 20); g.fillStyle = '#f6e7cf'; g.fillText(t, 14, yb - 14); }
           if (opts.highlightEngine || opts.labels) for (const o of this.registry) {
             const [x, y] = worldToScreen(cam, o.x, o.y), r = Math.max(10, o.radiusCm * 1.6 * cam.s);
             if (opts.highlightEngine) { g.strokeStyle = 'rgba(255,224,138,0.85)'; g.lineWidth = 1.5; g.setLineDash([5, 4]); g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.stroke(); g.setLineDash([]); }

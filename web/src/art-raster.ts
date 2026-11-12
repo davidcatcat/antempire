@@ -3,7 +3,7 @@
  * Drawing only — it receives finished vector data and never reads or writes simulation data.
  */
 import type { DrawList, Paint } from './art-core.ts';
-import { ANT_EXTENT, GAITS, IDLE_FRAMES, WALK_FRAMES, antFrameDrawList, antGlints, framesOf, ANT_BODY_HEIGHT, type Gait } from './art-ant.ts';
+import { ANT_EXTENT, ANT_PALETTE, GAITS, IDLE_FRAMES, WALK_FRAMES, antFrameDrawList, antGlints, framesOf, ANT_BODY_HEIGHT, type AntPalette, type Gait } from './art-ant.ts';
 import { light } from './art-core.ts';
 
 type Ctx = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
@@ -35,14 +35,14 @@ export function drawList(g: Ctx, list: DrawList, pxPerUnit: number) {
 export interface AntAtlas { canvas: HTMLCanvasElement | ImageBitmap; shadow: HTMLCanvasElement | ImageBitmap; cellW: number; cellH: number; scale: number; walk: number; idle: number; ox: number; oy: number; rows: Gait[] }
 /** Bake every gait (one row each, GAITS order) for an ant drawn `lengthPx` long (CSS px) at device ratio `dpr`.
  *  The body sprite carries no directional light (rotation-safe); shadow offset and glints follow the active light. */
-export function bakeAntAtlas(lengthPx: number, dpr: number, rows: Gait[] = GAITS): AntAtlas {
+export function bakeAntAtlas(lengthPx: number, dpr: number, rows: Gait[] = GAITS, palette: AntPalette = ANT_PALETTE): AntAtlas {
   const scale = (lengthPx * dpr) / 100, e = ANT_EXTENT;
   const cellW = Math.ceil((e.x1 - e.x0) * scale) + 2, cellH = Math.ceil((e.y1 - e.y0) * scale) + 2, cols = Math.max(WALK_FRAMES, IDLE_FRAMES);
   const mk = () => { const c = document.createElement('canvas'); c.width = cellW * cols; c.height = cellH * rows.length; return c; };
   const canvas = mk(), shadow = mk(), g = canvas.getContext('2d') as CanvasRenderingContext2D, gs = shadow.getContext('2d') as CanvasRenderingContext2D;
   rows.forEach((kind, row) => {
     for (let i = 0; i < framesOf(kind); i++) {
-      const fr = antFrameDrawList(kind, i);
+      const fr = antFrameDrawList(kind, i, palette);
       for (const [ctx, list] of [[g, fr.body], [gs, fr.shadow]] as const) {
         ctx.setTransform(scale, 0, 0, scale, i * cellW + 1 - e.x0 * scale, row * cellH + 1 - e.y0 * scale);
         drawList(ctx, list, scale);
