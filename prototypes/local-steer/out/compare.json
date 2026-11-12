@@ -57,8 +57,8 @@
     "delta_g_mm": 1e-9,
     "outside_bracket": 0
    },
-   "cpu_ms": 9.69,
-   "wall_ms": 17.083591000000013,
+   "cpu_ms": 19.582,
+   "wall_ms": 17.17402100000001,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -89,10 +89,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 2.900656999999967
+    "judge_wall_ms": 3.8428100000000143
    },
    "replay": {
-    "hash": "6666829951c94f08",
+    "hash": "10395429c462e644",
     "rerun_identical": true,
     "reversed_input_identical": true,
     "shuffled_input_identical": true
@@ -2181,8 +2181,8 @@
     "delta_g_mm": 1e-9,
     "outside_bracket": 0
    },
-   "cpu_ms": 0.868,
-   "wall_ms": 0.8542150000012043,
+   "cpu_ms": 5.894,
+   "wall_ms": 3.5108859999999993,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -2213,10 +2213,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.3226890000005369
+    "judge_wall_ms": 1.6130290000000116
    },
    "replay": {
-    "hash": "25d220de38110244",
+    "hash": "02a5fd5c1d024144",
     "rerun_identical": true,
     "reversed_input_identical": true,
     "shuffled_input_identical": true
@@ -4230,8 +4230,8 @@
     "delta_g_mm": 1e-9,
     "outside_bracket": 0
    },
-   "cpu_ms": 0.881,
-   "wall_ms": 3.3127000000004045,
+   "cpu_ms": 1.477,
+   "wall_ms": 1.2000479999999811,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -4262,7 +4262,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.20528400000148395
+    "judge_wall_ms": 0.631635000000017
    },
    "replay": {
     "hash": "b7fbfb0f3a1709dd",
@@ -6184,8 +6184,8 @@
     "delta_g_mm": 1e-9,
     "outside_bracket": 0
    },
-   "cpu_ms": 5.857,
-   "wall_ms": 5.84723699999995,
+   "cpu_ms": 2.666,
+   "wall_ms": 1.6670400000000143,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -6216,10 +6216,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 0.27646400000048743
+    "judge_wall_ms": 0.8331119999999999
    },
    "replay": {
-    "hash": "6dedb90c1b658962",
+    "hash": "840a31c1a433299c",
     "rerun_identical": true,
     "reversed_input_identical": true,
     "shuffled_input_identical": true
@@ -8314,42 +8314,42 @@
    "final_modes": {
     "arrived": 2
    },
-   "events": 6272,
+   "events": 3140,
    "events_by_class": {
     "motion": 4,
-    "physical_contact": 3134,
+    "physical_contact": 2,
     "physical_constraint": 3134
    },
    "events_by_kind": {
     "start": 2,
-    "contact_start": 1567,
+    "contact_start": 1,
     "stop": 1,
-    "contact_end": 1567,
     "resume": 1,
     "follow": 1566,
     "free": 1566,
+    "contact_end": 1,
     "arrive": 2
    },
    "decisions": {},
-   "contacts": 1567,
+   "contacts": 1,
    "stops_contact": 1,
    "stops_conservative": 0,
    "contact_end_check": {
-    "episodes": 1567,
-    "exact": 1567,
+    "episodes": 1,
+    "exact": 1,
     "estimated": 0,
     "open": 0,
     "violations": 0,
     "problems": [],
-    "max_err_s": 0.03325791015010848,
-    "median_err_s": 0.015296545664547967,
-    "max_dev_from_mid_s": 0.01662883713239971,
+    "max_err_s": 0.08034015103372916,
+    "median_err_s": 0.08034015103372916,
+    "max_dev_from_mid_s": 0.0401698275018072,
     "tol_mm": 1e-7,
     "delta_g_mm": 1e-9,
     "outside_bracket": 0
    },
-   "cpu_ms": 160.691,
-   "wall_ms": 120.79891700000007,
+   "cpu_ms": 615.544,
+   "wall_ms": 350.582953,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -8380,10 +8380,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 1,
-    "judge_wall_ms": 244.2603339999987
+    "judge_wall_ms": 260.90470200000027
    },
    "replay": {
-    "hash": "71e67466ed21cb0b",
+    "hash": "f3847d4acdeaede0",
     "rerun_identical": true,
     "reversed_input_identical": true,
     "shuffled_input_identical": true
@@ -10414,8 +10414,8 @@
     "delta_g_mm": 1e-9,
     "outside_bracket": 0
    },
-   "cpu_ms": 0.839,
-   "wall_ms": 0.82966099999976,
+   "cpu_ms": 1.372,
+   "wall_ms": 1.3572129999997742,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -10446,7 +10446,7 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 0,
-    "judge_wall_ms": 0.16435199999978067
+    "judge_wall_ms": 0.1720620000000963
    },
    "replay": {
     "hash": "a8fbf69acb502adc",
@@ -12495,15 +12495,15 @@
     "open": 7,
     "violations": 0,
     "problems": [],
-    "max_err_s": 1.4649699231483737e-9,
-    "median_err_s": 1.4649699231483737e-9,
-    "max_dev_from_mid_s": 1.7763568394002505e-15,
+    "max_err_s": 2.1983844430358563,
+    "median_err_s": 2.1983844430358563,
+    "max_dev_from_mid_s": 1.0991922207854434,
     "tol_mm": 1e-7,
     "delta_g_mm": 1e-9,
     "outside_bracket": 0
    },
-   "cpu_ms": 15.288,
-   "wall_ms": 11.302961000001233,
+   "cpu_ms": 41.235,
+   "wall_ms": 15.95013999999992,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -12534,10 +12534,10 @@
      "note": "checkOccupancy2D with each body in its OWN lane band and layer = level; at a crossing a body inside the other lane band is reported outside_lane by this contract"
     },
     "body_contact_episodes": 8,
-    "judge_wall_ms": 3.740961999999854
+    "judge_wall_ms": 5.635221000000001
    },
    "replay": {
-    "hash": "da2b0cbf2cabfe4b",
+    "hash": "719df47ded31c8a5",
     "rerun_identical": true,
     "reversed_input_identical": true,
     "shuffled_input_identical": true
@@ -14724,53 +14724,44 @@
    "final_modes": {
     "stopped_by_contact": 100
    },
-   "events": 44984,
+   "events": 24656,
    "events_by_class": {
     "motion": 263,
-    "physical_contact": 20433,
+    "physical_contact": 105,
     "physical_constraint": 24188,
     "solver_status": 100
    },
    "events_by_kind": {
     "start": 100,
-    "contact_start": 10261,
+    "contact_start": 97,
     "stop": 126,
     "pass": 163,
     "resume": 26,
-    "contact_end": 10172,
     "follow": 12306,
     "free": 11730,
+    "contact_end": 8,
     "stalled": 100
    },
    "decisions": {},
-   "contacts": 10261,
+   "contacts": 97,
    "stops_contact": 73,
    "stops_conservative": 0,
    "contact_end_check": {
-    "episodes": 10261,
-    "exact": 10172,
+    "episodes": 97,
+    "exact": 8,
     "estimated": 0,
     "open": 89,
-    "violations": 8,
-    "problems": [
-     "L0039-L0094@2.5289678061161838: contact_end at 2.5943146348812034 s, but the motion never separates (no bracket)",
-     "L0039-L0094@2.594314640767201: contact_end at 2.59440735635411 s, but the motion never separates (no bracket)",
-     "L0039-L0094@2.59440736224376: contact_end at 2.5945019850990794 s, but the motion never separates (no bracket)",
-     "L0039-L0094@2.594501990992528: contact_end at 2.5945932045391045 s, but the motion never separates (no bracket)",
-     "L0039-L0094@2.5945932104362854: contact_end at 2.594684813499514 s, but the motion never separates (no bracket)",
-     "L0039-L0094@2.5946848194005128: contact_end at 2.5947762327100685 s, but the motion never separates (no bracket)",
-     "L0039-L0094@2.594776238614948: contact_end at 2.594867196089291 s, but the motion never separates (no bracket)",
-     "L0039-L0094@2.594867201998103: contact_end at 2.5949576061623225 s, but the motion never separates (no bracket)"
-    ],
-    "max_err_s": 0.03326563223370593,
-    "median_err_s": 0.014386799703518083,
-    "max_dev_from_mid_s": 0.016632698174170457,
+    "violations": 0,
+    "problems": [],
+    "max_err_s": 1.858837162076827,
+    "median_err_s": 0.056132866352455846,
+    "max_dev_from_mid_s": 0.9294185809795907,
     "tol_mm": 1e-7,
     "delta_g_mm": 1e-9,
     "outside_bracket": 0
    },
-   "cpu_ms": 1214.589,
-   "wall_ms": 1012.0706439999922,
+   "cpu_ms": 4175.422,
+   "wall_ms": 3717.4895340000003,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -14795,10 +14786,10 @@
     "max_obstacle_penetration_mm": 0,
     "occupancy2d": null,
     "body_contact_episodes": 97,
-    "judge_wall_ms": 20271.169775999995
+    "judge_wall_ms": 20916.580722000002
    },
    "replay": {
-    "hash": "0b164add7cd69f7d",
+    "hash": "52e5fb7692e7519b",
     "rerun_identical": true,
     "reversed_input_identical": true,
     "shuffled_input_identical": true
@@ -16897,44 +16888,44 @@
    "final_modes": {
     "stopped_by_contact": 1000
    },
-   "events": 107671,
+   "events": 74963,
    "events_by_class": {
     "motion": 10296,
-    "physical_contact": 33725,
+    "physical_contact": 1017,
     "physical_constraint": 62650,
     "solver_status": 1000
    },
    "events_by_kind": {
     "start": 1000,
-    "contact_start": 17355,
+    "contact_start": 1001,
     "stop": 2439,
     "resume": 1439,
     "pass": 9296,
-    "contact_end": 16370,
     "follow": 30562,
     "free": 28210,
+    "contact_end": 16,
     "stalled": 1000
    },
    "decisions": {},
-   "contacts": 17355,
+   "contacts": 1001,
    "stops_contact": 88,
    "stops_conservative": 0,
    "contact_end_check": {
-    "episodes": 17355,
-    "exact": 16370,
+    "episodes": 1001,
+    "exact": 16,
     "estimated": 0,
     "open": 985,
     "violations": 0,
     "problems": [],
-    "max_err_s": 0.03578755496894992,
-    "median_err_s": 0.013656402659073752,
-    "max_dev_from_mid_s": 0.017892580831296634,
+    "max_err_s": 3.3808438917014287,
+    "median_err_s": 0.06820335756114848,
+    "max_dev_from_mid_s": 1.6904219457918912,
     "tol_mm": 1e-7,
     "delta_g_mm": 1e-9,
     "outside_bracket": 0
    },
-   "cpu_ms": 2644.166,
-   "wall_ms": 3940.748683999991,
+   "cpu_ms": 10945.268,
+   "wall_ms": 10759.303535,
    "fallback_intervals": 0,
    "unresolved": 0,
    "verify": {
@@ -16950,7 +16941,7 @@
    },
    "judge": "not run",
    "replay": {
-    "hash": "ea1cb2160dd06ab8",
+    "hash": "5e31e69ad31e807b",
     "rerun_identical": null,
     "reversed_input_identical": true,
     "shuffled_input_identical": null

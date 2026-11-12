@@ -256,11 +256,14 @@ export function steer2D(input: SteerInput): SteerResult {
     if (input.decision_clock === 'individual') throw new SteerRefused("'none' is the PH-3b solver itself: it takes no decisions, so it has no decision clock");
     if (input.control && (input.control.spawn || input.control.exit)) throw new SteerRefused("'none' is the PH-3b solver itself: it has no spawn / exit control rules (use N_no_yield as the no-yield control)");
     // the baseline IS PH-3b: no decision layer, nothing re-implemented
+    // stats.contacts = contact EPISODES (PH-3b stats.contact_episodes), as for A/B/C (one count per contact_start).
+    // PH-3b's own stats.contacts counts velocity-constraint switch-ons (solver state: 1,567 for one sliding contact in
+    // crossing-flank), which is not comparable with the candidates' column (docs/wp4-local-avoidance.md §4.2).
     const res = solve2D(input);
     const agents: Record<string, SteerAgentOut> = {};
     for (const id of Object.keys(res.agents).sort()) { const a = res.agents[id]; agents[id] = { ...a, blocked_reports: 0 }; }
     const stalled = res.stats.stalled;
-    return { policy: 'none', agents, events: res.events.map((e) => ({ ...e })), ph3b: res, stats: { decision_instants: 0, decisions: {}, probes: 0, pair_hit_evals: res.stats.pair_hit_evals, physics_rounds_max: 0, fallback_intervals: 0, stops_contact: res.events.filter((e) => e.kind === 'stop' && /^contact/.test(e.detail ?? '')).length, stops_static: res.events.filter((e) => e.kind === 'stop' && /static geometry/.test(e.detail ?? '')).length, contacts: res.stats.contacts, arrived: res.stats.arrived, stalled, blocked_reports: {}, geometry_halts: 0, unresolved: res.stats.unresolved, t_end_s: res.stats.t_end_s, stops_conservative: 0, contact_ends_exact: res.events.filter((e) => e.kind === 'contact_end').length, contact_ends_estimated: 0, entered: 0, exited: 0, entry_blocked_instants: 0 } };
+    return { policy: 'none', agents, events: res.events.map((e) => ({ ...e })), ph3b: res, stats: { decision_instants: 0, decisions: {}, probes: 0, pair_hit_evals: res.stats.pair_hit_evals, physics_rounds_max: 0, fallback_intervals: 0, stops_contact: res.events.filter((e) => e.kind === 'stop' && /^contact/.test(e.detail ?? '')).length, stops_static: res.events.filter((e) => e.kind === 'stop' && /static geometry/.test(e.detail ?? '')).length, contacts: res.stats.contact_episodes, arrived: res.stats.arrived, stalled, blocked_reports: {}, geometry_halts: 0, unresolved: res.stats.unresolved, t_end_s: res.stats.t_end_s, stops_conservative: 0, contact_ends_exact: res.events.filter((e) => e.kind === 'contact_end').length, contact_ends_estimated: 0, entered: 0, exited: 0, entry_blocked_instants: 0 } };
   }
   return runPolicy(input);
 }
