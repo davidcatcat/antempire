@@ -167,7 +167,9 @@ const dirHash = (d) => { const h = crypto.createHash('sha256'); const walk = (p)
         else if (c.other.length < 20) c.other.push(`seed ${seed} #${j} ${a.event_id} (${a.kind})`);
       }
       if (canon(n.payload) === canon(w.payload) && n.payload_sha256 === w.hash) c.payload_identical++;
-      const strip = (p) => { const q = JSON.parse(JSON.stringify(p)); delete q.state.log; return canon(q); };
+      // the event-chain head (payload schema 2, docs/save-format-v2.md §5b) is a hash over the same events, so it carries
+      // the same rh_percent difference as the log hash chain; its genesis and count are still compared
+      const strip = (p) => { const q = JSON.parse(JSON.stringify(p)); delete q.state.log; if (q.chain) delete q.chain.head; return canon(q); };
       if (strip(n.payload) === strip(w.payload)) c.state_without_log_identical++; else c.other.push(`seed ${seed}: 48 h state (without the log hash chain) differs`);
     });
     info.p0a2_node_vs_worker = { node: p0node[0].platform, ...c, other: c.other.slice(0, 5), arm64: 'not verified', note: 'rh_percent (logged only, read by no decision) differs by <= max_rh_diff; the log hash chain therefore differs; byte identity across environments not claimed' };

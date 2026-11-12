@@ -16,25 +16,39 @@
  *    synthetic temperature and, for drawing only, the sun altitude by the general method (engine/clock/solar.ts).
  * The frame and follow copies are read-only observation (CLAUDE.md §2.4): nothing in them reaches the world.
  * Pacing (speed, pause, frame rate) only chooses the advanceTo targets (runtime.ts); it cannot change results.
+ *
+ * Payload schema 2 (Owner ruling #200, option C; docs/save-format-v2.md §5): every emitted protocol event also advances
+ * the event-chain commitment (chain.ts, antempire.event-chain.v1, the same definition as the synthetic world) and the
+ * payload carries save_meta (world kind p0a2-24h-v1, trusted initial conditions, species / environment fingerprints,
+ * fork lineage) and chain (head + count). Recording the chain draws nothing and changes no event or world state; restore
+ * checks the chain's shape, genesis and count (the head itself only by Node recomputation, cli/verify-save.ts).
  */
 import raw from '../../p0a2-24h/params.json' with { type: 'json' };
 import { World, exactOfMs, SOURCE_ID } from '../../p0a2-24h/world.ts';
+import type { ExactTime } from '../../../engine/scheduler/world-events.ts';
 import { canon } from '../../p0a2-24h/canon.ts';
 import { applyVariant, buildModel } from '../../p0a2-24h/params.ts';
 import { dayOf, MS_PER_DAY } from '../../p0a2-24h/environment.ts';
 import { solarAltitude } from '../../../engine/clock/solar.ts';
 import { dateOfDay } from '../../../engine/clock/time-frames.ts';
-import { hashJson } from './sha256.ts';
+import { canonicalJson, hashJson } from './sha256.ts';
+import { chainNext, chainShapeProblem, chainStart, type ChainState } from './chain.ts';
 import { P0A2_CODE_FILES, P0A2_CODE_SHA256 } from './p0a2-code-hash.ts';
 
 /** the same strings as the synthetic world (worker/params.ts; tests check equality), kept here so that a change of the
  *  synthetic world's parameters does not change the P0-A2 code hash */
 export const LABEL_ZH = '非正式實驗世界／不屬於正式遊戲歷史';
 export const SNAPSHOT_SCHEMA = 'antempire.experiment-world-snapshot.v1';
-/** bump on any change of what this adapter emits or stores (the code hash also changes with every module it runs) */
+/** bump the engine version or the payload schema on any change of what this adapter emits or stores (the code hash
+ *  also changes with every module it runs) */
 export const P0A2_ENGINE_VERSION = 'experiment-p0a2-24h/1';
-export const P0A2_SCHEMA_VERSION = 1;
+/** payload schema 2 (Owner ruling #200): payload.save_meta + payload.chain (event-chain commitment). Snapshots of
+ *  schema 1 are refused (no chain; kept unchanged, no migration path). docs/save-format-v2.md §6. */
+export const P0A2_SCHEMA_VERSION = 2;
+/** the runtime / protocol world kind (init command, frames, payload.world_kind) */
 export const P0A2_WORLD_KIND = 'p0a2';
+/** the save-format world kind (payload.save_meta.world_kind; the Node verifier's registry id, world-kinds.ts) */
+export const P0A2_SAVE_WORLD_KIND = 'p0a2-24h-v1';
 /** the weather scenario of the experiment page (params.json; synthetic: true); the reference variant of the file is used */
 export const P0A2_SCENARIO = 'taichung-march-ref';
 /** product label of this world (Owner #201): a candidate / experiment world, never an official Day0 */
@@ -49,12 +63,49 @@ const WORLD_ID_RE = /^exp-[A-Za-z0-9._-]{1,60}$/;
 type J = { [k: string]: unknown };
 
 const RAW: unknown = raw;
+/** the integer millisecond of an exact instant (inverse of exactOfMs); refuses instants off the millisecond grain */
+function msOfExact(e: ExactTime): number {
+  const ok = typeof e === 'object' && e !== null && Number.isSafeInteger(e.day) && e.day >= 0 && Number.isSafeInteger(e.us) && e.us >= 0 && e.us % 1000 === 0 && e.us_lo === 0;
+  if (!ok) refuse('BAD_TIME', 'an exact instant of the P0-A2 world must be a whole millisecond (us multiple of 1000, us_lo 0)');
+  const ms = e.day * MS_PER_DAY + e.us / 1000;
+  if (e.us / 1000 >= MS_PER_DAY) refuse('BAD_TIME', 'us beyond one day');
+  return ms;
+}
 const VARIANT: string = (raw as { reference_variant: string }).reference_variant;
 /** the model of this runtime (validated once; buildModel refuses an incompletely labelled parameter file) */
 export const P0A2_PARAMS_SHA = buildModel(RAW, P0A2_SCENARIO, VARIANT).params_sha;
 /** nest-to-source distance of the model (params.json source_distance_mm, cm); the route's DIRECTION is not modelled */
 const SOURCE_DISTANCE_CM = (applyVariant(RAW, VARIANT).parameters.source_distance_mm.value as number) / 10;
 export const P0A2_RULES_FINGERPRINT = hashJson({ engine_version: P0A2_ENGINE_VERSION, schema_version: P0A2_SCHEMA_VERSION, world_kind: P0A2_WORLD_KIND, params_sha256: P0A2_PARAMS_SHA, code_sha256: P0A2_CODE_SHA256, code_files: [...P0A2_CODE_FILES], scenario: P0A2_SCENARIO, variant: VARIANT });
+/** id of the environment this world runs in: the synthetic weather scenario of params.json plus its site */
+export const P0A2_ENVIRONMENT_ID = `p0a2-weather/${P0A2_SCENARIO}`;
+/** SHA-256 of the environment definition (canonical {scenario, site, weather_scenario} of params.json) */
+export const P0A2_ENVIRONMENT_SHA = hashJson({ scenario: P0A2_SCENARIO, site: (raw as { site: unknown }).site, weather_scenario: (raw as { weather_scenarios: Record<string, unknown> }).weather_scenarios[P0A2_SCENARIO] } as never);
+
+/**
+ * Save metadata of a P0-A2 world (payload schema 2, docs/save-format-v2.md §2 and §5): the world kind, the TRUSTED
+ * initial conditions a verifier recomputes from (world id, seed, t = 0, this build's parameter-file SHA-256, scenario,
+ * variant), species / environment fingerprints and the fork lineage. Constant for a world.
+ */
+export interface P0a2SaveMeta {
+  format: 'antempire.experiment-save-meta.v1';
+  world_kind: typeof P0A2_SAVE_WORLD_KIND;
+  initial: { world_id: string; seed: number; t_sim: 0; params_sha256: string; scenario: string; variant: string; how: string };
+  /** P0-A2 has no official species parameter file: null, with the reason (not fabricated) */
+  species: { id: null; fingerprint: null; note: string };
+  environment: { id: string; fingerprint: string; synthetic: true; note: string };
+  /** fork records, oldest first (docs/save-format-v2.md §6). This runtime implements no fork: always empty. */
+  lineage: never[];
+}
+export function p0a2SaveMetaOf(worldId: string, seed: number): P0a2SaveMeta {
+  return {
+    format: 'antempire.experiment-save-meta.v1', world_kind: P0A2_SAVE_WORLD_KIND,
+    initial: { world_id: worldId, seed, t_sim: 0, params_sha256: P0A2_PARAMS_SHA, scenario: P0A2_SCENARIO, variant: VARIANT, how: 'P0a2ExperimentWorld.create(world_id, seed) with the runtime\'s own prototypes/p0a2-24h/params.json (scenario and reference variant above)' },
+    species: { id: null, fingerprint: null, note: 'P0-A2 原型沒有正式物種參數檔（species/*.json）；個體參數在原型參數檔 prototypes/p0a2-24h/params.json（原型、非正式），其 SHA-256 見 initial.params_sha256' },
+    environment: { id: P0A2_ENVIRONMENT_ID, fingerprint: P0A2_ENVIRONMENT_SHA, synthetic: true, note: '合成天氣情境（params.json weather_scenarios，synthetic: true）＋示意地點；光照由一般方法計算' },
+    lineage: [],
+  };
+}
 
 export interface P0a2Event {
   seq: number; event_id: string; kind: string; t_sim: number; exact: { day: number; us: number; us_lo: number }; round: number; entity: string | null;
@@ -66,6 +117,8 @@ export interface P0a2Payload {
   params_sha256: string; code_sha256: string; scenario: string; variant: string; t_sim: number; seq: number;
   /** World.snapshot() of prototypes/p0a2-24h (complete state: individuals, queue, log hash chain, ledger, statistics) */
   state: J;
+  /** payload schema 2: constant save metadata and the event-chain commitment over every event emitted so far */
+  save_meta: P0a2SaveMeta; chain: ChainState;
 }
 export interface P0a2Snapshot {
   schema: string; label: string; official: false; world_id: string; seed: number; rules_fingerprint: string; engine_version: string; schema_version: number;
@@ -80,17 +133,23 @@ const TRANSIT = new Set(['to_entrance', 'from_entrance']);
 export class P0a2ExperimentWorld {
   readonly worldId: string; readonly seed: number; readonly fingerprint = P0A2_RULES_FINGERPRINT;
   readonly world: World;
-  private constructor(worldId: string, w: World) { this.worldId = worldId; this.seed = w.seed; this.world = w; }
+  private readonly meta: P0a2SaveMeta;
+  private chain: ChainState;
+  private constructor(worldId: string, w: World, chain: ChainState) { this.worldId = worldId; this.seed = w.seed; this.world = w; this.meta = p0a2SaveMetaOf(worldId, w.seed); this.chain = { ...chain }; }
 
   static create(worldId: string, seed: number): { world: P0a2ExperimentWorld; events: P0a2Event[] } {
     if (typeof worldId !== 'string' || !WORLD_ID_RE.test(worldId)) refuse('BAD_WORLD_ID', `world_id must match ${WORLD_ID_RE} (experiment worlds only)`);
     if (!Number.isSafeInteger(seed) || seed < 0 || seed > 0xffffffff) refuse('BAD_SEED', 'seed must be an integer in [0, 2^32)');
-    const x = new P0a2ExperimentWorld(worldId, World.create(RAW, P0A2_SCENARIO, seed, { captureLog: true, variant: VARIANT }));
+    const x = new P0a2ExperimentWorld(worldId, World.create(RAW, P0A2_SCENARIO, seed, { captureLog: true, variant: VARIANT }), chainStart({ world_kind: P0A2_SAVE_WORLD_KIND, world_id: worldId, seed, rules_fingerprint: P0A2_RULES_FINGERPRINT }));
     return { world: x, events: x.advanceTo(0).events };
   }
 
   tSim(): number { return this.world.t_now / 1000; }
   seqNo(): number { return this.world.logCount; }
+  /** the exact instant of the world time (integer milliseconds) */
+  nowExact(): ExactTime { return exactOfMs(this.world.t_now); }
+  /** the event-chain commitment over every event emitted so far (copy) */
+  chainState(): ChainState { return { ...this.chain }; }
   antIds(): string[] { return Object.keys(this.world.view().workers).sort(); }
 
   /**
@@ -101,7 +160,12 @@ export class P0a2ExperimentWorld {
   advanceTo(t: number, maxEvents = Infinity): { events: P0a2Event[]; done: boolean } {
     if (typeof t !== 'number' || !Number.isFinite(t) || t < 0) refuse('BAD_TIME', 't must be a finite number >= 0');
     if (t < this.tSim()) refuse('TIME_BACKWARDS', `t ${t} is before the world time ${this.tSim()}`);
-    const end = Math.max(this.world.t_now, Math.floor(t * 1000)), first = this.world.logCount;
+    return this.advanceMs(Math.max(this.world.t_now, Math.floor(t * 1000)), maxEvents);
+  }
+
+  /** advance to an integer world millisecond `end` (>= the world time); see advanceTo */
+  private advanceMs(end: number, maxEvents: number): { events: P0a2Event[]; done: boolean } {
+    const first = this.world.logCount;
     let done = true;
     if (maxEvents === Infinity || end === this.world.t_now) this.world.advanceTo(end);
     else for (let at = this.world.t_now; at < end;) {
@@ -111,18 +175,29 @@ export class P0a2ExperimentWorld {
     return { events: this.drain(first), done };
   }
 
+  /** advanceTo with the end given as an exact instant (the Node verifier stops at a save's exact `now`); the instant
+   *  must be a whole millisecond (the world's time grain), otherwise refused */
+  advanceToExact(end: ExactTime, maxEvents = Infinity): { events: P0a2Event[]; done: boolean } {
+    const ms = msOfExact(end);
+    if (ms < this.world.t_now) refuse('TIME_BACKWARDS', `t ${ms / 1000} is before the world time ${this.tSim()}`);
+    return this.advanceMs(ms, maxEvents);
+  }
+
   private drain(first: number): P0a2Event[] {
     const lines = this.world.lines!.splice(0), out: P0a2Event[] = [];
-    if (first + lines.length !== this.world.logCount) refuse('INTERNAL', 'log lines and log count disagree');
+    if (first + lines.length !== this.world.logCount || this.chain.count !== first) refuse('INTERNAL', 'log lines, log count and event chain disagree');
+    let head = this.chain.head;
     for (let i = 0; i < lines.length; i++) {
       const e = JSON.parse(lines[i]) as { t: number; r: number; q: number; id: string; k: string; a: string; p: J };
-      out.push({ seq: first + i, event_id: e.id, kind: e.k, t_sim: e.t / 1000, exact: exactOfMs(e.t), round: e.r, entity: e.a === 'env' ? null : e.a, data: { ...e.p, tie_q: e.q }, rng: null, world_id: this.worldId, seed: this.seed, rules_fingerprint: this.fingerprint, engine_version: P0A2_ENGINE_VERSION, schema_version: P0A2_SCHEMA_VERSION, official: false, label: LABEL_ZH });
+      const ev: P0a2Event = { seq: first + i, event_id: e.id, kind: e.k, t_sim: e.t / 1000, exact: exactOfMs(e.t), round: e.r, entity: e.a === 'env' ? null : e.a, data: { ...e.p, tie_q: e.q }, rng: null, world_id: this.worldId, seed: this.seed, rules_fingerprint: this.fingerprint, engine_version: P0A2_ENGINE_VERSION, schema_version: P0A2_SCHEMA_VERSION, official: false, label: LABEL_ZH };
+      head = chainNext(head, ev); out.push(ev);
     }
+    this.chain = { algo: this.chain.algo, genesis: this.chain.genesis, head, count: this.chain.count + lines.length };
     return out;
   }
 
   payload(): P0a2Payload {
-    return { world_kind: P0A2_WORLD_KIND, world_id: this.worldId, seed: this.seed, engine_version: P0A2_ENGINE_VERSION, schema_version: P0A2_SCHEMA_VERSION, rules_fingerprint: this.fingerprint, params_sha256: P0A2_PARAMS_SHA, code_sha256: P0A2_CODE_SHA256, scenario: P0A2_SCENARIO, variant: VARIANT, t_sim: this.tSim(), seq: this.seqNo(), state: JSON.parse(this.world.snapshot()) as J };
+    return { world_kind: P0A2_WORLD_KIND, world_id: this.worldId, seed: this.seed, engine_version: P0A2_ENGINE_VERSION, schema_version: P0A2_SCHEMA_VERSION, rules_fingerprint: this.fingerprint, params_sha256: P0A2_PARAMS_SHA, code_sha256: P0A2_CODE_SHA256, scenario: P0A2_SCENARIO, variant: VARIANT, t_sim: this.tSim(), seq: this.seqNo(), state: JSON.parse(this.world.snapshot()) as J, save_meta: p0a2SaveMetaOf(this.worldId, this.seed), chain: this.chainState() };
   }
   /** a snapshot at the current consistent boundary (between two advanceTo calls); a pure read */
   snapshot(): P0a2Snapshot {
@@ -136,6 +211,7 @@ export class P0a2ExperimentWorld {
     const keys = Object.keys(s).sort().join();
     if (keys !== 'engine_version,label,official,payload,payload_sha256,rules_fingerprint,schema,schema_version,seed,seq,t_sim,world_id') refuse('BAD_SNAPSHOT', `unexpected fields ${keys}`);
     if (s.schema !== SNAPSHOT_SCHEMA) refuse('SCHEMA_MISMATCH', `schema ${String(s.schema)} is not ${SNAPSHOT_SCHEMA}`);
+    if (s.schema_version === 1) refuse('SCHEMA_MISMATCH', `schema_version 1 snapshots carry no event-chain commitment and cannot be continued by this runtime (schema_version ${P0A2_SCHEMA_VERSION}); there is no migration path; the saved data is not changed and can still be exported`);
     if (s.schema_version !== P0A2_SCHEMA_VERSION) refuse('SCHEMA_MISMATCH', `schema_version ${String(s.schema_version)} is not ${P0A2_SCHEMA_VERSION}`);
     if (s.label !== LABEL_ZH || s.official !== false) refuse('NOT_EXPERIMENT', 'a snapshot must be labelled non-official (official:false)');
     if (s.engine_version !== P0A2_ENGINE_VERSION) refuse('ENGINE_MISMATCH', `engine_version ${String(s.engine_version)} is not ${P0A2_ENGINE_VERSION}`);
@@ -143,7 +219,7 @@ export class P0a2ExperimentWorld {
     try { h = hashJson(s.payload); } catch (e) { return refuse('HASH_MISMATCH', `payload is not canonical JSON data (${(e as Error).message})`); }
     if (h !== s.payload_sha256) refuse('HASH_MISMATCH', 'payload_sha256 does not match the payload');
     const p = s.payload;
-    if (!p || typeof p !== 'object' || Object.keys(p).sort().join() !== 'code_sha256,engine_version,params_sha256,rules_fingerprint,scenario,schema_version,seed,seq,state,t_sim,variant,world_id,world_kind') refuse('BAD_SNAPSHOT', 'payload fields');
+    if (!p || typeof p !== 'object' || Object.keys(p).sort().join() !== 'chain,code_sha256,engine_version,params_sha256,rules_fingerprint,save_meta,scenario,schema_version,seed,seq,state,t_sim,variant,world_id,world_kind') refuse('BAD_SNAPSHOT', 'payload fields');
     for (const k of ['world_id', 'seed', 'rules_fingerprint', 'engine_version', 'schema_version', 't_sim', 'seq'] as const) if (p[k] !== s[k]) refuse('HEADER_MISMATCH', `${k} of the header and the payload differ`);
     if (p.world_kind !== P0A2_WORLD_KIND) refuse('BAD_SNAPSHOT', 'world_kind');
     if (s.rules_fingerprint !== P0A2_RULES_FINGERPRINT || p.params_sha256 !== P0A2_PARAMS_SHA || p.code_sha256 !== P0A2_CODE_SHA256 || p.scenario !== P0A2_SCENARIO || p.variant !== VARIANT) refuse('FINGERPRINT_MISMATCH', 'the snapshot was made under other rules, parameters or code than this runtime');
@@ -157,7 +233,14 @@ export class P0a2ExperimentWorld {
     for (const [id, x] of Object.entries(st.workers ?? {})) if (!x.pending || !live.has(x.pending)) refuse('BAD_STATE', `${id}: its pending event is not in the queue`);
     if ((st.queue ?? []).some((e) => !(e.t > (st.t_now as number)))) refuse('BAD_STATE', 'a queued event is not after the world time');
     if (w.snapshot() !== canon(p.state)) refuse('BAD_STATE', 'state does not survive a restore round trip');
-    return new P0a2ExperimentWorld(p.world_id, w);
+    // payload schema 2: save metadata and event-chain commitment (the head itself is checked only by recomputation)
+    if (Array.isArray((p.save_meta as { lineage?: unknown } | null)?.lineage) && p.save_meta.lineage.length > 0) refuse('FORK_UNSUPPORTED', 'the snapshot records a fork; this runtime implements no fork (docs/save-format-v2.md §6)');
+    if (canonicalJson(p.save_meta as never) !== canonicalJson(p0a2SaveMetaOf(p.world_id, p.seed) as never)) refuse('META_MISMATCH', 'save_meta does not match the world id, seed, parameters, scenario and variant (initial conditions / versions)');
+    const cp = chainShapeProblem(p.chain);
+    if (cp) refuse('CHAIN_MISMATCH', cp);
+    if (p.chain.genesis !== chainStart({ world_kind: P0A2_SAVE_WORLD_KIND, world_id: p.world_id, seed: p.seed, rules_fingerprint: p.rules_fingerprint }).genesis) refuse('CHAIN_MISMATCH', 'chain genesis does not belong to this world, seed and rules');
+    if (p.chain.count !== p.seq) refuse('CHAIN_MISMATCH', `chain count ${p.chain.count} != seq ${p.seq}`);
+    return new P0a2ExperimentWorld(p.world_id, w, p.chain);
   }
 
   /** read-only copy of one worker's full record (follow): own physiology, traits, route memory, experienced contacts */

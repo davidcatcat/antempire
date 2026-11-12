@@ -67,6 +67,11 @@ Owner 2026-11-08 授權非正式實驗世界的本地即時存檔：
 - 快照由 Worker 在一致事件邊界產生，經 client 傳給儲存模組；Worker 匯入圖本身仍禁止所有持久化 API。
 - 存檔格式、原子性、回復點、版本遷移、多分頁鎖與驗收測試見 `docs/experimental-save-system.md`（SAVE-0）。
 
+## 4d. Node 驗證器例外（Owner 裁示 #200，選項 C）
+
+- `prototypes/continuous-world/worker-boundary.json` 的 `node_verifier.files` 只列 `cli/verify-save.ts`：它是唯一可以匯入 Worker 目錄的 `cli/` 檔案，且只匯入 Worker 目錄（不匯入其他 `cli/`、`engine/` 正式工具）；檔案內不得出現寫檔、子程序、網路 API 或正式存檔路徑（`forbidden_in_files`，`tests/worker-boundary.test.ts` 以真實掃描與負面樣本檢查）。
+- 驗證器經由 `world-kinds.ts` 使用與 Worker 相同的核心重算；登錄 P0-A2 世界後，它的匯入圖（間接）也到達白名單內的 P0-A2 核心檔（§4c）。這沒有擴大白名單：到達的仍只是 Worker 已允許的純模組，例外仍只限這一個檔案。格式與狀態見 [`save-format-v2.md`](save-format-v2.md)。
+
 ## 5. 驗證
 
 | 項目 | 何時 | 方法 |
