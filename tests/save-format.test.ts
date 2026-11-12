@@ -133,6 +133,22 @@ ok(!(await parseImport(text.slice(0, text.length / 2), RT, reg1)).ok, 'import re
   ok(c.request('hidden') === null && c.request('pagehide') === null, 'hidden/pagehide skip when nothing changed');
   const pm = c.request('manual'); ok(pm !== null, 'manual 立即存檔 always saves'); resolveSave!({ ok: true, value: 1 }); await pm;
   const pp = c.request('menu'); ok(pp !== null, 'returning to the menu always saves first'); resolveSave!({ ok: true, value: 1 }); await pp;
+  // review finding (#179): a menu request while an interval autosave is in flight must resolve with the follow-up save
+  {
+    const calls3: SaveReason[] = []; const res3: ((r: Result<unknown>) => void)[] = [];
+    const c3 = new AutosaveController({ now: () => 100_000, save: (r) => { calls3.push(r); return new Promise((res) => { res3.push(res); }); } });
+    c3.markDirty(); const pi = c3.request('interval');
+    c3.markDirty(); const pmenu = c3.request('menu');
+    ok(pi && pmenu && pmenu !== pi, 'a menu request during an in-flight save does not return the older in-flight promise');
+    let menuDone = false; void pmenu!.then(() => { menuDone = true; });
+    res3[0]({ ok: true, value: 'interval' }); await pi; await new Promise((r) => setTimeout(r, 0));
+    ok(!menuDone && calls3.join() === 'interval,menu', 'the menu promise is still pending while the follow-up menu save runs');
+    let settledDone = false; void c3.settled().then(() => { settledDone = true; }); await new Promise((r) => setTimeout(r, 0));
+    ok(!settledDone, 'settled() waits for the queued follow-up save');
+    res3[1]({ ok: false, code: 'write_failed', message: 'disk' }); const rm = await pmenu!; await new Promise((r) => setTimeout(r, 0));
+    ok(rm && !rm.ok && rm.code === 'write_failed', 'the menu request reports the follow-up save result (here its failure), never the older success');
+    ok(settledDone && c3.state.text === '儲存失敗', 'settled() resolves after the follow-up save, and the UI shows its failure');
+  }
   const c2 = new AutosaveController({ now: () => 0, save: async () => { throw new Error('crash'); } }); c2.markDirty();
   const r2 = await c2.request('manual'); ok(r2 && !r2.ok && c2.state.text === '儲存失敗', 'a thrown save error becomes 儲存失敗, never 已儲存');
 }

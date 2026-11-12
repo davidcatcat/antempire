@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>螞蟻帝國・實驗模式</title>
+<style>
+  /* V6-2 experiment mode: the same layered garden view, driven by the non-official experiment Worker */
+  :root { --bar: rgba(22,16,10,0.55); --panel: rgba(24,18,12,0.9); --bar-ink: #f3ead6; --muted: #cbbd9f; --accent: #e9b949; --line: rgba(243,234,214,0.22); --exp-bg: rgba(246,227,209,0.92); --exp-fg: #6b3410; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #3d2c1d; color: var(--bar-ink); font-family: system-ui, -apple-system, "Noto Sans TC", sans-serif; overflow: hidden; }
+  #scene { position: fixed; inset: 0; width: 100vw; height: 100dvh; display: block; touch-action: none; cursor: grab; }
+  .bar { position: fixed; left: 0; right: 0; background: var(--bar); color: var(--bar-ink); display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); backdrop-filter: blur(4px); z-index: 2; }
+  #top { top: 0; padding-block: calc(4px + env(safe-area-inset-top, 0px)) 4px; background: linear-gradient(rgba(22,16,10,0.62), rgba(22,16,10,0.38)); }
+  #bottom { bottom: 0; padding-block: 4px calc(6px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(rgba(22,16,10,0.38), rgba(22,16,10,0.66)); }
+  h1 { font-size: 15px; margin: 0 4px 0 0; letter-spacing: 0.05em; }
+  select, button, a.btn { font: inherit; font-size: 13px; min-height: 32px; color: var(--bar-ink); background: rgba(255,255,255,0.08); border: 1px solid var(--line); border-radius: 8px; padding: 0 9px; }
+  button:disabled { opacity: 0.4; }
+  button.primary { background: var(--accent); color: #2a1d0b; border-color: var(--accent); font-weight: 600; min-width: 64px; }
+  option { color: #1d160e; }
+  a { color: var(--accent); }
+  a.btn { display: inline-flex; align-items: center; text-decoration: none; }
+  label { font-size: 12.5px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+  #badge { font-size: 11px; color: var(--exp-fg); background: var(--exp-bg); border-radius: 6px; padding: 2px 7px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 260px; }
+  #clock { flex: 1 1 200px; min-width: 120px; accent-color: var(--accent); }
+  #time { font-size: 12px; font-variant-numeric: tabular-nums; flex-basis: 100%; color: var(--muted); }
+  .chip { position: fixed; right: max(10px, env(safe-area-inset-right, 0px)); background: var(--panel); border-radius: 8px; padding: 4px 8px; font-size: 12px; z-index: 2; }
+  #log { position: fixed; right: max(10px, env(safe-area-inset-right, 0px)); top: 84px; width: min(460px, calc(100vw - 20px)); max-height: 40vh; overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; font: 11px ui-monospace, monospace; white-space: pre-wrap; z-index: 3; }
+  #status { font-size: 12px; color: var(--muted); flex-basis: 100%; }
+  #exp-flag { font-size: 12px; font-weight: 700; color: #2a1d0b; background: #f0b25a; border-radius: 6px; padding: 2px 8px; }
+  #layers { position: fixed; top: 44px; right: max(10px, env(safe-area-inset-right, 0px)); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; z-index: 4; font-size: 13px; }
+  #layers .legend-tag { max-width: 220px; white-space: normal; }
+  #card { position: fixed; left: max(10px, env(safe-area-inset-left, 0px)); top: 84px; max-width: min(420px, calc(100vw - 20px)); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 13px; line-height: 1.6; z-index: 3; }
+  #card .muted { color: var(--muted); font-size: 12px; }
+  #card .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+  #banner, #toast { position: fixed; left: 50%; transform: translateX(-50%); max-width: min(640px, calc(100vw - 24px)); background: rgba(20,15,10,0.82); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 13px; line-height: 1.5; text-align: center; z-index: 3; }
+  #banner { top: 42%; } #toast { top: 18%; font-size: 12px; color: var(--muted); }
+  #about { position: fixed; inset: 84px max(10px, env(safe-area-inset-right, 0px)) 120px max(10px, env(safe-area-inset-left, 0px)); max-width: 640px; margin-inline: auto; overflow: auto; background: rgba(24,18,12,0.95); border: 1px solid var(--line); border-radius: 12px; padding: 10px 16px; font-size: 13px; line-height: 1.6; z-index: 4; }
+  #about h2 { font-size: 15px; margin: 4px 0 6px; }
+  #about code { font-size: 12px; overflow-wrap: anywhere; }
+  .legend-tag { font-size: 11px; color: var(--muted); }
+  [hidden] { display: none !important; }
+  #menu { position: fixed; inset: 0; z-index: 10; overflow: auto; background: radial-gradient(ellipse at 50% 30%, #4a3523, #1f160e); padding: calc(16px + env(safe-area-inset-top, 0px)) 16px 24px; }
+  #menu .box { max-width: 760px; margin: 0 auto; }
+  #menu h2 { font-size: 22px; margin: 6px 0 4px; letter-spacing: 0.06em; }
+  #menu .lead { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  #menu .main { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; margin: 14px 0 6px; }
+  #menu .main button { min-height: 48px; font-size: 16px; }
+  #mContinueInfo { font-size: 12px; color: var(--muted); }
+  #mStorage, #mMsg { font-size: 12.5px; line-height: 1.6; margin: 8px 0; }
+  #mMsg[data-kind="warn"], .warn { color: #ffd38a; } #mMsg[data-kind="error"] { color: #ff9f8a; }
+  .mrow { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin: 8px 0; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+  .mrow input { font: inherit; font-size: 13px; min-height: 32px; border-radius: 8px; border: 1px solid var(--line); background: rgba(255,255,255,0.08); color: var(--bar-ink); padding: 0 8px; max-width: 100%; }
+  .flag { font-size: 11px; font-weight: 700; color: #2a1d0b; background: #f0b25a; border-radius: 5px; padding: 0 6px; }
+  .muted { color: var(--muted); }
+  button.danger { background: #8a2b1c; border-color: #c4553f; }
+  #saveStatus { font-size: 12px; color: var(--muted); flex-basis: 100%; }
+  #saveStatus[data-status="failed"] { color: #ff9f8a; font-weight: 600; } #saveStatus[data-status="saved"] { color: #b8e0a0; }
+  #notice { position: fixed; left: 50%; transform: translateX(-50%); top: 52px; max-width: min(640px, calc(100vw - 24px)); background: rgba(20,15,10,0.92); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 13px; z-index: 5; }
+  #notice[data-kind="warn"] { border-color: #e9b949; } #notice[data-kind="error"] { border-color: #ff9f8a; }
+  #roBanner { position: fixed; left: 50%; transform: translateX(-50%); top: 96px; background: #6b3410; color: #fff3e0; border-radius: 8px; padding: 4px 10px; font-size: 12.5px; z-index: 5; }
+  @media (max-width: 600px) { h1 { font-size: 14px; } #log { top: 110px; } #card { top: 96px; } select, button, a.btn { font-size: 12.5px; min-height: 34px; } #bottom .legend-tag { display: none; } }
+</style>
+</head>
+<body>
+<canvas id="scene" aria-label="非正式實驗世界中的螞蟻（Worker 模擬）"></canvas>
+<div id="top" class="bar">
+  <h1>螞蟻帝國・實驗模式</h1>
+  <span id="exp-flag">非正式</span>
+  <button id="infoBtn" type="button" aria-expanded="false">資料說明</button>
+  <button id="logBtn" type="button">引擎事件</button>
+  <div id="badge">非正式實驗世界／不屬於正式遊戲歷史｜啟動中…</div>
+</div>
+<div id="card" hidden></div>
+<div id="notice" role="status" hidden></div>
+<div id="roBanner" hidden></div>
+<div id="menu" hidden>
+ <div class="box">
+  <h2>螞蟻帝國・實驗模式</h2>
+  <div class="lead"><span class="flag">非正式</span> 非正式實驗世界／不屬於正式遊戲歷史。這裡的世界是合成的小世界（遊戲假設，不是螞蟻科學模型），存檔只保存在這個瀏覽器，與正式 Day14 存檔、<code>saves/</code>、<code>journal/</code> 完全無關。你只能觀察，不能干預。</div>
+  <div class="main">
+   <button id="mContinue" type="button" class="primary">繼續遊戲</button>
+   <button id="mNew" type="button">開始新遊戲</button>
+   <button id="mLoad" type="button">讀取存檔</button>
+   <button id="mManage" type="button">存檔管理</button>
+  </div>
+  <div id="mContinueInfo"></div>
+  <div id="mMsg" role="status" aria-live="polite"></div>
+  <div id="mPanel"></div>
+  <div id="mStorage" class="muted"></div>
+ </div>
+</div>
+<pre id="log" hidden></pre>
+<div id="about" hidden>
+<h2>這個畫面是什麼</h2>
+<ul>
+<li><b>非正式實驗世界／不屬於正式遊戲歷史。</b>這是一個<b>合成</b>的小世界（6 隻個體、半徑 60 cm 場地、巢在中心），所有數值都是遊戲假設（assumption: true），<b>不是螞蟻科學模型</b>，不得引用為本種行為。它不讀取正式存檔、Day14 或 <code>web/data</code>，也不寫入任何東西。</li>
+<li><b>引擎事件</b>：模擬只在 Web Worker 內執行；畫面上的狀態（每隻個體目前線段的起點、終點、起訖時刻、活動）與「引擎事件」列表都是 Worker 送來的原樣資料。</li>
+<li><b>顯示插值</b>：螞蟻在目前線段兩個引擎紀錄點之間的畫面位置是直線插值；在紀錄時刻（線段起點與終點）畫面位置就是引擎位置。兩個 Worker 狀態之間，畫面時鐘最多超前 0.05 秒真實時間的推進量。腳的擺動、轉身、鏡頭、縮放都只是畫面，不回寫、不產生事件。</li>
+<li><b>示意</b>：地面紋理（與可選的落葉石塊）、固定光源都是示意；合成世界中<b>沒有障礙物</b>，所以落葉石塊預設關閉。螞蟻放大顯示（畫面左下角 ×N）。虛線圓是合成場地邊界（引擎參數）。</li>
+<li><b>存檔</b>：每 30 秒（真實時間）若世界有變化就自動存檔，暫停、回到選單前也會存檔；「立即存檔」是手動存檔（另外保存，不被自動存檔輪替）。快照只在 Worker 的事件邊界產生，存檔不改變模擬結果。「已儲存」只在瀏覽器資料庫交易完成後顯示；失敗時保留上一個成功的存檔。關閉瀏覽器期間世界不推進。</li>
+<li><b>只觀察</b>：暫停、速度、追蹤個體、縮放、拖曳、畫面幀率上限只改變排程或畫面，不改變同一世界時間的模擬結果（瀏覽器測試比對事件流與完整狀態雜湊）。沒有任何干預功能。</li>
+<li>世界時間：自實驗第 0 天 00:00 起的秒數，顯示為「實驗第 D 天 HH:MM:SS」。光照狀態由一般方法（太陽位置公式）計算；氣溫是合成剖面（synthetic: true），世界中沒有個體讀取它們。</li>
+</ul>
+</div>
+<div id="bottom" class="bar">
+  <button id="menuBtn" type="button">選單</button>
+  <button id="play" class="primary" type="button" aria-pressed="false">開始</button>
+  <button id="saveBtn" type="button">立即存檔</button>
+  <label>速度 <select id="speed" aria-label="觀察速度（世界秒／真實秒）"></select></label>
+  <label>追蹤 <select id="follow" aria-label="追蹤個體"><option value="">（不追蹤）</option></select></label>
+  <button id="zoomOut" type="button" aria-label="縮小">－</button>
+  <button id="zoomIn" type="button" aria-label="放大">＋</button>
+  <button id="homeBtn" type="button">全場地</button>
+  <label>畫面上限 <select id="fpsCap" aria-label="畫面幀率上限（只影響畫面）"></select></label>
+  <label><input type="checkbox" id="decor">示意落葉石塊（不是障礙物）</label>
+  <div id="time" aria-live="off">—</div>
+  <div id="status">—</div>
+  <div id="saveStatus" aria-live="polite"></div>
+  <span class="legend-tag">位置＝Worker 引擎紀錄點與其間的顯示插值；地面、光源為示意；螞蟻放大顯示</span>
+</div>
+<script type="module" src="dist/v62.js"></script>
+</body>
+</html>

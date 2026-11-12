@@ -28,6 +28,22 @@ const { chromium } = require('playwright');
     const state = () => page.evaluate(() => window.__game.state());
     await page.goto(base);
     await page.waitForFunction(() => window.__game && window.__game.ants().length > 0 && document.querySelectorAll('#marks i').length > 0, null, { timeout: 20000 });
+    // 0. opening framing (integration-3): the nest is inside the unobscured canvas band (between the top bar and the
+    //    bottom control panel), and while the opening plays at least one ant is drawn inside that band (ants().sx is
+    //    null for ants under the bars or off screen)
+    const vw = await page.evaluate(() => window.__game.view());
+    check(vw.home && vw.nest && vw.nest[0] >= 0 && vw.nest[0] <= vw.w && vw.nest[1] >= vw.top && vw.nest[1] <= vw.bottom, `${tag}: opening view frames the nest inside the unobscured canvas band (nest ${vw.nest && vw.nest.map((v) => v.toFixed(0))}, band y ${vw.top.toFixed(0)}–${vw.bottom.toFixed(0)})`);
+    const seen = await page.waitForFunction(() => window.__game.ants().some((a) => a.sx !== null && (a.vis === 'walking' || a.vis === 'at_site')), null, { timeout: 8000 }).then(() => true, () => false);
+    check(seen, `${tag}: during the opening an ant is drawn inside the unobscured canvas band (not under the controls)`);
+    // 0b. ground tiling: no one-pixel line across the canvas (the chunk-seam gap row seen at 1280×800 before the fix):
+    //     no canvas row where ≥ 30% of the columns step sharply against the rows two pixels above and below
+    const lines = await page.evaluate(() => {
+      const c = document.getElementById('scene'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, w = c.width, H = c.height;
+      const lum = (x, y) => { const i = (y * w + x) * 4; return 0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2]; }, out = [];
+      for (let y = 2; y < H - 2; y++) { let n = 0, m = 0; for (let x = 0; x < w; x += 2, m++) if (Math.abs(lum(x, y) - (lum(x, y - 2) + lum(x, y + 2)) / 2) > 18) n++; if (n > m * 0.3) out.push(y); }
+      return out;
+    });
+    check(lines.length === 0, `${tag}: no horizontal line artefact across the scene (rows ${lines.join(',') || 'none'})`);
     // pause so time is under test control
     if ((await state()).playing) await tap('#play');
     // 1. marks = walkIntervals of the day
