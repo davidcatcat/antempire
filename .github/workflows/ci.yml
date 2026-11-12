@@ -69,6 +69,10 @@ jobs:
         run: node tests/browser/web-replay-ux.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/
       - name: SAVE-1 experiment-world save store in Chromium (synthetic payloads; atomicity, recovery, kill, locks, isolation, browser restart, migrations, export/import, save cost)
         run: node tests/browser/save-store.check.cjs "$RUNNER_TEMP/viewer-shots"
+      - name: V6-2 experiment mode (P0-A2 PR 3; Worker + layered renderer; drawn = engine at record instants, UI ops do not change results, official/experiment isolation, headless measurements; desktop + Pixel 7)
+        run: |
+          set -o pipefail
+          node tests/browser/v62-experiment.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/ | tee "$RUNNER_TEMP/viewer-shots/v62-experiment-results.json"
       - name: Assemble the static preview (page + compiled script + data + screenshots + test results + instructions)
         if: always()
         run: |
