@@ -17,7 +17,7 @@ import { REPO_ROOT } from '../cli/lib/load.ts';
 import * as AG from '../engine/physics/antenna-geometry.ts';
 import { resolveModel, AntennaRefused, toParent, fromParent, compose, headInWorld, antennaInWorld, antennaInHead, scanJoints, reachEnvelope, jointsInRange, scanPointSpeedBound, detectAntennaContacts, contactKindOf, sensingRequests, antennaSamplePoints, MORPH_KEYS, SCAN_KEYS, type AntennaModel, type AntennaContactInput, type AntennaContactResult } from '../engine/physics/antenna-geometry.ts';
 import { PlanBuilder, CONTACT_TOL_MM, CA_LEVEL_MM, SEP_RES_MM, type Track, type Static } from '../engine/physics/kinematics2d.ts';
-import { sampleLocal, antennaSensors, SyntheticChemicalField } from '../engine/physics/local-sensing.ts';
+import { sampleLocal, antennaSensors, SyntheticChemicalField, SensingRefused } from '../engine/physics/local-sensing.ts';
 import { rng } from '../engine/rng.ts';
 import { candidateInput, speciesInput, candidateModel, candidateBody, scenarios, executed, loadAntennaCandidates } from '../prototypes/antenna-geometry/lib.ts';
 import { sensitivityTables } from '../prototypes/antenna-geometry/sensitivity.ts';
@@ -228,10 +228,13 @@ const toRecord = (inp: AntennaContactInput, res: AntennaContactResult): XRecord 
 
 // ---------------------------------------------------------------- local-sensing adapter
 {
-  const field = new SyntheticChemicalField({ id: 'syn', channel: 'ch', layer: 'L', field: { synthetic: true, kind: 'gaussian_ridge', polyline: [{ x: -10, y: 0 }, { x: 20, y: 0 }], sigma_mm: 1, peak: 1 }, committed_through_s: 10, max_range_mm: 0 });
+  // the real-time contract (sampleLocal reads only the LATEST committed state, whose time must equal the sensing time):
+  // each request instant gets its own field whose scheduler (advance) commits exactly that instant, and the adapter's
+  // request is read through the frozen real-time reader — never the field object itself
+  const fieldAt = (t: number) => { const f = new SyntheticChemicalField({ id: 'syn', channel: 'ch', layer: 'L', field: { synthetic: true, kind: 'gaussian_ridge', polyline: [{ x: -10, y: 0 }, { x: 20, y: 0 }], sigma_mm: 1, peak: 1 }, max_range_mm: 0 }); f.advance({ t_s: t, round: 0 }); return f.realtimeReader(); };
   const g = rng(4242); let maxDev = 0, n = 0;
   for (let i = 0; i < 200; i++) {
-    const pose = { x: (g() - 0.5) * 20, y: (g() - 0.5) * 4, th: (g() - 0.5) * 7 }, t = g() * 10;
+    const pose = { x: (g() - 0.5) * 20, y: (g() - 0.5) * 4, th: (g() - 0.5) * 7 }, t = g() * 10, field = fieldAt(t);
     const out = sensingRequests({ agent_id: 'a', t_s: t, round: 0, layer: 'L', channel: 'ch', range_mm: 0, source: 'synthetic', tags: [{ name: 'scenario', assumption: true, basis: '遊戲假設', note: '' }] }, pose, body.length_mm as number, m);
     for (const q of out.requests) {
       const res = sampleLocal(field, q); n++;
@@ -240,6 +243,14 @@ const toRecord = (inp: AntennaContactInput, res: AntennaContactResult): XRecord 
     const exact = { left: antennaInWorld(pose, m, 'left', scanJoints(m, 'left', t)).tip, right: antennaInWorld(pose, m, 'right', scanJoints(m, 'right', t)).tip };
     ok(json(out.exact) === json(exact), 'adapter uses the scan joints at the request time t_s (no other time)');
     maxDev = Math.max(maxDev, out.deviation_mm.left, out.deviation_mm.right);
+  }
+  {
+    // causality contract kept (#176): an uncommitted state and a not-yet-committed sensing instant are both refused
+    const q = sensingRequests({ agent_id: 'a', t_s: 2, round: 0, layer: 'L', channel: 'ch', range_mm: 0, source: 'synthetic', tags: [{ name: 's', assumption: true, basis: '遊戲假設', note: '' }] }, { x: 0, y: 0, th: 0 }, body.length_mm as number, m).requests[0];
+    const none = new SyntheticChemicalField({ id: 'syn', channel: 'ch', layer: 'L', field: { synthetic: true, kind: 'gaussian_ridge', polyline: [{ x: -10, y: 0 }, { x: 20, y: 0 }], sigma_mm: 1, peak: 1 }, max_range_mm: 0 });
+    const senseRefuses = (f: () => unknown, code: string, why: string) => { try { f(); } catch (e) { ok(e instanceof SensingRefused && e.codes.some((c) => c.startsWith(code)), `${why} (${(e as Error).message.slice(0, 300)})`); return; } ok(false, `${why}: no refusal`); };
+    senseRefuses(() => sampleLocal(none.realtimeReader(), q), 'MISSING_SIGNAL', 'adapter request against a field with nothing committed is refused');
+    senseRefuses(() => sampleLocal(fieldAt(1), q), 'FUTURE_SAMPLE', 'adapter request at an instant after the latest commit is refused');
   }
   ok(maxDev < 1e-12 && n === 400, `contract sensor points equal the exact antenna tips up to rounding (max ${maxDev} mm over ${n} requests)`);
   const q0 = sensingRequests({ agent_id: 'a', t_s: 0, round: 0, layer: 'L', channel: 'ch', range_mm: 0, source: 'synthetic', tags: [{ name: 's', assumption: true, basis: '遊戲假設', note: '' }] }, { x: 0, y: 0, th: 0 }, body.length_mm as number, m).requests[0];
