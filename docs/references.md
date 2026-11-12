@@ -750,6 +750,26 @@ R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-
 - R146（Asfiya et al. 2016）2026-11-08 以 pdftotext 核對：**沒有**步行速度資料。
 - R385（Burd & Aranwela 2003）2026-11-08 重查：Springer 需登入，仍只讀到搜尋片段（1 m 路段錄影、相遇使速度下降但效果小於體型與負重）；數值仍不採用。
 
+## 2026-11-08 WP5b 群組中的生命時間：年齡／齡期結構族群模型（R640–R652；`docs/od1b-cohort-life-time.md`）
+
+> 編號從 R640 起，避開其他工作包可能使用的編號。全部是**數學／一般方法**，不提供任何本種或背景物種的參數。「Crossref 核對」＝本次以 Crossref API 核對作者、年份、卷期頁與 DOI；**沒有讀全文**，方法內容是教科書層級的一般知識，引用時不得宣稱讀過原文細節。他種研究標**非本種**。
+
+| ID | 文獻 | 閱讀程度 | 用途 | 不可外推之處 |
+|---|---|---|---|---|
+| R640 | Leslie PH (1945) On the use of matrices in certain population mathematics. *Biometrika* 33(3):183–212. DOI 10.1093/biomet/33.3.183 | 書目（Crossref 核對） | 年齡結構矩陣（固定步長、只有年齡）；說明為何不足以表達溫度改變齡期長度 | 方法；無數值 |
+| R641 | Lefkovitch LP (1965) The study of population growth in organisms grouped by stages. *Biometrics* 21(1):1–18. DOI 10.2307/2528348 | 書目（Crossref 核對） | 齡期結構矩陣；寬年齡格的類別轉移（`cohort-coarse`） | 方法；幾何停留時間使齡期長度變異過大 |
+| R642 | McKendrick AG (1926) Applications of mathematics to medical problems. *Proc. Edinburgh Math. Soc.* 44:98–130. DOI 10.1017/s0013091500034428（Crossref 的出版年欄位為 1925） | 書目（Crossref 核對） | 連續年齡結構偏微分方程；`mean-field` 是其離散決定性投影的類比 | 方法；決定性 |
+| R643 | von Foerster H (1959) Some remarks on changing populations. In: Stohlman F (ed.) *The Kinetics of Cellular Proliferation*. Grune & Stratton, pp. 382–407 | **書目未核對**（無 DOI；依一般引用格式） | 同 R642（McKendrick–von Foerster 方程） | 同上 |
+| R644 | Caswell H (2001) *Matrix Population Models: Construction, Analysis, and Interpretation*, 2nd ed. Sinauer | 書目（未核對 ISBN） | 矩陣族群模型的標準教科書 | 方法 |
+| R645 | Manetsch TJ (1976) Time-varying distributed delays and their use in aggregative models of large systems. *IEEE Trans. Syst. Man Cybern.* SMC-6(8):547–553. DOI 10.1109/tsmc.1976.4309549 | 書目（Crossref 核對） | Erlang（k 階）分布延遲；時變發育速率 | 方法；k 需逐物種估計 |
+| R646 | Vansickle J (1977) Attrition in distributed delay models. *IEEE Trans. Syst. Man Cybern.* 7(9):635–638. DOI 10.1109/tsmc.1977.4309800 | 書目（Crossref 核對） | 分布延遲中的死亡（耗損） | 方法 |
+| R647 | Plant RE, Wilson LT (1986) Models for age structured populations with distributed maturation rates. *J. Math. Biol.* 23:247–262. DOI 10.1007/bf00276960 | 書目（Crossref 核對） | 成熟速率有個體差異的年齡結構模型；與 Erlang 延遲的關係 | 方法 |
+| R648 | Goudriaan J (1973) Dispersion in simulation models of population growth and salt movement in the soil. *Neth. J. Agric. Sci.* 21:269–281. DOI 10.18174/njas.v21i4.17242 | 書目（Crossref 核對） | boxcar train（以子期控制齡期長度離散度） | 方法 |
+| R649 | de Roos AM (1988) Numerical methods for structured population models: the escalator boxcar train. *Numer. Methods Partial Differ. Equ.* 4:173–195. DOI 10.1002/num.1690040303；de Roos AM, Diekmann O, Metz JAJ (1992) *Am. Nat.* 139:123–147. DOI 10.1086/285316 | 書目（Crossref 核對） | 生理結構族群的 cohort 數值方法（本原型未實作，只作對照） | 方法；1992 的應用對象是 *Daphnia*（**非本種**） |
+| R650 | Campbell A, Frazer BD, Gilbert N, Gutierrez AP, Mackauer M (1974) Temperature requirements of some aphids and their parasites. *J. Appl. Ecol.* 11(2):431–438. DOI 10.2307/2402197 | 書目（Crossref 核對；頁碼範圍未核對） | 線性度日、發育門檻的經典用法 | **非本種**（蚜蟲與寄生蜂）；不得作任何背景物種的數值 |
+| R651 | Trudgill DL, Honek A, Li D, van Straalen NM (2005) Thermal time – concepts and utility. *Ann. Appl. Biol.* 146:1–14. DOI 10.1111/j.1744-7348.2005.04088.x | 書目（Crossref 核對） | 度日（thermal time）概念與適用限制的綜述 | 綜述；線性近似在高溫失效 |
+| R652 | Kemeny JG, Snell JL (1960) *Finite Markov Chains*. Van Nostrand | 書目（依 Crossref 書評條目核對書名、作者、年份） | 馬可夫鏈的可合併性（lumpability）：狀態相同的成員可以只記計數 | 數學；本原型的可合併性是依構造成立並以數值驗證，不是引用其定理證明 |
+
 ## 2026-11-08 CHEM-4 警戒與 CHC 接觸辨識（R720–R721；Issue #135，`docs/chem4-alarm-chc-literature.md`）
 
 > 編號從 R720 起，避開 CHEM-0（R700–R701）。只新增，不改寫既有行。閱讀程度如實標記。

@@ -16,6 +16,7 @@
  * This module holds no biological value; every rate/amount is an input.
  */
 import { decayStep, type Rational } from './decay.ts';
+import { isViewCause, VIEW_REFUSAL } from './view-guard.ts';
 
 export type Resolution = 'fine' | 'coarse';
 export interface RegionDef { id: string; resolution: Resolution; in_garden: boolean }
@@ -39,6 +40,8 @@ export interface WorldState {
   retired: string[];
   scenario_records: ScenarioRecord[]; used_scenario_records: string[];
   policy: { non_demotable_colonies: string[] };
+  /** set by unified-migrate.ts: this state was converted into the unified ledger and is no longer authoritative (#145) */
+  superseded_by?: string;
 }
 
 interface T { day: number; minute: number | null; key: string }
@@ -322,6 +325,8 @@ export function applyCommand(ix: Ix, cmd: Command): LedgerRecord {
     }
     case 'promote': {
       const tr = needTrigger(cmd.trigger, 'promote');
+      // #144 fallback: this ledger's draws depend on representation, so the observer may not change it
+      if (isViewCause(tr)) refuse(VIEW_REFUSAL, `${cmd.key}: a view action cannot promote (issue #144)`);
       const c = ix.coh.get(cmd.cohort) ?? refuse('UNKNOWN_COHORT', cmd.cohort);
       const moves: FoodMove[] = [];
       const { member, roll } = pickMember(ix, c, 'promote', cmd.key);
@@ -334,6 +339,7 @@ export function applyCommand(ix: Ix, cmd: Command): LedgerRecord {
     }
     case 'demote': {
       const tr = needTrigger(cmd.trigger, 'demote');
+      if (isViewCause(tr)) refuse(VIEW_REFUSAL, `${cmd.key}: a view action cannot demote (issue #144)`);
       const i = ix.ind.get(cmd.individual) ?? refuse('UNKNOWN_INDIVIDUAL', cmd.individual);
       if (i.colony_id !== null && st.policy.non_demotable_colonies.includes(i.colony_id)) refuse('NON_DEMOTABLE', `${i.id} belongs to ${i.colony_id} (Owner Q2: focal colony stays individual)`);
       const c = getCohort(ix, i.region, i.taxon, i.stage, i.colony_id), moves: FoodMove[] = [];
@@ -374,6 +380,7 @@ export const indexState = (st: WorldState) => index(structuredClone(st));
 
 /** Run one day: atomic (works on a copy; any refusal throws and leaves the input untouched), canonical order. */
 export function runDay(state: WorldState, commands: Command[]): { state: WorldState; records: LedgerRecord[] } {
+  if (state.superseded_by) refuse('SUPERSEDED_BY_UNIFIED_LEDGER', `${state.superseded_by} (#145: one authoritative ledger)`);
   const keys = new Set<string>();
   for (const c of commands) { if (keys.has(c.key)) refuse('DUPLICATE_KEY', c.key); keys.add(c.key); }
   const ix = indexState(state);
