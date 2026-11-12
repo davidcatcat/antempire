@@ -66,6 +66,10 @@ PR #169（P0-A2 Worker 執行環境，`docs/experimental-worker-runtime.md` §6�
 - **第三階段要求**：接入實驗 Worker 之前，必須先依 §6 的 Owner 裁示（方案 A 或 A+B）解決，並以 Node 對 Chromium 的逐位元比較驗證，不得改用容許值。
 - **更新（#190 方案 A，§7）**：光照時刻現在逐位元跨環境相同（x86-64 驗證）。原型的 `Math.round(minute × 60000)` 量化與 `lightStateAt` 讀到的轉換值因此在 Node 與 Chromium 相同；上面的「暴露」機率不再適用於已驗證的環境。原型 24 小時釘選雜湊不變（見 §7.5）。ARM64 未驗證。
 
+### 5b. 新使用者審查：P0-A2 實驗 Worker 轉接層（#156 第三階段，2026-11-12）
+
+`prototypes/continuous-world/worker/p0a2-world.ts` 新增為使用者：狀態框中的 `sun_altitude_deg`（`solarAltitude`）與「是否在太陽正午前」（`lightTimes().solar_noon`），**只供畫面**分段光照與陰影方向示意；沒有任何事件、決策或快照讀取它們。兩者都經 `engine/clock/detmath.ts`（§7），Node 與 Chromium 相同（x86-64）；即使將來不同，也只影響畫面亮度分段，不影響世界。P0-A2 世界本身的光照轉換與 `lightStateAt` 的審查見 §5a。Node 與 Chromium Worker 的 P0-A2 比較中唯一的差異是記錄的相對濕度（`weather-input.ts` 的 `Math.exp`），不是光照（`docs/experimental-worker-runtime.md` §9）。
+
 ## 6. 規則 PR 提案（調查時的提案；Owner 已於 #193 裁示採方案 A，實作見 §7）
 
 目標：光照時刻在任何符合 ECMAScript 的環境（Node 各版本、瀏覽器 Worker、x86-64／ARM64）都**逐位元相同**，不放寬任何決定性要求。
