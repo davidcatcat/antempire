@@ -12,6 +12,7 @@
  *  7. no walking animation while stationary; gait continuous in the distance-driven phase;
  *  8. display never mutates inputs; the game view keeps positions = planAnts (= affine image of model.poseAt) and
  *     takes display time from simulated time;
+ *  (also) the game view's persistent bottom legend labels head/antenna motion as display-only (引擎尚未模擬);
  *  9. the natural-walk page: placeholder pose streams are valid antempire.pose-stream.v1, deterministic and labelled
  *     示意・待 PR A 物理資料; interpolation helpers; docs list every display parameter as 示意／假設.
  */
@@ -193,6 +194,9 @@ const maxAutocorr = (x: number[], lo: number, hi: number) => { const n = x.lengt
   ok(/物理資料/.test(page) && /美術插值/.test(page) && /未驗證候選模型/.test(page) && /R810/.test(page) && /R133/.test(page), 'page labels the three element classes (物理資料／美術插值／未驗證候選模型) and cites R810 / R133');
   ok(/物理資料/.test(page) && /顯示動畫/.test(page) && /示意・待 PR A 物理資料/.test(page) && /不是感覺事件/.test(page), 'page labels physics vs display animation, placeholder and non-perception');
   ok(!/Math\.random/.test(page), 'page: no unseeded randomness');
+  ok(/^prototypes\/natural-walk\/screenshots\/$/m.test(fs.readFileSync(path.join(REPO_ROOT, '.gitignore'), 'utf8')) && /mkdirSync\(OUT/.test(fs.readFileSync(path.join(REPO_ROOT, 'prototypes', 'natural-walk', 'shoot.cjs'), 'utf8')), 'natural-walk screenshots are generated (npm run natural:shoot) into the git-ignored screenshots/ folder, not committed');
+  const gameHtml = fs.readFileSync(path.join(REPO_ROOT, 'web', 'index.html'), 'utf8'), bottom = gameHtml.slice(gameHtml.indexOf('<div id="bottom"'), gameHtml.indexOf('<script', gameHtml.indexOf('<div id="bottom"')));
+  ok(/<span class="legend-tag" id="motionTag">頭與觸角動作＝示意動畫（引擎尚未模擬）<\/span>/.test(bottom) && /#bottom \.legend-tag:not\(#motionTag\) \{ display: none; \}/.test(gameHtml), 'game view: the persistent bottom legend (also on phones) says head/antenna motion is display-only animation, not simulated');
   const doc = fs.readFileSync(path.join(REPO_ROOT, 'docs', 'game-art-style.md'), 'utf8'), sec = doc.slice(doc.indexOf('## 5b'), doc.indexOf('## 6'));
   ok(sec.length > 200 && /示意/.test(sec) && /R133/.test(sec) && /R810/.test(sec) && /非本種/.test(sec) && /未驗證候選模型/.test(sec) && ['EPOCH_S', 'BLEND_S', 'glanceSlotS', 'turnGain', 'sweep', 'probe', 'tap', 'rest', 'WALK_BLEND_S', 'playbackDamp'].every((k) => sec.includes(k)), 'docs §5b: display micro-motion parameters listed as 示意／假設, R133 body-path stats, carpenter-ant study 非本種');
 }

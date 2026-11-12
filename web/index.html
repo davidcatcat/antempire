@@ -39,7 +39,7 @@
   #about code { font-size: 12px; overflow-wrap: anywhere; }
   .legend-tag { font-size: 11px; color: var(--muted); }
   [hidden] { display: none !important; }
-  @media (max-width: 600px) { h1 { font-size: 14px; } #weather { top: 96px; } #counts { top: 124px; } #card { top: 96px; } select, button, a.btn { font-size: 12.5px; min-height: 34px; } #bottom .legend-tag { display: none; } }
+  @media (max-width: 600px) { h1 { font-size: 14px; } #weather { top: 96px; } #counts { top: 124px; } #card { top: 96px; } select, button, a.btn { font-size: 12.5px; min-height: 34px; } #bottom .legend-tag:not(#motionTag) { display: none; } }
 </style>
 </head>
 <body>
@@ -78,6 +78,7 @@
   <input type="range" id="clock" min="0" max="360" step="any" value="0" aria-label="活動時段內的時間（分鐘）">
   <div id="time" aria-live="off"></div>
   <span class="legend-tag">位置＝引擎紀錄點與其間的顯示插值；場景、光源為示意；螞蟻放大顯示</span>
+  <span class="legend-tag" id="motionTag">頭與觸角動作＝示意動畫（引擎尚未模擬）</span>
 </div>
 <script type="module" src="dist/game.js"></script>
 </body>

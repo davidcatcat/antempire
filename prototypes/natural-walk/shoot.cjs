@@ -93,6 +93,7 @@ server.listen(0, async () => {
       check(m.ants.some((a) => JSON.stringify(a.L) !== JSON.stringify(a.R)), `${tag}: left and right antennae differ`);
       await page.click('#infoBtn'); const about = await page.textContent('#about');
       check(/顯示動畫（示意）/.test(about) && /不是感覺事件/.test(about), `${tag}: the data panel names the display animation and that it is not perception`);
+      check(await page.evaluate(() => { const e = document.querySelector('#bottom #motionTag'); return !!e && e.offsetParent !== null && /頭與觸角動作＝示意動畫（引擎尚未模擬）/.test(e.textContent); }), `${tag}: the bottom legend (always visible) labels head/antenna motion as display-only`);
       await page.click('#infoBtn');
       // close-up of a walking ant at 1× speed: select it, follow it, zoom in
       await page.selectOption('#speed', '1');
