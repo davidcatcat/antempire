@@ -22,6 +22,15 @@ export type Layer = typeof LAYERS[number];
 // ------------------------------------------------------------------ camera
 export interface Camera { cx: number; cy: number; s: number; w: number; h: number } // s = CSS px per cm
 export const worldToScreen = (c: Camera, x: number, y: number): [number, number] => [c.w / 2 + (x - c.cx) * c.s, c.h / 2 - (y - c.cy) * c.s];
+/** Device-pixel-snapped screen rectangle of the ground chunk (i, j) of side `cm` (CSS px). Every edge is computed from
+ *  its own WORLD coordinate (left = i·cm, right = (i+1)·cm, top = (j+1)·cm, bottom = j·cm), so two neighbouring chunks
+ *  evaluate their shared edge with the identical expression and snap it to the same device pixel: no gap row / column
+ *  and no overlap at any zoom. (Deriving one edge as `start + size` can land a hair below a .5 boundary while the
+ *  neighbour's own edge lands on it, leaving a one-pixel unpainted row.) */
+export function chunkScreenRect(c: Camera, i: number, j: number, cm: number, dpr: number) {
+  const [x0, y0] = worldToScreen(c, i * cm, (j + 1) * cm), [x1, y1] = worldToScreen(c, (i + 1) * cm, j * cm), snap = (v: number) => Math.round(v * dpr) / dpr;
+  return { ax: snap(x0), ay: snap(y0), bx: snap(x1), by: snap(y1) };
+}
 export const screenToWorld = (c: Camera, sx: number, sy: number): [number, number] => [c.cx + (sx - c.w / 2) / c.s, c.cy - (sy - c.h / 2) / c.s];
 export function visibleWorld(c: Camera, marginPx = 0) { const [x0, y1] = screenToWorld(c, -marginPx, -marginPx), [x1, y0] = screenToWorld(c, c.w + marginPx, c.h + marginPx); return { x0, y0, x1, y1 }; }
 

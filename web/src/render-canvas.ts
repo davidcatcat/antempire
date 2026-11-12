@@ -15,7 +15,7 @@
  *   prototypes/render-compare) and draws the layers above the ants on its `above` context; `fixedQuality` pins the
  *   quality level (comparisons).
  */
-import { LAYERS, QUALITY, PREROTATED_GAITS, ROT_ATLAS_BUDGET, ROT_SHEET_PX, bucketAngle, chooseBuckets, headingBucket, planRotatedAtlas, rotCellIndex, rotDrawRect, rotatedAtlasBytes, type RotPlan, DECOR_CELL_CM, DECOR_REACH_CM, groundField, reliefHeight, antLengthPx, decorCell, engineRegistry, keepAtLod, nextQuality, planAnts, weatherState, worldToScreen, type AntDraw, type AntInput, type AntLook, type Camera, type DecorItem, type EngineObject, type Layer, type Obstacles, type WeatherState } from './render-scene.ts';
+import { LAYERS, QUALITY, PREROTATED_GAITS, ROT_ATLAS_BUDGET, ROT_SHEET_PX, bucketAngle, chooseBuckets, headingBucket, planRotatedAtlas, rotCellIndex, rotDrawRect, rotatedAtlasBytes, type RotPlan, DECOR_CELL_CM, DECOR_REACH_CM, groundField, reliefHeight, antLengthPx, chunkScreenRect, decorCell, engineRegistry, keepAtLod, nextQuality, planAnts, weatherState, worldToScreen, type AntDraw, type AntInput, type AntLook, type Camera, type DecorItem, type EngineObject, type Layer, type Obstacles, type WeatherState } from './render-scene.ts';
 import { bakeAntAtlas, bakeHeadSprite, drawAntDetail, drawAntHeadLive, drawAntParts, drawAntSprite, drawList, pixelsToCanvas, type AntAtlas, type HeadSprite } from './art-raster.ts';
 import { DisplayMotion, NEUTRAL_MICRO, type ContextSampler, type MicroState } from './display-motion.ts';
 import { ANT_BODY_HEIGHT, PALETTE_VARIANTS, antGlintSpots, antPalette, magnification, walkCycles, walkFrame, framesOf, type Gait } from './art-ant.ts';
@@ -274,7 +274,8 @@ export class LayeredRenderer {
       if (which === 'low') { this.chunks.delete(key); this.chunks.set(key, ch); }
       // snap both edges to the device-pixel grid: neighbouring chunks then share an exact edge (no overlap, no gap,
       // no antialiased boundary column)
-      const D = this.dpr, ax = Math.round(sx * D) / D, ay = Math.round(sy * D) / D, bx = Math.round((sx + size) * D) / D, by = Math.round((sy + size) * D) / D;
+      // (chunkScreenRect: each edge from its own world coordinate, so a shared edge rounds identically on both sides)
+      const { ax, ay, bx, by } = chunkScreenRect(this.cam, i, j, cm, this.dpr);
       const img = which === 'low' ? ch.low : ch.high; if (img) g.drawImage(img, GUTTER, GUTTER, CHUNK_PX, CHUNK_PX, ax, ay, bx - ax, by - ay);
     }
   }

@@ -17,7 +17,7 @@ import path from 'node:path';
 import { REPO_ROOT } from '../cli/lib/load.ts';
 import { displayPositions, poseAt, windowOf, type Experiment } from '../web/src/model.ts';
 import { antFrame, buildDayIndex, rosterAtStart, gardenBounds, walkIntervals } from '../web/src/game-model.ts';
-import { groundField, valueNoise, LAYERS, CLEAR_PLACE_CM, CLEAR_ROUTE_CM, DECOR_CELL_CM, MAX_TURN_RATE, decorCell, decorRadiusCm, distToSegment, engineRegistry, isClear, keepAtLod, nextQuality, planAnts, recordedRoutes, screenToWorld, weatherState, worldToScreen, type AntInput, type AntLook, type Camera } from '../web/src/render-scene.ts';
+import { groundField, valueNoise, LAYERS, CLEAR_PLACE_CM, CLEAR_ROUTE_CM, DECOR_CELL_CM, MAX_TURN_RATE, decorCell, decorRadiusCm, distToSegment, engineRegistry, isClear, keepAtLod, nextQuality, planAnts, recordedRoutes, chunkScreenRect, screenToWorld, weatherState, worldToScreen, type AntInput, type AntLook, type Camera } from '../web/src/render-scene.ts';
 import { walkCycles } from '../web/src/art-ant.ts';
 
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
@@ -139,5 +139,25 @@ const res = JSON.parse(fs.readFileSync(path.join(H, 'results.json'), 'utf8'));
 ok(['desktop', 'pixel7', 'pixel7-cpu4x'].every((p) => ['replay', 'stress100', 'stress1000'].every((m) => res.rows.some((r: { profile: string; mode: string; fps_mean: number }) => r.profile === p && r.mode === m && r.fps_mean > 0))), 'measured results for 3 profiles × 3 modes are committed');
 ok(Array.isArray(res.seams) && res.seams.length >= 4 && res.seams.every((x: { max_seam_ratio: number; ordinary_column_p99_ratio: number; periodic_amp: number; seams: number }) => x.seams > 0 && x.max_seam_ratio <= 1.6 && x.max_seam_ratio <= x.ordinary_column_p99_ratio + 0.2 && x.periodic_amp <= 0.04), 'browser seam check: chunk boundaries are no steeper than ordinary columns and no visible periodic repeat');
 ok(res.rows.filter((r: { mode: string; positions_checked?: number }) => r.mode === 'replay').every((r: { positions_checked?: number }) => (r.positions_checked ?? 0) > 0), 'browser replay runs checked drawn positions against poseAt');
+
+// ground chunk tiling (integration-3 regression): neighbouring chunk rectangles share every edge exactly at any zoom,
+// DPR and camera position, so no device-pixel row / column is left unpainted. The failing case was the opening view at
+// 1280×800 (cx 0, cy −6, s 25.4167, cm 8): the old `round(sy + size)` put the chunk's bottom at 247 while the chunk
+// below started at round(247.5) = 248, leaving a one-pixel line through the nest.
+{
+  const oldBottom = (c: Camera, j: number, cm: number, D: number) => Math.round((worldToScreen(c, 0, (j + 1) * cm)[1] + cm * c.s) * D) / D;
+  const failing: Camera = { cx: 0, cy: -6, s: 25.416666666666668, w: 1280, h: 800 };
+  ok(oldBottom(failing, 0, 8, 1) !== Math.round(worldToScreen(failing, 0, 0)[1]), 'the regression case reproduces the old one-row gap (old formula)');
+  ok(chunkScreenRect(failing, 0, 0, 8, 1).by === chunkScreenRect(failing, 0, -1, 8, 1).ay, 'regression case: chunk (0,0) bottom = chunk (0,-1) top');
+  let pairs = 0, bad = 0;
+  for (let k = 0; k < 4000; k++) {
+    const r = (n: number) => (Math.sin(k * 12.9898 + n * 78.233) * 43758.5453) % 1;
+    const c: Camera = { cx: r(1) * 200 - 100, cy: r(2) * 200 - 100, s: 1 + Math.abs(r(3)) * 60, w: 300 + Math.round(Math.abs(r(4)) * 1400), h: 300 + Math.round(Math.abs(r(5)) * 900) };
+    const D = [1, 1.5, 2, 2.625, 3][k % 5], cm = 256 / [8, 16, 32, 64][k % 4], i = Math.round(r(6) * 20), j = Math.round(r(7) * 20);
+    const a = chunkScreenRect(c, i, j, cm, D), right = chunkScreenRect(c, i + 1, j, cm, D), below = chunkScreenRect(c, i, j - 1, cm, D);
+    pairs += 2; if (a.bx !== right.ax || a.by !== below.ay || a.bx <= a.ax || a.by <= a.ay) bad++;
+  }
+  ok(bad === 0, `chunk rectangles tile exactly (${pairs} shared edges over 4000 random cameras / DPRs / zoom buckets)`);
+}
 
 console.log(JSON.stringify({ test: 'render-system', passed: true, checks, anchors, decorItems }));
