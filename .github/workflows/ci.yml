@@ -63,6 +63,8 @@ jobs:
         run: node tests/browser/web-v5.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/
       - name: V6 game view E2E + frame-rate measurement (desktop 1280x800; Android Pixel 7 touch; Android with 4x CPU throttling)
         run: node tests/browser/web-game.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/
+      - name: V6 replay navigation E2E (next-activity jump, walk marks, day-summary mode; desktop 1280x800; 400px phone touch)
+        run: node tests/browser/web-replay-ux.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/
       - name: Assemble the static preview (page + compiled script + data + screenshots + test results + instructions)
         if: always()
         run: |
@@ -77,6 +79,7 @@ jobs:
           node tests/web-v5-observer.test.ts > "$P/test-results/web-v5-observer-node.json" 2>&1 || true
           cp docs/viewer-v5.md "$P/" 2>/dev/null || true
           node tests/web-v6-game.test.ts > "$P/test-results/web-v6-game-node.json" 2>&1 || true
+          node tests/web-v6-replay-ux.test.ts > "$P/test-results/web-v6-replay-ux-node.json" 2>&1 || true
           cp docs/viewer-v6-game.md "$P/" 2>/dev/null || true
           echo "commit ${GITHUB_SHA}" > "$P/BUILD.txt"; date -u >> "$P/BUILD.txt"; ls -R "$P" | head -60
       - name: Upload screenshots

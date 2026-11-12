@@ -6,6 +6,7 @@
  * engine and is shown as a banner, never at a minute. The scenery is decorative (示意場景).
  */
 import { ACTION_LABEL, TASK_LABEL, NEST, assertKind, displayPositions, stateAt, windowOf, type Experiment, type ExperimentDay, type Place } from './model.ts';
+import { daySummary, minuteAtFraction, nextActivityJump, summaryHtml, timelineMarks } from './replay-ux.ts';
 import { antFrame, anyWalking, walkIntervals, buildDayIndex, gardenBounds, hash32, laneOffset, nextWalkStart, rosterAtStart, sceneDecor, settlementSummary, simMinutesPerRealSecond, siteSlot, SPEEDS, type AntFrame, type Decor, type Pos } from './game-model.ts';
 
 interface Index { official: string; experiments: { id: string; file: string; title: string }[] }
@@ -42,7 +43,7 @@ async function init() {
   ui.nextDay.onclick = () => gotoDay(day + 1);
   ui.info.onclick = () => { ui.about.hidden = !ui.about.hidden; ui.info.setAttribute('aria-expanded', String(!ui.about.hidden)); };
   ui.fit.onclick = () => { following = null; fitCamera(); renderCard(); };
-  setupPointer();
+  setupPointer(); setupReplayUx();
   window.addEventListener('resize', resize); resize();
   await openWorld(index.experiments[0].file);
   requestAnimationFrame(loop);
@@ -61,7 +62,7 @@ function gotoDay(n: number) {
   if (!exp) return;
   day = Math.max(1, Math.min(exp.days.length, n)); t = 0; settleUntil = 0; ended = false;
   const d = exp.days[day - 1]; idx = buildDayIndex(d); walks = walkIntervals(d); roster = rosterAtStart(exp, day);
-  ui.clock.max = String(windowOf(d)); jumped();
+  ui.clock.max = String(windowOf(d)); jumped(); replayDayChanged();
 }
 const jumped = () => { look.clear(); };
 
@@ -277,6 +278,7 @@ function renderAbout() {
 <li><b>示意場景</b>：土壤、落葉、石子、草叢、植物與花的外觀是以種子產生的裝飾，不是任何實際花園的測量。地點位置由「方位＋約距離」推得，非測量。螞蟻外形為示意，縮小時放大顯示（引擎中的體長是 null）。</li>
 <li><b>沒有畫出的</b>：巢內的活動（只計數）；位置未記錄地點的螞蟻；沒有時刻的日終結算（死亡、羽化、產卵只在橫幅顯示）。不會出現引擎沒有記錄的覓食、交哺、攻擊或死亡。</li>
 <li><b>時間</b>：引擎目前以每日 360 分鐘活動時段簡化一天（不是 24 小時；24 小時時鐘仍在開發）。播放速度以實際時間倍數表示；「快轉」只跳過沒有螞蟻在外行走的時段，不改變任何紀錄。</li>
+<li><b>跳轉與日摘要</b>：時間軸下方的標記是引擎紀錄的行走時段（worker_activity）；「下一段活動」（快捷鍵 N）跳到下一段紀錄的行走開始前約 3 秒，不跳過任何行走的開始；兩者都只改變觀看的時刻。「日摘要」不是連續播放：有分鐘紀錄的事件列出紀錄的時刻，沒有分鐘紀錄的事件只列為日層級，不放在任何時間點；回到連續播放時恢復原本的觀看位置。</li>
 <li><b>這是非正式的實驗世界</b>，不是正式 Day14 遊戲；觀察者只觀察，不干預。</li></ul>`;
 }
 
@@ -315,7 +317,7 @@ function loop(now: number) {
   if (stats.lastTs) { stats.intervals.push(now - stats.lastTs); if (stats.intervals.length > 600) stats.intervals.shift(); }
   stats.lastTs = now; stats.frames++;
   if (!lowRes && stats.intervals.length >= 120 && now - bootTs > 4000) { const r = stats.intervals.slice(-120), m = r.reduce((a, b) => a + b, 0) / r.length; if (m > 30 && (window.devicePixelRatio || 1) > 1) { lowRes = true; maxDpr = 1; resize(); } }
-  if (exp) {
+  if (exp && !replay.summary) {
     if (playing && !ended) advance(dt, now);
     if (following) { const f = frames.find((x) => x.id === following); if (f && (f.vis === 'walking' || f.vis === 'at_site')) { cam.x += (f.x - cam.x) * Math.min(1, dt * 6); cam.y += (f.y - cam.y) * Math.min(1, dt * 6); } }
     drawScene(); drawPlaces(); drawAnts(dt); drawHud(now);
@@ -324,9 +326,54 @@ function loop(now: number) {
   requestAnimationFrame(loop);
 }
 
+// ------------------------------------------------------------------ replay navigation (Issue #148)
+// Each control only changes the VIEWING position or the display mode; none creates an event or changes engine time.
+const rx = { next: $<HTMLButtonElement>('nextAct'), mode: $<HTMLButtonElement>('modeBtn'), marks: $('marks'), summary: $('summary') };
+const replay = { summary: false, saved: null as { day: number; t: number; playing: boolean } | null };
+function jumpToNextActivity() {
+  if (!exp || replay.summary) return;
+  const d = exp.days[day - 1], r = nextActivityJump(walks, d, t), now = performance.now();
+  if (r.kind === 'none') { toast(r.reason, now); return; }
+  const gap = r.walkStart - r.target;
+  t = r.target; settleUntil = 0; ended = false; jumped(); syncButtons();
+  toast(`跳到下一段活動：引擎紀錄的行走${gap > 1e-9 ? `在 ${Math.round(gap * 60)} 秒後` : '在此刻'}開始（${r.walksStarting} 段）`, now);
+}
+function renderMarks() {
+  const d = exp.days[day - 1];
+  rx.marks.innerHTML = timelineMarks(walks, windowOf(d)).map((m) => `<i style="left:${(m.left * 100).toFixed(4)}%;width:${(m.width * 100).toFixed(4)}%" data-start="${m.start}" data-end="${m.end}"></i>`).join('');
+  rx.marks.title = `引擎紀錄的行走時段（worker_activity）：第 ${d.day} 日 ${walks.length} 段；點選或拖曳可跳到該時刻`;
+}
+function renderSummary() { rx.summary.innerHTML = summaryHtml(daySummary(exp.days[day - 1], walks)); }
+function replayDayChanged() { renderMarks(); if (replay.summary) renderSummary(); }
+function setMode(summary: boolean) {
+  if (summary === replay.summary || !exp) return;
+  if (summary) { replay.saved = { day, t, playing }; playing = false; replay.summary = true; renderSummary(); }
+  else {
+    replay.summary = false; const s = replay.saved; replay.saved = null;
+    if (s) { if (s.day !== day) gotoDay(s.day); t = s.t; playing = s.playing; jumped(); }
+  }
+  document.body.classList.toggle('summary-mode', replay.summary); rx.summary.hidden = !replay.summary;
+  rx.mode.textContent = replay.summary ? '回到連續播放' : '日摘要'; rx.mode.setAttribute('aria-pressed', String(replay.summary)); syncButtons();
+}
+function setupReplayUx() {
+  rx.next.onclick = jumpToNextActivity;
+  rx.mode.onclick = () => setMode(!replay.summary);
+  window.addEventListener('keydown', (e) => {
+    const tag = (e.target as HTMLElement | null)?.tagName;
+    if (e.ctrlKey || e.metaKey || e.altKey || tag === 'SELECT' || tag === 'TEXTAREA') return;
+    if (e.key === 'n' || e.key === 'N') { e.preventDefault(); jumpToNextActivity(); }
+  });
+  // tap or drag on the marks strip scrubs the viewing minute (touch and mouse); display only
+  let scrubbing = false;
+  const seek = (e: PointerEvent) => { const r = rx.marks.getBoundingClientRect(); t = minuteAtFraction((e.clientX - r.left) / r.width, windowOf(exp.days[day - 1])); settleUntil = 0; ended = false; jumped(); };
+  rx.marks.addEventListener('pointerdown', (e) => { if (!exp || replay.summary) return; scrubbing = true; rx.marks.setPointerCapture(e.pointerId); seek(e); });
+  rx.marks.addEventListener('pointermove', (e) => { if (scrubbing) seek(e); });
+  const end = () => { scrubbing = false; }; rx.marks.addEventListener('pointerup', end); rx.marks.addEventListener('pointercancel', end);
+}
+
 /** Read-only hooks for the browser tests and the FPS measurement (nothing here can change the replay data). */
 (window as unknown as { __game: unknown }).__game = {
-  state: () => ({ world: ui.world.value, day, t, playing, speed, skip, selected, following, ended, cam: { ...cam }, low_res: lowRes, canvas_px: [canvas.width, canvas.height] }),
+  state: () => ({ world: ui.world.value, day, t, playing, speed, skip, mode: replay.summary ? 'summary' : 'playback', selected, following, ended, cam: { ...cam }, low_res: lowRes, canvas_px: [canvas.width, canvas.height] }),
   ants: () => (frames as (AntFrame & { sx?: number; sy?: number })[]).map((f) => ({ id: f.id, vis: f.vis, moving: f.moving, x: f.x, y: f.y, sx: f.sx ?? null, sy: f.sy ?? null, place: f.place, action: f.action })),
   fps: () => { const iv = [...stats.intervals].sort((a, b) => a - b), n = iv.length; return { frames: stats.frames, samples: n, mean_ms: n ? iv.reduce((s, x) => s + x, 0) / n : null, p50_ms: n ? iv[Math.floor(n * 0.5)] : null, p95_ms: n ? iv[Math.floor(n * 0.95)] : null, fps_mean: n ? 1000 / (iv.reduce((s, x) => s + x, 0) / n) : null }; },
   resetFps: () => { stats.intervals = []; stats.frames = 0; },
