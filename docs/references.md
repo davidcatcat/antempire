@@ -750,6 +750,23 @@ R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-
 - R146（Asfiya et al. 2016）2026-11-08 以 pdftotext 核對：**沒有**步行速度資料。
 - R385（Burd & Aranwela 2003）2026-11-08 重查：Springer 需登入，仍只讀到搜尋片段（1 m 路段錄影、相遇使速度下降但效果小於體型與負重）；數值仍不採用。
 
+## 2026-11-08 CHEM-4 警戒與 CHC 接觸辨識（R720–R721；Issue #135，`docs/chem4-alarm-chc-literature.md`）
+
+> 編號從 R720 起，避開 CHEM-0（R700–R701）。只新增，不改寫既有行。閱讀程度如實標記。
+
+| ID | 文獻 | 閱讀程度 | 物種、地點 | 支持的內容 | 不可外推之處 |
+|---|---|---|---|---|---|
+| R720 | Chiu Y-C, Wang C-C, Nai Y-S, Peng M-H, Hsu J, Neoh K-B (2026) Genetics, cuticular hydrocarbon profiles, and bacterial endosymbionts are associated with the nestmate recognition in the invasive African big-headed ant, *Pheidole megacephala*, in Taiwan. *Myrmecological News* 36:59–72. DOI 10.25849/myrmecol.news_036:059（CC BY 4.0） | 全文文字（期刊 PDF）；圖與附表 S1–S4 未看 | **本種，臺中市**都市 8 群、森林 6 群（取樣點相距 ≥ 1 km），實驗室成對試驗 | 91 組群對各 5 次（5 cm 皿、5 分鐘），攻擊中位數 2.6～3（1–4 分）；作者推論臺中無超級群落；群平均 CHC 65 峰（C25–C40）；二甲基烷距離最能解釋攻擊（r² 0.40）；F_ST > 0.25 組較具攻擊性；攻擊與地理距離無關 | 50 隻合併萃取＝群平均，無個體變異；相關分析，無操作試驗；正文無同群對照；群間 ≥ 1 km，不代表花園尺度鄰巢；中位數不是「異巢必攻擊」；峰值不是本花園 profile |
+| R721 | Dejean A, Kenne M, Moreau CS (2007) Predatory abilities favour the success of the invasive ant *Pheidole megacephala* in an introduced area. *J. Appl. Entomol.* 131(9–10):625–629. DOI 10.1111/j.1439-0418.2007.01223.x | 全文文字（作者網站 PDF）；圖未看 | **本種**入侵族群，墨西哥 Quintana Roo（Puerto Morelos 附近海岸） | 偵察蟻未接觸白蟻即回巢做長距招募；空白蟻巢片（觸角探觸後）即可引發招募；大型白蟻兵蟻由 2～4 隻共同搬回 | 沒有短距警戒資料；入侵地海岸生境；招募數不可搬用 |
+
+**既有編號的附註**（新增，不改寫原有行）：
+- R98／R107（Dejean et al. 2007 *C R Biol*）2026-11-08 再讀全文文字：「警戒費洛蒙」只見於摘要與作者假設，**沒有化學分析**；方法句寫「第二隻工蟻從腹部末端釋放」，依上下文應為第一隻（原文筆誤，照錄）。
+- R141（Liu et al. 2022）：「相距 > 100 m 的群會攻擊」是正文一句初步結果，沒有方法或數據（2026-11-08 重讀）。
+- R113（Fournier et al. 2009）：Unpaywall 列的 Wiley PDF 回 403、ULB 典藏無檔案，仍**只讀摘要**。
+- R102（Saund & Friedman 2023）2026-11-08：**全文已讀**（通訊作者個人網站自存的出版社排版版 PDF，CC BY）。上方「僅查核摘要」各列以此為準。確認：式 1～4 與圖 3（`A(ph−B)^C` 冪次放大＋兩個 logistic 之積）、四條假設、參數任意單位且可互相權衡、無擬合品質指標、未與雙費洛蒙模型正式比較、§3 明言**不處理實驗 3**。只表示資料不足以區分單／雙費洛蒙，**不表示雙費洛蒙被推翻**。詳見 `docs/chem-evidence-saund-friedman-2023.md`。
+- R133（Vázquez, Koehler & Pereira 2020）2026-11-08：期刊、PMC、Zenodo、Figshare、Dryad、OSF、DataCite 與作者／學校頁面都**沒有**原始錄影或補充資料；論文只給「轉彎＝朝向或離開中線的左右修正動作」的文字定義，沒有角度或側移門檻。轉彎數的操作定義不完整。給作者的請求信草稿**未寄出**（對外聯絡需 Owner 授權），見 `docs/research-data-requests-2026-11.md`。
+- R720（Chiu et al. 2026）2026-11-08：期刊頁標示有附錄，但本環境看到的頁面沒有附錄下載連結，其他公開典藏也沒有；**附表 S2 未取得**，不得重建或推測其數值。見 `docs/research-data-requests-2026-11.md`。
+
 ## 2026-11-08 CHEM-0 化學生態證據稽核（R700–R701；#131，`docs/chemical-ecology-engine.md`、`docs/research-pheromone-models-2026-11.md` §11）
 
 > 新編號從 R700 起，避開其他進行中工作包。閱讀程度只寫本次實際讀到的；他種只作候選機制，不提供本種數值。
