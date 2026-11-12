@@ -60,6 +60,7 @@
 - 每個事件附 `bracket_s`、`err_s`、`confirmed_t_s`、`exact`、`usable_as_cause`。事件在確認時才寫入、帶穿越時刻，最後依時間穩定排序。
 - 時間終點時間距已超過 θ、未到 θ + ρ：記 `contact_end_unconfirmed`（`solver_status`，不能當原因）。仍接觸：不記結束。
 - 一致性：每批之後檢查「有約束的對都在接觸中或待確認」（`stats.constraint_outside_contact`，所有情境 0）。
+- 向下穿越的防呆（整合修正，2026-11-12）：`pairFirstHit`（膨脹膠囊距離）與解算器自己的間距函數算法不同，可差約 1e-16 mm；前者回報「已重疊」而 g(from) 仍 > 門檻時，舊程式回傳空區間 [from, from]，排出一個什麼都沒穿越的接觸區段事件，並在同一時刻無限重排（只有區段事件的批次不經過同一瞬間防呆）。現在「已重疊」只有在間距函數同意（g(from) ≤ 門檻）時才採信，否則照 τ = 0 的接觸繼續找嚴格晚於 from 的穿越或判定沒有穿越（`downCrossingBracket`）；只有區段事件的批次也計入同一瞬間（Zeno）防呆。所有情境（含 1000 隻）的軌跡、事件、統計與約束區間逐位元不變；測試 `tests/ph3b-crossing-guard.test.ts`（BLOCKING）。
 - 同時修正時間邊界（契約 §2）：經過轉折點不再重設時間錨點（事件時刻由速度改變時的錨點一次算出）；落在 (H, H + 8ε·max(1,H)] 的事件視為在 H；出發恰在 H 而未在目標上的個體記 `started_at_horizon`（舊為 `moving`）。
 
 ### 2.7 三種接觸（2026-11-08，Owner 決策第 6 題，#146；契約見 [`physics-time-contract.md`](physics-time-contract.md) §4）

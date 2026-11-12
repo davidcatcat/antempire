@@ -236,6 +236,32 @@ export function pairFirstHit(P: Capsule, vP: Vec2, Q: Capsule, vQ: Vec2, tolHit 
   return best === null ? null : { tau: best, overlapping: false };
 }
 
+/** bisection to floating-point resolution between lo (pred false) and hi (pred true) */
+const bis = (lo: number, hi: number, pred: (t: number) => boolean): [number, number] => {
+  for (let k = 0; k < 400; k++) { const m = lo + (hi - lo) / 2; if (m <= lo || m >= hi) break; if (pred(m)) hi = m; else lo = m; }
+  return [lo, hi];
+};
+
+/**
+ * Down-crossing bracket of a pair's gap through a threshold th after `from` (used by the episode scheduler; exported for
+ * the unit test only). `h` is pairFirstHit of the two capsules inflated by th/2, `below(t)` ⇔ the solver's own gap
+ * function g(t) ≤ th, `argmin(a, b)` the minimiser of the convex g on [a, b]. The caller only asks for a down-crossing
+ * when g(from) > th.
+ *
+ * The two distance computations (pairFirstHit's capsule distance and the solver's gap function) can disagree by about
+ * 1e-16 mm, so pairFirstHit may report `overlapping` while g(from) > th. Returning the empty bracket [from, from] in that
+ * case would schedule an episode event at `from` that crosses nothing (reconciliation finds the same band) and is
+ * re-scheduled at the same instant forever. So `overlapping` is believed only when the gap function agrees
+ * (below(from)); otherwise the search continues as for a touch at τ = 0: a crossing strictly after `from`, or none.
+ */
+export function downCrossingBracket(from: number, h: { tau: number; overlapping: boolean } | null, below: (t: number) => boolean, argmin: (a: number, b: number) => number): [number, number] | null {
+  if (!h) return null;
+  if (h.overlapping && below(from)) return [from, from];
+  let b = from + h.tau;
+  if (!below(b)) { b = argmin(from, from + 2 * h.tau + 1e-12 * Math.max(1, from)); if (!below(b)) return null; }
+  return bis(from, b, below);
+}
+
 // ---------------------------------------------------------------- lanes
 interface Seg { a: Vec2; t: Vec2; n: Vec2; s0: number; len: number }
 function laneSegs(cl: Vec2[], id: string): Seg[] {
@@ -516,11 +542,6 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
     return segSegDist(cx - ex, cy - ey, cx + ex, cy + ey, dx - fx, dy - fy, dx + fx, dy + fy) - P.r - Q.r;
   };
   const bandOf = (g: number) => { let b = 0; for (const x of TB) if (g > x) b++; return b; };
-  /** bisection to floating-point resolution between lo (pred false) and hi (pred true) */
-  const bis = (lo: number, hi: number, pred: (t: number) => boolean): [number, number] => {
-    for (let k = 0; k < 400; k++) { const m = lo + (hi - lo) / 2; if (m <= lo || m >= hi) break; if (pred(m)) hi = m; else lo = m; }
-    return [lo, hi];
-  };
   /** minimiser of the convex g on [a, b] (golden section) */
   const argminG = (P: RT, Q: RT, a: number, b: number) => {
     const r = (Math.sqrt(5) - 1) / 2;
@@ -549,11 +570,8 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
       // (pairFirstHit), then the root of the gap itself between `from` and a point inside the sublevel set
       const below = (t: number) => pg(P, Q, t) <= th;
       const cP = capAt(P, from), cQ = capAt(Q, from), h = pairFirstHit({ ...cP, r: cP.r + th / 2 }, vP, { ...cQ, r: cQ.r + th / 2 }, vQ, 0);
-      if (!h) return null;
-      if (h.overlapping) return [from, from];
-      let b = from + h.tau;
-      if (!below(b)) { b = argminG(P, Q, from, from + 2 * h.tau + 1e-12 * Math.max(1, from)); if (!below(b)) return null; }
-      r = bis(from, b, below);
+      r = downCrossingBracket(from, h, below, (a, b) => argminG(P, Q, a, b));
+      if (!r) return null;
     }
     return r[1] <= H + horizonSnap(H) ? r : null;
   };
@@ -760,7 +778,7 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
   // ---- main loop
   windowUpdate(0);
   for (const a of A) ownEvent(a);
-  let nextWin = WIN, lastT = -1, sameCount = 0;
+  let nextWin = WIN, lastT = -1, sameCount = 0, epLastT = -1, epSameCount = 0;
   /** episode reconciliation after a batch: pairs whose crossing event fired and every candidate pair of an agent whose
    *  motion record changed (its gap function changed; a joint turn may make it jump) */
   const reconcileAfter = (t: number, fired: QE[], moved: number[]) => {
@@ -859,7 +877,13 @@ export function solve2D(input: Solver2DInput): Solver2DResult {
       const bk = `${e.kind}|${e.a}|${e.b}`;
       if (valid && !inBatch.has(bk)) { inBatch.add(bk); batch.push(e); } else stats.stale_pops++;
     }
-    if (!batch.length) { if (epFired.length) reconcileAfter(t, epFired, []); continue; }
+    if (!batch.length) {
+      // episode-only batch: no motion changes, but it still counts against the same-instant (Zeno) guard: a crossing
+      // re-scheduled at the same t forever would otherwise loop without ever reaching the guard (or max_batches)
+      if (t === epLastT) { if (++epSameCount > maxSame) { stats.aborted = `more than ${maxSame} episode-only batches at t = ${t} (Zeno guard)`; break; } } else { epLastT = t; epSameCount = 0; }
+      if (epFired.length) reconcileAfter(t, epFired, []);
+      continue;
+    }
     if (t === lastT) { if (++sameCount > maxSame) { stats.aborted = `more than ${maxSame} batches at t = ${t} (Zeno guard)`; break; } } else { lastT = t; sameCount = 0; }
     stats.max_same_instant_batches = Math.max(stats.max_same_instant_batches, sameCount + 1);
     stats.batches++;
