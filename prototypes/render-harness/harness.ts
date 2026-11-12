@@ -1,7 +1,7 @@
 /**
  * Render harness (PR B): drives the layered renderer standalone, without the game view.
  *  ?mode=replay        — real experiment replay (web/data, read only): positions via game-model.antFrame (= model.poseAt)
- *  ?mode=stress&n=N    — N synthetic sprites on circles (示意 synthetic, NOT engine data) for the frame-rate budget
+ *  ?mode=stress&n=N    — N synthetic sprites on circles (示範 synthetic, NOT engine data) for the frame-rate budget
  * Exposes window.__harness for the Playwright bench: fps, quality, layer trace, a no-mutation check and a
  * position check (drawn engine positions = affine image of model.poseAt recomputed independently).
  */
@@ -72,7 +72,7 @@ async function main() {
 }
 
 function stress() {
-  const places = [{ id: 'N00', name: '示意巢', bearing: null, distance_cm: null, kind: null, layout: null }];
+  const places = [{ id: 'N00', name: '示範巢', bearing: null, distance_cm: null, kind: null, layout: null }];
   const pos = { N00: { x: 0, y: 0, known: true } };
   R.setScene({ seed: 4242, places, pos, routes: [], sources: {}, weather: null });
   fitCam(0, 0, Math.min(canvas.clientWidth, canvas.clientHeight) / 60); R.warm(cam);
@@ -83,7 +83,7 @@ function stress() {
     tt += dt; fitCam(0, 0, cam.s);
     const input: AntInput[] = ants.map((a) => { const ang = a.p0 + a.w * tt; return { id: a.id, x: a.cx + Math.cos(ang) * a.rad, y: a.cy + Math.sin(ang) * a.rad, vis: 'walking', moving: true, heading: qs.has('norot') ? 0 : ang + Math.sign(a.w) * Math.PI / 2 }; });
     const draws = R.frame(cam, input, dt, fms);
-    hud.innerHTML = `<b>繪圖器壓力測試</b>・${draws.length} 個合成精靈（示意 synthetic，非引擎資料）・品質 ${R.quality().level}`;
+    hud.innerHTML = `<b>繪圖器壓力測試</b>・${draws.length} 個合成精靈（示範 synthetic，非引擎資料）・品質 ${R.quality().level}`;
     requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
