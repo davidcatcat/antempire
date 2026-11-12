@@ -110,7 +110,7 @@ const { chromium, devices } = require('playwright');
     if (tag === 'desktop') check(fps.desktop.fps_mean >= 30, `desktop: mean frame rate ≥ 30 fps while playing (${fps.desktop.fps_mean.toFixed(1)})`);
     await shot('04-playing');
     // analysis mode link
-    await page.click('a[href="analysis.html"]'); await page.waitForFunction(() => document.getElementById('badge') && document.getElementById('badge').textContent.includes('Day14'), null, { timeout: 15000 });
+    await page.click('a[href="analysis.html"]'); await page.waitForFunction(() => window.antempireViewer && document.getElementById('badge') && document.getElementById('badge').textContent.includes('非正式'), null, { timeout: 15000 });
     check(page.url().endsWith('analysis.html'), `${tag}: the analysis link opens the V5 analysis view`);
     await ctx.close();
   }
