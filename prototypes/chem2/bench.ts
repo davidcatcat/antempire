@@ -88,7 +88,10 @@ const minutes = (a: { from_s: number; to_s: number }) => { const out: number[] =
 export const PROBES_S = [7200, 9000, 10800, 14400, 21600, 64800];
 export const label = (t: number) => { const m = 720 + t / 60, d = Math.floor(m / 1440); return `${d ? 'D+1 ' : ''}${String(Math.floor((m % 1440) / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; };
 
-export interface Profile { values: number[]; residual: number }
+/** residual = integrated − present − decayed; deposited = integrated amount (both from the channel ledger at the last probe) */
+export interface Profile { values: number[]; residual: number; deposited: number }
+export interface LedgerTotals { residual: number; deposited: number }
+const totals = (s: ChemStore, id: string): LedgerTotals => { const l = s.ledger(id); return { residual: l.residual, deposited: l.integrated_amount }; };
 function readEdge(s: ChemStore, signal_id: string, t: number) { return s.sampleLocal({ signal_id, agent_id: 'probe', layer: 'surface', time: T(t), phase: 'local_sensing', sensor: { kind: 'edge', edge_id: 'trail', s_mm: 300, radius_mm: 3 } }).exposure; }
 
 /** S1 single trail (M1 unit responses): whole-edge passes; probe at s = 300 mm */
@@ -97,23 +100,26 @@ export function singleTrail(half: number | null, q10: number | null, w: WeatherN
   const s = new ChemStore(cfg), ts = minutes(part === 'explore' ? EXPLORE : LADEN);
   s.deposit(ts.map((t, i) => dep(`${part}${i}`, 'm1', t, { kind: 'edge_segment', edge_id: 'trail', s0_mm: 0, s1_mm: 600 }, part === 'explore' ? 'exploration_pass' : 'laden_return')));
   const values = PROBES_S.map((t) => { s.advance(T(t)); return readEdge(s, 'm1', t); });
-  return { values, residual: s.ledger('m1').residual };
+  const { residual, deposited } = totals(s, 'm1');
+  return { values, residual, deposited };
 }
 
 /** S1 under M2: E from exploration passes, F from laden passes; λ_E = ratio·λ_F (λ_F at the half-life grid point) */
-export function singleTrailM2(halfF: number | null, ratio: number, q10: number | null, w: WeatherName): { E: number[]; F: number[] } {
+export function singleTrailM2(halfF: number | null, ratio: number, q10: number | null, w: WeatherName): { E: number[]; F: number[]; ledgers: { E: LedgerTotals; F: LedgerTotals } } {
   const hE = halfF === null ? null : halfF / ratio;
   const cfgs: ChannelConfig[] = [{ spec: channel('E', 'surface_edge', hE, 'M2', 'E'), domain: TRAIL, kinetics: kinetics(q10) }, { spec: channel('F', 'surface_edge', halfF, 'M2', 'F'), domain: TRAIL, kinetics: kinetics(q10) }];
   const s = new ChemStore({ clock: CLOCK, environment: envOf(w), channels: cfgs });
   s.deposit([...minutes(EXPLORE).map((t, i) => dep(`e${i}`, 'E', t, { kind: 'edge_segment', edge_id: 'trail', s0_mm: 0, s1_mm: 600 }, 'exploration_pass')), ...minutes(LADEN).map((t, i) => dep(`f${i}`, 'F', t, { kind: 'edge_segment', edge_id: 'trail', s0_mm: 0, s1_mm: 600 }, 'laden_return'))]);
   const E: number[] = [], F: number[] = [];
   for (const t of PROBES_S) { s.advance(T(t)); E.push(readEdge(s, 'E', t)); F.push(readEdge(s, 'F', t)); }
-  return { E, F };
+  return { E, F, ledgers: { E: totals(s, 'E'), F: totals(s, 'F') } };
 }
 
 /** S2 crossing trails on a plane: A along y = 200 (13:00–13:30), B along x = 200 (13:30–14:00), 10 mm steps per pass */
 export const CROSS_PROBES = { crossing: [200, 200], on_A: [100, 200], on_B: [200, 100] } as const;
-export function crossing(half: number | null, q10: number | null, w: WeatherName): Record<keyof typeof CROSS_PROBES, number[]> {
+export function crossing(half: number | null, q10: number | null, w: WeatherName): Record<keyof typeof CROSS_PROBES, number[]> { return crossingRun(half, q10, w).probes; }
+/** S2 with the channel ledger totals (same run as crossing()) */
+export function crossingRun(half: number | null, q10: number | null, w: WeatherName): { probes: Record<keyof typeof CROSS_PROBES, number[]>; ledger: LedgerTotals } {
   const s = new ChemStore({ clock: CLOCK, environment: envOf(w), channels: [{ spec: channel('x', 'sparse_2d', half), domain: PLANE, kinetics: kinetics(q10) }] });
   const evs: DepositEvent[] = [];
   minutes({ from_s: 3600, to_s: 5400 }).forEach((t, i) => evs.push(dep(`A${i}`, 'x', t, { kind: 'segment2d', x0_mm: 0, y0_mm: 200, x1_mm: 400, y1_mm: 200 }, 'laden_return')));
@@ -124,7 +130,7 @@ export function crossing(half: number | null, q10: number | null, w: WeatherName
     s.advance(T(t));
     for (const [k, [x, y]] of Object.entries(CROSS_PROBES) as [keyof typeof CROSS_PROBES, readonly [number, number]][]) out[k].push(s.sampleLocal({ signal_id: 'x', agent_id: 'probe', layer: 'surface', time: T(t), phase: 'local_sensing', sensor: { kind: 'disc', x_mm: x, y_mm: y, radius_mm: 3 } }).mean_density_per_mm2!);
   }
-  return out;
+  return { probes: out, ledger: totals(s, 'x') };
 }
 
 // ------------------------------------------------------------------ printing (terminal only)

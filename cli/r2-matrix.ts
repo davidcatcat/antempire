@@ -26,7 +26,15 @@
  *  - conservation, determinism, save recovery, life-state correctness and observation honesty are NOT relaxed: a row
  *    of a module in non_relaxable_modules (which must contain NON_RELAXABLE_MIN) blocks R2 unless it is 已接入;
  *  - the disclosure row (module not_simulated_disclosure: the list in viewer + save metadata) can be 已接入 only with
- *    probe_all entries found in a web/ viewer file AND in a Worker save-metadata file.
+ *    probe_all entries found in a web/ viewer file AND in a Worker save-metadata file, and only while the generated
+ *    list module (NOT_SIMULATED_MODULE) equals what this matrix generates;
+ *  - every listed row (未接入 except exempt / disclosure rows, and every 簡化代理) carries a player-facing disclosure_zh
+ *    (「尚未模擬」 / 「簡化代理」); other rows carry none. The generated module is a candidate-world source, so the 未接入
+ *    probes scan the disclosures too: a disclosure text can never pass for wiring.
+ *
+ *   --write also regenerates NOT_SIMULATED_MODULE (prototypes/continuous-world/worker/not-simulated.ts): the ONE
+ *   versioned 「尚未模擬／簡化代理」 list of the P0-A2 world, written into payload.save_meta.not_simulated by the Worker
+ *   and shown by the viewer from that save metadata only (Owner #212 Q2 a; matrix row M43).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -43,9 +51,14 @@ const UNMEASURED_BASES = new Set(['文獻支持', '一般生理學', '遊戲假�
  *  correctness, observation honesty). The matrix may list more, never fewer. */
 export const NON_RELAXABLE_MIN = ['energy_mass_ledger', 'death_consumption', 'brood_stages', 'queen_oviposition', 'determinism', 'save_lifecycle', 'view_invariance', 'viewer', 'not_simulated_disclosure', 'candidate_label', 'no_god_mode', 'local_sensing', 'verifier'] as const;
 export const DISCLOSURE_MODULE = 'not_simulated_disclosure';
+/** the generated list module (Worker directory: p0a2-world.ts puts it into save_meta; part of the P0-A2 code hash) */
+export const NOT_SIMULATED_MODULE = 'prototypes/continuous-world/worker/not-simulated.ts';
+export const NOT_SIMULATED_FORMAT = 'antempire.not-simulated.v1';
 
 export interface Row {
   id: string; module: string; name_zh: string; status: Status;
+  /** listed rows only: the one-line player-facing disclosure that the viewer and save_meta.not_simulated show */
+  disclosure_zh?: string;
   candidate_world_now: string; existing_assets: string[];
   probe?: { file?: string; text: string; any?: string[] };
   /** disclosure row only: every entry must be found in its file (viewer and save metadata) */
@@ -161,12 +174,24 @@ export function validateMatrix(m: Matrix, root = REPO_ROOT): string[] {
       for (const t of [r.probe.text, ...(r.probe.any ?? [])]) {
         const hit = corpus.find((x) => x.text.includes(t));
         if (hit) err(w, `marked 未接入 but "${t}" appears in candidate-world source ${hit.f}: update the matrix`);
+        // the generated list is a candidate-world source: no disclosure may contain an unwired mechanism's probe
+        const said = m.rows.find((y) => (y.disclosure_zh ?? '').includes(t));
+        if (said) err(w, `the disclosure_zh of ${said.id} contains this 未接入 probe "${t}" (it would read as wiring): reword it`);
       }
     }
     // Owner #212 Q2 a: an unwired mechanism is shown as 「尚未模擬」; the non-relaxable requirements still block
     if (r.status === '未接入' && !exempt.has(r.module) && !(r.player_view ?? '').includes('尚未模擬')) err(w, '未接入 must declare in player_view that the viewer shows 「尚未模擬」 (Owner #212 Q2 a)');
     if (nonRelaxable.has(r.module) && r.status !== '已接入' && r.blocks_r2 !== true) err(w, `${r.module} is non-relaxable (Owner #212 Q2 a: conservation, determinism, save recovery, life-state correctness, observation honesty): it blocks R2 unless 已接入`);
+    // Owner #212 Q2 a: every listed row carries the disclosure the viewer / save metadata show; other rows none
+    if (listed(m, r)) {
+      const d = r.disclosure_zh;
+      if (typeof d !== 'string' || d.trim() === '') err(w, 'a listed row (未接入 or 簡化代理) needs disclosure_zh (its 「尚未模擬」 list entry)');
+      else if (/[\n|'\\]/.test(d)) err(w, 'disclosure_zh must be one line without |, \' or \\');
+      else if (r.status === '未接入' && !d.includes('尚未模擬')) err(w, 'disclosure_zh of a 未接入 row must say 尚未模擬');
+      else if (r.status === '簡化代理' && !d.includes('簡化代理')) err(w, 'disclosure_zh of a 簡化代理 row must say 簡化代理');
+    } else if (r.disclosure_zh !== undefined) err(w, 'disclosure_zh is only for rows of the 「尚未模擬／簡化代理」 list');
     if (r.module === DISCLOSURE_MODULE && r.status === '已接入') {
+      if (!exists(root, NOT_SIMULATED_MODULE) || read(root, NOT_SIMULATED_MODULE) !== renderNotSimulatedModule(m)) err(w, `${NOT_SIMULATED_MODULE} is missing or is not the list this matrix generates (node cli/r2-matrix.ts --write)`);
       const pa = r.probe_all ?? [];
       if (!pa.some((p) => p.file.startsWith('web/')) || !pa.some((p) => p.file.startsWith('prototypes/continuous-world/worker/'))) err(w, 'the disclosure row needs probe_all entries in a web/ viewer file and in a Worker save-metadata file');
       for (const p of pa) {
@@ -220,10 +245,15 @@ export function renderTable(m: Matrix): string {
   ].join('\n');
 }
 
+/** is the row on the 「尚未模擬／簡化代理」 list (未接入 except exempt / disclosure rows; every 簡化代理) */
+export function listed(m: Pick<Matrix, 'disclosure_exempt_modules'>, r: Row): boolean {
+  if (r.status === '簡化代理') return true;
+  return r.status === '未接入' && !(m.disclosure_exempt_modules ?? []).includes(r.module) && r.module !== DISCLOSURE_MODULE;
+}
+
 /** the 「尚未模擬／簡化代理」 list (generated; Owner #212 Q2 a: docs and the acceptance report must show it) */
 export function renderNotSimulated(m: Matrix): string {
-  const exempt = new Set(m.disclosure_exempt_modules ?? []);
-  const no = m.rows.filter((r) => r.status === '未接入' && !exempt.has(r.module) && r.module !== DISCLOSURE_MODULE);
+  const no = m.rows.filter((r) => r.status === '未接入' && listed(m, r));
   const proxy = m.rows.filter((r) => r.status === '簡化代理');
   return [
     `**尚未模擬**（${no.length} 列；候選世界中沒有這些機制，畫面、存檔中繼資料、文件與本報告都必須標「尚未模擬」，不得以隱藏補給或代用演出冒充）：`,
@@ -233,6 +263,40 @@ export function renderNotSimulated(m: Matrix): string {
     `**簡化代理**（${proxy.length} 列；近似範圍見矩陣 limits）：`,
     '',
     ...proxy.map((r) => `- ${r.id} ${cell(r.name_zh)}：${cell(r.limits)}`),
+  ].join('\n');
+}
+
+/** the list items of the P0-A2 world: 未接入 first, then 簡化代理, matrix order within each group */
+export function notSimulatedItems(m: Matrix): { row: string; status: '未接入' | '簡化代理'; label_zh: string }[] {
+  const item = (r: Row) => ({ row: r.id, status: r.status as '未接入' | '簡化代理', label_zh: r.disclosure_zh ?? '' });
+  return [...m.rows.filter((r) => r.status === '未接入' && listed(m, r)).map(item), ...m.rows.filter((r) => r.status === '簡化代理').map(item)];
+}
+
+/** the generated Worker module that holds the list (pure data, imports nothing; part of the P0-A2 code hash) */
+export function renderNotSimulatedModule(m: Matrix): string {
+  return [
+    '/**',
+    ` * GENERATED by node cli/r2-matrix.ts --write from ${MATRIX_FILE}: do not edit by hand`,
+    ' * (tests/r2-acceptance-matrix.test.ts fails when this file is stale).',
+    ' *',
+    ' * The ONE 「尚未模擬／簡化代理」 list of the P0-A2 candidate / experiment world (Owner #212 Q2 a; matrix row M43): every',
+    ' * matrix row marked 未接入 (except the documentation / verification rows and the disclosure row itself) and every 簡化代理',
+    ' * row, each with its player-facing disclosure (disclosure_zh). p0a2-world.ts writes it into',
+    ' * payload.save_meta.not_simulated; the viewer shows only the list a Worker snapshot carries (it keeps no copy).',
+    ' * This module is in the P0-A2 code hash, so any change of the list changes the rules fingerprint. Pure data.',
+    ' */',
+    `export const NOT_SIMULATED_FORMAT = '${NOT_SIMULATED_FORMAT}';`,
+    "export interface NotSimulatedItem { row: string; status: '未接入' | '簡化代理'; label_zh: string }",
+    'export interface NotSimulatedList { format: typeof NOT_SIMULATED_FORMAT; source: string; note_zh: string; items: readonly NotSimulatedItem[] }',
+    'export const P0A2_NOT_SIMULATED: NotSimulatedList = {',
+    '  format: NOT_SIMULATED_FORMAT,',
+    `  source: '${MATRIX_FILE}',`,
+    "  note_zh: '候選／實驗世界中沒有標「尚未模擬」的機制，「簡化代理」只是近似；不得以隱藏補給或代用演出冒充（Owner #212 Q2 a）',",
+    '  items: [',
+    ...notSimulatedItems(m).map((x) => `    { row: '${x.row}', status: '${x.status}', label_zh: '${x.label_zh}' },`),
+    '  ],',
+    '};',
+    '',
   ].join('\n');
 }
 
@@ -252,11 +316,12 @@ export function withBlock(text: string, name: string, body: string): string {
 }
 /** generated-block problems (empty = the documents quote the current matrix verbatim) */
 export function staleBlocks(m: Matrix, root = REPO_ROOT): string[] {
-  return BLOCKS.flatMap(({ file, name, render }) => {
+  const mod = exists(root, NOT_SIMULATED_MODULE) && read(root, NOT_SIMULATED_MODULE) === renderNotSimulatedModule(m) ? [] : [`${NOT_SIMULATED_MODULE}: generated list is missing or out of date (node cli/r2-matrix.ts --write)`];
+  return [...mod, ...BLOCKS.flatMap(({ file, name, render }) => {
     const text = read(root, file);
     try { return withBlock(text, name, render(m)) === text ? [] : [`${file}: block ${name} is out of date (node cli/r2-matrix.ts --write)`]; }
     catch (x) { return [`${file}: ${(x as Error).message}`]; }
-  });
+  })];
 }
 
 const isMain = process.argv[1] !== undefined && path.resolve(process.argv[1]) === path.resolve(REPO_ROOT, 'cli', 'r2-matrix.ts');
@@ -264,7 +329,10 @@ if (isMain) {
   const m = loadMatrix();
   const errors = validateMatrix(m);
   if (errors.length) { console.error(errors.join('\n')); process.exit(1); }
-  if (process.argv.includes('--write')) for (const { file, name, render } of BLOCKS) fs.writeFileSync(path.join(REPO_ROOT, file), withBlock(read(REPO_ROOT, file), name, render(m)));
+  if (process.argv.includes('--write')) {
+    for (const { file, name, render } of BLOCKS) fs.writeFileSync(path.join(REPO_ROOT, file), withBlock(read(REPO_ROOT, file), name, render(m)));
+    fs.writeFileSync(path.join(REPO_ROOT, NOT_SIMULATED_MODULE), renderNotSimulatedModule(m));
+  }
   if (process.argv.includes('--check')) { const s = staleBlocks(m); if (s.length) { console.error(s.join('\n')); process.exit(1); } }
   console.log(JSON.stringify(summarize(m), null, 1));
 }
