@@ -71,7 +71,21 @@ const dirHash = (d) => { const h = crypto.createHash('sha256'); const walk = (p)
   const S = (page) => page.evaluate(() => ({ cur: window.__v62.session().current, save: window.__v62.saveUi(), receipt: window.__v62.session().lastReceipt, load: window.__v62.session().lastLoad, t: window.__v62.frame() && window.__v62.frame().t_sim, text: document.querySelector('#saveStatus').textContent }));
   const toMenu = async (page) => { await page.click('#menuBtn'); await page.waitForSelector('#menu:not([hidden])'); await page.waitForTimeout(300); };
   const list = (page) => page.evaluate(async () => (await window.__v62.session().list()));
-  const pauseNow = async (page) => { await page.evaluate(async () => { const V = window.__v62; if (V.pacing().running) await V.client.pause(); }); };
+  // A world entered from the menu (new game / 繼續遊戲 / load) is autostarted by the page AFTER the menu's promise
+  // resolves (enterWorld: set_speed, then start). `active()` / `lastLoad` / `frame()` become true before that `start`
+  // reaches the Worker, so pausing at that moment is a no-op and the later `start` would make the test's step_until
+  // be refused (RUNNING). Wait for the deterministic condition — the Worker acknowledged `start` (pacing.started) —
+  // then pause, and require the Worker's acknowledgement.
+  const pauseNow = async (page) => {
+    await page.waitForFunction(() => { const p = window.__v62.pacing(); return !!p && p.started; }, null, { timeout: 30000 });
+    const r = await page.evaluate(async () => { const V = window.__v62; if (!V.pacing().running) return { type: 'ack', already: true, running: false }; const a = await V.client.pause(); return { type: a.type, code: a.code, running: a.pacing ? a.pacing.running : null }; });
+    if (r.type !== 'ack' || r.running !== false) throw new Error(`pause not acknowledged by the Worker: ${JSON.stringify(r)}`);
+  };
+  /** step_until T on the paused world; the Worker must acknowledge it and be exactly at T (a refused command fails loudly) */
+  const stepTo = async (page, T) => {
+    const r = await page.evaluate(async (T) => { const a = await window.__v62.client.stepUntil(T); return { type: a.type, code: a.code, message: a.message, t: a.frame ? a.frame.t_sim : null }; }, T);
+    if (r.type !== 'ack' || r.t !== T) throw new Error(`step_until ${T} not completed: ${JSON.stringify(r)}`);
+  };
   // independent reference run in a separate Worker (same world id and seed), never saved
   const reference = (page, world_id, seed, T) => page.evaluate(async ({ world_id, seed, T, KIND }) => {
     const { ExperimentWorkerClient } = await import('./dist/experimental/worker-client.js');
@@ -239,7 +253,7 @@ const dirHash = (d) => { const h = crypto.createHash('sha256'); const walk = (p)
   ctx = await launch(dirA); page = await openMenu(ctx, 'A1');
   const WA = await newGame(page, '測試 A', 4242);
   await pauseNow(page);
-  await page.evaluate(async (T) => { await window.__v62.client.stepUntil(T); }, 24 * H);
+  await stepTo(page, 24 * H);
   await page.click('#saveBtn'); await page.waitForFunction(() => window.__v62.saveUi().status === 'saved' && window.__v62.session().lastReceipt.kind === 'manual');
   const r24 = (await S(page)).receipt;
   const evFirst = await page.evaluate(() => window.__ev.slice());
@@ -248,7 +262,7 @@ const dirHash = (d) => { const h = crypto.createHash('sha256'); const walk = (p)
   await page.click('#mContinue'); await page.waitForFunction(() => window.__v62.active() && window.__v62.session().lastLoad);
   await pauseNow(page);
   const loadA = (await S(page)).load;
-  await page.evaluate(async (T) => { await window.__v62.client.stepUntil(T); }, 48 * H);
+  await stepTo(page, 48 * H);
   const resumed = await page.evaluate(async () => { const s = (await window.__v62.client.snapshot()).snapshot; return { ev: window.__ev.slice(), hash: s.payload_sha256, payload: JSON.stringify(s.payload) }; });
   const ref = await reference(page, WA.world_id, 4242, 48 * H);
   const split = [...evFirst.filter((e) => JSON.parse(e).seq < loadA.seq), ...resumed.ev];
