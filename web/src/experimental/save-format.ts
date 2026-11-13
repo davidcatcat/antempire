@@ -159,7 +159,8 @@ export function compatibility(h: Pick<SnapshotHeader, 'schema' | 'rules_fingerpr
  */
 export type VerificationLevel = 'local_playable' | 'integrity_ok' | 'node_verified';
 export const VERIFICATION_TEXT: Record<VerificationLevel, string> = { local_playable: '本機可玩', integrity_ok: '完整性檢查通過', node_verified: 'Node 已重算驗證' };
-export const NOT_NODE_VERIFIED = '未經 Node 驗證';
+/** Owner #212 Q3 a wording (2026-11-13): shown with every status the browser can reach */
+export const NOT_NODE_VERIFIED = '未經 Node 重算驗證';
 /** What the viewer may claim for a save: never node_verified (no verifier report is accepted in the browser yet). */
 export function verificationOf(s: { loadable: boolean; integrity_checked: boolean }): { level: VerificationLevel | null; text: string } {
   if (!s.loadable) return { level: null, text: NOT_NODE_VERIFIED };
@@ -169,7 +170,12 @@ export function verificationOf(s: { loadable: boolean; integrity_checked: boolea
 
 // ---------- world records, retention, load order ----------
 
-export interface WorldSummary { queens?: number | null; workers?: number | null; larvae?: number | null; individuals?: number | null; note?: string | null }
+export interface WorldSummary {
+  queens?: number | null; workers?: number | null; larvae?: number | null; individuals?: number | null; note?: string | null;
+  /** sizes of the snapshot's save_meta.not_simulated list (null: the save carries none; absent: a record written before
+   *  the list existed). Display only. */
+  not_simulated?: { unwired: number; proxies: number } | null;
+}
 /** Where an imported copy came from (Owner decision 54). The copy's stored snapshots are the source's verified bytes. */
 export interface Provenance {
   kind: 'import_copy'; source_world_id: string; source_name: string; source_exported_at: string; source_export_sha256: string;
@@ -272,14 +278,44 @@ export function simDayTime(t_sim: number | null): { day: number; clock: string }
 
 /** Individuals in a Worker snapshot payload, for the save list. Neither world has a queen (null, not 0). */
 export function summaryOf(snapshot: unknown): WorldSummary {
+  const ns = notSimulatedOf(snapshot), not_simulated = ns.ok ? { unwired: ns.unwired.length, proxies: ns.proxies.length } : null;
   const p0 = (snapshot as { payload?: { world_kind?: unknown; state?: { workers?: object; larvae?: object } } })?.payload;
   if (p0?.world_kind === 'p0a2') {
     const nw = p0.state?.workers ? Object.keys(p0.state.workers).length : null, nl = p0.state?.larvae ? Object.keys(p0.state.larvae).length : null;
-    return { queens: null, workers: nw, larvae: nl, individuals: nw === null || nl === null ? null : nw + nl, note: 'P0-A2 候選／實驗世界（非正式）：小工蟻與幼蟲，沒有蟻后（尚未模擬）' };
+    return { queens: null, workers: nw, larvae: nl, individuals: nw === null || nl === null ? null : nw + nl, note: 'P0-A2 候選／實驗世界（非正式）：小工蟻與幼蟲，沒有蟻后（尚未模擬）', not_simulated };
   }
   const ants = (snapshot as { payload?: { ants?: unknown[] } })?.payload?.ants;
   const n = Array.isArray(ants) ? ants.length : null;
-  return { queens: null, workers: null, individuals: n, note: '合成世界：沒有蟻后，個體不分階級' };
+  return { queens: null, workers: null, individuals: n, note: '合成世界：沒有蟻后，個體不分階級', not_simulated };
+}
+
+// ---------- the 「尚未模擬／簡化代理」 list (Owner #212 Q2 a; docs/r2-acceptance-matrix.json row M43) ----------
+
+/** the list format the Worker writes into payload.save_meta.not_simulated (generated from the R2 matrix) */
+export const NOT_SIMULATED_FORMAT = 'antempire.not-simulated.v1';
+export interface NotSimulatedItem { row: string; status: '未接入' | '簡化代理'; label_zh: string }
+export type NotSimulatedView =
+  | { ok: true; format: string; note_zh: string; source: string; unwired: NotSimulatedItem[]; proxies: NotSimulatedItem[] }
+  | { ok: false; reason: string };
+/**
+ * The list a Worker snapshot carries in payload.save_meta.not_simulated, for display. The viewer has NO list of its own:
+ * a save without one (the synthetic test world, or a record of an older format) is reported as such, never filled in.
+ */
+export function notSimulatedOf(snapshot: unknown): NotSimulatedView {
+  const p = (snapshot as { payload?: { world_kind?: unknown; save_meta?: { not_simulated?: unknown } } } | null)?.payload;
+  const x = p?.save_meta?.not_simulated;
+  if (x === undefined || x === null) {
+    return { ok: false, reason: p?.world_kind === 'p0a2'
+      ? '此存檔的中繼資料沒有「尚未模擬」清單（舊格式）：不得把畫面當成已模擬任何機制'
+      : '合成測試世界不是螞蟻模型：存檔中繼資料沒有「尚未模擬」清單，螞蟻的生理、發育、繁殖、死亡與生態都不在這個世界中' };
+  }
+  if (!isObj(x) || x.format !== NOT_SIMULATED_FORMAT || !Array.isArray(x.items) || typeof x.note_zh !== 'string' || typeof x.source !== 'string') return { ok: false, reason: '存檔中繼資料的「尚未模擬」清單格式不符，未顯示' };
+  const items: NotSimulatedItem[] = [];
+  for (const i of x.items) {
+    if (!isObj(i) || typeof i.row !== 'string' || !/^M\d{2}$/.test(i.row) || (i.status !== '未接入' && i.status !== '簡化代理') || typeof i.label_zh !== 'string' || i.label_zh === '') return { ok: false, reason: '存檔中繼資料的「尚未模擬」清單格式不符，未顯示' };
+    items.push({ row: i.row, status: i.status, label_zh: i.label_zh });
+  }
+  return { ok: true, format: x.format, note_zh: x.note_zh, source: x.source, unwired: items.filter((i) => i.status === '未接入'), proxies: items.filter((i) => i.status === '簡化代理') };
 }
 
 // ---------- autosave policy ----------

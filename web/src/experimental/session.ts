@@ -15,7 +15,7 @@ import { WORLD_KINDS, type WorldKind } from './worker-protocol.ts';
 /** the world kind a new game starts by default: the P0-A2 24 h individual-behaviour world (candidate, non-official) */
 export const DEFAULT_WORLD_KIND: WorldKind = 'p0a2';
 
-/** verification: what this viewer may claim (Owner ruling #200): '本機可玩' or '完整性檢查通過', always with '未經 Node 驗證'. */
+/** verification: what this viewer may claim (Owner ruling #200): '本機可玩' or '完整性檢查通過', always with '未經 Node 重算驗證'. */
 export interface SessionState { world_id: string; name: string; seed: number; writer: boolean; readOnlyReason: string | null; recoveredNotice: string | null; sim_world_id: string; verification: string }
 
 /** Issue #224: the Worker failed or was terminated (its commands reject with a WorkerClientError). The message of the

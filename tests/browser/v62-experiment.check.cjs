@@ -20,6 +20,9 @@
  *    labels (非正式 + 候選／實驗世界，非正式), paused record instants (every drawn worker = its engine pose, departures
  *    exactly at the route end), day / night scene light follows the engine light state, inset tap-select + follow,
  *    UI operations → same event stream, event-log hash and payload hash, a 3600× measurement (reported only).
+ *  - 「尚未模擬」 (Owner #212 Q2 a, matrix M43): in the P0-A2 world the top-bar button is visible and its panel lists
+ *    exactly the snapshot's save_meta.not_simulated (unwired and proxies, including 擴散尚未模擬); the synthetic world
+ *    shows that it has no list. Opening the panel is observation only.
  *  - saves/ and journal/ unchanged.
  */
 const fs = require('node:fs');
@@ -60,6 +63,8 @@ const COUNT_WORKERS = () => { window.__workerCount = 0; const W = window.Worker;
     // --- 1. label, layers, default 1x, continuous time, pause
     const page = await open('?seed=7&world=synthetic');
     check((await page.textContent('#badge')).includes(LABEL) && (await page.textContent('#exp-flag')) === '非正式', `${tag}: non-official label and flag shown`);
+    await page.waitForFunction(() => window.__v62.disclosure() !== null, null, { timeout: 10000 });
+    { const d = await page.evaluate(() => ({ d: window.__v62.disclosure(), btn: document.querySelector('#nsBtn').textContent, vis: !document.querySelector('#nsBtn').hidden })); check(d.vis && d.d.ok === false && /合成測試世界不是螞蟻模型/.test(d.d.reason) && d.btn === '尚未模擬：沒有清單', `${tag}: synthetic world: the 「尚未模擬」 button says the world has no list (not an ant model)`); }
     await page.waitForTimeout(1200);
     const s0 = await page.evaluate(() => ({ p: window.__v62.pacing(), t: window.__v62.frame().t_sim, layers: window.__v62.state().layers, workers: window.__workerCount }));
     check(s0.p.running && s0.p.speed === 1, `${tag}: running at the default 1× (${JSON.stringify(s0.p)})`);
@@ -171,6 +176,26 @@ const COUNT_WORKERS = () => { window.__workerCount = 0; const W = window.Worker;
       const s1 = await P.evaluate(() => ({ f: window.__v62.frame(), p: window.__v62.pacing(), layers: window.__v62.state().layers, badge: document.querySelector('#badge').textContent }));
       check(s1.f.world_kind === 'p0a2' && s1.badge.includes(LABEL) && s1.badge.includes('候選／實驗世界，非正式') && s1.f.workers.length === 30 && s1.f.larvae.length === 8, `${tag}: P0-A2 world is the default; labelled non-official and 候選／實驗世界，非正式 (30 workers, 8 larvae)`);
       check(s1.p.running && s1.p.speed === 1 && s1.layers.length === 11, `${tag}: P0-A2 runs at 1× through the 11-layer renderer`);
+      // 「尚未模擬」 button + panel = the world's save metadata (Owner #212 Q2 a; matrix M43)
+      {
+        await P.waitForFunction(() => window.__v62.disclosure() !== null, null, { timeout: 10000 });
+        const btnVisible = await P.isVisible('#nsBtn'), btnText = await P.textContent('#nsBtn');
+        await P.click('#nsBtn');
+        const ns = await P.evaluate(async () => {
+          const r = await window.__v62.client.snapshot(), meta = r.snapshot.payload.save_meta.not_simulated;
+          const rows = (sel) => [...document.querySelectorAll(`${sel} li`)].map((li) => ({ row: li.dataset.row, text: li.textContent }));
+          return { meta, unwired: rows('#nsUnwired'), proxies: rows('#nsProxies'), panelVisible: !document.querySelector('#notSim').hidden, expanded: document.querySelector('#nsBtn').getAttribute('aria-expanded'), panel: document.querySelector('#notSim').textContent };
+        });
+        const mu = ns.meta.items.filter((i) => i.status === '未接入'), mp = ns.meta.items.filter((i) => i.status === '簡化代理');
+        check(btnVisible && btnText === `尚未模擬 ${mu.length} 項｜簡化代理 ${mp.length} 項` && mu.length > 0, `${tag}: P0-A2 top bar shows the 「尚未模擬」 button (${btnText})`);
+        check(ns.panelVisible && ns.expanded === 'true' && ns.unwired.length === mu.length && ns.proxies.length === mp.length
+          && mu.every((i, k) => ns.unwired[k].row === i.row && ns.unwired[k].text.startsWith(i.label_zh)) && mp.every((i, k) => ns.proxies[k].row === i.row && ns.proxies[k].text.startsWith(i.label_zh)),
+          `${tag}: the panel lists exactly save_meta.not_simulated (${mu.length} 尚未模擬, ${mp.length} 簡化代理)`);
+        check(['M15', 'M16', 'M17', 'M18', 'M19', 'M08', 'M24'].every((r) => ns.unwired.some((x) => x.row === r)) && ns.panel.includes('擴散尚未模擬') && ns.panel.includes('save_meta.not_simulated'), `${tag}: queen, brood development, death, majors, reproduction, open ecology and trail chemistry (擴散尚未模擬) are shown as 尚未模擬, with the source named`);
+        await shot(P, '4b-not-simulated-panel');
+        await P.click('#nsBtn');
+        check(await P.evaluate(() => document.querySelector('#notSim').hidden), `${tag}: the panel closes again`);
+      }
       await P.waitForTimeout(1500);
       check((await P.evaluate(() => window.__v62.frame().t_sim)) > s1.f.t_sim, `${tag}: P0-A2 world time advances`);
       // drawn = engine at record instants: pause, step to the next departure / arrival of a travelling worker

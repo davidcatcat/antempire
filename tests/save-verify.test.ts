@@ -33,7 +33,8 @@ import { canonicalJson, hashJson } from '../prototypes/continuous-world/worker/s
 import { verifySaveText, type Report } from '../cli/verify-save.ts';
 import { P0a2ExperimentWorld, P0a2Refused, P0A2_ENGINE_HISTORY, P0A2_ENGINE_VERSION, P0A2_PARAMS_SHA, P0A2_RULES_FINGERPRINT, P0A2_SAVE_WORLD_KIND, P0A2_SCENARIO, P0A2_SCHEMA_VERSION, type P0a2Event, type P0a2Snapshot } from '../prototypes/continuous-world/worker/p0a2-world.ts';
 import { canon as p0canon } from '../prototypes/p0a2-24h/canon.ts';
-import { buildExport, compatibility, defaultMigrations, parseImport, summaryOf, type SnapshotEnvelope } from '../web/src/experimental/save-format.ts';
+import { buildExport, compatibility, defaultMigrations, notSimulatedOf, parseImport, summaryOf, type SnapshotEnvelope } from '../web/src/experimental/save-format.ts';
+import { P0A2_NOT_SIMULATED } from '../prototypes/continuous-world/worker/not-simulated.ts';
 import { Runtime } from '../prototypes/continuous-world/worker/runtime.ts';
 import { P0A2_CODE_FILES, P0A2_CODE_SHA256 } from '../prototypes/continuous-world/worker/p0a2-code-hash.ts';
 
@@ -205,11 +206,16 @@ const ctxX = { world_kind: P0A2_SAVE_WORLD_KIND, world_id: 'exp-test', seed: 7, 
   const noLog = (st: unknown) => { const c = clone(st) as { log: { hash?: string } }; delete c.log.hash; return c; };
   const pNoVer = { ...p, state: noLog(p.state) } as Record<string, unknown>; delete pNoVer.engine_version;
   ok(X.events.length === 18595 && hashJson(X.events.map((e) => strip(v1(e as unknown as Record<string, unknown>)))) === '1107894ca43944f340a894a12e14ecbfd3e07cface6898ac32c7fadee3c3db2f', 'P0-A2 events (without schema_version / rules_fingerprint), projected to the /1 log form, are byte-identical to the pre-chain adapter (seed 7, 48 h, 18 595 events)');
-  ok(hashJson(X.events.map((e) => strip(e as unknown as Record<string, unknown>))) === '3ff0b35ab790588da2dc75bf2b8c4db16ed47c1ab52386893786298e062d14aa', 'P0-A2 events (without schema_version / rules_fingerprint), rules version /2: pinned');
+  // version /3 (2026-11-13, Owner #212 Q2 a, matrix M43) only adds save_meta.not_simulated: events and payload projected
+  // back to the /2 engine_version are the /2 pins; the /3 full values are pinned alongside
+  const v2 = (e: Record<string, unknown>) => ({ ...e, engine_version: 'experiment-p0a2-24h/2' });
+  ok(hashJson(X.events.map((e) => strip(v2(e as unknown as Record<string, unknown>)))) === '3ff0b35ab790588da2dc75bf2b8c4db16ed47c1ab52386893786298e062d14aa', 'P0-A2 events (without schema_version / rules_fingerprint), projected to the /2 engine_version, are byte-identical to rules version /2');
+  ok(hashJson(X.events.map((e) => strip(e as unknown as Record<string, unknown>))) === '054f051c8ff013fa73b13c312f9d016f6d3ca099cc80e5ef31788542eed4d5b3', 'P0-A2 events (without schema_version / rules_fingerprint), version /3: pinned (only engine_version differs from /2)');
   ok(hashJson(noLog(snapX.payload.state) as never) === 'f854d308b2199923a8bdc71fc82de963a52fb8814c8d56ac19acab37552cfae9', 'P0-A2 world state without the log hash chain is byte-identical to rules version /1 and the pre-chain adapter');
   ok(hashJson(snapX.payload.state as never) === '18cc59506ac97bec7217eeb7a7fabe170bfdffb03ae7df6e2bbb3b9ab7b8daf3', 'P0-A2 world state (World.snapshot), rules version /2: pinned (was 292c59fa…5ec4 under /1; only state.log.hash differs)');
   ok(hashJson(pNoVer as never) === 'ad627b99038faf5b72ae15eeb473aebbf1ca09b850bb0592b77b4a98e3e23d26', 'P0-A2 payload without version / fingerprint / code hash / save_meta / chain / log hash chain is byte-identical to rules version /1');
-  ok(hashJson(p as never) === '4ab7edec5a317d7ae58b7b8129e7d3ade608f849fd1c472f88c354fd20057215', 'P0-A2 payload without version fields / fingerprint / code hash / save_meta / chain, rules version /2: pinned (was 672229a6…1428 under /1; only engine_version and state.log.hash differ)');
+  ok(hashJson(v2(p) as never) === '4ab7edec5a317d7ae58b7b8129e7d3ade608f849fd1c472f88c354fd20057215', 'P0-A2 payload without version fields / fingerprint / code hash / save_meta / chain, engine_version projected to /2: byte-identical to rules version /2 (was 672229a6…1428 under /1; only engine_version and state.log.hash differ)');
+  ok(hashJson(p as never) === '219d97546a5bb5feb67281aee3b6996b1b0b2577a363b262086a10001b9da6fb', 'P0-A2 payload without version fields / fingerprint / code hash / save_meta / chain, version /3: pinned (only engine_version differs from /2)');
   ok(P0A2_SCHEMA_VERSION === 2 && X.events.every((e) => e.schema_version === 2) && snapX.schema_version === 2, 'P0-A2 payload schema is 2 and every event says so');
   // chain = independent node:crypto recomputation over the emitted events
   const n = nodeChain(ctxX, X.events), c = X.world.chainState();
@@ -219,6 +225,11 @@ const ctxX = { world_kind: P0A2_SAVE_WORLD_KIND, world_id: 'exp-test', seed: 7, 
   ok(m.world_kind === 'p0a2-24h-v1' && m.initial.world_id === 'exp-test' && m.initial.seed === 7 && m.initial.t_sim === 0 && m.initial.scenario === P0A2_SCENARIO && m.initial.variant === P0RAW.reference_variant
     && m.initial.params_sha256 === P0A2_PARAMS_SHA && P0A2_PARAMS_SHA === sha(p0canon(P0RAW)) && m.lineage.length === 0, 'P0-A2 save_meta: world kind, trusted initial conditions (world id, seed, t = 0, scenario, reference variant, params.json SHA-256 by node:crypto), empty lineage');
   ok(m.species.id === null && m.species.fingerprint === null && /沒有正式物種參數檔/.test(m.species.note), 'P0-A2 species: null with the reason (no official species file; not fabricated)');
+  // Owner #212 Q2 a (matrix M43): the 「尚未模擬／簡化代理」 list generated from the R2 matrix is part of the save metadata
+  ok(canonicalJson(m.not_simulated as never) === canonicalJson(P0A2_NOT_SIMULATED as never) && m.not_simulated.format === 'antempire.not-simulated.v1' && m.not_simulated.items.length > 0, 'P0-A2 save_meta.not_simulated = the generated list (not-simulated.ts)');
+  const nv = notSimulatedOf(snapX), sm = summaryOf(snapX);
+  ok(nv.ok && nv.unwired.length + nv.proxies.length === P0A2_NOT_SIMULATED.items.length && sm.not_simulated?.unwired === nv.unwired.length && sm.not_simulated?.proxies === nv.proxies.length, 'the viewer reads the list from the snapshot (notSimulatedOf, summaryOf)');
+  ok(!('not_simulated' in snapA.payload.save_meta) && !notSimulatedOf(snapA).ok && summaryOf(snapA).not_simulated === null, 'the synthetic world has no list (not an ant model) and the viewer does not fill one in');
   ok(m.environment.synthetic === true && m.environment.id === `p0a2-weather/${P0A2_SCENARIO}` && m.environment.fingerprint === hashJson({ scenario: P0A2_SCENARIO, site: P0RAW.site, weather_scenario: P0RAW.weather_scenarios[P0A2_SCENARIO] }), 'P0-A2 environment: synthetic weather scenario, fingerprint = SHA-256 of its params.json definition');
   ok(WORLD_KINDS[P0A2_SAVE_WORLD_KIND]?.rules_fingerprint === snapX.rules_fingerprint && WORLD_KINDS[P0A2_SAVE_WORLD_KIND].params_sha256 === P0A2_PARAMS_SHA, 'world-kind registry has the P0-A2 world with the runtime\'s rules and parameters');
 }
@@ -232,6 +243,9 @@ ok(p0refused(() => P0a2ExperimentWorld.restore(tamperX((s) => { s.payload.save_m
 ok(p0refused(() => P0a2ExperimentWorld.restore(tamperX((s) => { s.payload.save_meta.initial.variant = 'other'; })), 'META_MISMATCH'), 'P0-A2 restore refuses: another variant in the initial conditions');
 ok(p0refused(() => P0a2ExperimentWorld.restore(tamperX((s) => { s.payload.save_meta.environment.fingerprint = 'f'.repeat(64); })), 'META_MISMATCH'), 'P0-A2 restore refuses: foreign environment fingerprint');
 ok(p0refused(() => P0a2ExperimentWorld.restore(tamperX((s) => { (s.payload.save_meta.lineage as unknown[]).push({ parent_rules_fingerprint: 'x' }); })), 'FORK_UNSUPPORTED'), 'P0-A2 restore refuses: a fork record (no fork implemented)');
+ok(p0refused(() => P0a2ExperimentWorld.restore(tamperX((s) => { delete (s.payload.save_meta as { not_simulated?: unknown }).not_simulated; })), 'META_MISMATCH'), 'P0-A2 restore refuses: save_meta without the 尚未模擬 list (not silently filled in)');
+ok(p0refused(() => P0a2ExperimentWorld.restore(tamperX((s) => { s.payload.save_meta.not_simulated.items = s.payload.save_meta.not_simulated.items.filter((i) => i.status !== '未接入'); })), 'META_MISMATCH'), 'P0-A2 restore refuses: a list with the unwired mechanisms removed');
+ok(p0refused(() => P0a2ExperimentWorld.restore(tamperX((s) => { (s.payload.save_meta.not_simulated.items[0] as { label_zh: string }).label_zh = '已完整模擬'; })), 'META_MISMATCH'), 'P0-A2 restore refuses: an edited list entry');
 ok(P0a2ExperimentWorld.restore(tamperX((s) => { s.payload.chain.head = 'a'.repeat(64); })).chainState().head === 'a'.repeat(64), 'P0-A2 restore cannot detect a well-formed forged head (documented: only Node recomputation can)');
 const v1X = (() => { const s = clone(sX24) as unknown as Record<string, any>; delete s.payload.save_meta; delete s.payload.chain; s.schema_version = s.payload.schema_version = 1; s.payload_sha256 = hashJson(s.payload); return s as unknown as P0a2Snapshot; })();
 const v1XText = canonicalJson(v1X as never);
@@ -260,6 +274,7 @@ const honestX = await p0export(snapX);
   const r = verify(honestX);
   ok(r.status === 'node_verified' && r.save.world_kind === 'p0a2-24h-v1' && r.recomputed!.chain_head === snapX.payload.chain.head && r.recomputed!.chain_count === 18595 && r.recomputed!.payload_sha256 === snapX.payload_sha256 && r.recomputed!.differing_fields.length === 0, `honest P0-A2 48 h export (viewer buildExport) -> node_verified (${codes(r)})`);
   ok(r.verifier.world_kinds.some((k) => k.id === 'p0a2-24h-v1' && k.rules_fingerprint === P0A2_RULES_FINGERPRINT), 'the report lists the P0-A2 world kind the verifier implements');
+  ok(canonicalJson(r.save.not_simulated as never) === canonicalJson({ format: P0A2_NOT_SIMULATED.format, items: P0A2_NOT_SIMULATED.items } as never), 'the report lists the save\'s 尚未模擬 list (save.not_simulated)');
   ok(verify(snapX).status === 'node_verified', 'a bare P0-A2 snapshot envelope -> node_verified');
   const ni = verify(honestX, false);
   ok(ni.status === 'integrity_ok' && ni.recomputed === null, 'P0-A2 --no-recompute -> integrity_ok, never node_verified');
@@ -290,6 +305,7 @@ mustNotX('seed changed in the header only', (x) => { x.snapshot.seed = x.world.s
 mustNotX('rules fingerprint changed (header + payload)', (x) => { x.snapshot.rules_fingerprint = x.snapshot.payload.rules_fingerprint = 'f'.repeat(64); resealX(x); }, 'invalid', 'UNSUPPORTED_RULES');
 mustNotX('initial parameters hash changed', (x) => { x.snapshot.payload.save_meta.initial.params_sha256 = 'c'.repeat(64); resealX(x); }, 'invalid', 'UNSUPPORTED_PARAMS');
 mustNotX('scenario changed (fingerprint left)', (x) => { x.snapshot.payload.scenario = 'taichung-may-ref'; resealX(x); }, 'invalid', 'RESTORE_REFUSED');
+mustNotX('尚未模擬 list emptied, hashes recomputed', (x) => { x.snapshot.payload.save_meta.not_simulated.items = []; resealX(x); }, 'invalid', 'RESTORE_REFUSED');
 mustNotX('world kind claimed as synthetic', (x) => { x.snapshot.payload.save_meta.world_kind = 'synthetic-v1'; resealX(x); }, 'invalid', 'UNSUPPORTED_ENGINE');
 mustNotX('self-declared verification status in the export', (x) => { x.verification = { status: 'node_verified' }; const { export_sha256: _e, ...body } = x; x.export_sha256 = hashJson(body); }, 'invalid', 'BAD_EXPORT');
 ok(verify(v1X).status === 'invalid' && codes(verify(v1X)).includes('NO_CHAIN'), 'P0-A2 payload-schema-1 snapshot -> invalid (NO_CHAIN), never node_verified');
@@ -305,9 +321,11 @@ ok(verify(v1X).status === 'invalid' && codes(verify(v1X)).includes('NO_CHAIN'), 
   const f = path.join(REPO_ROOT, 'tests/fixtures/p0a2-rules-v1/exp-v1-fixture-6h.export.json');
   const text = fs.readFileSync(f, 'utf8'), before = sha(text), x = JSON.parse(text);
   const V1_CODE_SHA = 'b5645457db966d145929e48aa8f021e0125a2c59c3f84c0b8213f8c84e835d5b'; // P0A2_CODE_SHA256 of rules version /1 (main 688ca9e)
-  const v1Fp = hashJson({ engine_version: 'experiment-p0a2-24h/1', schema_version: 2, world_kind: 'p0a2', params_sha256: P0A2_PARAMS_SHA, code_sha256: V1_CODE_SHA, code_files: [...P0A2_CODE_FILES], scenario: P0A2_SCENARIO, variant: P0RAW.reference_variant });
+  // the /1 module graph = today's minus the 「尚未模擬」 list module added in version /3 (P0A2_CODE_FILES of main 688ca9e)
+  const V1_CODE_FILES = P0A2_CODE_FILES.filter((f) => f !== 'prototypes/continuous-world/worker/not-simulated.ts');
+  const v1Fp = hashJson({ engine_version: 'experiment-p0a2-24h/1', schema_version: 2, world_kind: 'p0a2', params_sha256: P0A2_PARAMS_SHA, code_sha256: V1_CODE_SHA, code_files: V1_CODE_FILES, scenario: P0A2_SCENARIO, variant: P0RAW.reference_variant });
   ok(x.snapshot.engine_version === 'experiment-p0a2-24h/1' && x.snapshot.rules_fingerprint === v1Fp && x.snapshot.payload.code_sha256 === V1_CODE_SHA && hashJson(x.snapshot.payload) === x.snapshot.payload_sha256, 'fixture is a genuine, intact /1 record (its fingerprint is the /1 fingerprint recomputed from the /1 code hash)');
-  ok(P0A2_ENGINE_VERSION === 'experiment-p0a2-24h/2' && P0A2_RULES_FINGERPRINT !== v1Fp && (P0A2_CODE_SHA256 as string) !== V1_CODE_SHA && 'experiment-p0a2-24h/1' in P0A2_ENGINE_HISTORY && P0A2_ENGINE_VERSION in P0A2_ENGINE_HISTORY, 'the current P0-A2 rules are version /2 with another fingerprint; both versions are listed in the version history');
+  ok(P0A2_ENGINE_VERSION === 'experiment-p0a2-24h/3' && P0A2_RULES_FINGERPRINT !== v1Fp && (P0A2_CODE_SHA256 as string) !== V1_CODE_SHA && ['experiment-p0a2-24h/1', 'experiment-p0a2-24h/2'].every((v) => v in P0A2_ENGINE_HISTORY) && P0A2_ENGINE_VERSION in P0A2_ENGINE_HISTORY, 'the current P0-A2 version is /3 (save_meta.not_simulated) with another fingerprint; every version is listed in the version history');
   const r = verify(text);
   ok(r.status === 'invalid' && codes(r).includes('UNSUPPORTED_ENGINE') && r.recomputed === null && r.save.engine_version === 'experiment-p0a2-24h/1' && r.save.world_kind === P0A2_SAVE_WORLD_KIND, `Node verifier: /1 save -> invalid (UNSUPPORTED_ENGINE), not recomputed under /2, the report names engine /1 (got ${r.status}: ${codes(r)})`);
   ok(p0refused(() => P0a2ExperimentWorld.restore(clone(x.snapshot)), 'ENGINE_MISMATCH', /older P0-A2 rules version.*cannot be continued or re-hashed/), 'Worker core: /1 snapshot refused (ENGINE_MISMATCH, names the older rules version)');

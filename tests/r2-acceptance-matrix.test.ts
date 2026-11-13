@@ -8,13 +8,17 @@
  *  4. the report keeps the candidate / experiment status: verdict NO-GO while any row blocks, no claim that the official
  *     Day0 is established;
  *  5. Owner #212 Q2 a: relaxing completeness (M08 open ecology, M19 reproduction) never relaxes the non-relaxable
- *     requirements, and the 「尚未模擬」 list is quoted in the report and the spec.
+ *     requirements, and the 「尚未模擬」 list is quoted in the report and the spec;
+ *  6. M43: the ONE list (generated Worker module = save_meta.not_simulated) matches the matrix, carries every listed row's
+ *     disclosure, and the disclosure row is 已接入 only with its probes in the Worker save metadata and the viewer.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { REPO_ROOT } from '../cli/lib/load.ts';
-import { type Matrix, GO_NO_GO_FILE, NON_RELAXABLE_MIN, SPEC_FILE, loadMatrix, referenceIds, renderBlockers, renderNotSimulated, staleBlocks, summarize, validateMatrix } from '../cli/r2-matrix.ts';
+import { type Matrix, GO_NO_GO_FILE, NON_RELAXABLE_MIN, NOT_SIMULATED_MODULE, SPEC_FILE, listed, loadMatrix, notSimulatedItems, referenceIds, renderBlockers, renderNotSimulated, renderNotSimulatedModule, staleBlocks, summarize, validateMatrix } from '../cli/r2-matrix.ts';
+import { P0A2_NOT_SIMULATED } from '../prototypes/continuous-world/worker/not-simulated.ts';
+import { p0a2SaveMetaOf } from '../prototypes/continuous-world/worker/p0a2-world.ts';
 
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
 const m = loadMatrix();
@@ -48,11 +52,21 @@ mutate('簡化代理 without a probe', (x) => { delete row(x, 'individual_behavi
 mutate('a 未接入 row that does not declare 「尚未模擬」', (x) => { row(x, 'open_ecology').player_view = '未顯示。'; }, /M08: 未接入 must declare in player_view/);
 mutate('a non-relaxable row (conservation) unblocked while not 已接入', (x) => { row(x, 'energy_mass_ledger').blocks_r2 = false; }, /energy_mass_ledger is non-relaxable/);
 mutate('a non-relaxable row (life state) unblocked while not 已接入', (x) => { row(x, 'death_consumption').blocks_r2 = false; }, /death_consumption is non-relaxable/);
-mutate('the disclosure row unblocked while not 已接入', (x) => { row(x, 'not_simulated_disclosure').blocks_r2 = false; }, /not_simulated_disclosure is non-relaxable/);
+mutate('the disclosure row unblocked while not 已接入', (x) => { const r = row(x, 'not_simulated_disclosure'); r.status = '簡化代理'; r.limits = '近似範圍：測試用'; r.blocks_r2 = false; }, /not_simulated_disclosure is non-relaxable/);
 mutate('dropping a module from non_relaxable_modules', (x) => { x.non_relaxable_modules = x.non_relaxable_modules.filter((y) => y !== 'determinism'); }, /must contain determinism/);
 mutate('exempting a non-relaxable module from the disclosure', (x) => { x.disclosure_exempt_modules.push('brood_stages'); }, /brood_stages cannot be exempt/);
-mutate('the disclosure row 已接入 without viewer and save-metadata probes', (x) => { const r = row(x, 'not_simulated_disclosure'); r.status = '已接入'; r.probe = { file: 'web/experiment.html', text: '非正式' }; }, /needs probe_all entries in a web\/ viewer file and in a Worker save-metadata file/);
-mutate('the disclosure row 已接入 with probe_all texts that are absent', (x) => { const r = row(x, 'not_simulated_disclosure'); r.status = '已接入'; r.probe = { file: 'web/experiment.html', text: '非正式' }; r.probe_all = [{ file: 'web/src/v62.ts', text: 'not_simulated' }, { file: 'prototypes/continuous-world/worker/p0a2-world.ts', text: 'not_simulated' }]; }, /probe_all "not_simulated" is not found/);
+mutate('the disclosure row 已接入 without viewer and save-metadata probes', (x) => { const r = row(x, 'not_simulated_disclosure'); r.status = '已接入'; r.probe = { file: 'web/experiment.html', text: '非正式' }; delete r.probe_all; }, /needs probe_all entries in a web\/ viewer file and in a Worker save-metadata file/);
+mutate('the disclosure row 已接入 with only a viewer probe', (x) => { row(x, 'not_simulated_disclosure').probe_all = row(x, 'not_simulated_disclosure').probe_all!.filter((p) => p.file.startsWith('web/')); }, /needs probe_all entries in a web\/ viewer file and in a Worker save-metadata file/);
+mutate('the disclosure row 已接入 with probe_all texts that are absent', (x) => { const r = row(x, 'not_simulated_disclosure'); r.status = '已接入'; r.probe = { file: 'web/experiment.html', text: '非正式' }; r.probe_all = [{ file: 'web/src/v62.ts', text: 'NO-SUCH-DISCLOSURE-PANEL' }, { file: 'prototypes/continuous-world/worker/p0a2-world.ts', text: 'not_simulated: { ...P0A2_NOT_SIMULATED' }]; }, /probe_all "NO-SUCH-DISCLOSURE-PANEL" is not found/);
+// M43 wiring: the generated list must be the matrix's (a change of a disclosure without --write, or a list module that was
+// removed, fails), every listed row needs a disclosure that says what it is, and no disclosure may read as wiring
+mutate('a disclosure changed without regenerating the list module', (x) => { row(x, 'caste').disclosure_zh = '大工蟻：尚未模擬（改寫但未重產）'; }, /not-simulated\.ts is missing or is not the list this matrix generates/);
+mutate('a 未接入 row dropped from the list (status changed without --write)', (x) => { const r = row(x, 'alarm'); r.status = '簡化代理'; r.limits = '近似範圍：測試用'; r.disclosure_zh = '警戒：簡化代理'; }, /not-simulated\.ts is missing or is not the list this matrix generates/);
+mutate('a listed row without disclosure_zh', (x) => { delete row(x, 'open_ecology').disclosure_zh; }, /M08: a listed row .* needs disclosure_zh/);
+mutate('a 未接入 disclosure that does not say 尚未模擬', (x) => { row(x, 'reproduction').disclosure_zh = '完整繁殖'; }, /M19: disclosure_zh of a 未接入 row must say 尚未模擬/);
+mutate('a 簡化代理 disclosure that does not say 簡化代理', (x) => { row(x, 'weather').disclosure_zh = '天氣：合成'; }, /M05: disclosure_zh of a 簡化代理 row must say 簡化代理/);
+mutate('a disclosure on a 已接入 row', (x) => { row(x, 'light').disclosure_zh = '光照：尚未模擬'; }, /M04: disclosure_zh is only for rows of the/);
+mutate('a disclosure that contains an unwired mechanism\'s probe', (x) => { row(x, 'caste').disclosure_zh = 'major workers：尚未模擬'; }, /disclosure_zh of M18 contains this 未接入 probe "major"/);
 mutate('an unknown reference ID', (x) => { row(x, 'species').evidence_refs.push('R99999'); }, /not defined in docs\/references\.md/);
 mutate('a missing blocker flag', (x) => { (row(x, 'species') as unknown as Record<string, unknown>).blocks_r2 = 'yes'; }, /blocks_r2 must be a boolean/);
 mutate('an empty blocker reason', (x) => { row(x, 'physics_collision').blocker_reason = ''; }, /blocker_reason/);
@@ -85,6 +99,18 @@ ok(!/正式 Day0 已(成立|啟用)/.test(report.replace(/不得宣稱正式 Day
 // 5. Owner #212 Q2 a (2026-11-13): M08 / M19 no longer block, but are listed as 尚未模擬; the non-relaxable set holds
 for (const mod of ['open_ecology', 'reproduction']) { const r = m.rows.find((y) => y.module === mod)!; ok(r.blocks_r2 === false && r.status === '未接入' && r.player_view.includes('尚未模擬') && renderNotSimulated(m).includes(`${r.id} `), `${mod}: not blocking, 未接入 and listed as 尚未模擬`); }
 for (const mod of NON_RELAXABLE_MIN) { const r = m.rows.find((y) => y.module === mod)!; ok(r.status === '已接入' || r.blocks_r2, `${mod}: non-relaxable, blocks unless 已接入`); }
-ok(m.rows.find((y) => y.module === 'not_simulated_disclosure')!.blocks_r2, 'the 尚未模擬 list is not yet in the viewer and save metadata: the disclosure row blocks');
+// 6. M43 (2026-11-13): the list is wired into the Worker save metadata and the viewer
+{
+  const d = m.rows.find((y) => y.module === 'not_simulated_disclosure')!;
+  ok(d.status === '已接入' && d.probe_all!.some((p) => p.file === 'prototypes/continuous-world/worker/p0a2-world.ts') && d.probe_all!.some((p) => p.file.startsWith('web/')), 'M43 is 已接入 with probes in the Worker save metadata and the viewer');
+  ok(fs.readFileSync(path.join(REPO_ROOT, NOT_SIMULATED_MODULE), 'utf8') === renderNotSimulatedModule(m), 'the generated list module is current');
+  const items = notSimulatedItems(m), lst = m.rows.filter((r) => listed(m, r));
+  ok(JSON.stringify(P0A2_NOT_SIMULATED.items) === JSON.stringify(items) && items.length === lst.length && lst.every((r) => items.some((i) => i.row === r.id && i.label_zh === r.disclosure_zh)), `the Worker list = every listed matrix row with its disclosure (${items.length})`);
+  ok(m.rows.filter((r) => r.status === '未接入' && listed(m, r)).every((r) => items.some((i) => i.row === r.id && i.status === '未接入' && i.label_zh.includes('尚未模擬'))), 'every unwired mechanism is listed as 尚未模擬');
+  for (const mod of ['open_ecology', 'reproduction', 'queen_oviposition', 'brood_stages', 'death_consumption', 'caste', 'chemistry_trail']) ok(items.some((i) => i.row === row(m, mod).id && i.status === '未接入'), `${mod} is on the 尚未模擬 list`);
+  ok(items.find((i) => i.row === row(m, 'chemistry_trail').id)!.label_zh.includes('擴散尚未模擬'), 'the trail chemistry entry says 擴散尚未模擬 (#213 Q1 a)');
+  const meta = p0a2SaveMetaOf('exp-m43', 1).not_simulated;
+  ok(JSON.stringify(meta) === JSON.stringify(P0A2_NOT_SIMULATED) && meta.items !== P0A2_NOT_SIMULATED.items, 'P0-A2 save_meta.not_simulated is the generated list (a copy, not the shared object)');
+}
 
 console.log(JSON.stringify({ test: 'r2-acceptance-matrix', checks, verdict: m.verdict, counts: s.counts, blockers: s.blocker_ids }));
