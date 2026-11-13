@@ -76,7 +76,7 @@ ok(compatibility(e0, { rules_fingerprint: 'rules-v2', engine_version: 'worker-0'
 }
 // Owner #212 Q2 a (matrix M43): the viewer shows only the list a snapshot's save metadata carries, never one of its own
 {
-  const list = { format: NOT_SIMULATED_FORMAT, world_kind: 'p0a2-24h-v1', source: 'docs/r2-acceptance-matrix.json', note_zh: '說明', items: [{ row: 'M15', status: '未接入', label_zh: '蟻后：尚未模擬' }, { row: 'M05', status: '簡化代理', label_zh: '天氣：簡化代理' }] };
+  const list = { format: NOT_SIMULATED_FORMAT, source: 'docs/r2-acceptance-matrix.json', note_zh: '說明', items: [{ row: 'M15', status: '未接入', label_zh: '蟻后：尚未模擬' }, { row: 'M05', status: '簡化代理', label_zh: '天氣：簡化代理' }] };
   const snap = (save_meta: unknown, world_kind = 'p0a2') => ({ payload: { world_kind, save_meta, state: { workers: { w1: {} }, larvae: {} } } });
   const v = notSimulatedOf(snap({ not_simulated: list }));
   ok(v.ok && v.unwired.length === 1 && v.unwired[0].label_zh === '蟻后：尚未模擬' && v.proxies.length === 1 && v.proxies[0].row === 'M05' && v.note_zh === '說明' && v.source === list.source, 'a well-formed list is shown as stored (unwired and proxies separated)');
