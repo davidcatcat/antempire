@@ -249,7 +249,7 @@ export function receiveFood(s: MembersState, id: string, t: number, amount: Amou
 export const metabolicType = (m: Member): MetabolicType | null => m.kind === 'queen' ? 'queen' : m.kind === 'worker' ? (m.caste === 'minor' ? 'worker_minor' : m.caste === 'major' ? 'worker_major' : 'worker_unknown') : null;
 
 /** book member `id`'s own metabolism up to t through the port for its type; null port = not booked (尚未模擬).
- *  Brood metabolism belongs to the brood-physiology work (BP-1) and is not booked here. */
+ *  Brood metabolism belongs to the BP-1 brood physiology work and is not booked here. */
 export function bookMetabolism(s: MembersState, ports: Ports, id: string, t: number): MemberEvent | null {
   needTime(t); const m = member(s, id); if (!m) throw Error(`CQ1: unknown member ${id}`);
   const type = metabolicType(m); if (type === null || !m.alive) return null;
