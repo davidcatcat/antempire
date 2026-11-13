@@ -152,7 +152,8 @@
       "origin": "ecological_driver",
       "basis": "遊戲假設",
       "flags": [
-        "NOT_READ_BY_ENGINE"
+        "NOT_READ_BY_ENGINE",
+        "MARKED_NOT_IMPLEMENTED"
       ],
       "note": "declared but not implemented (not read by engine/params.ts)"
     },
@@ -186,7 +187,8 @@
       "flags": [
         "UNITLESS_PORTION",
         "NOT_READ_BY_ENGINE",
-        "DEAD"
+        "DEAD",
+        "MARKED_NOT_IMPLEMENTED"
       ],
       "note": "DEAD: not read by engine/*.ts (production comes from colonies × rate); referenced only by the legacy v1 sim/ and a legacy-path override in tests/lib/scenarios.ts"
     },
@@ -780,7 +782,8 @@
       "origin": "colony_internal",
       "basis": "遊戲假設",
       "flags": [
-        "NOT_READ_BY_ENGINE"
+        "NOT_READ_BY_ENGINE",
+        "MARKED_NOT_IMPLEMENTED"
       ],
       "note": "not read by engine/*.ts (no reference by name); the legacy brood rule does not use it"
     },
