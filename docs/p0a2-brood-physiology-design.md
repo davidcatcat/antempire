@@ -345,6 +345,8 @@ G_s(t)  = §4.4 的營養閘門          （L1、L2、L3）
 
 ## §10 待 Owner 決定
 
+> **2026-11-13 已裁示**（Owner [#222](https://github.com/davidcatcat/antempire/issues/222#issuecomment-6846471780)）：Q1～Q8 全部採 A（質量／能量候選、液態蛋白優先＋L3 固態隔離候選、`linear_dd_A` 主候選、`N-d`、`protein_catabolism: false`、H0＋H1/H2/H3 隔離候選且保留累積 hazard、S0＋M1＋M2、依個體實際質量的維持代謝）。摘要見 [`owner-decisions-2026-11-13b.md`](owner-decisions-2026-11-13b.md)；以下原題保留作紀錄。
+
 1. **需求來源**：用本設計的物質平衡需求（µg，含範圍）取代原型的遊戲值，或維持遊戲值只作比較。若取代，還要決定遊戲份 ↔ 質量的對應與交哺液濃度（`bridge_*`）。
 2. **蛋白路線**：原型加入液態蛋白與固體蛋白（哪些齡能吃固體：只有 L3，或全部）。
 3. **溫度形狀**：flat、linear_dd_A／B、q10_refit、briere。
