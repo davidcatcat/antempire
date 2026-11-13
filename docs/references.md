@@ -904,3 +904,39 @@ R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-
 
 - 這四筆都**不是本種**；KIN-2D、PH-3b、LANE-FLOW 的加速度欄位仍為 `null`（`docs/physics-shared-contract.md` §4），裁示第 10 項：真實加速度要等本種資料。
 - 本種起步、停止、加速度與轉向速度的量測至 2026-11-12 仍未找到；本種唯一的運動量測仍是 R133（實驗室沿跡速度）。
+
+## 2026-11-13 #214 Q2／Q3 幼體生理：能量、蛋白／氮需求與發育時鐘（R940–R944；`docs/p0a2-brood-physiology-design.md`）
+
+> 問題：幼蟲分齡的能量與蛋白（氮）需求、攝入與吸收的物質平衡、發育時鐘、缺食延遲與死亡，有沒有**本種**數值。2026-11-13 以網路搜尋查詢（關鍵字：*Pheidole megacephala* larvae protein／carbohydrate／brood production；ant larvae metabolic rate／oxygen consumption；ant larvae starvation survival；insect nitrogen content；nitrogen-to-protein factor insects；*P. megacephala* worker dry mass），並重新核對本檔既有條目。
+> **結論**：本種只有發育時程（R94、R136、R166、R167）、成蟲體重（R97、R98、R116）、食物到達幼蟲的順序（R346）與「缺蛋白或缺糖都使育幼下降」的方向（R116）。**沒有**本種幼蟲的代謝率、分齡體重、同化率、耐飢時間或飢餓死亡門檻。下列新編號全部是**非本種或一般生理學**，只提供換算方法與量級，並在候選檔中標 `assumption: true`。
+> 編號 R940–R944 先以 `git grep` 確認在 `origin` 所有分支的 `docs/` 都未被使用（開放中 PR：#205 用 R810、R890–R892；#208／#209／#211 用 R930）。
+
+| ID | 文獻 | 閱讀程度 | 物種 | 支持的內容 | 不可外推之處 |
+|---|---|---|---|---|---|
+| R940 | Vogt JT, Appel AG (1999) Standard metabolic rate of the fire ant, *Solenopsis invicta* Buren: effects of temperature, mass, and caste. *J. Insect Physiol.* 45(7):655–666. DOI 10.1016/S0022-1910(99)00036-0 | 只讀摘要（經搜尋工具摘錄） | **非本種**：*Solenopsis invicta* | 密閉式呼吸計，校正到 25°C 的質量比耗氧（mL O₂ g⁻¹ 鮮重 h⁻¹）：工蟻 0.404 ± 0.023、有翅雌 0.316 ± 0.010、雄 0.674 ± 0.024、**幼蟲 0.291 ± 0.020**、**蛹 0.227 ± 0.015**；蛹低於體重預測值（42%） | 他屬；幼蟲齡期、樣本數、體積是否換算到標準狀況本次未讀到；用作量級與「蛹低於幼蟲」的方向，敏感度放寬到約 ×0.5～×2 |
+| R941 | Takahashi-Del-Bianco M, Hebling MJA, Bueno OC (1998) Respiratory metabolism of *Camponotus rufipes* ants: brood and adults. *Comp. Biochem. Physiol. A* 119(2):529–532. DOI 10.1016/S1095-6433(97)00462-5 | 只讀摘要（經搜尋工具摘錄；全文限制存取） | **非本種**：*Camponotus rufipes* | Warburg 呼吸計，25°C：一齡幼蟲質量比耗氧最高（約 5.07 µL O₂ mg⁻¹ h⁻¹），二齡 1.23，後期幼蟲 0.32、0.22，蛹低於成蟲 → 幼體代謝**依齡期**不同，早齡質量比代謝可遠高於後期 | 他亞科、齡期定義不同（四齡）；只作「一齡倍數」敏感度的上限來源，不作本種數值 |
+| R942 | Fagan WF, Siemann E, Mitter C, Denno RF, Huberty AF, Woods HA, Elser JJ (2002) Nitrogen in insects: implications for trophic complexity and species diversification. *Am. Nat.* 160(6):784–802 | 只讀摘要（作者實驗室頁） | 一般（多種昆蟲的彙整） | 昆蟲體氮含量依營養層級與譜系不同：掠食者平均比植食者高約 15%；較晚分化的植食譜系少 15～25% | **絕對的體氮百分比本次沒有讀到**（二手摘錄的「平均約 9.9%、5.7～13%」來源不明，不採用）；沒有螞蟻或本種數值；候選檔的 8～12% 是遊戲假設 |
+| R943 | Janssen RH, Vincken J-P, van den Broek LAM, Fogliano V, Lakemond CMM (2017) Nitrogen-to-protein conversion factors for three edible insects: *Tenebrio molitor*, *Alphitobius diaperinus*, and *Hermetia illucens*. *J. Agric. Food Chem.* 65(11):2275–2278. DOI 10.1021/acs.jafc.7b00471 | 只讀摘要（經搜尋工具摘錄） | **非本種**：三種食用昆蟲幼蟲 | 以胺基酸分析得氮→蛋白係數 Kp = 4.76 ± 0.09（萃取純化後 5.60 ± 0.39）；慣用的 6.25 因非蛋白氮（幾丁質等）而高估 | 鞘翅目與雙翅目幼蟲；用作「蛋白占乾重比例」換算的範圍，不是本種值 |
+| R944 | Waldbauer GP (1968) The consumption and utilization of food by insects. *Adv. Insect Physiol.* 5:229–288. DOI 10.1016/S0065-2806(08)60230-1 | 只查核書目；指標定義經二手來源（van Loon et al. 2005 等）核對 | 一般（方法） | 重量法的攝食利用指標：近似消化率 AD、攝入轉換效率 ECI、消化物轉換效率 ECD（＝成長／消化量）→ 本設計「同化率」「淨保留率」的**定義** | 只提供定義，不提供任何螞蟻或本種數值；原文未讀 |
+
+**既有編號的附註**（新增，不改寫原有行）：
+- R94（Yuan 2026，**本種**）：本設計只把 28°C 的里程碑平均作為各階段在 28°C 的速率（一齡 1.85、二齡 5.52、三齡 6.07、前蛹 2.55、蛹 5.05、卵 7.69 日，合計 28.73 日）；溫度形狀另由 P0-B 候選決定。飼料「麵包蟲＋10% 蔗糖」任食，**不能**據此得到任何缺食延遲或耐飢門檻。
+- R116（Tsuji & Win 2025，**本種**）：缺蛋白與缺糖的飼料分給兩巢、切斷交流時育幼量都下降——這是「兩種營養都能限制育幼」的本種方向，作為 §8 可區分性檢查的科學比對對象（定性，不是數值）。
+- R167（Phillips 1933，**本種**）：25°C 停食 2 週的幼蟲在恢復餵食後化蛹 → 本設計把它當作耐飢死亡門檻的**下限約束**（H1 的 τ ≥ 14 日）；停食開始時的齡期與存活比例未知。
+- R97（Wills et al. 2014，**本種**）：小工蟻乾重 63～97 µg（圖讀）是本設計蛋白需求的質量錨點；臺中族群未量測。
+- R364（Kay, Rostampour & Sterner 2006，*Tetramorium caespitum*，**非本種**）：摘要指出幼蟲、蛹、工蟻的 C:N:P 不同且主要隨蔗糖供給改變 → 支持「幼體組成不是常數」的方向；本設計的蛋白占乾重比例因此給寬範圍。
+
+## 2026-11-13 花園供給 vs 蟻群消耗稽核（R950–R955；#202 第 8 項，`docs/garden-supply-demand-audit.md`）
+
+> 編號選 R950 起：origin 上其他未合併分支已用到 R893 的說明文字與 R930，為避免並行 PR 撞號，跳到 R950；R950～R955 已在 origin 所有分支（`git show <branch>:docs/references.md`）確認未被使用。**全部只讀摘要**（經搜尋工具或摘要頁），沒有讀全文；沒有據此改任何引擎參數。
+
+| 編號 | 文獻 | 讀取程度 | 物種／地點 | 用到的內容 | 外推限制 |
+|---|---|---|---|---|---|
+| R950 | Völkl W, Woodring J, Fischer M, Lorenz MW, Hoffmann KH (1999) Ant-aphid mutualisms: the impact of honeydew production and honeydew sugar composition on ant preferences. *Oecologia* 118:483–491. DOI 10.1007/s004420050751 | 只讀摘要（經搜尋工具；書目經 Bayreuth eref 核對） | **非本種**：四種蚜蟲（同一寄主 *Tanacetum vulgare*），照護蟻 *Lasius niger*；德國 | 每隻每小時蜜露：*Metopeurum fuscoviride* 880 µg、*Brachycaudus cardui* 223 µg、*Aphis fabae* 133 µg、*Macrosiphoniella tanacetaria* 46 µg；螞蟻偏好與產量及糖組成相符 | 溫帶寄主；蜜露鮮重不是糖重（糖濃度數值未讀到）；不知晝夜節律；不是本花園的半翅目 |
+| R951 | Lighton JRB, Bartholomew GA (1988) Standard energy metabolism of a desert harvester ant, *Pogonomyrmex rugosus*: effects of temperature, body mass, group size, and humidity. *PNAS* 85:4765–4769. DOI 10.1073/pnas.85.13.4765 | 只讀摘要（PMC 摘要頁） | **非本種**：*Pogonomyrmex rugosus*（沙漠收穫蟻），實驗室 | VO2 = 10^(−1.588 + 0.0315T) mL g⁻¹ h⁻¹（T 體溫 °C）；VO2 = 0.0462 M^0.669 mL h⁻¹（M 為 g）；與群大小無關；作者稱代謝低於預期 | 體型遠大於本種 minor；摘要未寫體重式的溫度；只用於量級推算，不得當本種參數 |
+| R952 | Fischer MK, Völkl W, Hoffmann KH (2005) Honeydew production and honeydew sugar composition of polyphagous black bean aphid, *Aphis fabae* (Hemiptera: Aphididae) on various host plants and implications for ant-attendance. *Eur. J. Entomol.* 102:155–160. DOI 10.14411/eje.2005.025 | 只讀摘要（EJE 網頁） | **非本種**：*Aphis fabae* 兩亞種、多種寄主；歐洲 | 在 *Tanacetum vulgare* 約 110 µg／隻／h（約為一年生寄主的兩倍）；在 *Cirsium arvense* 約 150 µg／隻／h | 同 R950；寄主不同產量差兩倍，表示「每群固定份數」忽略寄主差異 |
+| R953 | Zhou A, Lu Y, Zeng L, Xu Y, Liang G (2013) Effect of host plants on honeydew production of an invasive mealybug, *Phenacoccus solenopsis* (Hemiptera: Pseudococcidae). *J. Insect Behav.* 26:191–199. DOI 10.1007/s10905-012-9351-7 | 只讀摘要（經搜尋工具） | **非本種**：扶桑綿粉介殼蟲；寄主番茄、朱槿 *Hibiscus rosa-sinensis*、棉 | 24 h 蜜露量依寄主與齡期不同（番茄最多）；一、二齡無差異，三齡與成蟲有差異 | 摘要沒有可用的每隻每日數值（搜尋工具轉述的「3085.3～572.0 µg」來源段落不明，**不採用**）；不是本花園的確認組合 |
+| R954 | Helms KR, Vinson SB (2008) Plant resources and colony growth in an invasive ant: the importance of honeydew-producing Hemiptera in carbohydrate transfer across trophic levels. *Environ. Entomol.* 37:487–493 | 只讀摘要與新聞稿（經搜尋工具） | **非本種**：*Solenopsis invicta*；美國 | 能取得有半翅目寄主植物的群，比只有無限昆蟲獵物的群大約 50%；作者認為蜜露單獨不足以支持群成長；新聞稿稱約 32% 的群每日能量來自 *Antonina graminis* | 只支持「糖與蛋白兩條供給都要有、各自的生態來源」的方向；百分比不可搬用 |
+| R955 | Tew NE, Memmott J, Vaughan IP, Bird S, Stone GN, Potts SG, Baldock KCR (2021) Quantifying nectar production by flowering plants in urban and rural landscapes. *J. Ecol.* 109:1747–1757. DOI 10.1111/1365-2745.13598 | 只讀摘要與新聞稿（全文 PDF 回 403） | **非本地**：英國四城市、536 個植物分類群 | 住宅花園每單位面積花蜜糖最多，約占城市尺度花蜜的 85%；花蜜量以花朵數 × 每朵花蜜糖產量估計 | 溫帶英國；沒有讀到每 m² 每日的數值；只支持「花蜜供給應由花朵數與每朵產量構成」的模型結構 |
+
+- 檢索未果（2026-11-13）：本種小工蟻每日糖或蛋白攝取量（mg）、本種代謝率；臺灣或亞熱帶都市花園地表節肢動物生物量或周轉率（只找到豐度與多樣性研究）；朱槿等花園植物每朵每日花蜜糖量的可引用數值。候選待讀全文：Vogt & Appel (1999) *J. Insect Physiol.* 45:655–666（紅火蟻標準代謝率，含 17 種螞蟻比較；本輪只看到摘要轉述，沒有數值，**不編號**）。

@@ -1,0 +1,1931 @@
+{
+  "schema": "antempire.garden-supply-demand-audit.v1",
+  "status": "研究稽核（#202 第 8 項）；診斷，不是目標，不得用來反推花園供給",
+  "inputs": {
+    "world": "world/xitun-garden.json",
+    "species": "species/pheidole-megacephala.json",
+    "garden": "scenarios/day0/garden.json",
+    "candidate": "scenarios/day0-budding-candidate.json",
+    "p0a2": "prototypes/p0a2-24h/params.json"
+  },
+  "anchors_file": "data/garden-supply-demand-anchors.json",
+  "registry": [
+    {
+      "file": "world/xitun-garden.json",
+      "path": "hemipterans.honeydew_per_colony_per_day.aphid",
+      "value": 0.32,
+      "role": "supply",
+      "food": "sugar",
+      "unit": "game_portion sugar / hemipteran \"colony\" / day",
+      "time_scale": "day",
+      "origin": "ecological_process",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "\"colony\" has no individual count, so the rate cannot be checked against per-insect honeydew data"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "hemipterans.honeydew_per_colony_per_day.scale",
+      "value": 0.4,
+      "role": "supply",
+      "food": "sugar",
+      "unit": "game_portion sugar / hemipteran \"colony\" / day",
+      "time_scale": "day",
+      "origin": "ecological_process",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "same as aphid"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "hemipterans.honeydew_productivity_multiplier",
+      "value": 1,
+      "role": "supply_driver",
+      "food": "sugar",
+      "unit": "dimensionless multiplier",
+      "time_scale": "-",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "sensitivity handle only"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "hemipterans.hemipteran_colony_daily_growth_probability",
+      "value": 0.012,
+      "role": "supply_driver",
+      "food": "none",
+      "unit": "1/day (probability of +1 colony)",
+      "time_scale": "day",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "temperature- and season-independent (defect D5)"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "hemipterans.hemipteran_colony_daily_collapse_probability",
+      "value": 0.006,
+      "role": "supply_driver",
+      "food": "none",
+      "unit": "1/day (probability of -1 colony)",
+      "time_scale": "day",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "temperature- and season-independent (defect D5)"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "hemipterans.max_hemipteran_colonies_per_host",
+      "value": 4,
+      "role": "supply_driver",
+      "food": "none",
+      "unit": "colonies / host plant",
+      "time_scale": "state",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "host plant size not modelled"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "hemipterans.rain_honeydew_secretion_suppression_per_mm",
+      "value": 0.018,
+      "role": "supply_driver",
+      "food": "sugar",
+      "unit": "fraction / mm rain",
+      "time_scale": "day",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "mechanism direction R183"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "hemipterans.honeydew_rain_secretion_min_multiplier",
+      "value": 0.05,
+      "role": "supply_driver",
+      "food": "sugar",
+      "unit": "dimensionless floor",
+      "time_scale": "day",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "plants.host_plant_daily_death_probability",
+      "value": 0.0007,
+      "role": "supply_driver",
+      "food": "none",
+      "unit": "1/day per host plant",
+      "time_scale": "day",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "mean host lifetime = 1/p days"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "plants.new_plant_event_probability",
+      "value": 0.035,
+      "role": "supply_driver",
+      "food": "none",
+      "unit": "1/day",
+      "time_scale": "day",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [
+        "NOT_READ_BY_ENGINE"
+      ],
+      "note": "declared but not implemented (not read by engine/params.ts)"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "honeydew.honeydew_max",
+      "value": 5.2,
+      "role": "stock_cap",
+      "food": "sugar",
+      "unit": "game_portion sugar (standing crop cap per site)",
+      "time_scale": "state",
+      "origin": "fixed_game_portion",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "same cap for every honeydew site regardless of colonies"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "honeydew.honeydew_daily_replenish",
+      "value": 0.65,
+      "role": "supply",
+      "food": "sugar",
+      "unit": "game_portion sugar / day",
+      "time_scale": "day",
+      "origin": "fixed_game_portion",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION",
+        "NOT_READ_BY_ENGINE",
+        "DEAD"
+      ],
+      "note": "DEAD: not read by engine/*.ts (production comes from colonies × rate); referenced only by the legacy v1 sim/ and a legacy-path override in tests/lib/scenarios.ts"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "honeydew.honeydew_initial",
+      "value": 0.55,
+      "role": "initial_stock",
+      "food": "sugar",
+      "unit": "game_portion sugar",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "Day15 migration only"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "honeydew.honeydew_washoff_per_rain_mm",
+      "value": 0.012,
+      "role": "loss",
+      "food": "sugar",
+      "unit": "fraction / mm rain",
+      "time_scale": "day",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "honeydew.honeydew_washoff_max_fraction",
+      "value": 0.9,
+      "role": "loss",
+      "food": "sugar",
+      "unit": "fraction / day",
+      "time_scale": "day",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "nectar.nectar_max",
+      "value": 2.4,
+      "role": "stock_cap",
+      "food": "sugar",
+      "unit": "game_portion sugar (standing crop cap)",
+      "time_scale": "state",
+      "origin": "fixed_game_portion",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "nectar.nectar_daily_replenish",
+      "value": 0.35,
+      "role": "supply",
+      "food": "sugar",
+      "unit": "game_portion sugar / site / day while blooming",
+      "time_scale": "day",
+      "origin": "fixed_game_portion",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "not per flower; no flower count, no temperature response (R186 direction unused), single bloom countdown (D4)"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "nectar.nectar_initial",
+      "value": 0.18,
+      "role": "initial_stock",
+      "food": "sugar",
+      "unit": "game_portion sugar",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "Day15 migration only"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "nectar.nectar_bloom_days_remaining",
+      "value": 12,
+      "role": "supply_driver",
+      "food": "sugar",
+      "unit": "days",
+      "time_scale": "day",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "one countdown, never re-blooms (D4)"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "nectar.nectar_washoff_per_rain_mm",
+      "value": 0.035,
+      "role": "loss",
+      "food": "sugar",
+      "unit": "fraction / mm rain",
+      "time_scale": "day",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "nectar.nectar_washoff_max_fraction",
+      "value": 0.9,
+      "role": "loss",
+      "food": "sugar",
+      "unit": "fraction / day",
+      "time_scale": "day",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "carcasses.carcass_new_protein_min",
+      "value": 1.45,
+      "role": "supply",
+      "food": "protein",
+      "unit": "game_portion protein / natural insect death",
+      "time_scale": "event",
+      "origin": "ecological_process",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "insects have no body mass in the model; yield independent of insect size"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "carcasses.carcass_new_protein_max",
+      "value": 2.6,
+      "role": "supply",
+      "food": "protein",
+      "unit": "game_portion protein / natural insect death",
+      "time_scale": "event",
+      "origin": "ecological_process",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "see min"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "carcasses.carcass_daily_decay_fraction",
+      "value": 0.14,
+      "role": "loss",
+      "food": "protein",
+      "unit": "fraction / day",
+      "time_scale": "day",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "temperature-independent"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "carcasses.carcass_rain_decay_bonus",
+      "value": 0.004,
+      "role": "loss",
+      "food": "protein",
+      "unit": "fraction / mm rain",
+      "time_scale": "day",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "carcasses.carcass_max_lifetime_days",
+      "value": 9,
+      "role": "loss",
+      "food": "protein",
+      "unit": "days",
+      "time_scale": "day",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "carcasses.carcass_decay_max_daily_fraction",
+      "value": 0.95,
+      "role": "loss",
+      "food": "protein",
+      "unit": "fraction / day",
+      "time_scale": "day",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "insects.insect_local_carrying_capacity",
+      "value": 18,
+      "role": "supply_driver",
+      "food": "protein",
+      "unit": "insects / site",
+      "time_scale": "state",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "no area, no biomass"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "insects.insect_background_immigration_probability",
+      "value": 0.08,
+      "role": "supply_driver",
+      "food": "protein",
+      "unit": "1/day (one insect)",
+      "time_scale": "day",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "insects.insect_local_daily_mortality_probability",
+      "value": 0.22,
+      "role": "supply_driver",
+      "food": "protein",
+      "unit": "1/day (at most one death per site per day)",
+      "time_scale": "day",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "caps natural carcass generation at 1 per site per day"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "insects.insect_site_logistic_daily_birth_rate",
+      "value": 0.065,
+      "role": "supply_driver",
+      "food": "protein",
+      "unit": "1/day per capita",
+      "time_scale": "day",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "insects.insect_boundary_logistic_daily_birth_rate",
+      "value": 0.055,
+      "role": "supply_driver",
+      "food": "protein",
+      "unit": "1/day per capita",
+      "time_scale": "day",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "insects.insect_boundary_carrying_capacity",
+      "value": 80,
+      "role": "supply_driver",
+      "food": "protein",
+      "unit": "insects",
+      "time_scale": "state",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "insects.insect_boundary_per_capita_daily_death_probability",
+      "value": 0.02,
+      "role": "supply_driver",
+      "food": "protein",
+      "unit": "1/day per capita",
+      "time_scale": "day",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "boundary deaths leave no food"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "insects.insect_reproduction_reference_c",
+      "value": 25,
+      "role": "supply_driver",
+      "food": "protein",
+      "unit": "°C",
+      "time_scale": "-",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "insects.insect_reproduction_per_degree_c",
+      "value": 0.035,
+      "role": "supply_driver",
+      "food": "protein",
+      "unit": "1/°C",
+      "time_scale": "-",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "insects.insect_reproduction_min_multiplier",
+      "value": 0.15,
+      "role": "supply_driver",
+      "food": "protein",
+      "unit": "dimensionless",
+      "time_scale": "-",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "insects.insect_reproduction_max_multiplier",
+      "value": 1.25,
+      "role": "supply_driver",
+      "food": "protein",
+      "unit": "dimensionless",
+      "time_scale": "-",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "insects.insect_local_death_reference_population",
+      "value": 12,
+      "role": "supply_driver",
+      "food": "protein",
+      "unit": "insects",
+      "time_scale": "-",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "prey.small_prey_protein",
+      "value": 0.55,
+      "role": "supply",
+      "food": "protein",
+      "unit": "game_portion protein / killed small insect",
+      "time_scale": "event",
+      "origin": "fixed_game_portion",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "same tracked insect yields carcass_new_protein_* when it dies naturally (inconsistent per-insect yield)"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "prey.large_prey_protein",
+      "value": 1.5,
+      "role": "supply",
+      "food": "protein",
+      "unit": "game_portion protein / killed large insect",
+      "time_scale": "event",
+      "origin": "fixed_game_portion",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "see small_prey_protein"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "prey.large_prey_fraction",
+      "value": 0.25,
+      "role": "supply_driver",
+      "food": "protein",
+      "unit": "fraction of encounters",
+      "time_scale": "event",
+      "origin": "fixed_game_portion",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "insects have no size attribute"
+    },
+    {
+      "file": "world/xitun-garden.json",
+      "path": "background_colonies.F04_rival.honeydew_harvest_fraction",
+      "value": 0.22,
+      "role": "loss",
+      "food": "sugar",
+      "unit": "fraction of F04 gross production",
+      "time_scale": "day",
+      "origin": "ecological_driver",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "fixed share, not a simulated colony"
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "nutrition.worker_sugar_daily",
+      "value": 0.1,
+      "role": "demand",
+      "food": "sugar",
+      "unit": "game_portion sugar / worker / day at metabolism.reference_c",
+      "time_scale": "day",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "scaled by Q10 of nest model temperature"
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "nutrition.worker_protein_daily",
+      "value": 0.008,
+      "role": "demand",
+      "food": "protein",
+      "unit": "game_portion protein / worker / day at reference_c",
+      "time_scale": "day",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "nutrition.queen_sugar_daily",
+      "value": 0.22,
+      "role": "demand",
+      "food": "sugar",
+      "unit": "game_portion sugar / queen / day at reference_c",
+      "time_scale": "day",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "nutrition.queen_protein_daily",
+      "value": 0.045,
+      "role": "demand",
+      "food": "protein",
+      "unit": "game_portion protein / queen / day at reference_c",
+      "time_scale": "day",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "nutrition.larva_sugar_daily",
+      "value": 0.025,
+      "role": "demand",
+      "food": "sugar",
+      "unit": "game_portion sugar / larva / day at reference_c",
+      "time_scale": "day",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "not instar-dependent"
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "nutrition.larva_protein_daily",
+      "value": 0.08,
+      "role": "demand",
+      "food": "protein",
+      "unit": "game_portion protein / larva / day at reference_c",
+      "time_scale": "day",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "not instar-dependent; no growth-efficiency link to adult mass"
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "nutrition.egg_laying_protein_cost",
+      "value": 0.14,
+      "role": "demand",
+      "food": "protein",
+      "unit": "game_portion protein / egg",
+      "time_scale": "event",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "nutrition.egg_laying_sugar_cost",
+      "value": 0.08,
+      "role": "demand",
+      "food": "sugar",
+      "unit": "game_portion sugar / egg",
+      "time_scale": "event",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "nutrition.brood_protein_min_fraction",
+      "value": 0.45,
+      "role": "demand",
+      "food": "protein",
+      "unit": "fraction of larva_protein_daily",
+      "time_scale": "day",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "NOT_READ_BY_ENGINE"
+      ],
+      "note": "not read by engine/*.ts (no reference by name); the legacy brood rule does not use it"
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "nutrition.max_sugar_store",
+      "value": 24,
+      "role": "stock_cap",
+      "food": "sugar",
+      "unit": "game_portion sugar (nest store cap at baseline)",
+      "time_scale": "state",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "overflow is destroyed (storage_overflow loss)"
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "nutrition.max_protein_store",
+      "value": 12,
+      "role": "stock_cap",
+      "food": "protein",
+      "unit": "game_portion protein (nest store cap at baseline)",
+      "time_scale": "state",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "nutrition.store_capacity_baseline_workers",
+      "value": 14,
+      "role": "stock_cap",
+      "food": "sugar+protein",
+      "unit": "workers",
+      "time_scale": "state",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "nutrition.sugar_store_per_extra_worker",
+      "value": 0.4,
+      "role": "stock_cap",
+      "food": "sugar",
+      "unit": "game_portion sugar / extra worker",
+      "time_scale": "state",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "nutrition.protein_store_per_extra_worker",
+      "value": 0.3,
+      "role": "stock_cap",
+      "food": "protein",
+      "unit": "game_portion protein / extra worker",
+      "time_scale": "state",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "metabolism.q10",
+      "value": 2,
+      "role": "demand",
+      "food": "sugar+protein",
+      "unit": "dimensionless (per 10 °C)",
+      "time_scale": "-",
+      "origin": "colony_internal",
+      "basis": "一般生理學",
+      "flags": [],
+      "note": "general physiology, applied to protein too"
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "metabolism.reference_c",
+      "value": 25,
+      "role": "demand",
+      "food": "sugar+protein",
+      "unit": "°C",
+      "time_scale": "-",
+      "origin": "colony_internal",
+      "basis": "一般生理學",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "foraging_trips.foraging_trip_sugar_cost",
+      "value": 0.012,
+      "role": "demand",
+      "food": "sugar",
+      "unit": "game_portion sugar / trip",
+      "time_scale": "trip",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "independent of distance"
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "foraging_trips.max_trips_per_forager",
+      "value": 2,
+      "role": "handling_limit",
+      "food": "sugar+protein",
+      "unit": "trips / forager / day",
+      "time_scale": "day",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "time-scale cap on income (D2)"
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "activity.active_minute_sugar_cost",
+      "value": 0.00024,
+      "role": "demand",
+      "food": "sugar",
+      "unit": "game_portion sugar / minute outside",
+      "time_scale": "minute",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "food_handling.crop_load_sugar_min",
+      "value": 0.28,
+      "role": "handling_limit",
+      "food": "sugar",
+      "unit": "game_portion sugar / trip",
+      "time_scale": "trip",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "food_handling.crop_load_sugar_max",
+      "value": 0.62,
+      "role": "handling_limit",
+      "food": "sugar",
+      "unit": "game_portion sugar / trip",
+      "time_scale": "trip",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "food_handling.crop_load_protein_min",
+      "value": 0.3,
+      "role": "handling_limit",
+      "food": "protein",
+      "unit": "game_portion protein / trip",
+      "time_scale": "trip",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "food_handling.crop_load_protein_max",
+      "value": 0.64,
+      "role": "handling_limit",
+      "food": "protein",
+      "unit": "game_portion protein / trip",
+      "time_scale": "trip",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "R107: a minor carries whole prey ≥9× its mass; per-trip piece cap is a game assumption"
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "food_handling.liquid_collection_probability",
+      "value": 0.85,
+      "role": "handling_limit",
+      "food": "sugar",
+      "unit": "probability / arrival",
+      "time_scale": "trip",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "food_handling.carcass_access_probability",
+      "value": 0.7,
+      "role": "handling_limit",
+      "food": "protein",
+      "unit": "probability / arrival",
+      "time_scale": "trip",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "trophallaxis.crop_capacity",
+      "value": 0.8,
+      "role": "handling_limit",
+      "food": "sugar+protein",
+      "unit": "game_portion per worker crop",
+      "time_scale": "state",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "R132: minor load 0.08 mg honey (a load, not the maximum)"
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "trophallaxis.transfer_max_portions",
+      "value": 0.28,
+      "role": "handling_limit",
+      "food": "sugar",
+      "unit": "game_portion sugar / trophallaxis",
+      "time_scale": "contact",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "queen_feeding.take_from_cache_max_portions",
+      "value": 0.28,
+      "role": "handling_limit",
+      "food": "protein",
+      "unit": "game_portion protein / nest round",
+      "time_scale": "contact",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "queen_feeding.feed_max_portions_per_contact",
+      "value": 0.28,
+      "role": "handling_limit",
+      "food": "sugar+protein",
+      "unit": "game_portion per contact",
+      "time_scale": "contact",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "queen_feeding.self_feed_max_portions",
+      "value": 0.045,
+      "role": "handling_limit",
+      "food": "protein",
+      "unit": "game_portion protein / round",
+      "time_scale": "contact",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "queen_feeding.queen_satiation_days_of_need",
+      "value": 3,
+      "role": "handling_limit",
+      "food": "sugar+protein",
+      "unit": "days of own need",
+      "time_scale": "day",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "queen_feeding.day0_initial_reserve_days_of_need",
+      "value": 0,
+      "role": "initial_stock",
+      "food": "sugar+protein",
+      "unit": "days of own need",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "larval_feeding.feed_bolus_sugar_portions",
+      "value": 0.025,
+      "role": "handling_limit",
+      "food": "sugar",
+      "unit": "game_portion sugar / contact",
+      "time_scale": "contact",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "larval_feeding.feed_bolus_protein_portions",
+      "value": 0.08,
+      "role": "handling_limit",
+      "food": "protein",
+      "unit": "game_portion protein / contact",
+      "time_scale": "contact",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "scouting.unproductive_route_threshold_portions",
+      "value": 0.1,
+      "role": "perception",
+      "food": "sugar+protein",
+      "unit": "game_portion remembered harvest",
+      "time_scale": "trip",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "species/pheidole-megacephala.json",
+      "path": "site_choice.default_prior_success_portions",
+      "value": 0.15,
+      "role": "perception",
+      "food": "sugar+protein",
+      "unit": "game_portion remembered harvest",
+      "time_scale": "trip",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "scenarios/day0/garden.json",
+      "path": "honeydew_sites.F01.host_plants",
+      "value": 2,
+      "role": "supply_driver",
+      "food": "sugar",
+      "unit": "host plants / site",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "no plant size / species"
+    },
+    {
+      "file": "scenarios/day0/garden.json",
+      "path": "honeydew_sites.F04.host_plants",
+      "value": 2,
+      "role": "supply_driver",
+      "food": "sugar",
+      "unit": "host plants / site",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "no plant size / species"
+    },
+    {
+      "file": "scenarios/day0/garden.json",
+      "path": "honeydew_sites.F05.host_plants",
+      "value": 1,
+      "role": "supply_driver",
+      "food": "sugar",
+      "unit": "host plants / site",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "no plant size / species"
+    },
+    {
+      "file": "scenarios/day0/garden.json",
+      "path": "honeydew_sites.F10.host_plants",
+      "value": 1,
+      "role": "supply_driver",
+      "food": "sugar",
+      "unit": "host plants / site",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "no plant size / species"
+    },
+    {
+      "file": "scenarios/day0/garden.json",
+      "path": "honeydew_sites.F01.hemipteran_colonies",
+      "value": 4,
+      "role": "supply_driver",
+      "food": "sugar",
+      "unit": "hemipteran \"colonies\" / site",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "no individuals per colony"
+    },
+    {
+      "file": "scenarios/day0/garden.json",
+      "path": "honeydew_sites.F04.hemipteran_colonies",
+      "value": 3,
+      "role": "supply_driver",
+      "food": "sugar",
+      "unit": "hemipteran \"colonies\" / site",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "no individuals per colony"
+    },
+    {
+      "file": "scenarios/day0/garden.json",
+      "path": "honeydew_sites.F05.hemipteran_colonies",
+      "value": 2,
+      "role": "supply_driver",
+      "food": "sugar",
+      "unit": "hemipteran \"colonies\" / site",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "no individuals per colony"
+    },
+    {
+      "file": "scenarios/day0/garden.json",
+      "path": "honeydew_sites.F10.hemipteran_colonies",
+      "value": 1,
+      "role": "supply_driver",
+      "food": "sugar",
+      "unit": "hemipteran \"colonies\" / site",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "no individuals per colony"
+    },
+    {
+      "file": "scenarios/day0/garden.json",
+      "path": "honeydew_sites.F01.exists_probability",
+      "value": 1,
+      "role": "supply_driver",
+      "food": "sugar",
+      "unit": "probability / world seed",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "scenarios/day0/garden.json",
+      "path": "honeydew_sites.F04.exists_probability",
+      "value": 0.65,
+      "role": "supply_driver",
+      "food": "sugar",
+      "unit": "probability / world seed",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "scenarios/day0/garden.json",
+      "path": "honeydew_sites.F05.exists_probability",
+      "value": 0.8,
+      "role": "supply_driver",
+      "food": "sugar",
+      "unit": "probability / world seed",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "scenarios/day0/garden.json",
+      "path": "honeydew_sites.F10.exists_probability",
+      "value": 0.7,
+      "role": "supply_driver",
+      "food": "sugar",
+      "unit": "probability / world seed",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "scenarios/day0/garden.json",
+      "path": "nectar_sites.F08.bloom_days_at_start_of_warmup",
+      "value": 12,
+      "role": "supply_driver",
+      "food": "sugar",
+      "unit": "days",
+      "time_scale": "day",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": "shorter than warmup_days: bloom ends before Day0"
+    },
+    {
+      "file": "scenarios/day0/garden.json",
+      "path": "nectar_sites.F08.initial_sugar",
+      "value": 0,
+      "role": "initial_stock",
+      "food": "sugar",
+      "unit": "game_portion sugar",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "scenarios/day0/garden.json",
+      "path": "carcass_sites.F07.initial_living_insects",
+      "value": 12,
+      "role": "supply_driver",
+      "food": "protein",
+      "unit": "insects / site",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "scenarios/day0/garden.json",
+      "path": "carcass_sites.F11.initial_living_insects",
+      "value": 9,
+      "role": "supply_driver",
+      "food": "protein",
+      "unit": "insects / site",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "scenarios/day0/garden.json",
+      "path": "carcass_sites.F07.initial_carcass_protein",
+      "value": 0,
+      "role": "initial_stock",
+      "food": "protein",
+      "unit": "game_portion protein",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "scenarios/day0/garden.json",
+      "path": "carcass_sites.F11.initial_carcass_protein",
+      "value": 0,
+      "role": "initial_stock",
+      "food": "protein",
+      "unit": "game_portion protein",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "scenarios/day0/garden.json",
+      "path": "boundary_insects",
+      "value": 40,
+      "role": "supply_driver",
+      "food": "protein",
+      "unit": "insects",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "scenarios/day0/garden.json",
+      "path": "warmup_days",
+      "value": 30,
+      "role": "supply_driver",
+      "food": "sugar+protein",
+      "unit": "days",
+      "time_scale": "day",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "prototypes/p0a2-24h/params.json",
+      "path": "parameters.honeydew_amount_portions",
+      "value": 0.05,
+      "role": "supply",
+      "food": "sugar",
+      "unit": "game_portion sugar / production event",
+      "time_scale": "event (every honeydew_interval_s)",
+      "origin": "fixed_game_portion",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "no hemipteran, plant, temperature or rain driver: a fixed scenario drip (synthetic)"
+    },
+    {
+      "file": "prototypes/p0a2-24h/params.json",
+      "path": "parameters.honeydew_interval_s",
+      "value": 900,
+      "role": "supply_driver",
+      "food": "sugar",
+      "unit": "s",
+      "time_scale": "event",
+      "origin": "fixed_game_portion",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "prototypes/p0a2-24h/params.json",
+      "path": "parameters.worker_sugar_daily_portions",
+      "value": 0.1,
+      "role": "demand",
+      "food": "sugar",
+      "unit": "game_portion sugar / worker / day, constant rate",
+      "time_scale": "continuous",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "no Q10 (nest temperature not simulated)"
+    },
+    {
+      "file": "prototypes/p0a2-24h/params.json",
+      "path": "brood_feeding_variants.m-half.overrides.worker_sugar_daily_portions",
+      "value": 0.05,
+      "role": "demand",
+      "food": "sugar",
+      "unit": "game_portion sugar / worker / day, constant rate (sensitivity variant m-half / m-double, #208; default off)",
+      "time_scale": "continuous",
+      "origin": "colony_internal",
+      "basis": "遊戲假設（敏感度）",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "isolated sensitivity override of the reference value; not the reference"
+    },
+    {
+      "file": "prototypes/p0a2-24h/params.json",
+      "path": "brood_feeding_variants.m-double.overrides.worker_sugar_daily_portions",
+      "value": 0.2,
+      "role": "demand",
+      "food": "sugar",
+      "unit": "game_portion sugar / worker / day, constant rate (sensitivity variant m-half / m-double, #208; default off)",
+      "time_scale": "continuous",
+      "origin": "colony_internal",
+      "basis": "遊戲假設（敏感度）",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "isolated sensitivity override of the reference value; not the reference"
+    },
+    {
+      "file": "prototypes/p0a2-24h/params.json",
+      "path": "parameters.larva_sugar_daily_portions",
+      "value": 0.025,
+      "role": "demand",
+      "food": "sugar",
+      "unit": "game_portion sugar / larva / day",
+      "time_scale": "continuous",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "prototypes/p0a2-24h/params.json",
+      "path": "parameters.crop_capacity_portions",
+      "value": 0.8,
+      "role": "handling_limit",
+      "food": "sugar",
+      "unit": "game_portion per worker crop",
+      "time_scale": "state",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "prototypes/p0a2-24h/params.json",
+      "path": "parameters.larva_gut_capacity_portions",
+      "value": 0.025,
+      "role": "handling_limit",
+      "food": "sugar",
+      "unit": "game_portion per larva gut",
+      "time_scale": "state",
+      "origin": "colony_internal",
+      "basis": "遊戲假設",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "prototypes/p0a2-24h/params.json",
+      "path": "parameters.feed_bolus_portions",
+      "value": 0.025,
+      "role": "handling_limit",
+      "food": "sugar",
+      "unit": "game_portion sugar / contact",
+      "time_scale": "contact",
+      "origin": "colony_internal",
+      "basis": "遊戲假設（機制：文獻支持，非本種）",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "prototypes/p0a2-24h/params.json",
+      "path": "parameters.transfer_max_portions",
+      "value": 0.28,
+      "role": "handling_limit",
+      "food": "sugar",
+      "unit": "game_portion sugar / trophallaxis",
+      "time_scale": "contact",
+      "origin": "colony_internal",
+      "basis": "遊戲假設（機制：文獻支持，非本種）",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": ""
+    },
+    {
+      "file": "prototypes/p0a2-24h/params.json",
+      "path": "parameters.initial_crop_fill_max",
+      "value": 1,
+      "role": "initial_stock",
+      "food": "sugar",
+      "unit": "fraction of crop",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "prototypes/p0a2-24h/params.json",
+      "path": "parameters.initial_larva_gut_fill_max",
+      "value": 1,
+      "role": "initial_stock",
+      "food": "sugar",
+      "unit": "fraction of gut",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "prototypes/p0a2-24h/params.json",
+      "path": "parameters.colony_workers",
+      "value": 30,
+      "role": "demand",
+      "food": "sugar",
+      "unit": "workers",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    },
+    {
+      "file": "prototypes/p0a2-24h/params.json",
+      "path": "parameters.colony_larvae",
+      "value": 8,
+      "role": "demand",
+      "food": "sugar",
+      "unit": "larvae",
+      "time_scale": "state",
+      "origin": "scenario_initial",
+      "basis": "遊戲假設",
+      "flags": [],
+      "note": ""
+    }
+  ],
+  "unclassified": [],
+  "legacy": {
+    "supply": {
+      "honeydew_by_site": [
+        {
+          "site": "F01",
+          "kind": "aphid",
+          "exists_probability": 1,
+          "host_plants": 2,
+          "colonies_day0_census": 4,
+          "colonies_max": 8,
+          "colonies_stationary_mean": 6.338,
+          "rate_per_colony": 0.32,
+          "rival_share": 0,
+          "net_gp_per_day_census": 1.28,
+          "net_gp_per_day_stationary": 2.028,
+          "net_gp_per_day_max": 2.56,
+          "expected_over_seeds_stationary": 2.028
+        },
+        {
+          "site": "F04",
+          "kind": "scale",
+          "exists_probability": 0.65,
+          "host_plants": 2,
+          "colonies_day0_census": 3,
+          "colonies_max": 8,
+          "colonies_stationary_mean": 6.338,
+          "rate_per_colony": 0.4,
+          "rival_share": 0.22,
+          "net_gp_per_day_census": 0.936,
+          "net_gp_per_day_stationary": 1.977,
+          "net_gp_per_day_max": 2.496,
+          "expected_over_seeds_stationary": 1.285
+        },
+        {
+          "site": "F05",
+          "kind": "aphid",
+          "exists_probability": 0.8,
+          "host_plants": 1,
+          "colonies_day0_census": 2,
+          "colonies_max": 4,
+          "colonies_stationary_mean": 3.169,
+          "rate_per_colony": 0.32,
+          "rival_share": 0,
+          "net_gp_per_day_census": 0.64,
+          "net_gp_per_day_stationary": 1.014,
+          "net_gp_per_day_max": 1.28,
+          "expected_over_seeds_stationary": 0.8112
+        },
+        {
+          "site": "F10",
+          "kind": "scale",
+          "exists_probability": 0.7,
+          "host_plants": 1,
+          "colonies_day0_census": 1,
+          "colonies_max": 4,
+          "colonies_stationary_mean": 3.169,
+          "rate_per_colony": 0.4,
+          "rival_share": 0,
+          "net_gp_per_day_census": 0.4,
+          "net_gp_per_day_stationary": 1.268,
+          "net_gp_per_day_max": 1.6,
+          "expected_over_seeds_stationary": 0.8873
+        }
+      ],
+      "honeydew_total_gp_per_day": {
+        "census_all_sites_present": 3.256,
+        "stationary_all_present": 6.287,
+        "max_all_present": 7.936,
+        "expected_over_world_seeds_stationary": 5.011
+      },
+      "nectar_by_site": [
+        {
+          "site": "F08",
+          "rate_gp_per_day_while_blooming": 0.35,
+          "bloom_days_at_warmup_start": 12,
+          "warmup_days": 30,
+          "bloom_days_left_at_day0": 0,
+          "gp_per_day_after_day0": 0,
+          "flag": "BLOOM_ENDS_BEFORE_DAY0 (D4: no re-bloom)"
+        }
+      ],
+      "carcass_by_site": [
+        {
+          "site": "F07",
+          "birth_factor_1": {
+            "insects": 14.57,
+            "natural_deaths_per_day": 0.2604,
+            "protein_gp_per_day": 0.5274
+          },
+          "birth_factor_min": {
+            "insects": 6.144,
+            "natural_deaths_per_day": 0.1195,
+            "protein_gp_per_day": 0.2419
+          },
+          "birth_factor_max": {
+            "insects": 15.23,
+            "natural_deaths_per_day": 0.2705,
+            "protein_gp_per_day": 0.5477
+          }
+        },
+        {
+          "site": "F11",
+          "birth_factor_1": {
+            "insects": 14.57,
+            "natural_deaths_per_day": 0.2604,
+            "protein_gp_per_day": 0.5274
+          },
+          "birth_factor_min": {
+            "insects": 6.144,
+            "natural_deaths_per_day": 0.1195,
+            "protein_gp_per_day": 0.2419
+          },
+          "birth_factor_max": {
+            "insects": 15.23,
+            "natural_deaths_per_day": 0.2705,
+            "protein_gp_per_day": 0.5477
+          }
+        }
+      ],
+      "carcass_total_protein_gp_per_day_birth_factor_1": 1.055,
+      "per_insect_yield_gp": {
+        "natural_death_mean": 2.025,
+        "natural_death_range": [
+          1.45,
+          2.6
+        ],
+        "killed_mean": 0.7875,
+        "killed_small": 0.55,
+        "killed_large": 1.5,
+        "ratio_killed_to_natural": 0.3889
+      }
+    },
+    "demand": [
+      {
+        "workers": 10,
+        "larvae": 2,
+        "queens": 1,
+        "by_temp_c": {
+          "15": {
+            "factor": 0.5,
+            "sugar_gp": 0.635,
+            "protein_gp": 0.1425
+          },
+          "20": {
+            "factor": 0.7071,
+            "sugar_gp": 0.898,
+            "protein_gp": 0.2015
+          },
+          "25": {
+            "factor": 1,
+            "sugar_gp": 1.27,
+            "protein_gp": 0.285
+          },
+          "30": {
+            "factor": 1.414,
+            "sugar_gp": 1.796,
+            "protein_gp": 0.4031
+          }
+        }
+      },
+      {
+        "workers": 30,
+        "larvae": 5,
+        "queens": 1,
+        "by_temp_c": {
+          "15": {
+            "factor": 0.5,
+            "sugar_gp": 1.673,
+            "protein_gp": 0.3425
+          },
+          "20": {
+            "factor": 0.7071,
+            "sugar_gp": 2.365,
+            "protein_gp": 0.4844
+          },
+          "25": {
+            "factor": 1,
+            "sugar_gp": 3.345,
+            "protein_gp": 0.685
+          },
+          "30": {
+            "factor": 1.414,
+            "sugar_gp": 4.731,
+            "protein_gp": 0.9687
+          }
+        }
+      },
+      {
+        "workers": 158,
+        "larvae": 24,
+        "queens": 1,
+        "by_temp_c": {
+          "15": {
+            "factor": 0.5,
+            "sugar_gp": 8.31,
+            "protein_gp": 1.615
+          },
+          "20": {
+            "factor": 0.7071,
+            "sugar_gp": 11.75,
+            "protein_gp": 2.283
+          },
+          "25": {
+            "factor": 1,
+            "sugar_gp": 16.62,
+            "protein_gp": 3.229
+          },
+          "30": {
+            "factor": 1.414,
+            "sugar_gp": 23.5,
+            "protein_gp": 4.566
+          }
+        }
+      },
+      {
+        "workers": 500,
+        "larvae": 75,
+        "queens": 1,
+        "by_temp_c": {
+          "15": {
+            "factor": 0.5,
+            "sugar_gp": 26.05,
+            "protein_gp": 5.022
+          },
+          "20": {
+            "factor": 0.7071,
+            "sugar_gp": 36.84,
+            "protein_gp": 7.103
+          },
+          "25": {
+            "factor": 1,
+            "sugar_gp": 52.09,
+            "protein_gp": 10.04
+          },
+          "30": {
+            "factor": 1.414,
+            "sugar_gp": 73.67,
+            "protein_gp": 14.21
+          }
+        }
+      },
+      {
+        "workers": 2000,
+        "larvae": 300,
+        "queens": 1,
+        "by_temp_c": {
+          "15": {
+            "factor": 0.5,
+            "sugar_gp": 103.9,
+            "protein_gp": 20.02
+          },
+          "20": {
+            "factor": 0.7071,
+            "sugar_gp": 146.9,
+            "protein_gp": 28.32
+          },
+          "25": {
+            "factor": 1,
+            "sugar_gp": 207.7,
+            "protein_gp": 40.05
+          },
+          "30": {
+            "factor": 1.414,
+            "sugar_gp": 293.8,
+            "protein_gp": 56.63
+          }
+        }
+      }
+    ],
+    "break_even_diagnostic": {
+      "15": {
+        "workers_whose_maintenance_sugar_equals_stationary_production_all_sites_present": 126,
+        "same_expected_over_world_seeds": 100,
+        "workers_whose_maintenance_protein_equals_natural_carcass_generation": 264
+      },
+      "20": {
+        "workers_whose_maintenance_sugar_equals_stationary_production_all_sites_present": 88.9,
+        "same_expected_over_world_seeds": 70.9,
+        "workers_whose_maintenance_protein_equals_natural_carcass_generation": 186
+      },
+      "25": {
+        "workers_whose_maintenance_sugar_equals_stationary_production_all_sites_present": 62.9,
+        "same_expected_over_world_seeds": 50.1,
+        "workers_whose_maintenance_protein_equals_natural_carcass_generation": 132
+      },
+      "30": {
+        "workers_whose_maintenance_sugar_equals_stationary_production_all_sites_present": 44.5,
+        "same_expected_over_world_seeds": 35.4,
+        "workers_whose_maintenance_protein_equals_natural_carcass_generation": 93.2
+      }
+    },
+    "foraging_time_cap": {
+      "max_trips_per_forager": 2,
+      "crop_load_sugar_max": 0.62,
+      "liquid_collection_probability": 0.85,
+      "max_sugar_gp_per_forager_day": 1.054,
+      "sugar_cost_gp_per_trip_round_trip_one_edge": 0.0252
+    }
+  },
+  "p0a2": {
+    "supply_gp_per_day": 4.8,
+    "demand_gp_per_day": 3.2,
+    "ratio": 1.5,
+    "supply_kind": "fixed scenario drip (no ecological driver)"
+  },
+  "anchored": {
+    "conversion_candidates_mg_sugar_per_gp": {
+      "load_based_R132": 0.08,
+      "smr_based_R951": [
+        0.0162,
+        0.08812
+      ],
+      "union": [
+        0.0162,
+        0.08812
+      ],
+      "status": "candidate range for comparison only; NOT an established unit"
+    },
+    "resting_sugar_mg_per_minor_per_day_R951_extrapolated": [
+      0.00162,
+      0.008812
+    ],
+    "aphid_honeydew_sugar_mg_per_aphid_per_day": [
+      0.0276,
+      5.28
+    ],
+    "game_aphid_colony_sugar_mg_per_day": [
+      0.005184,
+      0.0282
+    ],
+    "game_aphid_colony_in_aphid_equivalents": [
+      0.0009818,
+      1.022
+    ],
+    "game_garden_honeydew_stationary_mg_sugar_per_day": [
+      0.1018,
+      0.554
+    ]
+  }
+}

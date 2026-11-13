@@ -1,0 +1,779 @@
+{
+  "schema": "antempire.brood-physiology.candidates.v1",
+  "status": "非正式：#214 Q2／Q3 研究與設計階段的參數候選。不是正式參數，不在規則指紋內，不接入任何模擬（含 P0-A2 原型）；不寫存檔或日誌。所有數值都是模型先驗（assumption: true），由 Owner 選擇後另開 PR 實作。",
+  "official": false,
+  "issue": "#214 Owner 裁示 Q2 a、Q3 a（2026-11-13）",
+  "design_doc": "docs/p0a2-brood-physiology-design.md",
+  "evidence_classes": {
+    "this_species": "本種（Pheidole megacephala）文獻；數值仍有外推限制",
+    "other_species_extrapolated": "非本種文獻的數值外推到本種；必須寫出物種名（species_of_source）",
+    "general_physiology": "一般昆蟲生理學、化學計量或物理常數；不是本種量測",
+    "game_assumption": "遊戲假設：為讓模型能運作而設定；不是量測"
+  },
+  "units_note": "質量一律 µg（幼蟲生理）或 mg（個體體重）；能量以「糖當量」µg 表示（耗氧以化學計量換算），不使用 J；時間 d；溫度 °C。遊戲份只出現在 bridge_*。",
+  "stage_order": [
+    "egg",
+    "L1",
+    "L2",
+    "L3",
+    "prepupa",
+    "pupa"
+  ],
+  "feeding_stages": [
+    "L1",
+    "L2",
+    "L3"
+  ],
+  "anchor": {
+    "source": "R94",
+    "citation": "Yuan et al. (2026) Insects 17(10):992, doi:10.3390/insects17100992",
+    "species": "Pheidole megacephala",
+    "conditions": {
+      "temperature_c": 28,
+      "temperature_tolerance_c": 1,
+      "relative_humidity_pct": 70,
+      "photoperiod": "16L:8D",
+      "diet": "麵包蟲＋10% 蔗糖（任食）",
+      "colony": "野外巢片段，每群 2～7 隻蟻后，南寧引入族群"
+    },
+    "larval_instars": 3,
+    "egg_to_adult_non_reproductive_days": {
+      "mean": 28.73,
+      "sd": 2.83,
+      "min": 24,
+      "max": 34,
+      "n": 52
+    },
+    "milestones_days_from_oviposition": [
+      {
+        "milestone": "hatch",
+        "mean": 7.69,
+        "sd": 0.63,
+        "n": 227
+      },
+      {
+        "milestone": "L2",
+        "mean": 9.54,
+        "sd": 0.73,
+        "n": 208
+      },
+      {
+        "milestone": "L3",
+        "mean": 15.06,
+        "sd": 0.67,
+        "n": 194
+      },
+      {
+        "milestone": "prepupa",
+        "mean": 21.13,
+        "sd": 2.57,
+        "n": 93
+      },
+      {
+        "milestone": "pupa",
+        "mean": 23.68,
+        "sd": 2.38,
+        "n": 80
+      },
+      {
+        "milestone": "adult",
+        "mean": 28.73,
+        "sd": 2.83,
+        "n": 52
+      }
+    ],
+    "limits": [
+      {
+        "id": "single_temperature",
+        "text": "只有 28 ± 1°C 一個溫度；其他溫度的速率只能由模型（P0-B 候選）外推，28°C 重現是校準，不是驗證"
+      },
+      {
+        "id": "no_starvation_threshold",
+        "text": "食物任食；不提供任何缺食延遲、耐飢時間或死亡門檻"
+      },
+      {
+        "id": "not_taichung_field",
+        "text": "實驗室恆溫、南寧族群；不代表臺中花園的巢溫、食物或族群"
+      },
+      {
+        "id": "sd_not_individual",
+        "text": "各里程碑的 n 不同、不是逐隻配對；SD 含 24 小時產卵窗與每日檢查誤差，不能直接當個體差異"
+      },
+      {
+        "id": "n_decline_not_survival",
+        "text": "227 → 52 的人數下降原因不明，不是發育存活率"
+      },
+      {
+        "id": "castes_merged",
+        "text": "小工蟻與兵蟻合併為非繁殖型；兵蟻發育時間未分開"
+      },
+      {
+        "id": "stage_lengths_are_mean_differences",
+        "text": "階段長由不同個體集合的平均差得到（一齡 1.85 日可能偏短）"
+      }
+    ]
+  },
+  "parameters": {
+    "dev_d28_egg": {
+      "value": 7.69,
+      "unit": "d",
+      "evidence_class": "this_species",
+      "assumption": true,
+      "sources": [
+        "R94"
+      ],
+      "sensitivity": {
+        "min": 7.06,
+        "max": 8.32
+      },
+      "note": "28°C 產卵→孵化平均 7.69 ± 0.63（n 227）。敏感度＝平均 ± 報告的 SD（不是信賴區間）。只在 28°C 有效"
+    },
+    "dev_d28_l1": {
+      "value": 1.85,
+      "unit": "d",
+      "evidence_class": "this_species",
+      "assumption": true,
+      "sources": [
+        "R94"
+      ],
+      "sensitivity": {
+        "min": 1,
+        "max": 2.7
+      },
+      "note": "一齡＝二齡起點 9.54（n 208）− 孵化 7.69（n 227）。不同個體集合的平均差，不是逐隻階段長；短的一齡可能部分是此差值的人為現象"
+    },
+    "dev_d28_l2": {
+      "value": 5.52,
+      "unit": "d",
+      "evidence_class": "this_species",
+      "assumption": true,
+      "sources": [
+        "R94"
+      ],
+      "sensitivity": {
+        "min": 4.8,
+        "max": 6.2
+      },
+      "note": "二齡＝三齡起點 15.06（n 194）− 9.54（n 208）；平均差"
+    },
+    "dev_d28_l3": {
+      "value": 6.07,
+      "unit": "d",
+      "evidence_class": "this_species",
+      "assumption": true,
+      "sources": [
+        "R94"
+      ],
+      "sensitivity": {
+        "min": 3.5,
+        "max": 8.6
+      },
+      "note": "三齡＝前蛹起點 21.13 ± 2.57（n 93）− 15.06；三齡後開始分散，敏感度用前蛹起點的 SD"
+    },
+    "dev_d28_prepupa": {
+      "value": 2.55,
+      "unit": "d",
+      "evidence_class": "this_species",
+      "assumption": true,
+      "sources": [
+        "R94"
+      ],
+      "sensitivity": {
+        "min": 2.36,
+        "max": 2.74
+      },
+      "note": "前蛹期 2.55 ± 0.19（論文報告的階段長；平均差）"
+    },
+    "dev_d28_pupa": {
+      "value": 5.05,
+      "unit": "d",
+      "evidence_class": "this_species",
+      "assumption": true,
+      "sources": [
+        "R94"
+      ],
+      "sensitivity": {
+        "min": 4.6,
+        "max": 5.5
+      },
+      "note": "蛹期 5.05 ± 0.45；羽化 28.73 − 化蛹 23.68（n 52 對 80）"
+    },
+    "dev_cv_egg": {
+      "value": null,
+      "unit": "無因次（CV）",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "sources": [
+        "R94"
+      ],
+      "sensitivity": {
+        "min": 0.02,
+        "max": 0.15
+      },
+      "note": "同批個體門檻 Gamma 的 CV（P0-B M1）；Yuan 只給條件式數量級（約 0.06），未知量保持 null"
+    },
+    "dev_cv_larva": {
+      "value": null,
+      "unit": "無因次（CV）",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "sources": [
+        "R94"
+      ],
+      "sensitivity": {
+        "min": 0.02,
+        "max": 0.15
+      },
+      "note": "三齡前約 0.04（條件式）；三齡後離散來源不明"
+    },
+    "dev_cv_pupa": {
+      "value": null,
+      "unit": "無因次（CV）",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "sources": [
+        "R94"
+      ],
+      "sensitivity": {
+        "min": 0.02,
+        "max": 0.15
+      },
+      "note": "在「羽化個體都在化蛹紀錄中」的假設下，S2 與逐隻 SD 0.45 不相容（P0-B 設計 §2.1）"
+    },
+    "temp_ld_t0_egg_c": {
+      "value": 16.99,
+      "unit": "°C",
+      "evidence_class": "this_species",
+      "assumption": true,
+      "sources": [
+        "R94",
+        "R136",
+        "R166"
+      ],
+      "sensitivity": {
+        "min": 15.99,
+        "max": 18.74
+      },
+      "note": "線性度日候選 A 的卵發育下限（Fluker＋Chang＋Yuan 擬合，docs/p0b-life-history-evidence-matrix.md §4.1）；候選 B（含 Phillips）17.74。敏感度＝A、B 兩值各外擴 1°C。只用作形狀，28°C 時速率由 dev_d28_* 固定"
+    },
+    "temp_ld_t0_larva_c": {
+      "value": 13.27,
+      "unit": "°C",
+      "evidence_class": "this_species",
+      "assumption": true,
+      "sources": [
+        "R94",
+        "R136",
+        "R166"
+      ],
+      "sensitivity": {
+        "min": 12.27,
+        "max": 14.84
+      },
+      "note": "同上，幼蟲（含前蛹）；B 為 13.84。三個齡期與前蛹共用此值是模型假設（本種沒有分齡溫度資料）"
+    },
+    "temp_ld_t0_pupa_c": {
+      "value": 18.84,
+      "unit": "°C",
+      "evidence_class": "this_species",
+      "assumption": true,
+      "sources": [
+        "R94",
+        "R136",
+        "R166"
+      ],
+      "sensitivity": {
+        "min": 17.84,
+        "max": 20.56
+      },
+      "note": "同上，蛹；B 為 19.56"
+    },
+    "temp_q10_egg": {
+      "value": 4.44,
+      "unit": "無因次",
+      "evidence_class": "this_species",
+      "assumption": true,
+      "sources": [
+        "R94",
+        "R136",
+        "R166"
+      ],
+      "sensitivity": {
+        "min": 2,
+        "max": 7
+      },
+      "note": "分階段 Q10 重擬合（P0-B §4.1）；遠高於一般 2～3，表示三點擬合不穩"
+    },
+    "temp_q10_larva": {
+      "value": 2.58,
+      "unit": "無因次",
+      "evidence_class": "this_species",
+      "assumption": true,
+      "sources": [
+        "R94",
+        "R136",
+        "R166"
+      ],
+      "sensitivity": {
+        "min": 2,
+        "max": 7
+      },
+      "note": "分階段 Q10 重擬合的幼蟲值（P0-B §4.1）；四個幼蟲階段共用是模型假設"
+    },
+    "temp_q10_pupa": {
+      "value": 6.7,
+      "unit": "無因次",
+      "evidence_class": "this_species",
+      "assumption": true,
+      "sources": [
+        "R94",
+        "R136",
+        "R166"
+      ],
+      "sensitivity": {
+        "min": 2,
+        "max": 7
+      },
+      "note": "分階段 Q10 重擬合的蛹值（P0-B §4.1）；6.70 遠超一般範圍，不穩"
+    },
+    "temp_tmax_c": {
+      "value": null,
+      "unit": "°C",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "sources": [],
+      "sensitivity": {
+        "min": 33,
+        "max": 38
+      },
+      "note": "發育上限溫度：本種沒有 28°C 以上的發育資料，不可辨識（P0-B T3）"
+    },
+    "mass_adult_minor_dry_ug": {
+      "value": 80,
+      "unit": "µg",
+      "evidence_class": "this_species",
+      "assumption": true,
+      "sources": [
+        "R97"
+      ],
+      "sensitivity": {
+        "min": 63,
+        "max": 97
+      },
+      "note": "五個入侵族群小工蟻乾重（圖讀）63～97 µg；取中點。臺中族群未量測"
+    },
+    "mass_adult_minor_fresh_mg": {
+      "value": 0.24,
+      "unit": "mg",
+      "evidence_class": "this_species",
+      "assumption": true,
+      "sources": [
+        "R116",
+        "R98"
+      ],
+      "sensitivity": {
+        "min": 0.24,
+        "max": 0.35
+      },
+      "note": "沖繩 200 隻 minor 鮮重 48.0 mg（0.24 mg／隻）；喀麥隆 0.35 mg"
+    },
+    "mass_final_larva_fresh_mg": {
+      "value": 0.3,
+      "unit": "mg",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "sources": [
+        "R116",
+        "R98"
+      ],
+      "sensitivity": {
+        "min": 0.24,
+        "max": 0.45
+      },
+      "note": "末齡幼蟲鮮重沒有本種量測；下限取成蟲鮮重（變態會失重，所以末齡幼蟲不應較輕）"
+    },
+    "mass_dyar_ratio": {
+      "value": 2.7,
+      "unit": "無因次（每齡末體重比）",
+      "evidence_class": "general_physiology",
+      "assumption": true,
+      "sources": [],
+      "sensitivity": {
+        "min": 2,
+        "max": 4
+      },
+      "note": "每齡結束時的體重比，用來把總沉積量分配到三個齡期（Dyar 型幾何成長，一般昆蟲生理學；本種沒有分齡體重，R94 只有三齡體長 1.38 ± 0.11 mm）"
+    },
+    "comp_protein_fraction_dry": {
+      "value": 0.5,
+      "unit": "g 蛋白／g 乾重",
+      "evidence_class": "general_physiology",
+      "assumption": true,
+      "sources": [
+        "R942",
+        "R943"
+      ],
+      "sensitivity": {
+        "min": 0.38,
+        "max": 0.67
+      },
+      "note": "昆蟲體氮約 8～12%（範圍為遊戲假設：R942 的絕對值未讀到）× 氮→蛋白係數 4.76～5.60（R943，三種食用昆蟲幼蟲，非本種）；6.25 會高估"
+    },
+    "protein_metamorphic_loss": {
+      "value": 0.1,
+      "unit": "比例",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "sources": [],
+      "sensitivity": {
+        "min": 0,
+        "max": 0.2
+      },
+      "note": "前蛹＋蛹期間沉積蛋白中不保留到成蟲的比例；本種與近緣種都沒有資料"
+    },
+    "protein_hatch_fraction": {
+      "value": null,
+      "unit": "比例（相對成蟲蛋白）",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "sources": [],
+      "sensitivity": {
+        "min": 0,
+        "max": 0.05
+      },
+      "note": "孵化時已有的結構蛋白（來自卵）；與 C4 §3.1 一致保持 null（reserve_at_hatch 未知）。參考計算用 0＝需求上界"
+    },
+    "protein_assim_liquid": {
+      "value": 0.85,
+      "unit": "比例（同化／攝入）",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "sources": [
+        "R944"
+      ],
+      "sensitivity": {
+        "min": 0.6,
+        "max": 0.95
+      },
+      "note": "液態蛋白的同化率（AD 類指標，定義依 R944）；數值無資料"
+    },
+    "protein_assim_solid": {
+      "value": null,
+      "unit": "比例（同化／攝入）",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "sources": [
+        "R346",
+        "R620"
+      ],
+      "sensitivity": {
+        "min": 0.3,
+        "max": 0.9
+      },
+      "note": "固體蛋白：本種工蟻把固體放在幼蟲頭部附近（R346）；可吃固體的齡期與同化率無資料（R620 非本種：S. invicta 只有四齡）"
+    },
+    "protein_net_retention": {
+      "value": 0.7,
+      "unit": "比例（沉積／同化）",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "sources": [
+        "R944"
+      ],
+      "sensitivity": {
+        "min": 0.4,
+        "max": 0.9
+      },
+      "note": "同化蛋白中成為結構的比例（ECD 類指標，定義依 R944）；其餘經代謝排出"
+    },
+    "maint_o2_25c": {
+      "value": 0.291,
+      "unit": "mL O₂ g⁻¹（鮮重）h⁻¹",
+      "evidence_class": "other_species_extrapolated",
+      "assumption": true,
+      "sources": [
+        "R940"
+      ],
+      "sensitivity": {
+        "min": 0.15,
+        "max": 0.6
+      },
+      "species_of_source": "Solenopsis invicta",
+      "note": "S. invicta 幼蟲 25°C 靜止代謝 0.291 ± 0.020（工蟻 0.404、蛹 0.227）。外推到本種，敏感度放寬到約 ×0.5～×2"
+    },
+    "maint_pupa_ratio": {
+      "value": 0.78,
+      "unit": "比例（蛹／幼蟲）",
+      "evidence_class": "other_species_extrapolated",
+      "assumption": true,
+      "sources": [
+        "R940"
+      ],
+      "sensitivity": {
+        "min": 0.5,
+        "max": 1
+      },
+      "species_of_source": "Solenopsis invicta",
+      "note": "蛹與幼蟲的質量比代謝之比：0.227 ÷ 0.291（R940）"
+    },
+    "maint_l1_multiplier": {
+      "value": null,
+      "unit": "倍數",
+      "evidence_class": "other_species_extrapolated",
+      "assumption": true,
+      "sources": [
+        "R941"
+      ],
+      "sensitivity": {
+        "min": 1,
+        "max": 16
+      },
+      "species_of_source": "Camponotus rufipes",
+      "note": "C. rufipes 一齡質量比代謝遠高於後期（摘要：5.07 對三、四齡 0.32、0.22 µL mg⁻¹ h⁻¹）；本種未知，參考計算用 1"
+    },
+    "maint_q10": {
+      "value": 2,
+      "unit": "無因次",
+      "evidence_class": "general_physiology",
+      "assumption": true,
+      "sources": [],
+      "sensitivity": {
+        "min": 1.5,
+        "max": 3
+      },
+      "note": "代謝的溫度係數；與 species 檔 metabolism.q10（一般生理學）同值，未依結果挑選"
+    },
+    "o2_mg_per_ml": {
+      "value": 1.429,
+      "unit": "mg／mL",
+      "evidence_class": "general_physiology",
+      "assumption": true,
+      "sources": [],
+      "sensitivity": {
+        "min": 1.309,
+        "max": 1.429
+      },
+      "note": "標準狀況氧氣密度；若 R940 的體積是 25°C 未校正體積則約 1.309（原文換算方式未讀到）"
+    },
+    "sucrose_per_o2": {
+      "value": 0.8915,
+      "unit": "mg 蔗糖／mg O₂",
+      "evidence_class": "general_physiology",
+      "assumption": true,
+      "sources": [],
+      "sensitivity": {
+        "min": 0.8915,
+        "max": 0.9383
+      },
+      "note": "化學計量：C₁₂H₂₂O₁₁ + 12 O₂（342.30／383.98）；上限為葡萄糖當量（180.16／191.99）。把耗氧換成「糖當量」，不需要熱量密度"
+    },
+    "growth_energy_per_protein": {
+      "value": 0.5,
+      "unit": "µg 糖當量／µg 沉積蛋白",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "sources": [],
+      "sensitivity": {
+        "min": 0.2,
+        "max": 1
+      },
+      "note": "合成與沉積的額外能量成本；本種與螞蟻都沒有資料"
+    },
+    "sugar_assim": {
+      "value": 0.95,
+      "unit": "比例（同化／攝入）",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "sources": [
+        "R944"
+      ],
+      "sensitivity": {
+        "min": 0.8,
+        "max": 0.99
+      },
+      "note": "糖液的同化率（AD 類指標，定義依 R944）；數值無資料"
+    },
+    "abs_margin": {
+      "value": 2,
+      "unit": "倍數",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "sources": [
+        "R94"
+      ],
+      "sensitivity": {
+        "min": 1.2,
+        "max": 5
+      },
+      "note": "吸收能力沒有資料。下界由「Yuan 飽食條件下幼蟲能以觀測速度發育」推得（模型內推論）；實際能力＝下界 × 此倍數"
+    },
+    "bridge_portion_solution_ug": {
+      "value": 100,
+      "unit": "µg 液體／遊戲份",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "sources": [
+        "R132"
+      ],
+      "sensitivity": {
+        "min": 50,
+        "max": 200
+      },
+      "note": "本種 minor 嗉囊液體載量 0.08 ± 0.01 mg（R132）÷ species 檔嗉囊容量 0.8 份。遊戲份與質量的對應是選擇，不是量測"
+    },
+    "bridge_sugar_fraction": {
+      "value": null,
+      "unit": "g 糖／g 液體",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "sources": [
+        "R94"
+      ],
+      "sensitivity": {
+        "min": 0.05,
+        "max": 0.3
+      },
+      "note": "巢內交哺液的糖濃度未知；R94 實驗室飼料是 10% 蔗糖（只是飼養條件）"
+    },
+    "bridge_protein_fraction": {
+      "value": null,
+      "unit": "g 蛋白／g 液體",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "sources": [],
+      "sensitivity": {
+        "min": 0.02,
+        "max": 0.2
+      },
+      "note": "交哺液的蛋白濃度未知"
+    },
+    "haz_h1_tau_e_d": {
+      "value": null,
+      "unit": "d（參考 25°C）",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "sources": [
+        "R167"
+      ],
+      "sensitivity": {
+        "min": 14,
+        "max": 30
+      },
+      "note": "H1：能量虧損連續 τ 日即死亡。下限 14 日來自本種方向性觀察：25°C 停食 2 週的幼蟲在恢復餵食後化蛹（R167）。這是約束，不是擬合"
+    },
+    "haz_h2_lambda_d": {
+      "value": null,
+      "unit": "d",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "sources": [],
+      "sensitivity": {
+        "min": 7,
+        "max": 60
+      },
+      "note": "H2：虧損持續時間 D 的 Weibull 累積危險 (D/λ)^k；本種沒有耐飢資料"
+    },
+    "haz_h2_k": {
+      "value": null,
+      "unit": "無因次",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "sources": [],
+      "sensitivity": {
+        "min": 1,
+        "max": 5
+      },
+      "note": "H2 形狀；k = 1 為常數危險率"
+    },
+    "haz_h3_debt_fraction": {
+      "value": null,
+      "unit": "比例（未付維持量／成蟲蛋白當量）",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "sources": [],
+      "sensitivity": {
+        "min": 0.1,
+        "max": 0.5
+      },
+      "note": "H3：累積未付的維持需求超過一定量即死亡（以分解自身組織為代價的上限）；參考計算未實作"
+    }
+  },
+  "owner_choices": {
+    "temperature_model": {
+      "options": [
+        "flat",
+        "linear_dd_A",
+        "linear_dd_B",
+        "q10_refit",
+        "briere"
+      ],
+      "value": null,
+      "note": "溫度形狀（28°C 標準化）；21～28°C 外差異集中在外推段"
+    },
+    "nutrition_gate": {
+      "options": [
+        "N-d_stoichiometric",
+        "N-a",
+        "N-b",
+        "N-c"
+      ],
+      "value": null,
+      "note": "本設計建議的 N-d：發育推進需要實際沉積蛋白與能量（§4）；N-a～N-c 見 C4b 設計"
+    },
+    "hazard_family": {
+      "options": [
+        "H0",
+        "H1",
+        "H2",
+        "H3"
+      ],
+      "value": null,
+      "note": "H0＝不死亡、只診斷"
+    },
+    "hazard_recovery": {
+      "options": [
+        "retain",
+        "reset"
+      ],
+      "value": null,
+      "note": "餵食結束虧損後，累積危險保留或歸零"
+    },
+    "protein_catabolism": {
+      "options": [
+        false,
+        true
+      ],
+      "value": null,
+      "note": "能量虧損時是否分解蛋白補能量"
+    },
+    "solid_protein_instars": {
+      "options": [
+        [
+          "L3"
+        ],
+        [
+          "L1",
+          "L2",
+          "L3"
+        ]
+      ],
+      "value": null,
+      "note": "哪些齡期能吃固體蛋白"
+    },
+    "individual_variance": {
+      "options": [
+        "S0",
+        "M1",
+        "M2"
+      ],
+      "value": null,
+      "note": "P0-B 同批差異模型"
+    }
+  },
+  "reference_test_grid": {
+    "note": "只供 tests/brood-physiology.test.ts 的參考計算使用的測試格點，不是候選值，不代表任何選擇",
+    "temperature_model": "flat",
+    "haz_h2_lambda_d": 21,
+    "haz_h2_k": 2
+  }
+}
