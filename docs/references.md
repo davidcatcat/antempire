@@ -940,3 +940,18 @@ R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-
 | R955 | Tew NE, Memmott J, Vaughan IP, Bird S, Stone GN, Potts SG, Baldock KCR (2021) Quantifying nectar production by flowering plants in urban and rural landscapes. *J. Ecol.* 109:1747–1757. DOI 10.1111/1365-2745.13598 | 只讀摘要與新聞稿（全文 PDF 回 403） | **非本地**：英國四城市、536 個植物分類群 | 住宅花園每單位面積花蜜糖最多，約占城市尺度花蜜的 85%；花蜜量以花朵數 × 每朵花蜜糖產量估計 | 溫帶英國；沒有讀到每 m² 每日的數值；只支持「花蜜供給應由花朵數與每朵產量構成」的模型結構 |
 
 - 檢索未果（2026-11-13）：本種小工蟻每日糖或蛋白攝取量（mg）、本種代謝率；臺灣或亞熱帶都市花園地表節肢動物生物量或周轉率（只找到豐度與多樣性研究）；朱槿等花園植物每朵每日花蜜糖量的可引用數值。候選待讀全文：Vogt & Appel (1999) *J. Insect Physiol.* 45:655–666（紅火蟻標準代謝率，含 17 種螞蟻比較；本輪只看到摘要轉述，沒有數值，**不編號**）。
+
+## 2026-11-13 #213 Q2／Q4：地表溫度候選模型（R931、R932）與 R810 書目核對（只新增，不改舊列）
+
+> 編號 R931、R932 已先在**所有** origin 分支（`git grep` 於 refs/remotes/origin/*，限 docs/）確認未被使用（R930 已被使用，故從 R931 起）。兩筆都是**一般大氣輻射方法**，不涉及任何生物；只支持 SURF-0（[`surface-temperature-model.md`](surface-temperature-model.md)）晴空日射式的係數，**不支持**任何地表溫度數值，也不是臺中實測。
+
+| ID | 文獻 | 閱讀程度 | 物種 | 支持的內容 | 不可外推之處 |
+|---|---|---|---|---|---|
+| R931 | Kasten F, Czeplak G (1980) Solar and terrestrial radiation dependent on the amount and type of cloud. *Solar Energy* 24(2):177–189. DOI 10.1016/0038-092X(80)90391-6 | **原文未讀**；書目經 Crossref（2026-11-13）核對作者、篇名、期刊、卷期頁、年份 | 不適用（大氣輻射） | 晴空全天空水平輻照度的簡單經驗式 GHI = 910·cos z − 30（W m⁻²）；式子經 R932 式 17 核對 | 原文的校準地點、資料期間與誤差**待核**；臺中（北緯約 24°）未驗證；雲量修正式未採用（引擎沒有雲量資料） |
+| R932 | Reno MJ, Hansen CW, Stein JS (2012) *Global Horizontal Irradiance Clear Sky Models: Implementation and Analysis*. Sandia National Laboratories, SAND2012-2389. DOI 10.2172/1039404 | 讀 PDF 第 2 節「very simple clear sky models」（式 14～21） | 不適用 | 列出 Kasten–Czeplak 式（式 17）；並提醒「簡單模型用在校準地以外要小心」 | 本 PR 只用它核對式子，未使用其站點比較的任何數值；作者依 PDF 封面（Matthew J. Reno, Clifford W. Hansen, Joshua S. Stein）；Sandia 網頁摘要頁只列 Reno、Stein |
+
+**R810 書目核對（#213 Q4，2026-11-13）**（新增，不改寫 2026-11-08 原列）：
+- 以 Crossref（DOI 10.1242/jeb.185124）與 PubMed E-utilities（PMID 30266788）兩個獨立書目來源核對，結果一致：作者 **Ryan W. Draft, Matthew R. McGill, Vikrant Kapoor, Venkatesh N. Murthy**；篇名 **"Carpenter ants use diverse antennae sampling strategies to track odor trails"**；*Journal of Experimental Biology*（PubMed 刊名 *The Journal of experimental biology*）**221**（Pt 22）：**jeb185124**；年份 **2018**；物種（摘要原文）***Camponotus pennsylvanicus***。
+- 結論：#189 所指「Draft 2018」與 R810 為**同一篇**，書目身分**已核**。閱讀程度不變：**只讀摘要**（PubMed 摘要全文；沒有讀全文，也沒有讀圖表）。摘要沒有提供任何數值，所以 R810 仍**不提供任何數值**。
+- 摘要可支持的（定性）：觸角在追跡與探索時都高度活動；追跡時有「sinusoidal」「probing」「trail following」三種取樣模式；所有行為中左右觸角運動**反相關**；追跡時左右觸角使用有偏好；trail following 模式中兩觸角偵測路徑邊緣並導向轉彎（作者稱特化的 tropotaxis）；切除一側觸角使追跡較不準確，且剩下的觸角取樣模式改變。
+- 地位：**非本種**（*Camponotus pennsylvanicus*），只屬**跨物種候選機制**；不能當作 *Pheidole megacephala* 的實測證據。

@@ -11,6 +11,8 @@
  *     verified against the source world id (recordProblem with sim id).
  *  5. static: the menu never uses window.confirm, escapes stored names before innerHTML, and the session/menu touch no
  *     storage API directly (only save-store.ts does; tests/worker-boundary.test.ts); manual saves are never swept.
+ *  6. runtime info per world kind: overlapping probes (list() of a fresh page, runtimeFor) each read their own kind's
+ *     world on the single Worker (regression: a saved synthetic world showed 規則不同 after reopening the page).
  */
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
@@ -19,7 +21,8 @@ import path from 'node:path';
 import { REPO_ROOT } from '../cli/lib/load.ts';
 import { ExperimentWorld } from '../prototypes/continuous-world/worker/core.ts';
 import { Runtime } from '../prototypes/continuous-world/worker/runtime.ts';
-import { canonicalJson, sha256Hex, seedFromInput, summaryOf, parseImport, defaultMigrations, recordProblem, newCopyId, MAX_IMPORT_BYTES, MANUAL_KEEP_MAX, sweepable, type SnapshotRecord } from '../web/src/experimental/save-format.ts';
+import { WORLD_KINDS, type WorldKind } from '../web/src/experimental/worker-protocol.ts';
+import { canonicalJson, sha256Hex, seedFromInput, summaryOf, parseImport, defaultMigrations, recordProblem, newCopyId, MAX_IMPORT_BYTES, MANUAL_KEEP_MAX, sweepable, type SnapshotRecord, type RuntimeInfo } from '../web/src/experimental/save-format.ts';
 
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
 const H = 3600;
@@ -86,5 +89,49 @@ const H = 3600;
   }
   ok(!/\$\{w\.name\}|\$\{w\.provenance\.source_name\}|\$\{r\.message\}/.test(menu), 'menu: stored names and messages are escaped before innerHTML');
   ok(/save-store\.ts/.test(read('prototypes/continuous-world/worker-boundary.json')), 'the store stays the only persistence module');
+}
+
+// 6. runtime info per world kind is probed from the right world even when probes overlap (session list race).
+//    A fake Worker client drives the REAL Runtime through an asynchronous FIFO message queue, like postMessage: before
+//    the fix, list() probed both kinds concurrently, the two probe inits interleaved on the single Worker, and both
+//    snapshots read the world created last, so a saved synthetic world showed as a rules mismatch in a new page.
+{
+  const expected = new Map<WorldKind, RuntimeInfo>();
+  for (const k of WORLD_KINDS) { const rt = new Runtime(() => 0); rt.handle({ type: 'init', req: 1, world_id: 'exp-ref', seed: 0, kind: k });
+    const s = (rt.handle({ type: 'snapshot', req: 2 }).find((r) => r.type === 'snapshot') as { snapshot: RuntimeInfo }).snapshot;
+    expected.set(k, { rules_fingerprint: s.rules_fingerprint, engine_version: s.engine_version, schema_version: s.schema_version }); }
+  ok(expected.get('synthetic')!.engine_version !== expected.get('p0a2')!.engine_version, 'the two world kinds have different engine versions');
+  class QueueClient {
+    readonly rt = new Runtime(() => 0); private n = 0; private q: { m: Record<string, unknown>; done: (r: unknown) => void }[] = []; private busy = false; sent: string[] = [];
+    send(body: Record<string, unknown>): Promise<never> { const m = { ...body, req: ++this.n }; this.sent.push(String(body.type)); return new Promise((done) => { this.q.push({ m, done: done as (r: unknown) => void }); this.pump(); }); }
+    private pump() { if (this.busy) return; this.busy = true; setTimeout(() => { this.busy = false; const x = this.q.shift(); if (!x) return; const rs = this.rt.handle(x.m) as { req?: number | null; type: string }[];
+      x.done(rs.find((r) => r.req === x.m.req && (r.type === 'ack' || r.type === 'error' || r.type === 'snapshot'))); if (this.q.length) this.pump(); }, 0); }
+    init(world_id: string, seed: number, kind?: WorldKind) { return this.send(kind ? { type: 'init', world_id, seed, kind } : { type: 'init', world_id, seed }); }
+    snapshot() { return this.send({ type: 'snapshot' }); }
+  }
+  const row = (k: WorldKind) => ({ world_id: `exp-saved-${k}`, engine_version: expected.get(k)!.engine_version, rules_fingerprint: expected.get(k)!.rules_fingerprint });
+  const fakeStore = { listWorlds: async (rt: RuntimeInfo) => WORLD_KINDS.map((k) => ({ ...row(k), compat: rt.rules_fingerprint === row(k).rules_fingerprint ? 'ok' : 'rules_mismatch' })) };
+  // session.ts is loaded by a computed specifier: it (and the Worker client / IndexedDB store it imports) is DOM code
+  // checked by web/tsconfig.json, not by the Node tsconfig; only list / runtimeInfo / runtimeFor run here (no DOM API)
+  interface SessionApi { list(): Promise<{ world_id: string }[]>; runtimeInfo(k: WorldKind): Promise<RuntimeInfo>; runtimeFor(ev: string): Promise<RuntimeInfo> }
+  const sessionModule = '../web/src/experimental/session.ts';
+  const { ExperimentSession } = await import(sessionModule) as { ExperimentSession: new (c: unknown, s: unknown) => SessionApi };
+  const mk = () => { const c = new QueueClient(); return { c, s: new ExperimentSession(c, fakeStore) }; };
+  { // a fresh page opens the menu: list() first
+    const { s } = mk(); const rows = await s.list();
+    for (const k of WORLD_KINDS) {
+      ok(JSON.stringify(await s.runtimeInfo(k)) === JSON.stringify(expected.get(k)), `list(): runtime info of ${k} comes from a ${k} world (${(await s.runtimeInfo(k)).engine_version})`);
+      ok((rows.find((r) => r.world_id === `exp-saved-${k}`) as { compat?: string } | undefined)?.compat === 'ok', `list(): a saved ${k} world is listed as compatible (繼續遊戲 enabled)`);
+    }
+  }
+  { // overlapping direct probes of every kind, in both orders, and the same kind twice
+    for (const order of [[...WORLD_KINDS], [...WORLD_KINDS].reverse()]) {
+      const { s, c } = mk(); const got = await Promise.all([...order, ...order].map((k) => s.runtimeInfo(k)));
+      ok([...order, ...order].every((k, i) => JSON.stringify(got[i]) === JSON.stringify(expected.get(k))), `overlapping probes (${order.join(',')}) each read their own kind`);
+      ok(c.sent.filter((t) => t === 'init').length === order.length, `each kind is probed once (${c.sent.join(',')})`);
+      const { s: s2 } = mk(); const [a, b] = await Promise.all([s2.runtimeFor(expected.get(order[0])!.engine_version), s2.runtimeFor(expected.get(order[1])!.engine_version)]);
+      ok(a.engine_version === expected.get(order[0])!.engine_version && b.engine_version === expected.get(order[1])!.engine_version, `overlapping runtimeFor (${order.join(',')}) finds each kind`);
+    }
+  }
 }
 console.log(JSON.stringify({ test: 'save2-session', checks }));

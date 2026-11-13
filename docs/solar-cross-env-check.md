@@ -192,3 +192,7 @@ PR #169（P0-A2 Worker 執行環境，`docs/experimental-worker-runtime.md` §6�
 
 ### 8.7 回滾
 還原本次提交：`detmath.ts` 移除 `detExp`／`detLog`／`detPow`／`detPowInt`，`weather-input.ts`、`world.ts`、`decision.ts` 回到 `Math.*`／`**`，`P0A2_CODE_SHA256` 回到舊值，靜態規則與收緊的瀏覽器檢查一併還原。回滾後 Node 中的 P0-A2 輸出不變（逐位元組相同），但瀏覽器產生的 P0-A2 存檔重新無法通過 Node 驗證（§8.1），`docs/save-format-v2.md` §5b 的已知限制恢復。本版產生的 P0-A2 實驗存檔在回滾後以 `FINGERPRINT_MISMATCH` 拒絕（原樣保留、可匯出）；正式存檔與日誌不受影響。
+
+## 附註（2026-11-13，#213 Q2 b；只新增）
+
+新增光照消費者 `engine/clock/surface-temperature.ts`（SURF-0 地表溫度候選）：只把 `solarAltitude()` 當作模型值的連續輸入，不產生任何事件、批次或光照狀態邊界；只用 `detmath.ts` 與 IEEE 基本運算；沒有任何模組匯入它。已在 `tests/solar-xenv.test.ts` 的消費者清單登錄。它的輸出跨環境逐位元相同的前提是**相同的氣溫輸入**；`WeatherSeries.temperature` 已由 §8（#211）改用 `detSin`／`detExp`，但 SURF-0 本身的跨環境掃描尚未執行（只以 Node 測試）。

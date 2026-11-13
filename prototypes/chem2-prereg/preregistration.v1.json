@@ -1,0 +1,82 @@
+{
+  "schema": "antempire.chem2-prereg.v1",
+  "id": "chem2-sens-prereg-v1",
+  "decision": "Owner ruling #213 Q3 a (2026-11-13)",
+  "registered_on": "2026-11-13",
+  "status": "exploratory_sensitivity_range",
+  "status_zh": "探索性敏感度範圍；不是校準；不代表本種參數已知",
+  "official": false,
+  "disclosure_zh": "CHEM-2 基準（PR #205 分支 prototypes/chem2/bench.ts）在本預註冊之前已輸出過部分網格點；本檔鎖定主分析的完整網格、情境、指標、種子與判定方式，從本版起主分析一律依此執行並報告全部格子。",
+  "grid": {
+    "half_life_min": [
+      { "label": "0", "bench_value": null, "meaning_zh": "λ = 0 基準（當日不衰減）；不是「半衰期 0 分鐘＝瞬間消失」" },
+      { "label": "5", "bench_value": 5 },
+      { "label": "10", "bench_value": 10 },
+      { "label": "17", "bench_value": 17 },
+      { "label": "30", "bench_value": 30 },
+      { "label": "60", "bench_value": 60 }
+    ],
+    "half_life_reference_temperature_c": 25,
+    "q10": [
+      { "label": "off", "bench_value": null, "meaning_zh": "溫度項關閉" },
+      { "label": "1.5", "bench_value": 1.5 },
+      { "label": "2", "bench_value": 2 },
+      { "label": "3", "bench_value": 3 }
+    ],
+    "weather": [
+      { "label": "cool", "t_min_c": 18, "t_max_c": 24, "synthetic": true },
+      { "label": "hot", "t_min_c": 26, "t_max_c": 34, "synthetic": true }
+    ],
+    "cells_total": 48,
+    "degenerate_cells_rule_zh": "λ = 0 列（任何 Q10、任何天氣）與 Q10 關閉列（涼／熱）在數學上彼此相同；仍須逐格列出，標「與某格逐位元相同」並以實際計算驗證，不得省略。"
+  },
+  "fixed_setup": {
+    "anchor": { "day0_date": "2027-07-01", "utc_offset_minutes": 480, "zone": "Asia/Taipei" },
+    "site": { "latitude_deg": 24.17, "longitude_deg": 120.64 },
+    "temperature_shape": { "peak_lag_after_noon_h": 2, "night_decay_b": 2, "min_lag_after_sunrise_h": 0 },
+    "rh_mean_percent": 75,
+    "rain_mm": 0,
+    "sample_step_min": 10,
+    "temperature_input": "air_temp_c_surrogate",
+    "chem_clock_origin": "world day 1 12:00",
+    "cover_s": [0, 64800]
+  },
+  "seeds": {
+    "clock_seed": [11],
+    "note_zh": "主情境沒有任何隨機抽樣（沉積時程固定、無雨），種子只決定 P0-A1 雨時段情境；固定為 11，不得換種子重跑擇優。"
+  },
+  "scenarios": {
+    "main": [
+      { "id": "S1-laden", "zh": "單一路徑，帶食段 13:15–14:00 每分鐘一次全長通過（45 次），探針 s = 300 mm", "cells": "all 48" },
+      { "id": "S1-explore", "zh": "單一路徑，探索段 13:00–13:15 每分鐘一次全長通過（15 次），探針 s = 300 mm", "cells": "all 48" },
+      { "id": "S3-ratio", "zh": "由 S1-laden 導出：16:00 讀值的熱／涼比", "cells": "half_life ≠ 0 × all q10 (20)" }
+    ],
+    "secondary_fixed": [
+      { "id": "S2-crossing", "zh": "平面交叉路徑（2 mm 格、r = 3 mm），固定 4 格：(0, off, cool)、(17, off, cool)、(17, 2, cool)、(17, 2, hot)" },
+      { "id": "S1-M2", "zh": "雙通道 M2：半衰期 F ∈ {10, 17, 30} × λ_E/λ_F ∈ {0.3, 0.6, 1} × {cool, hot}，Q10 = 2" },
+      { "id": "S4-rain-off", "zh": "17 min、Q10 2、熱天：無雨 vs 當日 5 mm 一小時雨但沖刷 null，必須逐位元相同" }
+    ]
+  },
+  "deposit_schedule_s_after_noon": { "explore": [3600, 4500], "laden": [4500, 7200], "every_s": 60 },
+  "probes_s_after_noon": [7200, 9000, 10800, 14400, 21600, 64800],
+  "metrics": [
+    { "id": "M-read", "zh": "每個探針時刻的讀值（normalized activity；非化學濃度）" },
+    { "id": "M-residual", "zh": "通道帳本殘差（沉積 − 現存 − 衰減）" },
+    { "id": "M-remain", "zh": "16:00 讀值 / 14:00 讀值（S1）" },
+    { "id": "M-ratio", "zh": "16:00 讀值的熱／涼比（S3）" },
+    { "id": "M-zero", "zh": "零值邊界：讀值恰為 0 或低於 1e-12 的探針數（下溢也要記錄，不得刪除）" }
+  ],
+  "decision_rules": [
+    { "id": "D1", "zh": "全部 48 格 × 主情境都要報告，順序固定為 半衰期 → Q10 → 天氣；不得依結果刪格或排序。" },
+    { "id": "D2", "zh": "失敗判定（任一即失敗，失敗格保留並列出原因）：讀值為 NaN 或負值；|帳本殘差| > 1e-9 × 總沉積量；無雨情境在最後一次沉積後讀值隨時間增加；Q10 關閉時涼／熱不逐位元相同；λ = 0 列在最後一次沉積後讀值改變。" },
+    { "id": "D3", "zh": "描述性分類（預先固定，不是選參）：S3 熱／涼比偏離 1 超過 10 % 記為「溫度敏感」，否則「溫度不敏感」；只用來描述範圍。" },
+    { "id": "D4", "zh": "不得從網格中挑出任何一組稱為「最佳」「已校準」或本種數值；結論只能寫成範圍與敏感方向。" },
+    { "id": "D5", "zh": "補充實驗必須另建新版本檔（chem2-sens-supp-vN），與本主分析分開報告，不得取代或覆寫本檔。" },
+    { "id": "D6", "zh": "本檔一經合併即凍結：改動任何內容必須新增 v2 檔，v1 保留。" }
+  ],
+  "evidence_notes_zh": [
+    "10 與 17 分鐘是 R21（實驗室 25 ± 1 °C、60 mm 橋）的模型相依估計，作為格點；不是西屯戶外值。",
+    "Q10 只有一般生理學形式（R35／R36 方向，非本種），沒有本種量測值。",
+    "溫度輸入是氣溫代理；SURF-0 地表溫度候選（#213 Q2）只作對照，未接入本主分析。"
+  ]
+}

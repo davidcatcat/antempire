@@ -31,4 +31,14 @@ for (const f of files) {
   ok(!/pheidole|megacephala|species/i.test(code), `engine/clock/${f}: no species branch or species parameter`);
   ok(!/colon(y|ies)|worker|brood|queen|larva|\bcrop\b|forag|nestmate|\btask/i.test(code.replace(/\bcolony:\s*null\b/g, '')), `engine/clock/${f}: names no colony-side state (environment independent of the colony)`);
 }
+// SURF-0 (Owner ruling #213 Q2 b): the surface-temperature candidate is an opt-in clock module. It must exist, read no
+// colony-level state, needs or physiology (stricter than the generic check above), and no other clock module, scheduler,
+// physics or chemistry module may depend on it (it is fed BY the environment, never the other way round).
+ok(files.includes('surface-temperature.ts'), 'engine/clock/surface-temperature.ts exists');
+{
+  const code = noStrings(strip(fs.readFileSync(path.join(REPO_ROOT, 'engine/clock/surface-temperature.ts'), 'utf8')));
+  ok(!/colon(y|ies)|sugar|protein|brood|larva|queen|deficit|days_short|trail_by_edge|\bneeds?\b|\bcrop\b|hunger|population|demand/i.test(code), 'engine/clock/surface-temperature.ts: reads no colony-level state, needs or physiology (CLAUDE.md §2.2)');
+  const dependents = [...files.filter((f) => f !== 'surface-temperature.ts').map((f) => path.join(REPO_ROOT, 'engine/clock', f)), ...walk(path.join(REPO_ROOT, 'engine/scheduler')), ...walk(path.join(REPO_ROOT, 'engine/physics')), ...walk(path.join(REPO_ROOT, 'engine/chemistry'))];
+  for (const f of dependents) ok(!/surface-temperature/.test(strip(fs.readFileSync(f, 'utf8'))), `${path.relative(REPO_ROOT, f)} does not import the surface-temperature candidate (opt-in only)`);
+}
 console.log(JSON.stringify({ test: 'clock-isolation', checks }));
