@@ -64,7 +64,12 @@
   #notice { position: fixed; left: 50%; transform: translateX(-50%); top: 52px; max-width: min(640px, calc(100vw - 24px)); background: rgba(20,15,10,0.92); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 13px; z-index: 5; }
   #notice[data-kind="warn"] { border-color: #e9b949; } #notice[data-kind="error"] { border-color: #ff9f8a; }
   #roBanner { position: fixed; left: 50%; transform: translateX(-50%); top: 96px; background: #6b3410; color: #fff3e0; border-radius: 8px; padding: 4px 10px; font-size: 12.5px; z-index: 5; }
-  @media (max-width: 600px) { h1 { font-size: 14px; } #log { top: 110px; } #card { top: 96px; } select, button, a.btn { font-size: 12.5px; min-height: 34px; } #bottom .legend-tag { display: none; } }
+  #legend { position: fixed; top: 84px; right: max(10px, env(safe-area-inset-right, 0px)); width: min(380px, calc(100vw - 20px)); max-height: 60vh; overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 12.5px; line-height: 1.55; z-index: 4; }
+  #legend h3 { font-size: 13px; margin: 8px 0 2px; } #legend p { margin: 2px 0; }
+  #legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  #ugLabel { position: fixed; left: 50%; transform: translateX(-50%); top: 50px; background: #6b3410; color: #fff3e0; border: 1px solid #e9b949; border-radius: 8px; padding: 4px 12px; font-size: 13px; font-weight: 600; white-space: nowrap; max-width: calc(100vw - 20px); overflow: hidden; text-overflow: ellipsis; z-index: 2; pointer-events: none; }
+  #viewBtn[aria-pressed="true"] { background: #6b3410; border-color: #e9b949; }
+  @media (max-width: 600px) { #bottom { gap: 4px 6px; } #status { font-size: 11px; line-height: 1.35; max-height: 2.7em; overflow: hidden; } #card { font-size: 12px; line-height: 1.45; max-height: 26vh; overflow: auto; padding: 6px 8px; } #card .muted { font-size: 11px; } #legend { top: 120px; max-height: 50vh; } #saveStatus { font-size: 11px; } #time { font-size: 11.5px; } h1 { font-size: 14px; } #log { top: 110px; } #card { top: 96px; } select, button, a.btn { font-size: 12.5px; min-height: 34px; } #bottom .legend-tag { display: none; } }
 </style>
 </head>
 <body>
@@ -75,9 +80,21 @@
   <button id="infoBtn" type="button" aria-expanded="false">資料說明</button>
   <button id="logBtn" type="button">引擎事件</button>
   <button id="nsBtn" type="button" aria-expanded="false" aria-controls="notSim" hidden>尚未模擬</button>
+  <button id="legendBtn" type="button" aria-expanded="false" aria-controls="legend">圖例</button>
   <div id="badge">非正式實驗世界／不屬於正式遊戲歷史｜啟動中…</div>
 </div>
 <div id="card" hidden></div>
+<div id="legend" role="region" aria-label="圖例：引擎、顯示插值、示意、裝飾" hidden>
+<h3><span class="sw" style="background:#e9b949"></span>引擎（Worker 送來的原樣狀態）</h3>
+<p>工蟻的活動狀態與開始時刻、出發與抵達時刻、嗉囊量、路線記憶、幼蟲腸道量、路線長度 200 cm、光照（日／曙暮光／夜）、合成氣溫。巢與蜜露源<b>存在</b>是引擎事實。</p>
+<h3><span class="sw" style="background:#9fe0ff"></span>顯示插值（只是畫面）</h3>
+<p><b>路徑形狀＝顯示插值（示意），出發／抵達時刻＝引擎</b>：每趟路徑由螞蟻編號＋出發時刻決定（同一重播畫面相同），弧長＝引擎路線長度，螞蟻在出發時刻正好在起點、抵達時刻正好在終點。步態相位依畫面上走過的距離前進（步幅 0.6 體長／週期，畫面參數，示意）；轉向緩和與觸角擺動只是動畫。</p>
+<h3><span class="sw" style="background:#cbbd9f"></span>示意</h3>
+<p>路線方向、搜尋中工蟻的位置與路徑（搜尋沒有空間模型）、食源周圍的取食位置、巢口與寄主植物的外觀、蚜蟲圖像、陰影方向、地下概念圖（巢室幾何未模擬）。夜間畫面比真實亮，方便觀察。</p>
+<h3><span class="sw" style="background:#7a8f4a"></span>裝飾</h3>
+<p>土壤、砂粒、礫石、石頭、落葉、細枝、草叢、三葉草、苔蘚、樹冠遮蔭、地下土層與根。<b>花園景物沒有生態模擬，不是障礙物，螞蟻不感知它們</b>；路線旁沒有大石與草叢只是畫面安排，不是模型結果。</p>
+</div>
+<div id="ugLabel" hidden>概念圖：巢室幾何尚未模擬｜分組＝引擎狀態，位置＝示意</div>
 <div id="notice" role="status" hidden></div>
 <div id="roBanner" hidden></div>
 <div id="menu" hidden>
@@ -106,7 +123,8 @@
 <li><b>尚未模擬</b>：頂列「尚未模擬」按鈕列出這個世界<b>沒有模擬</b>的機制（例如蟻后與產卵、幼體發育、死亡、大工蟻、完整繁殖、開放生態、費洛蒙與其擴散）與只有<b>簡化代理</b>的部分；清單取自世界的存檔中繼資料，畫面上沒有出現的機制也不代表已完整模擬。</li>
 <li><b>引擎事件</b>：模擬只在 Web Worker 內執行；畫面上的狀態（每隻個體目前線段的起點、終點、起訖時刻、活動）與「引擎事件」列表都是 Worker 送來的原樣資料。</li>
 <li><b>顯示插值</b>：螞蟻在目前線段兩個引擎紀錄點之間的畫面位置是直線插值；在紀錄時刻（線段起點與終點）畫面位置就是引擎位置。兩個 Worker 狀態之間，畫面時鐘最多超前 0.05 秒真實時間的推進量。腳的擺動、轉身、鏡頭、縮放都只是畫面，不回寫、不產生事件。</li>
-<li><b>示意</b>：地面紋理（與可選的落葉石塊）都是示意；合成世界的固定光源是示意。兩個世界中都<b>沒有障礙物</b>，所以落葉石塊預設關閉。螞蟻放大顯示（畫面左下角 ×N）。合成世界的虛線圓是場地邊界（引擎參數）。</li>
+<li><b>P0-A2 花園畫面（VIS-1）</b>：路線上的工蟻沿一條<b>顯示路徑</b>行走：路徑形狀＝顯示插值（示意），出發／抵達時刻＝引擎；路徑弧長等於引擎路線長度，所以畫面步行速度＝引擎的路線長度÷往返時間。土壤、石頭、落葉、草叢等是<b>裝飾</b>（沒有生態模擬、不是障礙物、螞蟻不感知）。「地下（概念圖）」只依引擎狀態分組顯示巢內工蟻與幼蟲；巢室幾何尚未模擬。詳見「圖例」。</li>
+<li><b>示意</b>：地面紋理與裝飾景物都是示意；合成世界的固定光源是示意。兩個世界中都<b>沒有障礙物</b>（合成世界的落葉石塊預設關閉）。螞蟻放大顯示（畫面左下角 ×N）。合成世界的虛線圓是場地邊界（引擎參數）。</li>
 <li><b>存檔</b>：每 30 秒（真實時間）若世界有變化就自動存檔，暫停、回到選單前也會存檔；「立即存檔」是手動存檔（另外保存，不被自動存檔輪替）。快照只在 Worker 的事件邊界產生，存檔不改變模擬結果。「已儲存」只在瀏覽器資料庫交易完成後顯示；失敗時保留上一個成功的存檔。關閉瀏覽器期間世界不推進。</li>
 <li><b>只觀察</b>：暫停、速度、追蹤個體、縮放、拖曳、畫面幀率上限只改變排程或畫面，不改變同一世界時間的模擬結果（瀏覽器測試比對事件流與完整狀態雜湊）。沒有任何干預功能。</li>
 <li>世界時間：自實驗第 0 天 00:00 起的秒數，顯示為「實驗第 D 天 HH:MM:SS」。光照狀態由一般方法（太陽位置公式）計算；氣溫是合成剖面（synthetic: true）。P0-A2 世界中，工蟻只在巢口與巢外感知自己所在位置的氣溫與光照；合成世界中沒有個體讀取它們。</li>
@@ -121,12 +139,14 @@
   <button id="zoomOut" type="button" aria-label="縮小">－</button>
   <button id="zoomIn" type="button" aria-label="放大">＋</button>
   <button id="homeBtn" type="button">全場地</button>
-  <label>畫面上限 <select id="fpsCap" aria-label="畫面幀率上限（只影響畫面）"></select></label>
-  <label><input type="checkbox" id="decor">示意落葉石塊（不是障礙物）</label>
+  <button id="closeBtn" type="button" title="把選取的螞蟻放大到實際比例約 80 像素">特寫</button>
+  <button id="viewBtn" type="button" aria-pressed="false">地下（概念圖）</button>
+  <label class="fpsl">畫面上限 <select id="fpsCap" aria-label="畫面幀率上限（只影響畫面）"></select></label>
+  <label><input type="checkbox" id="decor">裝飾景物（不是障礙物）</label>
   <div id="time" aria-live="off">—</div>
   <div id="status">—</div>
   <div id="saveStatus" aria-live="polite"></div>
-  <span class="legend-tag">位置＝Worker 引擎紀錄點與其間的顯示插值；路線方向、搜尋位置、巢內小圖、地面為示意；螞蟻放大顯示</span>
+  <span class="legend-tag">位置＝Worker 引擎紀錄點與其間的顯示插值；路徑形狀＝顯示插值（示意），出發／抵達時刻＝引擎；路線方向、搜尋位置、巢內小圖、地下概念圖為示意；地面景物＝裝飾；螞蟻放大顯示</span>
 </div>
 <script type="module" src="dist/v62.js"></script>
 </body>

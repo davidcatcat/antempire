@@ -16,7 +16,7 @@ export interface InsetHit { id: string; sx: number; sy: number; r: number }
 
 /** where the inset goes: above the bottom bar; full width on narrow screens, 400 px on the right otherwise */
 export function insetRect(cw: number, ch: number, bottomPx: number): InsetRect {
-  const w = cw < 640 ? cw - 16 : Math.min(420, cw * 0.42), h = cw < 640 ? 118 : 138;
+  const w = cw < 640 ? cw - 16 : Math.min(420, cw * 0.42), h = cw < 640 ? 104 : 138;
   return { x: cw - w - 8, y: ch - bottomPx - h - 8, w, h };
 }
 

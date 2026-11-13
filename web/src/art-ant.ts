@@ -175,10 +175,10 @@ export const NEUTRAL_POSE: MicroPose = { headYaw: 0, L: { scape: 0.98, fun: 0.3,
  * periodic sway. A turning gait only comes from the caller (authoritative ω or the display ease toward a recorded
  * heading), never chosen here.
  */
-export function antPoseAt(kind: Gait, phi: number, o: { walkW?: number; micro?: MicroPose } = {}): AntPose {
-  const w = Math.max(0, Math.min(1, o.walkW ?? (kind === 'idle' ? 0 : 1))), p = ((phi % 1) + 1) % 1, stepKind: Gait = kind === 'idle' ? 'walk' : kind;
+export function antPoseAt(kind: Gait, phi: number, o: { walkW?: number; micro?: MicroPose; /** stance sweep multiplier (display stride; default 1 = STRIDE) */ stride?: number } = {}): AntPose {
+  const w = Math.max(0, Math.min(1, o.walkW ?? (kind === 'idle' ? 0 : 1))), p = ((phi % 1) + 1) % 1, stepKind: Gait = kind === 'idle' ? 'walk' : kind, sk = o.stride ?? 1;
   const legs: LegPose[] = LEGS.map((lg) => {
-    const st0 = legState(lg.id, p), st = { stance: w < 0.02 ? true : st0.stance, lift: st0.lift * w, s: st0.s * w }, v = strideVector(stepKind, lg.id);
+    const st0 = legState(lg.id, p), st = { stance: w < 0.02 ? true : st0.stance, lift: st0.lift * w, s: st0.s * w }, v0 = strideVector(stepKind, lg.id), v: [number, number] = sk === 1 ? v0 : [v0[0] * sk, v0[1] * sk];
     const pull = st.lift * 3.2;
     const foot: [number, number] = [lg.foot[0] + v[0] * st.s, lg.foot[1] + v[1] * st.s - lg.side * pull];
     const tr = lg.tarsus * (1 - st.lift * 0.12), ta = -v[0] * st.s * 0.012 * lg.side;
