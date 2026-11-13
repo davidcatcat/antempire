@@ -8,7 +8,7 @@
  * schematic light (the replay has no time of day); weather is the engine's DAILY value.
  */
 import { ACTION_LABEL, TASK_LABEL, NEST, assertKind, displayPositions, stateAt, windowOf, type Experiment, type ExperimentDay, type Place } from './model.ts';
-import { daySummary, minuteAtFraction, nextActivityJump, summaryHtml, timelineMarks } from './replay-ux.ts';
+import { JUMP_HINT, dayRecordSummary, daySummary, jumpNote, minuteAtFraction, nextActivityJump, summaryHtml, timelineMarks } from './replay-ux.ts';
 import { antFrame, anyWalking, walkIntervals, buildDayIndex, gardenBounds, hash32, laneOffset, nextWalkStart, openingMoment, rosterAtStart, settlementSummary, simMinutesPerRealSecond, siteSlot, SPEEDS, type AntFrame, type Pos } from './game-model.ts';
 import { LayeredRenderer } from './render-canvas.ts';
 import { antLengthPx, recordedRoutes, type AntInput, type Camera } from './render-scene.ts';
@@ -52,13 +52,13 @@ async function init() {
   ui.lChips.onchange = () => { ui.counts.hidden = ui.weather.hidden = !ui.lChips.checked; };
   ui.fit.onclick = () => { following = null; fitCamera(); R.warm(camera()); renderCard(); };
   ui.home.onclick = () => { following = null; homeCamera(); R.warm(camera()); renderCard(); };
-  setupPointer(); setupReplayUx();
+  setupPointer(); setupReplayUx(); setupMoreMenu();
   window.addEventListener('resize', resize); resize();
   // the bars can re-wrap after fonts / options load: keep their measured heights current
   const barsChanged = () => {
     const b = $('bottom').getBoundingClientRect().height, tp = $('top').getBoundingClientRect().height;
     if (b === bottomBarPx && tp === topBarPx) return;
-    bottomBarPx = b; topBarPx = tp; if (exp && homeView && !following) { homeCamera(); R.warm(camera()); } // keep the opening framed above the controls
+    bottomBarPx = b; topBarPx = tp; barVars(); if (exp && homeView && !following) { homeCamera(); R.warm(camera()); } // keep the opening framed above the controls
   };
   new ResizeObserver(barsChanged).observe(document.body);
   for (const id of ['top', 'bottom']) new ResizeObserver(barsChanged).observe($(id));
@@ -135,7 +135,9 @@ function fitCamera() {
   cam.s = Math.min(w / (bounds.x1 - bounds.x0), h / (bounds.y1 - bounds.y0));
 }
 let bottomBarPx = 0, topBarPx = 0;
-function resize() { R.resize(); bottomBarPx = $('bottom').getBoundingClientRect().height; topBarPx = $('top').getBoundingClientRect().height; if (exp && !following) homeCamera(); }
+function resize() { R.resize(); bottomBarPx = $('bottom').getBoundingClientRect().height; topBarPx = $('top').getBoundingClientRect().height; barVars(); if (exp && !following) homeCamera(); }
+/** bar heights as CSS variables, so the 更多 panel, the jump hint and the summary sit between the bars (layout only) */
+function barVars() { const s = document.documentElement.style; s.setProperty('--bar-bottom', `${bottomBarPx}px`); s.setProperty('--bar-top', `${topBarPx}px`); }
 const S2W = (sx: number, sy: number) => [cam.x + (sx - canvas.clientWidth / 2) / cam.s, cam.y - (sy - canvas.clientHeight / 2) / cam.s] as const;
 const camera = (): Camera => ({ cx: cam.x, cy: cam.y, s: cam.s, w: canvas.clientWidth, h: canvas.clientHeight });
 
@@ -195,7 +197,12 @@ function drawHud(now: number) {
   const th = now > toastUntil; if (ui.toast.hidden !== th) ui.toast.hidden = th;
   if (ui.prevDay.disabled !== (day <= 1)) ui.prevDay.disabled = day <= 1; if (ui.nextDay.disabled !== (day >= exp.days.length)) ui.nextDay.disabled = day >= exp.days.length;
 }
-function toast(msg: string, now: number) { ui.toast.textContent = msg; toastUntil = now + 1800; }
+/** a toast; with `tag`, a highlighted label (e.g. 「跳轉（非連續播放）」) precedes the message */
+function toast(msg: string, now: number, tag?: string, ms = 1800) {
+  if (tag) { const b = document.createElement('b'); b.className = 'jump-label'; b.textContent = tag; ui.toast.replaceChildren(b, document.createTextNode(msg)); }
+  else ui.toast.textContent = msg;
+  toastUntil = now + ms;
+}
 function syncButtons() { ui.play.textContent = ended ? '重新播放' : playing ? '暫停' : '播放'; ui.play.setAttribute('aria-pressed', String(playing)); }
 
 function renderCard() {
@@ -211,7 +218,7 @@ function renderCard() {
 let cardKey = '';
 
 function renderAbout() {
-  ui.about.innerHTML = `<h2>畫面上的東西從哪裡來</h2><ul>
+  ui.about.innerHTML = `<button type="button" class="about-close touch" id="aboutClose">關閉</button><h2>畫面上的東西從哪裡來</h2><ul>
 <li><b>引擎紀錄</b>：每隻螞蟻在每個時刻的所在地點、出發與抵達的分鐘、行動（出巢、搜尋、採集、回巢、卸貨、休息）與當日任務，來自 <code>web/data/${ui.world.value}</code>（引擎 ${exp.engine_version}）。食源上的半翅目群數（每群畫一簇）、寄主是否存活、天氣日值也是引擎紀錄。開場的日子與時刻取自紀錄中行走最密集的時段。</li>
 <li><b>顯示插值</b>：螞蟻在兩個紀錄點之間沿直線前進的位置；同一路段同時出發的螞蟻左右錯開；停在同一地點的螞蟻圍成一圈排列；轉身與腳的擺動（步伐由移動距離驅動；轉向動作只在紀錄的路段方向改變時出現，是顯示插值，不是物理結果）。這些只為畫面，不寫回、不產生事件。</li>
 <li><b>顯示動畫（示意）</b>：頭部小幅左右轉動、左右觸角各自的探索動作（掃動、向前探、點地、休息）與走↔停的步態過渡，依螞蟻 ID 的種子與模擬時間決定（可重播），只參考引擎紀錄的「是否在走、路段方向、是否接近紀錄地點、是否在搜尋」。<b>不是感覺事件</b>：畫面上的觸角位置不代表螞蟻聞到或碰到什麼，也不改變任何位置、方向、時間或事件；身體路徑仍是紀錄點之間的直線。播放倍速越高，微動作越弱（避免閃爍）。</li>
@@ -219,8 +226,10 @@ function renderAbout() {
 <li><b>沒有畫出的</b>：巢內的活動（只計數）；位置未記錄地點的螞蟻；沒有時刻的日終結算（死亡、羽化、產卵只在橫幅顯示）。不會出現引擎沒有記錄的覓食、交哺、攻擊或死亡。</li>
 <li><b>圖層</b>：「圖層」選單可打開引擎物件標示、地點代號、紀錄路段、螞蟻 ID、狀態列（玩家視角，螞蟻不知道這些）。</li>
 <li><b>時間</b>：引擎目前以每日 360 分鐘活動時段簡化一天（不是 24 小時）。播放速度以實際時間倍數表示；「快轉」只跳過沒有螞蟻在外行走的時段，不改變任何紀錄。</li>
-<li><b>跳轉與日摘要</b>：時間軸下方的標記是引擎紀錄的行走時段（worker_activity）；「下一段活動」（快捷鍵 N）跳到下一段紀錄的行走開始前約 3 秒，不跳過任何行走的開始；兩者都只改變觀看的時刻。「日摘要」不是連續播放：有分鐘紀錄的事件列出紀錄的時刻，沒有分鐘紀錄的事件只列為日層級，不放在任何時間點；回到連續播放時恢復原本的觀看位置。</li>
+<li><b>跳轉與日摘要</b>：時間軸下方的標記是引擎紀錄的行走時段（worker_activity）。「下一段活動」（快捷鍵 N）是<b>跳轉</b>，不是連續播放：第 1 次按停在下一段紀錄的行走開始前約 3 秒，再按到行走開始的那一刻，再按到下一段行走前約 3 秒；正在行走時也可以跳，畫面會標示「跳轉」與略過的時間、沒有連續播完的行走段數。不跳過任何行走的開始，只改變觀看的時刻。「日摘要」（快捷鍵 S）不是連續播放：列出引擎紀錄的人口、死亡與出生、覓食、存量變化與個體任務，每個數字都標明來源欄位，紀錄中沒有的量顯示「引擎未記錄」；有分鐘紀錄的事件列出紀錄的時刻，沒有分鐘紀錄的事件只列為日層級，不放在任何時間點；回到連續播放時恢復原本的觀看位置。快捷鍵在輸入框或選單有焦點時不作用，也不使用 Ctrl／Cmd 組合鍵。</li>
+<li><b>窄螢幕</b>：控制列只保留播放、速度、下一段活動、日摘要、「更多」與時間軸；標籤、全景、巢口近景、換日與其他控制收在「更多」裡。</li>
 <li><b>這是非正式的實驗世界</b>，不是正式 Day14 遊戲；觀察者只觀察，不干預。</li></ul>`;
+  $('aboutClose').onclick = () => { ui.about.hidden = true; ui.info.setAttribute('aria-expanded', 'false'); };
 }
 
 // ------------------------------------------------------------------ input
@@ -271,21 +280,34 @@ function loop(now: number) {
 // ------------------------------------------------------------------ replay navigation (Issue #148)
 // Each control only changes the VIEWING position or the display mode; none creates an event or changes engine time.
 const rx = { next: $<HTMLButtonElement>('nextAct'), mode: $<HTMLButtonElement>('modeBtn'), marks: $('marks'), summary: $('summary') };
-const replay = { summary: false, saved: null as { day: number; t: number; playing: boolean } | null };
+const replay = { summary: false, saved: null as { day: number; t: number; playing: boolean } | null, lastJump: null as (ReturnType<typeof jumpNote> & { walkStart: number; target: number }) | null };
 function jumpToNextActivity() {
   if (!exp || replay.summary) return;
   const d = exp.days[day - 1], r = nextActivityJump(walks, d, t), now = performance.now();
   if (r.kind === 'none') { toast(r.reason, now); return; }
-  const gap = r.walkStart - r.target;
+  const gap = r.walkStart - r.target, note = jumpNote(walks, t, r), sk = Math.round(note.skippedMin * 60);
   t = r.target; settleUntil = 0; ended = false; jumped(); syncButtons();
-  toast(`跳到下一段活動：引擎紀錄的行走${gap > 1e-9 ? `在 ${Math.round(gap * 60)} 秒後` : '在此刻'}開始（${r.walksStarting} 段）`, now);
+  replay.lastJump = { ...note, walkStart: r.walkStart, target: r.target };
+  const skipped = `略過觀看時間 ${Math.floor(sk / 60)} 分 ${sk % 60} 秒`, cut = note.inProgress ? `；此刻進行中的 ${note.inProgress} 段行走沒有連續播完` : '';
+  const step = note.stage === 'lead' ? '（停在開始前約 3 秒；再按到開始那一刻）' : '（到行走開始的那一刻；再按到下一段行走前）';
+  toast(`下一段活動：引擎紀錄的行走${gap > 1e-9 ? `在 ${Math.round(gap * 60)} 秒後` : '在此刻'}開始（${r.walksStarting} 段）${step}；${skipped}${cut}`, now, '跳轉（非連續播放）', 3200);
+  showJumpHintOnce();
+}
+// Q1 (Issue #191): the first explicit jump of this page view shows how the three landing steps work (inline hint; the
+// button tooltip says the same). Kept in memory only: the game view writes no browser storage.
+let hintTimer = 0, hintShown = false;
+function showJumpHintOnce() {
+  if (hintShown) return;
+  hintShown = true;
+  $('jumpHintText').textContent = JUMP_HINT; $('jumpHint').hidden = false;
+  clearTimeout(hintTimer); hintTimer = window.setTimeout(() => { $('jumpHint').hidden = true; }, 15000);
 }
 function renderMarks() {
   const d = exp.days[day - 1];
   rx.marks.innerHTML = timelineMarks(walks, windowOf(d)).map((m) => `<i style="left:${(m.left * 100).toFixed(4)}%;width:${(m.width * 100).toFixed(4)}%" data-start="${m.start}" data-end="${m.end}"></i>`).join('');
   rx.marks.title = `引擎紀錄的行走時段（worker_activity）：第 ${d.day} 日 ${walks.length} 段；點選或拖曳可跳到該時刻`;
 }
-function renderSummary() { rx.summary.innerHTML = summaryHtml(daySummary(exp.days[day - 1], walks)); }
+function renderSummary() { rx.summary.innerHTML = summaryHtml(daySummary(exp.days[day - 1], walks), 30, dayRecordSummary(exp, day, ui.world.value)); }
 function replayDayChanged() { renderMarks(); if (replay.summary) renderSummary(); }
 function setMode(summary: boolean) {
   if (summary === replay.summary || !exp) return;
@@ -296,14 +318,21 @@ function setMode(summary: boolean) {
   }
   document.body.classList.toggle('summary-mode', replay.summary); rx.summary.hidden = !replay.summary;
   rx.mode.textContent = replay.summary ? '回到連續播放' : '日摘要'; rx.mode.setAttribute('aria-pressed', String(replay.summary)); syncButtons();
+  placeMore();
 }
+/** Keyboard shortcuts N (next activity) and S (day summary, Issue #191 Q3): single letters with no Ctrl / Cmd / Alt
+ *  combination (no clash with browser shortcuts), ignored while a form control (input, select, textarea, editable
+ *  text) has focus or during IME composition; Esc closes the 更多 panel and the hint. */
 function setupReplayUx() {
   rx.next.onclick = jumpToNextActivity;
   rx.mode.onclick = () => setMode(!replay.summary);
+  $('jumpHintClose').onclick = () => { $('jumpHint').hidden = true; };
   window.addEventListener('keydown', (e) => {
-    const tag = (e.target as HTMLElement | null)?.tagName;
-    if (e.ctrlKey || e.metaKey || e.altKey || tag === 'SELECT' || tag === 'TEXTAREA') return;
+    const el = e.target as HTMLElement | null, tag = el?.tagName;
+    if (e.key === 'Escape') { setMoreOpen(false); $('jumpHint').hidden = true; return; }
+    if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing || tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || el?.isContentEditable) return;
     if (e.key === 'n' || e.key === 'N') { e.preventDefault(); jumpToNextActivity(); }
+    else if ((e.key === 's' || e.key === 'S') && !e.repeat) { e.preventDefault(); setMode(!replay.summary); }
   });
   // tap or drag on the marks strip scrubs the viewing minute (touch and mouse); display only
   let scrubbing = false;
@@ -311,6 +340,31 @@ function setupReplayUx() {
   rx.marks.addEventListener('pointerdown', (e) => { if (!exp || replay.summary) return; scrubbing = true; rx.marks.setPointerCapture(e.pointerId); seek(e); });
   rx.marks.addEventListener('pointermove', (e) => { if (scrubbing) seek(e); });
   const end = () => { scrubbing = false; }; rx.marks.addEventListener('pointerup', end); rx.marks.addEventListener('pointercancel', end);
+}
+
+// ------------------------------------------------------------------ narrow-screen 更多 panel (Issue #191 Q5)
+// On narrow screens the [data-more] controls (labels, panorama, home, world / layers / info / analysis, and day stepping
+// during playback) are moved into the 更多 panel, so the bars keep only the core controls and cover less of the garden.
+// The same nodes are moved back on wide screens (ids and handlers unchanged). Layout only: nothing reads or writes data.
+const narrowMq = window.matchMedia('(max-width: 600px)');
+const moreUi = { btn: $<HTMLButtonElement>('moreBtn'), panel: $('morePanel'), items: $('moreItems') };
+const moreNodes = [...document.querySelectorAll<HTMLElement>('[data-more]')].map((el) => { const ph = document.createComment(`more:${el.id || el.className}`); el.before(ph); return { el, ph, kind: el.dataset.more }; });
+function placeMore() {
+  const narrow = narrowMq.matches, inMenu = (k: string | undefined) => narrow && (k === 'always' || (k === 'playback' && !replay.summary));
+  for (const m of moreNodes) if (!inMenu(m.kind) && m.ph.nextSibling !== m.el) m.ph.after(m.el);
+  for (const m of moreNodes) if (inMenu(m.kind)) moreUi.items.append(m.el); // in document order
+  if (!narrow) setMoreOpen(false);
+}
+function setMoreOpen(open: boolean) {
+  if (moreUi.panel.hidden === !open) return;
+  moreUi.panel.hidden = !open; moreUi.btn.setAttribute('aria-expanded', String(open)); moreUi.btn.textContent = open ? '收合' : '更多';
+}
+function setupMoreMenu() {
+  placeMore(); narrowMq.addEventListener('change', placeMore);
+  moreUi.btn.onclick = () => setMoreOpen(moreUi.panel.hidden);
+  // choosing a panel / view / page from the menu closes it (day stepping and toggles keep it open)
+  moreUi.items.addEventListener('click', (e) => { const b = (e.target as HTMLElement).closest('button, a'); if (b && !['prevDay', 'nextDay'].includes(b.id)) setMoreOpen(false); });
+  canvas.addEventListener('pointerdown', () => setMoreOpen(false));
 }
 
 /** Read-only hooks for the browser tests and the FPS measurement (nothing here can change the replay data). */
@@ -326,6 +380,9 @@ function setupReplayUx() {
   fps: () => { const iv = [...stats.intervals].sort((a, b) => a - b), n = iv.length; return { frames: stats.frames, samples: n, mean_ms: n ? iv.reduce((s, x) => s + x, 0) / n : null, p50_ms: n ? iv[Math.floor(n * 0.5)] : null, p95_ms: n ? iv[Math.floor(n * 0.95)] : null, fps_mean: n ? 1000 / (iv.reduce((s, x) => s + x, 0) / n) : null }; },
   resetFps: () => { stats.intervals = []; stats.frames = 0; },
   gotoDay: (n: number) => gotoDay(n),
+  /** the last explicit jump (Issue #191 Q2) and the 更多 panel state (Q5) */
+  lastJump: () => (replay.lastJump ? { ...replay.lastJump } : null),
+  more: () => ({ narrow: narrowMq.matches, open: !moreUi.panel.hidden, items: moreNodes.filter((m) => m.el.parentElement === moreUi.items).map((m) => m.el.id || m.el.className) }),
 };
 
 init().catch((e) => { ui.badge.textContent = '載入失敗：' + (e as Error).message; });
