@@ -15,14 +15,14 @@ export interface UHit { id: string; sx: number; sy: number; r: number }
 export const U_W = 100, U_H = 62, U_ANT = 2.6;
 export interface Room { key: string; states: string[]; label: string; cx: number; cy: number; rx: number; ry: number }
 export const ROOMS: Room[] = [
-  { key: 'rest', states: ['resting'], label: '休息', cx: 23, cy: 33, rx: 17, ry: 6.8 },
+  { key: 'rest', states: ['resting'], label: '休息', cx: 22, cy: 34, rx: 19, ry: 8.4 },
   { key: 'idle', states: ['idle'], label: '巢內走動', cx: 50, cy: 46, rx: 14, ry: 6.2 },
   { key: 'brood', states: ['brood_care'], label: '育幼（幼蟲）', cx: 78, cy: 33, rx: 16, ry: 7.2 },
 ];
 /** passage from the entrance (top) to the junction, then to each room (示意) */
 export const PASSAGE: [number, number][] = [[50, -0.5], [48.6, 6], [51.4, 12], [49.6, 19], [50, 24]];
 export const BRANCH: Record<string, [number, number][]> = {
-  rest: [[50, 24], [42, 27], [34, 31]], idle: [[50, 24], [51, 32], [50, 40]], brood: [[50, 24], [58, 27], [66, 31]],
+  rest: [[50, 24], [42, 27], [36, 30]], idle: [[50, 24], [51, 32], [50, 40]], brood: [[50, 24], [58, 27], [66, 31]],
 };
 const lerpPath = (P: [number, number][], k: number): { x: number; y: number; a: number } => {
   const seg: number[] = []; let tot = 0;
@@ -47,7 +47,7 @@ export function undergroundSpot(w: PW, t: number, tau: number): { x: number; y: 
     return { x: room.cx + u * room.rx, y: floorY(u) - r3 * 2.2, a: du >= 0 ? 0.08 : Math.PI - 0.08, walking: true, interpolated: false };
   }
   if (w.state === 'brood_care') { const u = (r1 - 0.5) * 1.5; return { x: room.cx + u * room.rx, y: floorY(u) - 2.6 - r2 * 1.5, a: Math.PI / 2 + (r3 - 0.5) * 0.9, walking: false, interpolated: false }; }
-  const u = fx; return { x: room.cx + u * room.rx * 0.95, y: floorY(u) - 0.8 - r2 * 3.4, a: r3 * TAU, walking: false, interpolated: false };
+  const u = fx; return { x: room.cx + u * room.rx * 0.95, y: floorY(u) - 0.8 - r2 * room.ry * 0.75, a: r3 * TAU, walking: false, interpolated: false };
 }
 export function larvaSpot(i: number, n: number): { x: number; y: number } { const R = ROOMS[2], u = -0.7 + (1.4 * (i + 0.5)) / n; return { x: R.cx + u * R.rx, y: R.cy + R.ry * Math.sqrt(1 - u * u) * 0.6 }; }
 

@@ -25,8 +25,9 @@ export class UndergroundView {
   private bg: { key: string; c: HTMLCanvasElement; s: number } | null = null;
   private phase = new Map<string, number>();
   private last = new Map<string, { x: number; y: number }>();
+  private sprites = new Map<string, HTMLCanvasElement>();
   private bake(s: number): { c: HTMLCanvasElement; s: number } {
-    const bs = Math.min(48, Math.pow(2, Math.ceil(Math.log2(Math.max(4, s))))), key = String(bs);
+    const bs = Math.min(4096 / (U_W + 120), Math.pow(2, Math.ceil(Math.log2(Math.max(4, s))))), key = String(bs);
     if (this.bg?.key === key) return this.bg;
     const W = Math.ceil((U_W + 120) * bs), H = Math.ceil((U_H + 40) * bs), c = document.createElement('canvas'); c.width = W; c.height = H;
     const g = c.getContext('2d') as CanvasRenderingContext2D; g.setTransform(bs, 0, 0, bs, 60 * bs, 12 * bs);
@@ -79,9 +80,20 @@ export class UndergroundView {
       const [x, y] = S(p.x, p.y), prev = this.last.get(w.id), moved = prev ? Math.hypot(x - prev.x, y - prev.y) : 0;
       this.last.set(w.id, { x, y });
       const ph = (this.phase.get(w.id) ?? h01(hash32(w.id), 1, 1, 1)) + (p.walking ? Math.min(0.42, moved / (STRIDE_BODY_LENGTHS * len)) : 0); this.phase.set(w.id, ph);
-      const feeding = w.state === 'brood_care', hh = hash32(w.id) >>> 0, tt = tau * (feeding ? 3 : 1.2) + h01(hh, 3, 3, 3) * TAU;
+      // standing ants: the antenna animation is quantised to 12 poses per cycle and the drawn ant cached (drawing cost only)
+      const feeding = w.state === 'brood_care', hh = hash32(w.id) >>> 0, rate = feeding ? 3 : 1.2, tq = p.walking ? tau : Math.round((tau * rate) / (TAU / 12)) * (TAU / 12) / rate, tt = tq * rate + h01(hh, 3, 3, 3) * TAU;
       const m: MicroPose = { headYaw: 0.05 * Math.sin(tt * 0.6), L: { scape: 0.95 + 0.1 * Math.sin(tt), fun: 0.3 + 0.15 * Math.sin(tt * 1.3), reach: feeding ? 0.7 : 0.85 }, R: { scape: 0.95 + 0.1 * Math.sin(tt + 1), fun: 0.3 + 0.15 * Math.sin(tt * 1.3 + 2), reach: feeding ? 0.7 : 0.85 } };
-      drawAntDetail(g, len, x, y, p.a, p.walking ? 'walk' : 'idle', ph % 1, p.walking ? 1 : 0, m, antPalette(hash32(w.id) % PALETTE_VARIANTS), { part: 'body', stride: ART_STRIDE_SCALE });
+      if (p.walking) drawAntDetail(g, len, x, y, p.a, 'walk', ph % 1, 1, m, antPalette(hash32(w.id) % PALETTE_VARIANTS), { part: 'body', stride: ART_STRIDE_SCALE });
+      else {
+        const dpr = g.getTransform().a, key = `${w.id}|${len.toFixed(1)}|${p.a.toFixed(3)}|${Math.round(((tq * rate) % TAU) / (TAU / 12))}|${dpr}`;
+        let spr = this.sprites.get(key);
+        if (!spr) {
+          const side = Math.ceil(len * 1.7 * dpr), c = document.createElement('canvas'); c.width = c.height = side; const sg = c.getContext('2d') as CanvasRenderingContext2D;
+          sg.setTransform(dpr, 0, 0, dpr, 0, 0); drawAntDetail(sg, len, side / dpr / 2, side / dpr / 2, p.a, 'idle', ph % 1, 0, m, antPalette(hash32(w.id) % PALETTE_VARIANTS), { part: 'body', stride: ART_STRIDE_SCALE });
+          spr = c; if (this.sprites.size > 600) this.sprites.clear(); this.sprites.set(key, spr);
+        }
+        g.drawImage(spr, x - spr.width / dpr / 2, y - spr.height / dpr / 2, spr.width / dpr, spr.height / dpr);
+      }
       // crop fill (ENGINE) as a small amber bar under the ant
       const cf = Math.max(0, Math.min(1, w.crop_fill)), bw = len * 0.7; g.fillStyle = 'rgba(0,0,0,0.45)'; g.fillRect(x - bw / 2, y + len * 0.4, bw, 2); g.fillStyle = '#e8b04a'; g.fillRect(x - bw / 2, y + len * 0.4, bw * cf, 2);
       if (w.id === sel) { g.strokeStyle = w.id === fol ? '#9fe0ff' : '#ffe08a'; g.lineWidth = 2; g.beginPath(); g.arc(x, y, len * 0.62, 0, TAU); g.stroke(); }

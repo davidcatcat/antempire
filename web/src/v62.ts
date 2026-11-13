@@ -54,7 +54,7 @@ let saveUi: SaveUiState | null = null;
 /** the 「尚未模擬」 list of the world in the Worker (from its snapshot's save metadata; null before a world is entered) */
 let disclosure: NotSimulatedView | null = null;
 const cam = { x: 0, y: 0, s: 8 };
-const stats = { frames: 0, intervals: [] as number[], lastTs: 0, lastDraw: 0 };
+const stats = { frames: 0, intervals: [] as number[], drawMs: [] as number[], lastTs: 0, lastDraw: 0 };
 let fpsCap = 60, topBarPx = 0, bottomBarPx = 0;
 
 const minAntPx = () => Math.max(28, Math.round(Math.min(canvas.clientWidth, canvas.clientHeight) * 0.05));
@@ -306,7 +306,7 @@ function loop(now: number) {
   if (fms !== null) { stats.intervals.push(fms); if (stats.intervals.length > 600) stats.intervals.shift(); }
   stats.lastDraw = now; stats.frames++;
   if (!active) return;
-  drawFrame(dt, fms);
+  { const d0 = performance.now(); drawFrame(dt, fms); stats.drawMs.push(performance.now() - d0); if (stats.drawMs.length > 600) stats.drawMs.shift(); }
   renderSave();
   const key = `${selected}|${following}|${frame?.seq}`; if (key !== cardKey) { cardKey = key; renderCard(); }
 }
@@ -425,7 +425,8 @@ function renderSave() {
   camera: () => camera(),
   state: () => ({ selected, following, fpsCap, cam: { ...cam }, quality: isP0a2Frame(frame) ? G.quality().level : R.quality().level, canvas_px: [canvas.width, canvas.height], layers: [...(isP0a2Frame(frame) ? G.trace : R.trace)], lastDisplay, view, ucam: { ...ucam }, garden: { ...G.stats, frameMs: undefined, frame_p50_ms: med(G.stats.frameMs), frame_p95_ms: pct(G.stats.frameMs, 0.95) } }),
   fps: () => { const iv = [...stats.intervals].sort((a, b) => a - b), n = iv.length, mean = n ? iv.reduce((s, x) => s + x, 0) / n : null; return { frames: stats.frames, samples: n, mean_ms: mean, p50_ms: n ? iv[Math.floor(n * 0.5)] : null, p95_ms: n ? iv[Math.floor(n * 0.95)] : null, fps_mean: mean ? 1000 / mean : null }; },
-  resetFps: () => { stats.intervals = []; stats.frames = 0; },
+  resetFps: () => { stats.intervals = []; stats.drawMs = []; stats.frames = 0; },
+  drawCost: () => ({ samples: stats.drawMs.length, p50_ms: med(stats.drawMs), p95_ms: pct(stats.drawMs, 0.95) }),
   zoomAt: (sx: number, sy: number, k: number) => zoomAt(sx, sy, k),
   setView: (v: 'surface' | 'underground') => setView(v),
   closeUp: (id?: string) => closeUp(id ?? selected),

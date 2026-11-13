@@ -37,9 +37,10 @@ const { chromium, devices } = require('playwright');
   };
   const shot = async (page, name, clip) => { const f = path.join(out, `vis1-${name}.jpg`); await page.screenshot({ path: f, type: 'jpeg', quality: 82, scale: 'css', ...(clip ? { clip } : {}) }); files.push(f); return f; };
   const measure = async (page, key, ms = 5000) => {
+    await page.waitForTimeout(2500); // warm-up: chunk bakes of a new view are excluded from the window
     await page.evaluate(() => window.__v62.resetFps()); await page.waitForTimeout(ms);
-    const r = await page.evaluate(() => ({ fps: window.__v62.fps(), g: window.__v62.state().garden, q: window.__v62.state().quality }));
-    measurements[key] = { headless: true, fps_mean: r.fps.fps_mean && +r.fps.fps_mean.toFixed(1), frame_interval_p50_ms: r.fps.p50_ms && +r.fps.p50_ms.toFixed(1), frame_interval_p95_ms: r.fps.p95_ms && +r.fps.p95_ms.toFixed(1), renderer_cpu_p50_ms: r.g.frame_p50_ms, renderer_cpu_p95_ms: r.g.frame_p95_ms, chunk_bakes: r.g.bakes, bake_ms_last: r.g.lastBakeMs && +r.g.lastBakeMs.toFixed(1), quality: r.q };
+    const r = await page.evaluate(() => ({ fps: window.__v62.fps(), g: window.__v62.state().garden, q: window.__v62.state().quality, d: window.__v62.drawCost() }));
+    measurements[key] = { headless: true, fps_mean: r.fps.fps_mean && +r.fps.fps_mean.toFixed(1), frame_interval_p50_ms: r.fps.p50_ms && +r.fps.p50_ms.toFixed(1), frame_interval_p95_ms: r.fps.p95_ms && +r.fps.p95_ms.toFixed(1), main_thread_draw_p50_ms: r.d.p50_ms, main_thread_draw_p95_ms: r.d.p95_ms, chunk_bakes: r.g.bakes, bake_ms_last: r.g.lastBakeMs && +r.g.lastBakeMs.toFixed(1), quality: r.q };
   };
 
   for (const [tag, opts] of profiles.filter(([t]) => !process.env.VIS1_PROFILE || process.env.VIS1_PROFILE === t)) {
@@ -135,6 +136,6 @@ const { chromium, devices } = require('playwright');
   }
   await browser.close();
   check(errors.length === 0, `no page or console errors (${errors.slice(0, 3).join(' | ')})`);
-  console.log(JSON.stringify({ test: 'vis1-demo-browser', passed: passed.length, failed: failures, measurements_note: 'headless Chromium; pixel7 = emulated viewport + touch (and 4× CPU throttling as a mid-range proxy), not a real device; renderer_cpu = main-thread time of the garden renderer per drawn frame', measurements, files: files.map((f) => path.basename(f)), passed_checks: passed }, null, 1));
+  console.log(JSON.stringify({ test: 'vis1-demo-browser', passed: passed.length, failed: failures, measurements_note: 'headless Chromium; pixel7 = emulated viewport + touch (and 4× CPU throttling as a mid-range proxy), not a real device; main_thread_draw = main-thread time of one drawn frame (scene + ants + labels + inset), measured in the page', measurements, files: files.map((f) => path.basename(f)), passed_checks: passed }, null, 1));
   if (failures.length) process.exitCode = 1;
 })().catch((e) => { console.error(e); process.exit(1); });
