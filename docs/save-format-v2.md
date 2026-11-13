@@ -40,6 +40,7 @@
 | 事件鏈承諾 | `payload.chain` | §3 |
 | 校驗資訊 | 信封 `payload_sha256`；匯出 `export_sha256` | 只偵測意外損壞，**不是**真實性或科學驗證 |
 | fork 紀錄 | `payload.save_meta.lineage` | §6；目前永遠是空陣列 |
+| 尚未模擬清單 | `payload.save_meta.not_simulated` | Owner #212 Q2 a（矩陣 M43）：只有 P0-A2 世界有（§5b）；合成世界沒有（它不是螞蟻模型），不補上 |
 | 驗證狀態 | **不在檔案中** | 只由驗證器的結果產生（§8）；檔案若自帶狀態欄位，匯入與驗證器都拒絕 |
 
 `save_meta` 對一個世界是常數：Worker 還原時重新計算 `saveMetaOf(world_id, seed, params)` 並要求完全相同，否則拒絕（`META_MISMATCH`）。
@@ -95,6 +96,7 @@ interface VerifiableWorld { advanceToExact(end, maxBatches?); nowExact(); seqNo(
 - **`save_meta.initial`**：`{ world_id, seed, t_sim: 0, params_sha256, scenario, variant, how }`；`params_sha256`＝`prototypes/p0a2-24h/params.json` 標準 JSON 的 SHA-256，`scenario`＝`taichung-march-ref`，`variant`＝參數檔的參考變體。驗證器只用**自己這一版**的參數檔、情境與變體；檔案中的參數永遠不被採用。
 - **`save_meta.species`**：`{ id: null, fingerprint: null, note }`。P0-A2 原型沒有正式物種參數檔（`species/*.json`）；個體參數在原型參數檔中（原型、非正式），其指紋就是 `initial.params_sha256`。不捏造物種 ID 或指紋。
 - **`save_meta.environment`**：`id: "p0a2-weather/taichung-march-ref"`、`fingerprint`＝SHA-256(canonical{scenario, site, weather_scenario})（取自 `params.json` 的 `site` 與該情境定義）、`synthetic: true`（合成天氣情境＋示意地點；光照由一般方法計算）。
+- **`save_meta.not_simulated`**（2026-11-13，Owner #212 Q2 a、#213 Q1 a；矩陣 M43）：`{ format: "antempire.not-simulated.v1", world_kind, source, note_zh, items: [{ row, status: "未接入"|"簡化代理", label_zh }] }`，就是 `node cli/r2-matrix.ts --write` 由 `docs/r2-acceptance-matrix.json` 產生的 `prototypes/continuous-world/worker/not-simulated.ts`。這個模組在 P0-A2 程式碼雜湊中：清單改變＝規則指紋改變，舊存檔顯示「規則不同，無法繼續」（不改寫、可匯出）。實驗頁的「尚未模擬」面板與存檔清單只顯示這個欄位；驗證器報告以 `save.not_simulated` 列出存檔所述的清單。加入此欄位沒有改變任何事件或世界狀態（`tests/save-verify.test.ts` §6 的去版本／指紋／程式碼雜湊／`save_meta`／`chain` 釘選不變），只改變 `save_meta`、程式碼雜湊與規則指紋。
 - **還原檢查**：原有的 P0-A2 檢查（雜湊、標頭、指紋／參數／程式碼／情境／變體、`World.restore`、守恆、佇列、往返）之後，再檢查 `lineage` 為空（否則 `FORK_UNSUPPORTED`）、`save_meta` 等於依世界 ID 與種子重算的值（`META_MISMATCH`）、事件鏈形狀、genesis 屬於此世界／種子／規則、`count === seq`（`CHAIN_MISMATCH`）。
 - **精確時刻**：P0-A2 世界的時間粒度是整數毫秒；`advanceToExact` 只接受整毫秒的精確時刻（否則 `BAD_TIME`），驗證器推進到存檔的 `t_now`。
 - **結構 1 的 P0-A2 存檔**：Worker 拒絕（`SCHEMA_MISMATCH`，訊息說明沒有事件鏈承諾、沒有遷移路徑），儲存模組回報 `no_migration_path`／`migration_failed` 並保留原檔，驗證器回報 `invalid`（`NO_CHAIN`）。
@@ -146,8 +148,8 @@ npm run verify:save -- <存檔.json> [--no-recompute]
 | 完整性檢查通過 | 瀏覽器 | 讀取時儲存模組重讀並重算雜湊、檢查信封與版本，Worker 還原時檢查結構與事件鏈欄位，全部通過 |
 | Node 已重算驗證 | 只有 Node 驗證器 | `status = node_verified` 且針對**這一份**存檔（輸入檔雜湊、`payload_sha256`、`chain.head` 完全相同） |
 
-- 存檔清單每一列顯示「本機可玩｜未經 Node 驗證」；讀取後世界畫面的存檔狀態列顯示「完整性檢查通過｜未經 Node 驗證」；新遊戲顯示「本機可玩｜未經 Node 驗證」（`save-format.ts` `verificationOf()`，測試保證它永遠不會給出 Node 已重算驗證）。
-- **報告匯入（設計，未實作）**：使用者交來的報告本身也是用戶提供的資料，可以被偽造，因此瀏覽器**不得**只因匯入報告就顯示「Node 已重算驗證」。可行做法（需 Owner 決定）：(a) 由受信任的驗證服務以金鑰簽章報告，瀏覽器驗章且比對存檔雜湊與 head；或 (b) 只顯示「附有 Node 報告（未簽章，未經本機確認）」並提供重跑指令。在此之前一律顯示「未經 Node 驗證」。
+- 存檔清單每一列顯示「本機可玩｜未經 Node 重算驗證」；讀取後世界畫面的存檔狀態列顯示「完整性檢查通過｜未經 Node 重算驗證」；新遊戲顯示「本機可玩｜未經 Node 重算驗證」（`save-format.ts` `verificationOf()`，測試保證它永遠不會給出 Node 已重算驗證）。
+- **報告匯入（設計，未實作）**：使用者交來的報告本身也是用戶提供的資料，可以被偽造，因此瀏覽器**不得**只因匯入報告就顯示「Node 已重算驗證」。可行做法（需 Owner 決定）：(a) 由受信任的驗證服務以金鑰簽章報告，瀏覽器驗章且比對存檔雜湊與 head；或 (b) 只顯示「附有 Node 報告（未簽章，未經本機確認）」並提供重跑指令。在此之前一律顯示「未經 Node 重算驗證」。
 - 驗證失敗保留可診斷資料：驗證器報告列出重算值與差異欄位；瀏覽器端的損壞快照仍依 SAVE-1 移入隔離區保留，不自動修補、不改寫。
 
 ## 9. 原子提交（雙槽或等效）

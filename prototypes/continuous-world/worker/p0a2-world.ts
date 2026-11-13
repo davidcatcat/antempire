@@ -34,6 +34,7 @@ import { dateOfDay } from '../../../engine/clock/time-frames.ts';
 import { canonicalJson, hashJson } from './sha256.ts';
 import { chainNext, chainShapeProblem, chainStart, type ChainState } from './chain.ts';
 import { P0A2_CODE_FILES, P0A2_CODE_SHA256 } from './p0a2-code-hash.ts';
+import { P0A2_NOT_SIMULATED, type NotSimulatedList } from './not-simulated.ts';
 
 /** the same strings as the synthetic world (worker/params.ts; tests check equality), kept here so that a change of the
  *  synthetic world's parameters does not change the P0-A2 code hash */
@@ -85,7 +86,8 @@ export const P0A2_ENVIRONMENT_SHA = hashJson({ scenario: P0A2_SCENARIO, site: (r
 /**
  * Save metadata of a P0-A2 world (payload schema 2, docs/save-format-v2.md §2 and §5): the world kind, the TRUSTED
  * initial conditions a verifier recomputes from (world id, seed, t = 0, this build's parameter-file SHA-256, scenario,
- * variant), species / environment fingerprints and the fork lineage. Constant for a world.
+ * variant), species / environment fingerprints, the fork lineage and the 「尚未模擬／簡化代理」 list (Owner #212 Q2 a; matrix
+ * row M43: generated from docs/r2-acceptance-matrix.json into not-simulated.ts). Constant for a world.
  */
 export interface P0a2SaveMeta {
   format: 'antempire.experiment-save-meta.v1';
@@ -96,6 +98,8 @@ export interface P0a2SaveMeta {
   environment: { id: string; fingerprint: string; synthetic: true; note: string };
   /** fork records, oldest first (docs/save-format-v2.md §6). This runtime implements no fork: always empty. */
   lineage: never[];
+  /** what this world does NOT simulate (未接入) or only approximates (簡化代理); the viewer shows exactly this list */
+  not_simulated: NotSimulatedList;
 }
 export function p0a2SaveMetaOf(worldId: string, seed: number): P0a2SaveMeta {
   return {
@@ -104,6 +108,7 @@ export function p0a2SaveMetaOf(worldId: string, seed: number): P0a2SaveMeta {
     species: { id: null, fingerprint: null, note: 'P0-A2 原型沒有正式物種參數檔（species/*.json）；個體參數在原型參數檔 prototypes/p0a2-24h/params.json（原型、非正式），其 SHA-256 見 initial.params_sha256' },
     environment: { id: P0A2_ENVIRONMENT_ID, fingerprint: P0A2_ENVIRONMENT_SHA, synthetic: true, note: '合成天氣情境（params.json weather_scenarios，synthetic: true）＋示意地點；光照由一般方法計算' },
     lineage: [],
+    not_simulated: { ...P0A2_NOT_SIMULATED, items: P0A2_NOT_SIMULATED.items.map((x) => ({ ...x })) },
   };
 }
 

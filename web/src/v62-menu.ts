@@ -28,6 +28,11 @@ function individuals(w: WorldListing) {
   if (s.individuals !== null && s.individuals !== undefined) return `個體 ${s.individuals}（${esc(s.note ?? '合成世界沒有蟻后')}）`;
   return `蟻后 ${w.queens ?? '—'}、工蟻 ${w.workers ?? '—'}`;
 }
+/** Owner #212 Q2 a: what the save metadata says is not simulated (counts of save_meta.not_simulated; never filled in) */
+function disclosure(w: WorldListing) {
+  const n = w.summary?.not_simulated;
+  return `<span class="nsSummary" data-unwired="${n ? n.unwired : 'none'}">${n ? `尚未模擬 ${n.unwired} 項、簡化代理 ${n.proxies} 項（存檔中繼資料）` : '存檔中繼資料沒有「尚未模擬」清單'}</span>`;
+}
 
 export interface MenuHooks { enter: (how: string) => void; message: (html: string, kind?: 'info' | 'warn' | 'error') => void }
 
@@ -101,7 +106,7 @@ export class Menu {
     const ver = w.compat === 'rules_mismatch' || w.compat === 'newer_schema' || w.compat === 'unknown_schema' || w.compat === 'no_migration_path' ? `<br><span class="warn">${COMPAT[w.compat]}：${versionDiff(w, rt)}。存檔保持原樣，可以匯出備份。</span>` : '';
     const last = w.last_save ? `｜上次存檔大小 ${kb(w.last_save.bytes)}、耗時 ${w.last_save.ms} ms` : '';
     const manual = w.manual.length ? `<br>手動存檔（不被自動存檔輪替）：${w.manual.slice().reverse().map((m) => `<button type="button" data-act="loadgen" data-id="${id}" data-gen="${m.gen}"${ok ? '' : ' disabled'}>${esc(simTime(m.t_sim))}</button>`).join(' ')}` : '';
-    const head = `<b>${esc(w.name)}</b> <span class="flag">非正式</span><br><span class="muted">${id}${w.sim_world_id !== w.world_id ? `（快照內世界 ${esc(w.sim_world_id)}）` : ''}｜種子 ${w.seed}｜${simTime(w.t_sim)}｜上次儲存 ${when(w.last_saved_at)}${last}｜${individuals(w)}｜回復點 ${w.verified_snapshots}${w.quarantined ? `、隔離 ${w.quarantined}` : ''}｜${COMPAT[w.compat] ?? w.compat}｜${verification(w)}</span>${prov}${ver}`;
+    const head = `<b>${esc(w.name)}</b> <span class="flag">非正式</span><br><span class="muted">${id}${w.sim_world_id !== w.world_id ? `（快照內世界 ${esc(w.sim_world_id)}）` : ''}｜種子 ${w.seed}｜${simTime(w.t_sim)}｜上次儲存 ${when(w.last_saved_at)}${last}｜${individuals(w)}｜${disclosure(w)}｜回復點 ${w.verified_snapshots}${w.quarantined ? `、隔離 ${w.quarantined}` : ''}｜${COMPAT[w.compat] ?? w.compat}｜${verification(w)}</span>${prov}${ver}`;
     if (this.view === 'load') return `<div class="mrow" data-world="${id}">${head}<br><button type="button" class="primary" data-act="load" data-id="${id}"${ok ? '' : ' disabled'}>讀取最新存檔</button>${manual}</div>`;
     const del = this.pendingDelete?.world_id === w.world_id
       ? `<span class="warn">確定刪除「${esc(w.name)}」與它的全部存檔？此動作無法復原。</span> <button type="button" class="danger" data-act="delete2" data-id="${id}">確定刪除</button> <button type="button" data-act="delcancel">取消</button>`

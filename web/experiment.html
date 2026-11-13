@@ -37,7 +37,11 @@
   #banner, #toast { position: fixed; left: 50%; transform: translateX(-50%); max-width: min(640px, calc(100vw - 24px)); background: rgba(20,15,10,0.82); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 13px; line-height: 1.5; text-align: center; z-index: 3; }
   #banner { top: 42%; } #toast { top: 18%; font-size: 12px; color: var(--muted); }
   #about { position: fixed; inset: 84px max(10px, env(safe-area-inset-right, 0px)) 120px max(10px, env(safe-area-inset-left, 0px)); max-width: 640px; margin-inline: auto; overflow: auto; background: rgba(24,18,12,0.95); border: 1px solid var(--line); border-radius: 12px; padding: 10px 16px; font-size: 13px; line-height: 1.6; z-index: 4; }
-  #about h2 { font-size: 15px; margin: 4px 0 6px; }
+  #about h2, #notSim h2 { font-size: 15px; margin: 4px 0 6px; }
+  #notSim { position: fixed; inset: 84px max(10px, env(safe-area-inset-right, 0px)) 120px max(10px, env(safe-area-inset-left, 0px)); max-width: 680px; margin-inline: auto; overflow: auto; background: rgba(24,18,12,0.96); border: 1px solid #e9b949; border-radius: 12px; padding: 10px 16px; font-size: 13px; line-height: 1.6; z-index: 4; }
+  #notSim h3 { font-size: 13.5px; margin: 10px 0 2px; color: #ffd38a; }
+  #notSim ul { margin: 2px 0; padding-left: 20px; } #notSim .src { font-size: 12px; color: var(--muted); }
+  #nsBtn { border-color: #e9b949; color: #ffd38a; }
   #about code { font-size: 12px; overflow-wrap: anywhere; }
   .legend-tag { font-size: 11px; color: var(--muted); }
   [hidden] { display: none !important; }
@@ -70,6 +74,7 @@
   <span id="exp-flag">非正式</span>
   <button id="infoBtn" type="button" aria-expanded="false">資料說明</button>
   <button id="logBtn" type="button">引擎事件</button>
+  <button id="nsBtn" type="button" aria-expanded="false" aria-controls="notSim" hidden>尚未模擬</button>
   <div id="badge">非正式實驗世界／不屬於正式遊戲歷史｜啟動中…</div>
 </div>
 <div id="card" hidden></div>
@@ -92,11 +97,13 @@
  </div>
 </div>
 <pre id="log" hidden></pre>
+<div id="notSim" role="region" aria-label="尚未模擬與簡化代理清單" hidden></div>
 <div id="about" hidden>
 <h2>這個畫面是什麼</h2>
 <ul>
 <li><b>非正式實驗世界／不屬於正式遊戲歷史；候選／實驗世界，非正式。</b>預設是 <b>P0-A2 24 小時個體行為世界</b>（<code>prototypes/p0a2-24h/</code>，文件 <code>docs/p0a2-24h-prototype.md</code>）：30 隻小工蟻、8 隻幼蟲、一個情境蜜露源（半翅目，200 cm 外）；每隻工蟻依自己的嗉囊、門檻、路線記憶與實際接觸過的同伴／幼蟲決定休息、巢內走動、育幼、出巢、取食與回巢；日出日落以一般方法計算，氣溫是合成剖面（synthetic: true）。多數數值是遊戲假設或他種外推（見參數檔標示），日夜活動分布<b>未經科學驗證</b>；這<b>不是正式 Day0</b>（Owner #201）。另可選「合成測試世界」（6 隻個體、半徑 60 cm 場地；遊戲假設，不是螞蟻科學模型）。兩者都不讀取正式存檔、Day14 或 <code>web/data</code>，也不寫入任何東西。</li>
 <li><b>P0-A2 畫面上什麼是什麼</b>：<b>引擎狀態</b>＝每隻工蟻的活動（巢內休息／巢內走動／育幼／走向巢口／回巢內／去程／搜尋／取食／回程）、開始時刻、自己的嗉囊量與路線記憶、幼蟲腸道量、路線長度、光照狀態（日／曙暮光／夜；畫面亮度依此與太陽高度分段）、合成氣溫。<b>顯示插值</b>＝路線上的工蟻在出發與抵達兩個引擎紀錄點之間的位置。<b>示意</b>＝路線方向（模型只有長度）、搜尋中工蟻的位置（搜尋沒有空間模型）、食源周圍的排列、陰影方向、「巢內」小圖（巢內位置未模擬，只依引擎狀態分組）。蜜露存量是玩家視角，沒有工蟻讀它。</li>
+<li><b>尚未模擬</b>：頂列「尚未模擬」按鈕列出這個世界<b>沒有模擬</b>的機制（例如蟻后與產卵、幼體發育、死亡、大工蟻、完整繁殖、開放生態、費洛蒙與其擴散）與只有<b>簡化代理</b>的部分；清單取自世界的存檔中繼資料，畫面上沒有出現的機制也不代表已完整模擬。</li>
 <li><b>引擎事件</b>：模擬只在 Web Worker 內執行；畫面上的狀態（每隻個體目前線段的起點、終點、起訖時刻、活動）與「引擎事件」列表都是 Worker 送來的原樣資料。</li>
 <li><b>顯示插值</b>：螞蟻在目前線段兩個引擎紀錄點之間的畫面位置是直線插值；在紀錄時刻（線段起點與終點）畫面位置就是引擎位置。兩個 Worker 狀態之間，畫面時鐘最多超前 0.05 秒真實時間的推進量。腳的擺動、轉身、鏡頭、縮放都只是畫面，不回寫、不產生事件。</li>
 <li><b>示意</b>：地面紋理（與可選的落葉石塊）都是示意；合成世界的固定光源是示意。兩個世界中都<b>沒有障礙物</b>，所以落葉石塊預設關閉。螞蟻放大顯示（畫面左下角 ×N）。合成世界的虛線圓是場地邊界（引擎參數）。</li>

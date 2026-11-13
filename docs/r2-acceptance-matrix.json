@@ -54,6 +54,7 @@
     {
       "id": "M01", "module": "species", "name_zh": "物種參數（熱帶大頭家蟻）",
       "status": "簡化代理",
+      "disclosure_zh": "物種參數：簡化代理——本種數值只有步行速度與 CTmax，其餘是遊戲假設或他種外推；沒有正式物種參數檔與物種指紋",
       "candidate_world_now": "Worker 的 P0-A2 世界讀原型參數檔 prototypes/p0a2-24h/params.json（不是 species/*.json）：本種數值只有步行速度 17 mm/s（R133）與 CTmax 42°C（R145、R760），兩者都標 this_species、assumption:true；嗉囊容量等少數值沿用物種檔的遊戲假設；其餘是遊戲假設或非本種機制外推。個體不分階級（只有小工蟻）。存檔 save_meta.species 為 null 並註明原因（不捏造物種指紋）。",
       "existing_assets": ["species/pheidole-megacephala.json", "prototypes/p0a2-24h/params.json"],
       "probe": { "file": "prototypes/p0a2-24h/params.json", "text": "\"evidence_class\": \"this_species\"" },
@@ -70,6 +71,7 @@
     {
       "id": "M02", "module": "environment_site", "name_zh": "臺中西屯花園情境與地理",
       "status": "簡化代理",
+      "disclosure_zh": "臺中西屯花園：簡化代理——只有一個代表點座標（用於光照）與巢口到單一食源 2 m 的情境距離；花園幾何、植被、遮蔭與土壤尚未模擬",
       "candidate_world_now": "P0-A2 世界：代表點座標（北緯 24.17°、東經 120.64°，params.json site，遊戲假設）只供光照計算；空間只有「巢內／巢口過渡／巢外」三類位置與巢口到單一食源的固定距離 2 m（遊戲假設）；路線方向、搜尋位置都沒有空間模型（畫面標示意）。合成測試世界是半徑 60 cm 的合成圓。沒有花園幾何、植被、土壤。",
       "existing_assets": ["world/xitun-garden.json", "scenarios/day0/garden.json", "scenarios/p0a1-clock/xitun-day0-clock.json"],
       "probe": { "file": "prototypes/p0a2-24h/params.json", "text": "latitude_deg" },
@@ -118,6 +120,7 @@
     {
       "id": "M05", "module": "weather", "name_zh": "氣溫、濕度與降雨",
       "status": "簡化代理",
+      "disclosure_zh": "天氣：簡化代理——合成的 3 月氣溫剖面（每天相同）與平均濕度；季節、日際變異與降雨尚未模擬",
       "candidate_world_now": "P0-A2 世界：合成天氣情境 taichung-march-ref（synthetic: true）——以臺中站 3 月平年值（日最低 16.4°C、最高 25.2°C）在 06:00 與 14:00 兩點間畫直線的 24 值逐時剖面，每天相同；相對濕度由平年值 74.6% 與飽和水氣壓計算、只記錄不進入決策；雨為 null（時刻未知：不產生雨事件，也不當作無雨）。工蟻在巢口與巢外讀所在地氣溫（加地表偏移）決定出巢。合成世界另有手寫 24 值剖面。",
       "existing_assets": ["engine/clock/weather-input.ts", "engine/clock/environment.ts", "data/taichung-climatology-1991-2020.json", "engine/weather.ts"],
       "probe": { "file": "prototypes/p0a2-24h/params.json", "text": "hourly_temp_c" },
@@ -134,6 +137,7 @@
     {
       "id": "M06", "module": "nest_microclimate", "name_zh": "巢內與地表微氣候",
       "status": "未接入",
+      "disclosure_zh": "巢內溫度與地表微氣候：尚未模擬（巢內個體不讀溫度，代謝不依溫度）",
       "candidate_world_now": "沒有巢內溫度。P0-A2 只有巢口／巢外的「所在地氣溫＝氣溫＋地表偏移」（surface_offset_c，遊戲假設，參考情境 0°C）供出巢決策；巢內個體不讀溫度，代謝為常數（不套用 Q10）。",
       "existing_assets": ["engine/weather.ts", "engine/clock/weather-input.ts"],
       "probe": { "text": "nest_temperature", "any": ["nestTemp", "nest_temp"] },
@@ -142,7 +146,7 @@
       "tests": ["tests/nest-temperature.test.ts", "tests/rh-offsets-v27.test.ts", "tests/p0a2-24h-proto.test.ts"],
       "known_defects": [83],
       "limits": "幼體發育與代謝需要溫度輸入；地表與氣溫差目前暫用 0°C 參考情境（Owner 決定）。",
-      "player_view": "未顯示；必須標「巢內溫度：尚未模擬」（M43）。",
+      "player_view": "世界畫面頂列「尚未模擬」面板（內容取自存檔中繼資料 save_meta.not_simulated，M43）列出「巢內溫度與地表微氣候：尚未模擬（巢內個體不讀溫度，代謝不依溫度）」。",
       "r2_conditions": [1, 2],
       "blocks_r2": true,
       "blocker_reason": "M16 幼體發育與 M12 代謝需要巢內溫度輸入；最低版可用標示的簡化代理，但必須存在且標示。"
@@ -150,6 +154,7 @@
     {
       "id": "M07", "module": "food_sources", "name_zh": "食源（半翅目蜜露、花蜜、獵物、屍體）由環境獨立產生",
       "status": "簡化代理",
+      "disclosure_zh": "食源：簡化代理——一個情境蜜露源以固定間隔固定產出；寄主植物、半翅目族群、花蜜、獵物與昆蟲屍體尚未模擬",
       "candidate_world_now": "P0-A2 世界有一個情境食源 hemiptera-A（半翅目蜜露）：每 900 秒固定產出 0.05 份（produce 事件，帶來源 ID 與累計帳），不讀蟻群、不依環境（溫度、日夜、寄主植物、半翅目族群都沒有）；工蟻只在親身抵達時看到現場存量。沒有花蜜、獵物或昆蟲屍體。合成世界沒有食物。舊每日引擎有植物、半翅目、花蜜與昆蟲屍體但不在 Worker 中。（舊 probe \"hemiptera\" 只在觀察器字串命中，已改成指向產出事件本身。）",
       "existing_assets": ["engine/ecology.ts", "prototypes/p0a2-24h/world.ts", "data/pmegacephala-food-web-v1.json"],
       "probe": { "file": "prototypes/p0a2-24h/world.ts", "text": "source_kind: 'hemipteran honeydew (scenario)'" },
@@ -158,7 +163,7 @@
       "tests": ["tests/local-ecology.test.ts", "tests/naturalism.test.ts", "tests/source-flows-v26.test.ts", "tests/p0a2-24h-proto.test.ts"],
       "known_defects": [80, 85, 149],
       "limits": "近似範圍：單一來源、固定間隔、固定量的蜜露流入（遊戲假設），與蟻群狀態無關（§2.2 成立）。失真：不是由環境產生——沒有寄主植物、半翅目族群動態、照護效應、日夜或溫度變化；沒有花蜜、蛋白質（獵物、屍體）；只有一種「份」單位。舊引擎缺陷（#80 食物無事件刪除、#85 背景對手固定拿走 22%、ODD F08）不在候選世界，但接入舊生態前必須先修。花園供給／需求單位稽核另開（#202 第 8 項）。",
-      "player_view": "HUD 顯示「蜜露存量（玩家視角）」；實驗頁說明「一個情境蜜露源」。沒有標示花蜜、獵物、屍體與環境驅動「尚未模擬」（M43）。",
+      "player_view": "HUD 顯示「蜜露存量（玩家視角）」；實驗頁說明「一個情境蜜露源」；世界畫面頂列「尚未模擬」面板（內容取自存檔中繼資料 save_meta.not_simulated，M43）列出此列的簡化代理說明（寄主植物、半翅目族群、花蜜、獵物與昆蟲屍體尚未模擬）。",
       "r2_conditions": [1, 2],
       "blocks_r2": true,
       "blocker_reason": "條件 1、2：食源必須由環境獨立產生並帶來源 ID；目前只有一個固定產出的情境源，沒有環境驅動，也沒有蛋白質來源，覓食與收支的結果不能解讀為生態。"
@@ -166,6 +171,7 @@
     {
       "id": "M08", "module": "open_ecology", "name_zh": "開放式生態（D7-A）：周圍棲地、外部族群、其他蟻群、邊界進出",
       "status": "未接入",
+      "disclosure_zh": "開放生態（D7-A：周圍棲地、外部族群、其他蟻群、邊界進出）：尚未模擬",
       "candidate_world_now": "沒有。混合精度帳與邊界事件只在隔離原型 prototypes/mixed-precision/。",
       "existing_assets": ["prototypes/mixed-precision", "docs/spec-open-ecology.md", "docs/od1-mixed-precision-open-ecology.md"],
       "probe": { "text": "mixed-precision", "any": ["open_ecology", "boundary_inflow"] },
@@ -174,7 +180,7 @@
       "tests": ["tests/wp5-mixed-precision.test.ts", "tests/wp5-cohort-lifetime.test.ts", "tests/wp5-camera-invariance.test.ts", "tests/multi-colony-timeline.test.ts"],
       "known_defects": [144, 145, 85, 9],
       "limits": "鏡頭與升降級不改命運（#144）、單一權威帳本（#145）未完成；多蟻群陣列順序（#9）。",
-      "player_view": "未顯示；必須標「開放生態（周圍棲地、外部族群、其他蟻群）：尚未模擬」（M43）。",
+      "player_view": "世界畫面頂列「尚未模擬」面板（內容取自存檔中繼資料 save_meta.not_simulated，M43）列出「開放生態（D7-A：周圍棲地、外部族群、其他蟻群、邊界進出）：尚未模擬」。",
       "r2_conditions": [1, 2],
       "blocks_r2": false,
       "blocker_reason": "Owner #212 Q2 a（2026-11-13，決策 O-2 已裁示）：D7-A 不再是最低可信 Day0 的完整實作硬性條件；條件是畫面、存檔中繼資料、文件與報告標「尚未模擬」（M43 阻擋）且沒有隱藏補給或代用演出。接入時須先解決 #144、#145，並通過守恆與鏡頭不變的阻擋測試。",
@@ -183,6 +189,7 @@
     {
       "id": "M09", "module": "initial_colony", "name_zh": "初始蟻群（#202：本種多后群體的分巢遷入單位）",
       "status": "未接入",
+      "disclosure_zh": "初始蟻群（本種多后群體的分巢遷入單位，#202）：尚未模擬；目前是 30 隻小工蟻與 8 隻幼蟲的原型實驗群",
       "candidate_world_now": "Worker 世界的蟻群不是 #202 的分巢單位：P0-A2 是 30 隻小工蟻＋8 隻幼蟲的隔離原型小實驗群（遊戲假設，沒有蟻后、大工蟻、卵、蛹），合成世界是 6 隻合成個體。#204 的候選初始條件（scenarios/day0-budding-candidate.json，全部 assumption:true）與抽樣規則存在但沒有接進 Worker；舊引擎的 A1～A5、B、C 是研究情境。",
       "existing_assets": ["engine/initialization.ts", "scenarios/day0/founding-A1.json", "docs/day0-initialization.md", "scenarios/day0-budding-candidate.json", "docs/day0-founding-evidence.md"],
       "probe": { "text": "day0-budding-candidate", "any": ["budding", "BUD-CAND"] },
@@ -191,7 +198,7 @@
       "tests": ["tests/day0.test.ts", "tests/day0-founding-candidate.test.ts"],
       "known_defects": [202],
       "limits": "#202 的證據矩陣與候選初始條件已交付（#204），多種子敏感度只在舊引擎上做；分巢單位沒有在候選世界中建立。Owner 2026-11-13 的八項暫定規格見 owner_rulings_202（暫准開發的假設 vs. 正式啟用前必須滿足的條件）。",
-      "player_view": "未顯示；畫面必須標「初始蟻群（分巢單位）：尚未模擬；目前是 30 隻小工蟻的原型實驗群」（M43）。",
+      "player_view": "世界畫面頂列「尚未模擬」面板（內容取自存檔中繼資料 save_meta.not_simulated，M43）列出「初始蟻群（本種多后群體的分巢遷入單位，#202）：尚未模擬；目前是 30 隻小工蟻與 8 隻幼蟲的原型實驗群」。",
       "r2_conditions": [1],
       "blocks_r2": true,
       "blocker_reason": "條件 1 要求呈現初始蟻群來源與文獻；候選世界沒有分巢單位，且 #202 列出的正式啟用前條件（多后、大工蟻、幼體分布、固定日期與種子寫入存檔並驗證 Worker／Node 一致）都未滿足。",
@@ -214,6 +221,7 @@
     {
       "id": "M10", "module": "individual_behaviour", "name_zh": "個體行為（24 小時活動、休息、任務轉換、出巢）",
       "status": "簡化代理",
+      "disclosure_zh": "個體行為：簡化代理——只有小工蟻、四種巢內選擇與出巢決策；狀態時長是遊戲假設；日夜活動分布未經科學驗證",
       "candidate_world_now": "P0-A2 世界在 Worker 中執行（#209，預設世界）：30 隻小工蟻各自依自己的嗉囊、個體門檻與增益、路線記憶、實際接觸過的同伴與幼蟲，在巢內選擇休息／走動／育幼／出巢；在巢口依所在地氣溫與光照決定出巢或返回；巢外去程、搜尋、取食、回程。沒有時刻→活動的表，日夜活動分布是輸出。參考情境 ft-flat（Owner #193 Q1 = B）。",
       "existing_assets": ["prototypes/p0a2-24h/world.ts", "prototypes/p0a2-24h/decision.ts", "docs/p0a2-24h-prototype.md"],
       "probe": { "file": "prototypes/p0a2-24h/decision.ts", "text": "export function chooseInNest" },
@@ -247,6 +255,7 @@
     {
       "id": "M12", "module": "energy_mass_ledger", "name_zh": "能量／物質收支（嗉囊、代謝、整數微份帳）",
       "status": "簡化代理",
+      "disclosure_zh": "能量／物質收支：簡化代理——單一糖類份數的整數守恆、常數代謝；蛋白質、脂肪儲備與飢餓的生理後果尚未模擬",
       "candidate_world_now": "P0-A2 世界以整數微份（µP）記帳：每隻工蟻的嗉囊與每隻幼蟲的腸道各自以常數速率代謝（drainPool，精確整數），轉移時供者減、受者加；守恆 initial＋produced＝存量（嗉囊＋腸道＋食源）＋已代謝，在 Worker 還原時檢查（LEDGER_MISMATCH）；未滿足的代謝需求記為 debt／deficit（診斷）。",
       "existing_assets": ["prototypes/p0a2-24h/world.ts", "cli/lib/compartments.ts", "docs/design-wpc-food-compartments.md"],
       "probe": { "file": "prototypes/p0a2-24h/world.ts", "text": "export function drainPool" },
@@ -263,6 +272,7 @@
     {
       "id": "M13", "module": "foraging_recruitment", "name_zh": "覓食、路線記憶與招募",
       "status": "簡化代理",
+      "disclosure_zh": "覓食與招募：簡化代理——單一食源、固定往返時間、以固定機率找到食源（沒有空間搜尋）；只有巢內接觸招募",
       "candidate_world_now": "P0-A2 世界：沒有路線的工蟻出巢搜尋，每段搜尋以固定機率找到唯一食源並記住路線（ID）；有路線者往返固定距離（2 m÷17 mm/s）；只在親身抵達時看到現場存量並依自己的嗉囊空間取食；滿載回巢者在巢內接觸同伴時傳遞路線並可喚醒休息者（接觸招募，不經費洛蒙）；放棄路線機制預設關閉。",
       "existing_assets": ["prototypes/p0a2-24h/decision.ts", "engine/foraging.ts", "engine/navigation.ts"],
       "probe": { "file": "prototypes/p0a2-24h/world.ts", "text": "recruit_contacts_recent" },
@@ -279,6 +289,7 @@
     {
       "id": "M14", "module": "trophallaxis", "name_zh": "交哺與巢內食物分配",
       "status": "簡化代理",
+      "disclosure_zh": "交哺：簡化代理——巢內相遇以機率代表，不是身體接觸；沒有蟻后餵食與蛋白質流",
       "candidate_world_now": "P0-A2 世界：回巢者與「當時在巢內」的每位同伴以固定機率相遇（隨機相遇順序、最多 max_trophallaxis 次），只看到實際接觸同伴的嗉囊空間；轉移量＝min(提供量, 供者嗉囊, 受者空間)，同一時刻供者減受者加；育幼者只餵實際碰到且在求食的幼蟲（三種食物流程分離，#208）。",
       "existing_assets": ["prototypes/p0a2-24h/world.ts", "engine/nutrition.ts", "engine/transfers.ts"],
       "probe": { "file": "prototypes/p0a2-24h/world.ts", "text": "trophallaxis_events++" },
@@ -295,6 +306,7 @@
     {
       "id": "M15", "module": "queen_oviposition", "name_zh": "蟻后營養與產卵（D3：依實際被餵量）",
       "status": "未接入",
+      "disclosure_zh": "蟻后、蟻后營養與產卵：尚未模擬（世界中沒有蟻后，也沒有卵）",
       "candidate_world_now": "沒有蟻后（P0-A2 與合成世界都沒有；存檔摘要 queens 為 null 並註明「沒有蟻后（尚未模擬）」）。舊引擎的蟻后產卵讀全巢庫存與幼體數（G1，#43 F01）；C3a 個體營養已合併但開關預設關閉，C3b 產卵暫停。",
       "existing_assets": ["engine/queen.ts", "engine/queen-feeding.ts", "docs/design-c3-queen-feeding.md"],
       "probe": { "text": "oviposit", "any": ["queen_feed", "lay_egg", "egg_laid"] },
@@ -303,7 +315,7 @@
       "tests": ["tests/c3a-queen-feeding.test.ts", "tests/c3a-feed-rule.test.ts"],
       "known_defects": [43],
       "limits": "批次產卵與暫停（R94）尚未建模；#202 第 2 項：正式使用多后情境前必須正確實作多后個體、產卵、死亡與狀態存檔。",
-      "player_view": "存檔清單摘要「沒有蟻后（尚未模擬）」；世界畫面必須同樣標示（M43）。",
+      "player_view": "世界畫面頂列「尚未模擬」面板（內容取自存檔中繼資料 save_meta.not_simulated，M43）列出「蟻后、蟻后營養與產卵：尚未模擬（世界中沒有蟻后，也沒有卵）」。存檔清單摘要另有「沒有蟻后（尚未模擬）」。",
       "r2_conditions": [2],
       "blocks_r2": true,
       "blocker_reason": "條件 2 要求基本的卵—幼蟲—蛹—成蟻，且生命狀態正確性不可放寬（Owner #212 Q2 a）；#202 第 2 項要求多后個體在正式使用前真正實作。"
@@ -311,6 +323,7 @@
     {
       "id": "M16", "module": "brood_stages", "name_zh": "卵—幼蟲—蛹—成蟻發育",
       "status": "未接入",
+      "disclosure_zh": "幼體發育（卵—幼蟲—蛹—成蟻）：尚未模擬；畫面上的 8 隻幼蟲只被餵食與代謝，不發育、不化蛹、不羽化",
       "candidate_world_now": "沒有發育。P0-A2 的 8 隻幼蟲只有腸道量、常數代謝、求食訊號與被餵量（received，生長的診斷代理），不發育、不化蛹、不羽化、不死亡；沒有卵與蛹。舊引擎每日發育（同批同日羽化，#84）；P0-B 候選模型並列比較、尚未選定。（舊 probe \"larva\" 命中的是這 8 隻不發育的幼蟲，屬 M12／M14 的食物匯；probe 改成發育階段轉換本身。）",
       "existing_assets": ["engine/brood.ts", "engine/larva-development.ts", "engine/larva-feeding.ts", "docs/p0b-life-history-evidence-matrix.md"],
       "probe": { "text": "pupa", "any": ["eclos", "instar", "molt"] },
@@ -319,7 +332,7 @@
       "tests": ["tests/p0b-life-history.test.ts", "tests/c4b-larva-development.test.ts", "tests/c4a-larva-feeding.test.ts", "tests/issue50-brood-order.test.ts", "tests/p0a2-24h-proto.test.ts"],
       "known_defects": [84, 81, 83],
       "limits": "溫度反應證據與適用溫區不足（#83）；個體差異未定（#84）；初始幼體分布待 #214（#202 第 4 項）。",
-      "player_view": "畫面與 HUD 顯示 8 隻幼蟲與腸道填色，但世界畫面沒有標示「幼蟲不發育、不死亡（尚未模擬）」（只在參數檔註記）——觀測誠實性缺口，列入 M43。",
+      "player_view": "世界畫面頂列「尚未模擬」面板（內容取自存檔中繼資料 save_meta.not_simulated，M43）列出「幼體發育（卵—幼蟲—蛹—成蟻）：尚未模擬；畫面上的 8 隻幼蟲只被餵食與代謝，不發育、不化蛹、不羽化」。HUD 與巢內小圖仍顯示 8 隻幼蟲與腸道填色（引擎狀態）。",
       "r2_conditions": [2],
       "blocks_r2": true,
       "blocker_reason": "條件 2 明列卵—幼蟲—蛹—成蟻，生命狀態正確性不可放寬（Owner #212 Q2 a）。"
@@ -327,6 +340,7 @@
     {
       "id": "M17", "module": "death_consumption", "name_zh": "死亡與消耗（工蟻、幼體、蟻后、屍體）",
       "status": "未接入",
+      "disclosure_zh": "死亡與消耗（工蟻、幼蟲、屍體）：尚未模擬；未滿足的代謝需求只記為診斷，沒有個體會死亡",
       "candidate_world_now": "沒有死亡。P0-A2 只記錄未滿足的代謝需求（debt／deficit）與空腹時長（診斷，不回饋），沒有個體死亡、屍體或死亡事件；舊引擎工蟻飢餓風險讀全巢缺糖天數（G5）。（舊 probe \"death\" 命中的是 P0-A2 註解「starvation death are NOT modelled」；probe 改成屍體／死亡事件本身。）",
       "existing_assets": ["engine/queen.ts", "engine/workers.ts"],
       "probe": { "text": "corpse", "any": ["mortality", "'died'", "'death'"] },
@@ -335,7 +349,7 @@
       "tests": ["tests/death-diagnostics.test.ts", "tests/injury.test.ts", "tests/p0a2-24h-proto.test.ts"],
       "known_defects": [43],
       "limits": "C5 工蟻個體代謝、飢餓與屍體區室未實作；R94 壽命是 28°C、食物無限的實驗值。",
-      "player_view": "未顯示；必須標「死亡：尚未模擬」（M43）。",
+      "player_view": "世界畫面頂列「尚未模擬」面板（內容取自存檔中繼資料 save_meta.not_simulated，M43）列出「死亡與消耗（工蟻、幼蟲、屍體）：尚未模擬；未滿足的代謝需求只記為診斷，沒有個體會死亡」。",
       "r2_conditions": [2],
       "blocks_r2": true,
       "blocker_reason": "條件 2 明列死亡／消耗，生命狀態正確性不可放寬（Owner #212 Q2 a）：P0-A2 的 debt 可以無限累積而個體仍存活。"
@@ -343,6 +357,7 @@
     {
       "id": "M18", "module": "caste", "name_zh": "小工蟻／大工蟻階級",
       "status": "未接入",
+      "disclosure_zh": "大工蟻（小工蟻／大工蟻階級）：尚未模擬；所有工蟻都是小工蟻",
       "candidate_world_now": "個體不分階級（P0-A2 只有小工蟻）。",
       "existing_assets": ["docs/research-design-p1a-majors.md"],
       "probe": { "text": "major", "any": ["caste"] },
@@ -351,7 +366,7 @@
       "tests": ["tests/scaling.test.ts"],
       "known_defects": [25],
       "limits": "大工蟻的生產（品級決定）沒有本種觸發條件資料；初始分巢單位若含大工蟻，只能以初始個體存在，不能宣稱會自然產生。",
-      "player_view": "未顯示；畫面必須標「大工蟻：尚未模擬」（M43）。",
+      "player_view": "世界畫面頂列「尚未模擬」面板（內容取自存檔中繼資料 save_meta.not_simulated，M43）列出「大工蟻（小工蟻／大工蟻階級）：尚未模擬；所有工蟻都是小工蟻」。",
       "r2_conditions": [2, 3],
       "blocks_r2": true,
       "blocker_reason": "Owner #202 第 3 項（2026-11-13）：大工蟻是本種基本階級，正式宣稱完整的初始蟻群組成之前必須支援其個體、工作、能量與存檔。品級決定（大工蟻的生產）屬 D4-A，依 #212 Q2 a 可標「尚未模擬」，不阻擋。",
@@ -360,6 +375,7 @@
     {
       "id": "M19", "module": "reproduction", "name_zh": "完整繁殖生命週期（D4-A：雄蟻、新蟻后、交配、婚飛、分巢、新巢）",
       "status": "未接入",
+      "disclosure_zh": "完整繁殖（D4-A：雄蟻、新蟻后、交配、婚飛、分巢、新巢）：尚未模擬",
       "candidate_world_now": "沒有。研究與設計（#53、#55）未合併、未實作。",
       "existing_assets": ["docs/research-design-reproduction-d4a.md", "docs/castes-and-reproduction.md"],
       "probe": { "text": "gyne", "any": ["nuptial", "alate"] },
@@ -368,7 +384,7 @@
       "tests": ["tests/reproduction-measures.test.ts"],
       "known_defects": [],
       "limits": "D4-A 10 項都沒有實作。",
-      "player_view": "未顯示；必須標「完整繁殖（雄蟻、新蟻后、婚飛、分巢）：尚未模擬」（M43）。",
+      "player_view": "世界畫面頂列「尚未模擬」面板（內容取自存檔中繼資料 save_meta.not_simulated，M43）列出「完整繁殖（D4-A：雄蟻、新蟻后、交配、婚飛、分巢、新巢）：尚未模擬」。",
       "r2_conditions": [2],
       "blocks_r2": false,
       "blocker_reason": "Owner #212 Q2 a（2026-11-13，決策 O-2 已裁示）：D4-A 不再是最低可信 Day0 的完整實作硬性條件；條件是「尚未模擬」標示（M43 阻擋）。日後接入時從版本邊界起生效（M37），並通過守恆與生命狀態的阻擋測試。",
@@ -377,6 +393,7 @@
     {
       "id": "M20", "module": "nest_space", "name_zh": "巢穴空間（P1-B）",
       "status": "簡化代理",
+      "disclosure_zh": "巢穴空間：簡化代理——只有巢內／巢口過渡／巢外三類位置與固定移動時間；巢室、容量與挖掘尚未模擬，巢內小圖是示意",
       "candidate_world_now": "P0-A2 世界：巢只有「巢內（nest）／巢內與巢口之間（nest_transit，固定移動時間）／巢外（outside）」三類位置；巢內個體沒有座標，相遇以機率代表；沒有巢室、挖掘或容量。合成世界的巢是場地中心一點。",
       "existing_assets": ["docs/research-design-p1b-nest-space.md", "docs/nest-construction.md"],
       "probe": { "file": "prototypes/p0a2-24h/types.ts", "text": "'nest_transit'" },
@@ -393,6 +410,7 @@
     {
       "id": "M21", "module": "physics_collision", "name_zh": "身體碰撞、占位與接觸約束（PH-2／PH-3b）",
       "status": "未接入",
+      "disclosure_zh": "身體碰撞、占位與接觸幾何：尚未模擬（巢外個體沒有身體，畫面上的排列是示意）",
       "candidate_world_now": "沒有。物理層是隔離實驗（tests/physics-isolation.test.ts 證明正式管線不匯入）。",
       "existing_assets": ["engine/physics/solver2d.ts", "engine/physics/collision.ts", "engine/physics/broadphase.ts", "docs/physics-ph3b-solver2d.md"],
       "probe": { "text": "engine/physics", "any": ["solver2d", "collision"] },
@@ -401,7 +419,7 @@
       "tests": ["tests/ph3b-solver2d.test.ts", "tests/ph3b-contact-kinds.test.ts", "tests/ph3b-contact-time.test.ts", "tests/physics-isolation.test.ts", "tests/physics-contact-constraint.test.ts"],
       "known_defects": [107, 146, 189],
       "limits": "1000 隻完整裁判須在最新 SHA 重跑（#146）；三種接觸語意分離進行中。",
-      "player_view": "必須標「碰撞與身體占位：尚未模擬」（M43）；P0-A2 巢外個體沒有身體，畫面上的排列是示意。",
+      "player_view": "世界畫面頂列「尚未模擬」面板（內容取自存檔中繼資料 save_meta.not_simulated，M43）列出「身體碰撞、占位與接觸幾何：尚未模擬（巢外個體沒有身體，畫面上的排列是示意）」。",
       "r2_conditions": [3],
       "blocks_r2": false,
       "blocker_reason": "#201 條件 3 允許未接入，只要畫面與規則不假裝已模擬（由 M36 檢查）。"
@@ -409,6 +427,7 @@
     {
       "id": "M22", "module": "kinematics", "name_zh": "二維轉向與步行運動學（KIN-2D、WP4 local-steer、自然步行）",
       "status": "未接入",
+      "disclosure_zh": "步行運動學（二維轉向、加減速）：尚未模擬；路線上的位置是兩個引擎紀錄點之間的顯示插值",
       "candidate_world_now": "P0-A2 的移動是固定距離÷固定速度（17 mm/s，R133）的往返時間，畫面以兩個紀錄點間直線插值；合成世界是固定速度直線段。沒有轉向、加減速。",
       "existing_assets": ["engine/physics/kinematics2d.ts", "engine/physics/natural-walk.ts", "engine/physics/local-steer.ts", "docs/physics-kinematics2d.md", "docs/wp4-individual-time.md"],
       "probe": { "text": "kinematics2d", "any": ["local-steer", "natural-walk"] },
@@ -417,7 +436,7 @@
       "tests": ["tests/kin2d-kinematics.test.ts", "tests/natural-walk.test.ts", "tests/wp4-local-steer.test.ts", "tests/wp4-individual-time.test.ts", "tests/r133-observer.test.ts"],
       "known_defects": [189, 157, 69],
       "limits": "模型 C 驗證失敗待找結構性反例（#189 第 12 題）；R133 原始影片缺，轉向 proxy 不可宣稱同口徑。",
-      "player_view": "畫面的轉身與腳步是顯示插值，必須標示；「步行運動學：尚未模擬」（M43）。",
+      "player_view": "世界畫面頂列「尚未模擬」面板（內容取自存檔中繼資料 save_meta.not_simulated，M43）列出「步行運動學（二維轉向、加減速）：尚未模擬；路線上的位置是兩個引擎紀錄點之間的顯示插值」。畫面的轉身與腳步是顯示插值。",
       "r2_conditions": [3],
       "blocks_r2": false,
       "blocker_reason": "#201 條件 3 允許未接入；步行時間由 M13 的距離÷速度代理，必須標示。"
@@ -425,6 +444,7 @@
     {
       "id": "M23", "module": "traffic", "name_zh": "出口、目的地容量與交通流（#158）",
       "status": "未接入",
+      "disclosure_zh": "巢口容量與交通流：尚未模擬（巢口沒有容量）",
       "candidate_world_now": "沒有；巢口無容量。",
       "existing_assets": ["engine/physics/destinations.ts", "engine/physics/traffic-metrics.ts", "docs/physics-destinations-traffic.md"],
       "probe": { "text": "engine/physics/destinations", "any": ["traffic-metrics"] },
@@ -433,7 +453,7 @@
       "tests": ["tests/physics-destinations.test.ts"],
       "known_defects": [158],
       "limits": "沒有容量時，出巢時刻分布可能失真（大量個體同時出巢不受阻）。",
-      "player_view": "未顯示；必須標「巢口容量與交通流：尚未模擬」（M43）。",
+      "player_view": "世界畫面頂列「尚未模擬」面板（內容取自存檔中繼資料 save_meta.not_simulated，M43）列出「巢口容量與交通流：尚未模擬（巢口沒有容量）」。",
       "r2_conditions": [3],
       "blocks_r2": false,
       "blocker_reason": "#201 條件 3 允許未接入；若長時段測試中同時出巢量超過規格 §3 C3.3 的門檻，升級為阻擋。（probe 由 \"destinations\" 改為模組路徑，以免一般英文單字誤判。）"
@@ -441,6 +461,7 @@
     {
       "id": "M24", "module": "chemistry_trail", "name_zh": "沿跡費洛蒙（CHEM-1／1b 事件驅動化學場）",
       "status": "未接入",
+      "disclosure_zh": "沿跡費洛蒙（化學訊號）：尚未模擬；擴散尚未模擬（#213 Q1：這只是目前模型範圍，不代表自然界的費洛蒙不擴散）",
       "candidate_world_now": "沒有化學場。CHEM-1／1b 是隔離核心（tests/chemistry-isolation.test.ts）。",
       "existing_assets": ["engine/chemistry/core.ts", "engine/chemistry/sampling.ts", "engine/chemistry/contract.ts", "docs/chemical-ecology-engine.md"],
       "probe": { "text": "engine/chemistry", "any": ["pheromone"] },
@@ -449,7 +470,7 @@
       "tests": ["tests/chem0-contract.test.ts", "tests/chem1-core.test.ts", "tests/chem1b-sampling.test.ts", "tests/chemistry-isolation.test.ts"],
       "known_defects": [133, 134, 61],
       "limits": "P-1～P-6 實驗未執行；運動學與 CHEM horizon 的同步契約未定（#189 第 14 題）。",
-      "player_view": "費洛蒙圖層不得出現在候選世界；必須標「費洛蒙：尚未模擬」（M43）。",
+      "player_view": "世界畫面頂列「尚未模擬」面板（內容取自存檔中繼資料 save_meta.not_simulated，M43）列出「沿跡費洛蒙（化學訊號）：尚未模擬；擴散尚未模擬（#213 Q1：這只是目前模型範圍，不代表自然界的費洛蒙不擴散）」。費洛蒙圖層不得出現在候選世界。",
       "r2_conditions": [3],
       "blocks_r2": false,
       "blocker_reason": "#201 條件 3 允許未接入；候選世界不得宣稱沿跡招募，招募只限 M13 的接觸代理。"
@@ -457,6 +478,7 @@
     {
       "id": "M25", "module": "alarm", "name_zh": "短距警戒化學訊號（CHEM-4）",
       "status": "未接入",
+      "disclosure_zh": "短距警戒化學訊號：尚未模擬",
       "candidate_world_now": "沒有。",
       "existing_assets": ["docs/chem4-alarm-chc-literature.md"],
       "probe": { "text": "alarm" },
@@ -465,7 +487,7 @@
       "tests": ["tests/chem0-contract.test.ts"],
       "known_defects": [135],
       "limits": "最低版世界沒有掠食者與敵巢接觸，警戒沒有觸發來源。",
-      "player_view": "未顯示；必須標「警戒訊號：尚未模擬」（M43）。",
+      "player_view": "世界畫面頂列「尚未模擬」面板（內容取自存檔中繼資料 save_meta.not_simulated，M43）列出「短距警戒化學訊號：尚未模擬」。",
       "r2_conditions": [3],
       "blocks_r2": false,
       "blocker_reason": "#201 條件 3 允許未接入；最低版沒有會觸發警戒的事件。"
@@ -473,6 +495,7 @@
     {
       "id": "M26", "module": "chc", "name_zh": "CHC 接觸辨識（同巢／異巢）",
       "status": "未接入",
+      "disclosure_zh": "同巢／異巢接觸辨識（體表碳氫化合物）：尚未模擬",
       "candidate_world_now": "沒有。",
       "existing_assets": ["docs/chem4-alarm-chc-literature.md"],
       "probe": { "text": "chc" },
@@ -481,7 +504,7 @@
       "tests": ["tests/chem0-contract.test.ts"],
       "known_defects": [135, 27],
       "limits": "最低版只有一個遷入群，沒有異巢接觸；若 M08 引入其他蟻群，CHC 即成為阻擋項。",
-      "player_view": "未顯示；必須標「同巢／異巢辨識：尚未模擬」（M43）。",
+      "player_view": "世界畫面頂列「尚未模擬」面板（內容取自存檔中繼資料 save_meta.not_simulated，M43）列出「同巢／異巢接觸辨識（體表碳氫化合物）：尚未模擬」。",
       "r2_conditions": [3],
       "blocks_r2": false,
       "blocker_reason": "只有單一蟻群時沒有辨識事件；若 M08 引入其他蟻群（O-2 已裁示可標「尚未模擬」），CHC 即成為阻擋項。"
@@ -489,6 +512,7 @@
     {
       "id": "M27", "module": "injury_disease", "name_zh": "傷勢、疾病、捕食者與合作捕獵",
       "status": "未接入",
+      "disclosure_zh": "傷勢、疾病、捕食者與合作捕獵：尚未模擬",
       "candidate_world_now": "沒有。",
       "existing_assets": ["engine/activity.ts", "engine/queen.ts"],
       "probe": { "text": "injur" },
@@ -497,7 +521,7 @@
       "tests": ["tests/injury.test.ts", "tests/hunting.test.ts"],
       "known_defects": [],
       "limits": "疾病與寄生未確認，未模擬。",
-      "player_view": "未顯示；必須標「傷勢、疾病、捕食：尚未模擬」（M43）。",
+      "player_view": "世界畫面頂列「尚未模擬」面板（內容取自存檔中繼資料 save_meta.not_simulated，M43）列出「傷勢、疾病、捕食者與合作捕獵：尚未模擬」。",
       "r2_conditions": [2, 3],
       "blocks_r2": false,
       "blocker_reason": "#201 允許將尚不可信的複雜機制明確停用並標示。"
@@ -521,6 +545,7 @@
     {
       "id": "M29", "module": "cross_platform", "name_zh": "跨平台逐位元重播（Node／Chromium Worker／ARM64／其他瀏覽器）",
       "status": "簡化代理",
+      "disclosure_zh": "跨平台重播：簡化代理——只證實 x64 Linux＋Node 22＋Chromium 逐位元一致；其他平台可實驗性遊玩，未經 Node 重算驗證",
       "candidate_world_now": "已證實（x64 Linux、Node 22.23.4、Chromium 153 headless）：光照時刻與 detmath 全部函式（detExp、detLog、detPow、detPowInt、detSin、detCos 共 585 070 個輸入）Node＝Chromium 頁面＝Chromium Worker 逐位元相同；P0-A2 世界兩個種子 48 小時 42 480 個事件、日誌雜湊鏈、事件鏈 head 與整份 payload 逐位元組相同；Chromium Worker 推進 26 小時的 P0-A2 存檔經 node cli/verify-save.ts → node_verified（#211）。未證實：ARM64（手機、Apple Silicon）、Firefox、Safari、實體手機瀏覽器。",
       "existing_assets": ["prototypes/solar-xenv", "docs/solar-cross-env-check.md", "docs/save-format-v2.md"],
       "probe": { "file": "prototypes/p0a2-24h/world.ts", "text": "import { detLog } from '../../engine/clock/detmath.ts'" },
@@ -528,8 +553,8 @@
       "assumption": { "flagged": false, "basis": ["不適用"], "note": "工程證據；只對實際測過的環境成立。" },
       "tests": ["tests/solar-xenv.test.ts", "tests/detmath-explog.test.ts", "tests/worker-runtime.test.ts", "tests/browser/worker-runtime.check.cjs", "tests/browser/detmath-xenv.check.cjs", "tests/browser/save2-acceptance.check.cjs"],
       "known_defects": [190, 192],
-      "limits": "近似範圍：只有 x64 Linux＋Node 22＋Chromium（V8）被證實逐位元一致（Owner #212 Q3 a 的支援界線）。ARM64 沒有 CI runner，Firefox／Safari 未測；ARM64 與實機回放驗證仍在計畫中（#192、#190）。瀏覽器在任何平台都不顯示「Node 已重算驗證」（Q4 a），存檔狀態列一律附「未經 Node 驗證」；Owner 指定的字樣是「未經 Node 重算驗證」，文字對齊列為後續小修。",
-      "player_view": "存檔清單與狀態列顯示「本機可玩／完整性檢查通過｜未經 Node 驗證」；任何平台都不顯示「Node 已重算驗證」或逐位元一致。",
+      "limits": "近似範圍：只有 x64 Linux＋Node 22＋Chromium（V8）被證實逐位元一致（Owner #212 Q3 a 的支援界線）。ARM64 沒有 CI runner，Firefox／Safari 未測；ARM64 與實機回放驗證仍在計畫中（#192、#190）。瀏覽器在任何平台都不顯示「Node 已重算驗證」（Q4 a），存檔狀態列一律附 Owner 指定的「未經 Node 重算驗證」（#212 Q3 a；字樣已於 2026-11-13 對齊）。",
+      "player_view": "存檔清單與狀態列顯示「本機可玩／完整性檢查通過｜未經 Node 重算驗證」；任何平台都不顯示「Node 已重算驗證」或逐位元一致。",
       "r2_conditions": [4],
       "blocks_r2": false,
       "blocker_reason": "Owner #212 Q3 a（2026-11-13，決策 O-3 已裁示）：支援界線＝已驗證的 x64 Linux／Node 22／Chromium；其他平台可實驗性遊玩、標示未經 Node 重算驗證、不宣稱逐位元一致，因此不再阻擋。若畫面或文件在未驗證平台宣稱驗證或逐位元一致，即回到阻擋。ARM64 驗證仍依 #192 排程。",
@@ -602,18 +627,19 @@
     {
       "id": "M34", "module": "save_format", "name_zh": "正式存檔格式（#200 第 2 項）",
       "status": "簡化代理",
-      "candidate_world_now": "存檔格式 v2（#210、#209；docs/save-format-v2.md）：信封 v1＋payload 結構 2，含 save_meta（world_kind、受信任初始條件 {world_id, seed, t=0, params_sha256, 情境, 變體}、species {id:null, fingerprint:null, 原因}、environment {id, fingerprint, synthetic:true}、lineage）與事件鏈承諾 chain {algo, genesis, head, count}；驗證狀態不在檔案中（只由驗證器產生）。",
+      "disclosure_zh": "存檔格式：簡化代理——沒有正式物種指紋、分巢初始條件、scenario checksum 與規則區段；fork 未實作",
+      "candidate_world_now": "存檔格式 v2（#210、#209；docs/save-format-v2.md）：信封 v1＋payload 結構 2，含 save_meta（world_kind、受信任初始條件 {world_id, seed, t=0, params_sha256, 情境, 變體}、species {id:null, fingerprint:null, 原因}、environment {id, fingerprint, synthetic:true}、lineage；P0-A2 世界另有 not_simulated：由本矩陣產生的「尚未模擬／簡化代理」清單，M43）與事件鏈承諾 chain {algo, genesis, head, count}；驗證狀態不在檔案中（只由驗證器產生）。",
       "existing_assets": ["web/src/experimental/save-format.ts", "prototypes/continuous-world/save/experiment-world-snapshot.v1.schema.json", "docs/save-format-v2.md", "prototypes/continuous-world/worker/chain.ts"],
       "probe": { "file": "prototypes/continuous-world/worker/p0a2-world.ts", "text": "export function p0a2SaveMetaOf" },
       "evidence_refs": [],
       "assumption": { "flagged": false, "basis": ["不適用"], "note": "工程格式。" },
       "tests": ["tests/save-format.test.ts", "tests/save-contract.test.ts", "tests/save-verify.test.ts"],
       "known_defects": [],
-      "limits": "近似範圍：#200 第 2 項的欄位都有位置；但物種指紋為 null（沒有正式物種檔）、初始條件只有世界 ID＋種子＋參數雜湊（沒有分巢單位抽樣分布、入場日期與 scenario checksum，#202 第 7 項）、沒有規則區段（segments）紀錄、lineage 永遠為空（fork 未實作）、沒有「尚未模擬」清單（M43）。payload_sha256 只證明檔案完整；chain 是承諾不是證明（只有重算能證明）。",
+      "limits": "近似範圍：#200 第 2 項的欄位都有位置；但物種指紋為 null（沒有正式物種檔）、初始條件只有世界 ID＋種子＋參數雜湊（沒有分巢單位抽樣分布、入場日期與 scenario checksum，#202 第 7 項）、沒有規則區段（segments）紀錄、lineage 永遠為空（fork 未實作）。「尚未模擬」清單已寫入 save_meta.not_simulated（M43）。payload_sha256 只證明檔案完整；chain 是承諾不是證明（只有重算能證明）。",
       "player_view": "存檔清單顯示「非正式」、規則指紋與驗證等級。",
       "r2_conditions": [4],
       "blocks_r2": true,
-      "blocker_reason": "存檔格式不可放寬（Owner #212 Q2 a）：正式世界的存檔必須帶物種指紋、分巢初始條件與 scenario checksum（#202 第 7 項）、尚未模擬清單（#212 Q2 a）與規則區段（M37）；目前沒有。"
+      "blocker_reason": "存檔格式不可放寬（Owner #212 Q2 a）：正式世界的存檔必須帶物種指紋、分巢初始條件與 scenario checksum（#202 第 7 項）與規則區段（M37）；目前沒有（「尚未模擬」清單已有，M43）。"
     },
     {
       "id": "M35", "module": "verifier", "name_zh": "Node 重算驗證器與三種狀態（本機可玩／完整性檢查通過／Node 已重算驗證）",
@@ -626,7 +652,7 @@
       "tests": ["tests/save-verify.test.ts", "tests/worker-boundary.test.ts", "tests/save-format.test.ts", "tests/browser/save2-acceptance.check.cjs"],
       "known_defects": [],
       "limits": "只能重算單一規則版本的世界：規則區段與 fork 的驗證（M37）未實作；報告未簽章（可重現的證據，不是憑證）；node_verified 只在可信環境（CI、維護者重跑）有效（Q4 a）。驗證成本未在手機量測。",
-      "player_view": "存檔狀態列「本機可玩｜未經 Node 驗證」或「完整性檢查通過｜未經 Node 驗證」。",
+      "player_view": "存檔狀態列「本機可玩｜未經 Node 重算驗證」或「完整性檢查通過｜未經 Node 重算驗證」。",
       "r2_conditions": [4],
       "blocks_r2": false,
       "blocker_reason": "已接入並有阻擋測試（竄改、偽造 head、改事件、刪事件、改種子都回報 mismatch／invalid；Chromium 推進的存檔 node_verified）；多版本區段驗證屬 M37。",
@@ -651,6 +677,7 @@
     {
       "id": "M37", "module": "version_boundary", "name_zh": "版本邊界、fork 與遷移（#201 條件 6、#200 第 5 項）",
       "status": "簡化代理",
+      "disclosure_zh": "版本邊界：簡化代理——規則不同的存檔只會被拒絕（可匯出），fork 與遷移未實作",
       "candidate_world_now": "規則或程式碼不同的存檔被拒絕並可匯出（rules_mismatch／FINGERPRINT_MISMATCH）；payload 結構 1 的 P0-A2 存檔沒有遷移路徑（拒絕、原樣保留）；fork 已設計（docs/save-format-v2.md §6：新世界 ID、lineage 紀錄、genesis 接在父鏈 head 之後）但未實作，Worker 拒絕非空 lineage（FORK_UNSUPPORTED）；沒有規則版本邊界事件。",
       "existing_assets": ["web/src/experimental/save-format.ts", "docs/experimental-save-system.md", "docs/save-format-v2.md"],
       "probe": { "file": "web/src/experimental/save-format.ts", "text": "rules_mismatch" },
@@ -667,18 +694,19 @@
     {
       "id": "M38", "module": "viewer", "name_zh": "實際玩家畫面（V6-2 實驗模式）與「尚未模擬」清單",
       "status": "簡化代理",
-      "candidate_world_now": "畫面只呈現 Worker 狀態框與事件；P0-A2 畫面把資料分為引擎狀態、顯示插值、示意三類並標示（路線方向、搜尋位置、巢內小圖為示意；蜜露存量為玩家視角），頂列固定「非正式」。沒有由矩陣產生的「尚未模擬／簡化代理」面板。",
+      "disclosure_zh": "玩家畫面：簡化代理——忠實呈現 Worker 的引擎狀態與事件；路線方向、搜尋位置與巢內小圖是示意",
+      "candidate_world_now": "畫面只呈現 Worker 狀態框與事件；P0-A2 畫面把資料分為引擎狀態、顯示插值、示意三類並標示（路線方向、搜尋位置、巢內小圖為示意；蜜露存量為玩家視角），頂列固定「非正式」。頂列「尚未模擬」按鈕與面板列出存檔中繼資料 save_meta.not_simulated 的清單（由本矩陣產生，M43）。",
       "existing_assets": ["web/experiment.html", "web/src/v62.ts", "web/src/v62-p0a2-view.ts", "docs/v62-experiment-mode.md"],
       "probe": { "file": "web/src/v62-p0a2-view.ts", "text": "巢內位置未模擬" },
       "evidence_refs": [],
       "assumption": { "flagged": false, "basis": ["不適用"], "note": "畫面；示意元素已標示。" },
       "tests": ["tests/web-v62-experiment.test.ts", "tests/browser/v62-experiment.check.cjs", "tests/display-motion.test.ts"],
       "known_defects": [191, 159],
-      "limits": "近似範圍：畫面忠實呈現 Worker 世界的引擎狀態與事件，零散標示幾項未模擬（巢內位置、搜尋空間）；沒有完整的「尚未模擬」清單，幼蟲不發育不死亡、沒有死亡、沒有大工蟻等都沒有在世界畫面標示（M43）。30fps 未實機驗證（#159）；手機控制列待收合（#191 Q5）。",
+      "limits": "近似範圍：畫面忠實呈現 Worker 世界的引擎狀態與事件，「尚未模擬／簡化代理」清單取自 Worker 存檔中繼資料並在世界畫面顯示（M43）。30fps 未實機驗證（#159）；手機控制列待收合（#191 Q5）。",
       "player_view": "實驗頁 web/experiment.html。",
       "r2_conditions": [3, 5],
       "blocks_r2": true,
-      "blocker_reason": "觀測誠實性不可放寬（Owner #212 Q2 a）：畫面必須顯示由本矩陣產生的「尚未模擬／簡化代理」清單（M43）；目前沒有。"
+      "blocker_reason": "觀測誠實性不可放寬（Owner #212 Q2 a）：「尚未模擬／簡化代理」清單已顯示（M43），但畫面仍是簡化代理：30fps 未實機驗證（#159）、手機控制列待收合（#191 Q5）、沒有參數來源面板（M40）。"
     },
     {
       "id": "M39", "module": "candidate_label", "name_zh": "候選／實驗世界標示（#201：批准前不得宣稱正式）",
@@ -699,6 +727,7 @@
     {
       "id": "M40", "module": "provenance", "name_zh": "數值來源標註（assumption:true、證據類別、非本種）",
       "status": "簡化代理",
+      "disclosure_zh": "數值來源標註：簡化代理——P0-A2 參數檔逐項標示來源類別；畫面沒有參數來源面板",
       "candidate_world_now": "P0-A2 的 params.json 每個參數都有 evidence_class、assumption、basis、來源 ID、外推限制或註記，他種寫出物種名；buildModel 拒絕標示不完整的參數檔（Worker 載入時即檢查）。合成世界參數全標遊戲假設。正式物種檔與分巢情境檔尚未接入候選世界。",
       "existing_assets": ["prototypes/continuous-world/worker/params.ts", "prototypes/p0a2-24h/params.json", "species/pheidole-megacephala.json", "scenarios/day0-budding-candidate.json"],
       "probe": { "file": "prototypes/p0a2-24h/params.ts", "text": "export function buildModel" },
@@ -744,19 +773,26 @@
     },
     {
       "id": "M43", "module": "not_simulated_disclosure", "name_zh": "「尚未模擬」清單：畫面、存檔中繼資料、文件與驗收報告（Owner #212 Q2 a）",
-      "status": "未接入",
-      "candidate_world_now": "文件與報告：由本矩陣產生的清單（cli/r2-matrix.ts --write 的 not-simulated 區塊）已在 docs/r2-go-no-go.md 與規格中，測試逐字比對。畫面：沒有清單面板，只有零散的「未模擬」字樣（巢內位置、搜尋空間）；存檔清單摘要有「沒有蟻后（尚未模擬）」一項。存檔中繼資料：save_meta 沒有尚未模擬清單。",
-      "existing_assets": ["cli/r2-matrix.ts", "docs/r2-go-no-go.md"],
-      "probe": { "text": "not_simulated", "any": ["notSimulated", "NOT_SIMULATED"] },
+      "status": "已接入",
+      "candidate_world_now": "一份清單、一個來源：本矩陣每個未接入列（文件類 odd、pom_long_run 與本列除外）與每個簡化代理列的 disclosure_zh，由 node cli/r2-matrix.ts --write 產生 prototypes/continuous-world/worker/not-simulated.ts（antempire.not-simulated.v1，P0A2_NOT_SIMULATED）。存檔中繼資料：P0-A2 世界的 save_meta.not_simulated 就是這份清單；它在 P0-A2 程式碼雜湊（規則指紋）涵蓋的模組中，Worker 還原時與重算值比對（META_MISMATCH），Node 驗證器報告列出清單（save.not_simulated）。畫面：實驗頁頂列「尚未模擬」按鈕與面板只顯示 Worker 快照的 save_meta.not_simulated（web/src/experimental/save-format.ts notSimulatedOf；觀察器不自帶清單）；存檔清單每列顯示清單項數，沒有清單的存檔（合成世界、舊格式）明示「沒有尚未模擬清單」。文件與報告：同一矩陣產生的 not-simulated 區塊（docs/r2-go-no-go.md、規格）。",
+      "existing_assets": ["cli/r2-matrix.ts", "docs/r2-go-no-go.md", "prototypes/continuous-world/worker/not-simulated.ts"],
+      "probe": { "file": "prototypes/continuous-world/worker/p0a2-world.ts", "text": "not_simulated: { ...P0A2_NOT_SIMULATED" },
+      "probe_all": [
+        { "file": "prototypes/continuous-world/worker/p0a2-world.ts", "text": "not_simulated: { ...P0A2_NOT_SIMULATED" },
+        { "file": "prototypes/continuous-world/worker/not-simulated.ts", "text": "export const P0A2_NOT_SIMULATED" },
+        { "file": "web/src/experimental/save-format.ts", "text": "export function notSimulatedOf" },
+        { "file": "web/src/v62.ts", "text": "notSimulatedOf(" },
+        { "file": "web/experiment.html", "text": "id=\"notSim\"" }
+      ],
       "evidence_refs": [],
       "assumption": { "flagged": false, "basis": ["不適用"], "note": "揭露規則（Owner #212 Q2 a、CLAUDE.md §8），不是數值。" },
-      "tests": ["tests/r2-acceptance-matrix.test.ts"],
+      "tests": ["tests/r2-acceptance-matrix.test.ts", "tests/save-verify.test.ts", "tests/save-format.test.ts", "tests/web-v62-experiment.test.ts", "tests/browser/v62-experiment.check.cjs", "tests/browser/save2-world-kinds.check.cjs"],
       "known_defects": [],
-      "limits": "清單必須由矩陣（或其版本化輸出）產生，與世界的規則指紋一起版本化；畫面與 save_meta 都要能列出每個未接入機制與每個簡化代理的近似範圍。",
-      "player_view": "世界畫面目前沒有「尚未模擬」清單面板；這一列本身就是要求畫面顯示它。",
+      "limits": "清單只列矩陣已知的缺口：矩陣漏列的機制不會出現在清單（矩陣審查是唯一防線）。清單與規則指紋一起版本化：清單文字改變就改變 P0-A2 程式碼雜湊，舊存檔顯示「規則不同，無法繼續」（不改寫、可匯出）。合成測試世界沒有清單（它不是螞蟻模型，畫面明示）。",
+      "player_view": "頂列「尚未模擬 N 項」按鈕（世界畫面中常駐）展開面板：未接入機制與簡化代理分兩組逐列顯示，並註明來源是存檔中繼資料；存檔清單每列顯示「尚未模擬 N 項、簡化代理 M 項」或「沒有尚未模擬清單」。",
       "r2_conditions": [3, 5],
-      "blocks_r2": true,
-      "blocker_reason": "Owner #212 Q2 a：放寬 D4-A／D7-A 的前提是畫面、存檔中繼資料、文件與驗收報告都清楚標示「尚未模擬」；畫面與存檔中繼資料尚未做到。屬觀測誠實性，不可放寬。只有在 probe_all 找到觀察器與 Worker save_meta 中的清單時才可改為已接入（cli/r2-matrix.ts 檢查）。",
+      "blocks_r2": false,
+      "blocker_reason": "Owner #212 Q2 a 的揭露要求已接上：畫面、存檔中繼資料、文件與驗收報告顯示同一份由矩陣產生的清單；validator 要求 probe_all 在觀察器與 Worker 存檔中繼資料檔中都找到、且產生的清單模組與矩陣一致（移除或過期即失敗）。仍屬不可放寬模組：任何一處失去清單即回到阻擋。",
       "owner_decision": "O-2"
     }
   ]
