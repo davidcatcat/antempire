@@ -155,6 +155,8 @@ S6＋S3a＋S1＋A09（共用時間軸） ──> 開放式生態 S10（D7-A） �
 | V6 | 共用空間資料的地圖；巢內剖面（只畫引擎實際有的巢室） | S3a、S3b |
 | V7 | 建置與部署：`web/dist` 不進 git，由建置流程產生；是否公開部署由 Owner 決定 | — |
 
+> **2026-11-13 新增（Owner 指示，[`owner-decisions-2026-11-13c.md`](owner-decisions-2026-11-13c.md)）**：「遊戲畫面品質與真實世界呈現」列為獨立 P0 工作線 VIS-0～VIS-8（[`roadmap.md`](roadmap.md) §3f，追蹤 [#238](https://github.com/davidcatcat/antempire/issues/238)），與科學模擬並行、互不阻擋。目標是玩家像觀察真實螞蟻一樣看一個持續運作的微型自然世界；§7 的可視化原則全部照常適用。驗收以實際觀看體驗與「與上一版並排的比較截圖」為主，CI 通過不證明畫面品質。現況與規格見 [`visual-p0-audit.md`](visual-p0-audit.md)、[`visual-p0-scene-spec.md`](visual-p0-scene-spec.md)。
+
 ## 9.4 Issue #43（Codex 獨立審查，2026-11-03）與新版正式 Day0 的阻擋條件
 | 代號 | 內容 | 嚴重度／證據類別 | 狀態 |
 |---|---|---|---|

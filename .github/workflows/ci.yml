@@ -91,6 +91,10 @@ jobs:
         run: |
           set -o pipefail
           node tests/browser/v62-experiment.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/ | tee "$RUNNER_TEMP/viewer-shots/v62-experiment-results.json"
+      - name: VIS-1 garden view (P0-A2; display paths = engine at record instants, close-up, underground concept label, legend, UI ops do not change results; desktop 1440x900 + Pixel 7; screenshots + short video)
+        run: |
+          set -o pipefail
+          node tests/browser/vis1-demo.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/ | tee "$RUNNER_TEMP/viewer-shots/vis1-demo-results.json"
       - name: SAVE-2 menu, autosave and resume acceptance (real Chromium, persistent profiles; Owner flow 1-10, tests A-E, hard kill, multi-tab, rules mismatch, import as copy; browser-advanced P0-A2 save -> node cli/verify-save.ts -> node_verified; desktop + Pixel 7 screens)
         run: |
           set -o pipefail
