@@ -21,7 +21,10 @@ export interface SessionState { world_id: string; name: string; seed: number; wr
 export class ExperimentSession {
   readonly client: ExperimentWorkerClient;
   readonly store: ExperimentSaveStore;
-  private rtInfo = new Map<WorldKind, RuntimeInfo>();
+  /** runtime info per world kind (a settled or in-flight probe) */
+  private rtInfo = new Map<WorldKind, Promise<RuntimeInfo>>();
+  /** probes run strictly one after another on the single Worker (see runtimeInfo) */
+  private probeQueue: Promise<unknown> = Promise.resolve();
   current: SessionState | null = null;
   private lock: WriterLock | null = null;
   autosave: AutosaveController | null = null;
@@ -39,16 +42,25 @@ export class ExperimentSession {
   constructor(client: ExperimentWorkerClient, store: ExperimentSaveStore) { this.client = client; this.store = store; }
 
   /** What this Worker build expects of a snapshot of one world kind. Read from a throw-away world the Worker creates
-   *  and that is never saved or shown (the protocol has no separate info command). */
-  async runtimeInfo(kind: WorldKind = DEFAULT_WORLD_KIND): Promise<RuntimeInfo> {
+   *  and that is never saved or shown (the protocol has no separate info command).
+   *  A probe is two commands (init, then snapshot) on the ONE Worker, which holds one world: probes of different kinds
+   *  must never overlap, or the second init replaces the first probe world before its snapshot is taken and both kinds
+   *  read the world created last (a saved world of the other kind then showed 規則不同 in a fresh page's list). So probes
+   *  run one at a time (a queue) and each kind is probed at most once (the in-flight promise is shared). */
+  runtimeInfo(kind: WorldKind = DEFAULT_WORLD_KIND): Promise<RuntimeInfo> {
     const have = this.rtInfo.get(kind); if (have) return have;
+    const p = this.probeQueue.then(() => this.probe(kind));
+    this.probeQueue = p.catch(() => undefined);
+    this.rtInfo.set(kind, p);
+    p.catch(() => { if (this.rtInfo.get(kind) === p) this.rtInfo.delete(kind); }); // a failed probe may be retried
+    return p;
+  }
+  private async probe(kind: WorldKind): Promise<RuntimeInfo> {
     await this.client.init('exp-runtime-probe', 0, kind);
     const r = await this.client.snapshot();
     const s = (r as { snapshot?: { rules_fingerprint: string; engine_version: string; schema_version: number } }).snapshot;
     if (!s) throw new Error('the Worker did not return a snapshot');
-    const rt = { rules_fingerprint: s.rules_fingerprint, engine_version: s.engine_version, schema_version: s.schema_version };
-    this.rtInfo.set(kind, rt);
-    return rt;
+    return { rules_fingerprint: s.rules_fingerprint, engine_version: s.engine_version, schema_version: s.schema_version };
   }
   /** the runtime info a stored world is checked against: the kind whose engine version the save names (a save with
    *  an unknown engine version is checked against the default kind and shows as a rules mismatch) */
