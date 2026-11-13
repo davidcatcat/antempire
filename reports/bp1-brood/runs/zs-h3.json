@@ -1,0 +1,4792 @@
+{
+ "variant": "zs-h3",
+ "group": "zero_supply",
+ "label": "零供給：H3 累積未付維持量 ≥ 0.1 × 成蟲蛋白",
+ "config_sha256": "27ed758669f3cf79f028f82b4778520ef5523f921b7432919d5e31a52d6835e3",
+ "config": {
+  "schema": "antempire.p0a2-bp1.config.v1",
+  "version": "p0a2-bp1/1",
+  "physiology": "p0a2-bp1-physiology/1",
+  "variant": "zs-h3",
+  "group": "zero_supply",
+  "label": "零供給：H3 累積未付維持量 ≥ 0.1 × 成蟲蛋白",
+  "status": "隔離候選；門檻取敏感度下端",
+  "candidate_file_sha256": "a90a33dce2c8a8015532c1fb919f0e3d83dc995bac1b0ea1a60c85d5b1c6b767",
+  "variants_file_sha256": "7c860ef0757140bf559f64d2db9269a47fa07c17ee9fb616bc5d514922b66641",
+  "choices": {
+   "temperature_model": "linear_dd_A",
+   "nutrition_gate": "N-d",
+   "protein_catabolism": false,
+   "maintenance_mass": "actual",
+   "hazard_family": "H3",
+   "hazard_recovery": "retain",
+   "variance_model": "S0",
+   "solid_protein_enabled": false,
+   "solid_protein_instars": [
+    "L3"
+   ],
+   "init_stage": "L1"
+  },
+  "values": {
+   "nest_temp_c": 28,
+   "sugar_bridge_mg_per_portion": "0.0162",
+   "liquid_protein_mg_per_portion": null,
+   "h1_tau_d": null,
+   "h2_lambda_d": null,
+   "h2_k": null,
+   "h3_debt_fraction": 0.1,
+   "cv_egg": null,
+   "cv_larva": null,
+   "cv_pupa": null,
+   "protein_assim_solid": null,
+   "step_ms": 60000
+  },
+  "candidate_values": {
+   "dev_d28_egg": 7.69,
+   "dev_d28_l1": 1.85,
+   "dev_d28_l2": 5.52,
+   "dev_d28_l3": 6.07,
+   "dev_d28_prepupa": 2.55,
+   "dev_d28_pupa": 5.05,
+   "temp_ld_t0_egg_c": 16.99,
+   "temp_ld_t0_larva_c": 13.27,
+   "temp_ld_t0_pupa_c": 18.84,
+   "temp_q10_egg": 4.44,
+   "temp_q10_larva": 2.58,
+   "temp_q10_pupa": 6.7,
+   "mass_adult_minor_dry_ug": 80,
+   "mass_final_larva_fresh_mg": 0.3,
+   "mass_dyar_ratio": 2.7,
+   "comp_protein_fraction_dry": 0.5,
+   "protein_metamorphic_loss": 0.1,
+   "protein_assim_liquid": 0.85,
+   "protein_net_retention": 0.7,
+   "maint_o2_25c": 0.291,
+   "maint_pupa_ratio": 0.78,
+   "maint_q10": 2,
+   "o2_mg_per_ml": 1.429,
+   "sucrose_per_o2": 0.8915,
+   "growth_energy_per_protein": 0.5,
+   "sugar_assim": 0.95,
+   "abs_margin": 2,
+   "temp_ld_b_t0_egg_c": 17.74,
+   "temp_ld_b_t0_larva_c": 13.84,
+   "temp_ld_b_t0_pupa_c": 19.56
+  },
+  "null_rules": {
+   "protein_hatch_fraction": "null → 0（需求上界；設計 §6）",
+   "maint_l1_multiplier": "null → 1（非本種齡期效應不套用；設計 §6）"
+  },
+  "assumption": true,
+  "official": false
+ },
+ "seeds": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20
+ ],
+ "days": 35,
+ "scenario": "taichung-march-ref",
+ "official": false,
+ "label_zh": "研究候選（隔離、預設關閉；非正式實驗世界）",
+ "runs": [
+  {
+   "seed": 1,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 0,
+    "used": 0,
+    "initial": 0,
+    "produced": 0,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 0,
+   "log_sha256": "adedc11c9443a429fb435664fe1e5b2232f2ed69ff2757f9622339d1c52262b3",
+   "state_sha256": "219782fccd55b51e047ae1a4769a9031ef9baa48c7883a9495e0960503e70b93",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l02",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l03",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l04",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l05",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l06",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l07",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l08",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    }
+   ]
+  },
+  {
+   "seed": 2,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 0,
+    "used": 0,
+    "initial": 0,
+    "produced": 0,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 0,
+   "log_sha256": "5cb406b3ae9e6ee205632e6449163668b908e3a1ef1bd368113e8ae1c9caac11",
+   "state_sha256": "192da5e06f62e7afb5e33bc0a8f3e64ee17b1c325f82f43900e3c6d005c045f0",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l02",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l03",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l04",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l05",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l06",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l07",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l08",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    }
+   ]
+  },
+  {
+   "seed": 3,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 0,
+    "used": 0,
+    "initial": 0,
+    "produced": 0,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 0,
+   "log_sha256": "97e52d6e11e688e2f5672157f3c94991d3b6d51bf781ab0c86ab61cc82a4f16c",
+   "state_sha256": "fe8cdafb53cb9c909094a6f19e1eda4d8587b0d5c29c298adb04a02444d8d964",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l02",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l03",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l04",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l05",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l06",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l07",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l08",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    }
+   ]
+  },
+  {
+   "seed": 4,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 0,
+    "used": 0,
+    "initial": 0,
+    "produced": 0,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 0,
+   "log_sha256": "487587f404eda93e0706363b3fdc9df37d5dbe4bb47998b8ffe93794339d8e76",
+   "state_sha256": "7aad92da707296c3746f8cd0b294a59d378db331c2aa263021c367561281fb3a",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l02",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l03",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l04",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l05",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l06",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l07",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l08",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    }
+   ]
+  },
+  {
+   "seed": 5,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 0,
+    "used": 0,
+    "initial": 0,
+    "produced": 0,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 0,
+   "log_sha256": "854ed54763d841d894461373316efe42bd422860fe65cb972265d8cb0622abc8",
+   "state_sha256": "7a2f3b6f0d56dc837362a2ec510c9a4e2b55955fb5aa0c79f22f6efd3255ec91",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l02",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l03",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l04",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l05",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l06",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l07",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l08",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    }
+   ]
+  },
+  {
+   "seed": 6,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 0,
+    "used": 0,
+    "initial": 0,
+    "produced": 0,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 0,
+   "log_sha256": "39a7713cbc5cb43a3ad2913d165972de21d3be28a96970dcd740ef4bf6af708b",
+   "state_sha256": "c6e944283367c18558783c1551f7b7fb6638eb570be26cdd3c5ebacaaf848c15",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l02",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l03",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l04",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l05",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l06",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l07",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l08",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    }
+   ]
+  },
+  {
+   "seed": 7,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 0,
+    "used": 0,
+    "initial": 0,
+    "produced": 0,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 0,
+   "log_sha256": "6bba58b408d48b8ecdffc789448ca57f9bf21cd519488b0b4f6142d0a025426b",
+   "state_sha256": "511550276e984b4a8a2ead37e24141c1fe136eb898e08a4a3e490bf3a3858d71",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l02",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l03",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l04",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l05",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l06",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l07",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l08",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    }
+   ]
+  },
+  {
+   "seed": 8,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 0,
+    "used": 0,
+    "initial": 0,
+    "produced": 0,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 0,
+   "log_sha256": "366e4f176812a2229c86ee00bb862824577ba6776c7cca9dc6d116ea4b6f4615",
+   "state_sha256": "e122803ccfa92f1b01016c9fde971380917a462248953c41d01c9a574d8fee51",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l02",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l03",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l04",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l05",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l06",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l07",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l08",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    }
+   ]
+  },
+  {
+   "seed": 9,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 0,
+    "used": 0,
+    "initial": 0,
+    "produced": 0,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 0,
+   "log_sha256": "b3a298fc7cbbacf3dda136907f9ac042a3e0fee81c6bc8ef15bd0cef2bec3ee3",
+   "state_sha256": "bc9da874635284b163f77f0401ca39598b89f874c76fa2eb2a2872d195ac2653",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l02",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l03",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l04",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l05",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l06",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l07",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l08",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    }
+   ]
+  },
+  {
+   "seed": 10,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 0,
+    "used": 0,
+    "initial": 0,
+    "produced": 0,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 0,
+   "log_sha256": "a50f4fb53e66ad4ad947044d76d2b341f98f40a717b44b2ef4fcb1b1fcfd4630",
+   "state_sha256": "e96858df6255470956fed4bf66718598eec003ab85648dea0930522ceac5bf28",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l02",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l03",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l04",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l05",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l06",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l07",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l08",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    }
+   ]
+  },
+  {
+   "seed": 11,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 0,
+    "used": 0,
+    "initial": 0,
+    "produced": 0,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 0,
+   "log_sha256": "a9b09c88d74cf4630d1eab354758e27af9007527b1d30a5e2cf7d1abfc01167a",
+   "state_sha256": "1c11f843c5523f76d76f93dfa902a7b62b8340080a753a115e27a99fad72bf36",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l02",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l03",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l04",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l05",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l06",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l07",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l08",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    }
+   ]
+  },
+  {
+   "seed": 12,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 0,
+    "used": 0,
+    "initial": 0,
+    "produced": 0,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 0,
+   "log_sha256": "4fdee19a262b75a0653b4abb64978d349f236e25bb9e3224304cec55f851331e",
+   "state_sha256": "a426adc7ffe374ac0a207612984aacee7be2dc8f2f6fe73f2999c62fb354cb3d",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l02",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l03",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l04",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l05",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l06",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l07",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l08",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    }
+   ]
+  },
+  {
+   "seed": 13,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 0,
+    "used": 0,
+    "initial": 0,
+    "produced": 0,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 0,
+   "log_sha256": "d7d5b46c661310f5041720c582a0734a8f7850612759da93e7c62b88b8b10a69",
+   "state_sha256": "3f6020a51243d81cde22a4bed11b62aa2fcf75e7d6353b6820b694175ff68ce9",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l02",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l03",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l04",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l05",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l06",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l07",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l08",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    }
+   ]
+  },
+  {
+   "seed": 14,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 0,
+    "used": 0,
+    "initial": 0,
+    "produced": 0,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 0,
+   "log_sha256": "0c4069b1f37c4344992158d2551b2daa1f68e91ff43ffc140e17f21830c0d62a",
+   "state_sha256": "f973a60cb642d68c7f2250fcd4b299e4b108dbc00b7fb3f3005d83c32305a87b",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l02",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l03",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l04",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l05",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l06",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l07",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l08",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    }
+   ]
+  },
+  {
+   "seed": 15,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 0,
+    "used": 0,
+    "initial": 0,
+    "produced": 0,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 0,
+   "log_sha256": "e7ead7a7cf64356fa9b276f250eed9ebc10306b39498d854ab5c839ed17b065b",
+   "state_sha256": "3c679fee63e7bced43eea4fc7ccd4f8dd9a08cea8784c7010fb59a48131df632",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l02",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l03",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l04",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l05",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l06",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l07",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l08",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    }
+   ]
+  },
+  {
+   "seed": 16,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 0,
+    "used": 0,
+    "initial": 0,
+    "produced": 0,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 0,
+   "log_sha256": "c9ffa639a77a7eb76ee8612c8bcdb524ee921bdfa48c17f85b8fa7d05714865e",
+   "state_sha256": "d5ee4ce3d80a99d07ed8f56b572d65fd1c264250e884dc01ccba25b84f52ecb8",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l02",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l03",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l04",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l05",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l06",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l07",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l08",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    }
+   ]
+  },
+  {
+   "seed": 17,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 0,
+    "used": 0,
+    "initial": 0,
+    "produced": 0,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 0,
+   "log_sha256": "8503e1901ba26835b3828ba5894ccec2cc205a5d25b8f6b0a0620532b5d07912",
+   "state_sha256": "8ce82fc3a072967b017d575553a0f92690e27da5e2298446bdd3559f43f931c0",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l02",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l03",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l04",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l05",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l06",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l07",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l08",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    }
+   ]
+  },
+  {
+   "seed": 18,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 0,
+    "used": 0,
+    "initial": 0,
+    "produced": 0,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 0,
+   "log_sha256": "1aae3227a57749af2df22bdddce469154df8feb4840c04a9793d8b5dcec6dd27",
+   "state_sha256": "2d12716d2bbb4381ce0fc488b40a3c4c4e67be1b126836f5146c620761f9bbcc",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l02",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l03",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l04",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l05",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l06",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l07",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l08",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    }
+   ]
+  },
+  {
+   "seed": 19,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 0,
+    "used": 0,
+    "initial": 0,
+    "produced": 0,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 0,
+   "log_sha256": "d27ab73336374e49b7c7f3e2d621c2fd113405d16cab250be6548e3e9cdfd53c",
+   "state_sha256": "cdb824c9656afd2c8f2fe3edcd9bb237d2db5d31685de8033252a3d91c727ef8",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l02",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l03",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l04",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l05",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l06",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l07",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l08",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    }
+   ]
+  },
+  {
+   "seed": 20,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 0,
+    "used": 0,
+    "initial": 0,
+    "produced": 0,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 0,
+   "log_sha256": "f81bfd1771fc9eec499f6aed7cad5e725094546b5b196dff60f1bd6edfa05883",
+   "state_sha256": "99ffbbb4131c0ba5e09b03ccb2f8b0d8f6d17da940e12eead0f5c5fb341b29c1",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l02",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l03",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l04",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l05",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l06",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l07",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    },
+    {
+     "id": "l08",
+     "stage": "dead",
+     "stage_entry_d": {
+      "L1": 0,
+      "dead": 24.1
+     },
+     "fed_sugar_ng": 0,
+     "fed_protein_ng": 0,
+     "structure_ng": 0,
+     "reserve_sugar_ng": 0,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 0,
+     "growth_uj": 0,
+     "unmet_ng": 4000,
+     "deficit_d": 24.1,
+     "max_bout_d": 24.1,
+     "limit_d": {
+      "none": 0,
+      "P": 0,
+      "E_growth": 0,
+      "E_deficit": 24.1
+     },
+     "feeds": 0,
+     "bridged_up": 0,
+     "death": "H3: starvation hazard (research candidate)"
+    }
+   ]
+  }
+ ],
+ "seconds": 678.078
+}

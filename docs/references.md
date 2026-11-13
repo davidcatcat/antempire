@@ -960,3 +960,9 @@ R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-
 - 結論：#189 所指「Draft 2018」與 R810 為**同一篇**，書目身分**已核**。閱讀程度不變：**只讀摘要**（PubMed 摘要全文；沒有讀全文，也沒有讀圖表）。摘要沒有提供任何數值，所以 R810 仍**不提供任何數值**。
 - 摘要可支持的（定性）：觸角在追跡與探索時都高度活動；追跡時有「sinusoidal」「probing」「trail following」三種取樣模式；所有行為中左右觸角運動**反相關**；追跡時左右觸角使用有偏好；trail following 模式中兩觸角偵測路徑邊緣並導向轉彎（作者稱特化的 tropotaxis）；切除一側觸角使追跡較不準確，且剩下的觸角取樣模式改變。
 - 地位：**非本種**（*Camponotus pennsylvanicus*），只屬**跨物種候選機制**；不能當作 *Pheidole megacephala* 的實測證據。
+
+## 2026-11-13 BP-1（#222）：育幼生理隔離候選使用的既有來源（只新增，不改舊列；沒有新文獻編號）
+
+- BP-1（`prototypes/p0a2-24h/brood/`，[`docs/p0a2-brood-physiology-design.md`](p0a2-brood-physiology-design.md) §5.4）沒有引入新文獻；所用數值全部來自候選檔 `prototypes/brood-physiology/brood-physiology.candidates.json`（R94、R97、R116、R98、R136、R166、R167、R940～R944、R620、R346，各自的外推限制見設計 §1）與 `prototypes/p0a2-24h/brood/bp1-variants.json`。
+- 舊遊戲份 → 糖質量的橋接係數（0.0162／0.03／0.08812 mg 糖／份）取自 #202 稽核的候選區間（R132 本種載量、R951 **非本種** *Pogonomyrmex rugosus* 靜止代謝）與候選檔液體路線（R132 嗉囊液體載量）的交集；是遊戲假設的換算層（`assumption: true`），**不是**本種任何量測，也不是巢內交哺液濃度的估計。
+- 巢溫 21／25／28／32°C 是情境常數：28°C＝R94 飼養溫度（校準錨點）、25°C＝R167 溫度櫃、21°C＝R166 範圍中點、32°C 為超出資料範圍的高溫外推；都不是臺中巢溫。
