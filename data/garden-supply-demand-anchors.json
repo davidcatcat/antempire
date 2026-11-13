@@ -1,0 +1,125 @@
+{
+  "schema": "antempire.garden-supply-demand-anchors.v1",
+  "status": "研究稽核用的文獻錨點（#202 第 8 項）。不是引擎參數，引擎與正式推進都不讀本檔；只由 cli/reports/garden-supply-demand-audit.ts 讀取，用來把遊戲份數放到 mg 尺度上做量級比較。",
+  "use_rule": "本檔的任何數值都不得用來反推花園供給、使蟻群存活或通過測試（CLAUDE.md §7；#202 Owner 裁示第 8 項）。換算係數是候選區間，不是已確立的單位。",
+  "anchors": {
+    "minor_fresh_mass_mg": {
+      "range": [0.35, 0.541],
+      "unit": "mg 鮮重／隻",
+      "evidence_class": "this_species",
+      "species": "Pheidole megacephala",
+      "basis": "文獻支持",
+      "assumption": true,
+      "sources": ["R107", "R346"],
+      "read_level": "R107 全文（約 0.35 mg）；R346 全文（minor 0.541 mg，Hawaii 實驗室群）",
+      "extrapolation_limit": "兩個族群、兩種量法；臺中族群體重未知。只用於代謝量級推算。"
+    },
+    "minor_liquid_load_mg": {
+      "value": 0.08,
+      "unit": "mg 液體（蜂蜜）／趟",
+      "evidence_class": "this_species",
+      "species": "Pheidole megacephala",
+      "basis": "文獻支持",
+      "assumption": true,
+      "sources": ["R132"],
+      "read_level": "全文",
+      "extrapolation_limit": "喀麥隆、蜂蜜實驗的搬運量，不是嗉囊最大容量；蜂蜜不是蜜露；把它對到遊戲 crop_capacity 是本稽核的換算假設。"
+    },
+    "honey_sugar_mass_fraction": {
+      "value": 0.8,
+      "unit": "g 糖／g 蜂蜜",
+      "evidence_class": "game_assumption",
+      "basis": "一般生理學",
+      "assumption": true,
+      "sources": [],
+      "read_level": "未引用文獻：一般食品組成常識（蜂蜜約八成為糖），作為換算假設",
+      "extrapolation_limit": "R132 未報告所用蜂蜜的濃度或是否稀釋。"
+    },
+    "standard_vo2_temperature": {
+      "formula": "VO2 = 10^(a + b·T) mL O2 g^-1 h^-1",
+      "a": -1.588,
+      "b": 0.0315,
+      "unit": "mL O2 g^-1 h^-1（T 為體溫 °C）",
+      "evidence_class": "other_species_extrapolated",
+      "species": "Pogonomyrmex rugosus",
+      "basis": "文獻支持",
+      "assumption": true,
+      "sources": ["R951"],
+      "read_level": "只讀摘要",
+      "extrapolation_limit": "**非本種**（沙漠收穫蟻，作者稱其代謝低於預期）；工蟻體重遠大於本種 minor；只作量級。"
+    },
+    "standard_vo2_mass": {
+      "formula": "VO2 = c · M^e mL O2 h^-1（M 為 g）",
+      "c": 0.0462,
+      "e": 0.669,
+      "unit": "mL O2 h^-1",
+      "evidence_class": "other_species_extrapolated",
+      "species": "Pogonomyrmex rugosus",
+      "basis": "文獻支持",
+      "assumption": true,
+      "sources": ["R951"],
+      "read_level": "只讀摘要（摘要未寫此式的測定溫度）",
+      "extrapolation_limit": "**非本種**；把種內體重關係外推到 0.35～0.54 mg 是跨出原資料範圍的外推。"
+    },
+    "oxyjoule_j_per_ml_o2": {
+      "value": 20.1,
+      "unit": "J／mL O2",
+      "evidence_class": "game_assumption",
+      "basis": "一般生理學",
+      "assumption": true,
+      "sources": [],
+      "read_level": "一般呼吸熱當量（碳水化合物氧化約 20～21 J/mL O2）",
+      "extrapolation_limit": "混合基質時約 ±5%。"
+    },
+    "sugar_energy_j_per_mg": {
+      "value": 16.5,
+      "unit": "J／mg 蔗糖",
+      "evidence_class": "game_assumption",
+      "basis": "一般生理學",
+      "assumption": true,
+      "sources": [],
+      "read_level": "一般生理學：蔗糖可代謝能約 16～17 J/mg",
+      "extrapolation_limit": "只換算能量，不含消化效率。"
+    },
+    "aphid_honeydew_ug_per_aphid_h": {
+      "range": [46, 880],
+      "typical_aphis_fabae": [110, 150],
+      "unit": "µg 蜜露（鮮重）／隻／小時",
+      "evidence_class": "other_species_extrapolated",
+      "species": "Metopeurum fuscoviride、Brachycaudus cardui、Aphis fabae、Macrosiphoniella tanacetaria（R950）；Aphis fabae 兩亞種（R952）",
+      "basis": "文獻支持",
+      "assumption": true,
+      "sources": ["R950", "R952"],
+      "read_level": "經摘要工具（兩篇都未讀全文）",
+      "extrapolation_limit": "**非本種、非本花園**：歐洲溫帶寄主、*Lasius niger* 照護；臺中花園的半翅目種類、每群隻數、晝夜分泌節律都未知；蜜露是鮮重不是糖重。"
+    },
+    "honeydew_sugar_mass_fraction": {
+      "range": [0.05, 0.25],
+      "value": null,
+      "unit": "g 糖／g 蜜露",
+      "evidence_class": "game_assumption",
+      "basis": "遊戲假設",
+      "assumption": true,
+      "sources": [],
+      "read_level": "未找到可用的本花園半翅目資料；區間只作敏感度，不是文獻值",
+      "extrapolation_limit": "R950 指出糖濃度依蚜蟲種類而異（未讀到數值）。"
+    },
+    "honeydew_secretion_hours_per_day": {
+      "range": [12, 24],
+      "value": null,
+      "unit": "h／日",
+      "evidence_class": "game_assumption",
+      "basis": "遊戲假設",
+      "assumption": true,
+      "sources": [],
+      "read_level": "R950／R952 是每小時速率；換成每日需要晝夜節律，沒有資料",
+      "extrapolation_limit": "只作敏感度。"
+    }
+  },
+  "qualitative_sources": {
+    "R953": "Zhou et al. 2013（*Phenacoccus solenopsis*，**非本種**）：粉介殼蟲蜜露量依寄主植物（含朱槿 *Hibiscus rosa-sinensis*）與齡期不同；只讀摘要，未讀到可用的每隻每日數值。",
+    "R183": "既有：粉介殼蟲蜜露量隨溫度增加（Zhou et al. 2017，非本種）；全文未列數值（只在圖中）。",
+    "R954": "Helms & Vinson 2008（*Solenopsis invicta*，**非本種**）：可取得半翅目蜜露的群比只有無限獵物的群大約 50%；摘要稱蜜露單獨不足以支持群體成長。只支持「糖與蛋白兩條供給都要建模」的方向。",
+    "R955": "Tew et al. 2021（英國四城市，**非本地**）：住宅花園是都市花蜜糖的主要來源（城市尺度約 85%），花蜜量以「花朵數 × 每朵每日糖量」估計；只讀摘要與新聞稿，未讀到每平方公尺每日的數值。"
+  }
+}

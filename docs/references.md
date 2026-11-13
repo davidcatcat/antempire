@@ -870,3 +870,18 @@ R102（Saund & Friedman 2023，DOI 10.1016/j.cogsys.2023.02.005）補充：2026-
 - **R97**（Wills et al. 2014）2026-11-12 原文 PDF 回 503，未重讀；沿用既有全文紀錄（大工蟻比例 0.06～0.25）。
 - **R136**（Chang 1985）：2026-11-12 網頁檢索摘要出現「6 重複平均每巢 30 卵、9 幼蟲、2 蛹、12 小工蟻」一句；ScholarSpace 掃描 PDF 沒有文字層，無法確認是設置時或結束時、哪一處理的計數，**不採用**。
 - 檢索未果（2026-11-12）：本種在臺灣、華南、沖繩、香港的婚飛／分巢季節，與巢內蟻后數的野外計數。
+
+## 2026-11-13 花園供給 vs 蟻群消耗稽核（R950–R955；#202 第 8 項，`docs/garden-supply-demand-audit.md`）
+
+> 編號選 R950 起：origin 上其他未合併分支已用到 R893 的說明文字與 R930，為避免並行 PR 撞號，跳到 R950；R950～R955 已在 origin 所有分支（`git show <branch>:docs/references.md`）確認未被使用。**全部只讀摘要**（經搜尋工具或摘要頁），沒有讀全文；沒有據此改任何引擎參數。
+
+| 編號 | 文獻 | 讀取程度 | 物種／地點 | 用到的內容 | 外推限制 |
+|---|---|---|---|---|---|
+| R950 | Völkl W, Woodring J, Fischer M, Lorenz MW, Hoffmann KH (1999) Ant-aphid mutualisms: the impact of honeydew production and honeydew sugar composition on ant preferences. *Oecologia* 118:483–491. DOI 10.1007/s004420050751 | 只讀摘要（經搜尋工具；書目經 Bayreuth eref 核對） | **非本種**：四種蚜蟲（同一寄主 *Tanacetum vulgare*），照護蟻 *Lasius niger*；德國 | 每隻每小時蜜露：*Metopeurum fuscoviride* 880 µg、*Brachycaudus cardui* 223 µg、*Aphis fabae* 133 µg、*Macrosiphoniella tanacetaria* 46 µg；螞蟻偏好與產量及糖組成相符 | 溫帶寄主；蜜露鮮重不是糖重（糖濃度數值未讀到）；不知晝夜節律；不是本花園的半翅目 |
+| R951 | Lighton JRB, Bartholomew GA (1988) Standard energy metabolism of a desert harvester ant, *Pogonomyrmex rugosus*: effects of temperature, body mass, group size, and humidity. *PNAS* 85:4765–4769. DOI 10.1073/pnas.85.13.4765 | 只讀摘要（PMC 摘要頁） | **非本種**：*Pogonomyrmex rugosus*（沙漠收穫蟻），實驗室 | VO2 = 10^(−1.588 + 0.0315T) mL g⁻¹ h⁻¹（T 體溫 °C）；VO2 = 0.0462 M^0.669 mL h⁻¹（M 為 g）；與群大小無關；作者稱代謝低於預期 | 體型遠大於本種 minor；摘要未寫體重式的溫度；只用於量級推算，不得當本種參數 |
+| R952 | Fischer MK, Völkl W, Hoffmann KH (2005) Honeydew production and honeydew sugar composition of polyphagous black bean aphid, *Aphis fabae* (Hemiptera: Aphididae) on various host plants and implications for ant-attendance. *Eur. J. Entomol.* 102:155–160. DOI 10.14411/eje.2005.025 | 只讀摘要（EJE 網頁） | **非本種**：*Aphis fabae* 兩亞種、多種寄主；歐洲 | 在 *Tanacetum vulgare* 約 110 µg／隻／h（約為一年生寄主的兩倍）；在 *Cirsium arvense* 約 150 µg／隻／h | 同 R950；寄主不同產量差兩倍，表示「每群固定份數」忽略寄主差異 |
+| R953 | Zhou A, Lu Y, Zeng L, Xu Y, Liang G (2013) Effect of host plants on honeydew production of an invasive mealybug, *Phenacoccus solenopsis* (Hemiptera: Pseudococcidae). *J. Insect Behav.* 26:191–199. DOI 10.1007/s10905-012-9351-7 | 只讀摘要（經搜尋工具） | **非本種**：扶桑綿粉介殼蟲；寄主番茄、朱槿 *Hibiscus rosa-sinensis*、棉 | 24 h 蜜露量依寄主與齡期不同（番茄最多）；一、二齡無差異，三齡與成蟲有差異 | 摘要沒有可用的每隻每日數值（搜尋工具轉述的「3085.3～572.0 µg」來源段落不明，**不採用**）；不是本花園的確認組合 |
+| R954 | Helms KR, Vinson SB (2008) Plant resources and colony growth in an invasive ant: the importance of honeydew-producing Hemiptera in carbohydrate transfer across trophic levels. *Environ. Entomol.* 37:487–493 | 只讀摘要與新聞稿（經搜尋工具） | **非本種**：*Solenopsis invicta*；美國 | 能取得有半翅目寄主植物的群，比只有無限昆蟲獵物的群大約 50%；作者認為蜜露單獨不足以支持群成長；新聞稿稱約 32% 的群每日能量來自 *Antonina graminis* | 只支持「糖與蛋白兩條供給都要有、各自的生態來源」的方向；百分比不可搬用 |
+| R955 | Tew NE, Memmott J, Vaughan IP, Bird S, Stone GN, Potts SG, Baldock KCR (2021) Quantifying nectar production by flowering plants in urban and rural landscapes. *J. Ecol.* 109:1747–1757. DOI 10.1111/1365-2745.13598 | 只讀摘要與新聞稿（全文 PDF 回 403） | **非本地**：英國四城市、536 個植物分類群 | 住宅花園每單位面積花蜜糖最多，約占城市尺度花蜜的 85%；花蜜量以花朵數 × 每朵花蜜糖產量估計 | 溫帶英國；沒有讀到每 m² 每日的數值；只支持「花蜜供給應由花朵數與每朵產量構成」的模型結構 |
+
+- 檢索未果（2026-11-13）：本種小工蟻每日糖或蛋白攝取量（mg）、本種代謝率；臺灣或亞熱帶都市花園地表節肢動物生物量或周轉率（只找到豐度與多樣性研究）；朱槿等花園植物每朵每日花蜜糖量的可引用數值。候選待讀全文：Vogt & Appel (1999) *J. Insect Physiol.* 45:655–666（紅火蟻標準代謝率，含 17 種螞蟻比較；本輪只看到摘要轉述，沒有數值，**不編號**）。
