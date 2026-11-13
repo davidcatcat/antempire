@@ -1,0 +1,86 @@
+{
+ "schema": "antempire.event-chain-vectors.v1",
+ "algo": "antempire.event-chain.v1",
+ "definition": "genesis = sha256(utf8(\"antempire.event-chain.v1\\n\" + canonicalJson({world_kind, world_id, seed, rules_fingerprint}))); head_k+1 = sha256(utf8(head_k + \"\\n\" + canonicalJson(event_k))); lower-case hex; canonicalJson as canonical-vectors.v1.json",
+ "note": "Generated from the first three events of ExperimentWorld.create(\"exp-vector\", 1) (payload schema v2). Checked against node:crypto by tests/save-verify.test.ts.",
+ "context": {
+  "world_kind": "synthetic-v1",
+  "world_id": "exp-vector",
+  "seed": 1,
+  "rules_fingerprint": "3b647996b452140ca51dfe43ea59d7271b3aa92d61d13e4d931d49557a0750a1"
+ },
+ "genesis": "e35ec128aba15b363ba413a832ca7c968e9732d16e848fbc893af223e2d664d3",
+ "events": [
+  {
+   "event_id": "env_day:d0",
+   "kind": "env_day",
+   "t_sim": 0,
+   "exact": {
+    "day": 0,
+    "us": 0,
+    "us_lo": 0
+   },
+   "round": 0,
+   "world_id": "exp-vector",
+   "seed": 1,
+   "rules_fingerprint": "3b647996b452140ca51dfe43ea59d7271b3aa92d61d13e4d931d49557a0750a1",
+   "engine_version": "experiment-world-runtime/2",
+   "schema_version": 2,
+   "official": false,
+   "label": "非正式實驗世界／不屬於正式遊戲歷史",
+   "entity": null,
+   "data": {
+    "day": 0,
+    "date": "2026-03-26",
+    "light": "night",
+    "light_times": {
+     "date": "2026-03-26",
+     "civil_dawn": 333.1451900953158,
+     "sunrise": 355.8373314018007,
+     "solar_noon": 723.173989042116,
+     "sunset": 1090.8702489641971,
+     "civil_dusk": 1113.591093584072
+    },
+    "cause": {
+     "cause": null,
+     "day": 0
+    }
+   },
+   "rng": null,
+   "seq": 0
+  },
+  {
+   "event_id": "env_hour:d0.h0",
+   "kind": "env_hour",
+   "t_sim": 0,
+   "exact": {
+    "day": 0,
+    "us": 0,
+    "us_lo": 0
+   },
+   "round": 0,
+   "world_id": "exp-vector",
+   "seed": 1,
+   "rules_fingerprint": "3b647996b452140ca51dfe43ea59d7271b3aa92d61d13e4d931d49557a0750a1",
+   "engine_version": "experiment-world-runtime/2",
+   "schema_version": 2,
+   "official": false,
+   "label": "非正式實驗世界／不屬於正式遊戲歷史",
+   "entity": null,
+   "data": {
+    "day": 0,
+    "hour": 0,
+    "temperature_c": 19,
+    "synthetic": true,
+    "assumption": true,
+    "basis": "遊戲假設"
+   },
+   "rng": null,
+   "seq": 1
+  }
+ ],
+ "heads": [
+  "82e56392eee3f28b3bbc20c3b8dc8d886392f19167a3a58ba9a57708d73d7014",
+  "dc7a2764e93418775232e1e7e200b610b9c93a8e951a67b956d82e924975ada3"
+ ]
+}

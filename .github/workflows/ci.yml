@@ -81,6 +81,8 @@ jobs:
         run: node tests/browser/web-game.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/
       - name: Experiment Worker runtime (P0-A2 PR 2; Node vs Chromium Worker, replay, snapshot/restore, pacing, demo page; non-official)
         run: node tests/browser/worker-runtime.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/
+      - name: Deterministic exp / log / pow / sin sweep (rules update detmath-exp; Node vs Chromium page vs Chromium module Worker, bit for bit, no tolerance)
+        run: node tests/browser/detmath-xenv.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/
       - name: V6 replay navigation E2E (next-activity jump, walk marks, day-summary mode; desktop 1280x800; 400px phone touch)
         run: node tests/browser/web-replay-ux.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/
       - name: SAVE-1 experiment-world save store in Chromium (synthetic payloads; atomicity, recovery, kill, locks, isolation, browser restart, migrations, export/import, save cost)
@@ -89,7 +91,7 @@ jobs:
         run: |
           set -o pipefail
           node tests/browser/v62-experiment.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/ | tee "$RUNNER_TEMP/viewer-shots/v62-experiment-results.json"
-      - name: SAVE-2 menu, autosave and resume acceptance (real Chromium, persistent profiles; Owner flow 1-10, tests A-E, hard kill, multi-tab, rules mismatch, import as copy; desktop + Pixel 7 screens)
+      - name: SAVE-2 menu, autosave and resume acceptance (real Chromium, persistent profiles; Owner flow 1-10, tests A-E, hard kill, multi-tab, rules mismatch, import as copy; browser-advanced P0-A2 save -> node cli/verify-save.ts -> node_verified; desktop + Pixel 7 screens)
         run: |
           set -o pipefail
           node tests/browser/save2-acceptance.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/ | tee "$RUNNER_TEMP/viewer-shots/save2-acceptance-results.json"
