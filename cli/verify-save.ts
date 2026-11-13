@@ -43,13 +43,22 @@ export interface Report {
   note: string;
   verifier: { tool: 'cli/verify-save.ts'; node: string; platform: string; arch: string; world_kinds: { id: string; engine_version: string; schema_version: number; rules_fingerprint: string }[] };
   input: { sha256: string; bytes: number; container: 'export' | 'snapshot' | null };
-  save: { world_kind: string | null; world_id: string | null; seed: number | null; t_sim: number | null; seq: number | null; rules_fingerprint: string | null; engine_version: string | null; schema_version: number | null; payload_sha256: string | null; chain_head: string | null; chain_count: number | null };
+  save: { world_kind: string | null; world_id: string | null; seed: number | null; t_sim: number | null; seq: number | null; rules_fingerprint: string | null; engine_version: string | null; schema_version: number | null; payload_sha256: string | null; chain_head: string | null; chain_count: number | null;
+    /** save_meta.not_simulated as the file states it (Owner #212 Q2 a; null when the save has none, e.g. the synthetic world). The
+     *  same core's restore refuses a P0-A2 save whose list differs from this build's (META_MISMATCH). */
+    not_simulated: { format: string; items: { row: string; status: string; label_zh: string }[] } | null };
   recomputed: { from: string; events: number; now: unknown; chain_head: string; chain_count: number; payload_sha256: string; differing_fields: string[] } | null;
   checks: Check[];
   diagnostics: { code: string; message: string }[];
 }
 
 const isObj = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
+/** the 「尚未模擬」 list a save states (a copy of well-formed data only; anything else is reported as null) */
+function notSimulatedClaim(x: unknown): Report['save']['not_simulated'] {
+  if (!isObj(x) || typeof x.format !== 'string' || !Array.isArray(x.items)) return null;
+  const items = x.items.filter((i): i is Record<string, unknown> => isObj(i) && typeof i.row === 'string' && typeof i.status === 'string' && typeof i.label_zh === 'string');
+  return items.length === x.items.length ? { format: x.format, items: items.map((i) => ({ row: i.row as string, status: i.status as string, label_zh: i.label_zh as string })) } : null;
+}
 const keysOf = (o: Record<string, unknown>) => Object.keys(o).sort().join();
 
 /** an empty report (status invalid until the checks pass) */
@@ -59,7 +68,7 @@ export function baseReport(sha256: string, bytes: number): Report {
     note: '本報告未簽章：任何人可用同一版本的 cli/verify-save.ts 重跑重現。檔案中的雜湊只是聲明；只有 status = node_verified 表示 Node 由受信任的初始條件以同一核心重算並一致。',
     verifier: { tool: 'cli/verify-save.ts', node: process.version, platform: process.platform, arch: process.arch, world_kinds: Object.values(WORLD_KINDS).map((k) => ({ id: k.id, engine_version: k.engine_version, schema_version: k.schema_version, rules_fingerprint: k.rules_fingerprint })) },
     input: { sha256, bytes, container: null },
-    save: { world_kind: null, world_id: null, seed: null, t_sim: null, seq: null, rules_fingerprint: null, engine_version: null, schema_version: null, payload_sha256: null, chain_head: null, chain_count: null },
+    save: { world_kind: null, world_id: null, seed: null, t_sim: null, seq: null, rules_fingerprint: null, engine_version: null, schema_version: null, payload_sha256: null, chain_head: null, chain_count: null, not_simulated: null },
     recomputed: null, checks: [], diagnostics: [],
   };
 }
@@ -104,6 +113,7 @@ export function verifySaveText(text: string, opts: { recompute?: boolean } = {})
     rules_fingerprint: typeof env.rules_fingerprint === 'string' ? env.rules_fingerprint : null, engine_version: typeof env.engine_version === 'string' ? env.engine_version : null,
     schema_version: typeof env.schema_version === 'number' ? env.schema_version : null, payload_sha256: ph,
     chain_head: chain && typeof chain.head === 'string' ? chain.head : null, chain_count: chain && typeof chain.count === 'number' ? chain.count : null,
+    not_simulated: notSimulatedClaim(meta?.not_simulated),
   };
   for (const k of ['world_id', 'seed', 'rules_fingerprint', 'engine_version', 'schema_version', 't_sim', 'seq'] as const)
     if (!check(`header.${k}`, payload[k] === env[k], `${k}: header = payload`)) return fail('HEADER_MISMATCH', `${k} of the header and the payload differ`);

@@ -12,6 +12,9 @@
  *  5. isolation (static): the official pages (index.html → game.ts, analysis.html → main.ts) never reach the Worker
  *     client or the experiment page; the experiment page's runtime graph has no fetch / XHR, names no web/data,
  *     saves/ or journal/ path, imports only viewer modules, and the simulation is not run on the main thread.
+ *     「尚未模擬」 (Owner #212 Q2 a, matrix M43): the page has the button and panel, fills them only from the Worker
+ *     snapshot's save_meta.not_simulated (no list entry appears in the viewer sources), and the snapshot reads it
+ *     takes do not change results (section 4).
  *  6. saves/ and journal/ unchanged.
  */
 import assert from 'node:assert/strict';
@@ -25,6 +28,7 @@ import { DEFAULT_SPEED, DISPLAY_LEAD_S, EventDigest, V62_SPEEDS, antInputs, cloc
 import type { EventMsg, FrameMsg } from '../web/src/experimental/worker-protocol.ts';
 import type { P0a2FrameMsg } from '../web/src/experimental/worker-protocol.ts';
 import { P0a2ExperimentWorld } from '../prototypes/continuous-world/worker/p0a2-world.ts';
+import { P0A2_NOT_SIMULATED } from '../prototypes/continuous-world/worker/not-simulated.ts';
 import { P0A2_STATUS_LABEL, P0_LIGHT_LABEL, SOURCE_BEARING_RAD, insetSlots, layoutOf, p0AntInputs, p0Light, p0Pose, p0Poses, stateCounts } from '../web/src/v62-p0a2-model.ts';
 
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
@@ -153,6 +157,8 @@ for (const [k, v] of Object.entries(variants)) ok(v.digest === plain.digest && v
     speeds_pause_follow: p0session((send, tick) => { send({ type: 'start' }); for (let i = 0; i < 40; i++) tick(16); send({ type: 'follow', id: 'w003' }); send({ type: 'set_speed', speed: 3600 }); for (let i = 0; i < 300; i++) tick(17 + (i % 5)); send({ type: 'pause' }); send({ type: 'follow', id: null }); send({ type: 'resume' }); send({ type: 'set_speed', speed: 600 }); for (let i = 0; i < 100; i++) tick(33); }, PT),
     fps_cap_like_ticks: p0session((send, tick) => { send({ type: 'set_speed', speed: 60 }); send({ type: 'start' }); for (let i = 0; i < 300; i++) tick(i % 3 === 0 ? 66 : 16); send({ type: 'set_speed', speed: 3600 }); for (let i = 0; i < 50; i++) tick(250); }, PT),
     stepwise: p0session((send) => { for (let t = 1000; t < PT; t += 977.25) send({ type: 'step_until', t_sim: t }); }, PT),
+    // the page reads the 「尚未模擬」 list from a snapshot when it enters a world (Owner #212 Q2 a): a pure read
+    disclosure_snapshot_reads: p0session((send, tick) => { send({ type: 'set_speed', speed: 1 }); send({ type: 'snapshot' }); send({ type: 'start' }); for (let i = 0; i < 30; i++) tick(16); send({ type: 'pause' }); send({ type: 'snapshot' }); send({ type: 'step_until', t_sim: 7200 }); send({ type: 'snapshot' }); }, PT),
   };
   for (const [k, v] of Object.entries(p0var)) ok(v.digest === p0plain.digest && v.count === p0plain.count && v.log === p0plain.log && v.hash === p0plain.hash && v.gaps === 0, `P0-A2: UI operations (${k}) do not change the event stream, the event-log hash or the full state at the same t_sim`);
 }
@@ -173,7 +179,15 @@ for (const [page, script] of [['web/index.html', 'web/src/game.ts'], ['web/analy
 const exHtml = fs.readFileSync(path.join(REPO_ROOT, 'web/experiment.html'), 'utf8');
 ok(/<script type="module" src="dist\/v62\.js"><\/script>/.test(exHtml) && (exHtml.match(/<script/g) ?? []).length === 1, 'experiment.html loads only dist/v62.js');
 ok(exHtml.includes('非正式實驗世界／不屬於正式遊戲歷史') && exHtml.includes('>非正式<') && exHtml.includes('顯示插值') && exHtml.includes('示意'), 'experiment page is labelled non-official and names the three data classes');
+// Owner #212 Q2 a (matrix M43): a visible 「尚未模擬」 button and panel, filled ONLY from the world's save metadata
+ok(/<button id="nsBtn"[^>]*aria-controls="notSim"/.test(exHtml) && exHtml.includes('<div id="notSim"'), 'experiment page has the 「尚未模擬」 button and panel');
+const v62src = fs.readFileSync(path.join(REPO_ROOT, 'web/src/v62.ts'), 'utf8');
+ok(/notSimulatedOf\(snap\.snapshot\)/.test(v62src) && /const snap = await client\.snapshot\(\)/.test(v62src), 'the page reads the list from the Worker snapshot (save_meta.not_simulated)');
 const vg = graph('web/src/v62.ts');
+{
+  const viewerText = vg.map((f) => fs.readFileSync(path.join(REPO_ROOT, f), 'utf8')).join('\n') + exHtml;
+  ok(P0A2_NOT_SIMULATED.items.every((i) => !viewerText.includes(i.label_zh)), 'the viewer keeps no copy of the list (no list entry appears in its sources): it shows only what a save carries');
+}
 ok(vg.includes('web/src/experimental/worker-client.ts') && vg.includes('web/src/render-canvas.ts'), 'experiment page uses the Worker client and the layered renderer');
 for (const f of vg) {
   const code = strip(fs.readFileSync(path.join(REPO_ROOT, f), 'utf8'));
