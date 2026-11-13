@@ -21,7 +21,8 @@ CHEM-2 基準（PR #205 分支的 `prototypes/chem2/bench.ts`）在本預註冊�
 
 λ = 0 列（任何 Q10、天氣）與 Q10 關閉列（涼／熱）在數學上相同；**仍須逐格列出**，標「與某格逐位元相同」並以實際計算驗證，不得省略。
 
-> 註：#205 現行基準的列印為了簡潔把這些等價格摺疊成一列。依本預註冊，主分析報告器必須展開為 48 格（TODO：CHEM-2 合併到 main 後，於該報告器補上展開並由測試檢查）。
+> 註：#205 現行基準的列印為了簡潔把這些等價格摺疊成一列。依本預註冊，主分析報告器必須展開為 48 格。
+> **已完成（2026-11-13）**：主分析報告器 [`prototypes/chem2-prereg/main-analysis.ts`](../prototypes/chem2-prereg/main-analysis.ts) 逐格展開 48 格並以實際逐位元比較標示等價格；報告見 [`reports/chem2-prereg-main/main-analysis.md`](../reports/chem2-prereg-main/main-analysis.md)（與 `.json`），結果摘要見 [`docs/chem2-sensitivity-main-results.md`](chem2-sensitivity-main-results.md)，由 `tests/chem2-prereg-main.test.ts`（BLOCKING）檢查。預註冊內容（v1 JSON，雜湊不變）未修改；本註只補上指向。
 
 ## 3. 固定設定
 
