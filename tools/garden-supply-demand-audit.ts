@@ -296,7 +296,8 @@ export function audit(root = REPO_ROOT): Any {
   const q10 = val(S, 'metabolism.q10'), refC = val(S, 'metabolism.reference_c'), f = (T: number) => Math.pow(q10, (T - refC) / 10);
   const n = (k: string) => val(S, `nutrition.${k}`);
   const route = val(W, 'routes.route_edge_minutes'), tripCost = val(S, 'foraging_trips.foraging_trip_sugar_cost') + val(S, 'activity.active_minute_sugar_cost') * (2 * route + val(S, 'activity.liquid_fill_minutes_full_crop') + val(S, 'activity.unload_minutes'));
-  const lpm = (C.fields.larvae_per_minor.min + C.fields.larvae_per_minor.max) / 2, wMin = C.fields.minor_workers.min, wMax = C.fields.minor_workers.max;
+  // larvae per minor: the candidate's pre-registered mid brood level (v2, #202 item 4; = the midpoint of the v1 range 0–0.3)
+  const lpf = C.fields.larvae_per_minor, lpm = lpf.distribution === 'fixed' ? lpf.value : (lpf.min + lpf.max) / 2, wMin = C.fields.minor_workers.min, wMax = C.fields.minor_workers.max;
   const sizes = [10, 30, Math.round(Math.sqrt(wMin * wMax)), wMax, 2000];
   const temps = [15, 20, 25, 30];
   const demand = sizes.map((N) => {

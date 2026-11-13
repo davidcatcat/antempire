@@ -1,27 +1,30 @@
 /**
- * #202 candidate Day0 founding (候選／實驗，未經 Owner 啟用批准): a budding propagule of a polygynous population.
- * Reads scenarios/day0-budding-candidate.json, validates its labels, draws a reproducible composition per seed and
- * builds the ENGINE PROJECTION (antempire.day0-founding.v1 document) that the existing Day0 initializer accepts.
+ * #202 candidate Day0 founding (候選／實驗，未經 Owner 啟用批准; NOT the #201 GO): a budding propagule of a polygynous
+ * population. Reads scenarios/day0-budding-candidate.json (schema v2, Owner #202 provisional spec of 2026-11-13),
+ * validates its labels, draws a reproducible composition per seed with the ONE deterministic sampler
+ * (engine/day0/founding-sampler.ts: fixed PRNG, sampling order and scenario checksum) and builds the ENGINE PROJECTION
+ * (antempire.day0-founding.v1 document) that the existing Day0 initializer accepts.
  *
  * The projection is NOT the candidate: the engine holds one queen and has no majors, so extra queens and all majors
  * are listed as "not simulated" — never converted into something else. Nothing here reads or writes saves/ or journal/.
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { hash32 } from '../../engine/index.ts';
+import { factorOf as samplerFactorOf, factorVariants, prepareScenario, sampleInitialConditions, DAY0_PRNG_ID, type Variant } from '../../engine/day0/founding-sampler.ts';
 import { REPO_ROOT, readJson } from './load.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any -- tagged scenario JSON
 export const CANDIDATE_FILE = 'scenarios/day0-budding-candidate.json';
-export const CANDIDATE_SCHEMA = 'antempire.day0-founding-candidate.v1';
+export const CANDIDATE_SCHEMA = 'antempire.day0-founding-candidate.v2';
 export const CANDIDATE_STATUS = '候選／實驗，未經 Owner 啟用批准';
 export const BASES = ['文獻支持', '一般生理學', '遊戲假設'] as const;
 export const DISTRIBUTIONS = ['uniform_int', 'log_uniform_int', 'uniform', 'fixed'] as const;
-export type Variant = 'default' | 'low' | 'high';
-/** Sensitivity factors: a factor is one field, or a group of fields switched together (brood). */
-export type Overrides = Record<string, Variant>;
+/** Sensitivity factors: a factor is one field, or a group of fields switched together (brood); value = variant name. */
+export type Overrides = Variant;
+export const BROOD_LEVELS = ['zero', 'low', 'mid', 'high'] as const;
 
-export function loadCandidate(root = REPO_ROOT): Any { return readJson<Any>(CANDIDATE_FILE, root); }
+/** The candidate as a deeply frozen canonical copy (checksum computed once; prepareScenario). */
+export function loadCandidate(root = REPO_ROOT): Any { return prepareScenario(readJson<Any>(CANDIDATE_FILE, root)); }
 
 /** Reference IDs defined in docs/references.md (table rows `| Rnnn |`). */
 export function referenceIds(root = REPO_ROOT): Set<string> {
@@ -45,54 +48,54 @@ export function validateCandidate(c: Any, refs: Set<string>): void {
     if (f.distribution !== 'fixed' && f.min > f.max) fail(k + ': min > max');
     if (f.distribution === 'log_uniform_int' && f.min <= 0) fail(k + ': log-uniform needs min > 0');
     if (typeof f.engine_representable !== 'boolean') fail(k + ': engine_representable');
+    for (const [vn, sv] of Object.entries((f.sensitivity ?? {}) as Record<string, Any>)) {
+      const g = { ...f, ...sv }, xs = g.distribution === 'fixed' ? [g.value] : [g.min, g.max];
+      if (xs.some((x) => typeof x !== 'number' || !Number.isFinite(x)) || (g.distribution !== 'fixed' && g.min > g.max)) fail(`${k}: sensitivity ${vn} numbers`);
+    }
   }
+  if (c.activation?.activated !== false || c.activation?.go_issue !== '#201') fail('activation: must be activated:false pending #201');
+  // #202 item 2: queens default 2–3 with a 1–3 sensitivity; item 1: minors 50–500 log-uniform; item 3: majors isolated
+  const q = c.fields.queens, mw = c.fields.minor_workers, mj = c.fields.major_fraction;
+  if (q?.distribution !== 'uniform_int' || q.min !== 2 || q.max !== 3 || q.sensitivity?.range_1_3?.min !== 1 || q.sensitivity?.range_1_3?.max !== 3 || q.simulation_status !== '尚未模擬') fail('queens: #202 default 2–3, sensitivity 1–3, 尚未模擬');
+  if (mw?.distribution !== 'log_uniform_int' || mw.min !== 50 || mw.max !== 500) fail('minor_workers: #202 log-uniform 50–500');
+  if (mj?.isolated !== true || mj.engine_representable !== false || mj.simulation_status !== '尚未模擬') fail('major_fraction: must be isolated and 尚未模擬');
+  // #202 item 4: zero / low / mid / high pre-registered brood scenarios, all labelled
+  const bv = c.scenario_variants?.brood;
+  if (!bv || bv.levels?.join() !== BROOD_LEVELS.join() || !BROOD_LEVELS.includes(bv.default_level) || bv.assumption !== true || !BASES.includes(bv.basis)) fail('scenario_variants.brood: zero/low/mid/high, labelled');
+  const fv = factorVariants(c), others = BROOD_LEVELS.filter((l) => l !== bv.default_level);
+  if (fv.brood?.slice().sort().join() !== [...others].sort().join()) fail('brood fields must declare every non-default brood level');
+  // #202 item 7: seed is an identifier, PRNG / order fixed
+  if (c.seed?.value !== 20261113 || c.seed.role !== 'reproducibility_identifier' || c.seed.not_picked !== true) fail('seed: 20261113 reproducibility identifier, not picked');
+  if (c.sampling?.prng?.id !== DAY0_PRNG_ID || !Array.isArray(c.sampling.order)) fail('sampling: fixed PRNG id and order');
+  if (!Array.isArray(c.owner_ruling_202?.items) || c.owner_ruling_202.items.length !== 8 || c.owner_ruling_202.items.some((i: Any) => !i.provisional || !i.before_activation || typeof i.met !== 'boolean')) fail('owner_ruling_202: eight items with provisional / before_activation / met');
+  if (!Array.isArray(c.simulation_status?.not_simulated) || c.simulation_status.label !== '尚未模擬') fail('simulation_status: 尚未模擬 list');
   for (const a of c.alternative_scenarios ?? []) for (const s of a.sources ?? []) if (!refs.has(s)) fail(`alternative ${a.id}: source ${s}`);
   const m = c.mother_nest;
-  if (m?.location !== 'outside_scene' || m.fully_separated !== true || m.simulated_exchange !== 'none' || !m.mass_balance || !m.reason) fail('mother_nest must be outside the scene, fully separated, with reason and mass balance');
-  if (c.entry_date?.assumption !== true || !BASES.includes(c.entry_date.basis) || c.entry_date.default_rule !== 'uniform_day_of_year' || !Number.isInteger(c.entry_date.year)) fail('entry_date');
-}
-
-const unit = (seed: number, key: string) => hash32(`${seed}|day0_budding_candidate|${key}`) / 4294967296;
-
-/** Range used for a field under a variant (sensitivity ranges replace min/max or value). */
-function range(f: Any, v: Variant): Any { return v === 'default' ? f : { ...f, ...(f.sensitivity?.[v] ?? {}) }; }
-
-export function draw(f: Any, u: number): number {
-  switch (f.distribution) {
-    case 'fixed': return f.value;
-    case 'uniform_int': return f.min + Math.floor(u * (f.max - f.min + 1));
-    case 'log_uniform_int': return Math.round(Math.exp(Math.log(f.min) + u * (Math.log(f.max) - Math.log(f.min))));
-    case 'uniform': return f.min + u * (f.max - f.min);
-    default: throw Error('unknown distribution ' + f.distribution);
-  }
+  if (m?.location !== 'outside_scene' || m.fully_separated !== true || m.simulated_exchange !== 'none' || !m.mass_balance || !m.reason || m.model_boundary !== true || !m.boundary_inflow) fail('mother_nest must be outside the scene, fully separated, a model boundary, with reason, mass balance and boundary inflow');
+  const e = c.entry_date;
+  if (e?.assumption !== true || !BASES.includes(e.basis) || e.rule !== 'fixed' || e.date !== '2026-11-13' || e.timezone !== 'Asia/Taipei' || !e.not_optimal_season || !Number.isInteger(e.full_year_sensitivity?.span_days)) fail('entry_date: fixed 2026-11-13 Asia/Taipei, not the optimal season, full-year sensitivity separate');
 }
 
 /** Factor name of a field for sensitivity (group if present, else the field itself). */
-export const factorOf = (c: Any, k: string): string => c.fields[k].sensitivity_group ?? k;
-export function sensitivityFactors(c: Any): string[] {
-  return [...new Set(Object.keys(c.fields).filter((k) => c.fields[k].sensitivity).map((k) => factorOf(c, k)))];
-}
+export const factorOf = samplerFactorOf;
+export function sensitivityFactors(c: Any): string[] { return Object.keys(factorVariants(c)); }
+/** Non-default variant names of a factor (e.g. brood: zero / low / high; queens: range_1_3). */
+export const variantsOf = (c: Any, factor: string): string[] => factorVariants(c)[factor] ?? [];
 
 export interface CandidateSample {
   seed: number; variant: Overrides;
   draws: Record<string, number>;
   composition: { queens: number; minor_workers: number; major_workers: number; eggs: number; larvae: number; pupae: number; carried_brood_progress: number; worker_age_days_min: number; worker_age_days_max: number; worker_crop_fill_fraction: number; stores_protein: number };
-  entry_date_default_rule: string;
+  entry_date: string; entry_timezone: string; entry_full_year_sensitivity_date: string;
+  scenario_checksum: string;
 }
 
-/** Reproducible composition for one seed. Overrides switch a factor to its low/high range; other draws are unchanged. */
+/** Reproducible composition for one seed (engine/day0/founding-sampler.ts). Overrides switch a factor to a named
+ *  variant; other draws are unchanged (common random numbers). */
 export function sampleCandidate(c: Any, seed: number, overrides: Overrides = {}): CandidateSample {
   if (!Number.isInteger(seed)) throw Error('seed must be an integer');
-  const d: Record<string, number> = {};
-  for (const [k, f] of Object.entries(c.fields as Record<string, Any>)) d[k] = draw(range(f, overrides[factorOf(c, k)] ?? 'default'), unit(seed, k));
-  const minors = d.minor_workers, fr = d.major_fraction;
-  const majors = fr >= 1 ? Infinity : Math.round((fr * minors) / (1 - fr));
-  const dayOfYear = Math.floor(unit(seed, 'entry_day') * 365), y = c.entry_date.year;
-  return {
-    seed, variant: overrides, draws: d,
-    composition: { queens: d.queens, minor_workers: minors, major_workers: majors, eggs: Math.round(d.eggs_per_minor * minors), larvae: Math.round(d.larvae_per_minor * minors), pupae: Math.round(d.pupae_per_minor * minors), carried_brood_progress: d.carried_brood_progress, worker_age_days_min: d.worker_age_days_min, worker_age_days_max: d.worker_age_days_max, worker_crop_fill_fraction: d.worker_crop_fill_fraction, stores_protein: d.stores_protein },
-    entry_date_default_rule: new Date(Date.UTC(y, 0, 1) + dayOfYear * 86400000).toISOString().slice(0, 10),
-  };
+  const ic = sampleInitialConditions(c, seed, overrides);
+  return { seed, variant: overrides, draws: ic.draws, composition: ic.composition, entry_date: ic.entry.date, entry_timezone: ic.entry.timezone, entry_full_year_sensitivity_date: ic.entry.full_year_sensitivity_date, scenario_checksum: ic.scenario.checksum };
 }
 
 const tag = (value: number, description: string) => ({ value, assumption: true, basis: '遊戲假設', description, origin: CANDIDATE_FILE + '（抽樣值；候選／實驗，未經 Owner 啟用批准）' });
