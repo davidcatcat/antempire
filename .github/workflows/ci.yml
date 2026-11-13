@@ -104,6 +104,10 @@ jobs:
         run: |
           set -o pipefail
           node tests/browser/save2-world-kinds.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/ | tee "$RUNNER_TEMP/viewer-shots/save2-world-kinds-results.json"
+      - name: Worker failure does not hang the menu (issue #224; Worker script 404 and terminate while playing; saves stay listed and exportable; non-official)
+        run: |
+          set -o pipefail
+          node tests/browser/worker-fatal.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/ | tee "$RUNNER_TEMP/viewer-shots/worker-fatal-results.json"
       - name: Assemble the static preview (page + compiled script + data + screenshots + test results + instructions)
         if: always()
         run: |

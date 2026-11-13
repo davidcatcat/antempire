@@ -7,7 +7,7 @@
  *  - "已儲存" is reported only after the store's promote transaction completed (save-store.ts).
  *  - one writer per world (Web Locks); a second tab is read-only unless it takes over ("切換到此分頁").
  */
-import { ExperimentWorkerClient } from './worker-client.ts';
+import { ExperimentWorkerClient, isWorkerClientError } from './worker-client.ts';
 import { ExperimentSaveStore, acquireWriterLock, type LoadResult, type SaveReceipt, type WorldListing, type WriterLock } from './save-store.ts';
 import { AutosaveController, errR, newWorldId, okR, seedFromInput, summaryOf, verificationOf, type Result, type RuntimeInfo, type SaveReason, type SaveUiState } from './save-format.ts';
 import { WORLD_KINDS, type WorldKind } from './worker-protocol.ts';
@@ -17,6 +17,12 @@ export const DEFAULT_WORLD_KIND: WorldKind = 'p0a2';
 
 /** verification: what this viewer may claim (Owner ruling #200): '本機可玩' or '完整性檢查通過', always with '未經 Node 驗證'. */
 export interface SessionState { world_id: string; name: string; seed: number; writer: boolean; readOnlyReason: string | null; recoveredNotice: string | null; sim_world_id: string; verification: string }
+
+/** Issue #224: the Worker failed or was terminated (its commands reject with a WorkerClientError). The message of the
+ *  failure, or null for any other error (which is re-thrown). Stored saves are never changed by such a failure. */
+export function workerFailure(e: unknown): string | null { return isWorkerClientError(e) ? `模擬 Worker 已停止（${e.message}）` : null; }
+type Reply = Awaited<ReturnType<ExperimentWorkerClient['send']>>;
+const workerErr = (e: unknown, extra = '') => { const w = workerFailure(e); if (w === null) throw e; return errR('worker_failed', `${w}${extra}`); };
 
 export class ExperimentSession {
   readonly client: ExperimentWorkerClient;
@@ -86,13 +92,16 @@ export class ExperimentSession {
     const sd = await seedFromInput(seedInput);
     if (!sd) return errR('invalid_snapshot', '種子必須是 0～4294967295 的整數，或任意文字（會轉成整數）');
     await this.leave(false);
-    await this.runtimeInfo(kind);
+    // issue #224: a failed / terminated Worker ends the attempt with worker_failed (lock released, nothing written)
+    const noWorld = '；沒有建立新世界';
+    try { await this.runtimeInfo(kind); } catch (e) { return workerErr(e, noWorld); }
     const id = newWorldId(), got = await acquireWriterLock(id, { onLost: () => this.lockLost() });
     if (got.mode !== 'writer') return errR('not_writer', got.reason);
     this.onWorldStart();
-    const ini = await this.client.init(id, sd.seed, kind);
+    let ini: Reply, snap: Reply;
+    try { ini = await this.client.init(id, sd.seed, kind); } catch (e) { got.lock.release(); return workerErr(e, noWorld); }
     if (ini.type === 'error') { got.lock.release(); return errR('invalid_snapshot', `${ini.code}: ${ini.message}`); }
-    const snap = await this.client.snapshot();
+    try { snap = await this.client.snapshot(); } catch (e) { got.lock.release(); return workerErr(e, noWorld); }
     if (snap.type !== 'snapshot') { got.lock.release(); return errR('invalid_snapshot', 'no snapshot'); }
     const r = await this.store.createWorld(got.lock, name.trim() || `實驗世界 ${new Date().toLocaleString('zh-TW')}`, snap.snapshot, summaryOf(snap.snapshot));
     if (!r.ok) { got.lock.release(); return r; }
@@ -105,7 +114,9 @@ export class ExperimentSession {
   /** Open a saved world (latest recovery point, or one manual save). A second tab gets read-only unless `steal`. */
   async open(world_id: string, opts: { steal?: boolean; readOnly?: boolean; gen?: number } = {}): Promise<Result<LoadResult & { readOnly: string | null }>> {
     await this.leave(false);
-    const rt = await this.runtimeFor((await this.store.getWorld(world_id))?.engine_version);
+    const kept = '；存檔未被修改', engine = (await this.store.getWorld(world_id))?.engine_version;
+    let rt: RuntimeInfo;
+    try { rt = await this.runtimeFor(engine); } catch (e) { return workerErr(e, kept); }
     let lock: WriterLock | null = null, readOnly: string | null = null;
     if (!opts.readOnly) {
       const got = await acquireWriterLock(world_id, { steal: opts.steal, onLost: () => this.lockLost() });
@@ -114,7 +125,8 @@ export class ExperimentSession {
     const ld = await this.store.loadLatest(world_id, rt, lock ?? undefined, opts.gen);
     if (!ld.ok) { lock?.release(); return ld; }
     this.onWorldStart();
-    const r = await this.client.restore(ld.value.envelope);
+    let r: Reply;
+    try { r = await this.client.restore(ld.value.envelope); } catch (e) { lock?.release(); return workerErr(e, kept); }
     if (r.type === 'error') { lock?.release(); return errR('invalid_snapshot', `Worker 拒絕此快照（${r.code}）：${r.message}；存檔未被修改`); }
     this.onRestored(ld.value.envelope.seq);
     this.lastLoad = { world_id, gen: ld.value.gen, t_sim: ld.value.envelope.t_sim, seq: ld.value.envelope.seq, recovered: ld.value.recovered };
@@ -141,7 +153,8 @@ export class ExperimentSession {
     // capture the lock before any await: leave() may clear this.lock while the snapshot is being taken
     const lock = this.lock;
     if (!this.current || !lock || !this.current.writer) return errR('not_writer', this.current?.readOnlyReason ?? '沒有開啟的世界');
-    const snap = await this.client.snapshot();
+    let snap: Reply;
+    try { snap = await this.client.snapshot(); } catch (e) { return workerErr(e); }
     if (snap.type !== 'snapshot') return errR('invalid_snapshot', snap.type === 'error' ? `${snap.code}: ${snap.message}` : 'no snapshot');
     const r = await this.store.saveSnapshot(lock, snap.snapshot, summaryOf(snap.snapshot), reason === 'manual' ? 'manual' : 'auto');
     if (r.ok) this.lastReceipt = r.value;
@@ -153,7 +166,8 @@ export class ExperimentSession {
   async leave(save = true): Promise<Result<unknown> | null> {
     if (!this.current) return null;
     let r: Result<unknown> | null = null;
-    const p = await this.client.pause(); void p; // NOT_RUNNING is fine
+    // NOT_RUNNING is fine; a failed Worker (issue #224) is too: the save below then reports worker_failed and the lock is released
+    try { await this.client.pause(); } catch (e) { if (workerFailure(e) === null) throw e; }
     if (save && this.current.writer) r = await (this.autosave?.request('menu') ?? Promise.resolve(null));
     // never release the writer lock while a save (in flight or queued) can still write with it
     await this.autosave?.settled();

@@ -6,7 +6,7 @@
  */
 import { ExperimentSaveStore, type WorldListing } from './experimental/save-store.ts';
 import { MAX_IMPORT_BYTES, simDayTime, verificationOf } from './experimental/save-format.ts';
-import type { ExperimentSession } from './experimental/session.ts';
+import { workerFailure, type ExperimentSession } from './experimental/session.ts';
 import type { RuntimeInfo } from './experimental/save-format.ts';
 import type { WorldKind } from './experimental/worker-protocol.ts';
 
@@ -14,7 +14,9 @@ const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '
 const when = (iso: string | null) => iso ? new Date(iso).toLocaleString('zh-TW', { hour12: false }) : '—';
 const kb = (n: number) => n >= 1048576 ? `${(n / 1048576).toFixed(2)} MB` : `${(n / 1024).toFixed(1)} KB`;
 const simTime = (t: number | null) => { const d = simDayTime(t); return d ? `實驗第 ${d.day} 天 ${d.clock}` : '—'; };
-const COMPAT: Record<string, string> = { compatible: '相容', migratable: '可遷移（舊版結構）', no_snapshot: '沒有已驗證的存檔', newer_schema: '存檔來自較新版本，無法讀取', unknown_schema: '未知格式，無法讀取', rules_mismatch: '規則不同，無法繼續', no_migration_path: '沒有遷移路徑，無法讀取' };
+const COMPAT: Record<string, string> = { worker_unavailable: '模擬 Worker 已停止：無法判定相容性、無法讀取（可以匯出備份）', compatible: '相容', migratable: '可遷移（舊版結構）', no_snapshot: '沒有已驗證的存檔', newer_schema: '存檔來自較新版本，無法讀取', unknown_schema: '未知格式，無法讀取', rules_mismatch: '規則不同，無法繼續', no_migration_path: '沒有遷移路徑，無法讀取' };
+/** a runtime that matches no save: used only to list the stored worlds when the Worker failed (issue #224) */
+const WORKER_DOWN_RT: RuntimeInfo = { rules_fingerprint: '(worker unavailable)', engine_version: '(worker unavailable)', schema_version: Number.MAX_SAFE_INTEGER };
 export const loadable = (w: WorldListing) => w.compat === 'compatible' || w.compat === 'migratable';
 function versionDiff(w: WorldListing, rt: { rules_fingerprint: string; engine_version: string; schema_version?: number }) {
   const old = w.compat === 'no_migration_path' && w.schema_version === 1 ? '（v1 存檔沒有事件鏈承諾，無法遷移）' : '';
@@ -37,6 +39,8 @@ export class Menu {
   private view: 'home' | 'new' | 'load' | 'manage' = 'home';
   private pendingDelete: { world_id: string; nonce: string; name: string } | null = null;
   private pendingCopyText: string | null = null;
+  /** issue #224: the simulation Worker failed or was terminated; the saves are still listed and exportable, never loadable */
+  private workerDown: string | null = null;
   constructor(root: HTMLElement, session: ExperimentSession | null, hooks: MenuHooks) {
     this.root = root; this.session = session; this.hooks = hooks;
     this.panel = root.querySelector('#mPanel') as HTMLElement; this.msgEl = root.querySelector('#mMsg') as HTMLElement;
@@ -44,7 +48,7 @@ export class Menu {
     (root.querySelector('#mNew') as HTMLButtonElement).onclick = () => { this.view = 'new'; void this.render(); };
     (root.querySelector('#mLoad') as HTMLButtonElement).onclick = () => { this.view = 'load'; void this.render(); };
     (root.querySelector('#mManage') as HTMLButtonElement).onclick = () => { this.view = 'manage'; void this.render(); };
-    root.addEventListener('click', (e) => void this.onClick(e));
+    root.addEventListener('click', (e) => { this.onClick(e).catch((err: unknown) => { const w = workerFailure(err); if (w === null) throw err; this.say(`${esc(w)}：此操作未完成。既有存檔保持原樣。`, 'error'); }); });
   }
   show(msg?: string, kind: 'info' | 'warn' | 'error' = 'info') { this.root.hidden = false; this.view = 'home'; if (msg) this.say(msg, kind); else this.say(''); void this.render(); void this.storageStatus(); }
   hide() { this.root.hidden = true; }
@@ -81,11 +85,22 @@ export class Menu {
   async render() {
     const cont = this.root.querySelector('#mContinue') as HTMLButtonElement, info = this.root.querySelector('#mContinueInfo') as HTMLElement;
     if (!this.session) { for (const b of this.root.querySelectorAll('button')) (b as HTMLButtonElement).disabled = b.id !== 'mNew'; this.panel.innerHTML = this.view === 'new' ? this.newForm() : ''; return; }
-    const list = await this.session.list(), rts = new Map<string, RuntimeInfo>();
-    for (const w of list) if (!rts.has(w.engine_version)) rts.set(w.engine_version, await this.session.runtimeFor(w.engine_version));
+    let list: WorldListing[]; const rts = new Map<string, RuntimeInfo>();
+    try {
+      list = await this.session.list();
+      for (const w of list) if (!rts.has(w.engine_version)) rts.set(w.engine_version, await this.session.runtimeFor(w.engine_version));
+    } catch (e) {
+      // issue #224: no runtime to check compatibility against; list the stored worlds as they are (export only)
+      const why = workerFailure(e); if (why === null) throw e;
+      // said once, after any message already shown (e.g. the failed save of 回到選單)
+      if (this.workerDown === null) { const prev = this.msgEl.innerHTML; this.say(`${prev ? `${prev}<br>` : ''}${esc(why)}：無法開始新遊戲或讀取存檔。既有存檔保持原樣，可以在「存檔管理」匯出備份；請重新載入頁面再試。`, 'error'); }
+      this.workerDown = why; this.root.dataset.workerDown = 'true';
+      list = await this.session.store.listWorlds(WORKER_DOWN_RT);
+      for (const w of list) rts.set(w.engine_version, WORKER_DOWN_RT);
+    }
     const lastId = await this.session.store.lastPlayed(), last = list.find((w) => w.world_id === lastId);
-    cont.disabled = !last || !loadable(last);
-    info.textContent = last ? `${last.name}｜${simTime(last.t_sim)}｜上次儲存 ${when(last.last_saved_at)}${loadable(last) ? '' : `｜${COMPAT[last.compat]}`}` : '（沒有存檔）';
+    cont.disabled = !last || !loadable(last) || this.workerDown !== null;
+    info.textContent = last ? `${last.name}｜${simTime(last.t_sim)}｜上次儲存 ${when(last.last_saved_at)}${this.workerDown ? `｜${COMPAT.worker_unavailable}` : loadable(last) ? '' : `｜${COMPAT[last.compat]}`}` : '（沒有存檔）';
     if (this.view === 'home') { this.panel.innerHTML = ''; return; }
     if (this.view === 'new') { this.panel.innerHTML = this.newForm(); (this.panel.querySelector('#nName') as HTMLInputElement)?.focus(); return; }
     const rows = list.map((w) => this.row(w, rts.get(w.engine_version)!)).join('') || '<p class="muted">沒有存檔。</p>';
@@ -95,7 +110,9 @@ export class Menu {
   private newForm() {
     return `<h3>開始新遊戲</h3><div class="mrow"><label>世界名稱 <input id="nName" maxlength="200" placeholder="（可留空）"></label><br><label>種子 <input id="nSeed" placeholder="留空＝隨機；整數 0～4294967295 或任意文字"></label><br><label>世界 <select id="nWorld" aria-label="世界種類"><option value="p0a2" selected>P0-A2 24 小時個體行為世界（候選／實驗世界，非正式）</option><option value="synthetic">合成測試世界（不是螞蟻科學模型）</option></select></label><br><span class="muted">新世界 ID 以 exp- 開頭、永不覆寫其他世界；從實驗 Day0（第 0 天 00:00）開始，建立後立即存入初始快照。P0-A2 世界：30 隻小工蟻、8 隻幼蟲、一個情境蜜露源、合成天氣；<b>不是正式 Day0</b>（Owner #201：未經 Owner 核准不建立正式 Day0）。文字種子以 SHA-256 前 4 位元組轉成整數並顯示。</span><br><button type="button" class="primary" data-act="create">建立並開始</button></div>`;
   }
-  private row(w: WorldListing, rt: { rules_fingerprint: string; engine_version: string; schema_version?: number }) {
+  private row(w0: WorldListing, rt: { rules_fingerprint: string; engine_version: string; schema_version?: number }) {
+    // with the Worker down the compatibility is unknown: shown as such, never as 規則不同 or as loadable
+    const w = this.workerDown ? { ...w0, compat: 'worker_unavailable' as WorldListing['compat'] } : w0;
     const id = esc(w.world_id), ok = loadable(w);
     const prov = w.provenance ? `<br><span class="muted">副本：來源世界 ${esc(w.provenance.source_world_id)}（${esc(w.provenance.source_name)}）、來源快照 SHA-256 ${esc(w.provenance.source_payload_sha256.slice(0, 12))}…、匯入於 ${when(w.provenance.imported_at)}；${esc(w.provenance.verification)}</span>` : '';
     const ver = w.compat === 'rules_mismatch' || w.compat === 'newer_schema' || w.compat === 'unknown_schema' || w.compat === 'no_migration_path' ? `<br><span class="warn">${COMPAT[w.compat]}：${versionDiff(w, rt)}。存檔保持原樣，可以匯出備份。</span>` : '';
