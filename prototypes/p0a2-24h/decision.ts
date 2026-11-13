@@ -7,7 +7,7 @@
  *
  * There is NO time-of-day input and no table from hour to activity: the activity time distribution is an output.
  */
-import type { DecisionConsts, ExitChoice, LarvaView, NestChoice, PartnerView, SelfView, SiteView, SourceView } from './types.ts';
+import type { CarerView, DecisionConsts, DonorView, ExitChoice, LarvaView, NeedView, NestChoice, PartnerView, Retention, SelfView, SiteView, SourceView } from './types.ts';
 
 /** response threshold hill(s; θ, n) (mechanism: R234 etc., other species; form and values: game assumption) */
 export const hill = (s: number, theta: number, n: number): number => (s <= 0 ? 0 : s ** n / (s ** n + theta ** n));
@@ -25,8 +25,9 @@ export function fT(T: number, c: DecisionConsts['f_t']): number {
 export function chooseInNest(self: SelfView, c: DecisionConsts, u1: number, u2: number, u3: number): NestChoice {
   const sForage = (1 - self.crop_fill) + c.recruit_contact_weight * self.recruit_contacts_recent;
   const pf = self.gain * hill(sForage, self.theta_forage, c.hill_n);
-  // brood care feeds larvae from the worker's own crop: with an empty crop there is nothing to give
-  const pb = self.crop > 0 ? self.gain * hill(self.begging_recent, self.theta_brood, c.hill_n) : 0;
+  // brood care feeds larvae from the worker's own crop: with nothing it may give (process 3, its own state only —
+  // reference: crop > 0) there is nothing to give
+  const pb = broodGivable(self, c) > 0 ? self.gain * hill(self.begging_recent, self.theta_brood, c.hill_n) : 0;
   const any = 1 - (1 - pf) * (1 - pb);
   if (u1 < any) return u2 * (pf + pb) < pf ? 'forage' : 'brood';
   return u3 < c.idle_probability ? 'idle' : 'rest';
@@ -47,27 +48,49 @@ export function decideAtSource(self: SelfView, here: SourceView): { take: number
   return { take: Math.min(self.crop_room, here.food_here), heat: false };
 }
 
-/** Q2 candidate (Owner #188 / #193; default OFF): the part of its own crop a returning forager keeps for its OWN
- *  expected metabolic need until its next feeding opportunity, computed ONLY from its own state — its own metabolic
- *  rate and, for 'own_interval', the interval between its own last two intakes at a source (its own experience). No
- *  colony store, no nestmate, no larva is read. Mechanism direction only from R147 (Camponotus sanctus, other species:
- *  foragers do not hand over their whole crop); the 'hand over half' ratio is NOT used; formulations and values are
- *  game assumptions. null retention (reference) => 0. Unknown interval (no two own intakes yet) => 0 (not filled). */
-export function ownReserve(self: SelfView, c: DecisionConsts): number {
-  const r = c.retention;
+// ---------------------------------------------------------------- the three food processes (Owner #188, 2026-11-12)
+// (1) own metabolism / own need, (2) adult–adult trophallaxis, (3) adult→brood feeding. Each giving process has its OWN
+// cap and its OWN retention setting in DecisionConsts (trophallaxis.*, brood.*); none reads colony stores, other
+// individuals or the larvae count. Every transfer the world applies is min(offer, donor's crop, receiver's room), booked
+// as the donor's loss and the receiver's gain in the same instant (exact integer µP; tests check it per individual).
+
+/** (1) OWN NEED: the worker's own expected metabolic need (µP) under a retention formulation, computed ONLY from its
+ *  own state — its own metabolic rate and, for 'own_interval', the interval between its own last two intakes at a
+ *  source (its own experience). null => 0. Unknown interval (no two own intakes yet) => 0 (not filled). Formulations
+ *  and values are game assumptions; mechanism direction for foragers only from R147 (Camponotus sanctus, other
+ *  species; the 'hand over half' ratio is NOT used); for carers from general physiology (no data for this species). */
+export function ownNeed(self: NeedView, r: Retention, c: DecisionConsts): number {
   if (r === null) return 0;
   const need_ms = r.kind === 'horizon' ? r.need_ms : self.forage_interval_ms === null ? 0 : r.factor * self.forage_interval_ms;
-  return Math.ceil((c.metabolic_rate_per_day * need_ms) / c.day_ms);
+  return Math.ceil((c.own.metabolic_rate_per_day * need_ms) / c.own.day_ms);
 }
 
-/** trophallaxis offered by a returning forager to one nestmate it touched (µP); with the Q2 candidate on, it never
- *  offers below its own reserve (ownReserve) */
-export function decideTransfer(self: SelfView, partner: PartnerView, c: DecisionConsts): number {
-  return Math.max(0, Math.min(c.transfer_max, self.crop - ownReserve(self, c), partner.crop_room));
+/** (1)→(2) the Q2 candidate 'a returning forager keeps what it needs' (default OFF): the own need under the
+ *  TROPHALLAXIS retention setting */
+export function ownReserve(self: NeedView, c: DecisionConsts): number { return ownNeed(self, c.trophallaxis.retention, c); }
+
+/** (2) trophallaxis offered by a returning forager to one nestmate it touched (µP): never above the trophallaxis cap,
+ *  never below its own trophallaxis reserve, never above the partner's crop room */
+export function decideTransfer(self: DonorView, partner: PartnerView, c: DecisionConsts): number {
+  return Math.max(0, Math.min(c.trophallaxis.transfer_max, self.crop - ownReserve(self, c), partner.crop_room));
 }
 
-/** feeding one larva the worker touched: only when the larva's begging (perceived at the contact) reaches the threshold */
-export function decideFeedLarva(self: SelfView, larva: LarvaView, c: DecisionConsts): number {
-  if (larva.begging < c.begging_threshold) return 0;
-  return Math.max(0, Math.min(c.feed_bolus, self.crop, larva.room));
+/** (3) what a carer may give to brood from its OWN crop (µP): its crop minus its own need under the BROOD retention
+ *  setting (independent of the trophallaxis one); 0 when its own crop fill is below the carer's own minimum (if set).
+ *  Reads only the carer's own state. Reference (both null): its whole crop */
+export function broodGivable(self: CarerView, c: DecisionConsts): number {
+  const b = c.brood;
+  if (b.min_own_crop_fill !== null && self.crop_fill < b.min_own_crop_fill) return 0;
+  return Math.max(0, self.crop - ownNeed(self, b.retention, c));
+}
+
+/** (3) feeding one larva the carer actually touched: triggered by the begging it perceived at THIS contact
+ *  ('threshold': signal >= begging_threshold, reference; 'graded': with probability = signal, u = a uniform draw of the
+ *  calling event's own stream — mechanism direction R210 Solenopsis invicta, other species: feeding rate rises with the
+ *  larva's own deprivation; linear form is a game assumption); bolus = min(brood bolus, what the carer may give, the
+ *  larva's room). The larva's need never creates food: nothing is given beyond the carer's own crop */
+export function decideFeedLarva(self: CarerView, larva: LarvaView, c: DecisionConsts, u: number): number {
+  const b = c.brood;
+  if (b.trigger === 'threshold' ? larva.begging < b.begging_threshold : !(u < larva.begging)) return 0;
+  return Math.max(0, Math.min(b.feed_bolus, broodGivable(self, c), larva.room));
 }
