@@ -19,6 +19,9 @@
  *  - multi-tab: a second tab is offered 切換到此分頁 / 唯讀開啟; read-only never writes; taking over turns the first
  *    tab read-only. Rules mismatch (decision 53): refused, version difference shown, export still works. Import as copy
  *    (decision 54): new id, provenance, source unchanged, same state.
+ *  - Worker runs, Node verifies (Owner #200; rules update detmath-exp): a world advanced in the Chromium Worker for more
+ *    than a full day/night cycle at 3600×, manually saved and exported from the menu, is recomputed by
+ *    `node cli/verify-save.ts` → `node_verified` (event-chain head, count and whole payload equal; no tolerance).
  *  - saves/ and journal/ unchanged.
  * World kind: the P0-A2 24 h individual-behaviour world (the menu's default; candidate / experiment world, non-official)
  * unless SAVE2_WORLD=synthetic selects the synthetic test world. Every reference run uses the same kind.
@@ -28,7 +31,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { execSync } = require('node:child_process');
+const { execSync, spawnSync } = require('node:child_process');
 const { chromium, devices } = require('playwright');
 
 const ROOT = path.resolve(__dirname, '..', '..');
@@ -301,6 +304,33 @@ const dirHash = (d) => { const h = crypto.createHash('sha256'); const walk = (p)
   const ms = await page.evaluate(async () => { const st = window.__v62.session(); const w = await st.store.getWorld(st.current.world_id); return { manual: (w.manual || []).length, slots: w.slots.length }; });
   check(ms.slots <= 3 && ms.manual >= 1, `decision 55: 3 rotating recovery points kept separately from ${ms.manual} manual saves`);
   await page.close(); await ctx.close();
+
+  // ======================= Worker runs, Node verifies (Owner #200; rules update detmath-exp) =======================
+  // A world advanced ONLY in the Chromium Worker (3600×, through sunset, the night branch and sunrise of the synthetic
+  // weather, so every env_sample with rh_percent and the night-temperature exp are exercised), saved manually and
+  // exported through the menu, must be recomputed by the Node verifier from its trusted initial conditions to the SAME
+  // event chain and payload: status node_verified. No tolerance; a mismatch fails this check.
+  {
+    const T_MIN = 26 * H;
+    const vctx = await launch(path.join(tmp, 'verify')); const vp = await openMenu(vctx, 'node-verify');
+    const V = await newGame(vp, 'Node 驗證', 424242);
+    await vp.selectOption('#speed', '3600');
+    await vp.waitForFunction((T) => window.__v62.frame() && window.__v62.frame().t_sim >= T, T_MIN, { timeout: 240000, polling: 250 });
+    await pauseNow(vp); await vp.click('#saveBtn');
+    await vp.waitForFunction(() => window.__v62.saveUi().status === 'saved' && window.__v62.session().lastReceipt.kind === 'manual', null, { timeout: 30000 });
+    const rec = (await S(vp)).receipt;
+    await toMenu(vp); await vp.click('#mManage'); await vp.waitForTimeout(400);
+    const vdl = vp.waitForEvent('download'); await vp.click(`[data-act=export][data-id="${V.world_id}"]`); const vd = await vdl;
+    const vpath = path.join(tmp, 'export-node-verify.json'); await vd.saveAs(vpath);
+    const before = crypto.createHash('sha256').update(fs.readFileSync(vpath)).digest('hex');
+    const r = spawnSync(process.execPath, [path.join(ROOT, 'cli/verify-save.ts'), vpath], { encoding: 'utf8', maxBuffer: 64 << 20 });
+    let rep = null; try { rep = JSON.parse(r.stdout); } catch { rep = null; }
+    const after = crypto.createHash('sha256').update(fs.readFileSync(vpath)).digest('hex');
+    info.node_verify_browser_save = { world_kind: rep && rep.save.world_kind, t_sim: rec && rec.t_sim, chain_count: rep && rep.save.chain_count, chain_head: rep && rep.save.chain_head, status: rep && rep.status, exit_code: r.status, differing_fields: rep && rep.recomputed ? rep.recomputed.differing_fields : null, diagnostics: rep ? rep.diagnostics.slice(0, 5) : r.stderr.slice(-500), node: process.version };
+    check(rec && rec.t_sim >= T_MIN && rep && rep.save.world_kind === (KIND === 'p0a2' ? 'p0a2-24h-v1' : 'synthetic-v1') && rep.save.t_sim === rec.t_sim, `browser-advanced ${KIND} world saved at t=${rec && rec.t_sim.toFixed(1)} s (≥ ${T_MIN} s) and exported from the menu`);
+    check(r.status === 0 && rep && rep.status === 'node_verified' && rep.recomputed && rep.recomputed.chain_head === rep.save.chain_head && rep.recomputed.chain_count === rep.save.chain_count && rep.recomputed.differing_fields.length === 0 && before === after, `Worker runs, Node verifies: the browser save is recomputed by node cli/verify-save.ts → ${rep && rep.status} (${rep && rep.save.chain_count} chained events, head ${rep && String(rep.save.chain_head).slice(0, 12)}…; exit ${r.status}; input unchanged)`);
+    await vp.close(); await vctx.close();
+  }
 
   // ======================= Pixel 7 screens =======================
   ctx = await launch(path.join(tmp, 'pixel'), PIXEL); page = await openMenu(ctx, 'pixel7');

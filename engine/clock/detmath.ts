@@ -90,3 +90,133 @@ export function detAcos(x: number): number {
   const z = (1 - x) * 0.5, s = Math.sqrt(z);
   return 2 * (s + s * R(z));
 }
+
+// ───────────────────────── exp / log / pow (rules update, Owner ruling #190 scheme A extended to exp/log) ─────────────────────────
+// WHY: Math.exp / Math.log / ** are "implementation-approximated" too. Measured on PR #209 (head 8592c8a): a P0-A2 world
+// advanced in a Chromium Worker logged rh_percent 1 ulp away from the same world advanced in Node (Math.exp in
+// saturationVapourKPa), so the save failed Node verification. detExp / detLog are line-by-line ports of fdlibm 5.3
+// e_exp.c / e_log.c (Sun Microsystems 1993): the same reductions, the same minimax coefficients, the same operation
+// order, using only +, −, ×, ÷ and exact bit access to the IEEE-754 representation (DataView, big-endian, which is
+// fully specified). Scaling by 2^k is an exact multiplication by a power of two built from its bit pattern.
+// Special cases (as fdlibm / Math.*): see the function comments. Accuracy (fdlibm's own bound): < 1 ulp.
+// Verified: tests/detmath-explog.test.ts (special cases, reference values with a BigInt high-precision reference, ulp
+// statistics against Math.* of the running engine) and tests/browser/detmath-xenv.check.cjs (Node vs live Chromium page
+// and module Worker, bit equality over the sweep).
+
+const BITS = new DataView(new ArrayBuffer(8));
+const hiWord = (x: number): number => { BITS.setFloat64(0, x); return BITS.getInt32(0); };
+const loWord = (x: number): number => { BITS.setFloat64(0, x); return BITS.getUint32(4); };
+const withHi = (x: number, hi: number): number => { BITS.setFloat64(0, x); BITS.setInt32(0, hi | 0); return BITS.getFloat64(0); };
+/** 2^k for −1022 ≤ k ≤ 1023, exactly (built from the bit pattern) */
+const pow2 = (k: number): number => { BITS.setUint32(0, (k + 1023) << 20); BITS.setUint32(4, 0); return BITS.getFloat64(0); };
+
+// fdlibm e_exp.c constants
+const E_O_THRESHOLD = 7.09782712893383973096e+02, E_U_THRESHOLD = -7.45133219101941108420e+02;
+const LN2HI = [6.93147180369123816490e-01, -6.93147180369123816490e-01], LN2LO = [1.90821492927058770002e-10, -1.90821492927058770002e-10];
+const HALF = [0.5, -0.5], INVLN2 = 1.44269504088896338700e+00, HUGE = 1.0e+300, TWOM1000 = 9.33263618503218878990e-302;
+const EP1 = 1.66666666666666019037e-01, EP2 = -2.77777777770155933842e-03, EP3 = 6.61375632143793436117e-05,
+  EP4 = -1.65339022054652515390e-06, EP5 = 4.13813679705723846039e-08;
+
+/**
+ * e^x, deterministic across conforming ECMAScript engines (fdlibm e_exp.c).
+ * Special cases: NaN → NaN; +∞ → +∞; −∞ → +0; x > 709.782712893384 → +∞ (overflow); x < −745.1332191019411 → +0
+ * (underflow); results below 2^−1022 are subnormal (rounded once, as fdlibm); |x| < 2^−28 → 1 + x.
+ */
+export function detExp(x: number): number {
+  let hx = hiWord(x);
+  const xsb = (hx >>> 31) & 1;
+  hx &= 0x7fffffff;
+  let hi = 0, lo = 0, k = 0;
+  if (hx >= 0x40862e42) {                  // |x| ≥ 709.78…
+    if (hx >= 0x7ff00000) {
+      if (((hx & 0xfffff) | loWord(x)) !== 0) return x + x; // NaN
+      return xsb === 0 ? x : 0;           // exp(±∞) = {∞, 0}
+    }
+    if (x > E_O_THRESHOLD) return HUGE * HUGE;      // overflow → +∞
+    if (x < E_U_THRESHOLD) return TWOM1000 * TWOM1000; // underflow → +0
+  }
+  if (hx > 0x3fd62e42) {                   // |x| > 0.5 ln 2
+    if (hx < 0x3ff0a2b2) { hi = x - LN2HI[xsb]; lo = LN2LO[xsb]; k = 1 - xsb - xsb; }  // and |x| < 1.5 ln 2
+    else { k = Math.trunc(INVLN2 * x + HALF[xsb]); hi = x - k * LN2HI[0]; lo = k * LN2LO[0]; } // k·LN2HI exact
+    x = hi - lo;
+  } else if (hx < 0x3e300000) {            // |x| < 2^−28
+    if (HUGE + x > 1) return 1 + x;
+  } else k = 0;
+  const t = x * x, c = x - t * (EP1 + t * (EP2 + t * (EP3 + t * (EP4 + t * EP5))));
+  if (k === 0) return 1 - ((x * c) / (c - 2.0) - x);
+  const y = 1 - ((lo - (x * c) / (2.0 - c)) - hi);
+  // fdlibm adds k to the exponent field of y; for a normal result that is exactly y·2^k
+  if (k >= -1021) return k === 1024 ? y * 2 * pow2(1023) : y * pow2(k);
+  return y * pow2(k + 1000) * TWOM1000;
+}
+
+// fdlibm e_log.c constants
+const L_LN2_HI = 6.93147180369123816490e-01, L_LN2_LO = 1.90821492927058770002e-10, TWO54 = 1.80143985094819840000e+16;
+const LG1 = 6.666666666666735130e-01, LG2 = 3.999999999940941908e-01, LG3 = 2.857142874366239149e-01, LG4 = 2.222219843214978396e-01,
+  LG5 = 1.818357216161805012e-01, LG6 = 1.531383769920937332e-01, LG7 = 1.479819860511658591e-01;
+
+/**
+ * natural logarithm ln x, deterministic across conforming ECMAScript engines (fdlibm e_log.c).
+ * Special cases: ±0 → −∞; x < 0 → NaN; NaN → NaN; +∞ → +∞; 1 → +0; subnormal x is scaled by 2^54 first (exact).
+ */
+export function detLog(x: number): number {
+  let hx = hiWord(x);
+  const lx = loWord(x);
+  let k = 0;
+  if (hx < 0x00100000) {                   // x < 2^−1022 (incl. negatives, ±0, subnormals)
+    if (((hx & 0x7fffffff) | lx) === 0) return -Infinity; // log(±0) = −∞
+    if (hx < 0) return NaN;               // log(negative) = NaN
+    k -= 54; x *= TWO54; hx = hiWord(x);  // subnormal: scale up (exact)
+  }
+  if (hx >= 0x7ff00000) return x + x;     // +∞ or NaN
+  k += (hx >> 20) - 1023;
+  hx &= 0x000fffff;
+  let i = (hx + 0x95f64) & 0x100000;
+  x = withHi(x, hx | (i ^ 0x3ff00000));   // normalise x or x/2 into [√2/2, √2)
+  k += i >> 20;
+  const f = x - 1.0;
+  if ((0x000fffff & (2 + hx)) < 3) {       // |f| < 2^−20
+    if (f === 0) { if (k === 0) return 0; return k * L_LN2_HI + k * L_LN2_LO; }
+    const R = f * f * (0.5 - 0.33333333333333333 * f);
+    if (k === 0) return f - R;
+    return k * L_LN2_HI - ((R - k * L_LN2_LO) - f);
+  }
+  const s = f / (2.0 + f), dk = k, z = s * s;
+  i = hx - 0x6147a;
+  const w = z * z, j = 0x6b851 - hx;
+  const t1 = w * (LG2 + w * (LG4 + w * LG6)), t2 = z * (LG1 + w * (LG3 + w * (LG5 + w * LG7)));
+  i |= j;
+  const R = t2 + t1;
+  if (i > 0) {
+    const hfsq = 0.5 * f * f;
+    if (k === 0) return f - (hfsq - s * (hfsq + R));
+    return dk * L_LN2_HI - ((hfsq - (s * (hfsq + R) + dk * L_LN2_LO)) - f);
+  }
+  if (k === 0) return f - s * (f - R);
+  return dk * L_LN2_HI - ((s * (f - R) - dk * L_LN2_LO) - f);
+}
+
+/**
+ * x^n for an integer n (|n| ≤ 2^31 − 1) by binary exponentiation (squarings and products in a fixed order; each step is
+ * a correctly rounded IEEE multiplication, so the result is the same in every conforming engine). n = 2 gives exactly
+ * x·x. Error ≲ (number of multiplications) ulp. n < 0 → 1 / x^|n|. Throws for a non-integer n (use detPow).
+ */
+export function detPowInt(x: number, n: number): number {
+  if (!Number.isInteger(n) || Math.abs(n) > 0x7fffffff) throw Error(`detPowInt: exponent ${n} is not an integer in ±(2^31−1)`);
+  let e = Math.abs(n), b = x, r = 1;
+  while (e > 0) { if (e % 2 === 1) r *= b; e = Math.floor(e / 2); if (e > 0) b *= b; }
+  return n < 0 ? 1 / r : r;
+}
+
+/**
+ * x^y: integer y → detPowInt; otherwise, for x > 0, detExp(y·detLog(x)) (deterministic; NOT a port of fdlibm e_pow.c —
+ * relative error up to about |y·ln x|·2^−53 plus 1 ulp, adequate for model curves); x = 0, y > 0 → 0; x < 0 with
+ * non-integer y → NaN; any NaN → NaN.
+ */
+export function detPow(x: number, y: number): number {
+  if (Number.isNaN(x) || Number.isNaN(y)) return NaN;
+  if (Number.isInteger(y) && Math.abs(y) <= 0x7fffffff) return detPowInt(x, y);
+  if (x === 0) return y > 0 ? 0 : Infinity;
+  if (x < 0) return NaN;
+  return detExp(y * detLog(x));
+}

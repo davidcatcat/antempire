@@ -51,6 +51,12 @@ const base = (): Map<string, string> => new Map([
 ]);
 const clean = checkBoundary(new Map([...base(), ['cli/verify-save.ts', "import fs from 'node:fs';\nimport { step } from '../prototypes/continuous-world/worker/core.ts';\nconst t = fs.readFileSync(process.argv[2], 'utf8');"]]), B);
 ok(clean.violations.length === 0, `clean fixture passes (${JSON.stringify(clean.violations)})`);
+{ // allowed forms: exact Math members, integer-literal powers, an exempt sampler that the graph does not import
+  const m = base(); m.set(`${W}core.ts`, "import { makeRng } from '../../../engine/rng.ts';\nexport const step = (x: number) => Math.floor(Math.sqrt(Math.abs(x)) * Math.PI) + 2 ** 52 + x ** 2;");
+  m.set('engine/rng.ts', 'export const makeRng = (s: number) => s;\nexport function normal(g: () => number): number { return Math.sqrt(-2 * Math.log(g())) * Math.cos(2 * Math.PI * g()); }');
+  const r = checkBoundary(m, B); ok(r.violations.length === 0, `deterministic-math rule accepts exact Math members, integer-literal ** and an unreached exempt sampler (${JSON.stringify(r.violations)})`);
+}
+ok(JSON.stringify(B.deterministic_math_in_worker_graph?.exempt_unreached_functions.map((e) => [e.file, e.functions])) === JSON.stringify([['engine/rng.ts', ['normal', 'gamma']]]) && !['exp', 'log', 'pow', 'sin', 'cos', 'tan', 'atan', 'atan2', 'asin', 'acos', 'sinh', 'cosh', 'tanh', 'cbrt', 'hypot', 'expm1', 'log1p', 'log2', 'log10', 'random'].some((n) => B.deterministic_math_in_worker_graph!.allowed_math_members.includes(n)), 'deterministic-math rule: no approximated member allowed; the only exemption is the unreached official samplers normal / gamma of engine/rng.ts');
 ok(clean.reached.includes('engine/rng.ts') && clean.reached.includes('engine/scheduler/world-events.ts'), 'transitive graph reaches the allowlisted engine modules');
 const cases: [string, (m: Map<string, string>) => void, string][] = [
   ['cli import', (m) => m.set(`${W}core.ts`, "import { advance } from '../../../cli/advance.ts';"), 'denied-module'],
@@ -101,6 +107,19 @@ const cases: [string, (m: Map<string, string>) => void, string][] = [
   ['wall clock in a P0-A2 core module', (m) => { m.set('prototypes/p0a2-24h/decision.ts', 'export const d = () => Date.now();'); m.set(`${W}p0.ts`, "import { d } from '../../p0a2-24h/decision.ts';"); }, 'engine-impurity'],
   ['P0-A2 core module imports node', (m) => { m.set('prototypes/p0a2-24h/params.ts', "import fs from 'node:fs';\nexport const p = 1;"); m.set(`${W}p0.ts`, "import { p } from '../../p0a2-24h/params.ts';"); }, 'node-import'],
   ['P0-A2 core module leaks to cli', (m) => { m.set('prototypes/p0a2-24h/canon.ts', "import { advance } from '../../cli/advance.ts';\nexport const c = 1;"); m.set(`${W}p0.ts`, "import { c } from '../../p0a2-24h/canon.ts';"); }, 'denied-module'],
+  // deterministic math (Owner #190 scheme A, extended to exp / log / ** by the detmath-exp rules update)
+  ['Math.exp in an engine/clock module', (m) => { m.set('engine/clock/weather-input.ts', 'export const es = (T: number) => 0.6108 * Math.exp(17.27 * T / (T + 237.3));'); m.set(`${W}p0.ts`, "import { es } from '../../../engine/clock/weather-input.ts';"); }, 'approximated-math'],
+  ['Math.log in a P0-A2 core module', (m) => { m.set('prototypes/p0a2-24h/world.ts', 'export const w = (u: number) => -Math.log(1 - u);'); m.set(`${W}p0.ts`, "import { w } from '../../p0a2-24h/world.ts';"); }, 'approximated-math'],
+  ['Math.sin in the Worker dir', (m) => m.set(`${W}core.ts`, 'export const step = (x: number) => Math.sin(x);'), 'approximated-math'],
+  ['Math["cos"] (computed member)', (m) => m.set(`${W}core.ts`, "export const step = (x: number) => Math['cos'](x);"), 'approximated-math'],
+  ['destructured Math', (m) => m.set(`${W}core.ts`, 'const { exp } = Math;\nexport const step = (x: number) => exp(x);'), 'approximated-math'],
+  ['Math.pow', (m) => m.set(`${W}core.ts`, 'export const step = (x: number) => Math.pow(x, 2);'), 'approximated-math'],
+  ['** with a variable exponent', (m) => m.set(`${W}core.ts`, 'export const hill = (s: number, n: number) => s ** n;'), 'approximated-math'],
+  ['** with a fractional literal', (m) => m.set(`${W}core.ts`, 'export const step = (x: number) => x ** 0.5;'), 'approximated-math'],
+  ['** with a negative exponent', (m) => m.set(`${W}core.ts`, 'export const step = (x: number) => x ** -2;'), 'approximated-math'],
+  ['Worker imports the exempt official sampler', (m) => { m.set('engine/rng.ts', 'export const makeRng = (s: number) => s;\nexport function normal(g: () => number): number { return Math.sqrt(-2 * Math.log(g())) * Math.cos(6.28 * g()); }'); m.set(`${W}core.ts`, "import { normal } from '../../../engine/rng.ts';\nexport const step = normal;"); }, 'approximated-math'],
+  ['Worker imports the sampler module as a namespace', (m) => { m.set('engine/rng.ts', 'export const makeRng = (s: number) => s;\nexport function gamma(g: () => number): number { return Math.log(g()); }'); m.set(`${W}core.ts`, "import * as R from '../../../engine/rng.ts';\nexport const step = R.makeRng;"); }, 'approximated-math'],
+  ['exempt sampler called by a reached function', (m) => m.set('engine/rng.ts', 'export function normal(g: () => number): number { return Math.log(g()); }\nexport const makeRng = (s: number) => normal(() => s);'), 'approximated-math'],
   ['P0-A2 core module uses fetch', (m) => { m.set('prototypes/p0a2-24h/environment.ts', "export const e = () => fetch('/x');"); m.set(`${W}p0.ts`, "import { e } from '../../p0a2-24h/environment.ts';"); }, 'forbidden-global'],
 ];
 for (const [name, mutate, rule] of cases) {
