@@ -460,6 +460,24 @@
       "save_schema": "antempire.engine-v2",
       "state_migration": null,
       "note": "Nurse begging cue locality (local_signals.nurse_cue_same_place_v31, CLAUDE.md §2.1): a nurse draws its begging-cue larva only among larvae at its own place (nurse in the nest, larva in the brood chamber; a larva without a place counts as there; does not require C4a); a nurse outside the nest touches no larva. Same stream and ID-ordered draw; the contact event gains worker_location and larva_location only when on. Introduced OFF: every output byte-identical to v2-review.30."
+    },
+    {
+      "rules_version": "antempire.v2-review.32-param-units",
+      "tag": "v32",
+      "fingerprint": {
+        "engine": "1b4e1c4cd5250e856f849ea9215cc4a95a3a091ecdef043d76ca7838509c8fe3",
+        "params": "41d7d1ce56a532ef4ac7601629aab8fe07f5df6238158b23ef15992d101c151b"
+      },
+      "approved_in": "Owner ruling #219 Q1/Q5 2026-11-13 (RU-1: unit field on every food parameter, values unchanged; separate rules-update PR, not merged by Claude)",
+      "golden": {
+        "traces": "tests/golden/v32-trace-sha256.json",
+        "reports": "reports/day15-134-v32-*",
+        "day0_traces": "tests/golden/day0-v32-trace-sha256.json"
+      },
+      "previous": "antempire.v2-review.31-nurse-cue-same-place",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null,
+      "note": "RU-1 (docs/ru1-param-units.md): every food parameter of species/world declares its unit (game_portion = legacy 份, not mg); site_choice.score_base_offset declared game_portion after the CE1 conversion-invariance finding. Metadata only: every output byte-identical to v2-review.31."
     }
   ]
 }

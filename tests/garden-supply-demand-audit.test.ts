@@ -42,6 +42,24 @@ for (const e of REGISTRY) {
 for (const x of a.registry) if (/^game_portion/.test(x.unit)) ok(x.flags.includes('UNITLESS_PORTION'), `2: ${x.path} (game portions) is flagged UNITLESS_PORTION`);
 ok(a.registry.some((x: Any) => x.path === 'honeydew.honeydew_daily_replenish' && x.flags.includes('NOT_READ_BY_ENGINE')), '2: the unused honeydew_daily_replenish is flagged (not read by the engine)');
 ok(a.registry.some((x: Any) => x.path === 'hemipterans.honeydew_per_colony_per_day.aphid' && !x.flags.includes('NOT_READ_BY_ENGINE')), '2: map entries read through their map name are not falsely flagged');
+// RU-1 (v2-review.32): every registered species / world food parameter declares its unit IN the parameter file, equal to
+// the registry (one vocabulary); a game-portion unit is never a mass unit
+for (const x of a.registry.filter((r: Any) => r.file === FILES.world || r.file === FILES.species)) {
+  ok(x.declared_unit === x.unit && !x.flags.includes('UNIT_NOT_DECLARED_IN_FILE') && !x.flags.includes('UNIT_MISMATCH'), `2 (RU-1): ${x.path} declares unit "${x.unit}" in ${x.file} (got ${x.declared_unit})`);
+  if (/^game_portion/.test(x.unit)) ok(!/\b(mg|µg|ug|ng|mL|µL|J)\b/.test(x.declared_unit.replace(/^game_portion/, '')), `2 (RU-1): ${x.path} game-portion unit names no mass/energy unit`);
+}
+ok(a.registry.some((x: Any) => x.path === 'site_choice.score_base_offset' && /^game_portion/.test(x.declared_unit)), '2 (RU-1): the CE1 finding site_choice.score_base_offset is declared a portion quantity');
+{ // negative sample: a registered parameter whose file lost its unit (or carries another) is flagged
+  const tmp2 = fs.mkdtempSync(path.join(os.tmpdir(), 'garden-audit-unit-'));
+  for (const f of [...Object.values(FILES), ANCHORS_FILE]) { fs.mkdirSync(path.dirname(path.join(tmp2, f)), { recursive: true }); fs.copyFileSync(path.join(REPO_ROOT, f), path.join(tmp2, f)); }
+  fs.mkdirSync(path.join(tmp2, 'engine')); for (const f of fs.readdirSync(path.join(REPO_ROOT, 'engine')).filter((x) => x.endsWith('.ts'))) fs.copyFileSync(path.join(REPO_ROOT, 'engine', f), path.join(tmp2, 'engine', f));
+  const sp = JSON.parse(fs.readFileSync(path.join(tmp2, FILES.species), 'utf8')); delete sp.nutrition.worker_sugar_daily.unit; sp.nutrition.queen_sugar_daily.unit = 'mg sugar / queen / day';
+  fs.writeFileSync(path.join(tmp2, FILES.species), JSON.stringify(sp));
+  const b = audit(tmp2);
+  ok(b.registry.find((x: Any) => x.path === 'nutrition.worker_sugar_daily').flags.includes('UNIT_NOT_DECLARED_IN_FILE'), '2 (RU-1): a missing unit in the file is flagged');
+  ok(b.registry.find((x: Any) => x.path === 'nutrition.queen_sugar_daily').flags.includes('UNIT_MISMATCH'), '2 (RU-1): a unit that differs from the registry (here a false mg claim) is flagged');
+  fs.rmSync(tmp2, { recursive: true, force: true });
+}
 
 // 3 negative samples on a temporary copy of the inputs
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'garden-audit-'));

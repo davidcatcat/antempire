@@ -1,0 +1,2188 @@
+{
+  "schema": "antempire.ce1-conversion-invariance.v1",
+  "status": "診斷，不是目標（docs/garden-supply-demand-audit.md §4.2 CE1；RU-1）；非正式 Day0 實驗世界；不改任何參數值",
+  "design": {
+    "foundings": [
+      "A1",
+      "A2",
+      "A3",
+      "A4",
+      "A5"
+    ],
+    "seasons": [
+      "spring",
+      "summer",
+      "autumn",
+      "winter"
+    ],
+    "seeds": [
+      20270001,
+      20270002
+    ],
+    "horizon_days": 90,
+    "factors": [
+      2,
+      0.5,
+      10
+    ],
+    "classification": "see tools/ce1-conversion-invariance.ts header"
+  },
+  "scaled_parameters": [
+    {
+      "file": "world",
+      "path": "hemipterans.honeydew_per_colony_per_day.aphid",
+      "value": 0.32,
+      "unit": "game_portion sugar / hemipteran \"colony\" / day"
+    },
+    {
+      "file": "world",
+      "path": "hemipterans.honeydew_per_colony_per_day.scale",
+      "value": 0.4,
+      "unit": "game_portion sugar / hemipteran \"colony\" / day"
+    },
+    {
+      "file": "world",
+      "path": "honeydew.honeydew_max",
+      "value": 5.2,
+      "unit": "game_portion sugar (standing crop cap per site)"
+    },
+    {
+      "file": "world",
+      "path": "honeydew.honeydew_daily_replenish",
+      "value": 0.65,
+      "unit": "game_portion sugar / day"
+    },
+    {
+      "file": "world",
+      "path": "honeydew.honeydew_initial",
+      "value": 0.55,
+      "unit": "game_portion sugar"
+    },
+    {
+      "file": "world",
+      "path": "nectar.nectar_max",
+      "value": 2.4,
+      "unit": "game_portion sugar (standing crop cap)"
+    },
+    {
+      "file": "world",
+      "path": "nectar.nectar_daily_replenish",
+      "value": 0.35,
+      "unit": "game_portion sugar / site / day while blooming"
+    },
+    {
+      "file": "world",
+      "path": "nectar.nectar_initial",
+      "value": 0.18,
+      "unit": "game_portion sugar"
+    },
+    {
+      "file": "world",
+      "path": "carcasses.carcass_new_protein_min",
+      "value": 1.45,
+      "unit": "game_portion protein / natural insect death"
+    },
+    {
+      "file": "world",
+      "path": "carcasses.carcass_new_protein_max",
+      "value": 2.6,
+      "unit": "game_portion protein / natural insect death"
+    },
+    {
+      "file": "world",
+      "path": "prey.small_prey_protein",
+      "value": 0.55,
+      "unit": "game_portion protein / killed small insect"
+    },
+    {
+      "file": "world",
+      "path": "prey.large_prey_protein",
+      "value": 1.5,
+      "unit": "game_portion protein / killed large insect"
+    },
+    {
+      "file": "world",
+      "path": "day15_migration.hidden_honeydew_sites.F04.initial_sugar",
+      "value": 0.75,
+      "unit": "game_portion sugar"
+    },
+    {
+      "file": "world",
+      "path": "day15_migration.hidden_honeydew_sites.F04.listed_production",
+      "value": 0.75,
+      "unit": "game_portion sugar / day (listed by the retired v1 code, not used)"
+    },
+    {
+      "file": "world",
+      "path": "day15_migration.hidden_honeydew_sites.F04.capacity",
+      "value": 3,
+      "unit": "game_portion sugar (standing crop cap per site)"
+    },
+    {
+      "file": "world",
+      "path": "day15_migration.hidden_honeydew_sites.F05.initial_sugar",
+      "value": 0.4,
+      "unit": "game_portion sugar"
+    },
+    {
+      "file": "world",
+      "path": "day15_migration.hidden_honeydew_sites.F05.listed_production",
+      "value": 0.55,
+      "unit": "game_portion sugar / day (listed by the retired v1 code, not used)"
+    },
+    {
+      "file": "world",
+      "path": "day15_migration.hidden_honeydew_sites.F05.capacity",
+      "value": 2.8,
+      "unit": "game_portion sugar (standing crop cap per site)"
+    },
+    {
+      "file": "world",
+      "path": "day15_migration.hidden_honeydew_sites.F10.initial_sugar",
+      "value": 0.4,
+      "unit": "game_portion sugar"
+    },
+    {
+      "file": "world",
+      "path": "day15_migration.hidden_honeydew_sites.F10.listed_production",
+      "value": 0.5,
+      "unit": "game_portion sugar / day (listed by the retired v1 code, not used)"
+    },
+    {
+      "file": "world",
+      "path": "day15_migration.hidden_honeydew_sites.F10.capacity",
+      "value": 2.8,
+      "unit": "game_portion sugar (standing crop cap per site)"
+    },
+    {
+      "file": "world",
+      "path": "day15_migration.starting_sugar",
+      "value": 7.6,
+      "unit": "game_portion sugar (nest store, one time)"
+    },
+    {
+      "file": "world",
+      "path": "day15_migration.starting_protein",
+      "value": 2.3,
+      "unit": "game_portion protein (nest store, one time)"
+    },
+    {
+      "file": "world",
+      "path": "day15_migration.carcass_initial_F07",
+      "value": 0.6,
+      "unit": "game_portion protein (carcass remains, one time)"
+    },
+    {
+      "file": "world",
+      "path": "day15_migration.carcass_initial_F11",
+      "value": 0.07,
+      "unit": "game_portion protein (carcass remains, one time)"
+    },
+    {
+      "file": "world",
+      "path": "day15_migration.carcass_initial_F07_older",
+      "value": 0.05,
+      "unit": "game_portion protein (carcass remains, one time)"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "nutrition.worker_sugar_daily",
+      "value": 0.1,
+      "unit": "game_portion sugar / worker / day at metabolism.reference_c"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "nutrition.worker_protein_daily",
+      "value": 0.008,
+      "unit": "game_portion protein / worker / day at reference_c"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "nutrition.queen_sugar_daily",
+      "value": 0.22,
+      "unit": "game_portion sugar / queen / day at reference_c"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "nutrition.queen_protein_daily",
+      "value": 0.045,
+      "unit": "game_portion protein / queen / day at reference_c"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "nutrition.larva_sugar_daily",
+      "value": 0.025,
+      "unit": "game_portion sugar / larva / day at reference_c"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "nutrition.larva_protein_daily",
+      "value": 0.08,
+      "unit": "game_portion protein / larva / day at reference_c"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "nutrition.egg_laying_protein_cost",
+      "value": 0.14,
+      "unit": "game_portion protein / egg"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "nutrition.egg_laying_sugar_cost",
+      "value": 0.08,
+      "unit": "game_portion sugar / egg"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "nutrition.max_sugar_store",
+      "value": 24,
+      "unit": "game_portion sugar (nest store cap at baseline)"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "nutrition.max_protein_store",
+      "value": 12,
+      "unit": "game_portion protein (nest store cap at baseline)"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "nutrition.sugar_store_per_extra_worker",
+      "value": 0.4,
+      "unit": "game_portion sugar / extra worker"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "nutrition.protein_store_per_extra_worker",
+      "value": 0.3,
+      "unit": "game_portion protein / extra worker"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "foraging_trips.foraging_trip_sugar_cost",
+      "value": 0.012,
+      "unit": "game_portion sugar / trip"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "scouting.unproductive_route_threshold_portions",
+      "value": 0.1,
+      "unit": "game_portion remembered harvest"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "site_choice.default_prior_success_portions",
+      "value": 0.15,
+      "unit": "game_portion remembered harvest"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "site_choice.score_base_offset",
+      "value": 0.15,
+      "unit": "game_portion sugar+protein (added to remembered harvest in site scores)"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "food_handling.crop_load_sugar_min",
+      "value": 0.28,
+      "unit": "game_portion sugar / trip"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "food_handling.crop_load_sugar_max",
+      "value": 0.62,
+      "unit": "game_portion sugar / trip"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "food_handling.crop_load_protein_min",
+      "value": 0.3,
+      "unit": "game_portion protein / trip"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "food_handling.crop_load_protein_max",
+      "value": 0.64,
+      "unit": "game_portion protein / trip"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "trophallaxis.crop_capacity",
+      "value": 0.8,
+      "unit": "game_portion per worker crop"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "trophallaxis.transfer_max_portions",
+      "value": 0.28,
+      "unit": "game_portion sugar / trophallaxis"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "activity.active_minute_sugar_cost",
+      "value": 0.00024,
+      "unit": "game_portion sugar / minute outside"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "queen_feeding.take_from_cache_max_portions",
+      "value": 0.28,
+      "unit": "game_portion protein / nest round"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "queen_feeding.feed_max_portions_per_contact",
+      "value": 0.28,
+      "unit": "game_portion per contact"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "queen_feeding.self_feed_max_portions",
+      "value": 0.045,
+      "unit": "game_portion protein / round"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "larval_feeding.feed_bolus_sugar_portions",
+      "value": 0.025,
+      "unit": "game_portion sugar / contact"
+    },
+    {
+      "file": "species:pheidole-megacephala",
+      "path": "larval_feeding.feed_bolus_protein_portions",
+      "value": 0.08,
+      "unit": "game_portion protein / contact"
+    }
+  ],
+  "finding": {
+    "parameter": "species:pheidole-megacephala#site_choice.score_base_offset",
+    "reason": "added to a remembered harvest in portions: score = (score_base_offset + prior) × penalty × bias × (…) (engine/activity.ts, engine/foraging.ts); it is a portion quantity that was not declared as one"
+  },
+  "code_constants_not_scalable": [
+    {
+      "where": "engine/math.ts round()",
+      "what": "every stored food amount is rounded to 1e-6 份 (absolute, UNIT_DECIMALS = world model.unit_precision)"
+    },
+    {
+      "where": "engine/activity.ts, engine/foraging.ts sourceSum(site) <= 1e-5",
+      "what": "a source with ≤ 1e-5 份 is treated as empty (perception threshold in portions)"
+    },
+    {
+      "where": "engine/ecology.ts, engine/foraging.ts needed <= 1e-6",
+      "what": "loop stop in portions"
+    },
+    {
+      "where": "engine/ecology.ts TOL_FLOW = 1e-5, engine/day.ts carcass check 1e-4, engine/invariants.ts / queen-feeding.ts / larva-feeding.ts 1e-9",
+      "what": "conservation / domain check tolerances in portions (checks only; they do not change outputs while they pass)"
+    }
+  ],
+  "traced_divergences": [
+    {
+      "experiment": "declared_k10",
+      "case": "A1-summer-20270001",
+      "day": 7,
+      "cause": "perception threshold in code: on day 7 the bloomed-out nectar site F08 holds 0.000002 份 (baseline) vs 0.000019 份 (×10); sourceSum(site) <= 1e-5 makes it \"empty\" only in the baseline, so W009 finds nothing there in one run and discovers nectar in the other"
+    },
+    {
+      "experiment": "declared_k10",
+      "case": "A5-winter-20270001",
+      "day": 25,
+      "cause": "rounding: the collect duration is proportional to the rounded load (0.187246 vs 1.872458 份), so the activity ends at minute 15.411765 vs 15.411764; two events at minute 15.882352/3 are then processed in a different order"
+    }
+  ],
+  "experiments": [
+    {
+      "id": "declared_k2",
+      "k": 2,
+      "exclude": [],
+      "description": "every parameter declared game_portion (RU-1) × 2",
+      "cases": [
+        {
+          "founding": "A1",
+          "season": "spring",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000042,
+          "max_unscaled_dev": 0.000262,
+          "scaled_leaves": 12517
+        },
+        {
+          "founding": "A1",
+          "season": "spring",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000028,
+          "max_unscaled_dev": 0.000099,
+          "scaled_leaves": 12789
+        },
+        {
+          "founding": "A1",
+          "season": "summer",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000085,
+          "max_unscaled_dev": 0,
+          "scaled_leaves": 4391
+        },
+        {
+          "founding": "A1",
+          "season": "summer",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000175,
+          "max_unscaled_dev": 0.000125,
+          "scaled_leaves": 9307
+        },
+        {
+          "founding": "A1",
+          "season": "autumn",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000023,
+          "max_unscaled_dev": 0.000219,
+          "scaled_leaves": 17577
+        },
+        {
+          "founding": "A1",
+          "season": "autumn",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000405,
+          "max_unscaled_dev": 0.000105,
+          "scaled_leaves": 11680
+        },
+        {
+          "founding": "A1",
+          "season": "winter",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000245,
+          "max_unscaled_dev": 0.000092,
+          "scaled_leaves": 12719
+        },
+        {
+          "founding": "A1",
+          "season": "winter",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000435,
+          "max_unscaled_dev": 0.000073,
+          "scaled_leaves": 10153
+        },
+        {
+          "founding": "A2",
+          "season": "spring",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000455,
+          "max_unscaled_dev": 0.000171,
+          "scaled_leaves": 18454
+        },
+        {
+          "founding": "A2",
+          "season": "spring",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000195,
+          "max_unscaled_dev": 0.000167,
+          "scaled_leaves": 22536
+        },
+        {
+          "founding": "A2",
+          "season": "summer",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000008,
+          "max_unscaled_dev": 0.000002,
+          "scaled_leaves": 3975
+        },
+        {
+          "founding": "A2",
+          "season": "summer",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.00001,
+          "max_unscaled_dev": 0.000032,
+          "scaled_leaves": 20738
+        },
+        {
+          "founding": "A2",
+          "season": "autumn",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000375,
+          "max_unscaled_dev": 0.000135,
+          "scaled_leaves": 19992
+        },
+        {
+          "founding": "A2",
+          "season": "autumn",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000225,
+          "max_unscaled_dev": 0.000081,
+          "scaled_leaves": 20882
+        },
+        {
+          "founding": "A2",
+          "season": "winter",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000028,
+          "max_unscaled_dev": 0.000105,
+          "scaled_leaves": 15483
+        },
+        {
+          "founding": "A2",
+          "season": "winter",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000085,
+          "max_unscaled_dev": 0.000072,
+          "scaled_leaves": 11650
+        },
+        {
+          "founding": "A3",
+          "season": "spring",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000245,
+          "max_unscaled_dev": 0.000324,
+          "scaled_leaves": 11590
+        },
+        {
+          "founding": "A3",
+          "season": "spring",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000015,
+          "max_unscaled_dev": 0.000113,
+          "scaled_leaves": 15542
+        },
+        {
+          "founding": "A3",
+          "season": "summer",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000008,
+          "max_unscaled_dev": 0.00003,
+          "scaled_leaves": 4973
+        },
+        {
+          "founding": "A3",
+          "season": "summer",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000005,
+          "max_unscaled_dev": 0.000032,
+          "scaled_leaves": 15429
+        },
+        {
+          "founding": "A3",
+          "season": "autumn",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000042,
+          "max_unscaled_dev": 0.000154,
+          "scaled_leaves": 15697
+        },
+        {
+          "founding": "A3",
+          "season": "autumn",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000009,
+          "max_unscaled_dev": 0.000021,
+          "scaled_leaves": 17148
+        },
+        {
+          "founding": "A3",
+          "season": "winter",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000525,
+          "max_unscaled_dev": 0.000184,
+          "scaled_leaves": 13515
+        },
+        {
+          "founding": "A3",
+          "season": "winter",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000325,
+          "max_unscaled_dev": 0.000064,
+          "scaled_leaves": 11858
+        },
+        {
+          "founding": "A4",
+          "season": "spring",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000009,
+          "max_unscaled_dev": 0.000054,
+          "scaled_leaves": 11684
+        },
+        {
+          "founding": "A4",
+          "season": "spring",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000035,
+          "max_unscaled_dev": 0,
+          "scaled_leaves": 5015
+        },
+        {
+          "founding": "A4",
+          "season": "summer",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000025,
+          "max_unscaled_dev": 0.000014,
+          "scaled_leaves": 5784
+        },
+        {
+          "founding": "A4",
+          "season": "summer",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000055,
+          "max_unscaled_dev": 0.000004,
+          "scaled_leaves": 5033
+        },
+        {
+          "founding": "A4",
+          "season": "autumn",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000125,
+          "max_unscaled_dev": 0.000047,
+          "scaled_leaves": 11936
+        },
+        {
+          "founding": "A4",
+          "season": "autumn",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000011,
+          "max_unscaled_dev": 0.00005,
+          "scaled_leaves": 10682
+        },
+        {
+          "founding": "A4",
+          "season": "winter",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000003,
+          "max_unscaled_dev": 0,
+          "scaled_leaves": 3384
+        },
+        {
+          "founding": "A4",
+          "season": "winter",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000025,
+          "max_unscaled_dev": 0,
+          "scaled_leaves": 5135
+        },
+        {
+          "founding": "A5",
+          "season": "spring",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000205,
+          "max_unscaled_dev": 0.000127,
+          "scaled_leaves": 17785
+        },
+        {
+          "founding": "A5",
+          "season": "spring",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000017,
+          "max_unscaled_dev": 0.000064,
+          "scaled_leaves": 15407
+        },
+        {
+          "founding": "A5",
+          "season": "summer",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000285,
+          "max_unscaled_dev": 0.000189,
+          "scaled_leaves": 20173
+        },
+        {
+          "founding": "A5",
+          "season": "summer",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000016,
+          "max_unscaled_dev": 0.00007,
+          "scaled_leaves": 16131
+        },
+        {
+          "founding": "A5",
+          "season": "autumn",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000305,
+          "max_unscaled_dev": 0.000115,
+          "scaled_leaves": 18730
+        },
+        {
+          "founding": "A5",
+          "season": "autumn",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000165,
+          "max_unscaled_dev": 0.000044,
+          "scaled_leaves": 16869
+        },
+        {
+          "founding": "A5",
+          "season": "winter",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000019,
+          "max_unscaled_dev": 0.000034,
+          "scaled_leaves": 12790
+        },
+        {
+          "founding": "A5",
+          "season": "winter",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000075,
+          "max_unscaled_dev": 0.000154,
+          "scaled_leaves": 13736
+        }
+      ],
+      "invariant": 40,
+      "total": 40
+    },
+    {
+      "id": "declared_k0.5",
+      "k": 0.5,
+      "exclude": [],
+      "description": "every parameter declared game_portion (RU-1) × 0.5",
+      "cases": [
+        {
+          "founding": "A1",
+          "season": "spring",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000082,
+          "max_unscaled_dev": 0.000498,
+          "scaled_leaves": 12522
+        },
+        {
+          "founding": "A1",
+          "season": "spring",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000051,
+          "max_unscaled_dev": 0.000187,
+          "scaled_leaves": 12789
+        },
+        {
+          "founding": "A1",
+          "season": "summer",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000017,
+          "max_unscaled_dev": 0,
+          "scaled_leaves": 4379
+        },
+        {
+          "founding": "A1",
+          "season": "summer",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000038,
+          "max_unscaled_dev": 0.00023,
+          "scaled_leaves": 9307
+        },
+        {
+          "founding": "A1",
+          "season": "autumn",
+          "seed": 20270001,
+          "first_structural_divergence_day": 48,
+          "first_divergence_sample": [
+            "day48.0.colonies.0.events.163.worker#0: 3 vs 5",
+            "day48.0.colonies.0.events.164.worker#0: 3 vs 5",
+            "day48.0.colonies.0.events.165.worker#0: 5 vs 3"
+          ],
+          "max_scaled_dev_portions": 0.000048,
+          "max_unscaled_dev": 0.000456,
+          "scaled_leaves": 8834
+        },
+        {
+          "founding": "A1",
+          "season": "autumn",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000075,
+          "max_unscaled_dev": 0.000202,
+          "scaled_leaves": 11695
+        },
+        {
+          "founding": "A1",
+          "season": "winter",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000049,
+          "max_unscaled_dev": 0.00018,
+          "scaled_leaves": 12715
+        },
+        {
+          "founding": "A1",
+          "season": "winter",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000084,
+          "max_unscaled_dev": 0.000146,
+          "scaled_leaves": 10166
+        },
+        {
+          "founding": "A2",
+          "season": "spring",
+          "seed": 20270001,
+          "first_structural_divergence_day": 34,
+          "first_divergence_sample": [
+            "day34.0.colonies.0.summary.income.sugar: 6.864255 vs 4.558266",
+            "day34.0.colonies.0.summary.tasks.forage: 6 vs 8",
+            "day34.0.colonies.0.summary.tasks.nurse: 5 vs 4"
+          ],
+          "max_scaled_dev_portions": 0.000081,
+          "max_unscaled_dev": 0.000304,
+          "scaled_leaves": 6430
+        },
+        {
+          "founding": "A2",
+          "season": "spring",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000028,
+          "max_unscaled_dev": 0.000259,
+          "scaled_leaves": 22536
+        },
+        {
+          "founding": "A2",
+          "season": "summer",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000016,
+          "max_unscaled_dev": 0.000006,
+          "scaled_leaves": 3963
+        },
+        {
+          "founding": "A2",
+          "season": "summer",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000017,
+          "max_unscaled_dev": 0.000075,
+          "scaled_leaves": 20738
+        },
+        {
+          "founding": "A2",
+          "season": "autumn",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000071,
+          "max_unscaled_dev": 0.000248,
+          "scaled_leaves": 19992
+        },
+        {
+          "founding": "A2",
+          "season": "autumn",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000039,
+          "max_unscaled_dev": 0.000142,
+          "scaled_leaves": 20882
+        },
+        {
+          "founding": "A2",
+          "season": "winter",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000059,
+          "max_unscaled_dev": 0.000221,
+          "scaled_leaves": 15483
+        },
+        {
+          "founding": "A2",
+          "season": "winter",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000019,
+          "max_unscaled_dev": 0.000216,
+          "scaled_leaves": 11657
+        },
+        {
+          "founding": "A3",
+          "season": "spring",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000052,
+          "max_unscaled_dev": 0.000684,
+          "scaled_leaves": 11551
+        },
+        {
+          "founding": "A3",
+          "season": "spring",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000033,
+          "max_unscaled_dev": 0.000213,
+          "scaled_leaves": 15544
+        },
+        {
+          "founding": "A3",
+          "season": "summer",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000016,
+          "max_unscaled_dev": 0.000066,
+          "scaled_leaves": 4961
+        },
+        {
+          "founding": "A3",
+          "season": "summer",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000012,
+          "max_unscaled_dev": 0.000064,
+          "scaled_leaves": 15417
+        },
+        {
+          "founding": "A3",
+          "season": "autumn",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000101,
+          "max_unscaled_dev": 0.000338,
+          "scaled_leaves": 15697
+        },
+        {
+          "founding": "A3",
+          "season": "autumn",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000024,
+          "max_unscaled_dev": 0.000045,
+          "scaled_leaves": 17148
+        },
+        {
+          "founding": "A3",
+          "season": "winter",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000108,
+          "max_unscaled_dev": 0.00038,
+          "scaled_leaves": 13520
+        },
+        {
+          "founding": "A3",
+          "season": "winter",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000057,
+          "max_unscaled_dev": 0.000167,
+          "scaled_leaves": 11857
+        },
+        {
+          "founding": "A4",
+          "season": "spring",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.00001,
+          "max_unscaled_dev": 0.00005,
+          "scaled_leaves": 11684
+        },
+        {
+          "founding": "A4",
+          "season": "spring",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000006,
+          "max_unscaled_dev": 0,
+          "scaled_leaves": 5012
+        },
+        {
+          "founding": "A4",
+          "season": "summer",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000005,
+          "max_unscaled_dev": 0.000021,
+          "scaled_leaves": 5772
+        },
+        {
+          "founding": "A4",
+          "season": "summer",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.00001,
+          "max_unscaled_dev": 0.000008,
+          "scaled_leaves": 5033
+        },
+        {
+          "founding": "A4",
+          "season": "autumn",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.00002,
+          "max_unscaled_dev": 0.000075,
+          "scaled_leaves": 11937
+        },
+        {
+          "founding": "A4",
+          "season": "autumn",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000017,
+          "max_unscaled_dev": 0.000078,
+          "scaled_leaves": 10682
+        },
+        {
+          "founding": "A4",
+          "season": "winter",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000005,
+          "max_unscaled_dev": 0,
+          "scaled_leaves": 3384
+        },
+        {
+          "founding": "A4",
+          "season": "winter",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000004,
+          "max_unscaled_dev": 0,
+          "scaled_leaves": 5135
+        },
+        {
+          "founding": "A5",
+          "season": "spring",
+          "seed": 20270001,
+          "first_structural_divergence_day": 35,
+          "first_divergence_sample": [
+            "day35.0.colonies.0.summary.foraging_trips: 32 vs 33",
+            "day35.0.colonies.0.summary.foraging_successes: 11 vs 10",
+            "day35.0.colonies.0.summary.activity.trips: 32 vs 33"
+          ],
+          "max_scaled_dev_portions": 0.000717,
+          "max_unscaled_dev": 0.000116,
+          "scaled_leaves": 5863
+        },
+        {
+          "founding": "A5",
+          "season": "spring",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000032,
+          "max_unscaled_dev": 0.000095,
+          "scaled_leaves": 15407
+        },
+        {
+          "founding": "A5",
+          "season": "summer",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000064,
+          "max_unscaled_dev": 0.000398,
+          "scaled_leaves": 20161
+        },
+        {
+          "founding": "A5",
+          "season": "summer",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000043,
+          "max_unscaled_dev": 0.000219,
+          "scaled_leaves": 16131
+        },
+        {
+          "founding": "A5",
+          "season": "autumn",
+          "seed": 20270001,
+          "first_structural_divergence_day": 78,
+          "first_divergence_sample": [
+            "day78.0.colonies.0.summary.foraging_trips: 50 vs 49",
+            "day78.0.colonies.0.summary.foraging_successes: 20 vs 19",
+            "day78.0.colonies.0.summary.extra_sugar_cost: 0.234658 vs 0.098497"
+          ],
+          "max_scaled_dev_portions": 0.000068,
+          "max_unscaled_dev": 0.000206,
+          "scaled_leaves": 15663
+        },
+        {
+          "founding": "A5",
+          "season": "autumn",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000037,
+          "max_unscaled_dev": 0.000098,
+          "scaled_leaves": 16869
+        },
+        {
+          "founding": "A5",
+          "season": "winter",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000038,
+          "max_unscaled_dev": 0.00006,
+          "scaled_leaves": 12805
+        },
+        {
+          "founding": "A5",
+          "season": "winter",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000012,
+          "max_unscaled_dev": 0.00022,
+          "scaled_leaves": 13736
+        }
+      ],
+      "invariant": 36,
+      "total": 40
+    },
+    {
+      "id": "declared_k10",
+      "k": 10,
+      "exclude": [],
+      "description": "every parameter declared game_portion (RU-1) × 10",
+      "cases": [
+        {
+          "founding": "A1",
+          "season": "spring",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000351,
+          "max_unscaled_dev": 0.000229,
+          "scaled_leaves": 12517
+        },
+        {
+          "founding": "A1",
+          "season": "spring",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000229,
+          "max_unscaled_dev": 0.00008,
+          "scaled_leaves": 12789
+        },
+        {
+          "founding": "A1",
+          "season": "summer",
+          "seed": 20270001,
+          "first_structural_divergence_day": 7,
+          "first_divergence_sample": [
+            "day7.0.colonies.0.summary.foraging_trips: 16 vs 12",
+            "day7.0.colonies.0.summary.foraging_successes: 4 vs 5",
+            "day7.0.colonies.0.summary.extra_sugar_cost: 0.012856 vs 0.107529"
+          ],
+          "max_scaled_dev_portions": 0.0000048,
+          "max_unscaled_dev": 0.000006,
+          "scaled_leaves": 595
+        },
+        {
+          "founding": "A1",
+          "season": "summer",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000151,
+          "max_unscaled_dev": 0.000091,
+          "scaled_leaves": 9307
+        },
+        {
+          "founding": "A1",
+          "season": "autumn",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000279,
+          "max_unscaled_dev": 0.000175,
+          "scaled_leaves": 17577
+        },
+        {
+          "founding": "A1",
+          "season": "autumn",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000348,
+          "max_unscaled_dev": 0.000089,
+          "scaled_leaves": 11680
+        },
+        {
+          "founding": "A1",
+          "season": "winter",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000184,
+          "max_unscaled_dev": 0.000069,
+          "scaled_leaves": 12711
+        },
+        {
+          "founding": "A1",
+          "season": "winter",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000314,
+          "max_unscaled_dev": 0.000065,
+          "scaled_leaves": 10148
+        },
+        {
+          "founding": "A2",
+          "season": "spring",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000436,
+          "max_unscaled_dev": 0.000164,
+          "scaled_leaves": 18454
+        },
+        {
+          "founding": "A2",
+          "season": "spring",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000407,
+          "max_unscaled_dev": 0.000421,
+          "scaled_leaves": 22536
+        },
+        {
+          "founding": "A2",
+          "season": "summer",
+          "seed": 20270001,
+          "first_structural_divergence_day": 7,
+          "first_divergence_sample": [
+            "day7.0.colonies.0.summary.foraging_successes: 5 vs 6",
+            "day7.0.colonies.0.summary.extra_sugar_cost: 0.012931 vs 0.136329",
+            "day7.0.colonies.0.summary.foraging_workers_by_macro.sugar: 0 vs 1"
+          ],
+          "max_scaled_dev_portions": 0.000702,
+          "max_unscaled_dev": 0.000006,
+          "scaled_leaves": 581
+        },
+        {
+          "founding": "A2",
+          "season": "summer",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000016,
+          "max_unscaled_dev": 0.000093,
+          "scaled_leaves": 20738
+        },
+        {
+          "founding": "A2",
+          "season": "autumn",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000447,
+          "max_unscaled_dev": 0.000154,
+          "scaled_leaves": 19992
+        },
+        {
+          "founding": "A2",
+          "season": "autumn",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000023,
+          "max_unscaled_dev": 0.000084,
+          "scaled_leaves": 20882
+        },
+        {
+          "founding": "A2",
+          "season": "winter",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000242,
+          "max_unscaled_dev": 0.000086,
+          "scaled_leaves": 15483
+        },
+        {
+          "founding": "A2",
+          "season": "winter",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000114,
+          "max_unscaled_dev": 0.000033,
+          "scaled_leaves": 11642
+        },
+        {
+          "founding": "A3",
+          "season": "spring",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000162,
+          "max_unscaled_dev": 0.000213,
+          "scaled_leaves": 11590
+        },
+        {
+          "founding": "A3",
+          "season": "spring",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000115,
+          "max_unscaled_dev": 0.000114,
+          "scaled_leaves": 15542
+        },
+        {
+          "founding": "A3",
+          "season": "summer",
+          "seed": 20270001,
+          "first_structural_divergence_day": 7,
+          "first_divergence_sample": [
+            "day7.0.colonies.0.summary.foraging_successes: 5 vs 6",
+            "day7.0.colonies.0.summary.extra_sugar_cost: 0.012931 vs 0.136329",
+            "day7.0.colonies.0.summary.foraging_workers_by_macro.sugar: 0 vs 1"
+          ],
+          "max_scaled_dev_portions": 0.000702,
+          "max_unscaled_dev": 0.000017,
+          "scaled_leaves": 779
+        },
+        {
+          "founding": "A3",
+          "season": "summer",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000099,
+          "max_unscaled_dev": 0.00008,
+          "scaled_leaves": 15438
+        },
+        {
+          "founding": "A3",
+          "season": "autumn",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000368,
+          "max_unscaled_dev": 0.000121,
+          "scaled_leaves": 15697
+        },
+        {
+          "founding": "A3",
+          "season": "autumn",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000147,
+          "max_unscaled_dev": 0.000027,
+          "scaled_leaves": 17148
+        },
+        {
+          "founding": "A3",
+          "season": "winter",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000342,
+          "max_unscaled_dev": 0.00012,
+          "scaled_leaves": 13511
+        },
+        {
+          "founding": "A3",
+          "season": "winter",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000262,
+          "max_unscaled_dev": 0.000051,
+          "scaled_leaves": 11852
+        },
+        {
+          "founding": "A4",
+          "season": "spring",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000136,
+          "max_unscaled_dev": 0.000108,
+          "scaled_leaves": 11684
+        },
+        {
+          "founding": "A4",
+          "season": "spring",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000026,
+          "max_unscaled_dev": 0,
+          "scaled_leaves": 5021
+        },
+        {
+          "founding": "A4",
+          "season": "summer",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000002,
+          "max_unscaled_dev": 0.000014,
+          "scaled_leaves": 5784
+        },
+        {
+          "founding": "A4",
+          "season": "summer",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000034,
+          "max_unscaled_dev": 0.000003,
+          "scaled_leaves": 5033
+        },
+        {
+          "founding": "A4",
+          "season": "autumn",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000011,
+          "max_unscaled_dev": 0.000041,
+          "scaled_leaves": 11932
+        },
+        {
+          "founding": "A4",
+          "season": "autumn",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000091,
+          "max_unscaled_dev": 0.000028,
+          "scaled_leaves": 10682
+        },
+        {
+          "founding": "A4",
+          "season": "winter",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000018,
+          "max_unscaled_dev": 0,
+          "scaled_leaves": 3384
+        },
+        {
+          "founding": "A4",
+          "season": "winter",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000019,
+          "max_unscaled_dev": 0,
+          "scaled_leaves": 5135
+        },
+        {
+          "founding": "A5",
+          "season": "spring",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000302,
+          "max_unscaled_dev": 0.000227,
+          "scaled_leaves": 17783
+        },
+        {
+          "founding": "A5",
+          "season": "spring",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000167,
+          "max_unscaled_dev": 0.000063,
+          "scaled_leaves": 15407
+        },
+        {
+          "founding": "A5",
+          "season": "summer",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000388,
+          "max_unscaled_dev": 0.000266,
+          "scaled_leaves": 20173
+        },
+        {
+          "founding": "A5",
+          "season": "summer",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000151,
+          "max_unscaled_dev": 0.00007,
+          "scaled_leaves": 16131
+        },
+        {
+          "founding": "A5",
+          "season": "autumn",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000334,
+          "max_unscaled_dev": 0.000125,
+          "scaled_leaves": 18729
+        },
+        {
+          "founding": "A5",
+          "season": "autumn",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000162,
+          "max_unscaled_dev": 0.000061,
+          "scaled_leaves": 16869
+        },
+        {
+          "founding": "A5",
+          "season": "winter",
+          "seed": 20270001,
+          "first_structural_divergence_day": 25,
+          "first_divergence_sample": [
+            "day25.0.colonies.0.events.54: keys",
+            "day25.0.colonies.0.events.55: keys",
+            "day25.0.colonies.0.events.56: keys"
+          ],
+          "max_scaled_dev_portions": 0.0000052,
+          "max_unscaled_dev": 0.000011,
+          "scaled_leaves": 3001
+        },
+        {
+          "founding": "A5",
+          "season": "winter",
+          "seed": 20270002,
+          "first_structural_divergence_day": 87,
+          "first_divergence_sample": [
+            "day87.0.colonies.0.summary.income.protein: 4.183998 vs 0",
+            "day87.0.colonies.0.summary.tasks.forage: 6 vs 1",
+            "day87.0.colonies.0.summary.tasks.nurse: 1 vs 3"
+          ],
+          "max_scaled_dev_portions": 0.0000074,
+          "max_unscaled_dev": 0.000145,
+          "scaled_leaves": 13006
+        }
+      ],
+      "invariant": 35,
+      "total": 40
+    },
+    {
+      "id": "audit_set_k2",
+      "k": 2,
+      "exclude": [
+        "species:pheidole-megacephala#site_choice.score_base_offset"
+      ],
+      "description": "the audit's original portion set (#202 item 8 registry), i.e. without site_choice.score_base_offset, × 2 — reproduces the CE1 finding",
+      "cases": [
+        {
+          "founding": "A1",
+          "season": "spring",
+          "seed": 20270001,
+          "first_structural_divergence_day": 34,
+          "first_divergence_sample": [
+            "day34.0.colonies.0.summary.income.sugar: 0.398261 vs 0.118767",
+            "day34.0.colonies.0.summary.income.protein: 0.921877 vs 3.038396",
+            "day34.0.colonies.0.summary.tasks.nurse: 3 vs 0"
+          ],
+          "max_scaled_dev_portions": 0.000042,
+          "max_unscaled_dev": 0.000074,
+          "scaled_leaves": 5374
+        },
+        {
+          "founding": "A1",
+          "season": "spring",
+          "seed": 20270002,
+          "first_structural_divergence_day": 14,
+          "first_divergence_sample": [
+            "day14.0.colonies.0.summary.foraging_workers_by_macro.sugar: 5 vs 4",
+            "day14.0.colonies.0.summary.foraging_workers_by_macro.protein: 0 vs 1",
+            "day14.0.colonies.0.summary.activity.outside_minutes: 736.433024 vs 735.413416"
+          ],
+          "max_scaled_dev_portions": 0.000247,
+          "max_unscaled_dev": 0.000099,
+          "scaled_leaves": 2305
+        },
+        {
+          "founding": "A1",
+          "season": "summer",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000085,
+          "max_unscaled_dev": 0,
+          "scaled_leaves": 4391
+        },
+        {
+          "founding": "A1",
+          "season": "summer",
+          "seed": 20270002,
+          "first_structural_divergence_day": 35,
+          "first_divergence_sample": [
+            "day35.0.colonies.0.summary.activity.outside_minutes: 598.475563 vs 597.534387",
+            "day35.0.colonies.0.summary.activity.travel_minutes: 570.08823 vs 569.147054",
+            "day35.0.colonies.0.summary.activity.workers.W009.outside_minutes: 113.62745 vs 112.686274"
+          ],
+          "max_scaled_dev_portions": 0.000229,
+          "max_unscaled_dev": 0.000125,
+          "scaled_leaves": 5661
+        },
+        {
+          "founding": "A1",
+          "season": "autumn",
+          "seed": 20270001,
+          "first_structural_divergence_day": 51,
+          "first_divergence_sample": [
+            "day51.0.colonies.0.summary.income.sugar: 2.138045 vs 2.160134",
+            "day51.0.colonies.0.summary.tasks.forage: 3 vs 1",
+            "day51.0.colonies.0.summary.tasks.repair: 0 vs 1"
+          ],
+          "max_scaled_dev_portions": 0.000023,
+          "max_unscaled_dev": 0.000219,
+          "scaled_leaves": 9263
+        },
+        {
+          "founding": "A1",
+          "season": "autumn",
+          "seed": 20270002,
+          "first_structural_divergence_day": 37,
+          "first_divergence_sample": [
+            "day37.0.colonies.0.summary.income.sugar: 0.761404 vs 0",
+            "day37.0.colonies.0.summary.income.protein: 1.515296 vs 0",
+            "day37.0.colonies.0.summary.tasks.forage: 4 vs 1"
+          ],
+          "max_scaled_dev_portions": 0.0000405,
+          "max_unscaled_dev": 0.000105,
+          "scaled_leaves": 6194
+        },
+        {
+          "founding": "A1",
+          "season": "winter",
+          "seed": 20270001,
+          "first_structural_divergence_day": 84,
+          "first_divergence_sample": [
+            "day84.0.colonies.0.summary.income.sugar: 0.408195 vs 2.694582",
+            "day84.0.colonies.0.summary.foraging_trips: 12 vs 16",
+            "day84.0.colonies.0.summary.foraging_successes: 4 vs 6"
+          ],
+          "max_scaled_dev_portions": 0.0000245,
+          "max_unscaled_dev": 0.000092,
+          "scaled_leaves": 11379
+        },
+        {
+          "founding": "A1",
+          "season": "winter",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000435,
+          "max_unscaled_dev": 0.000073,
+          "scaled_leaves": 10153
+        },
+        {
+          "founding": "A2",
+          "season": "spring",
+          "seed": 20270001,
+          "first_structural_divergence_day": 19,
+          "first_divergence_sample": [
+            "day19.0.colonies.0.summary.tasks.forage: 7 vs 5",
+            "day19.0.colonies.0.summary.tasks.repair: 0 vs 1",
+            "day19.0.colonies.0.summary.tasks.rest: 0 vs 1"
+          ],
+          "max_scaled_dev_portions": 0.00101,
+          "max_unscaled_dev": 0.000007,
+          "scaled_leaves": 3495
+        },
+        {
+          "founding": "A2",
+          "season": "spring",
+          "seed": 20270002,
+          "first_structural_divergence_day": 43,
+          "first_divergence_sample": [
+            "day43.0.colonies.0.summary.foraging_workers_by_macro.sugar: 7 vs 6",
+            "day43.0.colonies.0.summary.foraging_workers_by_macro.protein: 0 vs 1",
+            "day43.0.colonies.0.summary.activity.workers.W003.outside_minutes: 2.941176 vs 3.215686"
+          ],
+          "max_scaled_dev_portions": 0.0000665,
+          "max_unscaled_dev": 0.275,
+          "scaled_leaves": 8305
+        },
+        {
+          "founding": "A2",
+          "season": "summer",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000008,
+          "max_unscaled_dev": 0.000002,
+          "scaled_leaves": 3975
+        },
+        {
+          "founding": "A2",
+          "season": "summer",
+          "seed": 20270002,
+          "first_structural_divergence_day": 5,
+          "first_divergence_sample": [
+            "day5.0.colonies.0.summary.income.sugar: 2.360781 vs 2.56",
+            "day5.0.colonies.0.summary.income.protein: 1.369577 vs 3.144175",
+            "day5.0.colonies.0.summary.tasks.nurse: 0 vs 1"
+          ],
+          "max_scaled_dev_portions": 0.000003,
+          "max_unscaled_dev": 0.000009,
+          "scaled_leaves": 1191
+        },
+        {
+          "founding": "A2",
+          "season": "autumn",
+          "seed": 20270001,
+          "first_structural_divergence_day": 27,
+          "first_divergence_sample": [
+            "day27.0.colonies.0.summary.activity.travel_minutes: 230.274512 vs 229.94118",
+            "day27.0.colonies.0.summary.activity.workers.W005.outside_minutes: 32.73999 vs 32.40665",
+            "day27.0.colonies.0.summary.activity.workers.W005.travel_minutes: 7.215686 vs 6.882354"
+          ],
+          "max_scaled_dev_portions": 0.000104,
+          "max_unscaled_dev": 0.333,
+          "scaled_leaves": 6166
+        },
+        {
+          "founding": "A2",
+          "season": "autumn",
+          "seed": 20270002,
+          "first_structural_divergence_day": 33,
+          "first_divergence_sample": [
+            "day33.0.colonies.0.summary.income.sugar: 0 vs 0.828797",
+            "day33.0.colonies.0.summary.foraging_trips: 7 vs 8",
+            "day33.0.colonies.0.summary.foraging_successes: 0 vs 1"
+          ],
+          "max_scaled_dev_portions": 0.0000215,
+          "max_unscaled_dev": 0.000041,
+          "scaled_leaves": 6848
+        },
+        {
+          "founding": "A2",
+          "season": "winter",
+          "seed": 20270001,
+          "first_structural_divergence_day": 88,
+          "first_divergence_sample": [
+            "day88.0.colonies.0.summary.income.sugar: 1.116951 vs 1.784476",
+            "day88.0.colonies.0.summary.foraging_trips: 7 vs 10",
+            "day88.0.colonies.0.summary.extra_sugar_cost: 0.005707 vs 0.014963"
+          ],
+          "max_scaled_dev_portions": 0.000028,
+          "max_unscaled_dev": 0.000105,
+          "scaled_leaves": 15030
+        },
+        {
+          "founding": "A2",
+          "season": "winter",
+          "seed": 20270002,
+          "first_structural_divergence_day": 47,
+          "first_divergence_sample": [
+            "day47.0.colonies.0.summary.income.sugar: 2.97785 vs 3.837288",
+            "day47.0.colonies.0.summary.foraging_trips: 22 vs 20",
+            "day47.0.colonies.0.summary.foraging_successes: 9 vs 7"
+          ],
+          "max_scaled_dev_portions": 0.000007,
+          "max_unscaled_dev": 0.000009,
+          "scaled_leaves": 6073
+        },
+        {
+          "founding": "A3",
+          "season": "spring",
+          "seed": 20270001,
+          "first_structural_divergence_day": 64,
+          "first_divergence_sample": [
+            "day64.0.colonies.0.summary.income.sugar: 0.324408 vs 0",
+            "day64.0.colonies.0.summary.tasks.forage: 3 vs 2",
+            "day64.0.colonies.0.summary.tasks.repair: 0 vs 1"
+          ],
+          "max_scaled_dev_portions": 0.0000245,
+          "max_unscaled_dev": 0.000324,
+          "scaled_leaves": 8035
+        },
+        {
+          "founding": "A3",
+          "season": "spring",
+          "seed": 20270002,
+          "first_structural_divergence_day": 18,
+          "first_divergence_sample": [
+            "day18.0.colonies.0.summary.income.sugar: 0 vs 1.568098",
+            "day18.0.colonies.0.summary.tasks.forage: 4 vs 5",
+            "day18.0.colonies.0.summary.tasks.repair: 1 vs 0"
+          ],
+          "max_scaled_dev_portions": 0.000012,
+          "max_unscaled_dev": 0.000031,
+          "scaled_leaves": 2804
+        },
+        {
+          "founding": "A3",
+          "season": "summer",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000008,
+          "max_unscaled_dev": 0.00003,
+          "scaled_leaves": 4973
+        },
+        {
+          "founding": "A3",
+          "season": "summer",
+          "seed": 20270002,
+          "first_structural_divergence_day": 29,
+          "first_divergence_sample": [
+            "day29.0.colonies.0.events.234.to#0: 1 vs 7",
+            "day29.0.colonies.0.events.235.duration: 0.470588 vs 0.607843",
+            "day29.0.colonies.0.events.235.place#1: 1 vs 7"
+          ],
+          "max_scaled_dev_portions": 0.000004,
+          "max_unscaled_dev": 0.137,
+          "scaled_leaves": 5594
+        },
+        {
+          "founding": "A3",
+          "season": "autumn",
+          "seed": 20270001,
+          "first_structural_divergence_day": 22,
+          "first_divergence_sample": [
+            "day22.0.colonies.0.summary.income.sugar: 4.083835 vs 6.900599",
+            "day22.0.colonies.0.summary.foraging_trips: 36 vs 35",
+            "day22.0.colonies.0.summary.foraging_successes: 19 vs 18"
+          ],
+          "max_scaled_dev_portions": 0.000012,
+          "max_unscaled_dev": 0.608,
+          "scaled_leaves": 2633
+        },
+        {
+          "founding": "A3",
+          "season": "autumn",
+          "seed": 20270002,
+          "first_structural_divergence_day": 22,
+          "first_divergence_sample": [
+            "day22.0.colonies.0.summary.income.sugar: 3.375393 vs 7.195774",
+            "day22.0.colonies.0.summary.income.protein: 0.828549 vs 0.672954",
+            "day22.0.colonies.0.summary.foraging_trips: 20 vs 17"
+          ],
+          "max_scaled_dev_portions": 0.0000025,
+          "max_unscaled_dev": 0.00001,
+          "scaled_leaves": 4116
+        },
+        {
+          "founding": "A3",
+          "season": "winter",
+          "seed": 20270001,
+          "first_structural_divergence_day": 11,
+          "first_divergence_sample": [
+            "day11.0.colonies.0.summary.income.sugar: 2.793722 vs 0",
+            "day11.0.colonies.0.summary.tasks.forage: 8 vs 6",
+            "day11.0.colonies.0.summary.tasks.rest: 0 vs 1"
+          ],
+          "max_scaled_dev_portions": 0.000037,
+          "max_unscaled_dev": 0.000821,
+          "scaled_leaves": 1606
+        },
+        {
+          "founding": "A3",
+          "season": "winter",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000325,
+          "max_unscaled_dev": 0.000064,
+          "scaled_leaves": 11858
+        },
+        {
+          "founding": "A4",
+          "season": "spring",
+          "seed": 20270001,
+          "first_structural_divergence_day": 54,
+          "first_divergence_sample": [
+            "day54.0.colonies.0.summary.foraging_workers_by_macro.sugar: 1 vs 0",
+            "day54.0.colonies.0.summary.foraging_workers_by_macro.protein: 0 vs 1",
+            "day54.0.colonies.0.summary.activity.outside_minutes: 105.254902 vs 53.215686"
+          ],
+          "max_scaled_dev_portions": 0.000003,
+          "max_unscaled_dev": 0.000283,
+          "scaled_leaves": 5456
+        },
+        {
+          "founding": "A4",
+          "season": "spring",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000035,
+          "max_unscaled_dev": 0,
+          "scaled_leaves": 5015
+        },
+        {
+          "founding": "A4",
+          "season": "summer",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000025,
+          "max_unscaled_dev": 0.000014,
+          "scaled_leaves": 5784
+        },
+        {
+          "founding": "A4",
+          "season": "summer",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000055,
+          "max_unscaled_dev": 0.000004,
+          "scaled_leaves": 5033
+        },
+        {
+          "founding": "A4",
+          "season": "autumn",
+          "seed": 20270001,
+          "first_structural_divergence_day": 65,
+          "first_divergence_sample": [
+            "day65.0.colonies.0.summary.income.sugar: 2.114031 vs 2.122629",
+            "day65.0.colonies.0.summary.foraging_trips: 18 vs 17",
+            "day65.0.colonies.0.summary.foraging_successes: 13 vs 10"
+          ],
+          "max_scaled_dev_portions": 0.0000125,
+          "max_unscaled_dev": 0.000047,
+          "scaled_leaves": 7307
+        },
+        {
+          "founding": "A4",
+          "season": "autumn",
+          "seed": 20270002,
+          "first_structural_divergence_day": 28,
+          "first_divergence_sample": [
+            "day28.0.colonies.0.summary.income.sugar: 1.17266 vs 0",
+            "day28.0.colonies.0.summary.income.protein: 2.94727 vs 6.829198",
+            "day28.0.colonies.0.summary.foraging_trips: 13 vs 9"
+          ],
+          "max_scaled_dev_portions": 0.0000105,
+          "max_unscaled_dev": 0.00003,
+          "scaled_leaves": 2640
+        },
+        {
+          "founding": "A4",
+          "season": "winter",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000003,
+          "max_unscaled_dev": 0,
+          "scaled_leaves": 3384
+        },
+        {
+          "founding": "A4",
+          "season": "winter",
+          "seed": 20270002,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.0000025,
+          "max_unscaled_dev": 0,
+          "scaled_leaves": 5135
+        },
+        {
+          "founding": "A5",
+          "season": "spring",
+          "seed": 20270001,
+          "first_structural_divergence_day": 52,
+          "first_divergence_sample": [
+            "day52.0.colonies.0.summary.extra_sugar_cost: 0.005959 vs 0.010808",
+            "day52.0.colonies.0.summary.activity.outside_minutes: 24.829565 vs 22.515837",
+            "day52.0.colonies.0.summary.activity.travel_minutes: 9 vs 6.686274"
+          ],
+          "max_scaled_dev_portions": 0.000555,
+          "max_unscaled_dev": 0.0001,
+          "scaled_leaves": 8770
+        },
+        {
+          "founding": "A5",
+          "season": "spring",
+          "seed": 20270002,
+          "first_structural_divergence_day": 19,
+          "first_divergence_sample": [
+            "day19.0.colonies.0.summary.income.protein: 2.07113 vs 1.089183",
+            "day19.0.colonies.0.summary.tasks.forage: 7 vs 5",
+            "day19.0.colonies.0.summary.tasks.nurse: 0 vs 1"
+          ],
+          "max_scaled_dev_portions": 0.0000145,
+          "max_unscaled_dev": 0.000039,
+          "scaled_leaves": 2618
+        },
+        {
+          "founding": "A5",
+          "season": "summer",
+          "seed": 20270001,
+          "first_structural_divergence_day": 17,
+          "first_divergence_sample": [
+            "day17.0.colonies.0.summary.foraging_trips: 17 vs 15",
+            "day17.0.colonies.0.summary.recruited: 5 vs 4",
+            "day17.0.colonies.0.summary.extra_sugar_cost: 0.013597 vs 0.024492"
+          ],
+          "max_scaled_dev_portions": 0.000008,
+          "max_unscaled_dev": 0.000052,
+          "scaled_leaves": 2090
+        },
+        {
+          "founding": "A5",
+          "season": "summer",
+          "seed": 20270002,
+          "first_structural_divergence_day": 11,
+          "first_divergence_sample": [
+            "day11.0.colonies.0.summary.activity.outside_minutes: 111.099233 vs 110.158057",
+            "day11.0.colonies.0.summary.activity.travel_minutes: 23.725476 vs 22.7843",
+            "day11.0.colonies.0.summary.activity.workers.W002.outside_minutes: 12.2549 vs 11.313724"
+          ],
+          "max_scaled_dev_portions": 0.000234,
+          "max_unscaled_dev": 0.000023,
+          "scaled_leaves": 1271
+        },
+        {
+          "founding": "A5",
+          "season": "autumn",
+          "seed": 20270001,
+          "first_structural_divergence_day": 24,
+          "first_divergence_sample": [
+            "day24.0.colonies.0.summary.income.protein: 4.584815 vs 2.130695",
+            "day24.0.colonies.0.summary.tasks.forage: 8 vs 7",
+            "day24.0.colonies.0.summary.tasks.rest: 0 vs 1"
+          ],
+          "max_scaled_dev_portions": 0.000027,
+          "max_unscaled_dev": 0.000032,
+          "scaled_leaves": 4307
+        },
+        {
+          "founding": "A5",
+          "season": "autumn",
+          "seed": 20270002,
+          "first_structural_divergence_day": 35,
+          "first_divergence_sample": [
+            "day35.0.colonies.0.summary.income.sugar: 1.592828 vs 1.516466",
+            "day35.0.colonies.0.summary.income.protein: 1.062582 vs 0",
+            "day35.0.colonies.0.summary.tasks.forage: 6 vs 4"
+          ],
+          "max_scaled_dev_portions": 0.0000165,
+          "max_unscaled_dev": 0.000171,
+          "scaled_leaves": 5575
+        },
+        {
+          "founding": "A5",
+          "season": "winter",
+          "seed": 20270001,
+          "first_structural_divergence_day": null,
+          "first_divergence_sample": [],
+          "max_scaled_dev_portions": 0.000019,
+          "max_unscaled_dev": 0.000034,
+          "scaled_leaves": 12790
+        },
+        {
+          "founding": "A5",
+          "season": "winter",
+          "seed": 20270002,
+          "first_structural_divergence_day": 14,
+          "first_divergence_sample": [
+            "day14.0.colonies.0.summary.income.sugar: 0.76167 vs 0.403338",
+            "day14.0.colonies.0.summary.foraging_trips: 21 vs 20",
+            "day14.0.colonies.0.summary.foraging_successes: 11 vs 9"
+          ],
+          "max_scaled_dev_portions": 0.000005,
+          "max_unscaled_dev": 0.000012,
+          "scaled_leaves": 1887
+        }
+      ],
+      "invariant": 11,
+      "total": 40
+    }
+  ]
+}
