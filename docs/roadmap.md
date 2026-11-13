@@ -255,6 +255,29 @@ V6 的共同原則：不為動畫流暢度修改生態決策或物理結果；�
 
 SAVE-1 只用合成 payload 測試，**不代表**已與 Worker 整合；存檔不得改變世界行為、時間或隨機串流（驗收 E）。
 
+## 3f. VIS：遊戲畫面品質與真實世界呈現（Owner 2026-11-13 指示，P0，與科學引擎並行）
+
+> 本節只新增，不改 §3～§3e。指示紀錄：[`owner-decisions-2026-11-13c.md`](owner-decisions-2026-11-13c.md)；稽核：[`visual-p0-audit.md`](visual-p0-audit.md)；規格：[`visual-p0-scene-spec.md`](visual-p0-scene-spec.md)；追蹤 [#238](https://github.com/davidcatcat/antempire/issues/238)。
+> **地位**：獨立 P0 工作線，與 §2 科學模擬並行，**不阻擋** Day0 科學工作，也不被它阻擋（VIS-7 的規則更新部分除外）。主要對象是實驗模式的 P0-A2 世界（候選／實驗世界，非正式）。
+> **驗收**：實際觀看體驗是主要驗收，CI 通過不證明畫面品質；每個階段交付**可觀看的版本**與**與上一版並排的比較截圖**（固定種子、固定世界時刻、固定鏡頭、桌面＋手機；規格 §11），Owner 觀看前標「待觀看驗收」。
+> **不變的界線**：只讀 Worker 狀態框與事件；UI 操作不改事件摘要與狀態雜湊；每個元素標為引擎／顯示插值／示範／示意／裝飾之一；引擎沒有的機制不畫或標「尚未模擬」。
+
+| 階段 | 內容 | 依賴 | Issue | 狀態 |
+|---|---|---|---|---|
+| VIS-0 | 稽核、場景規格、繪圖後端決策計畫、工作包 | — | #238 | 本 PR（文件） |
+| VIS-1 | 第一個可觀看的新版畫面：巢口近景開場、微距預設、P0-A2 畫面開啟頭與觸角微動作、裝飾預設開啟並標示 | 無（只讀現有狀態框） | [#239](https://github.com/davidcatcat/antempire/issues/239) | 另一 PR 實作中 |
+| VIS-2 | 螞蟻形態與動作：步幅改以體長計的顯示參數（步頻＝畫面地面速度 ÷ 步幅）、時間抗鋸齒、朝向取路徑切線、頭與觸角（示意）、腹部依嗉囊比例；大工蟻只寫規格不畫 | VIS-1 | [#240](https://github.com/davidcatcat/antempire/issues/240) | 未開始 |
+| VIS-3 | 花園地表場景（材質區、寄主與蚜蟲示意、巢口、裝飾限制）、弧長＝引擎長度的固定路線曲線、依引擎光照的連續日夜（夜間觀察增亮標玩家視角） | VIS-1 | [#241](https://github.com/davidcatcat/antempire/issues/241) | 未開始 |
+| VIS-4 | 地下概念視圖：依引擎狀態分組，巢口通道顯示插值，幼蟲腸道比例；巢室幾何、蟻后、卵、蛹標「尚未模擬」 | VIS-1；真正的巢室依賴 P1-B（#40） | [#242](https://github.com/davidcatcat/antempire/issues/242) | 未開始 |
+| VIS-5 | 桌面／手機操作：鏡頭預設、縮放、平移、追蹤、時間、地表／地下切換、手機控制列 | VIS-1、VIS-4；實機驗收需 Owner（#191 Q5） | [#243](https://github.com/davidcatcat/antempire/issues/243) | 未開始 |
+| VIS-6 | 繪圖後端量測與決策（Canvas 2D vs PixiJS）：實機、P0 場景、畫質功能；三項規則同時成立才改用 PixiJS | VIS-1～VIS-3；實機數據需 Owner（#192） | [#244](https://github.com/davidcatcat/antempire/issues/244)（連 #102、#159） | 目前建議維持 Canvas 2D |
+| VIS-7 | 物理／運動學軌跡接入 P0-A2 顯示路徑：7a 顯示插值＋固定曲線（純可視化）；7b 合成姿態串流對照頁（示範）；7c KIN-2D 以預設關閉開關接入 P0-A2、狀態框輸出等扭轉運動段（**規則更新 PR**） | 7c：#189、#103、P1-B、#190、#144、Worker 白名單擴充 | [#245](https://github.com/davidcatcat/antempire/issues/245) | 未開始 |
+| VIS-8 | 比較截圖工具（基準 main vs PR，並排）與觀看驗收清單 | 無 | [#246](https://github.com/davidcatcat/antempire/issues/246) | 未開始 |
+
+**順序**：VIS-1 → VIS-8（讓之後每個 PR 都有並排截圖）→ VIS-2、VIS-3、VIS-4 可並行 → VIS-5 → VIS-6。VIS-7 的 7a 隨 VIS-3 交付，7c 跟著 #189 的科學整合，不阻擋其他 VIS 項目。
+
+**舊編號的對照**：§3 的「之後：更好的畫面（貼圖、光影、PixiJS）」由 VIS-2、VIS-3、VIS-6 取代；§3 V6（巢內剖面只畫引擎實際建立的巢室）在 P1-B 之前由 VIS-4 的概念視圖代替，P1-B 之後回到 V6 的規則；§3b V6-2c（移動與接觸改由物理計算）＝VIS-7c。
+
 ## 4. Issue #49 的處理狀態（2026-11-03）
 | 項目 | PR | 狀態 | 尚未完成 |
 |---|---|---|---|
