@@ -10,7 +10,7 @@
  *    the canvas chip names 「路徑形狀＝顯示插值（示意），出發／抵達時刻＝引擎」 (page text);
  *  - paused at the next departure / arrival of a travelling worker, every drawn worker's exact point equals the affine
  *    image of its display pose, departures are drawn exactly at the route end (engine), never interpolated;
- *  - follow + close-up: the followed ant is drawn ≥ 60 px long at true scale (magnification label 實際比例);
+ *  - follow + close-up: the followed ant is drawn ≥ 60 px long (magnified ×N, fixed at the home view; zoom-scale.ts);
  *  - the underground view shows the concept label 「概念圖：巢室幾何尚未模擬」 and exactly the in-nest / transit workers;
  *  - surface ↔ underground, legend, close-up and follow do not change the event stream or the payload hash at the same
  *    t_sim (vs a page that only steps);
@@ -82,7 +82,9 @@ const { chromium, devices } = require('playwright');
     check(!!id, `${tag}: found an outbound worker to follow (${id})`);
     await P.selectOption('#follow', id); await P.waitForTimeout(300); await P.click('#closeBtn'); await P.waitForTimeout(3500);
     const cu = await P.evaluate((id) => { const V = window.__v62, c = V.camera(), d = V.draws().find((x) => x.id === id); return { s: c.s, len: 0.25 * c.s, d, w: c.w, h: c.h, following: V.state().following }; }, id);
-    check(cu.following === id && cu.len >= 60 && cu.d && Math.abs(cu.d.sx - cu.w / 2) < cu.w * 0.25, `${tag}: follow + close-up draws the ant ${cu.len.toFixed(0)} px long at true scale, centred`);
+    // the magnification is fixed at the home view (ants scale with the map, Owner 2026-11-13), so the close-up is the
+    // closest zoom with the magnified ant ≈ half the short side, not true scale
+    check(cu.following === id && cu.d && cu.d.lenPx >= 60 && cu.d.lenPx >= cu.len && Math.abs(cu.d.sx - cu.w / 2) < cu.w * 0.25, `${tag}: follow + close-up draws the ant ${cu.d ? cu.d.lenPx.toFixed(0) : '—'} px long (true length ${cu.len.toFixed(0)} px; ×N labelled), centred`);
     await shot(P, `${tag}-closeup`);
     await measure(P, `${tag}-closeup-follow-1x`, 4000);
     if (tag === 'desktop') { // motion test: frame sequence of the followed ant (1×, 100 ms apart)
