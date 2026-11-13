@@ -16,8 +16,17 @@
  *    candidate-world sources; a 簡化代理 row's probe is found too and its limits state the approximation range
  *    (「近似範圍」, condition 3); a 未接入 row's probe, if given, is ABSENT from the candidate-world sources (so wiring a
  *    mechanism without updating the matrix fails);
+ *  - a 未接入 probe may list extra texts (probe.any); a hit of ANY of them in the candidate world fails the row;
  *  - assumption flags: a row whose basis includes a non-measured class is flagged assumption:true;
  *  - owner decision codes exist; the verdict is NO-GO iff some row blocks R2.
+ * Owner ruling #212 Q2 a (2026-11-13): completeness may be relaxed (an unwired mechanism need not block), but
+ *  - every 未接入 row (except the documentation / verification modules in disclosure_exempt_modules) declares in
+ *    player_view that the viewer shows 「尚未模擬」, and the generated 「尚未模擬／簡化代理」 list (block not-simulated)
+ *    is quoted verbatim in docs/r2-go-no-go.md and docs/r2-day0-official-spec.md;
+ *  - conservation, determinism, save recovery, life-state correctness and observation honesty are NOT relaxed: a row
+ *    of a module in non_relaxable_modules (which must contain NON_RELAXABLE_MIN) blocks R2 unless it is 已接入;
+ *  - the disclosure row (module not_simulated_disclosure: the list in viewer + save metadata) can be 已接入 only with
+ *    probe_all entries found in a web/ viewer file AND in a Worker save-metadata file.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -30,11 +39,17 @@ export const STATUSES = ['已接入', '簡化代理', '未接入'] as const;
 export type Status = (typeof STATUSES)[number];
 export const BASES = ['文獻支持', '一般生理學', '遊戲假設', '實測統計', '一般方法', '不適用'] as const;
 const UNMEASURED_BASES = new Set(['文獻支持', '一般生理學', '遊戲假設', '實測統計', '一般方法']);
+/** Owner #212 Q2 a: modules whose requirement is never relaxed (conservation, determinism, save recovery, life-state
+ *  correctness, observation honesty). The matrix may list more, never fewer. */
+export const NON_RELAXABLE_MIN = ['energy_mass_ledger', 'death_consumption', 'brood_stages', 'queen_oviposition', 'determinism', 'save_lifecycle', 'view_invariance', 'viewer', 'not_simulated_disclosure', 'candidate_label', 'no_god_mode', 'local_sensing', 'verifier'] as const;
+export const DISCLOSURE_MODULE = 'not_simulated_disclosure';
 
 export interface Row {
   id: string; module: string; name_zh: string; status: Status;
   candidate_world_now: string; existing_assets: string[];
-  probe?: { file?: string; text: string };
+  probe?: { file?: string; text: string; any?: string[] };
+  /** disclosure row only: every entry must be found in its file (viewer and save metadata) */
+  probe_all?: { file: string; text: string }[];
   evidence_refs: string[];
   assumption: { flagged: boolean; basis: string[]; note: string };
   tests: string[]; known_defects: number[]; limits: string; player_view: string;
@@ -47,6 +62,8 @@ export interface Matrix {
   r2_conditions: Record<string, string>;
   required_modules: string[];
   owner_decisions: Record<string, string>;
+  non_relaxable_modules: string[];
+  disclosure_exempt_modules: string[];
   verdict: 'GO' | 'NO-GO';
   rows: Row[];
 }
@@ -93,6 +110,7 @@ export function validateMatrix(m: Matrix, root = REPO_ROOT): string[] {
   for (const s of sources) if (!exists(root, s)) err('candidate_world', `source ${s} does not exist`);
   const corpus = sources.flatMap((s) => listFiles(root, s)).map((f) => ({ f, text: read(root, f) }));
 
+  const nonRelaxable = new Set(m.non_relaxable_modules ?? []), exempt = new Set(m.disclosure_exempt_modules ?? []);
   const ids = new Set<string>(), modules = new Map<string, number>();
   for (const r of m.rows) {
     const w = r.id ?? '(no id)';
@@ -140,10 +158,27 @@ export function validateMatrix(m: Matrix, root = REPO_ROOT): string[] {
     if (r.status === '已接入' && (r.tests ?? []).length === 0) err(w, '已接入 needs at least one test');
     if (r.status === '簡化代理' && !/近似範圍/.test(r.limits ?? '')) err(w, '簡化代理 must state its approximation range (近似範圍) in limits (#201 condition 3)');
     if (r.status === '未接入' && r.probe?.text) {
-      const hit = corpus.find((x) => x.text.includes(r.probe!.text));
-      if (hit) err(w, `marked 未接入 but "${r.probe.text}" appears in candidate-world source ${hit.f}: update the matrix`);
+      for (const t of [r.probe.text, ...(r.probe.any ?? [])]) {
+        const hit = corpus.find((x) => x.text.includes(t));
+        if (hit) err(w, `marked 未接入 but "${t}" appears in candidate-world source ${hit.f}: update the matrix`);
+      }
+    }
+    // Owner #212 Q2 a: an unwired mechanism is shown as 「尚未模擬」; the non-relaxable requirements still block
+    if (r.status === '未接入' && !exempt.has(r.module) && !(r.player_view ?? '').includes('尚未模擬')) err(w, '未接入 must declare in player_view that the viewer shows 「尚未模擬」 (Owner #212 Q2 a)');
+    if (nonRelaxable.has(r.module) && r.status !== '已接入' && r.blocks_r2 !== true) err(w, `${r.module} is non-relaxable (Owner #212 Q2 a: conservation, determinism, save recovery, life-state correctness, observation honesty): it blocks R2 unless 已接入`);
+    if (r.module === DISCLOSURE_MODULE && r.status === '已接入') {
+      const pa = r.probe_all ?? [];
+      if (!pa.some((p) => p.file.startsWith('web/')) || !pa.some((p) => p.file.startsWith('prototypes/continuous-world/worker/'))) err(w, 'the disclosure row needs probe_all entries in a web/ viewer file and in a Worker save-metadata file');
+      for (const p of pa) {
+        if (!within(p.file, sources) || !exists(root, p.file)) err(w, `probe_all file ${p.file} is not a candidate-world source`);
+        else if (!read(root, p.file).includes(p.text)) err(w, `probe_all "${p.text}" is not found in ${p.file}`);
+      }
     }
   }
+  for (const mod of NON_RELAXABLE_MIN) if (!nonRelaxable.has(mod)) err('non_relaxable_modules', `must contain ${mod} (Owner #212 Q2 a)`);
+  for (const mod of [...nonRelaxable, ...exempt]) if (!(m.required_modules ?? []).includes(mod)) err('matrix', `module ${mod} (non_relaxable / disclosure_exempt) is not a required module`);
+  for (const mod of exempt) if (nonRelaxable.has(mod) || mod === DISCLOSURE_MODULE) err('disclosure_exempt_modules', `${mod} cannot be exempt`);
+  if (!(m.required_modules ?? []).includes(DISCLOSURE_MODULE)) err('required_modules', `${DISCLOSURE_MODULE} must be a required module (Owner #212 Q2 a)`);
   for (const req of m.required_modules ?? []) { const n = modules.get(req) ?? 0; if (n !== 1) err('required_modules', `${req} appears ${n} times (expected 1)`); }
   for (const mod of modules.keys()) if (!(m.required_modules ?? []).includes(mod)) err('required_modules', `row module ${mod} is not listed`);
   for (const c of Object.keys(m.r2_conditions ?? {})) if (!m.rows.some((r) => (r.r2_conditions ?? []).map(String).includes(c))) err('r2_conditions', `condition ${c} is covered by no row`);
@@ -185,9 +220,27 @@ export function renderTable(m: Matrix): string {
   ].join('\n');
 }
 
+/** the 「尚未模擬／簡化代理」 list (generated; Owner #212 Q2 a: docs and the acceptance report must show it) */
+export function renderNotSimulated(m: Matrix): string {
+  const exempt = new Set(m.disclosure_exempt_modules ?? []);
+  const no = m.rows.filter((r) => r.status === '未接入' && !exempt.has(r.module) && r.module !== DISCLOSURE_MODULE);
+  const proxy = m.rows.filter((r) => r.status === '簡化代理');
+  return [
+    `**尚未模擬**（${no.length} 列；候選世界中沒有這些機制，畫面、存檔中繼資料、文件與本報告都必須標「尚未模擬」，不得以隱藏補給或代用演出冒充）：`,
+    '',
+    ...no.map((r) => `- ${r.id} ${cell(r.name_zh)}${r.blocks_r2 ? '（阻擋 R2）' : '（不阻擋 R2）'}`),
+    '',
+    `**簡化代理**（${proxy.length} 列；近似範圍見矩陣 limits）：`,
+    '',
+    ...proxy.map((r) => `- ${r.id} ${cell(r.name_zh)}：${cell(r.limits)}`),
+  ].join('\n');
+}
+
 const BLOCKS: { file: string; name: string; render: (m: Matrix) => string }[] = [
   { file: GO_NO_GO_FILE, name: 'blockers', render: renderBlockers },
+  { file: GO_NO_GO_FILE, name: 'not-simulated', render: renderNotSimulated },
   { file: SPEC_FILE, name: 'table', render: renderTable },
+  { file: SPEC_FILE, name: 'not-simulated', render: renderNotSimulated },
 ];
 const markers = (name: string) => [`<!-- r2-matrix:${name}:begin (node cli/r2-matrix.ts --write) -->`, `<!-- r2-matrix:${name}:end -->`] as const;
 
