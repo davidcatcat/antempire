@@ -10,7 +10,7 @@ import { loadBundle, readJson } from './load.ts';
 import type { ParamBundle } from '../../engine/index.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
-interface Change { rules_version: string; kind: string; file?: string; path?: string; from?: unknown; introduced?: boolean; day14_output_unchanged?: boolean; diagnostics_only?: boolean }
+interface Change { rules_version: string; kind: string; file?: string; path?: string; paths?: string[]; metadata_field_added?: string; from?: unknown; introduced?: boolean; day14_output_unchanged?: boolean; diagnostics_only?: boolean }
 
 export function registryVersions(): { rules_version: string; tag: string; fingerprint: { engine: string; params: string } }[] {
   return readJson('rules/registry.json').versions;
@@ -31,6 +31,20 @@ export function bundleAtVersion(target: string, opts: { forHash?: boolean } = {}
   const later = (readJson('tests/golden/approved-rule-changes.json').changes as Change[]).filter((c) => order.indexOf(c.rules_version) > ti);
   const b = loadBundle();
   for (const c of [...later].reverse()) {
+    // v2-review.32 (RU-1): a metadata field added to listed parameters (values untouched) is removed for a hash of an
+    // earlier version, so its parameter files are reproduced exactly; a runnable bundle may keep it (the engine never reads it)
+    if (c.kind === 'param_metadata' && c.metadata_field_added) {
+      if (!c.day14_output_unchanged || !c.file || !Array.isArray(c.paths)) throw Error(`bundleAtVersion: malformed metadata change in ${c.rules_version}`);
+      if (opts.forHash) {
+        const [kind, id] = c.file.split(':'), root: Any = kind === 'species' ? (b.species as Any)[id] : b.world;
+        for (const p of c.paths) {
+          const node: Any = p.split('.').reduce((o: Any, k) => o?.[k], root);
+          if (!node || !(c.metadata_field_added in node)) throw Error(`bundleAtVersion: ${c.rules_version} ${p} has no ${c.metadata_field_added} to remove`);
+          delete node[c.metadata_field_added];
+        }
+      }
+      continue;
+    }
     if (c.kind === 'engine' || c.kind === 'param_metadata') {
       if (c.day14_output_unchanged || c.diagnostics_only) continue;
       throw Error(`bundleAtVersion: ${c.rules_version} has an engine change that no parameter switch can undo`);

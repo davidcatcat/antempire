@@ -224,6 +224,7 @@
   "plants": {
     "new_plant_event_probability": {
       "value": 0.035,
+      "unit": "1/day",
       "assumption": true,
       "description": "新花期或落果事件，用於後續世界擴充，未當前模型全實作",
       "reference_for_mechanism_only": [],
@@ -232,6 +233,7 @@
     },
     "host_plant_daily_death_probability": {
       "value": 0.0007,
+      "unit": "1/day per host plant",
       "assumption": true,
       "rationale": "garden host plant mortality; not reactive to colony demand",
       "basis": "遊戲假設",
@@ -242,6 +244,7 @@
     "honeydew_per_colony_per_day": {
       "aphid": {
         "value": 0.32,
+        "unit": "game_portion sugar / hemipteran \"colony\" / day",
         "assumption": true,
         "rationale": "ecological production per aphid colony with living host plants, independent of ant population",
         "basis": "遊戲假設",
@@ -249,6 +252,7 @@
       },
       "scale": {
         "value": 0.4,
+        "unit": "game_portion sugar / hemipteran \"colony\" / day",
         "assumption": true,
         "rationale": "ecological production per scale-insect colony with living host plants, independent of ant population",
         "basis": "遊戲假設",
@@ -257,6 +261,7 @@
     },
     "honeydew_productivity_multiplier": {
       "value": 1,
+      "unit": "dimensionless multiplier",
       "assumption": true,
       "rationale": "baseline physical productivity; single-variable sugar sensitivity test changes ONLY this input",
       "basis": "遊戲假設",
@@ -264,6 +269,7 @@
     },
     "hemipteran_colony_daily_growth_probability": {
       "value": 0.012,
+      "unit": "1/day (probability of +1 colony)",
       "assumption": true,
       "rationale": "natural hemipteran colony reproduction game assumption; depends on living host",
       "basis": "遊戲假設",
@@ -271,6 +277,7 @@
     },
     "hemipteran_colony_daily_collapse_probability": {
       "value": 0.006,
+      "unit": "1/day (probability of -1 colony)",
       "assumption": true,
       "rationale": "natural daily mortality/reproductive collapse of a colony, independent of ant demand",
       "basis": "遊戲假設",
@@ -278,6 +285,7 @@
     },
     "max_hemipteran_colonies_per_host": {
       "value": 4,
+      "unit": "colonies / host plant",
       "assumption": true,
       "rationale": "physical carrying capacity per host plant, distinct from honeydew stored capacity",
       "basis": "遊戲假設",
@@ -285,6 +293,7 @@
     },
     "rain_honeydew_secretion_suppression_per_mm": {
       "value": 0.018,
+      "unit": "fraction / mm rain",
       "assumption": true,
       "rationale": "rain suppresses feeding/secretion production as ecological assumption",
       "basis": "遊戲假設",
@@ -292,6 +301,7 @@
     },
     "honeydew_rain_secretion_min_multiplier": {
       "value": 0.05,
+      "unit": "dimensionless floor",
       "assumption": true,
       "basis": "遊戲假設",
       "description": "雨天蜜露分泌抑制後的最低倍率",
@@ -302,6 +312,7 @@
   "honeydew": {
     "honeydew_max": {
       "value": 5.2,
+      "unit": "game_portion sugar (standing crop cap per site)",
       "assumption": true,
       "description": "蜜露F01總可及糖份上限",
       "reference_for_mechanism_only": [],
@@ -310,6 +321,7 @@
     },
     "honeydew_daily_replenish": {
       "value": 0.65,
+      "unit": "game_portion sugar / day",
       "assumption": true,
       "description": "寄主與蚜蟲仍活著時每日補充糖份",
       "reference_for_mechanism_only": [],
@@ -318,6 +330,7 @@
     },
     "honeydew_initial": {
       "value": 0.55,
+      "unit": "game_portion sugar",
       "assumption": true,
       "description": "Day14 F01有蚜蟲但無可採蜜露；Day15起始少量保守情境",
       "reference_for_mechanism_only": [],
@@ -326,6 +339,7 @@
     },
     "honeydew_washoff_per_rain_mm": {
       "value": 0.012,
+      "unit": "fraction / mm rain",
       "assumption": true,
       "description": "每mm雨使蜜露減少的比例",
       "reference_for_mechanism_only": [],
@@ -334,6 +348,7 @@
     },
     "honeydew_washoff_max_fraction": {
       "value": 0.9,
+      "unit": "fraction / day",
       "assumption": true,
       "basis": "遊戲假設",
       "description": "雨水單日沖刷蜜露的比例上限",
@@ -344,6 +359,7 @@
   "nectar": {
     "nectar_max": {
       "value": 2.4,
+      "unit": "game_portion sugar (standing crop cap)",
       "assumption": true,
       "description": "F08花蜜份數上限",
       "reference_for_mechanism_only": [],
@@ -352,6 +368,7 @@
     },
     "nectar_daily_replenish": {
       "value": 0.35,
+      "unit": "game_portion sugar / site / day while blooming",
       "assumption": true,
       "description": "花仍在開放期時日補充量",
       "reference_for_mechanism_only": [],
@@ -360,6 +377,7 @@
     },
     "nectar_initial": {
       "value": 0.18,
+      "unit": "game_portion sugar",
       "assumption": true,
       "description": "Day14無可確認花蜜之情境假設",
       "reference_for_mechanism_only": [],
@@ -368,6 +386,7 @@
     },
     "nectar_bloom_days_remaining": {
       "value": 12,
+      "unit": "days",
       "assumption": true,
       "description": "Day15起餘下開花期假設",
       "reference_for_mechanism_only": [],
@@ -376,6 +395,7 @@
     },
     "nectar_washoff_per_rain_mm": {
       "value": 0.035,
+      "unit": "fraction / mm rain",
       "assumption": true,
       "description": "每mm雨造成花蜜沖刷比例",
       "reference_for_mechanism_only": [],
@@ -384,6 +404,7 @@
     },
     "nectar_washoff_max_fraction": {
       "value": 0.9,
+      "unit": "fraction / day",
       "assumption": true,
       "basis": "遊戲假設",
       "description": "雨水單日沖刷花蜜的比例上限",
@@ -394,6 +415,7 @@
   "carcasses": {
     "carcass_daily_decay_fraction": {
       "value": 0.14,
+      "unit": "fraction / day",
       "assumption": true,
       "description": "未採集殘骸每一日可食份數減少比例",
       "reference_for_mechanism_only": [],
@@ -402,6 +424,7 @@
     },
     "carcass_rain_decay_bonus": {
       "value": 0.004,
+      "unit": "fraction / mm rain",
       "assumption": true,
       "description": "每mm雨額外可食減少比例",
       "reference_for_mechanism_only": [],
@@ -410,6 +433,7 @@
     },
     "carcass_new_protein_min": {
       "value": 1.45,
+      "unit": "game_portion protein / natural insect death",
       "assumption": true,
       "description": "新屍體蛋白份數下界",
       "reference_for_mechanism_only": [],
@@ -418,6 +442,7 @@
     },
     "carcass_new_protein_max": {
       "value": 2.6,
+      "unit": "game_portion protein / natural insect death",
       "assumption": true,
       "description": "新屍體蛋白份數上界",
       "reference_for_mechanism_only": [],
@@ -426,6 +451,7 @@
     },
     "carcass_max_lifetime_days": {
       "value": 9,
+      "unit": "days",
       "assumption": true,
       "description": "殘骸來源最長保留9天；只刪除已腐化且無可食量來源",
       "reference_for_mechanism_only": [],
@@ -434,6 +460,7 @@
     },
     "carcass_decay_max_daily_fraction": {
       "value": 0.95,
+      "unit": "fraction / day",
       "assumption": true,
       "basis": "遊戲假設",
       "description": "殘骸每日可食量減少比例上限",
@@ -452,6 +479,7 @@
   "insects": {
     "insect_local_carrying_capacity": {
       "value": 18,
+      "unit": "insects / site",
       "assumption": true,
       "description": "局部昆蟲最大可容納數，依棲地而定的遊戲近似",
       "reference_for_mechanism_only": [
@@ -465,6 +493,7 @@
     },
     "insect_background_immigration_probability": {
       "value": 0.08,
+      "unit": "1/day (one insect)",
       "assumption": true,
       "description": "每日從相鄰花園棲地遷入1隻已存在昆蟲的情境機率，記錄來源事件",
       "reference_for_mechanism_only": [
@@ -478,6 +507,7 @@
     },
     "insect_local_daily_mortality_probability": {
       "value": 0.22,
+      "unit": "1/day (at most one death per site per day)",
       "assumption": true,
       "description": "每處已有存活昆蟲每日產生一次自然死亡的場址近似機率，絕非直接生成食物",
       "reference_for_mechanism_only": [
@@ -491,6 +521,7 @@
     },
     "insect_site_logistic_daily_birth_rate": {
       "value": 0.065,
+      "unit": "1/day per capita",
       "assumption": true,
       "rationale": "per-capita daily local insect birth chance scaled by available habitat capacity; assumption, not empirical rate",
       "basis": "遊戲假設",
@@ -498,6 +529,7 @@
     },
     "insect_boundary_logistic_daily_birth_rate": {
       "value": 0.055,
+      "unit": "1/day per capita",
       "assumption": true,
       "rationale": "self-renewal in the adjacent habitat, independent of colony demands",
       "basis": "遊戲假設",
@@ -505,6 +537,7 @@
     },
     "insect_boundary_carrying_capacity": {
       "value": 80,
+      "unit": "insects",
       "assumption": true,
       "rationale": "fixed ecological carrying capacity of neighboring habitat",
       "basis": "遊戲假設",
@@ -512,6 +545,7 @@
     },
     "insect_boundary_per_capita_daily_death_probability": {
       "value": 0.02,
+      "unit": "1/day per capita",
       "assumption": true,
       "rationale": "natural per-capita mortality of neighboring insects, no recoverable local carcass",
       "basis": "遊戲假設",
@@ -519,6 +553,7 @@
     },
     "insect_reproduction_reference_c": {
       "value": 25,
+      "unit": "°C",
       "assumption": true,
       "rationale": "synthetic mean air temperature reference for insect reproduction",
       "basis": "遊戲假設",
@@ -526,6 +561,7 @@
     },
     "insect_reproduction_per_degree_c": {
       "value": 0.035,
+      "unit": "1/°C",
       "assumption": true,
       "rationale": "game temperature sensitivity of insect reproduction per degree from reference",
       "basis": "遊戲假設",
@@ -533,6 +569,7 @@
     },
     "insect_reproduction_min_multiplier": {
       "value": 0.15,
+      "unit": "dimensionless",
       "assumption": true,
       "rationale": "cold suppression floor for insect reproduction",
       "basis": "遊戲假設",
@@ -540,6 +577,7 @@
     },
     "insect_reproduction_max_multiplier": {
       "value": 1.25,
+      "unit": "dimensionless",
       "assumption": true,
       "rationale": "warm ceiling for insect reproduction",
       "basis": "遊戲假設",
@@ -547,6 +585,7 @@
     },
     "insect_local_death_reference_population": {
       "value": 12,
+      "unit": "insects",
       "assumption": true,
       "rationale": "abundance used to scale existing 0.22 site mortality to current insect abundance",
       "basis": "遊戲假設",
@@ -556,6 +595,7 @@
   "prey": {
     "large_prey_fraction": {
       "value": 0.25,
+      "unit": "fraction of encounters",
       "assumption": true,
       "description": "遇見昆蟲屬大型獵物之假設比例，非實測",
       "reference_for_mechanism_only": [
@@ -571,6 +611,7 @@
     },
     "small_prey_protein": {
       "value": 0.55,
+      "unit": "game_portion protein / killed small insect",
       "assumption": true,
       "description": "小型獵物蛋白遊戲份，非實測質量",
       "reference_for_mechanism_only": [
@@ -586,6 +627,7 @@
     },
     "large_prey_protein": {
       "value": 1.5,
+      "unit": "game_portion protein / killed large insect",
       "assumption": true,
       "description": "大型獵物蛋白遊戲份，非實測質量",
       "reference_for_mechanism_only": [
@@ -739,6 +781,7 @@
       "site": "F04",
       "honeydew_harvest_fraction": {
         "value": 0.22,
+        "unit": "fraction of F04 gross production",
         "assumption": true,
         "rationale": "F04 background rival ants consume a fixed ecological share; independent of main colony shortage",
         "basis": "遊戲假設",
@@ -867,6 +910,7 @@
         ],
         "initial_sugar": {
           "value": 0.75,
+          "unit": "game_portion sugar",
           "assumption": true,
           "basis": "遊戲假設",
           "description": "Day15 遷移：F04 隱藏蜜露點若寄主存活時的初始糖份",
@@ -875,6 +919,7 @@
         },
         "listed_production": {
           "value": 0.75,
+          "unit": "game_portion sugar / day (listed by the retired v1 code, not used)",
           "assumption": true,
           "basis": "遊戲假設",
           "description": "Day15 遷移：F04 舊程式列出但未使用的 production 值（實際寫入 production_per_day=0，之後由生態模組重算）",
@@ -883,6 +928,7 @@
         },
         "capacity": {
           "value": 3,
+          "unit": "game_portion sugar (standing crop cap per site)",
           "assumption": true,
           "basis": "遊戲假設",
           "description": "Day15 遷移：F04 蜜露可及上限",
@@ -922,6 +968,7 @@
         ],
         "initial_sugar": {
           "value": 0.4,
+          "unit": "game_portion sugar",
           "assumption": true,
           "basis": "遊戲假設",
           "description": "Day15 遷移：F05 隱藏蜜露點若寄主存活時的初始糖份",
@@ -930,6 +977,7 @@
         },
         "listed_production": {
           "value": 0.55,
+          "unit": "game_portion sugar / day (listed by the retired v1 code, not used)",
           "assumption": true,
           "basis": "遊戲假設",
           "description": "Day15 遷移：F05 舊程式列出但未使用的 production 值（實際寫入 production_per_day=0，之後由生態模組重算）",
@@ -938,6 +986,7 @@
         },
         "capacity": {
           "value": 2.8,
+          "unit": "game_portion sugar (standing crop cap per site)",
           "assumption": true,
           "basis": "遊戲假設",
           "description": "Day15 遷移：F05 蜜露可及上限",
@@ -976,6 +1025,7 @@
         ],
         "initial_sugar": {
           "value": 0.4,
+          "unit": "game_portion sugar",
           "assumption": true,
           "basis": "遊戲假設",
           "description": "Day15 遷移：F10 隱藏蜜露點若寄主存活時的初始糖份",
@@ -984,6 +1034,7 @@
         },
         "listed_production": {
           "value": 0.5,
+          "unit": "game_portion sugar / day (listed by the retired v1 code, not used)",
           "assumption": true,
           "basis": "遊戲假設",
           "description": "Day15 遷移：F10 舊程式列出但未使用的 production 值（實際寫入 production_per_day=0，之後由生態模組重算）",
@@ -992,6 +1043,7 @@
         },
         "capacity": {
           "value": 2.8,
+          "unit": "game_portion sugar (standing crop cap per site)",
           "assumption": true,
           "basis": "遊戲假設",
           "description": "Day15 遷移：F10 蜜露可及上限",
@@ -1026,6 +1078,7 @@
     },
     "starting_sugar": {
       "value": 7.6,
+      "unit": "game_portion sugar (nest store, one time)",
       "assumption": true,
       "description": "Day14既有存糧不可測；作為Day15獨立情境起始糖儲備，約四天工蟻+蟻后基礎需求",
       "reference_for_mechanism_only": [],
@@ -1034,6 +1087,7 @@
     },
     "starting_protein": {
       "value": 2.3,
+      "unit": "game_portion protein (nest store, one time)",
       "assumption": true,
       "description": "Day14曾有兩次昆蟲來源帶回，作為Day15獨立情境的蛋白儲備假設，非由事件數換算",
       "reference_for_mechanism_only": [],
@@ -1050,6 +1104,7 @@
     },
     "carcass_initial_F07": {
       "value": 0.6,
+      "unit": "game_portion protein (carcass remains, one time)",
       "assumption": true,
       "description": "保留Day11 F07 V2D11-E04屍體可能剩餘的蛋白份數；高不確定性",
       "reference_for_mechanism_only": [],
@@ -1058,6 +1113,7 @@
     },
     "carcass_initial_F11": {
       "value": 0.07,
+      "unit": "game_portion protein (carcass remains, one time)",
       "assumption": true,
       "description": "保留Day9 F11舊屍剩餘蛋白份數；已採部分且腐敗更久",
       "reference_for_mechanism_only": [],
@@ -1066,6 +1122,7 @@
     },
     "carcass_initial_F07_older": {
       "value": 0.05,
+      "unit": "game_portion protein (carcass remains, one time)",
       "assumption": true,
       "description": "保留Day10 F07舊殘骸少量假設",
       "reference_for_mechanism_only": [],
