@@ -363,4 +363,5 @@ const dirHash = (d) => { const h = crypto.createHash('sha256'); const walk = (p)
   check(errors.length === 0, `no page or console errors (${errors.slice(0, 3).join(' | ')})`);
   console.log(JSON.stringify({ test: 'save2-acceptance-browser', passed: passed.length, failed: failures, info, screenshots: shots.map((x) => path.basename(x)), passed_checks: passed }, null, 1));
   if (failures.length) process.exitCode = 1;
-})().catch((e) => { console.error(e); process.exitCode = 1; });
+// an unexpected error leaves persistent browser contexts open, which would keep Node alive: exit instead of hanging
+})().catch((e) => { console.error(e); process.exit(1); });
