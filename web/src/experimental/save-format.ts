@@ -140,14 +140,36 @@ export const defaultMigrations = () => new MigrationRegistry(CURRENT_SCHEMA_VERS
 export function compatibility(h: Pick<SnapshotHeader, 'schema' | 'rules_fingerprint' | 'schema_version'>, rt: RuntimeInfo, reg: MigrationRegistry): Compatibility {
   if (h.schema !== SNAPSHOT_SCHEMA) return 'unknown_schema';
   if (h.schema_version > rt.schema_version) return 'newer_schema';
+  // an older payload schema with no registered path to the runtime's is reported as such (clearer than rules_mismatch:
+  // e.g. payload schema 1 has no event-chain commitment and cannot be migrated, docs/save-format-v2.md §6)
+  if (h.schema_version < rt.schema_version && !(reg.current >= rt.schema_version && reg.hasPath(h.schema_version))) return 'no_migration_path';
   if (h.rules_fingerprint !== rt.rules_fingerprint) return 'rules_mismatch';
   if (h.schema_version === rt.schema_version) return 'compatible';
   return reg.hasPath(h.schema_version) ? 'migratable' : 'no_migration_path';
 }
 
+// ---------- verification status (Owner ruling #200; docs/save-format-v2.md §8) ----------
+
+/**
+ * The three statuses of a save. The browser can reach only the first two: 'integrity_ok' means hashes, envelope,
+ * versions and the Worker's structural restore checks passed on THIS device; it is not a scientific verification.
+ * 'node_verified' is set only from a report of the Node verifier (cli/verify-save.ts) that recomputed exactly this
+ * save; this viewer has no trusted way to receive such a report yet, so it never shows it (a report or hash supplied
+ * by a user is a claim, not a verification).
+ */
+export type VerificationLevel = 'local_playable' | 'integrity_ok' | 'node_verified';
+export const VERIFICATION_TEXT: Record<VerificationLevel, string> = { local_playable: '本機可玩', integrity_ok: '完整性檢查通過', node_verified: 'Node 已重算驗證' };
+export const NOT_NODE_VERIFIED = '未經 Node 驗證';
+/** What the viewer may claim for a save: never node_verified (no verifier report is accepted in the browser yet). */
+export function verificationOf(s: { loadable: boolean; integrity_checked: boolean }): { level: VerificationLevel | null; text: string } {
+  if (!s.loadable) return { level: null, text: NOT_NODE_VERIFIED };
+  const level: VerificationLevel = s.integrity_checked ? 'integrity_ok' : 'local_playable';
+  return { level, text: `${VERIFICATION_TEXT[level]}｜${NOT_NODE_VERIFIED}` };
+}
+
 // ---------- world records, retention, load order ----------
 
-export interface WorldSummary { queens?: number | null; workers?: number | null; individuals?: number | null; note?: string | null }
+export interface WorldSummary { queens?: number | null; workers?: number | null; larvae?: number | null; individuals?: number | null; note?: string | null }
 /** Where an imported copy came from (Owner decision 54). The copy's stored snapshots are the source's verified bytes. */
 export interface Provenance {
   kind: 'import_copy'; source_world_id: string; source_name: string; source_exported_at: string; source_export_sha256: string;
@@ -248,8 +270,13 @@ export function simDayTime(t_sim: number | null): { day: number; clock: string }
   return { day, clock: `${p2(Math.floor(sec / 3600))}:${p2(Math.floor(sec / 60) % 60)}:${p2(sec % 60)}` };
 }
 
-/** Individuals in a Worker snapshot payload, for the save list. The synthetic world has no queen (null, not 0). */
+/** Individuals in a Worker snapshot payload, for the save list. Neither world has a queen (null, not 0). */
 export function summaryOf(snapshot: unknown): WorldSummary {
+  const p0 = (snapshot as { payload?: { world_kind?: unknown; state?: { workers?: object; larvae?: object } } })?.payload;
+  if (p0?.world_kind === 'p0a2') {
+    const nw = p0.state?.workers ? Object.keys(p0.state.workers).length : null, nl = p0.state?.larvae ? Object.keys(p0.state.larvae).length : null;
+    return { queens: null, workers: nw, larvae: nl, individuals: nw === null || nl === null ? null : nw + nl, note: 'P0-A2 候選／實驗世界（非正式）：小工蟻與幼蟲，沒有蟻后（尚未模擬）' };
+  }
   const ants = (snapshot as { payload?: { ants?: unknown[] } })?.payload?.ants;
   const n = Array.isArray(ants) ? ants.length : null;
   return { queens: null, workers: null, individuals: n, note: '合成世界：沒有蟻后，個體不分階級' };
