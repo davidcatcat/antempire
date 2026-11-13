@@ -1,0 +1,25 @@
+{
+  "schema": "antempire.lane-flow-benchmark.v1",
+  "issue": 189,
+  "synthetic": true,
+  "status": "隔離實驗的情境候選值（#189、#193 裁示第 5 項）；不是物種參數，不是生態實測，不進正式模擬。大頭家蟻沒有路線流量、隊列間距或進場流量的資料。",
+  "lane": { "length_mm": 100, "width_mm": 3 },
+  "body": { "length_mm": 2.5, "width_mm": 0.8 },
+  "speed_mm_s": 17.0,
+  "goal_s_mm": 95,
+  "initial": { "count_per_direction": 6, "min_gap_mm": 0.5, "mean_extra_gap_mm": 3 },
+  "inflow": { "count_per_direction": 40, "interval_s": 0.5, "t0_s": 0 },
+  "lateral_half_band_mm": 0.6,
+  "entry_retry_interval_s": 0.1,
+  "site": { "id": "nest", "kind": "nest_mouth", "capacity": 2, "dwell_s": 1, "queue_max": 20, "on_release": "off_plane" },
+  "provenance": {
+    "body_length_mm": { "assumption": true, "basis": "文獻支持", "source_ids": ["R94"], "note": "小工蟻體長約 2.5 mm（R94，本種）；在模型中作情境輸入" },
+    "body_width_mm": { "assumption": true, "basis": "遊戲假設", "source_ids": [], "note": "碰撞寬 0.8 mm 是候選上限（與 WP4 相同），沒有本種量測" },
+    "speed_mm_s": { "assumption": true, "basis": "文獻支持", "source_ids": ["R133"], "note": "本種實驗室沿跡速度 17.0 mm/s（R133，無相遇、人工路線、溫度未載明）；作為自由速度輸入，不是驗證；沒有個體差異資料，所以全部相同" },
+    "inflow_interval_s": { "assumption": true, "basis": "遊戲假設", "source_ids": [], "note": "每方向每 0.5 s 一隻（每秒 2 隻）；與 #158 timed_inflow_interval_s 候選、WP4 K2／K3 相同；本種沒有路線流量量測" },
+    "initial_gap": { "assumption": true, "basis": "遊戲假設", "source_ids": [], "note": "初始前後間距＝0.5 mm＋指數分布（平均 3 mm）；沒有本種隊列間距資料；只為避免『全部擠在同一點』的不合理起點" },
+    "lateral_band_mm": { "assumption": true, "basis": "遊戲假設", "source_ids": [], "note": "橫向位置在 ±0.6 mm 內均勻；R133 的平均偏離 1.1／1.7 mm 是 0.3 mm 寬費洛蒙線上的實驗室量測，只作量級參照" },
+    "lane": { "assumption": true, "basis": "遊戲假設", "source_ids": [], "note": "合成直線路段 100 × 3 mm（synthetic: true）" },
+    "goal_and_site": { "assumption": true, "basis": "遊戲假設", "source_ids": [], "note": "目的地為巢口（#158 候選：容量 2、停留 1 s、等候上限 20；邊界候選值，不是本種巢口資料）" }
+  }
+}

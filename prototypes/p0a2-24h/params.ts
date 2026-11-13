@@ -8,14 +8,15 @@ import { sha256Hex } from '../../engine/sha256.ts';
 import { type CalendarAnchor, checkAnchor } from '../../engine/clock/time-frames.ts';
 import { type SolarSite, checkSite } from '../../engine/clock/solar.ts';
 import { canon } from './canon.ts';
-import { type DecisionConsts, EVIDENCE_CLASSES } from './types.ts';
+import { type DecisionConsts, EVIDENCE_CLASSES, type Retention } from './types.ts';
 
 export const THIS_SPECIES = 'Pheidole megacephala';
 const REF_RE = /^R\d+$/;
 const fail = (m: string): never => { throw Error(`P0A2_PARAMS: ${m}`); };
 
-/** the two variant maps: diagnostic sensitivity scenarios, and the isolated Q2 retention experiment (Owner #193) */
-export const VARIANT_SECTIONS = ['sensitivity_variants', 'q2_retention_variants'] as const;
+/** the variant maps: diagnostic sensitivity scenarios, the isolated Q2 retention experiment (Owner #193), and the
+ *  isolated brood-feeding / own-metabolism experiment (Owner #188 supplementary ruling, 2026-11-12) */
+export const VARIANT_SECTIONS = ['sensitivity_variants', 'q2_retention_variants', 'brood_feeding_variants'] as const;
 /** every variant name of a raw parameter file, per section */
 export const variantNames = (raw: any, sec: (typeof VARIANT_SECTIONS)[number]): string[] => Object.keys(raw?.[sec] ?? {}).filter((k) => k !== '_note');
 
@@ -103,12 +104,13 @@ export function applyVariant(raw: any, variant: string): any {
   return out;
 }
 
-/** the Q2 retention candidate (default OFF = null); refuses anything it cannot honour, never repairs */
-function retentionOf(x: any): DecisionConsts['retention'] {
+/** an own-need retention setting (default OFF = null) of ONE giving process; refuses anything it cannot honour (a fixed
+ *  hand-over ratio included), never repairs */
+function retentionOf(x: any, key: string): Retention {
   if (x === null) return null;
   if (x && x.kind === 'horizon' && typeof x.hours === 'number' && Number.isFinite(x.hours) && x.hours > 0 && Object.keys(x).length === 2) return { kind: 'horizon', need_ms: Math.round(x.hours * 3_600_000) };
   if (x && x.kind === 'own_interval' && typeof x.factor === 'number' && Number.isFinite(x.factor) && x.factor > 0 && Object.keys(x).length === 2) return { kind: 'own_interval', factor: x.factor };
-  return fail('forager_retention must be null (off) or {kind: "horizon", hours > 0} or {kind: "own_interval", factor > 0}');
+  return fail(`${key} must be null (off) or {kind: "horizon", hours > 0} or {kind: "own_interval", factor > 0}`);
 }
 
 export function buildModel(rawFile: any, scenario: string, variantIn?: string): Model {
@@ -128,7 +130,9 @@ export function buildModel(rawFile: any, scenario: string, variantIn?: string): 
   if (ftNull.some((x) => x) && !ftNull.every((x) => x)) fail('f_T anchors must be all numbers or all null');
   const f_t = ftNull[0] ? null : { zero_low: num('forage_temp_zero_low_c', -50), peak: num('forage_temp_peak_c', -50), zero_high: num('forage_temp_zero_high_c', -50) };
   if (f_t && !(f_t.zero_low < f_t.peak && f_t.peak < f_t.zero_high)) fail('need forage_temp_zero_low_c < forage_temp_peak_c < forage_temp_zero_high_c');
-  const retention = retentionOf(v('forager_retention'));
+  const retention = retentionOf(v('forager_retention'), 'forager_retention'), broodRetention = retentionOf(v('brood_carer_retention'), 'brood_carer_retention');
+  const trigger = v('brood_feed_trigger'); if (trigger !== 'threshold' && trigger !== 'graded') fail('brood_feed_trigger must be "threshold" or "graded"');
+  const minFill = v('brood_min_own_crop_fill'); if (!(minFill === null || (typeof minFill === 'number' && minFill > 0 && minFill <= 1))) fail('brood_min_own_crop_fill must be null (off) or a fill in (0, 1]');
   const gu = v('give_up_empty_trips'); if (!(gu === null || (Number.isInteger(gu) && gu >= 1))) fail('give_up_empty_trips must be null or an integer >= 1');
   const workers = num('colony_workers', 1), larvae = num('colony_larvae');
   if (!Number.isInteger(workers) || !Number.isInteger(larvae) || workers > 999 || larvae > 99) fail('colony sizes must be integers (workers <= 999, larvae <= 99)');
@@ -136,7 +140,7 @@ export function buildModel(rawFile: any, scenario: string, variantIn?: string): 
   const speed = num('trail_walking_speed_mm_s'); if (!(speed > 0)) fail('speed must be > 0');
   const ms = (k: string) => { const x = Math.round(num(k) * 1000); if (!(x >= 1)) fail(`${k} must be >= 1 ms`); return x; };
   const S = raw.site;
-  const consts: DecisionConsts = deepFreeze({ hill_n: num('hill_n'), recruit_contact_weight: num('recruit_contact_weight'), idle_probability: prob('idle_probability'), f_t, light_factor_night: lightNight, transfer_max: up('transfer_max_portions'), feed_bolus: up('feed_bolus_portions'), begging_threshold: prob('larva_begging_threshold'), retention, metabolic_rate_per_day: up('worker_sugar_daily_portions'), day_ms: 86_400_000 });
+  const consts: DecisionConsts = deepFreeze({ hill_n: num('hill_n'), recruit_contact_weight: num('recruit_contact_weight'), idle_probability: prob('idle_probability'), f_t, light_factor_night: lightNight, own: { metabolic_rate_per_day: up('worker_sugar_daily_portions'), day_ms: 86_400_000 }, trophallaxis: { transfer_max: up('transfer_max_portions'), retention }, brood: { feed_bolus: up('feed_bolus_portions'), begging_threshold: prob('larva_begging_threshold'), trigger, retention: broodRetention, min_own_crop_fill: minFill } });
   return {
     params_sha: sha256Hex(canon(rawFile)), scenario, variant, give_up_empty_trips: gu, variant_label: vDef.label, variant_status: vDef.status, reference_variant: rawFile.reference_variant,
     anchor: checkAnchor({ day0_date: sc.day0_date.value, utc_offset_minutes: S.utc_offset_minutes.value, zone: S.zone }),
