@@ -235,6 +235,7 @@ function renderSave() {
     const size = rc ? `｜${kb(rc.bytes)}、${(rc.ms.hash + rc.ms.write + rc.ms.verify + rc.ms.promote).toFixed(0)} ms（${rc.kind === 'manual' ? '手動' : '自動'}）` : '';
     t = s.status === 'saving' ? `正在儲存…｜${last}` : s.status === 'failed' ? `⚠ 儲存失敗（${s.last_error ?? ''}）— 上一個成功的存檔仍保留｜${last}` : s.status === 'saved' ? `已儲存｜${last}${size}` : `${s.text}｜${last}`;
   }
+  t += `｜${cur.verification}`;
   if (ui.saveStatus.textContent !== t) { ui.saveStatus.textContent = t; ui.saveStatus.dataset.status = cur.writer ? s?.status ?? 'idle' : 'read_only'; }
   ui.saveBtn.disabled = !cur.writer;
 }

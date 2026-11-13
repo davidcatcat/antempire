@@ -9,9 +9,10 @@
  */
 import { ExperimentWorkerClient } from './worker-client.ts';
 import { ExperimentSaveStore, acquireWriterLock, type LoadResult, type SaveReceipt, type WorldListing, type WriterLock } from './save-store.ts';
-import { AutosaveController, errR, newWorldId, okR, seedFromInput, summaryOf, type Result, type RuntimeInfo, type SaveReason, type SaveUiState } from './save-format.ts';
+import { AutosaveController, errR, newWorldId, okR, seedFromInput, summaryOf, verificationOf, type Result, type RuntimeInfo, type SaveReason, type SaveUiState } from './save-format.ts';
 
-export interface SessionState { world_id: string; name: string; seed: number; writer: boolean; readOnlyReason: string | null; recoveredNotice: string | null; sim_world_id: string }
+/** verification: what this viewer may claim (Owner ruling #200): '本機可玩' or '完整性檢查通過', always with '未經 Node 驗證'. */
+export interface SessionState { world_id: string; name: string; seed: number; writer: boolean; readOnlyReason: string | null; recoveredNotice: string | null; sim_world_id: string; verification: string }
 
 export class ExperimentSession {
   readonly client: ExperimentWorkerClient;
@@ -62,7 +63,7 @@ export class ExperimentSession {
     if (snap.type !== 'snapshot') { got.lock.release(); return errR('invalid_snapshot', 'no snapshot'); }
     const r = await this.store.createWorld(got.lock, name.trim() || `實驗世界 ${new Date().toLocaleString('zh-TW')}`, snap.snapshot, summaryOf(snap.snapshot));
     if (!r.ok) { got.lock.release(); return r; }
-    this.attach({ world_id: id, name, seed: sd.seed, writer: true, readOnlyReason: null, recoveredNotice: null, sim_world_id: id }, got.lock);
+    this.attach({ world_id: id, name, seed: sd.seed, writer: true, readOnlyReason: null, recoveredNotice: null, sim_world_id: id, verification: verificationOf({ loadable: true, integrity_checked: false }).text }, got.lock);
     this.lastReceipt = r.value; this.autosave!.state = { ...this.autosave!.state, status: 'saved', text: '已儲存', last_success_ms: Date.now(), reason: 'new_game' };
     this.onSaveState(this.autosave!.state, r.value);
     return okR({ seed: sd.seed, how: sd.how, receipt: r.value });
@@ -85,7 +86,9 @@ export class ExperimentSession {
     this.onRestored(ld.value.envelope.seq);
     this.lastLoad = { world_id, gen: ld.value.gen, t_sim: ld.value.envelope.t_sim, seq: ld.value.envelope.seq, recovered: ld.value.recovered };
     const w = await this.store.getWorld(world_id);
-    this.attach({ world_id, name: w?.name ?? world_id, seed: ld.value.envelope.seed, writer: !!lock, readOnlyReason: readOnly, recoveredNotice: ld.value.notice, sim_world_id: ld.value.envelope.world_id }, lock);
+    this.attach({ world_id, name: w?.name ?? world_id, seed: ld.value.envelope.seed, writer: !!lock, readOnlyReason: readOnly, recoveredNotice: ld.value.notice, sim_world_id: ld.value.envelope.world_id,
+      // the store re-read and re-hashed the snapshot and the Worker's restore checked its structure and chain fields
+      verification: verificationOf({ loadable: true, integrity_checked: true }).text }, lock);
     return okR({ ...ld.value, readOnly });
   }
 

@@ -140,9 +140,31 @@ export const defaultMigrations = () => new MigrationRegistry(CURRENT_SCHEMA_VERS
 export function compatibility(h: Pick<SnapshotHeader, 'schema' | 'rules_fingerprint' | 'schema_version'>, rt: RuntimeInfo, reg: MigrationRegistry): Compatibility {
   if (h.schema !== SNAPSHOT_SCHEMA) return 'unknown_schema';
   if (h.schema_version > rt.schema_version) return 'newer_schema';
+  // an older payload schema with no registered path to the runtime's is reported as such (clearer than rules_mismatch:
+  // e.g. payload schema 1 has no event-chain commitment and cannot be migrated, docs/save-format-v2.md §6)
+  if (h.schema_version < rt.schema_version && !(reg.current >= rt.schema_version && reg.hasPath(h.schema_version))) return 'no_migration_path';
   if (h.rules_fingerprint !== rt.rules_fingerprint) return 'rules_mismatch';
   if (h.schema_version === rt.schema_version) return 'compatible';
   return reg.hasPath(h.schema_version) ? 'migratable' : 'no_migration_path';
+}
+
+// ---------- verification status (Owner ruling #200; docs/save-format-v2.md §8) ----------
+
+/**
+ * The three statuses of a save. The browser can reach only the first two: 'integrity_ok' means hashes, envelope,
+ * versions and the Worker's structural restore checks passed on THIS device; it is not a scientific verification.
+ * 'node_verified' is set only from a report of the Node verifier (cli/verify-save.ts) that recomputed exactly this
+ * save; this viewer has no trusted way to receive such a report yet, so it never shows it (a report or hash supplied
+ * by a user is a claim, not a verification).
+ */
+export type VerificationLevel = 'local_playable' | 'integrity_ok' | 'node_verified';
+export const VERIFICATION_TEXT: Record<VerificationLevel, string> = { local_playable: '本機可玩', integrity_ok: '完整性檢查通過', node_verified: 'Node 已重算驗證' };
+export const NOT_NODE_VERIFIED = '未經 Node 驗證';
+/** What the viewer may claim for a save: never node_verified (no verifier report is accepted in the browser yet). */
+export function verificationOf(s: { loadable: boolean; integrity_checked: boolean }): { level: VerificationLevel | null; text: string } {
+  if (!s.loadable) return { level: null, text: NOT_NODE_VERIFIED };
+  const level: VerificationLevel = s.integrity_checked ? 'integrity_ok' : 'local_playable';
+  return { level, text: `${VERIFICATION_TEXT[level]}｜${NOT_NODE_VERIFIED}` };
 }
 
 // ---------- world records, retention, load order ----------

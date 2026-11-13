@@ -8,7 +8,9 @@
  *   - Reached engine modules must not read wall clocks, frame timers or Math.random (simulation time only).
  *   - No path strings naming official saves / journals in the graph.
  *   - web/src may create a Worker only in the listed client files.
- *   - Nothing official (top-level engine/*.ts, engine/scheduler, engine/clock, cli/, web/src) imports the Worker dir.
+ *   - Nothing official (top-level engine/*.ts, engine/scheduler, engine/clock, cli/, web/src) imports the Worker dir,
+ *     except the listed Node verifier files (Owner ruling #200, option C: Node recomputes with the SAME core). A verifier
+ *     file may only read: no file-system writes, no child processes, no network, no official path strings.
  */
 import path from 'node:path';
 
@@ -16,6 +18,7 @@ export interface Boundary {
   worker_entry_dir: string; worker_client_files: string[]; allowed_import_prefixes: string[]; denied_import_prefixes: string[];
   forbidden_globals_in_worker_graph: string[]; forbidden_in_engine_modules: string[]; forbidden_path_strings_in_worker_graph: string[];
   experimental_save_store: { files: string[]; database_name_prefix: string };
+  node_verifier?: { files: string[]; forbidden_in_files: string[] };
 }
 export interface Violation { file: string; rule: string; detail: string }
 
@@ -87,13 +90,20 @@ export function checkBoundary(files: Map<string, string>, b: Boundary): { violat
   }
   // Official code must not reach into the Worker dir.
   const official = (f: string) => /^engine\/[^/]+\.ts$/.test(f) || f.startsWith('engine/scheduler/') || f.startsWith('engine/clock/') || f.startsWith('cli/') || f.startsWith('web/src/');
+  const verifiers = new Set(b.node_verifier?.files ?? []);
   for (const [f, src] of files) {
     if (!official(f)) continue;
+    const verifier = verifiers.has(f) && f.startsWith('cli/');
     for (const { spec } of specifiers(src)) {
       if (!spec || !spec.startsWith('.')) continue; checks++;
       const t = norm(path.posix.normalize(path.posix.join(path.posix.dirname(f), spec)));
-      if (t.startsWith(entry)) bad(f, 'official-imports-worker', t);
+      if (t.startsWith(entry) && !verifier) bad(f, 'official-imports-worker', t);
+      if (verifier && !t.startsWith(entry)) bad(f, 'verifier-import', `${t}: a verifier imports only the Worker core`);
     }
+    if (!verifier) continue;
+    const code = stripComments(src);
+    for (const x of b.node_verifier!.forbidden_in_files) { checks++; if (code.includes(x)) bad(f, 'verifier-writes', `${x}: the Node verifier only reads its input`); }
+    for (const p of b.forbidden_path_strings_in_worker_graph) { checks++; if (code.includes(p)) bad(f, 'official-path-string', p); }
   }
   return { violations: v, reached: [...seen].sort(), checks };
 }

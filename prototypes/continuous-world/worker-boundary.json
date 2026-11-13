@@ -21,6 +21,32 @@
     "database_name_prefix": "antempire-experiment-",
     "rule": "Only these files may touch IndexedDB / StorageManager / Web Locks, only for databases whose name starts with the prefix, and only to store non-official experiment-world snapshots received from the Worker. They import only ./ viewer modules, never fetch or write anything else, and never touch saves/ or journal/."
   },
+  "node_verifier": {
+    "decision": "Owner ruling #200 (2026-11-12, option C): the world runs in the browser Worker; Node is an independent, reproducible verifier that recomputes with the SAME versioned core (no second science implementation).",
+    "files": [
+      "cli/verify-save.ts"
+    ],
+    "rule": "Only these cli/ files may import the Worker directory, and they import nothing else of the repository. They read one input file and print a report: no file-system writes, no child processes, no network, no official save / journal paths. They never produce official history.",
+    "forbidden_in_files": [
+      "writeFile",
+      "appendFile",
+      "createWriteStream",
+      "renameSync",
+      "rename(",
+      "unlink",
+      "rmSync",
+      "rmdir",
+      "mkdir",
+      "copyFile",
+      "truncateSync",
+      "fs.write",
+      "openSync",
+      "child_process",
+      "fetch(",
+      "node:http",
+      "node:net"
+    ]
+  },
   "allowed_import_prefixes": [
     "prototypes/continuous-world/worker/",
     "engine/clock/",
