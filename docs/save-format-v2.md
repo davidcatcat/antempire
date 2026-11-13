@@ -40,6 +40,7 @@
 | 事件鏈承諾 | `payload.chain` | §3 |
 | 校驗資訊 | 信封 `payload_sha256`；匯出 `export_sha256` | 只偵測意外損壞，**不是**真實性或科學驗證 |
 | fork 紀錄 | `payload.save_meta.lineage` | §6；目前永遠是空陣列 |
+| 尚未模擬清單 | `payload.save_meta.not_simulated` | Owner #212 Q2 a（矩陣 M43）：只有 P0-A2 世界有（§5b）；合成世界沒有（它不是螞蟻模型），不補上 |
 | 驗證狀態 | **不在檔案中** | 只由驗證器的結果產生（§8）；檔案若自帶狀態欄位，匯入與驗證器都拒絕 |
 
 `save_meta` 對一個世界是常數：Worker 還原時重新計算 `saveMetaOf(world_id, seed, params)` 並要求完全相同，否則拒絕（`META_MISMATCH`）。
@@ -73,6 +74,8 @@ P0-A2 世界同樣釘住（`tests/save-verify.test.ts` §6，摘要由加入事�
 
 **2026-11-13（Owner #214 Q4，P0-A2 規則版本 `/2`）**：巢內走動接觸改記為 `idle_larvae`（[`p0a2-24h-prototype.md`](p0a2-24h-prototype.md) §12.5），事件的 `data`、`engine_version` 與狀態中的 P0-A2 紀錄雜湊鏈 `log.hash` 因此改變。上面三個舊摘要仍然釘住，比對對象改為：事件投影回 `/1` 寫法（並把 `engine_version` 換回 `/1`）→ `1107894c…`；去掉 `log.hash` 的狀態 → `f854d308…`（修正前後相同）；再去掉 `engine_version` 的 payload → `ad627b99…`（修正前後相同）。新的完整值另行釘選：事件 `3ff0b35a…`、狀態 `18cc5950…`（原 `292c59fa…`）、payload `4ab7edec…`（原 `672229a6…`）。
 
+**2026-11-13（Owner #212 Q2 a，版本 `/3`）**：只在 `save_meta` 加上 `not_simulated`。上面 `/2` 的事件與 payload 摘要仍然釘住，比對對象是把 `engine_version` 換回 `/2` 的投影（`3ff0b35a…`、`4ab7edec…`，逐位元組相同）；狀態 `18cc5950…` 不變。`/3` 的完整值另行釘選：事件 `054f051c…`、payload `219d9754…`（只差 `engine_version`）。
+
 ## 5. 世界種類（world kind）抽象
 
 [`world-kinds.ts`](../prototypes/continuous-world/worker/world-kinds.ts) 登錄每一種世界的版本化核心：
@@ -92,14 +95,15 @@ interface VerifiableWorld { advanceToExact(end, maxBatches?); nowExact(); seqNo(
 
 候選／實驗世界，非正式（Owner #201：未經 Owner 核准不建立正式 Day0）。實作在 Worker 目錄的轉接層 [`p0a2-world.ts`](../prototypes/continuous-world/worker/p0a2-world.ts)；P0-A2 核心（`prototypes/p0a2-24h/`）沒有修改。
 
-- **版本**：引擎版本 `experiment-p0a2-24h/2`（2026-11-13 起；`/1` 見下方「規則版本」；Worker 依 `experiment-p0a2-24h/` 前綴選擇還原的世界種類），payload 結構 1 → **2**；規則指紋＝SHA-256(canonical{引擎版本, 結構版本, `world_kind: "p0a2"`, `params.json` SHA-256, 程式碼 SHA-256 與檔案清單, 情境, 變體})。執行期／協定的世界種類仍是 `p0a2`（`init` 指令、畫面、`payload.world_kind`）；存檔格式的世界種類是 `save_meta.world_kind = "p0a2-24h-v1"`（驗證器登錄 ID）。
+- **版本**：引擎版本 `experiment-p0a2-24h/3`（2026-11-13 起：`/2` 加上 `save_meta.not_simulated`，事件與世界狀態與 `/2` 相同；`/1`、`/2` 見下方「規則版本」；Worker 依 `experiment-p0a2-24h/` 前綴選擇還原的世界種類），payload 結構 1 → **2**；規則指紋＝SHA-256(canonical{引擎版本, 結構版本, `world_kind: "p0a2"`, `params.json` SHA-256, 程式碼 SHA-256 與檔案清單, 情境, 變體})。執行期／協定的世界種類仍是 `p0a2`（`init` 指令、畫面、`payload.world_kind`）；存檔格式的世界種類是 `save_meta.world_kind = "p0a2-24h-v1"`（驗證器登錄 ID）。
 - **事件鏈**：與合成世界同一定義（§3）。`event_k` 是轉接層原樣輸出的第 k 個協定事件（P0-A2 世界自己的事件日誌一行對一個事件，含 `seq`、`event_id`、精確時刻、`round`、資料與 `tie_q`、版本與標示欄位）；同一時刻的次序就是 P0-A2 世界日誌的次序。genesis 的 `world_kind` 是 `p0a2-24h-v1`。P0-A2 世界本身另有日誌雜湊鏈（`state.log.hash`），兩者並存、互不取代。
 - **`save_meta.initial`**：`{ world_id, seed, t_sim: 0, params_sha256, scenario, variant, how }`；`params_sha256`＝`prototypes/p0a2-24h/params.json` 標準 JSON 的 SHA-256，`scenario`＝`taichung-march-ref`，`variant`＝參數檔的參考變體。驗證器只用**自己這一版**的參數檔、情境與變體；檔案中的參數永遠不被採用。
 - **`save_meta.species`**：`{ id: null, fingerprint: null, note }`。P0-A2 原型沒有正式物種參數檔（`species/*.json`）；個體參數在原型參數檔中（原型、非正式），其指紋就是 `initial.params_sha256`。不捏造物種 ID 或指紋。
 - **`save_meta.environment`**：`id: "p0a2-weather/taichung-march-ref"`、`fingerprint`＝SHA-256(canonical{scenario, site, weather_scenario})（取自 `params.json` 的 `site` 與該情境定義）、`synthetic: true`（合成天氣情境＋示意地點；光照由一般方法計算）。
+- **`save_meta.not_simulated`**（2026-11-13，Owner #212 Q2 a、#213 Q1 a；矩陣 M43）：`{ format: "antempire.not-simulated.v1", source, note_zh, items: [{ row, status: "未接入"|"簡化代理", label_zh }] }`，就是 `node cli/r2-matrix.ts --write` 由 `docs/r2-acceptance-matrix.json` 產生的 `prototypes/continuous-world/worker/not-simulated.ts`。這個模組在 P0-A2 程式碼雜湊中：清單改變＝規則指紋改變，舊存檔顯示「規則不同，無法繼續」（不改寫、可匯出）。實驗頁的「尚未模擬」面板與存檔清單只顯示這個欄位；驗證器報告以 `save.not_simulated` 列出存檔所述的清單。加入此欄位沒有改變任何事件或世界狀態（`tests/save-verify.test.ts` §6 的去版本／指紋／程式碼雜湊／`save_meta`／`chain` 釘選不變），只改變 `save_meta`、程式碼雜湊與規則指紋。
 - **還原檢查**：原有的 P0-A2 檢查（雜湊、標頭、指紋／參數／程式碼／情境／變體、`World.restore`、守恆、佇列、往返）之後，再檢查 `lineage` 為空（否則 `FORK_UNSUPPORTED`）、`save_meta` 等於依世界 ID 與種子重算的值（`META_MISMATCH`）、事件鏈形狀、genesis 屬於此世界／種子／規則、`count === seq`（`CHAIN_MISMATCH`）。
 - **精確時刻**：P0-A2 世界的時間粒度是整數毫秒；`advanceToExact` 只接受整毫秒的精確時刻（否則 `BAD_TIME`），驗證器推進到存檔的 `t_now`。
-- **規則版本（Owner #214 Q4，2026-11-13）**：`/1`＝`bout_end` 的巢內走動接觸被同一事件的育幼接觸清單覆寫（紀錄缺漏；狀態與食物帳不受影響）；`/2`＝走動接觸另記為 `idle_larvae`。版本表在 `p0a2-world.ts` 的 `P0A2_ENGINE_HISTORY`。**存檔世界種類 ID 不變（仍是 `p0a2-24h-v1`）**：它是驗證器登錄與 `save_meta`／payload 結構 2 的識別，這兩者沒有改變；規則版本由信封、payload 與每個事件的 `engine_version` 以及 `rules_fingerprint`（含程式碼 SHA-256，也進入事件鏈 genesis）攜帶。這樣 `/1` 存檔在驗證器得到明確的 `UNSUPPORTED_ENGINE`（報告列出存檔的 `/1` 與驗證器的 `/2`），而不是「沒有這種世界」。`/1` 存檔**不會**在 `/2` 下重播、重算雜湊或改寫：Worker 拒絕（`ENGINE_MISMATCH`，訊息指明是較舊的 P0-A2 規則版本，存檔不變、可以匯出）、驗證器回報 `invalid`（`UNSUPPORTED_ENGINE`，不重算）、觀察器回報 `rules_mismatch`（「規則不同，無法繼續」，列出兩邊的引擎版本）。真實的 `/1` 匯出檔保存在 `tests/fixtures/p0a2-rules-v1/`（由 `/1` 程式產生），`tests/save-verify.test.ts` §6b 檢查以上行為與檔案不被修改。這台驗證器不保留 `/1` 核心，所以 `/1` 存檔目前無法取得 `node_verified`；若日後需要，應以 fork（§6）或另行登錄 `/1` 核心處理，不得在 `/2` 下重算。
+- **規則版本（Owner #214 Q4，2026-11-13）**：`/1`＝`bout_end` 的巢內走動接觸被同一事件的育幼接觸清單覆寫（紀錄缺漏；狀態與食物帳不受影響）；`/2`＝走動接觸另記為 `idle_larvae`；`/3`（2026-11-13，Owner #212 Q2 a）＝`save_meta` 加上 `not_simulated`（事件與世界狀態與 `/2` 逐位元組相同，只有版本欄位、程式碼雜湊、規則指紋與 `save_meta` 不同；`/2` 存檔與 `/1` 一樣被拒絕、原樣保留、可匯出）。版本表在 `p0a2-world.ts` 的 `P0A2_ENGINE_HISTORY`。**存檔世界種類 ID 不變（仍是 `p0a2-24h-v1`）**：它是驗證器登錄與 `save_meta`／payload 結構 2 的識別，這兩者沒有改變；規則版本由信封、payload 與每個事件的 `engine_version` 以及 `rules_fingerprint`（含程式碼 SHA-256，也進入事件鏈 genesis）攜帶。這樣 `/1` 存檔在驗證器得到明確的 `UNSUPPORTED_ENGINE`（報告列出存檔的 `/1` 與驗證器的 `/2`），而不是「沒有這種世界」。`/1` 存檔**不會**在 `/2` 下重播、重算雜湊或改寫：Worker 拒絕（`ENGINE_MISMATCH`，訊息指明是較舊的 P0-A2 規則版本，存檔不變、可以匯出）、驗證器回報 `invalid`（`UNSUPPORTED_ENGINE`，不重算）、觀察器回報 `rules_mismatch`（「規則不同，無法繼續」，列出兩邊的引擎版本）。真實的 `/1` 匯出檔保存在 `tests/fixtures/p0a2-rules-v1/`（由 `/1` 程式產生），`tests/save-verify.test.ts` §6b 檢查以上行為與檔案不被修改。這台驗證器不保留 `/1` 核心，所以 `/1` 存檔目前無法取得 `node_verified`；若日後需要，應以 fork（§6）或另行登錄 `/1` 核心處理，不得在 `/2` 下重算。
 - **結構 1 的 P0-A2 存檔**：Worker 拒絕（`SCHEMA_MISMATCH`，訊息說明沒有事件鏈承諾、沒有遷移路徑），儲存模組回報 `no_migration_path`／`migration_failed` 並保留原檔，驗證器回報 `invalid`（`NO_CHAIN`）。
 - **瀏覽器產生的 P0-A2 存檔可由 Node 重算驗證（已解決，規則更新 detmath-exp，2026-11-12）**。原本的限制（保留紀錄）：P0-A2 環境記錄的相對溼度 `rh_percent` 經由 `engine/clock/weather-input.ts` 的飽和水氣壓計算使用 `Math.exp`（實作近似函式），Node 與 Chromium Worker 在部分 `env_sample` 事件差 1 ulp（兩個種子 48 h、42 480 個事件中 12 個，最大差 1.4×10⁻¹⁴ %），事件鏈 head 與 P0-A2 日誌雜湊鏈因此不同，瀏覽器推進的存檔交給 Node 驗證時如實回報 `mismatch`。修正：Worker 匯入圖中所有 `exp`／`log`／`**`／`sin` 改用 `engine/clock/detmath.ts` 的 fdlibm 移植（`detExp`／`detLog`／`detPow`／`detSin`），並以靜態規則禁止匯入圖再使用實作近似函式（[`solar-cross-env-check.md`](solar-cross-env-check.md) §8）。證據（x64 Linux、Node 22.23.4 vs. Chromium 153.0.8010.12 headless）：`tests/browser/worker-runtime.check.cjs` 兩個種子 48 h 的 42 480／42 480 個事件、日誌雜湊鏈、事件鏈 head 與整份 payload 逐位元組相同（`rh_percent`／`chain.head` 例外已移除）；`tests/browser/save2-acceptance.check.cjs` 在 Chromium Worker 以 3600× 推進新世界到 t = 94 032.577 s（13 155 個鏈事件）、手動存檔、由選單匯出，`node cli/verify-save.ts` → `node_verified`（同一檢查在修正前的程式上 → `mismatch`）。驗證器沒有放寬。**未驗證**：ARM64、Firefox、Safari、實體手機瀏覽器；在這些環境不得宣稱瀏覽器存檔可由 Node 驗證。
 - **成本**（Node 22、x64 測試機，未在手機量測）：48 h、18 595 個事件，加入鏈之前約 1.0 s，之後約 1.9 s（各一次量測）。
@@ -149,8 +153,8 @@ npm run verify:save -- <存檔.json> [--no-recompute]
 | 完整性檢查通過 | 瀏覽器 | 讀取時儲存模組重讀並重算雜湊、檢查信封與版本，Worker 還原時檢查結構與事件鏈欄位，全部通過 |
 | Node 已重算驗證 | 只有 Node 驗證器 | `status = node_verified` 且針對**這一份**存檔（輸入檔雜湊、`payload_sha256`、`chain.head` 完全相同） |
 
-- 存檔清單每一列顯示「本機可玩｜未經 Node 驗證」；讀取後世界畫面的存檔狀態列顯示「完整性檢查通過｜未經 Node 驗證」；新遊戲顯示「本機可玩｜未經 Node 驗證」（`save-format.ts` `verificationOf()`，測試保證它永遠不會給出 Node 已重算驗證）。
-- **報告匯入（設計，未實作）**：使用者交來的報告本身也是用戶提供的資料，可以被偽造，因此瀏覽器**不得**只因匯入報告就顯示「Node 已重算驗證」。可行做法（需 Owner 決定）：(a) 由受信任的驗證服務以金鑰簽章報告，瀏覽器驗章且比對存檔雜湊與 head；或 (b) 只顯示「附有 Node 報告（未簽章，未經本機確認）」並提供重跑指令。在此之前一律顯示「未經 Node 驗證」。
+- 存檔清單每一列顯示「本機可玩｜未經 Node 重算驗證」；讀取後世界畫面的存檔狀態列顯示「完整性檢查通過｜未經 Node 重算驗證」；新遊戲顯示「本機可玩｜未經 Node 重算驗證」（`save-format.ts` `verificationOf()`，測試保證它永遠不會給出 Node 已重算驗證）。
+- **報告匯入（設計，未實作）**：使用者交來的報告本身也是用戶提供的資料，可以被偽造，因此瀏覽器**不得**只因匯入報告就顯示「Node 已重算驗證」。可行做法（需 Owner 決定）：(a) 由受信任的驗證服務以金鑰簽章報告，瀏覽器驗章且比對存檔雜湊與 head；或 (b) 只顯示「附有 Node 報告（未簽章，未經本機確認）」並提供重跑指令。在此之前一律顯示「未經 Node 重算驗證」。
 - 驗證失敗保留可診斷資料：驗證器報告列出重算值與差異欄位；瀏覽器端的損壞快照仍依 SAVE-1 移入隔離區保留，不自動修補、不改寫。
 
 ## 9. 原子提交（雙槽或等效）

@@ -12,12 +12,15 @@
  *    light state the workers sense (scene light; sun altitude by the general method, bucketed; shadow direction 示意);
  *  - display interpolation: a travelling worker between the recorded ends of its route trip;
  *  - 示意: route direction (only its length is an engine parameter), a searching worker's point, the nest inset.
+ * 「尚未模擬」 (Owner #212 Q2 a; matrix row M43): the top-bar button and panel show the list the Worker writes into the
+ * world's save metadata (payload.save_meta.not_simulated, read from a snapshot, a pure read at an event boundary). The
+ * page has no list of its own; a world whose save metadata has none says so.
  * Nothing here runs the simulation, fetches web/data, reads saves/ or journal/, or writes anything.
  */
 import { ExperimentWorkerClient } from './experimental/worker-client.ts';
 import { ExperimentSaveStore } from './experimental/save-store.ts';
 import { ExperimentSession } from './experimental/session.ts';
-import type { SaveUiState } from './experimental/save-format.ts';
+import { notSimulatedOf, type NotSimulatedView, type SaveUiState } from './experimental/save-format.ts';
 import { Menu } from './v62-menu.ts';
 import { isP0a2Frame, type AnyFrameMsg, type EventMsg, type PacingMsg, type WorldKind } from './experimental/worker-protocol.ts';
 import { LayeredRenderer } from './render-canvas.ts';
@@ -30,7 +33,7 @@ import { cardHtml, drawInset, hudStatus, insetRect, type InsetHit } from './v62-
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const canvas = $<HTMLCanvasElement>('scene');
-const ui = { play: $<HTMLButtonElement>('play'), speed: $<HTMLSelectElement>('speed'), fpsCap: $<HTMLSelectElement>('fpsCap'), follow: $<HTMLSelectElement>('follow'), time: $('time'), status: $('status'), card: $('card'), badge: $('badge'), info: $<HTMLButtonElement>('infoBtn'), about: $('about'), logBtn: $<HTMLButtonElement>('logBtn'), log: $('log'), home: $<HTMLButtonElement>('homeBtn'), zoomIn: $<HTMLButtonElement>('zoomIn'), zoomOut: $<HTMLButtonElement>('zoomOut'), decor: $<HTMLInputElement>('decor'), saveBtn: $<HTMLButtonElement>('saveBtn'), menuBtn: $<HTMLButtonElement>('menuBtn'), saveStatus: $('saveStatus'), notice: $('notice'), ro: $('roBanner') };
+const ui = { play: $<HTMLButtonElement>('play'), speed: $<HTMLSelectElement>('speed'), fpsCap: $<HTMLSelectElement>('fpsCap'), follow: $<HTMLSelectElement>('follow'), time: $('time'), status: $('status'), card: $('card'), badge: $('badge'), info: $<HTMLButtonElement>('infoBtn'), about: $('about'), logBtn: $<HTMLButtonElement>('logBtn'), log: $('log'), home: $<HTMLButtonElement>('homeBtn'), zoomIn: $<HTMLButtonElement>('zoomIn'), zoomOut: $<HTMLButtonElement>('zoomOut'), decor: $<HTMLInputElement>('decor'), saveBtn: $<HTMLButtonElement>('saveBtn'), menuBtn: $<HTMLButtonElement>('menuBtn'), saveStatus: $('saveStatus'), notice: $('notice'), ro: $('roBanner'), nsBtn: $<HTMLButtonElement>('nsBtn'), notSim: $('notSim') };
 
 const R = new LayeredRenderer(canvas);
 const client = new ExperimentWorkerClient();
@@ -41,6 +44,8 @@ let digest = new EventDigest(); const recent: EventMsg[] = [], protocolErrors: s
 const PROBE = 'exp-runtime-probe';
 let session: ExperimentSession | null = null, menu: Menu | null = null, tempMode = false, active = false;
 let saveUi: SaveUiState | null = null;
+/** the 「尚未模擬」 list of the world in the Worker (from its snapshot's save metadata; null before a world is entered) */
+let disclosure: NotSimulatedView | null = null;
 const cam = { x: 0, y: 0, s: 8 };
 const stats = { frames: 0, intervals: [] as number[], lastTs: 0, lastDraw: 0 };
 let fpsCap = 60, topBarPx = 0, bottomBarPx = 0;
@@ -172,6 +177,18 @@ function renderCard() {
   $('followBtn').onclick = () => void setFollow(following === id ? null : id);
   $('closeCard').onclick = () => { selected = null; void setFollow(null); };
 }
+const escH = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+/** the 「尚未模擬」 button and panel: exactly the list in the world's save metadata (Owner #212 Q2 a) */
+function renderNotSim() {
+  const d = disclosure;
+  ui.nsBtn.hidden = !d;
+  if (!d) { ui.notSim.hidden = true; return; }
+  ui.nsBtn.textContent = d.ok ? `尚未模擬 ${d.unwired.length} 項｜簡化代理 ${d.proxies.length} 項` : '尚未模擬：沒有清單';
+  const li = (x: { row: string; label_zh: string }) => `<li data-row="${escH(x.row)}">${escH(x.label_zh)} <span class="src">（${escH(x.row)}）</span></li>`;
+  ui.notSim.innerHTML = d.ok
+    ? `<h2>這個世界尚未模擬什麼</h2><p>${escH(d.note_zh)}</p><h3>尚未模擬（${d.unwired.length} 項）</h3><ul id="nsUnwired">${d.unwired.map(li).join('')}</ul><h3>簡化代理（${d.proxies.length} 項）</h3><ul id="nsProxies">${d.proxies.map(li).join('')}</ul><p class="src">來源：此世界存檔中繼資料 <code>save_meta.not_simulated</code>（${escH(d.format)}；由 <code>${escH(d.source)}</code> 產生，與規則指紋一起版本化）。畫面不自帶清單，也不補上清單以外的機制；沒有列出的機制不代表已完整模擬。</p>`
+    : `<h2>這個世界尚未模擬什麼</h2><p id="nsNone">${escH(d.reason)}</p>`;
+}
 let cardKey = '';
 function renderLog() {
   ui.log.textContent = recent.slice().reverse().map((e) => `#${e.seq} ${fmtWorldTime(e.t_sim)} ${e.kind} ${e.entity ?? ''} ${e.engine_version.startsWith('experiment-p0a2') ? p0EventText(e) : e.kind === 'ant_bout_end' ? `${String(e.data.from)}→${String(e.data.to)}` : e.kind === 'env_hour' ? `${String(e.data.temperature_c)}°C（合成）` : e.kind === 'light_change' ? String(e.data.light) : ''}`).join('\n');
@@ -229,6 +246,7 @@ async function init() {
   ui.follow.onchange = () => void setFollow(ui.follow.value === '' ? null : ui.follow.value);
   ui.info.onclick = () => { ui.about.hidden = !ui.about.hidden; ui.info.setAttribute('aria-expanded', String(!ui.about.hidden)); };
   ui.logBtn.onclick = () => { ui.log.hidden = !ui.log.hidden; if (!ui.log.hidden) renderLog(); };
+  ui.nsBtn.onclick = () => { ui.notSim.hidden = !ui.notSim.hidden; ui.nsBtn.setAttribute('aria-expanded', String(!ui.notSim.hidden)); };
   ui.home.onclick = () => { void setFollow(null); homeCamera(); };
   ui.zoomIn.onclick = () => zoomAt(canvas.clientWidth / 2, canvas.clientHeight / 2, 1.5);
   ui.zoomOut.onclick = () => zoomAt(canvas.clientWidth / 2, canvas.clientHeight / 2, 1 / 1.5);
@@ -276,6 +294,9 @@ async function enterWorld(autostart: boolean) {
   ui.ro.hidden = !cur || cur.writer; if (cur && !cur.writer) ui.ro.textContent = cur.readOnlyReason ?? '唯讀';
   ui.saveBtn.hidden = ui.menuBtn.hidden = tempMode; ui.saveStatus.hidden = tempMode;
   await client.setSpeed(DEFAULT_SPEED);
+  // the 「尚未模擬」 list of THIS world, from its save metadata (a snapshot is a pure read at an event boundary)
+  const snap = await client.snapshot();
+  disclosure = snap.type === 'snapshot' ? notSimulatedOf(snap.snapshot) : { ok: false, reason: `無法讀取此世界的存檔中繼資料（${snap.type === 'error' ? snap.code : snap.type}）：「尚未模擬」清單未知，不得把畫面當成已模擬任何機制` }; ui.notSim.hidden = true; ui.nsBtn.setAttribute('aria-expanded', 'false'); renderNotSim();
   ui.badge.textContent = `${MODE_LABEL}｜${isP0a2Frame(frame) ? `${P0A2_STATUS_LABEL}｜P0-A2 24 小時個體行為世界` : '合成測試世界（不是螞蟻科學模型）'}｜${tempMode ? '臨時實驗（不存檔）' : `「${cur?.name ?? ''}」`}｜世界 ${frame?.world_id}｜種子 ${frame?.seed}｜規則指紋 ${frame?.rules_fingerprint.slice(0, 12)}…`;
   R.warm(camera());
   if (autostart) await client.start();
@@ -286,7 +307,7 @@ async function toMenu() {
   if (!session) return;
   ui.menuBtn.disabled = true;
   const r = await session.leave(true);
-  ui.menuBtn.disabled = false; active = false; frame = null; pacing = null;
+  ui.menuBtn.disabled = false; active = false; frame = null; pacing = null; disclosure = null; renderNotSim();
   const failed = r && !r.ok ? r as { code: string; message: string } : null;
   menu?.show(failed ? `離開前的儲存失敗（${failed.code}）：${failed.message}。上一個成功的存檔仍保留。` : r ? '已儲存並回到選單。' : undefined, failed ? 'error' : 'info');
 }
@@ -319,6 +340,7 @@ function renderSave() {
   p0poses: () => p0poses.map((p) => ({ ...p })),
   insetHits: () => insetHits.map((h) => ({ ...h })),
   sceneLight: () => sceneLight,
+  disclosure: () => (disclosure ? JSON.parse(JSON.stringify(disclosure)) as NotSimulatedView : null),
   draws: () => R.lastDraws().map((d) => ({ id: d.id, ex: d.ex, ey: d.ey, sx: d.sx, sy: d.sy })),
   camera: () => camera(),
   state: () => ({ selected, following, fpsCap, cam: { ...cam }, quality: R.quality().level, canvas_px: [canvas.width, canvas.height], layers: [...R.trace], lastDisplay }),

@@ -5,6 +5,8 @@
  * fix the two probes overlapped on the single Worker and both read the world created last, so a saved synthetic world
  * showed 「規則不同，無法繼續」 and 繼續遊戲 was disabled (tests/save2-session.test.ts section 6 is the Node-level test).
  * Short by design (seconds): the full Owner flow stays in save2-acceptance.check.cjs (p0a2 in CI; SAVE2_WORLD=synthetic).
+ * Also (Owner #212 Q2 a, matrix M43): each save-list row shows the size of the save metadata's 「尚未模擬」 list
+ * (P0-A2: 「尚未模擬 N 項、簡化代理 M 項」, the counts of the saved save_meta.not_simulated) or that it has none (synthetic).
  * Usage: node tests/browser/save2-world-kinds.check.cjs <out-dir> <base-url>
  */
 const fs = require('node:fs');
@@ -59,6 +61,19 @@ const dirHash = (d) => { const h = crypto.createHash('sha256'); const walk = (p)
         const w = lst.find((x) => x.world_id === ids[k]);
         check(!!w && w.compat === 'compatible' && w.official === false && w.engine_version === rt[k].engine_version, `${tag}: saved ${k} world listed as compatible after reopening (${w && w.compat})`);
       }
+      // the save list shows each world's 「尚未模擬」 list from its save metadata (never filled in by the viewer)
+      await page.click('#mLoad'); await page.waitForFunction((n) => document.querySelectorAll('#mPanel .mrow[data-world]').length === n, KINDS.length, { timeout: 30000 });
+      const ns = await page.evaluate(async (ids) => {
+        const out = {};
+        for (const [k, id] of Object.entries(ids)) {
+          const el = document.querySelector(`#mPanel .mrow[data-world="${id}"] .nsSummary`), rec = await window.__v62.session().store.getWorld(id);
+          out[k] = { attr: el && el.dataset.unwired, text: el && el.textContent, summary: rec && rec.summary && rec.summary.not_simulated };
+        }
+        return out;
+      }, ids);
+      check(ns.p0a2.summary && ns.p0a2.summary.unwired > 0 && ns.p0a2.attr === String(ns.p0a2.summary.unwired) && ns.p0a2.text === `尚未模擬 ${ns.p0a2.summary.unwired} 項、簡化代理 ${ns.p0a2.summary.proxies} 項（存檔中繼資料）`, `${tag}: the P0-A2 save row shows its save metadata's 尚未模擬 list (${ns.p0a2.text})`);
+      check(ns.synthetic.summary === null && ns.synthetic.attr === 'none' && ns.synthetic.text === '存檔中繼資料沒有「尚未模擬」清單', `${tag}: the synthetic save row says it has no 尚未模擬 list`);
+      await page.click('#mLoad');
       const last = order[order.length - 1];
       check(!(await page.isDisabled('#mContinue')) && (await page.textContent('#mContinueInfo')).includes(`世界 ${last}`), `${tag}: 繼續遊戲 enabled and offers the last world (${last}): "${await page.textContent('#mContinueInfo')}"`);
       for (const k of KINDS) {
