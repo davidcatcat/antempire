@@ -42,7 +42,21 @@ export const LABEL_ZH = '非正式實驗世界／不屬於正式遊戲歷史';
 export const SNAPSHOT_SCHEMA = 'antempire.experiment-world-snapshot.v1';
 /** bump the engine version or the payload schema on any change of what this adapter emits or stores (the code hash
  *  also changes with every module it runs) */
-export const P0A2_ENGINE_VERSION = 'experiment-p0a2-24h/1';
+export const P0A2_ENGINE_VERSION = 'experiment-p0a2-24h/3';
+/** every engine version of this world kind starts with this (the Worker routes a P0-A2 snapshot of any version here, so
+ *  an older one is refused as an older rules version instead of reaching another world kind) */
+export const P0A2_ENGINE_FAMILY = 'experiment-p0a2-24h/';
+/** rules versions of this world (Owner #214 Q4, 2026-11-13: old records stay identifiable, never silently rewritten).
+ *  /1: the event log of a bout_end that ended an idle walk and then chose brood care lost the idle-walk contacts (the
+ *      brood `larvae` list overwrote them; state and food were unaffected). /2: logged apart as `idle_larvae`.
+ *  /3: save_meta.not_simulated (the 「尚未模擬／簡化代理」 list, Owner #212 Q2 a; matrix M43) is stored; events and world
+ *      state are unchanged from /2.
+ *  An older snapshot is refused (ENGINE_MISMATCH), kept unchanged, and not replayed or re-hashed under the current version. */
+export const P0A2_ENGINE_HISTORY: Readonly<Record<string, string>> = Object.freeze({
+  'experiment-p0a2-24h/1': 'bout_end 的巢內走動接觸被育幼接觸清單覆寫（紀錄缺漏；狀態與食物帳不受影響）；#214 Q4 前的版本',
+  'experiment-p0a2-24h/2': '巢內走動接觸另記為 idle_larvae（Owner #214 Q4，2026-11-13）',
+  'experiment-p0a2-24h/3': '存檔中繼資料加入「尚未模擬／簡化代理」清單 save_meta.not_simulated（Owner #212 Q2 a，矩陣 M43，2026-11-13）；事件與世界狀態與 /2 相同',
+});
 /** payload schema 2 (Owner ruling #200): payload.save_meta + payload.chain (event-chain commitment). Snapshots of
  *  schema 1 are refused (no chain; kept unchanged, no migration path). docs/save-format-v2.md §6. */
 export const P0A2_SCHEMA_VERSION = 2;
@@ -219,7 +233,7 @@ export class P0a2ExperimentWorld {
     if (s.schema_version === 1) refuse('SCHEMA_MISMATCH', `schema_version 1 snapshots carry no event-chain commitment and cannot be continued by this runtime (schema_version ${P0A2_SCHEMA_VERSION}); there is no migration path; the saved data is not changed and can still be exported`);
     if (s.schema_version !== P0A2_SCHEMA_VERSION) refuse('SCHEMA_MISMATCH', `schema_version ${String(s.schema_version)} is not ${P0A2_SCHEMA_VERSION}`);
     if (s.label !== LABEL_ZH || s.official !== false) refuse('NOT_EXPERIMENT', 'a snapshot must be labelled non-official (official:false)');
-    if (s.engine_version !== P0A2_ENGINE_VERSION) refuse('ENGINE_MISMATCH', `engine_version ${String(s.engine_version)} is not ${P0A2_ENGINE_VERSION}`);
+    if (s.engine_version !== P0A2_ENGINE_VERSION) refuse('ENGINE_MISMATCH', `engine_version ${String(s.engine_version)} is not ${P0A2_ENGINE_VERSION}${typeof s.engine_version === 'string' && s.engine_version in P0A2_ENGINE_HISTORY ? ` (an older P0-A2 rules version: ${P0A2_ENGINE_HISTORY[s.engine_version]}; it cannot be continued or re-hashed under the current rules; the saved data is not changed and can still be exported)` : ''}`);
     let h: string;
     try { h = hashJson(s.payload); } catch (e) { return refuse('HASH_MISMATCH', `payload is not canonical JSON data (${(e as Error).message})`); }
     if (h !== s.payload_sha256) refuse('HASH_MISMATCH', 'payload_sha256 does not match the payload');
