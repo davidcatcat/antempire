@@ -1,10 +1,13 @@
 {
-  "//": "Independent build of the NON-OFFICIAL experiment Worker (Owner decision #39). WebWorker lib only (no DOM, no Node types); include is this directory plus the allowlisted engine modules (prototypes/continuous-world/worker-boundary.json). Output web/worker-dist/ is a build product (gitignored).",
+  "//": "Independent build of the NON-OFFICIAL experiment Worker (Owner decision #39). WebWorker lib only (no DOM, no Node types); include is this directory plus the allowlisted modules (prototypes/continuous-world/worker-boundary.json: engine clock / scheduler and the P0-A2 core files, params.json as a JSON module). Output web/worker-dist/ is a build product (gitignored).",
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ES2022",
+    "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": ["ES2023", "WebWorker"],
+    "lib": [
+      "ES2023",
+      "WebWorker"
+    ],
     "types": [],
     "strict": true,
     "rootDir": "../../..",
@@ -13,7 +16,20 @@
     "rewriteRelativeImportExtensions": true,
     "verbatimModuleSyntax": true,
     "erasableSyntaxOnly": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "resolveJsonModule": true
   },
-  "include": ["./*.ts", "../../../engine/scheduler/world-events.ts", "../../../engine/clock/solar.ts", "../../../engine/clock/time-frames.ts"]
+  "include": [
+    "./*.ts",
+    "../../../engine/scheduler/world-events.ts",
+    "../../../engine/clock/solar.ts",
+    "../../../engine/clock/time-frames.ts",
+    "../../p0a2-24h/canon.ts",
+    "../../p0a2-24h/decision.ts",
+    "../../p0a2-24h/environment.ts",
+    "../../p0a2-24h/params.ts",
+    "../../p0a2-24h/types.ts",
+    "../../p0a2-24h/world.ts",
+    "../../p0a2-24h/params.json"
+  ]
 }

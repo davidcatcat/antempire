@@ -4,7 +4,7 @@
  * between the two engine records of its current straight segment is display interpolation, never fed back.
  */
 import { ExperimentWorkerClient } from './worker-client.ts';
-import type { EventMsg, FrameMsg, PacingMsg } from './worker-protocol.ts';
+import { isP0a2Frame, type EventMsg, type FrameMsg, type PacingMsg } from './worker-protocol.ts';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const canvas = $<HTMLCanvasElement>('view'), ctx = canvas.getContext('2d')!;
@@ -17,7 +17,7 @@ const fmtTime = (t: number) => { const d = Math.floor(t / 86400), s = t - d * 86
 const LIGHT: Record<string, string> = { night: '夜', civil_twilight: '曙暮光', day: '日' };
 
 client.onEvents = (evs) => { eventCount += evs.length; for (const e of evs) recent.push(e); if (recent.length > 40) recent.splice(0, recent.length - 40); renderLog(); };
-client.onState = (f, p, fol) => { frame = f; pacing = p; followed = fol; frameAt = performance.now(); renderPanel(); };
+client.onState = (f, p, fol) => { if (isP0a2Frame(f)) return; /* this demo shows the synthetic world only */ frame = f; pacing = p; followed = fol; frameAt = performance.now(); renderPanel(); };
 client.onProtocolError = (w) => { errors.push(w); };
 
 function renderLog(): void {

@@ -13,6 +13,7 @@
     "test:golden": "node tests/golden.test.ts",
     "test:naturalism": "node tests/naturalism.test.ts",
     "test:rest": "node tests/run-all.ts --except golden,naturalism",
+    "verify:save": "node cli/verify-save.ts",
     "evaluate:day0": "node cli/reports/day0-evaluation.ts",
     "evaluate:day0-extremes": "node cli/reports/day0-extremes.ts",
     "web:export": "node cli/web-export.ts",
