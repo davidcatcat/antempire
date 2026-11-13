@@ -66,6 +66,10 @@ PR #169（P0-A2 Worker 執行環境，`docs/experimental-worker-runtime.md` §6�
 - **第三階段要求**：接入實驗 Worker 之前，必須先依 §6 的 Owner 裁示（方案 A 或 A+B）解決，並以 Node 對 Chromium 的逐位元比較驗證，不得改用容許值。
 - **更新（#190 方案 A，§7）**：光照時刻現在逐位元跨環境相同（x86-64 驗證）。原型的 `Math.round(minute × 60000)` 量化與 `lightStateAt` 讀到的轉換值因此在 Node 與 Chromium 相同；上面的「暴露」機率不再適用於已驗證的環境。原型 24 小時釘選雜湊不變（見 §7.5）。ARM64 未驗證。
 
+### 5b. 新使用者審查：P0-A2 實驗 Worker 轉接層（#156 第三階段，2026-11-12）
+
+`prototypes/continuous-world/worker/p0a2-world.ts` 新增為使用者：狀態框中的 `sun_altitude_deg`（`solarAltitude`）與「是否在太陽正午前」（`lightTimes().solar_noon`），**只供畫面**分段光照與陰影方向示意；沒有任何事件、決策或快照讀取它們。兩者都經 `engine/clock/detmath.ts`（§7），Node 與 Chromium 相同（x86-64）；即使將來不同，也只影響畫面亮度分段，不影響世界。P0-A2 世界本身的光照轉換與 `lightStateAt` 的審查見 §5a。Node 與 Chromium Worker 的 P0-A2 比較中唯一的差異是記錄的相對濕度（`weather-input.ts` 的 `Math.exp`），不是光照（`docs/experimental-worker-runtime.md` §9）。
+
 ## 6. 規則 PR 提案（調查時的提案；Owner 已於 #193 裁示採方案 A，實作見 §7）
 
 目標：光照時刻在任何符合 ECMAScript 的環境（Node 各版本、瀏覽器 Worker、x86-64／ARM64）都**逐位元相同**，不放寬任何決定性要求。
@@ -137,3 +141,54 @@ PR #169（P0-A2 Worker 執行環境，`docs/experimental-worker-runtime.md` §6�
 
 ### 7.7 回滾
 - 還原本次提交即可：`solar.ts` 回到 `Math.*`、刪除 `detmath.ts`、`ENGINE_VERSION` 回到 `/1`、`sweep.json` 回到 v1 紀錄。回滾後 §3 的跨環境差異會重新出現，P0-A2 不得宣稱跨環境一致，`engine/clock` 進入正式歷史的前提也不再成立。實驗世界 `/2` 的快照在回滾後會被拒絕（`ENGINE_MISMATCH`）；正式存檔與日誌不受影響。
+
+## 8. 規則更新 detmath-exp：決定性 `exp`／`log`／`**`（方案 A 的延伸，2026-11-12）
+
+### 8.1 問題
+方案 A（§7）只處理三角函數。`Math.exp`／`Math.log`／`**`（`Math.pow`）同樣是 ECMAScript 的「實作近似」函式，Worker 匯入圖中仍在使用：
+
+| 位置 | 用途 | 是否被決策讀取 |
+|---|---|---|
+| `engine/clock/weather-input.ts` `saturationVapourKPa`（`Math.exp`） | P0-A2 記錄的 `rh_percent`；FAO-56 飽和水氣壓 | 只記錄（日誌與事件鏈涵蓋它） |
+| `engine/clock/weather-input.ts` 夜間降溫分支（`Math.exp`）、白天分支（`Math.sin`） | 由日最低／最高溫重建逐時氣溫（`WeatherSeries`，P0-A1 時鐘） | 氣溫是決策輸入（目前 Worker 世界未使用此分支） |
+| `prototypes/p0a2-24h/world.ts`（`Math.log(1 − g())`，兩處） | 指數分布的休息／活動時長 | 是（事件時刻） |
+| `prototypes/p0a2-24h/decision.ts` `hill`（`s ** n`） | 反應門檻 | 是（任務選擇機率） |
+
+實測（PR #209，head 8592c8a，x64 Linux、Node 22.23.4 vs. Chromium 153.0.8010.12）：`tests/browser/worker-runtime.check.cjs` 兩個種子 48 小時 42 480 個事件中 12 個 `env_sample` 的 `rh_percent` 差 1 ulp（最大 1.4×10⁻¹⁴ %），整份 payload 0／2 相同；瀏覽器推進 26.2 小時的 P0-A2 存檔交給 `npm run verify:save` → `mismatch`（`CHAIN_MISMATCH`＋`STATE_MISMATCH`）。同一批輸入上，引擎內建函式在 Node 與 Chromium 之間的差異（本次掃描，§8.4）：`Math.exp` 14 961／180 035、`Math.log` 2 939／165 035、`Math.pow` 5 348／80 000、`Math.sin` 2 017／60 000 個結果位元不同。
+
+### 8.2 演算法（`engine/clock/detmath.ts`）
+- **`detExp`**：fdlibm 5.3 `e_exp.c` 逐行移植。以 ln 2 分成高低兩段（`k·ln2_hi` 精確）約化到 |r| ≤ ½ln 2，再用 fdlibm 的 5 項 minimax 有理式；乘 2ᵏ 以位元型樣建構的 2 的冪做精確乘法（等同 fdlibm 直接加指數欄位）。只用 ＋−×÷、`Math.trunc` 與 `DataView`（大端序、規格完全規定）讀寫 IEEE-754 位元。
+- **`detLog`**：fdlibm 5.3 `e_log.c` 逐行移植。以位元取出指數與尾數，把尾數正規化到 [√2/2, √2)，以 s = f/(2+f) 的 7 項多項式（Lg1～Lg7）計算；次正規數先乘 2⁵⁴（精確）。
+- **`detPowInt(x, n)`**：整數指數用二進位快速冪（固定次序的正確捨入乘法）；n = 2 就是 x·x，與 `x ** 2` 在 Node 中的結果相同。
+- **`detPow(x, y)`**：整數 y → `detPowInt`；否則 x > 0 時 `detExp(y·detLog(x))`。**不是** fdlibm `e_pow.c` 的移植：相對誤差約 (|y·ln x|＋2)·2⁻⁵²，足以用於模型曲線（測試驗證此界）。目前 P0-A2 的 `hill_n = 2`，走整數路徑。
+- 特殊值（與 fdlibm／`Math.*` 一致）：`detExp`：NaN→NaN、+∞→+∞、−∞→+0、x > 709.782712893384 → +∞、x < −745.1332191019411 → +0、結果低於 2⁻¹⁰²² 為次正規數、|x| < 2⁻²⁸ → 1＋x。`detLog`：±0→−∞、負數→NaN、NaN→NaN、+∞→+∞、1→+0。`detPowInt` 非整數指數拋出例外；`detPow`：NaN→NaN、0^(y>0)=0、0^(y<0)=+∞、負底數配非整數指數→NaN。
+- 已知差異：`detExp(1) = 2.7182818284590455`（fdlibm 原樣，比 `Math.E` 高 1 ulp）。為保持「移植而非新演算法」不特例處理。
+- NaN：ECMAScript 只有一個 NaN 值；其位元型樣由實作決定，跨入瀏覽器時會被正規化，因此比較時所有 NaN 記為 `NaN`（不影響任何可觀察的計算；JSON 也把 NaN 寫成 `null`）。
+
+### 8.3 取代與靜態規則
+- `weather-input.ts`：`Math.exp`（兩處夜間分支、一處 `saturationVapourKPa`）→ `detExp`；`Math.sin`（白天分支）→ `detSin`。
+- `prototypes/p0a2-24h/world.ts`：`Math.log(1 − g())` → `detLog(1 − g())`；`decision.ts` `hill`：`**` → `detPow`。`decision.ts` 的局部性靜態檢查（`tests/p0a2-24h-proto.test.ts`）放行**且只放行**從 `engine/clock/detmath.ts` 以具名方式匯入 `detExp`／`detLog`／`detPow`／`detPowInt`（無狀態純數學；新增 3 個負面樣本：匯入 `solar.ts`、匯入 detmath 的其他名稱、命名空間匯入都會被抓到）。
+- **新靜態規則**（`prototypes/continuous-world/worker-boundary.json` 的 `deterministic_math_in_worker_graph`，由 `tests/lib/worker-boundary.ts` 檢查、`tests/worker-boundary.test.ts` 執行）：Worker 匯入圖中每個模組只能以 `Math.<白名單成員>` 使用 Math（abs、ceil、clz32、floor、fround、imul、max、min、round、sign、sqrt、trunc 與常數；`Math.random` 另有禁止），`**` 只能接非負整數字面值。`Math['cos']`、`const { exp } = Math`、`Math.pow`、`x ** n`、`x ** 0.5`、`x ** -2` 都有負面樣本。
+- 合成實驗世界自己的 `prototypes/continuous-world/worker/detmath.ts`（`detLog` 以 atanh 級數、只用基本運算，早已決定性）保持不變，以免改變合成世界的輸出；P0-A2 與 `engine/clock` 使用 `engine/clock/detmath.ts` 的 fdlibm 版本。
+- 唯一豁免：`engine/rng.ts` 的 `normal`／`gamma`（正式日引擎的抽樣器，受黃金測試保護，本 PR 不修改）。規則檢查 Worker 匯入圖中沒有模組匯入這兩個名稱、沒有以命名空間匯入或轉出整個模組，而且 `rng.ts` 其他部分不呼叫它們（各有負面樣本）。
+
+### 8.4 驗證（x64 Linux、Node 22.23.4、Chromium 153.0.8010.12 headless）
+- **精確度**（`tests/detmath-explog.test.ts`，阻擋性）：以 BigInt 定點（256 位小數；ln 用 atanh 級數、exp 用 ln 2 約化＋泰勒級數）的獨立高精度參考值比較。`detExp` 7 007 個輸入（正規結果）最大誤差 0.829 ulp、90.0 % 正確捨入；`detLog` 7 504 個輸入最大 0.753 ulp、97.0 % 正確捨入（皆低於 fdlibm 宣稱的 1 ulp）。參考值自檢：ln 2、ln 10、e 都捨入到對應的 IEEE 值。特殊值與門檻逐一斷言。
+- **跨環境逐位元相同**（`tests/browser/detmath-xenv.check.cjs`，CI 瀏覽器步驟）：Node 執行 TypeScript 原始檔（驗證器使用的路徑），Chromium 頁面與 Chromium 模組 Worker 執行建置後的 `web/worker-dist/engine/clock/detmath.js`（實驗 Worker 匯入的同一檔）。`detExp` 180 035、`detLog` 165 035、`detPow` 80 000、`detPowInt` 40 000、`detSin`／`detCos` 各 60 000 個輸入：**0 個位元不同**（輸入涵蓋整個有限範圍、所有指數含次正規數、溢位／下溢門檻、約化邊界、P0-A2 實際使用的範圍）。對照：同批輸入上引擎內建 `Math.*` 的差異見 §8.1。
+- **P0-A2 世界**（`tests/browser/worker-runtime.check.cjs`，已收緊）：種子 11、12 各 48 小時，Node vs. Chromium Worker 42 480／42 480 個事件、P0-A2 日誌雜湊鏈 2／2、事件鏈 head 2／2、整份 payload 2／2 **逐位元組相同**。原本的 `rh_percent`（10⁻⁹ %）與 `chain.head` 例外**已移除**——任何差異都會失敗。
+- **Worker 推進、Node 驗證**（`tests/browser/save2-acceptance.check.cjs` 新增段落）：在 Chromium Worker 以 3600× 推進新世界（種子 424242）到 ≥ 26 小時（實測 t = 94 032.577 s，13 155 個鏈事件，跨過日落、夜間與日出），手動存檔、由選單匯出，`node cli/verify-save.ts` → **`node_verified`**（exit 0，差異欄位 0，輸入檔未改）。同一段檢查在本 PR 之前的程式（8592c8a）上執行：`mismatch`（`CHAIN_MISMATCH`＋`STATE_MISMATCH`，exit 1）。
+- **Node 中的行為**：fdlibm 移植在 Node 中與 V8 的 `Math.exp`／`Math.log` 幾乎相同（30 萬個隨機輸入 0 個不同；唯一已知差異是 x = 1），`x ** 2` 與 x·x 相同。因此 P0-A2 在 Node 的輸出**逐位元組不變**：20 個種子 × 72 小時、571 021 個事件（去掉版本／指紋欄位）0 個不同，20／20 個狀態相同；`tests/p0a2-24h-proto.test.ts`（log `0ca01939…`）與 `tests/save-verify.test.ts`（事件 `1107894c…`、狀態 `292c59fa…`、payload `672229a6…`）的行為釘選值不需更動。沒有任何決策改變。
+- **`WeatherSeries` 日值重建分支**（P0-A1 時鐘原型，Node；目前不在 Worker 世界的執行路徑上）：`detSin` 與 V8 的 `Math.sin` 在 [0, π] 約 10.7 % 的輸入末位不同。27 組形狀係數 × 38 天 × 每分鐘：1 477 440 個氣溫值中 19 073 個（1.3 %）改變，最大 2 ulp（7.1×10⁻¹⁵ °C）；相對溼度 15 591 個（1.1 %），最大 7.1×10⁻¹⁴ %。P0-A1 測試以容許值（10⁻⁹）比較，全部通過；沒有釘選雜湊。
+
+### 8.5 版本與雜湊
+- `P0A2_CODE_SHA256`（`node prototypes/continuous-world/tools/p0a2-code-hash.ts --write`）：`9bcaac24…57d7b6` → `b5645457…e835d5b`；P0-A2 規則指紋 `00f8dff2…52f669` → `b235ca1b…91cdc7de`。依 P0-A2 的既有慣例（`docs/experimental-worker-runtime.md`：修改行為檔後重新產生程式碼雜湊，舊存檔以 `FINGERPRINT_MISMATCH` 拒絕、原樣保留、可匯出），**不**另改 `experiment-p0a2-24h/1` 引擎版本字串：程式碼雜湊已在規則指紋內，舊存檔不會在新規則下默默接續；改版本字串反而會讓執行期把舊 P0-A2 快照分派給合成世界，產生誤導的錯誤訊息。
+- 因指紋改變，P0-A2 種子 7 的 48 小時事件鏈 head `b4992964…3c9` → `041176d0…f333`、payload SHA-256 `d39cb4dc…bfb2` → `16aeca6b…da28`（未釘選，`tests/save-verify.test.ts` 只輸出；鏈內每個事件帶有規則指紋）。
+- 合成實驗世界（`experiment-world-runtime/2`）：不經過任何被修改的函式，輸出、規則指紋與釘選值全部不變。
+- 正式引擎：未修改（`engine/rng.ts` 的 `normal`／`gamma` 保留 `Math.*`），`tests/golden.test.ts` 逐位元組通過。
+
+### 8.6 已驗證／未驗證環境
+- **已驗證**：x64 Linux，Node 22.23.4（`.nvmrc`）＋ Playwright Chromium 153.0.8010.12（headless，頁面與模組 Worker）。
+- **未驗證**：ARM64（沒有執行環境）、Firefox、Safari、其他 Node 版本、實體手機瀏覽器。演算法只用規格規定唯一結果的運算，理論上這些環境也應相同，但這是推論，不是驗證；在這些環境執行 `tests/browser/detmath-xenv.check.cjs` 與 `tests/browser/worker-runtime.check.cjs` 之前不得宣稱。
+
+### 8.7 回滾
+還原本次提交：`detmath.ts` 移除 `detExp`／`detLog`／`detPow`／`detPowInt`，`weather-input.ts`、`world.ts`、`decision.ts` 回到 `Math.*`／`**`，`P0A2_CODE_SHA256` 回到舊值，靜態規則與收緊的瀏覽器檢查一併還原。回滾後 Node 中的 P0-A2 輸出不變（逐位元組相同），但瀏覽器產生的 P0-A2 存檔重新無法通過 Node 驗證（§8.1），`docs/save-format-v2.md` §5b 的已知限制恢復。本版產生的 P0-A2 實驗存檔在回滾後以 `FINGERPRINT_MISMATCH` 拒絕（原樣保留、可匯出）；正式存檔與日誌不受影響。

@@ -5,8 +5,13 @@
  *   - Every reached module must sit under an allowed prefix and under no denied prefix.
  *   - No `node:` or bare-package imports, no non-literal dynamic import, no nested Worker.
  *   - No storage / network / file-system globals anywhere in the graph (no bypass of the isolation).
- *   - Reached engine modules must not read wall clocks, frame timers or Math.random (simulation time only).
+ *   - Reached engine modules (and every module under `pure_module_prefixes`, e.g. the allowlisted P0-A2 core) must not
+ *     read wall clocks, frame timers or Math.random (simulation time only).
  *   - No path strings naming official saves / journals in the graph.
+ *   - Deterministic math (Owner ruling #190 scheme A, extended to exp / log / ** by the detmath-exp rules update): in the
+ *     graph, Math only as Math.<allowed member> and ** only with a non-negative integer literal exponent; exempt
+ *     functions (official-engine samplers in a shared module) must be unreachable: never imported by a graph module,
+ *     never called by the rest of their own module, and their module never imported as a namespace / re-exported.
  *   - web/src may create a Worker only in the listed client files.
  *   - Nothing official (top-level engine/*.ts, engine/scheduler, engine/clock, cli/, web/src) imports the Worker dir,
  *     except the listed Node verifier files (Owner ruling #200, option C: Node recomputes with the SAME core). A verifier
@@ -18,7 +23,10 @@ export interface Boundary {
   worker_entry_dir: string; worker_client_files: string[]; allowed_import_prefixes: string[]; denied_import_prefixes: string[];
   forbidden_globals_in_worker_graph: string[]; forbidden_in_engine_modules: string[]; forbidden_path_strings_in_worker_graph: string[];
   experimental_save_store: { files: string[]; database_name_prefix: string };
+  /** module prefixes held to forbidden_in_engine_modules (default: engine/ only) */
+  pure_module_prefixes?: string[];
   node_verifier?: { files: string[]; forbidden_in_files: string[] };
+  deterministic_math_in_worker_graph?: { allowed_math_members: string[]; exempt_unreached_functions: { file: string; functions: string[] }[] };
 }
 export interface Violation { file: string; rule: string; detail: string }
 
@@ -40,6 +48,25 @@ export function specifiers(src: string): { spec: string | null; form: string }[]
 
 const norm = (p: string) => p.split(path.sep).join('/');
 const under = (file: string, prefix: string) => prefix.endsWith('/') ? file.startsWith(prefix) : file === prefix;
+
+/** the source text of `export function name(...) {...}` (brace-matched on comment- and string-blanked code), or null */
+function functionSpan(code: string, name: string): [number, number] | null {
+  const m = new RegExp(`(^|\\n)\\s*export\\s+function\\s+${esc(name)}\\s*\\(`).exec(code); if (!m) return null;
+  let depth = 0;
+  // skip the parameter list's own braces: the body starts at the first '{' after the closing ')' of the signature
+  let paren = 1, j = m.index + m[0].length;
+  for (; j < code.length && paren > 0; j++) { if (code[j] === '(') paren++; else if (code[j] === ')') paren--; }
+  const i = code.indexOf('{', j);
+  for (let k = i; k < code.length; k++) { if (code[k] === '{') depth++; else if (code[k] === '}' && --depth === 0) return [m.index, k + 1]; }
+  return null;
+}
+/** violations of the deterministic-math rule in one module's (comment- and string-blanked) code */
+export function approximatedMath(code: string, allowed: readonly string[]): string[] {
+  const out: string[] = [];
+  for (const m of code.matchAll(/(^|[^\w$.])Math(?![\w$])(\s*\.\s*([\w$]+))?/g)) if (!m[3] || !allowed.includes(m[3])) out.push(m[3] ? `Math.${m[3]}` : 'Math (not as Math.<member>)');
+  for (const m of code.matchAll(/\*\*(?!=)\s*([^\s;,)]*)/g)) if (!/^\d+(?![\d.eExXoObBn_])/.test(m[1])) out.push(`** ${m[1].slice(0, 20)}`);
+  return out;
+}
 
 export function checkBoundary(files: Map<string, string>, b: Boundary): { violations: Violation[]; reached: string[]; checks: number } {
   const v: Violation[] = []; let checks = 0;
@@ -66,7 +93,29 @@ export function checkBoundary(files: Map<string, string>, b: Boundary): { violat
     for (const g of b.forbidden_globals_in_worker_graph) { checks++; if (new RegExp(`(^|[^\\w$])${esc(g)}(?![\\w$])`).test(code) || new RegExp(`['"\`]${esc(g)}['"\`]`).test(text)) bad(f, 'forbidden-global', g); }
     checks++; if (/\bnew\s+(Shared)?Worker\s*\(/.test(code)) bad(f, 'nested-worker', 'Worker graph may not spawn workers');
     for (const p of b.forbidden_path_strings_in_worker_graph) { checks++; if (text.includes(p)) bad(f, 'official-path-string', p); }
-    if (f.startsWith('engine/')) for (const t of b.forbidden_in_engine_modules) { checks++; if (code.includes(t)) bad(f, 'engine-impurity', t); }
+    if ((b.pure_module_prefixes ?? ['engine/']).some((p) => under(f, p))) for (const t of b.forbidden_in_engine_modules) { checks++; if (code.includes(t)) bad(f, 'engine-impurity', t); }
+    const dm = b.deterministic_math_in_worker_graph;
+    if (dm && /\.(ts|js|mjs)$/.test(f)) {
+      let c = code;
+      for (const ex of dm.exempt_unreached_functions.filter((e) => e.file === f)) for (const fn of ex.functions) {
+        const span = functionSpan(c, fn); checks++;
+        if (span) c = c.slice(0, span[0]) + c.slice(span[1]); // absent: nothing exempted (any Math use is then flagged)
+      }
+      for (const ex of dm.exempt_unreached_functions.filter((e) => e.file === f)) for (const fn of ex.functions) { checks++; if (new RegExp(`(^|[^\\w$])${esc(fn)}(?![\\w$])`).test(c)) bad(f, 'approximated-math', `exempt function ${fn} is used inside its own module`); }
+      checks++; for (const x of approximatedMath(c, dm.allowed_math_members)) bad(f, 'approximated-math', x);
+    }
+  }
+  // exempt (official-engine) functions must stay unreachable from the Worker graph
+  for (const ex of b.deterministic_math_in_worker_graph?.exempt_unreached_functions ?? []) for (const f of seen) {
+    const src = files.get(f); if (src === undefined) continue;
+    const code = stripComments(src);
+    for (const m of code.matchAll(/\b(import|export)\s+(type\s+)?([^'"`;]*?)\bfrom\s*(['"])([^'"]+)\4/g)) {
+      if (norm(path.posix.normalize(path.posix.join(path.posix.dirname(f), m[5]))) !== ex.file || m[2]) continue;
+      checks++;
+      const names = /\{([^}]*)\}/.exec(m[3])?.[1].split(',').map((n) => n.trim().replace(/^type\s+/, '').split(/\s+as\s+/)[0]).filter(Boolean) ?? [];
+      if (/\*/.test(m[3]) || (m[1] === 'export' && !/\{/.test(m[3]))) bad(f, 'approximated-math', `${m[1]} * from ${ex.file} would expose ${ex.functions.join(', ')}`);
+      for (const n of names) if (ex.functions.includes(n)) bad(f, 'approximated-math', `imports ${n} from ${ex.file} (official-engine sampler with implementation-approximated math)`);
+    }
   }
   // web/src: Worker creation only in the client files; client files only import viewer modules (checked by web.test).
   for (const [f, src] of files) {

@@ -11,6 +11,10 @@
  *     restart); --no-recompute -> integrity_ok; tampered payload / event / seed / fingerprint / chain / world kind /
  *     container -> mismatch or invalid; self-consistent forged hashes and a self-declared status are never accepted;
  *     the CLI never modifies its input.
+ *  6. the P0-A2 24 h world (world kind p0a2-24h-v1): behaviour pinned to the pre-chain adapter (PR #209 branch
+ *     a9c5d4e, seed 7, 48 h), chain = node:crypto recomputation, save_meta, restore checks, schema-1 refusal, chunking /
+ *     budgets / save -> restore -> continue, and the verifier (honest -> node_verified, tampered -> mismatch / invalid),
+ *     including an export built by the viewer's own buildExport and the CLI.
  */
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
@@ -24,6 +28,9 @@ import { CHAIN_ALGO, chainAppend, chainStart } from '../prototypes/continuous-wo
 import { WORLD_KINDS } from '../prototypes/continuous-world/worker/world-kinds.ts';
 import { canonicalJson, hashJson } from '../prototypes/continuous-world/worker/sha256.ts';
 import { verifySaveText, type Report } from '../cli/verify-save.ts';
+import { P0a2ExperimentWorld, P0a2Refused, P0A2_PARAMS_SHA, P0A2_RULES_FINGERPRINT, P0A2_SAVE_WORLD_KIND, P0A2_SCENARIO, P0A2_SCHEMA_VERSION, type P0a2Event, type P0a2Snapshot } from '../prototypes/continuous-world/worker/p0a2-world.ts';
+import { canon as p0canon } from '../prototypes/p0a2-24h/canon.ts';
+import { buildExport, summaryOf, type SnapshotEnvelope } from '../web/src/experimental/save-format.ts';
 
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
 const H = 3600, DAY = 86400;
@@ -174,4 +181,109 @@ ok(verify('[]').status === 'invalid' && verify('{"schema":"x"}').status === 'inv
     ok(JSON.stringify([fs.readFileSync(good), fs.readFileSync(bad)].map((x) => crypto.createHash('sha256').update(x).digest('hex'))) === JSON.stringify(before) && JSON.stringify([good, bad].map((f) => fs.statSync(f).mtimeMs)) === JSON.stringify(mtimes) && fs.readdirSync(dir).length === 2, 'CLI never modifies its input and writes no file');
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 }
-console.log(JSON.stringify({ test: 'save-verify', checks, events_48h: A.events.length, chain_head_48h: A.world.chainState().head, payload_sha256_48h: snapA.payload_sha256 }));
+
+// ---------------------------------------------------------------- 6. the P0-A2 24 h world (world kind p0a2-24h-v1)
+const P0RAW = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'prototypes/p0a2-24h/params.json'), 'utf8'));
+const p0refused = (f: () => unknown, code: string, re?: RegExp) => { try { f(); return false; } catch (e) { return e instanceof P0a2Refused && e.code === code && (!re || re.test(e.message)); } };
+const p0run = (seed: number, t: number, id = 'exp-test') => { const c = P0a2ExperimentWorld.create(id, seed); const r = c.world.advanceTo(t); return { world: c.world, events: [...c.events, ...r.events] }; };
+const X = p0run(7, 48 * H), snapX = X.world.snapshot();
+const ctxX = { world_kind: P0A2_SAVE_WORLD_KIND, world_id: 'exp-test', seed: 7, rules_fingerprint: P0A2_RULES_FINGERPRINT };
+{
+  // behaviour unchanged: pinned from the adapter without the chain (PR #209 branch a9c5d4e, payload schema 1)
+  const strip = (e: Record<string, unknown>) => { const { schema_version: _a, rules_fingerprint: _b, ...r } = e; return r; };
+  const p = strip(X.world.payload() as unknown as Record<string, unknown>); delete p.save_meta; delete p.chain; delete p.code_sha256;
+  ok(X.events.length === 18595 && hashJson(X.events.map((e) => strip(e as unknown as Record<string, unknown>))) === '1107894ca43944f340a894a12e14ecbfd3e07cface6898ac32c7fadee3c3db2f', 'P0-A2 events (without schema_version / rules_fingerprint) are byte-identical to the pre-chain adapter (seed 7, 48 h, 18 595 events)');
+  ok(hashJson(snapX.payload.state as never) === '292c59fa5567bdd1f28b034768b9ec33ef432e2fa703aba5359e455e6cd25ec4', 'P0-A2 world state (World.snapshot) is byte-identical to the pre-chain adapter');
+  ok(hashJson(p as never) === '672229a67c5cff120c9a4007180926e590146127293bde59b1cfe5d380fa1428', 'P0-A2 payload without version / fingerprint / code hash / save_meta / chain is byte-identical to the pre-chain adapter');
+  ok(P0A2_SCHEMA_VERSION === 2 && X.events.every((e) => e.schema_version === 2) && snapX.schema_version === 2, 'P0-A2 payload schema is 2 and every event says so');
+  // chain = independent node:crypto recomputation over the emitted events
+  const n = nodeChain(ctxX, X.events), c = X.world.chainState();
+  ok(c.algo === CHAIN_ALGO && c.genesis === n.genesis && c.head === n.head && c.count === n.count && c.count === X.world.seqNo(), `P0-A2 chain head/count = node:crypto recomputation over the ${n.count} emitted events`);
+  ok(canonicalJson(chainAppend(chainStart(ctxX), X.events)) === canonicalJson(c) && canonicalJson(snapX.payload.chain) === canonicalJson(c), 'P0-A2: chainAppend = live chain = the snapshot\'s chain');
+  const m = snapX.payload.save_meta;
+  ok(m.world_kind === 'p0a2-24h-v1' && m.initial.world_id === 'exp-test' && m.initial.seed === 7 && m.initial.t_sim === 0 && m.initial.scenario === P0A2_SCENARIO && m.initial.variant === P0RAW.reference_variant
+    && m.initial.params_sha256 === P0A2_PARAMS_SHA && P0A2_PARAMS_SHA === sha(p0canon(P0RAW)) && m.lineage.length === 0, 'P0-A2 save_meta: world kind, trusted initial conditions (world id, seed, t = 0, scenario, reference variant, params.json SHA-256 by node:crypto), empty lineage');
+  ok(m.species.id === null && m.species.fingerprint === null && /沒有正式物種參數檔/.test(m.species.note), 'P0-A2 species: null with the reason (no official species file; not fabricated)');
+  ok(m.environment.synthetic === true && m.environment.id === `p0a2-weather/${P0A2_SCENARIO}` && m.environment.fingerprint === hashJson({ scenario: P0A2_SCENARIO, site: P0RAW.site, weather_scenario: P0RAW.weather_scenarios[P0A2_SCENARIO] }), 'P0-A2 environment: synthetic weather scenario, fingerprint = SHA-256 of its params.json definition');
+  ok(WORLD_KINDS[P0A2_SAVE_WORLD_KIND]?.rules_fingerprint === snapX.rules_fingerprint && WORLD_KINDS[P0A2_SAVE_WORLD_KIND].params_sha256 === P0A2_PARAMS_SHA, 'world-kind registry has the P0-A2 world with the runtime\'s rules and parameters');
+}
+const sX24 = (() => { const c = P0a2ExperimentWorld.create('exp-test', 7); c.world.advanceTo(24 * H); return c.world.snapshot(); })();
+const tamperX = (f: (s: P0a2Snapshot) => void) => { const s = clone(sX24); f(s); s.payload_sha256 = hashJson(s.payload as never); return s; };
+ok(p0refused(() => P0a2ExperimentWorld.restore(tamperX((s) => { s.payload.chain.count += 1; })), 'CHAIN_MISMATCH'), 'P0-A2 restore refuses: chain count != seq');
+ok(p0refused(() => P0a2ExperimentWorld.restore(tamperX((s) => { s.payload.chain.genesis = '0'.repeat(64); })), 'CHAIN_MISMATCH'), 'P0-A2 restore refuses: foreign genesis');
+ok(p0refused(() => P0a2ExperimentWorld.restore(tamperX((s) => { s.payload.chain.head = 'X'; })), 'CHAIN_MISMATCH'), 'P0-A2 restore refuses: malformed head');
+ok(p0refused(() => P0a2ExperimentWorld.restore(tamperX((s) => { delete (s.payload as Partial<typeof s.payload>).chain; })), 'BAD_SNAPSHOT'), 'P0-A2 restore refuses: chain missing');
+ok(p0refused(() => P0a2ExperimentWorld.restore(tamperX((s) => { s.payload.save_meta.initial.seed = 8; })), 'META_MISMATCH'), 'P0-A2 restore refuses: initial conditions that do not match the world');
+ok(p0refused(() => P0a2ExperimentWorld.restore(tamperX((s) => { s.payload.save_meta.initial.variant = 'other'; })), 'META_MISMATCH'), 'P0-A2 restore refuses: another variant in the initial conditions');
+ok(p0refused(() => P0a2ExperimentWorld.restore(tamperX((s) => { s.payload.save_meta.environment.fingerprint = 'f'.repeat(64); })), 'META_MISMATCH'), 'P0-A2 restore refuses: foreign environment fingerprint');
+ok(p0refused(() => P0a2ExperimentWorld.restore(tamperX((s) => { (s.payload.save_meta.lineage as unknown[]).push({ parent_rules_fingerprint: 'x' }); })), 'FORK_UNSUPPORTED'), 'P0-A2 restore refuses: a fork record (no fork implemented)');
+ok(P0a2ExperimentWorld.restore(tamperX((s) => { s.payload.chain.head = 'a'.repeat(64); })).chainState().head === 'a'.repeat(64), 'P0-A2 restore cannot detect a well-formed forged head (documented: only Node recomputation can)');
+const v1X = (() => { const s = clone(sX24) as unknown as Record<string, any>; delete s.payload.save_meta; delete s.payload.chain; s.schema_version = s.payload.schema_version = 1; s.payload_sha256 = hashJson(s.payload); return s as unknown as P0a2Snapshot; })();
+const v1XText = canonicalJson(v1X as never);
+ok(p0refused(() => P0a2ExperimentWorld.restore(v1X), 'SCHEMA_MISMATCH', /no event-chain commitment.*no migration path/), 'a P0-A2 payload-schema-1 snapshot is refused with a clear reason (no chain, no migration path)');
+ok(canonicalJson(v1X as never) === v1XText, 'and the P0-A2 schema-1 snapshot is not changed');
+{
+  const c = P0a2ExperimentWorld.create('exp-test', 7); let t = 0, k = 1;
+  while (t < 48 * H) { t = Math.min(48 * H, t + ((k * 7919) % 5000) + 0.25); k++; c.world.advanceTo(t, 1 + (k % 40)); }
+  while (!c.world.advanceTo(48 * H, 3).done) { /* tiny budget: stops at slice ends only */ }
+  ok(canonicalJson(c.world.chainState()) === canonicalJson(X.world.chainState()) && c.world.snapshot().payload_sha256 === snapX.payload_sha256, `P0-A2: ${k - 1} irregular chunks with work budgets -> the continuous chain and state`);
+  for (const tc of [DAY, DAY - 0.5, X.events[5000].t_sim, 37 * H + 0.0004]) {
+    const w = P0a2ExperimentWorld.create('exp-test', 7).world; w.advanceTo(tc);
+    const w2 = P0a2ExperimentWorld.restore(JSON.parse(JSON.stringify(w.snapshot()))); w2.advanceTo(48 * H);
+    ok(canonicalJson(w2.chainState()) === canonicalJson(X.world.chainState()) && w2.snapshot().payload_sha256 === snapX.payload_sha256, `P0-A2: save at ${tc} s -> restore (JSON round trip) -> continue to 48 h: chain and state = continuous`);
+  }
+  let w = P0a2ExperimentWorld.create('exp-test', 7).world; w.advanceTo(24 * H);
+  w = P0a2ExperimentWorld.restore(JSON.parse(JSON.stringify(w.snapshot()))); w.advanceTo(36 * H);
+  w = P0a2ExperimentWorld.restore(JSON.parse(JSON.stringify(w.snapshot()))); w.advanceTo(48 * H);
+  ok(canonicalJson(w.chainState()) === canonicalJson(X.world.chainState()), 'P0-A2: two restarts (24 h, 36 h) -> the continuous chain at 48 h');
+  ok(p0refused(() => P0a2ExperimentWorld.create('exp-test', 7).world.advanceToExact({ day: 0, us: 1500, us_lo: 0 }), 'BAD_TIME'), 'P0-A2 advanceToExact refuses an instant off the millisecond grain');
+}
+// the verifier on P0-A2 saves; the export is built by the viewer's own buildExport (web/src/experimental/save-format.ts)
+const p0export = async (s: P0a2Snapshot) => JSON.parse(JSON.stringify(await buildExport({ world_id: s.world_id, name: 'P0-A2 測試', seed: s.seed, created_at: '2026-11-12T00:00:00.000Z', summary: summaryOf(s) }, s as unknown as SnapshotEnvelope, '2026-11-12T00:00:00.000Z')));
+const honestX = await p0export(snapX);
+{
+  const r = verify(honestX);
+  ok(r.status === 'node_verified' && r.save.world_kind === 'p0a2-24h-v1' && r.recomputed!.chain_head === snapX.payload.chain.head && r.recomputed!.chain_count === 18595 && r.recomputed!.payload_sha256 === snapX.payload_sha256 && r.recomputed!.differing_fields.length === 0, `honest P0-A2 48 h export (viewer buildExport) -> node_verified (${codes(r)})`);
+  ok(r.verifier.world_kinds.some((k) => k.id === 'p0a2-24h-v1' && k.rules_fingerprint === P0A2_RULES_FINGERPRINT), 'the report lists the P0-A2 world kind the verifier implements');
+  ok(verify(snapX).status === 'node_verified', 'a bare P0-A2 snapshot envelope -> node_verified');
+  const ni = verify(honestX, false);
+  ok(ni.status === 'integrity_ok' && ni.recomputed === null, 'P0-A2 --no-recompute -> integrity_ok, never node_verified');
+  ok(verify(P0a2ExperimentWorld.create('exp-zero', 3).world.snapshot()).status === 'node_verified', 'a new P0-A2 world at t = 0 -> node_verified');
+  const b = P0a2ExperimentWorld.create('exp-budget', 11).world; const st = b.advanceTo(30 * H, 5);
+  ok(!st.done && verify(b.snapshot()).status === 'node_verified', `a P0-A2 save at a budget-stopped instant (t = ${b.tSim()} s) -> node_verified`);
+  const w = P0a2ExperimentWorld.create('exp-test', 7).world; w.advanceTo(10 * H + 0.125);
+  const w2 = P0a2ExperimentWorld.restore(JSON.parse(JSON.stringify(w.snapshot()))); w2.advanceTo(30 * H + 0.5);
+  ok(verify(await p0export(w2.snapshot())).status === 'node_verified', 'P0-A2 save -> restore -> continue -> save -> node_verified');
+}
+const resealX = (f: any) => { f.snapshot.payload_sha256 = hashJson(f.snapshot.payload); const { export_sha256: _x, ...body } = f; f.export_sha256 = hashJson(body); return f; };
+const mustNotX = (name: string, f: (x: any) => void, want: 'mismatch' | 'invalid', code?: string) => {
+  const x = clone(honestX); f(x); const r = verify(x);
+  ok(r.status === want && (!code || codes(r).includes(code)), `P0-A2 ${name} -> ${want}${code ? ` (${code})` : ''} (got ${r.status}: ${codes(r)})`);
+};
+mustNotX('state edited, hashes NOT updated', (x) => { x.snapshot.payload.state.stats.heat_refusals += 1; }, 'invalid', 'EXPORT_HASH_MISMATCH');
+mustNotX('state statistic edited, every hash recomputed (forged)', (x) => { x.snapshot.payload.state.stats.heat_refusals += 1; resealX(x); }, 'mismatch', 'STATE_MISMATCH');
+mustNotX('worker trait edited, every hash recomputed (forged)', (x) => { x.snapshot.payload.state.workers.w001.ctmax_c += 1; resealX(x); }, 'mismatch', 'STATE_MISMATCH');
+mustNotX('food not conserved, hashes recomputed', (x) => { x.snapshot.payload.state.workers.w001.crop += 1; resealX(x); }, 'invalid', 'RESTORE_REFUSED');
+mustNotX('chain head forged, hashes recomputed', (x) => { x.snapshot.payload.chain.head = 'b'.repeat(64); resealX(x); }, 'mismatch', 'CHAIN_MISMATCH');
+{
+  const forged = clone(X.events) as P0a2Event[]; forged[4321] = { ...forged[4321], data: { ...forged[4321].data, tie_q: (forged[4321].data.tie_q as number) + 1 } };
+  mustNotX('one committed event altered (head over the altered events), hashes recomputed', (x) => { x.snapshot.payload.chain.head = nodeChain(ctxX, forged).head; resealX(x); }, 'mismatch', 'CHAIN_MISMATCH');
+  const dropped = X.events.filter((_, i) => i !== 777);
+  mustNotX('one committed event dropped (head and count over the rest), hashes recomputed', (x) => { const c = nodeChain(ctxX, dropped); x.snapshot.payload.chain.head = c.head; x.snapshot.payload.chain.count = c.count; resealX(x); }, 'invalid', 'RESTORE_REFUSED');
+}
+mustNotX('seed changed in the header only', (x) => { x.snapshot.seed = x.world.seed = 8; resealX(x); }, 'invalid', 'HEADER_MISMATCH');
+mustNotX('rules fingerprint changed (header + payload)', (x) => { x.snapshot.rules_fingerprint = x.snapshot.payload.rules_fingerprint = 'f'.repeat(64); resealX(x); }, 'invalid', 'UNSUPPORTED_RULES');
+mustNotX('initial parameters hash changed', (x) => { x.snapshot.payload.save_meta.initial.params_sha256 = 'c'.repeat(64); resealX(x); }, 'invalid', 'UNSUPPORTED_PARAMS');
+mustNotX('scenario changed (fingerprint left)', (x) => { x.snapshot.payload.scenario = 'taichung-may-ref'; resealX(x); }, 'invalid', 'RESTORE_REFUSED');
+mustNotX('world kind claimed as synthetic', (x) => { x.snapshot.payload.save_meta.world_kind = 'synthetic-v1'; resealX(x); }, 'invalid', 'UNSUPPORTED_ENGINE');
+mustNotX('self-declared verification status in the export', (x) => { x.verification = { status: 'node_verified' }; const { export_sha256: _e, ...body } = x; x.export_sha256 = hashJson(body); }, 'invalid', 'BAD_EXPORT');
+ok(verify(v1X).status === 'invalid' && codes(verify(v1X)).includes('NO_CHAIN'), 'P0-A2 payload-schema-1 snapshot -> invalid (NO_CHAIN), never node_verified');
+{
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'antempire-verify-p0a2-'));
+  try {
+    const good = path.join(dir, 'p0a2.json'); fs.writeFileSync(good, JSON.stringify(honestX)); const before = sha(fs.readFileSync(good, 'utf8'));
+    let out = '', code = 0; try { out = execFileSync(process.execPath, [path.join(REPO_ROOT, 'cli/verify-save.ts'), good], { encoding: 'utf8' }); } catch (e) { code = (e as { status: number }).status; }
+    ok(code === 0 && JSON.parse(out).status === 'node_verified' && JSON.parse(out).save.world_kind === 'p0a2-24h-v1' && sha(fs.readFileSync(good, 'utf8')) === before && fs.readdirSync(dir).length === 1, 'CLI: honest P0-A2 export -> exit 0, node_verified; input unchanged, no file written');
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+}
+console.log(JSON.stringify({ test: 'save-verify', checks, events_48h: A.events.length, chain_head_48h: A.world.chainState().head, payload_sha256_48h: snapA.payload_sha256, p0a2_events_48h: X.events.length, p0a2_chain_head_48h: X.world.chainState().head, p0a2_payload_sha256_48h: snapX.payload_sha256 }));

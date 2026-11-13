@@ -19,19 +19,25 @@
  *  - multi-tab: a second tab is offered 切換到此分頁 / 唯讀開啟; read-only never writes; taking over turns the first
  *    tab read-only. Rules mismatch (decision 53): refused, version difference shown, export still works. Import as copy
  *    (decision 54): new id, provenance, source unchanged, same state.
+ *  - Worker runs, Node verifies (Owner #200; rules update detmath-exp): a world advanced in the Chromium Worker for more
+ *    than a full day/night cycle at 3600×, manually saved and exported from the menu, is recomputed by
+ *    `node cli/verify-save.ts` → `node_verified` (event-chain head, count and whole payload equal; no tolerance).
  *  - saves/ and journal/ unchanged.
+ * World kind: the P0-A2 24 h individual-behaviour world (the menu's default; candidate / experiment world, non-official)
+ * unless SAVE2_WORLD=synthetic selects the synthetic test world. Every reference run uses the same kind.
  * Not covered (stated, not claimed): a real phone's OS killing the page; Pixel 7 here is an emulated viewport + touch.
  */
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { execSync } = require('node:child_process');
+const { execSync, spawnSync } = require('node:child_process');
 const { chromium, devices } = require('playwright');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const LABEL = '非正式實驗世界／不屬於正式遊戲歷史';
 const H = 3600;
+const KIND = process.env.SAVE2_WORLD === 'synthetic' ? 'synthetic' : 'p0a2';
 const canon = (v) => Array.isArray(v) ? `[${v.map(canon).join(',')}]` : v && typeof v === 'object' ? `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canon(v[k])}`).join(',')}}` : JSON.stringify(v);
 const dirHash = (d) => { const h = crypto.createHash('sha256'); const walk = (p) => { for (const e of fs.readdirSync(p, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) { const f = path.join(p, e.name); if (e.isDirectory()) walk(f); else { h.update(path.relative(ROOT, f)); h.update(fs.readFileSync(f)); } } }; walk(path.join(ROOT, d)); return h.digest('hex'); };
 
@@ -51,12 +57,14 @@ const dirHash = (d) => { const h = crypto.createHash('sha256'); const walk = (p)
     const page = await ctx.newPage(); watch(page, tag);
     await page.goto(url('experiment.html'));
     await page.waitForSelector('#menu:not([hidden])'); await page.waitForFunction(() => document.querySelector('#mStorage').textContent.length > 0);
+    // the menu has rendered the save list (it probes the Worker for each world kind's runtime first)
+    await page.waitForFunction(() => document.querySelector('#mContinueInfo').textContent.length > 0, null, { timeout: 30000 });
     await page.evaluate(() => { window.__ev = []; const c = window.__v62.client, o = c.onEvents; c.onEvents = (e) => { if (e[0] && e[0].world_id !== 'exp-runtime-probe') window.__ev.push(...e.map((x) => JSON.stringify(x))); o(e); }; });
     return page;
   };
   const shot = async (page, name) => { const f = path.join(out, `save2-${name}.png`); await page.screenshot({ path: f }); shots.push(f); };
   const newGame = async (page, name, seed) => {
-    await page.click('#mNew'); await page.fill('#nName', name); await page.fill('#nSeed', String(seed));
+    await page.click('#mNew'); await page.fill('#nName', name); await page.fill('#nSeed', String(seed)); await page.selectOption('#nWorld', KIND);
     await page.click('[data-act=create]'); await page.waitForFunction(() => window.__v62.active() && window.__v62.frame() && window.__v62.session().current);
     return page.evaluate(() => window.__v62.session().current);
   };
@@ -65,12 +73,12 @@ const dirHash = (d) => { const h = crypto.createHash('sha256'); const walk = (p)
   const list = (page) => page.evaluate(async () => (await window.__v62.session().list()));
   const pauseNow = async (page) => { await page.evaluate(async () => { const V = window.__v62; if (V.pacing().running) await V.client.pause(); }); };
   // independent reference run in a separate Worker (same world id and seed), never saved
-  const reference = (page, world_id, seed, T) => page.evaluate(async ({ world_id, seed, T }) => {
+  const reference = (page, world_id, seed, T) => page.evaluate(async ({ world_id, seed, T, KIND }) => {
     const { ExperimentWorkerClient } = await import('./dist/experimental/worker-client.js');
     const c = new ExperimentWorkerClient(), ev = []; c.onEvents = (e) => ev.push(...e.map((x) => JSON.stringify(x)));
-    await c.init(world_id, seed); await c.stepUntil(T); const s = (await c.snapshot()).snapshot; c.terminate();
+    await c.init(world_id, seed, KIND); await c.stepUntil(T); const s = (await c.snapshot()).snapshot; c.terminate();
     return { events: ev, hash: s.payload_sha256, payload: JSON.stringify(s.payload) };
-  }, { world_id, seed, T });
+  }, { world_id, seed, T, KIND });
   const idbDump = (page, world_id) => page.evaluate((id) => new Promise((res, rej) => {
     const r = indexedDB.open('antempire-experiment-worlds'); r.onerror = () => rej(r.error);
     r.onsuccess = () => { const db = r.result, tx = db.transaction(['worlds', 'snapshots']); const w = tx.objectStore('worlds').get(id), s = tx.objectStore('snapshots').getAll(IDBKeyRange.bound([id, -Infinity], [id, Infinity])); tx.oncomplete = () => { db.close(); res(JSON.stringify({ w: w.result, s: s.result })); }; };
@@ -90,7 +98,7 @@ const dirHash = (d) => { const h = crypto.createHash('sha256'); const walk = (p)
   check(await page.isDisabled('#mContinue'), 'flow 1: 繼續遊戲 disabled with no save');
   check(/持久儲存：/.test(await page.textContent('#mStorage')) && /可能讓存檔消失/.test(await page.textContent('#mStorage')), 'flow 1: persistent-storage status shown; never claims saves cannot be lost');
   await shot(page, 'flow-01-menu');
-  await page.click('#mNew'); await page.fill('#nName', '世界 A'); await page.fill('#nSeed', '20261108'); await shot(page, 'flow-02-new-game');
+  await page.click('#mNew'); await page.fill('#nName', '世界 A'); await page.fill('#nSeed', '20261108'); await page.selectOption('#nWorld', KIND); await shot(page, 'flow-02-new-game');
   const tCreate = Date.now();
   await page.click('[data-act=create]'); await page.waitForFunction(() => window.__v62.active() && window.__v62.frame() && window.__v62.session().current);
   let s = await S(page);
@@ -128,7 +136,9 @@ const dirHash = (d) => { const h = crypto.createHash('sha256'); const walk = (p)
   check(s.load.t_sim === recA2.t_sim && s.cur.seed === A.seed, `flow 10: the first world still loads independently (t=${s.load.t_sim.toFixed(2)})`);
   await shot(page, 'flow-08-first-world-again');
   const rowText = lst2.map((w) => `${w.name}|${w.seed}|${w.sim_day}|${w.sim_clock}|${w.summary.individuals}`).join(' ; ');
-  check(lst2.every((w) => w.summary.individuals === 6 && w.queens === null), `save list: individuals from snapshot metadata, no invented queen (${rowText})`);
+  check(lst2.every((w) => (KIND === 'p0a2' ? w.summary.workers === 30 && w.summary.larvae === 8 && w.summary.individuals === 38 : w.summary.individuals === 6) && w.queens === null), `save list: individuals from snapshot metadata, no invented queen (${rowText})`);
+  info.world_kind = KIND;
+  if (KIND === 'p0a2') check(await page.evaluate(() => window.__v62.frame() && window.__v62.frame().world_kind === 'p0a2' && document.querySelector('#badge').textContent.includes('候選／實驗世界，非正式')), 'P0-A2 world loaded from the save list, labelled 候選／實驗世界，非正式');
   await toMenu(page);
 
   // ======================= C: new-game isolation =======================
@@ -142,7 +152,7 @@ const dirHash = (d) => { const h = crypto.createHash('sha256'); const walk = (p)
   // ======================= D: corrupt latest → recover previous; all corrupt → refused =======================
   const wC = JSON.parse(await idbDump(page, C2.world_id)).w;
   const prevGen = wC.slots[1], prevT = JSON.parse(await idbDump(page, C2.world_id)).s.find((x) => x.gen === prevGen).header.t_sim;
-  await idbEdit(page, C2.world_id, (w, snaps) => { const s0 = snaps.find((x) => x.gen === w.slots[0]); s0.payload_json = s0.payload_json.replace('"x":', '"x" :'); return { snaps: [s0] }; });
+  await idbEdit(page, C2.world_id, (w, snaps) => { const s0 = snaps.find((x) => x.gen === w.slots[0]); s0.payload_json = s0.payload_json.replace('"seed":', '"seed" :'); return { snaps: [s0] }; });
   await page.click('#mLoad'); await page.waitForTimeout(300);
   await page.click(`[data-act=load][data-id="${C2.world_id}"]`); await page.waitForFunction(() => window.__v62.active() && !document.querySelector('#notice').hidden);
   s = await S(page);
@@ -254,7 +264,7 @@ const dirHash = (d) => { const h = crypto.createHash('sha256'); const walk = (p)
   const WE = await newGame(page, '測試 E', 9001);
   await page.selectOption('#speed', '3600'); await page.waitForTimeout(600);
   await page.mouse.move(640, 400); await page.mouse.wheel(0, -300); await page.mouse.down(); await page.mouse.move(760, 460, { steps: 5 }); await page.mouse.up();
-  await page.selectOption('#fpsCap', '15'); await page.selectOption('#follow', 'w04');
+  await page.selectOption('#fpsCap', '15'); await page.selectOption('#follow', KIND === 'p0a2' ? 'w004' : 'w04');
   for (let i = 0; i < 3; i++) { await page.click('#saveBtn'); await page.waitForTimeout(400); }
   await page.click('#play'); await page.waitForTimeout(500); await page.click('#play'); // pause (saves) and resume
   await page.selectOption('#speed', '600'); await page.selectOption('#fpsCap', '30'); await page.click('#zoomIn'); await page.waitForTimeout(700);
@@ -295,10 +305,37 @@ const dirHash = (d) => { const h = crypto.createHash('sha256'); const walk = (p)
   check(ms.slots <= 3 && ms.manual >= 1, `decision 55: 3 rotating recovery points kept separately from ${ms.manual} manual saves`);
   await page.close(); await ctx.close();
 
+  // ======================= Worker runs, Node verifies (Owner #200; rules update detmath-exp) =======================
+  // A world advanced ONLY in the Chromium Worker (3600×, through sunset, the night branch and sunrise of the synthetic
+  // weather, so every env_sample with rh_percent and the night-temperature exp are exercised), saved manually and
+  // exported through the menu, must be recomputed by the Node verifier from its trusted initial conditions to the SAME
+  // event chain and payload: status node_verified. No tolerance; a mismatch fails this check.
+  {
+    const T_MIN = 26 * H;
+    const vctx = await launch(path.join(tmp, 'verify')); const vp = await openMenu(vctx, 'node-verify');
+    const V = await newGame(vp, 'Node 驗證', 424242);
+    await vp.selectOption('#speed', '3600');
+    await vp.waitForFunction((T) => window.__v62.frame() && window.__v62.frame().t_sim >= T, T_MIN, { timeout: 240000, polling: 250 });
+    await pauseNow(vp); await vp.click('#saveBtn');
+    await vp.waitForFunction(() => window.__v62.saveUi().status === 'saved' && window.__v62.session().lastReceipt.kind === 'manual', null, { timeout: 30000 });
+    const rec = (await S(vp)).receipt;
+    await toMenu(vp); await vp.click('#mManage'); await vp.waitForTimeout(400);
+    const vdl = vp.waitForEvent('download'); await vp.click(`[data-act=export][data-id="${V.world_id}"]`); const vd = await vdl;
+    const vpath = path.join(tmp, 'export-node-verify.json'); await vd.saveAs(vpath);
+    const before = crypto.createHash('sha256').update(fs.readFileSync(vpath)).digest('hex');
+    const r = spawnSync(process.execPath, [path.join(ROOT, 'cli/verify-save.ts'), vpath], { encoding: 'utf8', maxBuffer: 64 << 20 });
+    let rep = null; try { rep = JSON.parse(r.stdout); } catch { rep = null; }
+    const after = crypto.createHash('sha256').update(fs.readFileSync(vpath)).digest('hex');
+    info.node_verify_browser_save = { world_kind: rep && rep.save.world_kind, t_sim: rec && rec.t_sim, chain_count: rep && rep.save.chain_count, chain_head: rep && rep.save.chain_head, status: rep && rep.status, exit_code: r.status, differing_fields: rep && rep.recomputed ? rep.recomputed.differing_fields : null, diagnostics: rep ? rep.diagnostics.slice(0, 5) : r.stderr.slice(-500), node: process.version };
+    check(rec && rec.t_sim >= T_MIN && rep && rep.save.world_kind === (KIND === 'p0a2' ? 'p0a2-24h-v1' : 'synthetic-v1') && rep.save.t_sim === rec.t_sim, `browser-advanced ${KIND} world saved at t=${rec && rec.t_sim.toFixed(1)} s (≥ ${T_MIN} s) and exported from the menu`);
+    check(r.status === 0 && rep && rep.status === 'node_verified' && rep.recomputed && rep.recomputed.chain_head === rep.save.chain_head && rep.recomputed.chain_count === rep.save.chain_count && rep.recomputed.differing_fields.length === 0 && before === after, `Worker runs, Node verifies: the browser save is recomputed by node cli/verify-save.ts → ${rep && rep.status} (${rep && rep.save.chain_count} chained events, head ${rep && String(rep.save.chain_head).slice(0, 12)}…; exit ${r.status}; input unchanged)`);
+    await vp.close(); await vctx.close();
+  }
+
   // ======================= Pixel 7 screens =======================
   ctx = await launch(path.join(tmp, 'pixel'), PIXEL); page = await openMenu(ctx, 'pixel7');
   await shot(page, 'pixel7-01-menu');
-  await page.tap('#mNew'); await page.fill('#nName', '手機世界'); await shot(page, 'pixel7-02-new-game');
+  await page.tap('#mNew'); await page.fill('#nName', '手機世界'); await page.selectOption('#nWorld', KIND); await shot(page, 'pixel7-02-new-game');
   await page.tap('[data-act=create]'); await page.waitForFunction(() => window.__v62.active() && window.__v62.frame());
   await page.selectOption('#speed', '600'); await page.waitForTimeout(2000); await page.tap('#saveBtn'); await page.waitForFunction(() => window.__v62.saveUi().status === 'saved' && window.__v62.session().lastReceipt.kind === 'manual');
   await shot(page, 'pixel7-03-world-saved');

@@ -129,6 +129,36 @@
       "species_of_mechanism": "Camponotus sanctus",
       "note": "Q2 候選機制「覓食者保留自身所需」（Owner #188 Q2、#193 裁示）：參考情境為 null＝關，正式交哺上限 transfer_max_portions 不變。開啟時（只在 q2_retention_variants 隔離實驗中），回巢覓食者交哺時不把自己的嗉囊交到低於『自己預期到下次取食前的代謝需求』；這個需求只由它自己的狀態計算（自己的代謝率；own_interval 另用自己最近兩次在食源取食的間隔），不讀全巢存糧、同伴或幼蟲。R147（Camponotus sanctus，非本種）只提供『覓食者不把嗉囊全部交出』的機制方向；R147 的『交出約一半』比例不採用，也不把任何固定比例當作本種數值。保留公式與數值全為遊戲假設"
     },
+    "brood_carer_retention": {
+      "value": null,
+      "unit": "保留公式（null＝關）",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設（一般生理學：個體須先滿足自身代謝；本種無資料）",
+      "sources": [],
+      "note": "過程 (3)「成蟻對幼體餵食」的照護者自身保留（Owner #188 補充裁示 2026-11-12）：與過程 (2) 的 forager_retention 各自獨立，不共用上限或保留比。null＝關（參考：照護者可把自己的嗉囊餵到 0，與先前完全相同）。開啟時（只在 brood_feeding_variants 隔離實驗），照護者餵幼蟲時不把自己的嗉囊餵到低於『自己預期的代謝需求』；只由它自己的代謝率（own_interval 另用自己最近兩次在食源取食的間隔）計算，不讀全巢存糧、其他幼蟲或幼體數。本種沒有照護者保留量的資料；公式與數值全為遊戲假設"
+    },
+    "brood_feed_trigger": {
+      "value": "threshold",
+      "unit": "觸發形式",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設（機制方向：文獻，非本種，僅候選）",
+      "sources": [
+        "R210"
+      ],
+      "species_of_mechanism": "Solenopsis invicta",
+      "note": "過程 (3) 的觸發：threshold（參考）＝照護者在這次接觸感知到的求食訊號 ≥ larva_begging_threshold 才餵；graded（只在隔離實驗）＝以機率＝感知訊號餵（線性形式為遊戲假設）。R210（S. invicta，非本種）只提供『被餵頻率隨幼蟲自身飢餓上升、每口份量固定』的機制方向；本種沒有訊號門檻或頻率資料"
+    },
+    "brood_min_own_crop_fill": {
+      "value": null,
+      "unit": "0..1（null＝關）",
+      "evidence_class": "game_assumption",
+      "assumption": true,
+      "basis": "遊戲假設（本種無資料）",
+      "sources": [],
+      "note": "過程 (3) 的照護者自身狀態條件：開啟時（只在隔離實驗），照護者自己的嗉囊飽足度低於此值就不餵幼蟲（也不選擇育幼）。null＝關（參考）。只讀照護者自己的嗉囊"
+    },
     "max_trophallaxis_contacts": {
       "value": 3,
       "unit": "隻／次回巢",
@@ -812,6 +842,141 @@
           ],
           "species_of_mechanism": "Camponotus sanctus",
           "note": "Q2 敏感度：保留量＝自己的代謝率 ×（2 × 自己最近兩次在食源取食的間隔；尚無兩次取食經歷時保留 0）。數值為遊戲假設，不是本種量測；不採用 R147 的『交出一半』比例"
+        }
+      }
+    }
+  },
+  "brood_feeding_variants": {
+    "_note": "Owner #188 補充裁示（2026-11-12）的隔離實驗：把 (1) 工蟻自身代謝／保留、(2) 成蟻間交哺、(3) 成蟻對幼體餵食分開，各自的候選公式。全部預設關（參考 ft-flat 不變）；只在 prototypes/p0a2-24h/tools/brood-feeding-sensitivity.ts 與測試中使用；不是參考情境，不接入正式引擎，不改 species 參數。",
+    "b-res-h6": {
+      "label": "(3) 照護者保留自己 6 小時的代謝需求",
+      "status": "育幼／自身代謝隔離實驗（Owner #188 補充裁示 2026-11-12；非參考、預設關；公式與數值為遊戲假設；本種無照護者保留量資料）",
+      "overrides": {
+        "brood_carer_retention": {
+          "value": {
+            "kind": "horizon",
+            "hours": 6
+          },
+          "evidence_class": "game_assumption",
+          "assumption": true,
+          "basis": "遊戲假設（一般生理學；本種無資料）",
+          "sources": [],
+          "unit": "保留公式",
+          "note": "照護者保留量＝自己的代謝率 × 6 小時；與 forager_retention 無關"
+        }
+      }
+    },
+    "b-res-h24": {
+      "label": "(3) 照護者保留自己 24 小時的代謝需求",
+      "status": "育幼／自身代謝隔離實驗（Owner #188 補充裁示 2026-11-12；非參考、預設關；公式與數值為遊戲假設；本種無照護者保留量資料）",
+      "overrides": {
+        "brood_carer_retention": {
+          "value": {
+            "kind": "horizon",
+            "hours": 24
+          },
+          "evidence_class": "game_assumption",
+          "assumption": true,
+          "basis": "遊戲假設（一般生理學；本種無資料）",
+          "sources": [],
+          "unit": "保留公式",
+          "note": "照護者保留量＝自己的代謝率 × 24 小時；與 forager_retention 無關"
+        }
+      }
+    },
+    "b-res-int2": {
+      "label": "(3) 照護者保留自己 2 × 最近取食間隔的代謝需求",
+      "status": "育幼／自身代謝隔離實驗（Owner #188 補充裁示 2026-11-12；非參考、預設關；公式與數值為遊戲假設；本種無照護者保留量資料）",
+      "overrides": {
+        "brood_carer_retention": {
+          "value": {
+            "kind": "own_interval",
+            "factor": 2
+          },
+          "evidence_class": "game_assumption",
+          "assumption": true,
+          "basis": "遊戲假設（一般生理學；本種無資料）",
+          "sources": [],
+          "unit": "保留公式",
+          "note": "照護者保留量＝自己的代謝率 ×（2 × 自己最近兩次在食源取食的間隔；沒有兩次經歷時保留 0，不補值）"
+        }
+      }
+    },
+    "b-graded": {
+      "label": "(3) 依接觸時感知的求食訊號分級餵食（機率＝訊號）",
+      "status": "育幼／自身代謝隔離實驗（Owner #188 補充裁示 2026-11-12；非參考、預設關；線性形式為遊戲假設；機制方向 R210 Solenopsis invicta 非本種僅候選）",
+      "overrides": {
+        "brood_feed_trigger": {
+          "value": "graded",
+          "evidence_class": "game_assumption",
+          "assumption": true,
+          "basis": "遊戲假設（機制方向：文獻，非本種，僅候選）",
+          "sources": [
+            "R210"
+          ],
+          "unit": "觸發形式",
+          "species_of_mechanism": "Solenopsis invicta",
+          "note": "機率＝這次接觸感知到的訊號（1−腸內量／腸容量）；不讀其他幼蟲；不採用 R210 的任何頻率數值"
+        }
+      }
+    },
+    "b-minfill-25": {
+      "label": "(3) 照護者自己的嗉囊飽足度 ≥ 0.25 才餵",
+      "status": "育幼／自身代謝隔離實驗（Owner #188 補充裁示 2026-11-12；非參考、預設關；門檻為遊戲假設；本種無資料）",
+      "overrides": {
+        "brood_min_own_crop_fill": {
+          "value": 0.25,
+          "evidence_class": "game_assumption",
+          "assumption": true,
+          "basis": "遊戲假設（本種無資料）",
+          "sources": [],
+          "unit": "0..1",
+          "note": "照護者自身狀態條件；0.25 是遊戲假設，未依結果挑選"
+        }
+      }
+    },
+    "m-half": {
+      "label": "(1) 工蟻自身代謝率 ×0.5（0.05 份／日）",
+      "status": "育幼／自身代謝隔離實驗（Owner #188 補充裁示 2026-11-12；非參考、預設關；自身代謝的敏感度；數值為遊戲假設，不是本種量測）",
+      "overrides": {
+        "worker_sugar_daily_portions": {
+          "value": 0.05,
+          "evidence_class": "game_assumption",
+          "assumption": true,
+          "basis": "遊戲假設（敏感度）",
+          "sources": [],
+          "unit": "遊戲份／日",
+          "note": "過程 (1) 的敏感度：參考值 0.1（species 檔既有遊戲假設）× 0.5；只在隔離實驗"
+        }
+      }
+    },
+    "m-double": {
+      "label": "(1) 工蟻自身代謝率 ×2（0.2 份／日）",
+      "status": "育幼／自身代謝隔離實驗（Owner #188 補充裁示 2026-11-12；非參考、預設關；自身代謝的敏感度；數值為遊戲假設，不是本種量測）",
+      "overrides": {
+        "worker_sugar_daily_portions": {
+          "value": 0.2,
+          "evidence_class": "game_assumption",
+          "assumption": true,
+          "basis": "遊戲假設（敏感度）",
+          "sources": [],
+          "unit": "遊戲份／日",
+          "note": "過程 (1) 的敏感度：參考值 0.1 × 2；只在隔離實驗"
+        }
+      }
+    },
+    "load-24": {
+      "label": "幼蟲負荷 24 隻（敏感度負荷情境）",
+      "status": "育幼／自身代謝隔離實驗（Owner #188 補充裁示 2026-11-12；非參考、預設關；幼蟲數為遊戲假設；只用來檢查幼蟲需求較大時各候選公式的差異，不是本種巢的組成）",
+      "overrides": {
+        "colony_larvae": {
+          "value": 24,
+          "evidence_class": "game_assumption",
+          "assumption": true,
+          "basis": "遊戲假設（敏感度）",
+          "sources": [],
+          "unit": "隻",
+          "note": "參考 8 隻時 2 天內幼蟲缺額全為 0（文件 §11），看不出差異；24 隻只是負荷情境"
         }
       }
     }

@@ -16,6 +16,10 @@
  *  - measurements (HEADLESS Chromium on this machine; the Pixel 7 profile is an emulated viewport + touch, NOT a real
  *    phone): frame intervals, JS heap, main-thread task time, Worker throughput; also with 4x CPU throttling.
  *    Reported only; no frame-rate target is claimed.
+ *  - P0-A2 24 h world (the page's default; ?world=synthetic selects the synthetic world used by the sections above):
+ *    labels (非正式 + 候選／實驗世界，非正式), paused record instants (every drawn worker = its engine pose, departures
+ *    exactly at the route end), day / night scene light follows the engine light state, inset tap-select + follow,
+ *    UI operations → same event stream, event-log hash and payload hash, a 3600× measurement (reported only).
  *  - saves/ and journal/ unchanged.
  */
 const fs = require('node:fs');
@@ -54,7 +58,7 @@ const COUNT_WORKERS = () => { window.__workerCount = 0; const W = window.Worker;
     const shot = async (page, name) => { const f = path.join(out, `v62-${tag}-${name}.png`); await page.screenshot({ path: f }); shots.push(f); };
 
     // --- 1. label, layers, default 1x, continuous time, pause
-    const page = await open('?seed=7');
+    const page = await open('?seed=7&world=synthetic');
     check((await page.textContent('#badge')).includes(LABEL) && (await page.textContent('#exp-flag')) === '非正式', `${tag}: non-official label and flag shown`);
     await page.waitForTimeout(1200);
     const s0 = await page.evaluate(() => ({ p: window.__v62.pacing(), t: window.__v62.frame().t_sim, layers: window.__v62.state().layers, workers: window.__workerCount }));
@@ -141,7 +145,7 @@ const COUNT_WORKERS = () => { window.__workerCount = 0; const W = window.Worker;
     check(Object.keys(measurements).filter((k) => k.startsWith(tag)).every((k) => measurements[k].fps_mean > 0), `${tag}: frames drawn in every measurement`);
 
     // --- 4. UI operations do not change results (real input), vs a fresh page that only steps
-    const A = await open('?seed=21');
+    const A = await open('?seed=21&world=synthetic');
     const W = (opts.viewport.width), H = (opts.viewport.height);
     await A.selectOption('#speed', '3600'); await A.waitForTimeout(700);
     if (tag === 'desktop') { await A.mouse.move(W / 2, H / 2); await A.mouse.wheel(0, -400); await A.mouse.down(); await A.mouse.move(W / 2 + 120, H / 2 + 60, { steps: 6 }); await A.mouse.up(); await A.mouse.wheel(0, 300); }
@@ -153,11 +157,91 @@ const COUNT_WORKERS = () => { window.__workerCount = 0; const W = window.Worker;
     await A.selectOption('#fpsCap', '30'); await A.click('#homeBtn'); await A.selectOption('#speed', '3600'); await A.waitForTimeout(800);
     await A.selectOption('#follow', ''); await A.click('#play');
     const ra = await A.evaluate(async (T) => { const V = window.__v62; await new Promise((r) => setTimeout(r, 200)); const t0 = V.frame().t_sim; const TT = Math.max(T, Math.ceil(t0 / 3600) * 3600 + 3600.25); await V.client.stepUntil(TT); const s = (await V.client.snapshot()).snapshot; return { t0, T: TT, digest: V.digest(), hash: s.payload_sha256, t: s.t_sim }; }, T);
-    const B = await open('?seed=21&autostart=0');
+    const B = await open('?seed=21&world=synthetic&autostart=0');
     const rb = await B.evaluate(async (T) => { const V = window.__v62; await V.client.stepUntil(T); const s = (await V.client.snapshot()).snapshot; return { digest: V.digest(), hash: s.payload_sha256, t: s.t_sim }; }, ra.T);
     check(ra.t0 > 0 && ra.t0 < ra.T, `${tag}: UI session reached t=${ra.t0.toFixed(0)} s before the comparison step at t=${ra.T}`);
     check(ra.digest.value === rb.digest.value && ra.digest.count === rb.digest.count && ra.digest.gaps === 0 && ra.hash === rb.hash, `${tag}: pause/resume, speeds, zoom, drag, follow, FPS cap, décor → same event stream (${ra.digest.count} events, digest ${ra.digest.value}) and payload hash at t_sim=${ra.T}`);
     await A.close(); await B.close();
+
+    // --- 4b. P0-A2 24 h world (default world of the page; candidate / experiment world, non-official)
+    {
+      const P = await open('?seed=7');
+      // the world view is entered after the first frame arrives (badge, start at 1×, first drawn frame): wait for it
+      await P.waitForFunction(() => window.__v62.pacing().running && window.__v62.state().layers.length > 0 && document.querySelector('#badge').textContent.includes('種子'), null, { timeout: 30000 });
+      const s1 = await P.evaluate(() => ({ f: window.__v62.frame(), p: window.__v62.pacing(), layers: window.__v62.state().layers, badge: document.querySelector('#badge').textContent }));
+      check(s1.f.world_kind === 'p0a2' && s1.badge.includes(LABEL) && s1.badge.includes('候選／實驗世界，非正式') && s1.f.workers.length === 30 && s1.f.larvae.length === 8, `${tag}: P0-A2 world is the default; labelled non-official and 候選／實驗世界，非正式 (30 workers, 8 larvae)`);
+      check(s1.p.running && s1.p.speed === 1 && s1.layers.length === 11, `${tag}: P0-A2 runs at 1× through the 11-layer renderer`);
+      await P.waitForTimeout(1500);
+      check((await P.evaluate(() => window.__v62.frame().t_sim)) > s1.f.t_sim, `${tag}: P0-A2 world time advances`);
+      // drawn = engine at record instants: pause, step to the next departure / arrival of a travelling worker
+      const rec = await P.evaluate(async () => {
+        const V = window.__v62, raf = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        await V.client.pause(); await V.client.stepUntil(8 * 3600);
+        const out = { instants: 0, compared: 0, endpointExact: 0, mismatches: [], countMismatch: 0, schematic: 0 };
+        for (let k = 0; k < 10; k++) {
+          const f = V.frame(), mv = f.workers.filter((w) => w.until_s !== null && w.until_s > f.t_sim && (w.state === 'outbound' || w.state === 'returning'));
+          const next = mv.length ? Math.min(...mv.map((w) => w.until_s)) : f.t_sim + 600;
+          await V.client.stepUntil(next); await raf();
+          const fr = V.frame(), cam = V.camera(), draws = V.draws(), poses = V.p0poses();
+          const W2S = (x, y) => [cam.w / 2 + (x - cam.cx) * cam.s, cam.h / 2 - (y - cam.cy) * cam.s];
+          const outside = fr.workers.filter((w) => w.loc === 'outside');
+          if (draws.length !== outside.length) out.countMismatch++;
+          if (V.state().lastDisplay !== null) out.mismatches.push('paused display clock is not the frame t_sim');
+          for (const w of outside) {
+            const p = poses.find((x) => x.id === w.id), d = draws.find((x) => x.id === w.id); out.compared++;
+            if (p.schematic) out.schematic++;
+            const [ex, ey] = W2S(p.x, p.y);
+            if (!d || d.ex !== ex || d.ey !== ey) out.mismatches.push(`${w.id} drawn off its pose`);
+            if ((w.state === 'outbound' || w.state === 'returning') && w.since_s === fr.t_sim) { if (p.interpolated) out.mismatches.push(`${w.id} interpolated at its record instant`); else out.endpointExact++; }
+          }
+          out.instants++;
+        }
+        return out;
+      });
+      check(rec.mismatches.length === 0 && rec.countMismatch === 0 && rec.compared > 0, `${tag}: P0-A2 at ${rec.instants} record instants every drawn worker = its engine pose (${rec.compared} comparisons, ${rec.endpointExact} departures exactly at the route end, ${rec.schematic} schematic search points; ${rec.mismatches.slice(0, 2).join(' | ')})`);
+      // day / night lighting from the engine light state
+      const night = await P.evaluate(async () => { const V = window.__v62; await V.client.stepUntil(22 * 3600 + 30 * 60); await new Promise((r) => setTimeout(r, 300)); return { light: V.frame().env.light, scene: V.sceneLight() }; });
+      check(night.light === 'night' && night.scene.includes('夜'), `${tag}: at 22:30 the engine light is night and the scene light follows it (${night.scene})`);
+      await shot(P, 'p0a2-night');
+      const day = await P.evaluate(async () => { const V = window.__v62; await V.client.stepUntil(86400 + 12 * 3600); await new Promise((r) => setTimeout(r, 300)); return { light: V.frame().env.light, scene: V.sceneLight() }; });
+      check(day.light === 'day' && day.scene.includes('日'), `${tag}: next day 12:00 the engine light is day and the scene light follows it (${day.scene})`);
+      // tap a worker in the schematic nest inset: selection and card (observation only)
+      const hit = await P.evaluate(() => window.__v62.insetHits()[0] || null);
+      if (hit) { if (tag === 'pixel7') await P.tap('#scene', { position: { x: hit.sx, y: hit.sy } }); else await P.mouse.click(hit.sx, hit.sy); }
+      await P.waitForTimeout(300);
+      const sel = await P.evaluate(() => ({ s: window.__v62.state().selected, card: document.querySelector('#card').textContent }));
+      check(hit && sel.s === hit.id && /巢內/.test(sel.card) && /引擎/.test(sel.card), `${tag}: tapping a worker in the nest inset selects it; the card shows its engine state (${sel.s})`);
+      if (sel.s) { await P.click('#followBtn'); await P.waitForTimeout(400); }
+      const fol = await P.evaluate(() => ({ f: window.__v62.followed(), s: window.__v62.state() }));
+      check(!sel.s || (fol.s.following === sel.s && fol.f && fol.f.id === sel.s && fol.f.kind === 'p0a2_worker'), `${tag}: P0-A2 follow attaches the Worker's read-only copy of the worker`);
+      await P.selectOption('#speed', '60'); await P.click('#play'); await P.waitForTimeout(1500);
+      await shot(P, 'p0a2-day-follow');
+      await P.close();
+      // UI operations do not change results: real input vs a fresh page that only steps
+      const A = await open('?seed=31');
+      const W = opts.viewport.width, Hh = opts.viewport.height;
+      await A.selectOption('#speed', '3600'); await A.waitForTimeout(700);
+      if (tag === 'desktop') { await A.mouse.move(W / 2, Hh / 3); await A.mouse.wheel(0, -400); await A.mouse.down(); await A.mouse.move(W / 2 + 120, Hh / 3 + 60, { steps: 6 }); await A.mouse.up(); await A.mouse.wheel(0, 300); }
+      else { await A.tap('#zoomIn'); await A.tap('#zoomIn'); await A.tap('#zoomOut'); }
+      await A.selectOption('#fpsCap', '15'); await A.waitForTimeout(500);
+      await A.click('#play'); await A.waitForTimeout(300); await A.click('#play');
+      await A.selectOption('#follow', 'w002'); await A.waitForTimeout(400);
+      await A.selectOption('#speed', '600'); await A.click('#decor'); await A.waitForTimeout(500);
+      await A.selectOption('#fpsCap', '30'); await A.click('#homeBtn'); await A.selectOption('#speed', '3600'); await A.waitForTimeout(800);
+      await A.selectOption('#follow', ''); await A.click('#play');
+      const ra = await A.evaluate(async () => { const V = window.__v62; await new Promise((r) => setTimeout(r, 200)); const t0 = V.frame().t_sim; const TT = Math.ceil(t0 / 3600) * 3600 + 3600.25; await V.client.stepUntil(TT); const s = (await V.client.snapshot()).snapshot; return { t0, T: TT, digest: V.digest(), hash: s.payload_sha256, log: s.payload.state.log.hash }; });
+      const B = await open('?seed=31&autostart=0');
+      const rb = await B.evaluate(async (T) => { const V = window.__v62; await V.client.stepUntil(T); const s = (await V.client.snapshot()).snapshot; return { digest: V.digest(), hash: s.payload_sha256, log: s.payload.state.log.hash }; }, ra.T);
+      check(ra.t0 > 0 && ra.digest.value === rb.digest.value && ra.digest.count === rb.digest.count && ra.digest.gaps === 0 && ra.hash === rb.hash && ra.log === rb.log, `${tag}: P0-A2 pause/resume, speeds, zoom, drag, follow, FPS cap, décor → same event stream (${ra.digest.count} events), event-log hash ${ra.log.slice(0, 12)}… and payload hash at t_sim=${ra.T}`);
+      // measurement at 3600× (headless; reported only)
+      const cdpP = await ctx.newCDPSession(A); await cdpP.send('Performance.enable');
+      await A.click('#play'); await A.selectOption('#speed', '3600'); await A.waitForTimeout(800); await A.evaluate(() => window.__v62.resetFps());
+      const mm = async () => Object.fromEntries((await cdpP.send('Performance.getMetrics')).metrics.map((m) => [m.name, m.value]));
+      const m0 = await mm(), w0 = Date.now(), ts0 = await A.evaluate(() => window.__v62.frame().t_sim); await A.waitForTimeout(5000);
+      const m1 = await mm(), wall = (Date.now() - w0) / 1000, ts1 = await A.evaluate(() => window.__v62.frame().t_sim), fp = await A.evaluate(() => ({ ...window.__v62.fps(), lagging: window.__v62.pacing().lagging }));
+      measurements[`${tag}-p0a2-3600x`] = { headless: true, emulated_device: tag === 'pixel7', speed: 3600, fps_mean: fp.fps_mean && +fp.fps_mean.toFixed(1), frame_p95_ms: fp.p95_ms && +fp.p95_ms.toFixed(1), main_thread_task_s_per_s: +((m1.TaskDuration - m0.TaskDuration) / wall).toFixed(3), js_heap_used_mb: +(m1.JSHeapUsedSize / 1048576).toFixed(1), world_s_per_real_s: +((ts1 - ts0) / wall).toFixed(1), worker_lagging: fp.lagging };
+      await A.close(); await B.close();
+    }
 
     // --- 5. isolation: official pages never create the Worker
     for (const p of ['index.html', 'analysis.html']) {
