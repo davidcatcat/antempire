@@ -207,6 +207,7 @@
   "metabolism": {
     "reference_c": {
       "value": 25,
+      "unit": "°C",
       "assumption": true,
       "description": "一般生理學 + 遊戲假設: 巢溫代謝基準25°C；非P. megacephala實測",
       "reference_for_mechanism_only": [
@@ -218,6 +219,7 @@
     },
     "q10": {
       "value": 2,
+      "unit": "dimensionless (per 10 °C)",
       "assumption": true,
       "description": "一般生理學 + 遊戲假設: Q10=2.0 是研究標準化假設，非本物種實測",
       "reference_for_mechanism_only": [
@@ -231,6 +233,7 @@
   "nutrition": {
     "worker_sugar_daily": {
       "value": 0.1,
+      "unit": "game_portion sugar / worker / day at metabolism.reference_c",
       "assumption": true,
       "description": "每工蟻日糖消耗，單位份",
       "reference_for_mechanism_only": [],
@@ -239,6 +242,7 @@
     },
     "worker_protein_daily": {
       "value": 0.008,
+      "unit": "game_portion protein / worker / day at reference_c",
       "assumption": true,
       "description": "每工蟻維生蛋白日耗，單位份",
       "reference_for_mechanism_only": [],
@@ -247,6 +251,7 @@
     },
     "queen_sugar_daily": {
       "value": 0.22,
+      "unit": "game_portion sugar / queen / day at reference_c",
       "assumption": true,
       "description": "蟻后日糖消耗，單位份",
       "reference_for_mechanism_only": [],
@@ -255,6 +260,7 @@
     },
     "queen_protein_daily": {
       "value": 0.045,
+      "unit": "game_portion protein / queen / day at reference_c",
       "assumption": true,
       "description": "蟻后維生蛋白日耗，單位份",
       "reference_for_mechanism_only": [],
@@ -263,6 +269,7 @@
     },
     "larva_sugar_daily": {
       "value": 0.025,
+      "unit": "game_portion sugar / larva / day at reference_c",
       "assumption": true,
       "description": "每幼蟲日糖日耗，單位份",
       "reference_for_mechanism_only": [],
@@ -271,6 +278,7 @@
     },
     "larva_protein_daily": {
       "value": 0.08,
+      "unit": "game_portion protein / larva / day at reference_c",
       "assumption": true,
       "rationale": "game assumption 0.08 portions per larva per day; no mg conversion; replaces 0.2",
       "basis": "遊戲假設",
@@ -278,6 +286,7 @@
     },
     "egg_laying_protein_cost": {
       "value": 0.14,
+      "unit": "game_portion protein / egg",
       "assumption": true,
       "description": "每一顆卵的營養成本，單位份",
       "reference_for_mechanism_only": [],
@@ -286,6 +295,7 @@
     },
     "egg_laying_sugar_cost": {
       "value": 0.08,
+      "unit": "game_portion sugar / egg",
       "assumption": true,
       "description": "每一顆卵的營養成本，單位份",
       "reference_for_mechanism_only": [],
@@ -294,14 +304,23 @@
     },
     "brood_protein_min_fraction": {
       "value": 0.45,
+      "unit": "fraction of larva_protein_daily",
       "assumption": true,
       "description": "幼蟲吃到至少此比率的蛋白才可有效發育",
       "reference_for_mechanism_only": [],
       "basis": "遊戲假設",
-      "legacy_path": "sim/params.json#nutrition.brood_protein_min_fraction"
+      "legacy_path": "sim/params.json#nutrition.brood_protein_min_fraction",
+      "implementation": {
+        "status": "未實作",
+        "engine_reads": false,
+        "since_rules_version": "antempire.v2-review.33-dead-params",
+        "evidence": "tests/ru2-dead-params.test.ts（靜態：engine/ 與 cli/ 程式碼不出現此名稱；動態：改變數值，Day0 與 Day14 情境輸出逐位元組不變）",
+        "note": "幼蟲有效發育的最低蛋白比例：舊日程引擎的幼體規則與 C4a／C4b 都不讀取本參數（幼蟲發育見 larval_development；營養反應形式待 Owner 決定）。"
+      }
     },
     "max_sugar_store": {
       "value": 24,
+      "unit": "game_portion sugar (nest store cap at baseline)",
       "assumption": true,
       "description": "巢群本階段可存/嗉囊攜帶之糖份上限，會隨規模擴張",
       "reference_for_mechanism_only": [],
@@ -310,6 +329,7 @@
     },
     "max_protein_store": {
       "value": 12,
+      "unit": "game_portion protein (nest store cap at baseline)",
       "assumption": true,
       "description": "巢群本階段可存/處理之蛋白份上限，會隨規模擴張",
       "reference_for_mechanism_only": [],
@@ -318,6 +338,7 @@
     },
     "store_capacity_baseline_workers": {
       "value": 14,
+      "unit": "workers",
       "assumption": true,
       "basis": "遊戲假設",
       "description": "巢內儲存上限開始隨工蟻數擴張的基準工蟻數",
@@ -326,6 +347,7 @@
     },
     "sugar_store_per_extra_worker": {
       "value": 0.4,
+      "unit": "game_portion sugar / extra worker",
       "assumption": true,
       "basis": "遊戲假設",
       "description": "超過基準後每多一隻工蟻增加的糖儲存上限（份）",
@@ -334,6 +356,7 @@
     },
     "protein_store_per_extra_worker": {
       "value": 0.3,
+      "unit": "game_portion protein / extra worker",
       "assumption": true,
       "basis": "遊戲假設",
       "description": "超過基準後每多一隻工蟻增加的蛋白儲存上限（份）",
@@ -1062,6 +1085,7 @@
   "foraging_trips": {
     "max_trips_per_forager": {
       "value": 2,
+      "unit": "trips / forager / day",
       "assumption": true,
       "description": "每覓食工蟻單日最大外勤次數",
       "reference_for_mechanism_only": [],
@@ -1070,6 +1094,7 @@
     },
     "foraging_trip_sugar_cost": {
       "value": 0.012,
+      "unit": "game_portion sugar / trip",
       "assumption": true,
       "description": "覓食路線附加糖耗份數",
       "reference_for_mechanism_only": [],
@@ -1103,6 +1128,7 @@
     },
     "unproductive_route_threshold_portions": {
       "value": 0.1,
+      "unit": "game_portion remembered harvest",
       "assumption": true,
       "basis": "遊戲假設",
       "description": "個體已知路線最佳收穫低於此份數時才可能改去探索",
@@ -1150,6 +1176,7 @@
     },
     "default_prior_success_portions": {
       "value": 0.15,
+      "unit": "game_portion remembered harvest",
       "assumption": true,
       "basis": "遊戲假設",
       "description": "個體對某食源尚無收穫紀錄時的預設收穫印象",
@@ -1198,6 +1225,7 @@
     },
     "score_base_offset": {
       "value": 0.15,
+      "unit": "game_portion sugar+protein (added to remembered harvest in site scores)",
       "assumption": true,
       "basis": "遊戲假設",
       "description": "食源評分的基礎偏移",
@@ -1224,6 +1252,7 @@
   "food_handling": {
     "carcass_access_probability": {
       "value": 0.7,
+      "unit": "probability / arrival",
       "assumption": true,
       "description": "到達且食物剩餘時遇到/可採的機率",
       "reference_for_mechanism_only": [],
@@ -1232,6 +1261,7 @@
     },
     "crop_load_sugar_min": {
       "value": 0.28,
+      "unit": "game_portion sugar / trip",
       "assumption": true,
       "description": "每趟成功糖運輸下界份數",
       "reference_for_mechanism_only": [],
@@ -1240,6 +1270,7 @@
     },
     "crop_load_sugar_max": {
       "value": 0.62,
+      "unit": "game_portion sugar / trip",
       "assumption": true,
       "description": "每趟成功糖運輸上界份數",
       "reference_for_mechanism_only": [],
@@ -1248,6 +1279,7 @@
     },
     "crop_load_protein_min": {
       "value": 0.3,
+      "unit": "game_portion protein / trip",
       "assumption": true,
       "description": "每趟成功昆蟲蛋白運輸下界份數",
       "reference_for_mechanism_only": [],
@@ -1256,6 +1288,7 @@
     },
     "crop_load_protein_max": {
       "value": 0.64,
+      "unit": "game_portion protein / trip",
       "assumption": true,
       "description": "每趟成功昆蟲蛋白運輸上界份數",
       "reference_for_mechanism_only": [],
@@ -1264,6 +1297,7 @@
     },
     "liquid_collection_probability": {
       "value": 0.85,
+      "unit": "probability / arrival",
       "assumption": true,
       "basis": "遊戲假設",
       "description": "抵達有液態糖的食源且未遇雨時實際採到的機率",
@@ -1380,6 +1414,7 @@
   "trophallaxis": {
     "crop_capacity": {
       "value": 0.8,
+      "unit": "game_portion per worker crop",
       "assumption": true,
       "description": "小工蟻嗉囊可持有之遊戲份數上限，非物種實測",
       "reference_for_mechanism_only": [
@@ -1410,6 +1445,7 @@
     },
     "transfer_max_portions": {
       "value": 0.28,
+      "unit": "game_portion sugar / trophallaxis",
       "assumption": true,
       "description": "每次交哺最多交付的遊戲糖份，數值假設",
       "reference_for_mechanism_only": [
@@ -1653,6 +1689,7 @@
     },
     "active_minute_sugar_cost": {
       "value": 0.00024,
+      "unit": "game_portion sugar / minute outside",
       "assumption": true,
       "basis": "遊戲假設",
       "description": "外出每分鐘的額外耗糖（份）",
@@ -1699,6 +1736,7 @@
     "store_is_queen_location_note": "D 級假設：蛋白倉（store）與蟻后所在（queen）是否同一處。本種沒有巢室配置資料（P1-B 未完成）。",
     "take_from_cache_max_portions": {
       "value": 0.28,
+      "unit": "game_portion protein / nest round",
       "assumption": true,
       "basis": "遊戲假設",
       "description": "一隻工蟻在一個巢內回合中，從固體蛋白吸取進嗉囊的最大液態蛋白份數（遊戲份量，不是 mg）；受嗉囊共同總容量限制。數值沿用 trophallaxis.transfer_max_portions，D 級假設",
@@ -1710,6 +1748,7 @@
     },
     "feed_max_portions_per_contact": {
       "value": 0.28,
+      "unit": "game_portion per contact",
       "assumption": true,
       "basis": "遊戲假設",
       "description": "一次與蟻后的接觸中，每種食物最多交哺的份數（遊戲份量）；數值沿用 trophallaxis.transfer_max_portions，D 級假設",
@@ -1721,6 +1760,7 @@
     },
     "queen_satiation_days_of_need": {
       "value": 3,
+      "unit": "days of own need",
       "assumption": true,
       "basis": "遊戲假設",
       "description": "蟻后已知收支中某種食物達到自身每日需求的幾倍時，拒絕該種食物的交哺（食物留在工蟻嗉囊）。D 級假設，沒有本種資料",
@@ -1732,6 +1772,7 @@
     },
     "self_feed_max_portions": {
       "value": 0.045,
+      "unit": "game_portion protein / round",
       "assumption": true,
       "basis": "遊戲假設",
       "description": "開關 C：蟻后每個回合自行取食的最大蛋白份數；數值等於 nutrition.queen_protein_daily，D 級假設",
@@ -1743,6 +1784,7 @@
     },
     "day0_initial_reserve_days_of_need": {
       "value": 0,
+      "unit": "days of own need",
       "assumption": true,
       "basis": "遊戲假設",
       "description": "新版 Day0 實驗世界中蟻后已知儲備（以自身每日需求的倍數 k 表示）。設計 §6 要求 k ∈ {0, 3, 10, 30} 全部做敏感度；預設 0（不假設儲備），不是挑選結果。Day14 遷移的蟻后不用此值：其未知儲備為 null。",
@@ -1776,6 +1818,7 @@
     },
     "feed_bolus_sugar_portions": {
       "value": 0.025,
+      "unit": "game_portion sugar / contact",
       "assumption": true,
       "basis": "遊戲假設",
       "mechanism_basis": "文獻支持（非本種）",
@@ -1792,6 +1835,7 @@
     },
     "feed_bolus_protein_portions": {
       "value": 0.08,
+      "unit": "game_portion protein / contact",
       "assumption": true,
       "basis": "遊戲假設",
       "mechanism_basis": "文獻支持（非本種）",

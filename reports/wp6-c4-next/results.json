@@ -1,6 +1,6 @@
 {
  "schema": "antempire.wp6-c4-next.v1",
- "engine_version": "antempire.v2-review.31-nurse-cue-same-place",
+ "engine_version": "antempire.v2-review.33-dead-params",
  "official": false,
  "experiment_label": "非正式 Day0 experiment worlds — offline one-day counterfactual replay; not the official world, not history, not a rules update",
  "design": {

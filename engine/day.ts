@@ -69,8 +69,15 @@ import type { ColonyState, ColonySummary, SimEvent, Weather, WorldState } from '
  *     begging cue (workers.ts nurseContact) draws only among larvae at the nurse's own place — the nurse in the nest, the larva
  *     in the brood chamber (a larva without a place counts as there); a nurse outside the nest touches no larva. Same stream
  *     and draw. Introduced OFF: every output byte-identical to v2-review.30.
+ *   v2-review.32 (RU-1, Owner #219; docs/ru1-param-units.md): every food parameter of species/world files declares its
+ *     `unit` (values unchanged; game portions 份 are not mg); site_choice.score_base_offset, found by the CE1 conversion-
+ *     invariance test to be a portion quantity, is declared as one. Metadata only: every output byte-identical to
+ *     v2-review.31.
+ *   v2-review.33 (RU-2, Owner #219): the three parameters listed in docs/ru2-dead-params.md, read by no engine code, are
+ *     marked implementation.status 未實作 (values unchanged, not removed; their names are deliberately not written here, so
+ *     the name-based audit of engine/*.ts still sees them unread). Metadata only: every output byte-identical to v2-review.32.
  */
-export const ENGINE_VERSION = 'antempire.v2-review.31-nurse-cue-same-place';
+export const ENGINE_VERSION = 'antempire.v2-review.33-dead-params';
 /** Implementation of that behaviour (bumped for refactors that keep results byte-identical). */
 export const ENGINE_IMPLEMENTATION = 'antempire.engine-ts.1';
 /**

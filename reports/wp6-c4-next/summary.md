@@ -1,6 +1,6 @@
 # WP6 C4 下一階段：結構候選的離線重播（自動產生；非正式 Day0 實驗世界）
 
-由 `node cli/reports/wp6-c4-next.ts` 產生；引擎 `antempire.v2-review.31-nurse-cue-same-place`。A1/A3/A5 × 春／秋 × 種子 1,2,3,4,5 × 60 日，引擎規則 C3a＋C4a（v2-review.28）。每個候選只重播當日巢內回合，不回饋到隔日（一日反事實）。k、固體塊大小、固體門檻都是測試值，不是本種數值；沒有採用任何候選，沒有選定 C4b 形式。說明見 docs/wp6-c4-next-stage.md。
+由 `node cli/reports/wp6-c4-next.ts` 產生；引擎 `antempire.v2-review.33-dead-params`。A1/A3/A5 × 春／秋 × 種子 1,2,3,4,5 × 60 日，引擎規則 C3a＋C4a（v2-review.28）。每個候選只重播當日巢內回合，不回饋到隔日（一日反事實）。k、固體塊大小、固體門檻都是測試值，不是本種數值；沒有採用任何候選，沒有選定 C4b 形式。說明見 docs/wp6-c4-next-stage.md。
 
 守恆：引擎 C2 帳 41184 個個體區室日，最大殘差 0，失敗 0；重播小帳 138845 個區室回合，最大殘差 0，失敗 0；S0 重播與引擎紀錄逐筆相同：1800 個群體日，不符 0。
 

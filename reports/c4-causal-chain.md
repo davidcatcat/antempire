@@ -1,6 +1,6 @@
 # C4 因果鏈分析（自動產生；非正式 Day0 實驗世界）
 
-由 `node cli/reports/c4-causal-chain.ts` 產生；引擎 `antempire.v2-review.31-nurse-cue-same-place`。A1/A3/A5 × 春／秋 × 種子 1,2,3,4,5 × 60 日。所有數字是遊戲假設下的模型輸出，不是野外值，也不是目標。說明見 docs/c4-causal-chain.md。
+由 `node cli/reports/c4-causal-chain.ts` 產生；引擎 `antempire.v2-review.33-dead-params`。A1/A3/A5 × 春／秋 × 種子 1,2,3,4,5 × 60 日。所有數字是遊戲假設下的模型輸出，不是野外值，也不是目標。說明見 docs/c4-causal-chain.md。
 
 守恆：80871 個區室日（243615 個個體區室日）逐日檢查，最大殘差 0，失敗 0。
 

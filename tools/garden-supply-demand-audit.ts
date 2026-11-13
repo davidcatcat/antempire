@@ -117,6 +117,22 @@ export const REGISTRY: UnitEntry[] = [
   { file: 'species', path: 'larval_feeding.feed_bolus_protein_portions', role: 'handling_limit', food: 'protein', unit: gp('protein / contact'), time_scale: 'contact', physical_unit: null, origin: 'colony_internal', note: '' },
   { file: 'species', path: 'scouting.unproductive_route_threshold_portions', role: 'perception', food: 'sugar+protein', unit: gp('remembered harvest'), time_scale: 'trip', physical_unit: null, origin: 'colony_internal', note: '' },
   { file: 'species', path: 'site_choice.default_prior_success_portions', role: 'perception', food: 'sugar+protein', unit: gp('remembered harvest'), time_scale: 'trip', physical_unit: null, origin: 'colony_internal', note: '' },
+  { file: 'species', path: 'site_choice.score_base_offset', role: 'perception', food: 'sugar+protein', unit: 'game_portion sugar+protein (added to remembered harvest in site scores)', time_scale: 'trip', physical_unit: null, origin: 'colony_internal', note: 'found by CE1 (RU-1, reports/ce1-conversion-invariance): score = (score_base_offset + prior) × …, so it is a portion quantity; left unscaled, the CE1 test diverges' },
+  // ---------- legacy Day15 migration (one time, legacy Day14 history retired by #194; Day0 does not use it) ----------
+  { file: 'world', path: 'day15_migration.hidden_honeydew_sites.F04.initial_sugar', role: 'initial_stock', food: 'sugar', unit: gp('sugar'), time_scale: 'state', physical_unit: null, origin: 'scenario_initial', note: 'Day15 migration only' },
+  { file: 'world', path: 'day15_migration.hidden_honeydew_sites.F04.listed_production', role: 'supply', food: 'sugar', unit: gp('sugar / day (listed by the retired v1 code, not used)'), time_scale: 'day', physical_unit: null, origin: 'fixed_game_portion', note: 'Day15 migration only; the migration writes production_per_day = 0 (production comes from the ecology module)' },
+  { file: 'world', path: 'day15_migration.hidden_honeydew_sites.F04.capacity', role: 'stock_cap', food: 'sugar', unit: gp('sugar (standing crop cap per site)'), time_scale: 'state', physical_unit: null, origin: 'scenario_initial', note: 'Day15 migration only' },
+  { file: 'world', path: 'day15_migration.hidden_honeydew_sites.F05.initial_sugar', role: 'initial_stock', food: 'sugar', unit: gp('sugar'), time_scale: 'state', physical_unit: null, origin: 'scenario_initial', note: 'Day15 migration only' },
+  { file: 'world', path: 'day15_migration.hidden_honeydew_sites.F05.listed_production', role: 'supply', food: 'sugar', unit: gp('sugar / day (listed by the retired v1 code, not used)'), time_scale: 'day', physical_unit: null, origin: 'fixed_game_portion', note: 'Day15 migration only; the migration writes production_per_day = 0 (production comes from the ecology module)' },
+  { file: 'world', path: 'day15_migration.hidden_honeydew_sites.F05.capacity', role: 'stock_cap', food: 'sugar', unit: gp('sugar (standing crop cap per site)'), time_scale: 'state', physical_unit: null, origin: 'scenario_initial', note: 'Day15 migration only' },
+  { file: 'world', path: 'day15_migration.hidden_honeydew_sites.F10.initial_sugar', role: 'initial_stock', food: 'sugar', unit: gp('sugar'), time_scale: 'state', physical_unit: null, origin: 'scenario_initial', note: 'Day15 migration only' },
+  { file: 'world', path: 'day15_migration.hidden_honeydew_sites.F10.listed_production', role: 'supply', food: 'sugar', unit: gp('sugar / day (listed by the retired v1 code, not used)'), time_scale: 'day', physical_unit: null, origin: 'fixed_game_portion', note: 'Day15 migration only; the migration writes production_per_day = 0 (production comes from the ecology module)' },
+  { file: 'world', path: 'day15_migration.hidden_honeydew_sites.F10.capacity', role: 'stock_cap', food: 'sugar', unit: gp('sugar (standing crop cap per site)'), time_scale: 'state', physical_unit: null, origin: 'scenario_initial', note: 'Day15 migration only' },
+  { file: 'world', path: 'day15_migration.starting_sugar', role: 'initial_stock', food: 'sugar', unit: gp('sugar (nest store, one time)'), time_scale: 'state', physical_unit: null, origin: 'scenario_initial', note: 'Day15 migration only' },
+  { file: 'world', path: 'day15_migration.starting_protein', role: 'initial_stock', food: 'protein', unit: gp('protein (nest store, one time)'), time_scale: 'state', physical_unit: null, origin: 'scenario_initial', note: 'Day15 migration only' },
+  { file: 'world', path: 'day15_migration.carcass_initial_F07', role: 'initial_stock', food: 'protein', unit: gp('protein (carcass remains, one time)'), time_scale: 'state', physical_unit: null, origin: 'scenario_initial', note: 'Day15 migration only' },
+  { file: 'world', path: 'day15_migration.carcass_initial_F11', role: 'initial_stock', food: 'protein', unit: gp('protein (carcass remains, one time)'), time_scale: 'state', physical_unit: null, origin: 'scenario_initial', note: 'Day15 migration only' },
+  { file: 'world', path: 'day15_migration.carcass_initial_F07_older', role: 'initial_stock', food: 'protein', unit: gp('protein (carcass remains, one time)'), time_scale: 'state', physical_unit: null, origin: 'scenario_initial', note: 'Day15 migration only' },
   // ---------- Day0 garden census (scenario) ----------
   { file: 'garden', path: 'honeydew_sites.*.host_plants', role: 'supply_driver', food: 'sugar', unit: 'host plants / site', time_scale: 'state', physical_unit: null, origin: 'scenario_initial', note: 'no plant size / species' },
   { file: 'garden', path: 'honeydew_sites.*.hemipteran_colonies', role: 'supply_driver', food: 'sugar', unit: 'hemipteran "colonies" / site', time_scale: 'state', physical_unit: null, origin: 'scenario_initial', note: 'no individuals per colony' },
@@ -234,11 +250,14 @@ export function audit(root = REPO_ROOT): Any {
     return paths.map((p) => {
       const leaf = p.split('.').pop() as string, parent = p.split('.').slice(-2)[0];
       // a leaf is "read by the engine" when its own name appears in engine/*.ts; a map entry (3+ segments, e.g.
-      // hemipterans.honeydew_per_colony_per_day.aphid) is read through its map's name
-      const engineUse = e.file === 'world' || e.file === 'species' ? (engineSrc.includes(leaf) || (p.split('.').length >= 3 && engineSrc.includes(parent))) : null;
+      // hemipterans.honeydew_per_colony_per_day.aphid) is read through its map's name (a lower-case map name, not a site key
+      // such as F04: day15_migration.hidden_honeydew_sites.F04.listed_production is not read just because F04 appears)
+      const engineUse = e.file === 'world' || e.file === 'species' ? (engineSrc.includes(leaf) || (p.split('.').length >= 3 && /^[a-z][a-z0-9_]*$/.test(parent) && engineSrc.includes(parent))) : null;
       const x = at(F[e.file], p); const v = x && typeof x === 'object' && 'value' in x ? x.value : x;
       const basis = x && typeof x === 'object' ? (x.basis ?? x.evidence_class ?? null) : null;
-      return { file: FILES[e.file], path: p, value: v, role: e.role, food: e.food, unit: e.unit, time_scale: e.time_scale, origin: e.origin, basis, flags: [...(e.unit.startsWith('game_portion') ? ['UNITLESS_PORTION'] : []), ...(engineUse === false ? ['NOT_READ_BY_ENGINE'] : []), ...(e.note.startsWith('DEAD') ? ['DEAD'] : [])], note: e.note };
+      // RU-1 (v2-review.32): species / world parameters declare their own `unit`; it must equal this registry's unit
+      const declared = x && typeof x === 'object' && typeof x.unit === 'string' ? x.unit : null;
+      return { file: FILES[e.file], path: p, value: v, role: e.role, food: e.food, unit: e.unit, declared_unit: declared, time_scale: e.time_scale, origin: e.origin, basis, flags: [...(e.unit.startsWith('game_portion') ? ['UNITLESS_PORTION'] : []), ...(e.file === 'world' || e.file === 'species' ? (declared === null ? ['UNIT_NOT_DECLARED_IN_FILE'] : declared !== e.unit ? ['UNIT_MISMATCH'] : []) : []), ...(engineUse === false ? ['NOT_READ_BY_ENGINE'] : []), ...(e.note.startsWith('DEAD') ? ['DEAD'] : []), ...(x && typeof x === 'object' && x.implementation?.status === '未實作' ? ['MARKED_NOT_IMPLEMENTED'] : [])], note: e.note };
     });
   });
   // ---- 2. legacy engine: garden production ceiling (game portions / day) ----
@@ -327,10 +346,10 @@ export function renderMarkdown(a: Any): string {
   const L: string[] = [];
   L.push('# 花園供給 vs 蟻群消耗：單位、時間尺度與守恆稽核（自動產生）', '');
   L.push('> 由 `node tools/garden-supply-demand-audit.ts --write` 產生；只讀參數檔與 `' + a.anchors_file + '`，不執行引擎、不讀寫 saves/ 或 journal/。', '> **診斷，不是目標**：本報告任何數字都不得用來反推花園資源或讓蟻群存活（CLAUDE.md §7；#202 Owner 裁示第 8 項）。「份」（game portion）是遊戲單位，**不是 mg**；mg 欄位只是用明列的候選換算做量級比較。', '');
-  L.push('## 1. 參數單位登錄（每個供給／需求參數）', '', '| 檔案 | 參數 | 值 | 角色 | 食物 | 單位 | 時間尺度 | 來源類型 | 依據 | 旗標 | 備註 |', '|---|---|---:|---|---|---|---|---|---|---|---|');
-  for (const x of a.registry) L.push(`| ${x.file} | \`${x.path}\` | ${fmt(x.value)} | ${x.role} | ${x.food} | ${x.unit} | ${x.time_scale} | ${x.origin} | ${fmt(x.basis)} | ${x.flags.join(' ') || '—'} | ${x.note || '—'} |`);
+  L.push('## 1. 參數單位登錄（每個供給／需求參數）', '', '| 檔案 | 參數 | 值 | 角色 | 食物 | 單位 | 參數檔宣告 | 時間尺度 | 來源類型 | 依據 | 旗標 | 備註 |', '|---|---|---:|---|---|---|---|---|---|---|---|---|');
+  for (const x of a.registry) L.push(`| ${x.file} | \`${x.path}\` | ${fmt(x.value)} | ${x.role} | ${x.food} | ${x.unit} | ${x.declared_unit === null ? (x.file.startsWith('species/') || x.file.startsWith('world/') ? '**未宣告**' : '—（本檔不在 RU-1 範圍）') : x.declared_unit === x.unit ? '✔' : '**不一致**'} | ${x.time_scale} | ${x.origin} | ${fmt(x.basis)} | ${x.flags.join(' ') || '—'} | ${x.note || '—'} |`);
   const flagged = a.registry.filter((x: Any) => x.flags.includes('UNITLESS_PORTION')).length;
-  L.push('', `共 ${a.registry.length} 項；其中 ${flagged} 項以「份」計（UNITLESS_PORTION：沒有質量單位）。未分類的食物相關參數：${a.unclassified.length ? a.unclassified.join('、') : '0（全部已登錄或已列為非食物量）'}。`, '');
+  L.push('', `共 ${a.registry.length} 項；其中 ${flagged} 項以「份」計（UNITLESS_PORTION：沒有質量單位）。物種／世界參數檔中 ${a.registry.filter((x: Any) => x.declared_unit !== null).length} 項已在檔內宣告 unit 欄位（RU-1，v2-review.32），未宣告或不一致：${a.registry.filter((x: Any) => x.flags.includes('UNIT_NOT_DECLARED_IN_FILE') || x.flags.includes('UNIT_MISMATCH')).length}。未分類的食物相關參數：${a.unclassified.length ? a.unclassified.join('、') : '0（全部已登錄或已列為非食物量）'}。`, '');
   const s = a.legacy.supply;
   L.push('## 2. 舊日程引擎：花園生產上限（份／日，世界過程的平均場計算）', '', '| 地點 | 種類 | 存在機率 | 寄主 | 群數（Day0 盤點／平穩平均／上限） | 每群份／日 | 背景競爭者取走 | 淨產量 份／日（盤點／平穩／上限） |', '|---|---|---:|---:|---|---:|---:|---|');
   for (const h of s.honeydew_by_site) L.push(`| ${h.site} | ${h.kind} | ${h.exists_probability} | ${h.host_plants} | ${h.colonies_day0_census}／${h.colonies_stationary_mean}／${h.colonies_max} | ${h.rate_per_colony} | ${h.rival_share} | ${h.net_gp_per_day_census}／${h.net_gp_per_day_stationary}／${h.net_gp_per_day_max} |`);
