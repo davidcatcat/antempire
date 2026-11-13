@@ -33,6 +33,7 @@ import { cardHtml, drawInset, hudStatus, insetRect, type InsetHit } from './v62-
 import { GardenRenderer, MINOR_LEN_CM } from './vis1-render.ts';
 import { VisModel, SEARCH_RADIUS_CM, PATH_LABEL, UNDERGROUND_LABEL } from './vis1-model.ts';
 import { UndergroundView, U_W, U_H, type UCam } from './vis1-underground.ts';
+import { antPxAt, closeUpCapPx, maxScaleFor, type AntScale } from './zoom-scale.ts';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const canvas = $<HTMLCanvasElement>('scene');
@@ -57,7 +58,18 @@ const cam = { x: 0, y: 0, s: 8 };
 const stats = { frames: 0, intervals: [] as number[], drawMs: [] as number[], lastTs: 0, lastDraw: 0 };
 let fpsCap = 60, topBarPx = 0, bottomBarPx = 0;
 
-const minAntPx = () => Math.max(28, Math.round(Math.min(canvas.clientWidth, canvas.clientHeight) * 0.05));
+/** drawn ant length (CSS px) at each view's home camera; the magnification set there is kept while zooming, so the ants
+ *  scale with the map (zoom-scale.ts). Synthetic world and underground: 5% of the short side (≥ 28 px); P0-A2 surface:
+ *  16 px (narrow) / 18 px. */
+const baseAntPx = () => Math.max(28, Math.round(Math.min(canvas.clientWidth, canvas.clientHeight) * 0.05));
+const surfaceAntPx = () => (canvas.clientWidth < 640 ? 16 : 18);
+let synScale: AntScale | null = null, surfScale: AntScale | null = null, ugScale: AntScale | null = null;
+const underground = () => isP0a2Frame(frame) && view === 'underground';
+/** the active view's anchor (set at its home camera; lazily at the current scale if that has not run yet) */
+const antScale = (): AntScale => (!isP0a2Frame(frame) ? (synScale ??= { homeS: cam.s, homePx: baseAntPx() }) : view === 'underground' ? (ugScale ??= { homeS: ucam.s, homePx: baseAntPx() }) : (surfScale ??= { homeS: cam.s, homePx: surfaceAntPx() }));
+const minAntPx = () => antPxAt(antScale(), underground() ? ucam.s : cam.s);
+/** closest zoom of the active view: the ant reaches half the screen's short side (constant ×N, never true scale) */
+const maxZoom = () => { const a = antScale(); return maxScaleFor(a, closeUpCapPx(canvas.clientWidth, canvas.clientHeight, a.homePx)); };
 const camera = (): Camera => ({ cx: cam.x, cy: cam.y, s: cam.s, w: canvas.clientWidth, h: canvas.clientHeight });
 const S2W = (sx: number, sy: number) => [cam.x + (sx - canvas.clientWidth / 2) / cam.s, cam.y - (sy - canvas.clientHeight / 2) / cam.s] as const;
 
@@ -88,16 +100,18 @@ const nightOf = (f: { env: { light: string } }) => (f.env.light === 'night' ? 1 
 function homeCamera() {
   zoomGoal = null;
   if (isP0a2Frame(frame)) {
-    if (view === 'underground') { const w = canvas.clientWidth, h = canvas.clientHeight, top = topBarPx + 40, bottom = h - bottomBarPx - 8; ucam.s = Math.min((w - 16) / (U_W + 6), Math.max(60, bottom - top) / (U_H + 14)); ucam.x = U_W / 2; ucam.y = U_H / 2 - 5 - ((top + bottom) / 2 - h / 2) / ucam.s; return; }
+    if (view === 'underground') { const w = canvas.clientWidth, h = canvas.clientHeight, top = topBarPx + 40, bottom = h - bottomBarPx - 8; ucam.s = Math.min((w - 16) / (U_W + 6), Math.max(60, bottom - top) / (U_H + 14)); ucam.x = U_W / 2; ucam.y = U_H / 2 - 5 - ((top + bottom) / 2 - h / 2) / ucam.s; ugScale = { homeS: ucam.s, homePx: baseAntPx() }; return; }
     // fit nest + display corridor + source between the top bar and the nest inset (display only)
     const C = (vis ?? VisModel.of(frame)).corridor, w = canvas.clientWidth, h = canvas.clientHeight, ins = insetRect(w, h, bottomBarPx), top = topBarPx + 8, bottom = ins.y - 8;
     let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity; for (const p of C.line.pts) { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y); }
     const mx = w < 640 ? 24 : 14; x0 -= mx; x1 += mx; y0 -= 14; y1 += 14;
     cam.s = Math.min((w * 0.94) / (x1 - x0), Math.max(40, bottom - top) / (y1 - y0));
     cam.x = (x0 + x1) / 2; cam.y = (y0 + y1) / 2 - (h / 2 - (top + bottom) / 2) / cam.s;
+    surfScale = { homeS: cam.s, homePx: surfaceAntPx() };
     return;
   }
   cam.x = 0; cam.y = 0; cam.s = Math.min(canvas.clientWidth, canvas.clientHeight - bottomBarPx - topBarPx) / (arenaR * 2.2);
+  synScale = { homeS: cam.s, homePx: baseAntPx() };
 }
 function resize() { R.resize(); if (isP0a2Frame(frame)) G.resize(); topBarPx = $('top').getBoundingClientRect().height; bottomBarPx = $('bottom').getBoundingClientRect().height; }
 
@@ -117,17 +131,16 @@ async function playPause() {
 }
 const pct = (a: readonly number[], q: number) => { if (!a.length) return null; const b = [...a].sort((x, y) => x - y); return +b[Math.min(b.length - 1, Math.floor(b.length * q))].toFixed(2); };
 const med = (a: readonly number[]) => pct(a, 0.5);
-/** close-up: zoom so that an ant is drawn ≈ 80 px long at TRUE scale (display only) */
-const CLOSE_UP_S = 80 / MINOR_LEN_CM;
+/** close-up: zoom in to the closest view, where the (magnified) ant is half the screen's short side (display only) */
 function closeUp(id: string | null) {
   if (!isP0a2Frame(frame)) return;
-  if (view === 'underground') { ucam.s = Math.min(120, ucam.s * 2.2); return; }
+  if (view === 'underground') { ucam.s = Math.min(120, maxZoom(), ucam.s * 2.2); return; }
   const p = id ? p0poses.find((x) => x.id === id && x.vis !== 'in_nest') : undefined;
   if (p) { cam.x = p.x + (p.slot?.dx ?? 0); cam.y = p.y + (p.slot?.dy ?? 0); }
-  zoomGoal = CLOSE_UP_S;
+  zoomGoal = Math.min(480, maxZoom());
 }
 async function setFollow(id: string | null) {
-  if (id && id !== following && isP0a2Frame(frame) && cam.s < CLOSE_UP_S * 0.5 && view === 'surface' && p0poses.some((x) => x.id === id && x.vis !== 'in_nest')) zoomGoal = CLOSE_UP_S * 0.75;
+  if (id && id !== following && isP0a2Frame(frame) && view === 'surface' && cam.s < Math.min(480, maxZoom()) * 0.5 && p0poses.some((x) => x.id === id && x.vis !== 'in_nest')) zoomGoal = Math.min(480, maxZoom()) * 0.75;
   following = id; selected = id ?? selected; ui.follow.value = id ?? '';
   await client.follow(id); // observation only: the Worker attaches a read-only copy of the ant to each frame
   renderCard();
@@ -181,9 +194,9 @@ function drawP0(dt: number, fms: number | null, t: number) {
   } else {
     if (fp && fp.vis !== 'in_nest') { const tx = fp.x + (fp.slot?.dx ?? 0), ty = fp.y + (fp.slot?.dy ?? 0), k = Math.min(1, dt * 6); cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k; }
     const c = camera(), sw = selected ? f.workers.find((x) => x.id === selected && (x.state === 'outbound' || x.state === 'returning')) : undefined;
-    const draws = G.frame(c, vp, dt, { minAntPx: narrow ? 16 : 18, selected, following, running: !!pacing?.running, showIds: false, selectedPath: sw ? V.trip(sw).line : null });
+    const draws = G.frame(c, vp, dt, { minAntPx: minAntPx(), selected, following, running: !!pacing?.running, showIds: false, selectedPath: sw ? V.trip(sw).line : null });
     p0draws = draws;
-    const lenPx = GardenRenderer.antLenPx(cam.s, narrow ? 16 : 18);
+    const lenPx = GardenRenderer.antLenPx(cam.s, minAntPx());
     g.save(); g.font = '12px system-ui'; g.fillStyle = '#fff6dc'; g.strokeStyle = 'rgba(20,12,6,0.75)'; g.lineWidth = 3; g.textBaseline = 'alphabetic';
     const label = (x: number, y: number, s: string, align: CanvasTextAlign = 'left') => { const tw = g.measureText(s).width, x0 = align === 'center' ? x - tw / 2 : x, cx = Math.max(8, Math.min(w - 8 - tw, x0)); g.textAlign = 'left'; g.strokeText(s, cx, y); g.fillText(s, cx, y); };
     const C = V.corridor, [nx, ny] = worldToScreen(c, C.nest.x, C.nest.y), [sx, sy] = worldToScreen(c, C.source.x, C.source.y), r0 = Math.max(18, 3.4 * cam.s);
@@ -263,13 +276,13 @@ function renderLog() {
 function zoomAt(sx: number, sy: number, k: number) {
   zoomGoal = null;
   if (isP0a2Frame(frame)) {
-    if (view === 'underground') { const w = canvas.clientWidth, h = canvas.clientHeight, ux = ucam.x + (sx - w / 2) / ucam.s, uy = ucam.y + (sy - h / 2) / ucam.s; ucam.s = Math.max(4, Math.min(120, ucam.s * k)); if (!following) { ucam.x = ux - (sx - w / 2) / ucam.s; ucam.y = uy - (sy - h / 2) / ucam.s; } return; }
-    const [wx, wy] = S2W(sx, sy); cam.s = Math.max(2, Math.min(480, cam.s * k));
+    if (view === 'underground') { const w = canvas.clientWidth, h = canvas.clientHeight, ux = ucam.x + (sx - w / 2) / ucam.s, uy = ucam.y + (sy - h / 2) / ucam.s; ucam.s = Math.max(Math.min(4, maxZoom()), Math.min(120, maxZoom(), ucam.s * k)); if (!following) { ucam.x = ux - (sx - w / 2) / ucam.s; ucam.y = uy - (sy - h / 2) / ucam.s; } return; }
+    const [wx, wy] = S2W(sx, sy), hi = Math.min(480, maxZoom()); cam.s = Math.max(Math.min(2, hi), Math.min(hi, cam.s * k));
     if (!following) { const [nx, ny] = S2W(sx, sy); cam.x += wx - nx; cam.y += wy - ny; }
     return;
   }
   const fitS = Math.min(canvas.clientWidth, canvas.clientHeight) / (arenaR * 3);
-  const [wx, wy] = S2W(sx, sy); cam.s = Math.max(fitS, Math.min(400, cam.s * k));
+  const [wx, wy] = S2W(sx, sy), hi = Math.min(400, maxZoom()); cam.s = Math.max(Math.min(fitS, hi), Math.min(hi, cam.s * k));
   if (!following) { const [nx, ny] = S2W(sx, sy); cam.x += wx - nx; cam.y += wy - ny; }
 }
 /** drawn ant records of the active renderer (P0-A2: garden renderer; synthetic: layered renderer) */
@@ -421,7 +434,7 @@ function renderSave() {
   insetHits: () => insetHits.map((h) => ({ ...h })),
   sceneLight: () => sceneLight,
   disclosure: () => (disclosure ? JSON.parse(JSON.stringify(disclosure)) as NotSimulatedView : null),
-  draws: () => currentDraws().map((d) => ({ id: d.id, ex: d.ex, ey: d.ey, sx: d.sx, sy: d.sy })),
+  draws: () => { const lenPx = underground() ? null : antLengthPx(cam.s, minAntPx()); return currentDraws().map((d) => ({ id: d.id, ex: d.ex, ey: d.ey, sx: d.sx, sy: d.sy, lenPx })); },
   camera: () => camera(),
   state: () => ({ selected, following, fpsCap, cam: { ...cam }, quality: isP0a2Frame(frame) ? G.quality().level : R.quality().level, canvas_px: [canvas.width, canvas.height], layers: [...(isP0a2Frame(frame) ? G.trace : R.trace)], lastDisplay, view, ucam: { ...ucam }, garden: { ...G.stats, frameMs: undefined, frame_p50_ms: med(G.stats.frameMs), frame_p95_ms: pct(G.stats.frameMs, 0.95) } }),
   fps: () => { const iv = [...stats.intervals].sort((a, b) => a - b), n = iv.length, mean = n ? iv.reduce((s, x) => s + x, 0) / n : null; return { frames: stats.frames, samples: n, mean_ms: mean, p50_ms: n ? iv[Math.floor(n * 0.5)] : null, p95_ms: n ? iv[Math.floor(n * 0.95)] : null, fps_mean: mean ? 1000 / mean : null }; },

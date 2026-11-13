@@ -14,15 +14,19 @@ import { LayeredRenderer } from './render-canvas.ts';
 import { antLengthPx, recordedRoutes, type AntInput, type Camera } from './render-scene.ts';
 import { SCHEMATIC_LIGHT } from './art-core.ts';
 import { playbackDamp, smoothedContext, type ContextSampler, type RawSample } from './display-motion.ts';
+import { antPxAt, closeUpCapPx, maxScaleFor, type AntScale } from './zoom-scale.ts';
 
 interface Index { official: string; experiments: { id: string; file: string; title: string }[] }
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const canvas = $<HTMLCanvasElement>('scene');
 const ui = { world: $<HTMLSelectElement>('world'), play: $<HTMLButtonElement>('play'), speed: $<HTMLSelectElement>('speed'), skip: $<HTMLInputElement>('skip'), time: $('time'), clock: $<HTMLInputElement>('clock'), prevDay: $<HTMLButtonElement>('prevDay'), nextDay: $<HTMLButtonElement>('nextDay'), card: $('card'), banner: $('banner'), toast: $('toast'), counts: $('counts'), weather: $('weather'), info: $<HTMLButtonElement>('infoBtn'), about: $('about'), fit: $<HTMLButtonElement>('fit'), badge: $('badge'), layersBtn: $<HTMLButtonElement>('layersBtn'), layers: $('layers'), lEngine: $<HTMLInputElement>('layerEngine'), lLabels: $<HTMLInputElement>('layerLabels'), lRoutes: $<HTMLInputElement>('layerRoutes'), lIds: $<HTMLInputElement>('layerIds'), lChips: $<HTMLInputElement>('layerChips'), home: $<HTMLButtonElement>('homeBtn') };
 
-/** smallest drawn ant (CSS px), derived from the screen (8% of its short side, at least 36 px): ants are magnified to
- *  stay readable and the renderer labels the factor (放大顯示 ×N) */
-const minAntPx = () => Math.max(36, Math.round(Math.min(canvas.clientWidth, canvas.clientHeight) * 0.08));
+/** drawn ant length (CSS px) at the home view, derived from the screen (8% of its short side, at least 36 px): ants are
+ *  magnified to stay readable and the renderer labels the factor (放大顯示 ×N) */
+const homeAntPx = () => Math.max(36, Math.round(Math.min(canvas.clientWidth, canvas.clientHeight) * 0.08));
+/** the magnification is fixed at the home view and kept while zooming, so ants scale with the map (zoom-scale.ts) */
+let antScale: AntScale | null = null;
+const minAntPx = () => (antScale ? antPxAt(antScale, cam.s) : homeAntPx());
 const R = new LayeredRenderer(canvas);
 let index: Index, exp: Experiment, pos: Pos = {}, places: Place[] = [], bounds = { x0: 0, y0: 0, x1: 1, y1: 1 };
 let day = 1, t = 0, playing = true, speed = 5, skip = true, settleUntil = 0, ended = false;
@@ -126,6 +130,7 @@ function homeCamera() {
   cam.s = Math.max(1e-6, Math.min(canvas.clientWidth, v.bottom - v.top)) / MACRO_CM;
   cam.x = a.x + (b.x - a.x) * k;
   cam.y = a.y + (b.y - a.y) * k - (h / 2 - (v.top + v.bottom) / 2) / cam.s; // framed point at the centre of the unobscured band
+  antScale = { homeS: cam.s, homePx: homeAntPx() };
   homeView = true;
 }
 function fitCamera() {
@@ -167,7 +172,7 @@ function drawFrame(dtReal: number, frameMs: number | null) {
   const inputs: AntInput[] = frames.map((f) => {
     let off: AntInput['displayOffset'];
     if (f.vis === 'walking' && f.heading !== null) { const o = laneOffset(f.id) * L * 0.55, h = -f.heading; off = { dx: -Math.sin(h) * o, dy: Math.cos(h) * o }; }
-    else { const s = siteSlot(f.id), k = Math.min(1.4, L / 26); off = { dx: s.dx * k, dy: s.dy * k, heading: s.heading }; }
+    else { const s = siteSlot(f.id), k = L / 26; /* the ring at a site scales with the ants */ off = { dx: s.dx * k, dy: s.dy * k, heading: s.heading }; }
     return { id: f.id, x: f.x, y: f.y, vis: f.vis, moving: f.moving, heading: f.heading, displayOffset: off }; // no ω: the replay records none
   });
   const draws = R.frame(c, inputs, dtReal, frameMs, { uiBottom: bottomBarPx + 6, displayTurns: true, colourVariants: true, highlightEngine: ui.lEngine.checked, labels: ui.lLabels.checked, showRoutes: ui.lRoutes.checked, minAntPx: minAntPx(),
@@ -253,7 +258,8 @@ function setupPointer() {
 function zoomAt(sx: number, sy: number, k: number) {
   homeView = false;
   const fitS = Math.min(canvas.clientWidth / (bounds.x1 - bounds.x0), canvas.clientHeight / (bounds.y1 - bounds.y0));
-  const ns = Math.max(fitS * 0.6, Math.min(400, cam.s * k)); const [wx, wy] = S2W(sx, sy); cam.s = ns;
+  const maxS = antScale ? Math.min(400, maxScaleFor(antScale, closeUpCapPx(canvas.clientWidth, canvas.clientHeight, antScale.homePx))) : 400;
+  const ns = Math.max(Math.min(fitS * 0.6, maxS), Math.min(maxS, cam.s * k)); const [wx, wy] = S2W(sx, sy); cam.s = ns;
   if (!following) { const [nx, ny] = S2W(sx, sy); cam.x += wx - nx; cam.y += wy - ny; }
 }
 function pick(sx: number, sy: number) {
