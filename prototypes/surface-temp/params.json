@@ -1,0 +1,19 @@
+{
+  "schema": "antempire.surface-temp-params.v1",
+  "model_version": "surf-0.v1",
+  "status": "候選模型（Owner #213 Q2 b）；非正式、未接入任何世界；輸出是模型值，不是現地測量",
+  "label_zh": "模型值（非實測）",
+  "coefficients": {
+    "ghi_a_wm2": { "value": 910, "assumption": true, "basis": "文獻支持", "sources": ["R931", "R932"], "note": "Kasten–Czeplak (1980) 晴空全天空水平輻照度 GHI = 910·cos z − 30 的係數；以 R932（Reno, Hansen & Stein 2012，SAND2012-2389，式 17）核對式子；R931 原文未讀，原文校準地點與資料期間待核。R932 提醒簡單模型用在校準地以外要小心：臺中（北緯約 24°）未驗證。" },
+    "ghi_b_wm2": { "value": 30, "assumption": true, "basis": "文獻支持", "sources": ["R931", "R932"], "note": "同上式的常數項；式子為負時取 0（遊戲假設：太陽很低時不讓輻照為負）。" },
+    "sky_clearness": { "value": 1, "assumption": true, "basis": "遊戲假設", "sources": [], "note": "雲量縮放情境係數。引擎天氣輸入沒有雲量／日射資料，所以預設 1＝晴空上限；不是測站值。" },
+    "albedo": { "value": 0.2, "assumption": true, "basis": "遊戲假設", "sources": [], "note": "裸露乾土的候選反照率；本 PR 沒有讀任何反照率文獻原文，敏感度以 {0.1, 0.2, 0.35} 檢查。" },
+    "diffuse_fraction": { "value": 0.2, "assumption": true, "basis": "遊戲假設", "sources": [], "note": "晴空 GHI 中不被遮蔭擋掉的散射比例（遮蔭只擋直射）；未讀文獻，未依太陽高度變化。" },
+    "ground_flux_fraction": { "value": 0.3, "assumption": true, "basis": "遊戲假設", "sources": [], "note": "吸收短波中導入地下的比例（穩態近似）；真實值隨土壤水分、時刻變化，這裡固定。" },
+    "h_conv_wm2k": { "value": 10, "assumption": true, "basis": "遊戲假設", "sources": [], "note": "對流熱傳係數常數；沒有風速輸入，風不模擬。" },
+    "emissivity": { "value": 0.95, "assumption": true, "basis": "遊戲假設", "sources": [], "note": "自然地表長波放射率候選值；未讀文獻。" },
+    "stefan_boltzmann": { "value": 5.670374419e-8, "assumption": false, "basis": "物理常數", "sources": ["CODATA 2018（SI 定義值推得的精確常數）"], "note": "W m⁻² K⁻⁴；用於線性化長波交換 h_r = 4εσT³（一般物理推理，周遭以氣溫代表）。" },
+    "tau_min": { "value": 30, "assumption": true, "basis": "遊戲假設", "sources": [], "note": "表層熱慣性的一階鬆弛時間常數（分鐘）；未讀文獻，敏感度以 {10, 30, 90} 檢查。" },
+    "night_offset_k": { "value": null, "assumption": true, "basis": "遊戲假設", "sources": [], "note": "晴夜天空長波冷卻使地表低於氣溫的幅度：未知，保持 null＝不模擬（夜間目標＝氣溫）。" }
+  }
+}
