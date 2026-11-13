@@ -163,6 +163,8 @@
 - **不得**依模擬結果（存活、人口成長）挑選分布、參數或種子；多種子敏感度報告要列出全部種子。
 - 初始個體各自的特質（門檻、增益等）在建立時抽一次並保存，之後不重抽。
 
+> **2026-11-13 補充（#202 第 7 項）**：候選 v2 的亂數流命名已固定為 `${seed}|day0_budding_candidate|${欄位}`（PRNG 代號 `antempire.named-stream.sha256-u32.v1`），取代上文示意的 `init.<變數>`；抽樣順序與 scenario checksum 見 §4.8。
+
 ### 4.4 母巢與連通
 - 預設：母巢在場景外；Day0 時刻分巢單位已**完全分離**，之後沒有工蟻、食物或個體往來（沒有模擬的連通不能偷偷補給）。
 - 分離的物質收支：分巢單位帶入的所有個體與嗉囊內容在帳上記為一筆**邊界流入事件**（來源 `mother_nest_offscene`，帶 ID 與時刻），之後的帳從此起算；不得有第二筆未模擬的流入。
@@ -191,6 +193,33 @@
 | 7 正式種子 | 候選基準 seed 20261113，僅為可重現標識，不是挑出的最佳存活種子 | 固定 PRNG 演算法、版本、抽樣順序與 scenario checksum，寫入存檔並驗證 Worker／Node 一致；依 #201 再釘選 | M09、M34 |
 | 8 花園供給／需求單位 | 另開獨立規則更新研究：稽核單位、時間尺度、物質與能量守恆，區分花蜜／蜜露／昆蟲蛋白的外生生成 | 現有 90 日縮群診斷不得解釋成建群數量錯誤，也不得倒推花園資源保證存活；有依據的敏感度與反例測試 | M07、M12 |
 
+### 4.8 候選 v2 與決定性初始條件（2026-11-13，依 #202 八項）
+
+> **這不是 #201 GO。** 本節只記錄候選檔與抽樣程式如何套用 §4.7 的「暫准開發的假設」；「正式啟用前必須滿足」欄全部仍未滿足（候選檔 `owner_ruling_202.items[*].met = false`），矩陣 M09 仍為「未接入／阻擋」。
+
+候選檔 [`scenarios/day0-budding-candidate.json`](../scenarios/day0-budding-candidate.json) 升為 `antempire.day0-founding-candidate.v2`（`BUD-CAND-2`；v1 見 git 4a45304）。檔內 `owner_ruling_202` 以兩欄（`provisional`＝暫准開發的假設、`before_activation`＝正式啟用前必須滿足）逐項記錄八項，並加 `met`（是否已滿足）與 `progress`（目前做到哪裡）；`activation.activated = false`，等待 #201。
+
+| 項目 | 暫准開發的假設（候選 v2 的寫法） | 正式啟用前必須滿足 | 目前進度（2026-11-13） |
+|---|---|---|---|
+| 1 小工蟻數 | `fields.minor_workers`：對數均勻整數 50～500，`assumption:true`、遊戲假設；`not_claimed_as` 臺中野外分布 | 不依存活率改範圍；抽樣規則、分布與種子寫入存檔 | 規則已寫入候選檔；未寫入存檔 |
+| 2 蟻后數 | `fields.queens`：均勻整數 2～3（預設），敏感度 `range_1_3`；`simulation_status: 尚未模擬` | 多后個體、產卵、死亡與存檔確實實作 | **尚未模擬**（P0-A2 沒有蟻后；舊引擎只有一隻） |
+| 3 大工蟻 | `fields.major_fraction`：隔離（`isolated: true`），只抽樣記錄、不放入任何模擬、不改成小工蟻 | 支援大工蟻個體／工作／能量／存檔，才能宣稱完整初始蟻群 | **尚未模擬** |
+| 4 幼體 | 卵／幼蟲／蛹每隻小工蟻的比值，零／低／中／高四情境事前定義（零 0／0／0、低 0.1／0.05／0.05、中 0.25／0.15／0.10、高 0.5／0.3／0.2），全部 `assumption:true`；單一世界預設「中」（事前定義、非依結果） | #214 完成後決定正式分布 | 可重現；幼蟲三齡未分 |
+| 5 入場日 | `entry_date`：固定 2026-11-13（Asia/Taipei），專案測試基準日，**不是**最佳建巢季節；全年敏感度＝2026-11-13 ＋ floor(u×365) 日，另列 | 寫入 scenario metadata | 已寫入候選 metadata；正式 metadata 待 #201；候選世界天氣仍是 3 月（M05） |
+| 6 母巢 | `mother_nest`：場景外、完全分離、`model_boundary: true`；Day0 帶入內容＝一筆邊界流入 | 母巢連通另開規則更新 | 未實作連通（正確：不自動送入） |
+| 7 種子 | `seed.value = 20261113`，`role: reproducibility_identifier`、`not_picked: true` | 固定 PRNG／抽樣順序／scenario checksum，寫入存檔並驗證 Worker／Node 一致；上線前依 #201 再釘選 | PRNG、順序、checksum 已固定並有測試；**未寫入存檔、未驗證 Worker／Node** |
+| 8 花園供給／需求 | 獨立稽核（#218，`docs/garden-supply-demand-audit.md`） | 不倒推資源保證存活 | 本候選不倒推資源 |
+
+**決定性契約**（`engine/day0/founding-sampler.ts`，純函式、無平台 API；`tests/day0-initial-conditions.test.ts`）：
+- **PRNG** `antempire.named-stream.sha256-u32.v1`：`u = hash32("${seed}|day0_budding_candidate|${欄位}") / 2^32`（hash32＝SHA-256 前 4 位元組小端；`engine/rng.ts`）。每個欄位一條具名流、只抽一次，所以數值不依其他欄位、也不依順序；切換敏感度變體時其他欄位不變（共用亂數）。
+- **抽樣順序**：候選檔 `sampling.order`（11 個欄位＋`entry_day_full_year`，各一次），抽樣器依此順序執行並寫入紀錄；改順序會改 checksum（改順序＝規則更新）。
+- **分布**：`uniform_int`、`log_uniform_int`（以 `detLog`／`detExp` 計算，#190 的跨環境逐位元決定性實作）、`uniform`、`fixed`。
+- **scenario checksum**：`sha256:` ＋ 整份候選檔的 canonical JSON（鍵排序、無空白、只接受有限數字；與 `prototypes/p0a2-24h/canon.ts` 同一定義）。目前值由測試釘選；候選檔的任何改動都會改變它。
+- **初始條件紀錄**（`antempire.day0-initial-conditions.v1`）：含候選 ID／schema／checksum、PRNG 代號、種子與其角色、變體、抽樣順序、抽樣值、組成、入場日（含時區）、母巢邊界與「尚未模擬」清單；`initialConditionsHash` 是其 canonical JSON 的 SHA-256。種子 20261113 的預設紀錄雜湊由測試釘選。
+- **Worker 就緒度**：抽樣器只用 IEEE 基本運算、`Math.floor`／`Math.round` 與 detmath；測試證明若加入 Worker 白名單會通過 `deterministic_math_in_worker_graph`，但**目前沒有**加入白名單，Worker 也沒有匯入它。
+
+**下一步（未在本次完成，不得宣稱已完成）**：(a) 把抽樣器加入 Worker 白名單（規則修改，另開 PR，附邊界測試）；(b) 在候選世界建立分巢單位（需要多后、卵、蛹等事件子模型，M15～M17；大工蟻 M18）後，將 `scenario.checksum`、PRNG 代號、種子與 `initialConditionsHash` 寫入 `save_meta`，並由 `cli/verify-save.ts` 重算比對、跨 Worker／Node 驗證（M09、M34）。在 P0-A2 原型群（30 小工蟻＋8 幼蟲）的存檔寫入本候選的 checksum 會誤導為「初始蟻群來自本候選」，所以本次刻意不做。(c) 以 v2 重跑多種子敏感度報告（`reports/day0-founding-candidate/` 目前仍是 v1 的結果）。
+
 ---
 
 ## 5. 啟用後的版本邊界與 fork 政策（#201 條件 6、#200 第 5 項）
@@ -204,7 +233,7 @@
 ### 5.2 正式存檔必要欄位
 `schema`、`schema_version`；`rules_version` 與 `rules_fingerprint`（核心原始碼＋參數）；`species_fingerprint`、`environment_fingerprint`（含天氣輸入來源）；`initial_conditions`（分巢單位抽樣分布、種子、情境、Day0 日期）與其雜湊；`segments`（每段的版本與邊界時刻）；`t_sim`、`seq`；完整狀態（個體、群體、環境、排程器、帳本；亂數為內容導出，不需保存串流狀態）；`event_chain`（每批事件的雜湊鏈頭）；`verification`（三種狀態之一＋驗證器版本＋平台）；`official`（只有 Owner 批准後的正式世界才可能為 true）。
 
-> **2026-11-13 註**：存檔格式 v2（`docs/save-format-v2.md`）已實作其中一部分：`save_meta`（世界種類、受信任初始條件、物種／環境指紋、lineage）與事件鏈承諾 `chain`。與上列不同的是 **`verification` 不寫在檔案中**——驗證狀態只由驗證器的結果產生，檔案若自帶狀態欄位即被拒絕（較嚴格，採之）。尚缺：物種指紋（沒有正式物種檔）、分巢初始條件與 scenario checksum、`segments`、尚未模擬清單（矩陣 M34、M37、M43）。
+> **2026-11-13 註**：存檔格式 v2（`docs/save-format-v2.md`）已實作其中一部分：`save_meta`（世界種類、受信任初始條件、物種／環境指紋、lineage）與事件鏈承諾 `chain`。與上列不同的是 **`verification` 不寫在檔案中**——驗證狀態只由驗證器的結果產生，檔案若自帶狀態欄位即被拒絕（較嚴格，採之）。尚缺：物種指紋（沒有正式物種檔）、分巢初始條件與 scenario checksum（2026-11-13：checksum 與決定性抽樣已定義，§4.8，但未寫入存檔）、`segments`、尚未模擬清單（矩陣 M34、M37、M43）。
 
 ### 5.3 舊存檔遇到新規則
 | 情況 | 處理 |
@@ -272,7 +301,7 @@ GO 的必要條件：矩陣沒有任何阻擋列、所有 Owner 決策已裁示�
 | M06 | 巢內與地表微氣候 | 未接入 | 是 | 3 | R14 R146 | #83 |
 | M07 | 食源（半翅目蜜露、花蜜、獵物、屍體）由環境獨立產生 | 簡化代理 | 是 | 4 | R10 R95 R388 R389 R780 | #80 #85 #149 |
 | M08 | 開放式生態（D7-A）：周圍棲地、外部族群、其他蟻群、邊界進出 | 未接入 | 否 | 4 | R330 | #144 #145 #85 #9 |
-| M09 | 初始蟻群（#202：本種多后群體的分巢遷入單位） | 未接入 | 是 | 2 | R94 R99 R101 R136 R137 R138 R139 R140 R141 | #202 |
+| M09 | 初始蟻群（#202：本種多后群體的分巢遷入單位） | 未接入 | 是 | 3 | R94 R99 R101 R136 R137 R138 R139 R140 R141 | #202 |
 | M10 | 個體行為（24 小時活動、休息、任務轉換、出巢） | 簡化代理 | 是 | 4 | R145 R228 R167 R233 R760 | #188 #156 |
 | M11 | 局部感測守衛（無全知資訊） | 已接入 | 否 | 3 | — | #43 #81 |
 | M12 | 能量／物質收支（嗉囊、代謝、整數微份帳） | 簡化代理 | 是 | 4 | R09 R95 | #43 #145 #80 |
@@ -342,7 +371,7 @@ GO 的必要條件：矩陣沒有任何阻擋列、所有 Owner 決策已裁示�
 - M14 交哺與巢內食物分配：近似範圍：巢內是一個混合良好的空間；相遇是機率而非物理接觸（M20、M21、#146）；transfer_max、接觸機率是遊戲假設（#188 Q2，R210 為非本種 Solenopsis invicta）。失真：沒有蟻后餵食（無蟻后，M15）、沒有蛋白質流、沒有身體接觸幾何。
 - M20 巢穴空間（P1-B）：近似範圍：三類位置與固定巢內移動時間（遊戲假設）。失真：沒有巢室結構、容量、擁擠、溫度分層與挖掘；巢內接觸率不依空間。
 - M29 跨平台逐位元重播（Node／Chromium Worker／ARM64／其他瀏覽器）：近似範圍：只有 x64 Linux＋Node 22＋Chromium（V8）被證實逐位元一致（Owner #212 Q3 a 的支援界線）。ARM64 沒有 CI runner，Firefox／Safari 未測；ARM64 與實機回放驗證仍在計畫中（#192、#190）。瀏覽器在任何平台都不顯示「Node 已重算驗證」（Q4 a），存檔狀態列一律附「未經 Node 驗證」；Owner 指定的字樣是「未經 Node 重算驗證」，文字對齊列為後續小修。
-- M34 正式存檔格式（#200 第 2 項）：近似範圍：#200 第 2 項的欄位都有位置；但物種指紋為 null（沒有正式物種檔）、初始條件只有世界 ID＋種子＋參數雜湊（沒有分巢單位抽樣分布、入場日期與 scenario checksum，#202 第 7 項）、沒有規則區段（segments）紀錄、lineage 永遠為空（fork 未實作）、沒有「尚未模擬」清單（M43）。payload_sha256 只證明檔案完整；chain 是承諾不是證明（只有重算能證明）。
+- M34 正式存檔格式（#200 第 2 項）：近似範圍：#200 第 2 項的欄位都有位置；但物種指紋為 null（沒有正式物種檔）、初始條件只有世界 ID＋種子＋參數雜湊（沒有分巢單位抽樣分布、入場日期與 scenario checksum，#202 第 7 項；checksum 與決定性抽樣已在 engine/day0/founding-sampler.ts 定義，但尚未寫入存檔）、沒有規則區段（segments）紀錄、lineage 永遠為空（fork 未實作）、沒有「尚未模擬」清單（M43）。payload_sha256 只證明檔案完整；chain 是承諾不是證明（只有重算能證明）。
 - M37 版本邊界、fork 與遷移（#201 條件 6、#200 第 5 項）：近似範圍：只會拒絕，不會在邊界接續或分支；驗證器只能重算單一版本。
 - M38 實際玩家畫面（V6-2 實驗模式）與「尚未模擬」清單：近似範圍：畫面忠實呈現 Worker 世界的引擎狀態與事件，零散標示幾項未模擬（巢內位置、搜尋空間）；沒有完整的「尚未模擬」清單，幼蟲不發育不死亡、沒有死亡、沒有大工蟻等都沒有在世界畫面標示（M43）。30fps 未實機驗證（#159）；手機控制列待收合（#191 Q5）。
 - M40 數值來源標註（assumption:true、證據類別、非本種）：近似範圍：涵蓋 P0-A2 原型參數檔；basis 有些是組合字串（例如「遊戲假設（機制：文獻支持，非本種）」）而非三類之一，未統一；不涵蓋正式物種檔與分巢情境。畫面沒有參數來源面板。
