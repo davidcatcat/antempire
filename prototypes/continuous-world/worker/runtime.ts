@@ -7,33 +7,49 @@
  * Every event up to the target is processed (core.advanceTo); a per-tick work budget can only make the world reach the
  * target LATER (the pacer then re-anchors and reports lagging), never skip an event. Pause, resume and set_speed only
  * move the anchors. Results at a given world time are therefore independent of speed, pauses and tick sizes.
+ *
+ * World kinds: 'synthetic' (core.ts; default of init) and 'p0a2' (p0a2-world.ts, the P0-A2 24-hour individual-
+ * behaviour world). Both implement the same small interface; for the P0-A2 world the work budget counts events.
  */
 import { ExperimentRefused, ExperimentWorld, type ExperimentSnapshot } from './core.ts';
-import { COMMAND_TYPES, EXPERIMENT_LABEL, MAX_SPEED, MIN_SPEED, PROTOCOL_VERSION, type Command, type CommandType, type EventMsg, type FrameMsg, type PacingMsg, type Reply } from './protocol.ts';
+import { P0A2_ENGINE_VERSION, P0a2ExperimentWorld, P0a2Refused, type P0a2Snapshot } from './p0a2-world.ts';
+import { COMMAND_TYPES, EXPERIMENT_LABEL, MAX_SPEED, MIN_SPEED, PROTOCOL_VERSION, WORLD_KINDS, type AnyFrameMsg, type Command, type CommandType, type EventMsg, type PacingMsg, type Reply } from './protocol.ts';
+
+/** what the dispatcher needs of a world (both kinds) */
+interface RuntimeWorld {
+  tSim(): number;
+  advanceTo(t: number, budget?: number): { events: unknown[]; done: boolean };
+  snapshot(): ExperimentSnapshot | P0a2Snapshot;
+  frame(): unknown;
+  antView(id: string): unknown;
+  antIds(): string[];
+}
 
 const env = { protocol: PROTOCOL_VERSION, label: EXPERIMENT_LABEL, official: false as const };
 
 export class Runtime {
-  private world: ExperimentWorld | null = null;
+  private world: RuntimeWorld | null = null;
   private started = false; private running = false; private lagging = false;
   private speed = 60; private anchorWall = 0; private anchorSim = 0;
   private follow: string | null = null;
   /** batches per tick before the pacer yields (engineering bound; never drops events) */
   static BUDGET = 20_000;
+  /** events per tick before the pacer yields, P0-A2 world (engineering bound; never drops events) */
+  static P0A2_BUDGET = 4_000;
   private readonly wallMs: () => number;
   constructor(wallMs: () => number) { this.wallMs = wallMs; }
 
   isRunning(): boolean { return this.running; }
   pacing(): PacingMsg { return { running: this.running, started: this.started, speed: this.speed, lagging: this.lagging }; }
   /** the current world (tests); null before init */
-  current(): ExperimentWorld | null { return this.world; }
+  current(): RuntimeWorld | null { return this.world; }
 
   private reanchor(): void { this.anchorWall = this.wallMs(); this.anchorSim = this.world ? this.world.tSim() : 0; }
-  private frame(): FrameMsg | null { return this.world ? (this.world.frame() as FrameMsg) : null; }
+  private frame(): AnyFrameMsg | null { return this.world ? (this.world.frame() as AnyFrameMsg) : null; }
   private followed(): unknown { return this.world && this.follow ? this.world.antView(this.follow) : null; }
   private ack(req: number, cmd: CommandType): Reply { return { ...env, type: 'ack', req, cmd, frame: this.frame(), pacing: this.pacing(), followed: this.followed() }; }
   private eventsMsg(events: EventMsg[]): Reply[] { return events.length ? [{ ...env, type: 'events', events }] : []; }
-  private need(): ExperimentWorld { if (!this.world) throw new ExperimentRefused('NO_WORLD', 'init first'); return this.world; }
+  private need(): RuntimeWorld { if (!this.world) throw new ExperimentRefused('NO_WORLD', 'init first'); return this.world; }
 
   handle(raw: unknown): Reply[] {
     const m = raw as Partial<Command> & Record<string, unknown>;
@@ -45,7 +61,9 @@ export class Runtime {
       const c = m as Command;
       switch (c.type) {
         case 'init': {
-          const r = ExperimentWorld.create(c.world_id, c.seed);
+          const kind = c.kind ?? 'synthetic';
+          if (!WORLD_KINDS.includes(kind)) return err('BAD_WORLD_KIND', `kind must be one of ${WORLD_KINDS.join(', ')}`);
+          const r = kind === 'p0a2' ? P0a2ExperimentWorld.create(c.world_id, c.seed) : ExperimentWorld.create(c.world_id, c.seed);
           this.world = r.world; this.started = false; this.running = false; this.lagging = false; this.follow = null;
           return [...this.eventsMsg(r.events as EventMsg[]), this.ack(c.req, 'init')];
         }
@@ -71,7 +89,9 @@ export class Runtime {
           return [{ ...env, type: 'snapshot', req: c.req, snapshot: s }];
         }
         case 'restore': {
-          const w = ExperimentWorld.restore(c.snapshot as ExperimentSnapshot); // throws (and changes nothing) on mismatch
+          // the world kind follows the snapshot's engine version; throws (and changes nothing) on any mismatch
+          const s = c.snapshot as { engine_version?: unknown } | null;
+          const w: RuntimeWorld = s && typeof s === 'object' && s.engine_version === P0A2_ENGINE_VERSION ? P0a2ExperimentWorld.restore(c.snapshot as P0a2Snapshot) : ExperimentWorld.restore(c.snapshot as ExperimentSnapshot);
           this.world = w; this.started = false; this.running = false; this.lagging = false; this.follow = null; this.reanchor();
           return [this.ack(c.req, 'restore')];
         }
@@ -82,7 +102,7 @@ export class Runtime {
         }
       }
     } catch (e) {
-      if (e instanceof ExperimentRefused) return err(e.code, e.message);
+      if (e instanceof ExperimentRefused || e instanceof P0a2Refused) return err(e.code, e.message);
       return err('INTERNAL', (e as Error).message);
     }
     return err('UNKNOWN_COMMAND', 'unreachable');
@@ -94,10 +114,10 @@ export class Runtime {
     const target = this.anchorSim + (this.speed * (this.wallMs() - this.anchorWall)) / 1000;
     if (!(target > w.tSim())) return [];
     try {
-      const r = w.advanceTo(target, Runtime.BUDGET);
+      const r = w.advanceTo(target, w instanceof P0a2ExperimentWorld ? Runtime.P0A2_BUDGET : Runtime.BUDGET);
       this.lagging = !r.done; if (!r.done) this.reanchor();
       return r.events as EventMsg[];
-    } catch (e) { if (e instanceof ExperimentRefused && e.code === 'TIME_BACKWARDS') return []; throw e; }
+    } catch (e) { if ((e instanceof ExperimentRefused || e instanceof P0a2Refused) && e.code === 'TIME_BACKWARDS') return []; throw e; }
   }
 
   /** one pacing tick: events since the last tick and the current state (empty when paused) */

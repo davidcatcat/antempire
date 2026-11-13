@@ -1,6 +1,6 @@
 # 存檔格式 v2：事件鏈承諾與 Node 重算驗證（SAVE-O）
 
-> 狀態：設計＋第一版實作（合成實驗世界）。依據：Owner 裁示 #200（2026-11-12，採 C：世界在瀏覽器 Web Worker 推進、IndexedDB 自動存檔；Node 是獨立、可重現的驗證器）。延伸 [`experimental-save-system.md`](experimental-save-system.md)（SAVE-0～SAVE-2），兩者不一致時以較嚴格者為準。
+> 狀態：設計＋實作（合成實驗世界；P0-A2 24 小時個體行為世界，§5b）。依據：Owner 裁示 #200（2026-11-12，採 C：世界在瀏覽器 Web Worker 推進、IndexedDB 自動存檔；Node 是獨立、可重現的驗證器）。延伸 [`experimental-save-system.md`](experimental-save-system.md)（SAVE-0～SAVE-2），兩者不一致時以較嚴格者為準。
 >
 > **本文件不代表新版 Day0 已通過啟用**（啟用依 #201 由 Owner 裁示），也不修改 CLAUDE.md；CLAUDE.md §8／§9 的修訂由另一個規則 PR 提出。目前所有世界仍是**非正式實驗世界**（`official: false`）。
 
@@ -32,8 +32,8 @@
 |---|---|---|
 | schema 版本 | 信封 `schema`、`schema_version`；匯出 `schema` | 信封 v1、payload 結構 2 |
 | rules 版本與指紋 | 信封與 payload 的 `engine_version`、`rules_fingerprint` | 指紋＝SHA-256(canonical{engine_version, schema_version, params})；因此 payload 結構升版也會改變指紋 |
-| species 版本與指紋 | `payload.save_meta.species` | 合成世界沒有物種參數：`id: null`、`fingerprint: null`，並註明原因（不捏造） |
-| environment 版本與指紋 | `payload.save_meta.environment` | `id: "synthetic-env/1"`、`fingerprint`＝SHA-256(canonical{calendar, site, temperature_profile_c})、`synthetic: true` |
+| species 版本與指紋 | `payload.save_meta.species` | 合成世界沒有物種參數：`id: null`、`fingerprint: null`，並註明原因（不捏造）。P0-A2 世界同樣是 `null`（沒有正式物種參數檔，§5b） |
+| environment 版本與指紋 | `payload.save_meta.environment` | 合成世界：`id: "synthetic-env/1"`、`fingerprint`＝SHA-256(canonical{calendar, site, temperature_profile_c})、`synthetic: true`。P0-A2 世界見 §5b |
 | 初始條件與種子 | `payload.save_meta.initial` | `{ world_id, seed, t_sim: 0, params_sha256, how }`；`world_kind` 在 `save_meta.world_kind` |
 | 模擬時刻 | 信封 `t_sim`、`seq`；payload `now`（精確時刻 day/us/us_lo） | 驗證器推進到 `now` 這個**精確**時刻 |
 | 必要狀態 | payload 其餘欄位 | SAVE-0 §3（個體、環境、亂數串流、事件佇列、帳本） |
@@ -69,6 +69,8 @@ head_k+1 = H(head_k + "\n" + canonicalJson(event_k)),  count_k+1 = count_k + 1
 
 payload 結構升到 2 之後，事件與狀態除了下列欄位外**逐位元組相同**：事件的 `schema_version`（1→2）與 `rules_fingerprint`（含 schema 版本），payload 的同兩欄與新增的 `save_meta`、`chain`。`tests/save-verify.test.ts` §2 以舊核心（origin/main 198d359）產生的摘要釘住：種子 7、48 h、6 084 個事件，去掉上述欄位後的事件 SHA-256 `d7b0cc58…` 與狀態 SHA-256 `3444f2f7…`。
 
+P0-A2 世界同樣釘住（`tests/save-verify.test.ts` §6，摘要由加入事件鏈之前的轉接層產生：PR #209 分支 a9c5d4e，世界 ID `exp-test`、種子 7、48 h、18 595 個事件）：去掉 `schema_version`／`rules_fingerprint` 的事件 SHA-256 `1107894c…`、`World.snapshot()` 狀態 SHA-256 `292c59fa…`、去掉版本／指紋／程式碼雜湊／`save_meta`／`chain` 的 payload SHA-256 `672229a6…`。轉接層改動使 P0-A2 程式碼 SHA-256（規則指紋的一部分，涵蓋轉接層與新匯入的 `chain.ts`）改變，因此指紋改變是預期的；P0-A2 核心行為檔沒有修改。
+
 ## 5. 世界種類（world kind）抽象
 
 [`world-kinds.ts`](../prototypes/continuous-world/worker/world-kinds.ts) 登錄每一種世界的版本化核心：
@@ -82,7 +84,22 @@ interface WorldKind {
 interface VerifiableWorld { advanceToExact(end, maxBatches?); nowExact(); seqNo(); chainState(); snapshot(); }
 ```
 
-目前只有 `synthetic-v1`（合成實驗世界）。P0-A2 世界接入時新增一個符合 `WorldKind` 的項目，並在其 payload 寫入同樣的 `save_meta`（含自己的 species／environment 指紋）與 `chain`；驗證器不需要改。`runtime.ts` 不需要改（仍由指令分派器使用目前的世界）。
+目前登錄 `synthetic-v1`（合成實驗世界，`core.ts`）與 `p0a2-24h-v1`（P0-A2 24 小時個體行為世界，`p0a2-world.ts`，§5b）。新世界接入時新增一個符合 `WorldKind` 的項目，並在其 payload 寫入同樣的 `save_meta`（含自己的 species／environment 指紋）與 `chain`；驗證器不需要改。`runtime.ts` 不需要改（仍由指令分派器使用目前的世界）。
+
+## 5b. P0-A2 世界（`p0a2-24h-v1`）
+
+候選／實驗世界，非正式（Owner #201：未經 Owner 核准不建立正式 Day0）。實作在 Worker 目錄的轉接層 [`p0a2-world.ts`](../prototypes/continuous-world/worker/p0a2-world.ts)；P0-A2 核心（`prototypes/p0a2-24h/`）沒有修改。
+
+- **版本**：引擎版本仍是 `experiment-p0a2-24h/1`（Worker 依它選擇還原的世界種類），payload 結構 1 → **2**；規則指紋＝SHA-256(canonical{引擎版本, 結構版本, `world_kind: "p0a2"`, `params.json` SHA-256, 程式碼 SHA-256 與檔案清單, 情境, 變體})。執行期／協定的世界種類仍是 `p0a2`（`init` 指令、畫面、`payload.world_kind`）；存檔格式的世界種類是 `save_meta.world_kind = "p0a2-24h-v1"`（驗證器登錄 ID）。
+- **事件鏈**：與合成世界同一定義（§3）。`event_k` 是轉接層原樣輸出的第 k 個協定事件（P0-A2 世界自己的事件日誌一行對一個事件，含 `seq`、`event_id`、精確時刻、`round`、資料與 `tie_q`、版本與標示欄位）；同一時刻的次序就是 P0-A2 世界日誌的次序。genesis 的 `world_kind` 是 `p0a2-24h-v1`。P0-A2 世界本身另有日誌雜湊鏈（`state.log.hash`），兩者並存、互不取代。
+- **`save_meta.initial`**：`{ world_id, seed, t_sim: 0, params_sha256, scenario, variant, how }`；`params_sha256`＝`prototypes/p0a2-24h/params.json` 標準 JSON 的 SHA-256，`scenario`＝`taichung-march-ref`，`variant`＝參數檔的參考變體。驗證器只用**自己這一版**的參數檔、情境與變體；檔案中的參數永遠不被採用。
+- **`save_meta.species`**：`{ id: null, fingerprint: null, note }`。P0-A2 原型沒有正式物種參數檔（`species/*.json`）；個體參數在原型參數檔中（原型、非正式），其指紋就是 `initial.params_sha256`。不捏造物種 ID 或指紋。
+- **`save_meta.environment`**：`id: "p0a2-weather/taichung-march-ref"`、`fingerprint`＝SHA-256(canonical{scenario, site, weather_scenario})（取自 `params.json` 的 `site` 與該情境定義）、`synthetic: true`（合成天氣情境＋示意地點；光照由一般方法計算）。
+- **還原檢查**：原有的 P0-A2 檢查（雜湊、標頭、指紋／參數／程式碼／情境／變體、`World.restore`、守恆、佇列、往返）之後，再檢查 `lineage` 為空（否則 `FORK_UNSUPPORTED`）、`save_meta` 等於依世界 ID 與種子重算的值（`META_MISMATCH`）、事件鏈形狀、genesis 屬於此世界／種子／規則、`count === seq`（`CHAIN_MISMATCH`）。
+- **精確時刻**：P0-A2 世界的時間粒度是整數毫秒；`advanceToExact` 只接受整毫秒的精確時刻（否則 `BAD_TIME`），驗證器推進到存檔的 `t_now`。
+- **結構 1 的 P0-A2 存檔**：Worker 拒絕（`SCHEMA_MISMATCH`，訊息說明沒有事件鏈承諾、沒有遷移路徑），儲存模組回報 `no_migration_path`／`migration_failed` 並保留原檔，驗證器回報 `invalid`（`NO_CHAIN`）。
+- **瀏覽器產生的 P0-A2 存檔可由 Node 重算驗證（已解決，規則更新 detmath-exp，2026-11-12）**。原本的限制（保留紀錄）：P0-A2 環境記錄的相對溼度 `rh_percent` 經由 `engine/clock/weather-input.ts` 的飽和水氣壓計算使用 `Math.exp`（實作近似函式），Node 與 Chromium Worker 在部分 `env_sample` 事件差 1 ulp（兩個種子 48 h、42 480 個事件中 12 個，最大差 1.4×10⁻¹⁴ %），事件鏈 head 與 P0-A2 日誌雜湊鏈因此不同，瀏覽器推進的存檔交給 Node 驗證時如實回報 `mismatch`。修正：Worker 匯入圖中所有 `exp`／`log`／`**`／`sin` 改用 `engine/clock/detmath.ts` 的 fdlibm 移植（`detExp`／`detLog`／`detPow`／`detSin`），並以靜態規則禁止匯入圖再使用實作近似函式（[`solar-cross-env-check.md`](solar-cross-env-check.md) §8）。證據（x64 Linux、Node 22.23.4 vs. Chromium 153.0.8010.12 headless）：`tests/browser/worker-runtime.check.cjs` 兩個種子 48 h 的 42 480／42 480 個事件、日誌雜湊鏈、事件鏈 head 與整份 payload 逐位元組相同（`rh_percent`／`chain.head` 例外已移除）；`tests/browser/save2-acceptance.check.cjs` 在 Chromium Worker 以 3600× 推進新世界到 t = 94 032.577 s（13 155 個鏈事件）、手動存檔、由選單匯出，`node cli/verify-save.ts` → `node_verified`（同一檢查在修正前的程式上 → `mismatch`）。驗證器沒有放寬。**未驗證**：ARM64、Firefox、Safari、實體手機瀏覽器；在這些環境不得宣稱瀏覽器存檔可由 Node 驗證。
+- **成本**（Node 22、x64 測試機，未在手機量測）：48 h、18 595 個事件，加入鏈之前約 1.0 s，之後約 1.9 s（各一次量測）。
 
 ## 6. 版本邊界、遷移與 fork
 
@@ -147,14 +164,15 @@ SAVE-1 的寫入程序等同（且多於）雙槽：
 
 ## 10. 已驗證與未驗證範圍
 
-- 已在本 PR 測試：Node 22（x64 Linux）上的事件鏈定義、行為不變、任意分段／工作預算／同時刻批次、存檔→還原→接續（含兩次重啟）、驗證器的誠實與竄改案例、CLI 不修改輸入；Chromium（headless，x64）上 Worker 與存檔流程的既有瀏覽器驗收。
+- 已在本 PR 測試：Node 22（x64 Linux）上的事件鏈定義（合成與 P0-A2 世界）、行為不變、任意分段／工作預算／同時刻批次、存檔→還原→接續（含兩次重啟）、驗證器的誠實與竄改案例、CLI 不修改輸入；Chromium（headless，x64）上 Worker 與存檔流程的既有瀏覽器驗收。
+- **已驗證為不一致**：Chromium Worker 推進的 P0-A2 世界與 Node 重算在 `rh_percent` 上差 1 ulp，Node 驗證回報 `mismatch`（§5b 已知限制）。
 - **未驗證**：ARM64（手機與 Apple Silicon）、Firefox／Safari／手機瀏覽器、手機實機的背景終止與斷電。#197 的跨環境一致性證據只涵蓋實際測過的 Node／Chromium／Worker；逐位元一致的聲明只限這些環境。若日後發現跨平台浮點差異，先處理決定性數學或定義相容界線，不得宣稱普遍一致。
 
 ## 11. 測試
 
 | 測試 | 內容 |
 |---|---|
-| `tests/save-verify.test.ts` | §3～§7：鏈定義與向量、行為不變釘選、還原檢查、分段／預算／同時刻／重啟、驗證器各狀態與竄改案例、CLI |
+| `tests/save-verify.test.ts` | §3～§7：鏈定義與向量、行為不變釘選、還原檢查、分段／預算／同時刻／重啟、驗證器各狀態與竄改案例、CLI；§6：P0-A2 世界的同一組檢查（行為釘選、鏈、`save_meta`、還原拒絕、結構 1、分段／預算／存讀接續、以觀察器 `buildExport` 產生的匯出檔 → `node_verified`、竄改 → `mismatch`／`invalid`、CLI） |
 | `tests/worker-runtime.test.ts` | 既有：連續 vs. 分段、節奏無關、拒絕竄改快照（payload 結構 2） |
 | `tests/worker-boundary.test.ts` | Node 驗證器例外：只限 `cli/verify-save.ts`、唯讀；其他 `cli/` 檔案 import Worker 仍被拒絕 |
 | `tests/save-format.test.ts` | 結構 1 存檔在結構 2 runtime 下為 `no_migration_path`；`verificationOf` 永不給 Node 已重算驗證 |

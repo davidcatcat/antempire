@@ -3,7 +3,7 @@
  * `worker_client_files`; CLAUDE.md §9 B). Message-only: it imports no engine or Worker code, runs no simulation, and
  * persists nothing. Every reply is checked to carry the non-official label before it is handed to the page.
  */
-import { EXPERIMENT_LABEL, PROTOCOL_VERSION, type Command, type EventMsg, type FrameMsg, type PacingMsg, type Reply } from './worker-protocol.ts';
+import { EXPERIMENT_LABEL, PROTOCOL_VERSION, type AnyFrameMsg, type Command, type EventMsg, type PacingMsg, type Reply, type WorldKind } from './worker-protocol.ts';
 
 type Body<C> = C extends { req: number } ? Omit<C, 'req'> : never;
 export type CommandBody = Body<Command>;
@@ -14,7 +14,7 @@ export class ExperimentWorkerClient {
   private req = 0;
   private readonly waiting = new Map<number, (r: Final) => void>();
   onEvents: (events: EventMsg[]) => void = () => {};
-  onState: (frame: FrameMsg, pacing: PacingMsg, followed: unknown) => void = () => {};
+  onState: (frame: AnyFrameMsg, pacing: PacingMsg, followed: unknown) => void = () => {};
   onProtocolError: (why: string) => void = () => {};
 
   constructor(url: URL = new URL('../../worker-dist/prototypes/continuous-world/worker/entry.js', import.meta.url)) {
@@ -37,7 +37,8 @@ export class ExperimentWorkerClient {
     const req = ++this.req;
     return new Promise((resolve) => { this.waiting.set(req, resolve); this.worker.postMessage({ ...body, req }); });
   }
-  init(world_id: string, seed: number) { return this.send({ type: 'init', world_id, seed }); }
+  /** kind omitted = the Worker's default (synthetic); the experiment page passes it explicitly */
+  init(world_id: string, seed: number, kind?: WorldKind) { return this.send(kind ? { type: 'init', world_id, seed, kind } : { type: 'init', world_id, seed }); }
   start() { return this.send({ type: 'start' }); }
   pause() { return this.send({ type: 'pause' }); }
   resume() { return this.send({ type: 'resume' }); }

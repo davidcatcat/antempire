@@ -30,7 +30,7 @@ CHEM-2 的溫度項目前以**氣溫**作為地表溫度的代理。螞蟻走過
 
 **沒有模擬**：風（h_c 為常數）、雲（只有縮放係數 k_sky，引擎沒有雲量資料）、降雨潤濕／蒸發冷卻／露水、土壤水分、地下溫度剖面（只有比例 g）、坡度與坡向、鄰近物體的遮蔭幾何（只有 shade）、晴夜天空冷卻（null）。
 
-決定性：只用 IEEE 基本運算與 `solar.ts`／`detmath.ts`，不用 `Math.exp／log／pow／sin／cos`。**對相同的氣溫輸入**跨環境逐位元相同；但 `WeatherSeries.temperature` 本身仍使用 `Math.sin／Math.exp`，跨環境未驗證。
+決定性：只用 IEEE 基本運算與 `solar.ts`／`detmath.ts`，不用 `Math.exp／log／pow／sin／cos`。**對相同的氣溫輸入**跨環境逐位元相同；`WeatherSeries.temperature` 已由 #211 改用 `detSin`／`detExp`（`docs/solar-cross-env-check.md` §8）；SURF-0 本身尚未在 Chromium 做跨環境掃描，只以 Node 測試。
 
 ## 4. 係數證據表
 

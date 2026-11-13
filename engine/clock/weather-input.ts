@@ -22,6 +22,7 @@
 import { hash32, rng } from '../rng.ts';
 import { type CalendarAnchor, clockFail, dateOfDay, dayOfDate, parseDate } from './time-frames.ts';
 import { type LightTimes, type SolarSite, lightTimes } from './solar.ts';
+import { detExp, detSin } from './detmath.ts';
 
 export type WeatherKind = 'observation' | 'forecast' | 'synthetic_climatology';
 export interface WeatherProvenance {
@@ -149,7 +150,7 @@ export class WeatherSeries {
     const s = this.shape!, L = this.days.get(day)!.light;
     const tMin = L.sunrise + 60 * s.min_lag_after_sunrise_h, tPeak = L.solar_noon + 60 * s.peak_lag_after_noon_h;
     const x = Math.min(1, (minute - tMin) / (2 * (tPeak - tMin)));
-    return { value: mm[0] + (mm[1] - mm[0]) * Math.sin(Math.PI * x), source: 'reconstructed_from_daily', reason: null };
+    return { value: mm[0] + (mm[1] - mm[0]) * detSin(Math.PI * x), source: 'reconstructed_from_daily', reason: null };
   }
   /** night branch of day d evaluated at minute m (minutes since 00:00 of day d; may exceed 1440) */
   private night(d: number, m: number): TempValue {
@@ -158,7 +159,7 @@ export class WeatherSeries {
     const L = this.days.get(d)!.light, ts = this.dayBranch(d, L.sunset);
     if (ts.value === null) return ts;
     const s = this.shape!, end = 1440 + this.days.get(d + 1)!.light.sunrise + 60 * s.min_lag_after_sunrise_h, Z = end - L.sunset, n = m - L.sunset;
-    const eb = Math.exp(-s.night_decay_b), w = (Math.exp(-s.night_decay_b * n / Z) - eb) / (1 - eb);
+    const eb = detExp(-s.night_decay_b), w = (detExp(-s.night_decay_b * n / Z) - eb) / (1 - eb);
     return { value: next[0] + (ts.value - next[0]) * w, source: 'reconstructed_from_daily', reason: null };
   }
 
@@ -180,7 +181,7 @@ export class WeatherSeries {
   }
 }
 /** FAO-56 eq. 11 (R391): saturation vapour pressure in kPa at air temperature T (°C) */
-export const saturationVapourKPa = (T: number) => 0.6108 * Math.exp((17.27 * T) / (T + 237.3));
+export const saturationVapourKPa = (T: number) => 0.6108 * detExp((17.27 * T) / (T + 237.3));
 
 // ------------------------------------------------------------------ rain events
 export const NM_PER_MM = 1_000_000;

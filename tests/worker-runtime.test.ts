@@ -14,6 +14,10 @@
  *  6. chunking and pacing: arbitrary step_until chunks, speeds, pauses, tick sizes and a tiny work budget -> identical
  *     results at the same world time; scheduler compaction is behaviour-neutral.
  *  7. formal data: saves/ and journal/ hashes unchanged.
+ *  8. the P0-A2 24 h world (#156 phase 3) through the same runtime: fresh code hash, the adapter adds / changes no
+ *     event (one-to-one with a direct prototypes/p0a2-24h World run), 48 h == cut + snapshot + restore + rest at five
+ *     cut points, irregular chunks and snapshots change nothing, frames' movement end times = pending events, refusals,
+ *     kind selection, and speeds / pauses / ticks / budget / follow do not change the event log hash or state.
  */
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
@@ -28,6 +32,12 @@ import { detLog, unitVector } from '../prototypes/continuous-world/worker/detmat
 import { lightTimes } from '../engine/clock/solar.ts';
 import { dateOfDay } from '../engine/clock/time-frames.ts';
 import { compareExact } from '../engine/scheduler/world-events.ts';
+import { LABEL_ZH as P0A2_LABEL, P0A2_ENGINE_VERSION, P0A2_PARAMS_SHA, P0A2_RULES_FINGERPRINT, P0A2_SCENARIO, SNAPSHOT_SCHEMA as P0A2_SNAPSHOT_SCHEMA, P0a2ExperimentWorld, P0a2Refused, type P0a2Snapshot } from '../prototypes/continuous-world/worker/p0a2-world.ts';
+import { P0A2_CODE_FILES, P0A2_CODE_SHA256 } from '../prototypes/continuous-world/worker/p0a2-code-hash.ts';
+import { codeHash } from '../prototypes/continuous-world/tools/p0a2-code-hash.ts';
+import { World as P0World } from '../prototypes/p0a2-24h/world.ts';
+import { canon as p0canon } from '../prototypes/p0a2-24h/canon.ts';
+import { isP0a2Frame, type AnyFrameMsg, type P0a2FrameMsg } from '../prototypes/continuous-world/worker/protocol.ts';
 
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
 const H = 3600, DAY = 86400;
@@ -207,6 +217,105 @@ ok(P1.snap.payload_sha256 === snapA.payload_sha256 && P2.snap.payload_sha256 ===
 }
 // synthetic ants do not read the environment: no ant event carries environment data
 ok(A.events.filter((e) => e.kind === 'ant_bout_end').every((e) => !('temperature_c' in e.data) && !('light' in e.data)), 'ant events carry no environment input (synthetic ants do not read the environment)');
+
+// ---------------------------------------------------------------- 8. P0-A2 24 h world in the Worker runtime (#156 phase 3)
+// The REAL P0-A2 individual-behaviour world (prototypes/p0a2-24h/) behind the same dispatcher: candidate / experiment
+// world, non-official (Owner #201). The adapter must not change the world's behaviour, and every determinism property
+// of sections 5-6 must hold for it as well.
+{
+  const P0RAW = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'prototypes/p0a2-24h/params.json'), 'utf8'));
+  // code hash constant is fresh (any edit of the world's modules changes it -> old saves are refused)
+  const ch = codeHash();
+  ok(ch.sha256 === P0A2_CODE_SHA256 && JSON.stringify(ch.files) === JSON.stringify(P0A2_CODE_FILES), `P0-A2 code hash constant is current (regenerate: node prototypes/continuous-world/tools/p0a2-code-hash.ts --write)`);
+  ok(['prototypes/p0a2-24h/world.ts', 'prototypes/p0a2-24h/decision.ts', 'prototypes/p0a2-24h/params.ts', 'prototypes/continuous-world/worker/p0a2-world.ts', 'engine/clock/solar.ts'].every((f) => P0A2_CODE_FILES.includes(f)), 'code hash covers the P0-A2 core, the adapter and the engine modules they run');
+  ok(P0A2_LABEL === LABEL_ZH && P0A2_SNAPSHOT_SCHEMA === snapA.schema, 'P0-A2 adapter uses the same non-official label and SAVE envelope schema');
+  ok(P0A2_PARAMS_SHA === crypto.createHash('sha256').update(p0canon(P0RAW)).digest('hex'), 'P0-A2 params SHA-256 = sha256(canonical params.json) (node:crypto)');
+  ok(P0A2_RULES_FINGERPRINT === hashJson({ engine_version: P0A2_ENGINE_VERSION, schema_version: 2, world_kind: 'p0a2', params_sha256: P0A2_PARAMS_SHA, code_sha256: P0A2_CODE_SHA256, code_files: [...P0A2_CODE_FILES], scenario: P0A2_SCENARIO, variant: P0RAW.reference_variant }), 'P0-A2 rules fingerprint = engine version + params SHA + code SHA + scenario + reference variant');
+  const p0 = (seed: number, t: number) => { const c = P0a2ExperimentWorld.create('exp-p0', seed); return { world: c.world, events: [...c.events, ...c.world.advanceTo(t).events] }; };
+  const X = p0(7, 48 * H), sx = X.world.snapshot();
+  ok(X.events.length > 10_000, `P0-A2 48 h run produced ${X.events.length} events`);
+  ok(X.events.every((e, i) => e.seq === i && e.official === false && e.label === LABEL_ZH && e.world_id === 'exp-p0' && e.seed === 7 && e.rules_fingerprint === P0A2_RULES_FINGERPRINT && e.engine_version === P0A2_ENGINE_VERSION), 'P0-A2 events: contiguous seq, labelled non-official, world id, seed, fingerprint, version');
+  ok(X.events.every((e, i) => i === 0 || compareExact(X.events[i - 1].exact, e.exact) <= 0) && X.events.every((e) => Math.round(e.t_sim * 1000) === e.exact.day * 86_400_000 + e.exact.us / 1000), 'P0-A2 events: exact instants non-decreasing, t_sim = exact instant');
+  // the adapter does not change the world: the same run directly on the prototypes/p0a2-24h World has the same log
+  const direct = P0World.create(P0RAW, P0A2_SCENARIO, 7, { captureLog: true }); direct.advanceTo(48 * 3_600_000);
+  ok(direct.lines!.length === X.events.length && direct.lines!.every((l, i) => { const e = JSON.parse(l); const v = X.events[i]; return e.id === v.event_id && e.k === v.kind && e.t / 1000 === v.t_sim && e.r === v.round && e.q === v.data.tie_q; }), 'P0-A2 events are the world\'s own log lines, one to one (the adapter adds no event)');
+  ok(direct.logHash === (sx.payload.state as { log: { hash: string } }).log.hash && direct.snapshot() === p0canon(sx.payload.state), 'P0-A2 state in the SAVE envelope = World.snapshot() of the direct run (log hash chain identical)');
+  ok(sx.label === LABEL_ZH && sx.official === false && Object.keys(sx).sort().join() === 'engine_version,label,official,payload,payload_sha256,rules_fingerprint,schema,schema_version,seed,seq,t_sim,world_id' && sx.payload_sha256 === crypto.createHash('sha256').update(canonicalJson(sx.payload)).digest('hex'), 'P0-A2 snapshot: SAVE envelope fields, label, payload SHA-256 (node:crypto)');
+  ok(p0(7, 48 * H).world.snapshot().payload_sha256 === sx.payload_sha256 && p0(8, 48 * H).world.snapshot().payload_sha256 !== sx.payload_sha256, 'P0-A2: same seed identical, different seed different');
+  // 48 h continuous == cut + snapshot + structured clone + restore + rest, at several cut points
+  for (const [tc, label] of [[24 * H, '24 h'], [X.events[Math.floor(X.events.length / 3)].t_sim, 'an event instant'], [DAY, 'midnight'], [DAY - 0.5, '23:59:59.5'], [37 * H + 0.0004, 'a sub-millisecond cut']] as [number, string][]) {
+    const c = P0a2ExperimentWorld.create('exp-p0', 7), evs = [...c.events, ...c.world.advanceTo(tc).events];
+    const w2 = P0a2ExperimentWorld.restore(clone(c.world.snapshot())); evs.push(...w2.advanceTo(48 * H).events);
+    ok(JSON.stringify(evs) === JSON.stringify(X.events) && w2.snapshot().payload_sha256 === sx.payload_sha256, `P0-A2: 48 h continuous == cut at ${label} + snapshot + restore + rest (events and full state byte-identical)`);
+  }
+  // snapshots are pure reads; irregular chunks identical
+  {
+    const c = P0a2ExperimentWorld.create('exp-p0', 7), evs = [...c.events]; let t = 0, k = 1;
+    while (t < 48 * H) { t = Math.min(48 * H, t + ((k * 7919) % 5000) + 0.25); k++; evs.push(...c.world.advanceTo(t).events); if (k % 5 === 0) { const a1 = c.world.snapshot(), a2 = c.world.snapshot(); if (a1.payload_sha256 !== a2.payload_sha256) throw Error('snapshot changed the world'); } }
+    ok(JSON.stringify(evs) === JSON.stringify(X.events) && c.world.snapshot().payload_sha256 === sx.payload_sha256, `P0-A2: ${k - 1} irregular chunks with ~${Math.floor(k / 5)} snapshots -> identical events and state`);
+  }
+  // frame: the end time of every moving worker is its pending event's instant (checked against the queue)
+  {
+    const c = P0a2ExperimentWorld.create('exp-p0', 7); let moving = 0, bad = 0, frames = 0;
+    for (let t = 0; t <= 24 * H; t += 173) {
+      c.world.advanceTo(t); const f = c.world.frame() as unknown as P0a2FrameMsg, st = c.world.payload().state as { queue: { id: string; t: number }[]; workers: Record<string, { pending: string }> };
+      frames++; if (f.workers.length !== 30 || f.larvae.length !== 8 || f.official !== false || f.label !== LABEL_ZH || f.t_sim !== t) bad++;
+      for (const w of f.workers) if (w.until_s !== null) { moving++; const q = st.queue.find((e) => e.id === st.workers[w.id].pending); if (!q || q.t / 1000 !== w.until_s || !(w.since_s <= f.t_sim && f.t_sim <= w.until_s)) bad++; }
+      if (f.env.light !== c.world.world.env.light(t * 1000)) bad++;
+    }
+    ok(bad === 0 && moving > 50, `P0-A2 frame: ${frames} frames list every worker / larva; ${moving} moving workers end exactly at their pending event; light = the light the workers sense`);
+  }
+  // refusals
+  const s24 = P0a2ExperimentWorld.create('exp-p0', 7); s24.world.advanceTo(24 * H); const S = s24.world.snapshot();
+  const p0refused = (f: () => unknown, code: string) => { try { f(); return false; } catch (e) { return e instanceof P0a2Refused && e.code === code; } };
+  const tm = (f: (s: P0a2Snapshot) => void, rehash = false) => { const s = clone(S); f(s); if (rehash) s.payload_sha256 = hashJson(s.payload); return s; };
+  type St = { workers: Record<string, { crop: number; pending: string }>; queue: unknown[]; t_now: number };
+  const st = (s: P0a2Snapshot) => s.payload.state as unknown as St;
+  ok(p0refused(() => P0a2ExperimentWorld.restore(tm((s) => { st(s).workers.w001.crop += 1; })), 'HASH_MISMATCH'), 'P0-A2 refused: state changed without its hash');
+  ok(p0refused(() => P0a2ExperimentWorld.restore(tm((s) => { st(s).workers.w001.crop += 1; }, true)), 'LEDGER_MISMATCH'), 'P0-A2 refused: food not conserved (even with a recomputed hash)');
+  ok(p0refused(() => P0a2ExperimentWorld.restore(tm((s) => { st(s).queue = st(s).queue.slice(1); }, true)), 'BAD_STATE'), 'P0-A2 refused: a pending event missing from the queue');
+  ok(p0refused(() => P0a2ExperimentWorld.restore(tm((s) => { s.payload.code_sha256 = '0'.repeat(64); }, true)), 'FINGERPRINT_MISMATCH'), 'P0-A2 refused: other code hash');
+  ok(p0refused(() => P0a2ExperimentWorld.restore(tm((s) => { s.payload.params_sha256 = '0'.repeat(64); }, true)), 'FINGERPRINT_MISMATCH'), 'P0-A2 refused: other parameter file');
+  ok(p0refused(() => P0a2ExperimentWorld.restore(tm((s) => { s.rules_fingerprint = s.payload.rules_fingerprint = 'f'.repeat(64); }, true)), 'FINGERPRINT_MISMATCH'), 'P0-A2 refused: foreign rules fingerprint');
+  ok(p0refused(() => P0a2ExperimentWorld.restore(tm((s) => { s.payload.scenario = 'taichung-may-ref'; }, true)), 'FINGERPRINT_MISMATCH'), 'P0-A2 refused: other weather scenario');
+  ok(p0refused(() => P0a2ExperimentWorld.restore(tm((s) => { s.engine_version = 'experiment-p0a2-24h/0'; })), 'ENGINE_MISMATCH'), 'P0-A2 refused: other engine version');
+  ok(p0refused(() => P0a2ExperimentWorld.restore(tm((s) => { s.seq += 1; })), 'HEADER_MISMATCH'), 'P0-A2 refused: header and payload disagree');
+  ok(p0refused(() => P0a2ExperimentWorld.restore(tm((s) => { s.seq += 1; s.payload.seq += 1; }, true)), 'BAD_STATE'), 'P0-A2 refused: log position disagrees with the state');
+  ok(p0refused(() => P0a2ExperimentWorld.restore(tm((s) => { (s as { official: boolean }).official = true; })), 'NOT_EXPERIMENT'), 'P0-A2 refused: official:true');
+  ok(p0refused(() => P0a2ExperimentWorld.restore(tm((s) => { s.schema = 'x'; })), 'SCHEMA_MISMATCH'), 'P0-A2 refused: other schema');
+  ok(refusedWith(() => ExperimentWorld.restore(clone(S) as unknown as ExperimentSnapshot), 'ENGINE_MISMATCH') && p0refused(() => P0a2ExperimentWorld.restore(clone(snapA) as unknown as P0a2Snapshot), 'ENGINE_MISMATCH'), 'a P0-A2 snapshot is never restored as the synthetic world and vice versa');
+  // dispatcher: kind selection, restore switches kind, refused restore keeps the world
+  {
+    const wl = 0; const r = new Runtime(() => wl);
+    ok((last(r.handle({ type: 'init', req: 1, world_id: 'exp-p0', seed: 7, kind: 'nope' })) as { code: string }).code === 'BAD_WORLD_KIND', 'init refuses an unknown world kind');
+    r.handle({ type: 'init', req: 2, world_id: 'exp-p0', seed: 7, kind: 'p0a2' });
+    r.handle({ type: 'step_until', req: 3, t_sim: 10 * H });
+    const h10 = r.current()!.snapshot().payload_sha256;
+    ok((last(r.handle({ type: 'restore', req: 4, snapshot: tm((s) => { st(s).workers.w001.crop += 1; }) })) as { code: string }).code === 'HASH_MISMATCH' && r.current()!.snapshot().payload_sha256 === h10, 'a refused P0-A2 restore keeps the current world');
+    const ack = last(r.handle({ type: 'restore', req: 5, snapshot: clone(S) }));
+    ok(ack.type === 'ack' && isP0a2Frame(ack.frame) && ack.frame.t_sim === 24 * H, 'runtime restore picks the P0-A2 world from the snapshot engine version');
+    r.handle({ type: 'restore', req: 6, snapshot: clone(snapA) });
+    ok(!isP0a2Frame((last(r.handle({ type: 'follow', req: 7, id: null })) as { frame: AnyFrameMsg }).frame), 'and the synthetic world from a synthetic snapshot');
+  }
+  // pacing / UI operations: speeds, pauses, tick sizes, tiny budget, follow -> same events and log hash at the same t
+  const p0paced = (plan: { speed: number; ticks: number[]; pauseAfter?: number }[], budget: number, follow: string | null) => {
+    let wl = 0; const old = Runtime.P0A2_BUDGET; Runtime.P0A2_BUDGET = budget; const r = new Runtime(() => wl); const evs: unknown[] = []; let lagged = false;
+    const take = (rs: ReturnType<Runtime['handle']>) => { for (const x of rs) { if (x.type === 'events') evs.push(...x.events); if ((x.type === 'state' || x.type === 'ack') && x.pacing.lagging) lagged = true; } };
+    take(r.handle({ type: 'init', req: 1, world_id: 'exp-p0', seed: 7, kind: 'p0a2' }));
+    if (follow) take(r.handle({ type: 'follow', req: 2, id: follow }));
+    take(r.handle({ type: 'start', req: 3 }));
+    for (const p of plan) { take(r.handle({ type: 'set_speed', req: 4, speed: p.speed })); for (const dt of p.ticks) { wl += dt; take(r.tick()); } if (p.pauseAfter !== undefined) { take(r.handle({ type: 'pause', req: 5 })); wl += p.pauseAfter; take(r.tick()); take(r.handle({ type: 'resume', req: 6 })); } }
+    take(r.handle({ type: 'pause', req: 7 })); const t = r.current()!.tSim();
+    take(r.handle({ type: 'step_until', req: 8, t_sim: 48 * H })); Runtime.P0A2_BUDGET = old;
+    const f = r.current()!.frame() as P0a2FrameMsg;
+    return { evs, hash: r.current()!.snapshot().payload_sha256, log: f.log.hash, t, lagged };
+  };
+  const Q1 = p0paced([{ speed: 60, ticks: Array(200).fill(16) }, { speed: 3600, ticks: Array(150).fill(16), pauseAfter: 5000 }, { speed: 1, ticks: [5, 40, 3, 250] }], 4000, null);
+  const Q2 = p0paced([{ speed: 86_400, ticks: [7, 33, 120, 1, 1, 500, 64], pauseAfter: 99 }, { speed: 0.1, ticks: Array(30).fill(16) }, { speed: 600, ticks: [1000, 2000] }], 3, 'w005');
+  ok(Q1.t > 0 && Q2.t > 0 && Q1.t !== Q2.t && Q2.lagged, `P0-A2 pacing scenarios reached different times (${Q1.t.toFixed(1)} s / ${Q2.t.toFixed(1)} s); the tiny budget lagged`);
+  ok(JSON.stringify(Q1.evs) === JSON.stringify(X.events) && JSON.stringify(Q2.evs) === JSON.stringify(X.events) && Q1.hash === sx.payload_sha256 && Q2.hash === sx.payload_sha256 && Q1.log === (sx.payload.state as { log: { hash: string } }).log.hash && Q2.log === Q1.log, 'P0-A2: speeds, pauses, tick sizes, work budget and follow -> identical events, event-log hash and full state at 48 h');
+  ok((X.world.antView('w005') as { id: string } | null)?.id === 'w005', 'P0-A2 follow returns the worker\'s read-only record');
+}
 
 // ---------------------------------------------------------------- 7. formal data untouched
 ok(dirHash('saves') === formalBefore.saves && dirHash('journal') === formalBefore.journal, 'saves/ and journal/ unchanged by the experiment runtime');
