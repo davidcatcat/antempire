@@ -87,6 +87,8 @@ export class Menu {
     if (!this.session) { for (const b of this.root.querySelectorAll('button')) (b as HTMLButtonElement).disabled = b.id !== 'mNew'; this.panel.innerHTML = this.view === 'new' ? this.newForm() : ''; return; }
     let list: WorldListing[]; const rts = new Map<string, RuntimeInfo>();
     try {
+      // runtime info may be cached from before the failure: a failed client is reported as such all the same
+      if (this.session.client.failure) throw this.session.client.failure;
       list = await this.session.list();
       for (const w of list) if (!rts.has(w.engine_version)) rts.set(w.engine_version, await this.session.runtimeFor(w.engine_version));
     } catch (e) {
