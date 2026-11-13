@@ -496,3 +496,9 @@ Day14 權威已知卵：E001／E002／E003／E004／E005 分別經過 **12／6�
 - **CE1 換算不變性**：把所有宣告為 `game_portion` 的參數乘上同一常數，Day0 實驗世界的動態只差捨入；CE1 發現 `site_choice.score_base_offset`（加在以份計的收穫記憶上）其實是份量，已宣告為 `game_portion`。結果與限制見 `docs/ru1-param-units.md`、`reports/ce1-conversion-invariance/`。
 - **不變**：所有輸出與 v2-review.31 逐位元組相同（`tests/golden.test.ts`、`tests/rules-isolation.test.ts`）；只有規則指紋（參數檔）與引擎版本字串改變。
 - **引擎行為版本**：`antempire.v2-review.32-param-units`。
+
+## 2026-11-13 規則版本 v2-review.33：死參數標「未實作」（RU-2，Owner #219；只改中繼資料）
+- **內容**：`honeydew.honeydew_daily_replenish`、`plants.new_plant_event_probability`、`nutrition.brood_protein_min_fraction` 沒有任何引擎程式讀取（靜態與動態證明見 `tests/ru2-dead-params.test.ts`），在參數檔中加上 `implementation: { status: "未實作", engine_reads: false, … }`；**數值與其他欄位不變，也不刪除**（理由見 `docs/ru2-dead-params.md`）。
+- 花園**沒有**固定的每日蜜露補充、**沒有**新植物或重新開花事件；幼蟲也**沒有**「最低蛋白比例」門檻。讀參數檔的人不應把這三個數值當成正在運作的過程。
+- **不變**：所有輸出與 v2-review.32 逐位元組相同；只有規則指紋與引擎版本字串改變。
+- **引擎行為版本**：`antempire.v2-review.33-dead-params`。

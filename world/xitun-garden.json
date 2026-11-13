@@ -229,7 +229,14 @@
       "description": "新花期或落果事件，用於後續世界擴充，未當前模型全實作",
       "reference_for_mechanism_only": [],
       "basis": "遊戲假設",
-      "legacy_path": "sim/params.json#sources.new_plant_event_probability"
+      "legacy_path": "sim/params.json#sources.new_plant_event_probability",
+      "implementation": {
+        "status": "未實作",
+        "engine_reads": false,
+        "since_rules_version": "antempire.v2-review.33-dead-params",
+        "evidence": "tests/ru2-dead-params.test.ts（靜態：engine/ 與 cli/ 程式碼不出現此名稱；動態：改變數值，Day0 與 Day14 情境輸出逐位元組不變）",
+        "note": "新花期或落果事件的機率：引擎沒有新植物或重新開花的事件（花期只有一次倒數，見 docs/garden-supply-demand-audit.md D4），本參數不被讀取。"
+      }
     },
     "host_plant_daily_death_probability": {
       "value": 0.0007,
@@ -326,7 +333,14 @@
       "description": "寄主與蚜蟲仍活著時每日補充糖份",
       "reference_for_mechanism_only": [],
       "basis": "遊戲假設",
-      "legacy_path": "sim/params.json#sources.honeydew_daily_replenish"
+      "legacy_path": "sim/params.json#sources.honeydew_daily_replenish",
+      "implementation": {
+        "status": "未實作",
+        "engine_reads": false,
+        "since_rules_version": "antempire.v2-review.33-dead-params",
+        "evidence": "tests/ru2-dead-params.test.ts（靜態：engine/ 與 cli/ 程式碼不出現此名稱；動態：改變數值，Day0 與 Day14 情境輸出逐位元組不變）",
+        "note": "固定的每日蜜露補充：引擎的蜜露產量來自半翅目群數 × hemipterans.honeydew_per_colony_per_day（engine/ecology.ts growHoneydew），本參數不被讀取；只有已退役的 v1 程式（sim/）與一個舊黃金情境（tests/lib/scenarios.ts abundant-30）的覆寫寫到它，對輸出沒有作用。"
+      }
     },
     "honeydew_initial": {
       "value": 0.55,

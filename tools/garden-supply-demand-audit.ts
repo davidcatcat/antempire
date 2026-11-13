@@ -257,7 +257,7 @@ export function audit(root = REPO_ROOT): Any {
       const basis = x && typeof x === 'object' ? (x.basis ?? x.evidence_class ?? null) : null;
       // RU-1 (v2-review.32): species / world parameters declare their own `unit`; it must equal this registry's unit
       const declared = x && typeof x === 'object' && typeof x.unit === 'string' ? x.unit : null;
-      return { file: FILES[e.file], path: p, value: v, role: e.role, food: e.food, unit: e.unit, declared_unit: declared, time_scale: e.time_scale, origin: e.origin, basis, flags: [...(e.unit.startsWith('game_portion') ? ['UNITLESS_PORTION'] : []), ...(e.file === 'world' || e.file === 'species' ? (declared === null ? ['UNIT_NOT_DECLARED_IN_FILE'] : declared !== e.unit ? ['UNIT_MISMATCH'] : []) : []), ...(engineUse === false ? ['NOT_READ_BY_ENGINE'] : []), ...(e.note.startsWith('DEAD') ? ['DEAD'] : [])], note: e.note };
+      return { file: FILES[e.file], path: p, value: v, role: e.role, food: e.food, unit: e.unit, declared_unit: declared, time_scale: e.time_scale, origin: e.origin, basis, flags: [...(e.unit.startsWith('game_portion') ? ['UNITLESS_PORTION'] : []), ...(e.file === 'world' || e.file === 'species' ? (declared === null ? ['UNIT_NOT_DECLARED_IN_FILE'] : declared !== e.unit ? ['UNIT_MISMATCH'] : []) : []), ...(engineUse === false ? ['NOT_READ_BY_ENGINE'] : []), ...(e.note.startsWith('DEAD') ? ['DEAD'] : []), ...(x && typeof x === 'object' && x.implementation?.status === '未實作' ? ['MARKED_NOT_IMPLEMENTED'] : [])], note: e.note };
     });
   });
   // ---- 2. legacy engine: garden production ceiling (game portions / day) ----

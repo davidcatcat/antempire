@@ -478,6 +478,24 @@
       "save_schema": "antempire.engine-v2",
       "state_migration": null,
       "note": "RU-1 (docs/ru1-param-units.md): every food parameter of species/world declares its unit (game_portion = legacy 份, not mg); site_choice.score_base_offset declared game_portion after the CE1 conversion-invariance finding. Metadata only: every output byte-identical to v2-review.31."
+    },
+    {
+      "rules_version": "antempire.v2-review.33-dead-params",
+      "tag": "v33",
+      "fingerprint": {
+        "engine": "599a3bddfdc7de8e8f5fa0ae9c51aa757b29b7304484995a8759811109eb2161",
+        "params": "1a2546049741268468d89cbaf8280504d2a12b24fc3067d1d72d9353f076c311"
+      },
+      "approved_in": "Owner ruling #219 Q1/Q5 2026-11-13 (RU-2: dead parameters marked 未實作, values unchanged; separate rules-update PR, not merged by Claude)",
+      "golden": {
+        "traces": "tests/golden/v33-trace-sha256.json",
+        "reports": "reports/day15-134-v33-*",
+        "day0_traces": "tests/golden/day0-v33-trace-sha256.json"
+      },
+      "previous": "antempire.v2-review.32-param-units",
+      "save_schema": "antempire.engine-v2",
+      "state_migration": null,
+      "note": "RU-2 (docs/ru2-dead-params.md): honeydew.honeydew_daily_replenish, plants.new_plant_event_probability and nutrition.brood_protein_min_fraction are read by no engine code (static + dynamic proof, tests/ru2-dead-params.test.ts) and marked implementation.status 未實作; not removed. Metadata only: every output byte-identical to v2-review.32."
     }
   ]
 }

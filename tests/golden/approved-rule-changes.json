@@ -790,6 +790,31 @@
         "trophallaxis.transfer_max_portions"
       ],
       "description": "RU-1: a `unit` string is added to each listed parameter (values and every other field unchanged). `game_portion …` means the legacy game unit 份 (not mg). site_choice.score_base_offset is declared game_portion because the CE1 conversion-invariance test found it added to a remembered harvest in portions. Metadata only: every output byte-identical to v2-review.31 (tests/golden.test.ts, tests/rules-isolation.test.ts); bundleAtVersion(forHash) removes the field for earlier versions."
+    },
+    {
+      "rules_version": "antempire.v2-review.33-dead-params",
+      "approved_in": "Owner ruling #219 Q1/Q5 2026-11-13 (RU-2 of docs/garden-supply-demand-audit.md §5: dead parameters removed or marked 未實作; separate rules-update PR, not merged by Claude)",
+      "kind": "param_metadata",
+      "day14_output_unchanged": true,
+      "file": "world",
+      "metadata_field_added": "implementation",
+      "paths": [
+        "honeydew.honeydew_daily_replenish",
+        "plants.new_plant_event_probability"
+      ],
+      "description": "RU-2: the listed parameters are not read by any engine code (tests/ru2-dead-params.test.ts: static and dynamic proof) and are marked implementation.status 未實作 (values, units and every other field unchanged; not removed, so older parameter files and the frozen legacy golden scenario that overrides honeydew_daily_replenish keep working). Metadata only: every output byte-identical to v2-review.32; bundleAtVersion(forHash) removes the field for earlier versions."
+    },
+    {
+      "rules_version": "antempire.v2-review.33-dead-params",
+      "approved_in": "Owner ruling #219 Q1/Q5 2026-11-13 (RU-2 of docs/garden-supply-demand-audit.md §5: dead parameters removed or marked 未實作; separate rules-update PR, not merged by Claude)",
+      "kind": "param_metadata",
+      "day14_output_unchanged": true,
+      "file": "species:pheidole-megacephala",
+      "metadata_field_added": "implementation",
+      "paths": [
+        "nutrition.brood_protein_min_fraction"
+      ],
+      "description": "RU-2: the listed parameters are not read by any engine code (tests/ru2-dead-params.test.ts: static and dynamic proof) and are marked implementation.status 未實作 (values, units and every other field unchanged; not removed, so older parameter files and the frozen legacy golden scenario that overrides honeydew_daily_replenish keep working). Metadata only: every output byte-identical to v2-review.32; bundleAtVersion(forHash) removes the field for earlier versions."
     }
   ]
 }
