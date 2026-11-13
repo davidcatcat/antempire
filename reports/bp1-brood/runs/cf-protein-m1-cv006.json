@@ -1,0 +1,5432 @@
+{
+ "variant": "cf-protein-m1-cv006",
+ "group": "counterfactual_protein",
+ "label": "反事實蛋白，M1 Gamma 門檻 CV 0.06",
+ "config_sha256": "7a9de653075e9e3b5d7b490e9e1093b46c3fbd6529418b64ab4e2940b2b13da7",
+ "config": {
+  "schema": "antempire.p0a2-bp1.config.v1",
+  "version": "p0a2-bp1/1",
+  "physiology": "p0a2-bp1-physiology/1",
+  "variant": "cf-protein-m1-cv006",
+  "group": "counterfactual_protein",
+  "label": "反事實蛋白，M1 Gamma 門檻 CV 0.06",
+  "status": "個體差異主候選；CV 為明示假設",
+  "candidate_file_sha256": "a90a33dce2c8a8015532c1fb919f0e3d83dc995bac1b0ea1a60c85d5b1c6b767",
+  "variants_file_sha256": "7c860ef0757140bf559f64d2db9269a47fa07c17ee9fb616bc5d514922b66641",
+  "choices": {
+   "temperature_model": "linear_dd_A",
+   "nutrition_gate": "N-d",
+   "protein_catabolism": false,
+   "maintenance_mass": "actual",
+   "hazard_family": "H0",
+   "hazard_recovery": "retain",
+   "variance_model": "M1",
+   "solid_protein_enabled": false,
+   "solid_protein_instars": [
+    "L3"
+   ],
+   "init_stage": "L1"
+  },
+  "values": {
+   "nest_temp_c": 28,
+   "sugar_bridge_mg_per_portion": "0.0162",
+   "liquid_protein_mg_per_portion": "0.01",
+   "h1_tau_d": null,
+   "h2_lambda_d": null,
+   "h2_k": null,
+   "h3_debt_fraction": null,
+   "cv_egg": 0.06,
+   "cv_larva": 0.06,
+   "cv_pupa": 0.06,
+   "protein_assim_solid": null,
+   "step_ms": 60000
+  },
+  "candidate_values": {
+   "dev_d28_egg": 7.69,
+   "dev_d28_l1": 1.85,
+   "dev_d28_l2": 5.52,
+   "dev_d28_l3": 6.07,
+   "dev_d28_prepupa": 2.55,
+   "dev_d28_pupa": 5.05,
+   "temp_ld_t0_egg_c": 16.99,
+   "temp_ld_t0_larva_c": 13.27,
+   "temp_ld_t0_pupa_c": 18.84,
+   "temp_q10_egg": 4.44,
+   "temp_q10_larva": 2.58,
+   "temp_q10_pupa": 6.7,
+   "mass_adult_minor_dry_ug": 80,
+   "mass_final_larva_fresh_mg": 0.3,
+   "mass_dyar_ratio": 2.7,
+   "comp_protein_fraction_dry": 0.5,
+   "protein_metamorphic_loss": 0.1,
+   "protein_assim_liquid": 0.85,
+   "protein_net_retention": 0.7,
+   "maint_o2_25c": 0.291,
+   "maint_pupa_ratio": 0.78,
+   "maint_q10": 2,
+   "o2_mg_per_ml": 1.429,
+   "sucrose_per_o2": 0.8915,
+   "growth_energy_per_protein": 0.5,
+   "sugar_assim": 0.95,
+   "abs_margin": 2,
+   "temp_ld_b_t0_egg_c": 17.74,
+   "temp_ld_b_t0_larva_c": 13.84,
+   "temp_ld_b_t0_pupa_c": 19.56
+  },
+  "null_rules": {
+   "protein_hatch_fraction": "null → 0（需求上界；設計 §6）",
+   "maint_l1_multiplier": "null → 1（非本種齡期效應不套用；設計 §6）"
+  },
+  "assumption": true,
+  "official": false
+ },
+ "seeds": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20
+ ],
+ "days": 40,
+ "scenario": "taichung-march-ref",
+ "official": false,
+ "label_zh": "研究候選（隔離、預設關閉；非正式實驗世界）",
+ "runs": [
+  {
+   "seed": 1,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 47778959,
+    "used": 155418658,
+    "initial": 11197617,
+    "produced": 192000000,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 6673,
+   "log_sha256": "16585c7c569530beebaeb0ad73201823081569e61cc2eddf86b825a4bde1c845",
+   "state_sha256": "c834526e2112c0fa3bfd4f3eb461f07cc7c536579c79d42e1d29ef26db29c641",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.4,
+      "L3": 12.2,
+      "prepupa": 20.54,
+      "pupa": 23.12,
+      "adult": 27.67
+     },
+     "fed_sugar_ng": 127741,
+     "fed_protein_ng": 78852,
+     "structure_ng": 46865,
+     "reserve_sugar_ng": 46249,
+     "reserve_protein_ng": 13,
+     "maintenance_uj": 844222,
+     "growth_uj": 386644,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.02,
+      "P": 6.65,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 866,
+     "bridged_up": 7885269,
+     "death": null
+    },
+    {
+     "id": "l02",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.99,
+      "L3": 10.83,
+      "prepupa": 18.47,
+      "pupa": 21.06,
+      "adult": 25.65
+     },
+     "fed_sugar_ng": 115809,
+     "fed_protein_ng": 71487,
+     "structure_ng": 42497,
+     "reserve_sugar_ng": 44074,
+     "reserve_protein_ng": 24,
+     "maintenance_uj": 729085,
+     "growth_uj": 350608,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 19.65,
+      "P": 6,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 804,
+     "bridged_up": 7148716,
+     "death": null
+    },
+    {
+     "id": "l03",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.04,
+      "L3": 11.44,
+      "prepupa": 19.54,
+      "pupa": 22.07,
+      "adult": 27.08
+     },
+     "fed_sugar_ng": 122388,
+     "fed_protein_ng": 75548,
+     "structure_ng": 44906,
+     "reserve_sugar_ng": 44528,
+     "reserve_protein_ng": 63,
+     "maintenance_uj": 805777,
+     "growth_uj": 370491,
+     "unmet_ng": 1,
+     "deficit_d": 0.01,
+     "max_bout_d": 0.01,
+     "limit_d": {
+      "none": 20.78,
+      "P": 6.29,
+      "E_growth": 0,
+      "E_deficit": 0.01
+     },
+     "feeds": 844,
+     "bridged_up": 7554857,
+     "death": null
+    },
+    {
+     "id": "l04",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.8,
+      "L3": 11.72,
+      "prepupa": 19.33,
+      "pupa": 21.96,
+      "adult": 26.9
+     },
+     "fed_sugar_ng": 118646,
+     "fed_protein_ng": 73238,
+     "structure_ng": 43557,
+     "reserve_sugar_ng": 43130,
+     "reserve_protein_ng": 27,
+     "maintenance_uj": 781077,
+     "growth_uj": 359353,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.73,
+      "P": 6.18,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 817,
+     "bridged_up": 7323846,
+     "death": null
+    },
+    {
+     "id": "l05",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.02,
+      "L3": 11.88,
+      "prepupa": 20.94,
+      "pupa": 23.86,
+      "adult": 28.95
+     },
+     "fed_sugar_ng": 133248,
+     "fed_protein_ng": 82252,
+     "structure_ng": 48914,
+     "reserve_sugar_ng": 45154,
+     "reserve_protein_ng": 36,
+     "maintenance_uj": 933273,
+     "growth_uj": 403557,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 22.31,
+      "P": 6.64,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 900,
+     "bridged_up": 8225209,
+     "death": null
+    },
+    {
+     "id": "l06",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.86,
+      "L3": 10.59,
+      "prepupa": 19.31,
+      "pupa": 22.1,
+      "adult": 27.05
+     },
+     "fed_sugar_ng": 125182,
+     "fed_protein_ng": 77273,
+     "structure_ng": 45916,
+     "reserve_sugar_ng": 45134,
+     "reserve_protein_ng": 14,
+     "maintenance_uj": 830032,
+     "growth_uj": 378823,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.89,
+      "P": 6.16,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 858,
+     "bridged_up": 7727324,
+     "death": null
+    },
+    {
+     "id": "l07",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.77,
+      "L3": 11.64,
+      "prepupa": 18.9,
+      "pupa": 21.56,
+      "adult": 26.38
+     },
+     "fed_sugar_ng": 114965,
+     "fed_protein_ng": 70966,
+     "structure_ng": 42140,
+     "reserve_sugar_ng": 42530,
+     "reserve_protein_ng": 121,
+     "maintenance_uj": 745915,
+     "growth_uj": 347655,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.32,
+      "P": 6.06,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 796,
+     "bridged_up": 7096617,
+     "death": null
+    },
+    {
+     "id": "l08",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.29,
+      "L3": 10.2,
+      "prepupa": 17.98,
+      "pupa": 20.19,
+      "adult": 24.9
+     },
+     "fed_sugar_ng": 114420,
+     "fed_protein_ng": 70630,
+     "structure_ng": 41983,
+     "reserve_sugar_ng": 45088,
+     "reserve_protein_ng": 28,
+     "maintenance_uj": 695161,
+     "growth_uj": 346368,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 19.23,
+      "P": 5.67,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 788,
+     "bridged_up": 7063018,
+     "death": null
+    }
+   ]
+  },
+  {
+   "seed": 2,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 48364484,
+    "used": 156868296,
+    "initial": 13232780,
+    "produced": 192000000,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 6553,
+   "log_sha256": "e6875bf7482fd11933482acd93ece59b099567d4a4cf4e1556411c3438e26711",
+   "state_sha256": "ca4b0153c774121f0b665d1ee76a1d9aa137084b0d183c38389a9e42a8bd4167",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.78,
+      "L3": 12.05,
+      "prepupa": 19.79,
+      "pupa": 22.38,
+      "adult": 27.47
+     },
+     "fed_sugar_ng": 121220,
+     "fed_protein_ng": 74827,
+     "structure_ng": 44382,
+     "reserve_sugar_ng": 43397,
+     "reserve_protein_ng": 155,
+     "maintenance_uj": 809523,
+     "growth_uj": 366168,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.15,
+      "P": 6.31,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 819,
+     "bridged_up": 7482756,
+     "death": null
+    },
+    {
+     "id": "l02",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.5,
+      "L3": 10.61,
+      "prepupa": 18.53,
+      "pupa": 21.17,
+      "adult": 26.61
+     },
+     "fed_sugar_ng": 117389,
+     "fed_protein_ng": 72462,
+     "structure_ng": 43054,
+     "reserve_sugar_ng": 42484,
+     "reserve_protein_ng": 32,
+     "maintenance_uj": 776539,
+     "growth_uj": 355195,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.74,
+      "P": 5.86,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 807,
+     "bridged_up": 7246253,
+     "death": null
+    },
+    {
+     "id": "l03",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.97,
+      "L3": 11.71,
+      "prepupa": 19.59,
+      "pupa": 22.3,
+      "adult": 27.13
+     },
+     "fed_sugar_ng": 121228,
+     "fed_protein_ng": 74832,
+     "structure_ng": 44487,
+     "reserve_sugar_ng": 43894,
+     "reserve_protein_ng": 54,
+     "maintenance_uj": 802164,
+     "growth_uj": 367026,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.84,
+      "P": 6.28,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 826,
+     "bridged_up": 7483233,
+     "death": null
+    },
+    {
+     "id": "l04",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.94,
+      "L3": 10.78,
+      "prepupa": 18.7,
+      "pupa": 21.31,
+      "adult": 26.84
+     },
+     "fed_sugar_ng": 118142,
+     "fed_protein_ng": 72927,
+     "structure_ng": 43365,
+     "reserve_sugar_ng": 42345,
+     "reserve_protein_ng": 36,
+     "maintenance_uj": 788089,
+     "growth_uj": 357769,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.8,
+      "P": 6.04,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 821,
+     "bridged_up": 7292752,
+     "death": null
+    },
+    {
+     "id": "l05",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.72,
+      "L3": 11.05,
+      "prepupa": 19.2,
+      "pupa": 21.79,
+      "adult": 26.37
+     },
+     "fed_sugar_ng": 121355,
+     "fed_protein_ng": 74910,
+     "structure_ng": 44510,
+     "reserve_sugar_ng": 45467,
+     "reserve_protein_ng": 13,
+     "maintenance_uj": 776704,
+     "growth_uj": 367224,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.27,
+      "P": 6.1,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 832,
+     "bridged_up": 7491053,
+     "death": null
+    },
+    {
+     "id": "l06",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.13,
+      "L3": 11.81,
+      "prepupa": 20.04,
+      "pupa": 22.64,
+      "adult": 27.49
+     },
+     "fed_sugar_ng": 125122,
+     "fed_protein_ng": 77236,
+     "structure_ng": 45865,
+     "reserve_sugar_ng": 45183,
+     "reserve_protein_ng": 27,
+     "maintenance_uj": 830610,
+     "growth_uj": 378394,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.02,
+      "P": 6.47,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 848,
+     "bridged_up": 7723616,
+     "death": null
+    },
+    {
+     "id": "l07",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.75,
+      "L3": 11.35,
+      "prepupa": 19.15,
+      "pupa": 21.7,
+      "adult": 26.8
+     },
+     "fed_sugar_ng": 119076,
+     "fed_protein_ng": 73504,
+     "structure_ng": 43725,
+     "reserve_sugar_ng": 43452,
+     "reserve_protein_ng": 13,
+     "maintenance_uj": 782182,
+     "growth_uj": 360739,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.68,
+      "P": 6.13,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 828,
+     "bridged_up": 7350407,
+     "death": null
+    },
+    {
+     "id": "l08",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.65,
+      "L3": 10.54,
+      "prepupa": 17.95,
+      "pupa": 20.37,
+      "adult": 25.09
+     },
+     "fed_sugar_ng": 112259,
+     "fed_protein_ng": 69296,
+     "structure_ng": 41225,
+     "reserve_sugar_ng": 43524,
+     "reserve_protein_ng": 8,
+     "maintenance_uj": 694501,
+     "growth_uj": 340114,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 19.34,
+      "P": 5.76,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 772,
+     "bridged_up": 6929616,
+     "death": null
+    }
+   ]
+  },
+  {
+   "seed": 3,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 48041649,
+    "used": 154333383,
+    "initial": 10375032,
+    "produced": 192000000,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 6551,
+   "log_sha256": "8e10e412061439884d0a5e2ac13811cb7baea4bdb4c05a0a190cddb177cb263f",
+   "state_sha256": "3b449dd6581426b7a03cbc415d586a6a80b7448c508cc95ac86d938e425ecd96",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.7,
+      "L3": 10.44,
+      "prepupa": 17.78,
+      "pupa": 20.22,
+      "adult": 25.29
+     },
+     "fed_sugar_ng": 111334,
+     "fed_protein_ng": 68725,
+     "structure_ng": 40802,
+     "reserve_sugar_ng": 42440,
+     "reserve_protein_ng": 72,
+     "maintenance_uj": 699567,
+     "growth_uj": 336616,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 19.54,
+      "P": 5.75,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 780,
+     "bridged_up": 6872529,
+     "death": null
+    },
+    {
+     "id": "l02",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.79,
+      "L3": 11.09,
+      "prepupa": 18.43,
+      "pupa": 21.07,
+      "adult": 26.1
+     },
+     "fed_sugar_ng": 113679,
+     "fed_protein_ng": 70172,
+     "structure_ng": 41706,
+     "reserve_sugar_ng": 42132,
+     "reserve_protein_ng": 55,
+     "maintenance_uj": 735834,
+     "growth_uj": 344091,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.16,
+      "P": 5.94,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 777,
+     "bridged_up": 7017252,
+     "death": null
+    },
+    {
+     "id": "l03",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.06,
+      "L3": 12.46,
+      "prepupa": 20.06,
+      "pupa": 22.77,
+      "adult": 27.95
+     },
+     "fed_sugar_ng": 121512,
+     "fed_protein_ng": 75007,
+     "structure_ng": 44597,
+     "reserve_sugar_ng": 42371,
+     "reserve_protein_ng": 44,
+     "maintenance_uj": 829537,
+     "growth_uj": 367933,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.51,
+      "P": 6.44,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 828,
+     "bridged_up": 7500787,
+     "death": null
+    },
+    {
+     "id": "l04",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.69,
+      "L3": 10.82,
+      "prepupa": 19.3,
+      "pupa": 21.76,
+      "adult": 27.04
+     },
+     "fed_sugar_ng": 123656,
+     "fed_protein_ng": 76331,
+     "structure_ng": 45383,
+     "reserve_sugar_ng": 44849,
+     "reserve_protein_ng": 36,
+     "maintenance_uj": 816007,
+     "growth_uj": 374418,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.92,
+      "P": 6.11,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 844,
+     "bridged_up": 7633110,
+     "death": null
+    },
+    {
+     "id": "l05",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.06,
+      "L3": 11.71,
+      "prepupa": 19.54,
+      "pupa": 22.05,
+      "adult": 27.58
+     },
+     "fed_sugar_ng": 120814,
+     "fed_protein_ng": 74576,
+     "structure_ng": 44310,
+     "reserve_sugar_ng": 42660,
+     "reserve_protein_ng": 77,
+     "maintenance_uj": 817261,
+     "growth_uj": 365557,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.26,
+      "P": 6.32,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 825,
+     "bridged_up": 7457692,
+     "death": null
+    },
+    {
+     "id": "l06",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.85,
+      "L3": 11.44,
+      "prepupa": 19.8,
+      "pupa": 22.43,
+      "adult": 27.65
+     },
+     "fed_sugar_ng": 124872,
+     "fed_protein_ng": 77081,
+     "structure_ng": 45802,
+     "reserve_sugar_ng": 44260,
+     "reserve_protein_ng": 86,
+     "maintenance_uj": 841186,
+     "growth_uj": 377883,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.34,
+      "P": 6.3,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 845,
+     "bridged_up": 7708175,
+     "death": null
+    },
+    {
+     "id": "l07",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.52,
+      "L3": 10.02,
+      "prepupa": 18.15,
+      "pupa": 20.55,
+      "adult": 25.33
+     },
+     "fed_sugar_ng": 117162,
+     "fed_protein_ng": 72322,
+     "structure_ng": 43019,
+     "reserve_sugar_ng": 45211,
+     "reserve_protein_ng": 17,
+     "maintenance_uj": 728706,
+     "growth_uj": 354915,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 19.54,
+      "P": 5.78,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 818,
+     "bridged_up": 7232272,
+     "death": null
+    },
+    {
+     "id": "l08",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.99,
+      "L3": 12.66,
+      "prepupa": 20.32,
+      "pupa": 22.74,
+      "adult": 28.14
+     },
+     "fed_sugar_ng": 122784,
+     "fed_protein_ng": 75792,
+     "structure_ng": 45050,
+     "reserve_sugar_ng": 42948,
+     "reserve_protein_ng": 65,
+     "maintenance_uj": 836632,
+     "growth_uj": 371679,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.65,
+      "P": 6.49,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 834,
+     "bridged_up": 7579292,
+     "death": null
+    }
+   ]
+  },
+  {
+   "seed": 4,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 46305074,
+    "used": 157965900,
+    "initial": 12270974,
+    "produced": 192000000,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 6857,
+   "log_sha256": "5c966cf22b42b28e684966f713bb58d6545a7b014c89ea2c19970454eb514ddd",
+   "state_sha256": "458cf91395027dea7dc4c4a211c32167b713f257c834af4bb7f287b25dca12d7",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.95,
+      "L3": 12.03,
+      "prepupa": 20.05,
+      "pupa": 22.34,
+      "adult": 27.88
+     },
+     "fed_sugar_ng": 123773,
+     "fed_protein_ng": 76403,
+     "structure_ng": 45376,
+     "reserve_sugar_ng": 43837,
+     "reserve_protein_ng": 118,
+     "maintenance_uj": 835180,
+     "growth_uj": 374368,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.47,
+      "P": 6.41,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 853,
+     "bridged_up": 7640315,
+     "death": null
+    },
+    {
+     "id": "l02",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.12,
+      "L3": 12.22,
+      "prepupa": 19.95,
+      "pupa": 22.61,
+      "adult": 27.59
+     },
+     "fed_sugar_ng": 121917,
+     "fed_protein_ng": 75257,
+     "structure_ng": 44746,
+     "reserve_sugar_ng": 43358,
+     "reserve_protein_ng": 27,
+     "maintenance_uj": 818169,
+     "growth_uj": 369154,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.16,
+      "P": 6.43,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 840,
+     "bridged_up": 7525745,
+     "death": null
+    },
+    {
+     "id": "l03",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.5,
+      "L3": 12.67,
+      "prepupa": 21.22,
+      "pupa": 23.87,
+      "adult": 29.12
+     },
+     "fed_sugar_ng": 131257,
+     "fed_protein_ng": 81022,
+     "structure_ng": 48153,
+     "reserve_sugar_ng": 44548,
+     "reserve_protein_ng": 77,
+     "maintenance_uj": 919099,
+     "growth_uj": 397270,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 22.23,
+      "P": 6.89,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 869,
+     "bridged_up": 8102286,
+     "death": null
+    },
+    {
+     "id": "l04",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.99,
+      "L3": 11.64,
+      "prepupa": 19.07,
+      "pupa": 21.54,
+      "adult": 26.94
+     },
+     "fed_sugar_ng": 116771,
+     "fed_protein_ng": 72081,
+     "structure_ng": 42759,
+     "reserve_sugar_ng": 42131,
+     "reserve_protein_ng": 131,
+     "maintenance_uj": 773701,
+     "growth_uj": 352770,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.74,
+      "P": 6.2,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 811,
+     "bridged_up": 7208121,
+     "death": null
+    },
+    {
+     "id": "l05",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.64,
+      "L3": 11.37,
+      "prepupa": 19.96,
+      "pupa": 22.58,
+      "adult": 27.93
+     },
+     "fed_sugar_ng": 126760,
+     "fed_protein_ng": 78247,
+     "structure_ng": 46471,
+     "reserve_sugar_ng": 44471,
+     "reserve_protein_ng": 112,
+     "maintenance_uj": 861613,
+     "growth_uj": 383394,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.63,
+      "P": 6.3,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 875,
+     "bridged_up": 7824737,
+     "death": null
+    },
+    {
+     "id": "l06",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.2,
+      "L3": 12.03,
+      "prepupa": 20.07,
+      "pupa": 22.75,
+      "adult": 27.79
+     },
+     "fed_sugar_ng": 124113,
+     "fed_protein_ng": 76613,
+     "structure_ng": 45510,
+     "reserve_sugar_ng": 43916,
+     "reserve_protein_ng": 89,
+     "maintenance_uj": 837886,
+     "growth_uj": 375474,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.3,
+      "P": 6.49,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 855,
+     "bridged_up": 7661346,
+     "death": null
+    },
+    {
+     "id": "l07",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.83,
+      "L3": 11.54,
+      "prepupa": 20.59,
+      "pupa": 23.26,
+      "adult": 28.5
+     },
+     "fed_sugar_ng": 131836,
+     "fed_protein_ng": 81380,
+     "structure_ng": 48383,
+     "reserve_sugar_ng": 45575,
+     "reserve_protein_ng": 31,
+     "maintenance_uj": 907434,
+     "growth_uj": 399168,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 22,
+      "P": 6.5,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 897,
+     "bridged_up": 8138060,
+     "death": null
+    },
+    {
+     "id": "l08",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.37,
+      "L3": 11.26,
+      "prepupa": 19.76,
+      "pupa": 22.19,
+      "adult": 27.1
+     },
+     "fed_sugar_ng": 125191,
+     "fed_protein_ng": 77278,
+     "structure_ng": 45978,
+     "reserve_sugar_ng": 46044,
+     "reserve_protein_ng": 3,
+     "maintenance_uj": 818416,
+     "growth_uj": 379318,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.93,
+      "P": 6.17,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 857,
+     "bridged_up": 7727869,
+     "death": null
+    }
+   ]
+  },
+  {
+   "seed": 5,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 47765810,
+    "used": 154339510,
+    "initial": 10105320,
+    "produced": 192000000,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 6571,
+   "log_sha256": "83af0870b7fafc01e7bda189df821bf960c412e40e8a5227d5caea303917ab64",
+   "state_sha256": "c9f8521f9ec5d36c60220766be54579852156d2e9c52f58d99f357601afbe92c",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.2,
+      "L3": 11.71,
+      "prepupa": 19.35,
+      "pupa": 21.93,
+      "adult": 27.01
+     },
+     "fed_sugar_ng": 119106,
+     "fed_protein_ng": 73522,
+     "structure_ng": 43726,
+     "reserve_sugar_ng": 43086,
+     "reserve_protein_ng": 27,
+     "maintenance_uj": 787446,
+     "growth_uj": 360739,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.73,
+      "P": 6.28,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 825,
+     "bridged_up": 7352264,
+     "death": null
+    },
+    {
+     "id": "l02",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.01,
+      "L3": 11.51,
+      "prepupa": 19.27,
+      "pupa": 21.95,
+      "adult": 26.95
+     },
+     "fed_sugar_ng": 119487,
+     "fed_protein_ng": 73758,
+     "structure_ng": 43817,
+     "reserve_sugar_ng": 43264,
+     "reserve_protein_ng": 97,
+     "maintenance_uj": 789706,
+     "growth_uj": 361498,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.73,
+      "P": 6.23,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 829,
+     "bridged_up": 7375801,
+     "death": null
+    },
+    {
+     "id": "l03",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.25,
+      "L3": 11.59,
+      "prepupa": 19.38,
+      "pupa": 21.83,
+      "adult": 26.97
+     },
+     "fed_sugar_ng": 120165,
+     "fed_protein_ng": 74176,
+     "structure_ng": 44093,
+     "reserve_sugar_ng": 43706,
+     "reserve_protein_ng": 30,
+     "maintenance_uj": 790267,
+     "growth_uj": 363775,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.67,
+      "P": 6.31,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 832,
+     "bridged_up": 7417615,
+     "death": null
+    },
+    {
+     "id": "l04",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.26,
+      "L3": 12.74,
+      "prepupa": 20.24,
+      "pupa": 22.58,
+      "adult": 27.77
+     },
+     "fed_sugar_ng": 121537,
+     "fed_protein_ng": 75023,
+     "structure_ng": 44549,
+     "reserve_sugar_ng": 43443,
+     "reserve_protein_ng": 127,
+     "maintenance_uj": 814044,
+     "growth_uj": 367537,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.19,
+      "P": 6.58,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 835,
+     "bridged_up": 7502308,
+     "death": null
+    },
+    {
+     "id": "l05",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.24,
+      "L3": 12.13,
+      "prepupa": 20.16,
+      "pupa": 22.59,
+      "adult": 27.83
+     },
+     "fed_sugar_ng": 124215,
+     "fed_protein_ng": 76676,
+     "structure_ng": 45602,
+     "reserve_sugar_ng": 44108,
+     "reserve_protein_ng": 27,
+     "maintenance_uj": 836319,
+     "growth_uj": 376233,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.31,
+      "P": 6.51,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 835,
+     "bridged_up": 7667652,
+     "death": null
+    },
+    {
+     "id": "l06",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.88,
+      "L3": 10.99,
+      "prepupa": 18.13,
+      "pupa": 20.78,
+      "adult": 26.39
+     },
+     "fed_sugar_ng": 111494,
+     "fed_protein_ng": 68823,
+     "structure_ng": 40940,
+     "reserve_sugar_ng": 40113,
+     "reserve_protein_ng": 13,
+     "maintenance_uj": 740454,
+     "growth_uj": 337771,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.53,
+      "P": 5.86,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 777,
+     "bridged_up": 6882366,
+     "death": null
+    },
+    {
+     "id": "l07",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.71,
+      "L3": 10.99,
+      "prepupa": 18.48,
+      "pupa": 20.74,
+      "adult": 26.28
+     },
+     "fed_sugar_ng": 114636,
+     "fed_protein_ng": 70763,
+     "structure_ng": 42039,
+     "reserve_sugar_ng": 42451,
+     "reserve_protein_ng": 62,
+     "maintenance_uj": 743737,
+     "growth_uj": 346830,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.33,
+      "P": 5.95,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 802,
+     "bridged_up": 7076345,
+     "death": null
+    },
+    {
+     "id": "l08",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.98,
+      "L3": 11.96,
+      "prepupa": 19.83,
+      "pupa": 22.27,
+      "adult": 27.38
+     },
+     "fed_sugar_ng": 122169,
+     "fed_protein_ng": 75413,
+     "structure_ng": 44827,
+     "reserve_sugar_ng": 44032,
+     "reserve_protein_ng": 29,
+     "maintenance_uj": 810051,
+     "growth_uj": 369831,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.02,
+      "P": 6.35,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 836,
+     "bridged_up": 7541313,
+     "death": null
+    }
+   ]
+  },
+  {
+   "seed": 6,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 48083712,
+    "used": 160364005,
+    "initial": 16447717,
+    "produced": 192000000,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 6717,
+   "log_sha256": "7456e4791d2f2b4ae58c27bef0ea625280b4f99517521028356b6211e8e4b68c",
+   "state_sha256": "cbddc46ba3aea2ddabbd9240d4c96972ec5663accd379d8ee3dad2b5dcfe35d5",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.14,
+      "L3": 11.69,
+      "prepupa": 19.1,
+      "pupa": 21.69,
+      "adult": 26.99
+     },
+     "fed_sugar_ng": 116764,
+     "fed_protein_ng": 72076,
+     "structure_ng": 42853,
+     "reserve_sugar_ng": 41908,
+     "reserve_protein_ng": 45,
+     "maintenance_uj": 777793,
+     "growth_uj": 353545,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.75,
+      "P": 6.23,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 824,
+     "bridged_up": 7207667,
+     "death": null
+    },
+    {
+     "id": "l02",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.88,
+      "L3": 11.32,
+      "prepupa": 19.14,
+      "pupa": 21.46,
+      "adult": 26.62
+     },
+     "fed_sugar_ng": 119149,
+     "fed_protein_ng": 73549,
+     "structure_ng": 43730,
+     "reserve_sugar_ng": 44126,
+     "reserve_protein_ng": 44,
+     "maintenance_uj": 772810,
+     "growth_uj": 360789,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.45,
+      "P": 6.17,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 841,
+     "bridged_up": 7354920,
+     "death": null
+    },
+    {
+     "id": "l03",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.92,
+      "L3": 11.59,
+      "prepupa": 19.18,
+      "pupa": 21.74,
+      "adult": 26.17
+     },
+     "fed_sugar_ng": 118003,
+     "fed_protein_ng": 72841,
+     "structure_ng": 43290,
+     "reserve_sugar_ng": 44628,
+     "reserve_protein_ng": 71,
+     "maintenance_uj": 749314,
+     "growth_uj": 357142,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 19.97,
+      "P": 6.2,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 840,
+     "bridged_up": 7284162,
+     "death": null
+    },
+    {
+     "id": "l04",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.58,
+      "L3": 11.47,
+      "prepupa": 18.95,
+      "pupa": 21.64,
+      "adult": 26.5
+     },
+     "fed_sugar_ng": 116410,
+     "fed_protein_ng": 71858,
+     "structure_ng": 42725,
+     "reserve_sugar_ng": 42749,
+     "reserve_protein_ng": 39,
+     "maintenance_uj": 758835,
+     "growth_uj": 352489,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.47,
+      "P": 6.03,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 829,
+     "bridged_up": 7185807,
+     "death": null
+    },
+    {
+     "id": "l05",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.85,
+      "L3": 11.58,
+      "prepupa": 19.83,
+      "pupa": 22.36,
+      "adult": 28.08
+     },
+     "fed_sugar_ng": 124302,
+     "fed_protein_ng": 76730,
+     "structure_ng": 45630,
+     "reserve_sugar_ng": 43000,
+     "reserve_protein_ng": 34,
+     "maintenance_uj": 855211,
+     "growth_uj": 376464,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.75,
+      "P": 6.33,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 866,
+     "bridged_up": 7673011,
+     "death": null
+    },
+    {
+     "id": "l06",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.86,
+      "L3": 11.59,
+      "prepupa": 19.42,
+      "pupa": 21.98,
+      "adult": 26.93
+     },
+     "fed_sugar_ng": 120232,
+     "fed_protein_ng": 74217,
+     "structure_ng": 44102,
+     "reserve_sugar_ng": 43940,
+     "reserve_protein_ng": 54,
+     "maintenance_uj": 789261,
+     "growth_uj": 363858,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.7,
+      "P": 6.23,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 836,
+     "bridged_up": 7421778,
+     "death": null
+    },
+    {
+     "id": "l07",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.3,
+      "L3": 11.35,
+      "prepupa": 19.01,
+      "pupa": 21.5,
+      "adult": 26.34
+     },
+     "fed_sugar_ng": 117962,
+     "fed_protein_ng": 72816,
+     "structure_ng": 43274,
+     "reserve_sugar_ng": 43969,
+     "reserve_protein_ng": 57,
+     "maintenance_uj": 758752,
+     "growth_uj": 357027,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.1,
+      "P": 6.24,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 824,
+     "bridged_up": 7281665,
+     "death": null
+    },
+    {
+     "id": "l08",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.02,
+      "L3": 12.36,
+      "prepupa": 20.38,
+      "pupa": 22.71,
+      "adult": 28.19
+     },
+     "fed_sugar_ng": 125076,
+     "fed_protein_ng": 77207,
+     "structure_ng": 45858,
+     "reserve_sugar_ng": 43874,
+     "reserve_protein_ng": 4,
+     "maintenance_uj": 850311,
+     "growth_uj": 378345,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.66,
+      "P": 6.52,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 857,
+     "bridged_up": 7720797,
+     "death": null
+    }
+   ]
+  },
+  {
+   "seed": 7,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 47836726,
+    "used": 157472974,
+    "initial": 13309700,
+    "produced": 192000000,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 6706,
+   "log_sha256": "a8f80c4fd18e825d15a89cb9ef40517de94142564b930d54b70f2cabb8a59061",
+   "state_sha256": "1d0321f68e47b025c2da3bf9713426d39831a7b5d308bd731498ff1f96b0f617",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.02,
+      "L3": 11.42,
+      "prepupa": 18.58,
+      "pupa": 21.08,
+      "adult": 26.46
+     },
+     "fed_sugar_ng": 113258,
+     "fed_protein_ng": 69912,
+     "structure_ng": 41484,
+     "reserve_sugar_ng": 41314,
+     "reserve_protein_ng": 72,
+     "maintenance_uj": 743275,
+     "growth_uj": 342259,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.4,
+      "P": 6.06,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 792,
+     "bridged_up": 6991258,
+     "death": null
+    },
+    {
+     "id": "l02",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.61,
+      "L3": 11.45,
+      "prepupa": 20.09,
+      "pupa": 22.99,
+      "adult": 28.15
+     },
+     "fed_sugar_ng": 127419,
+     "fed_protein_ng": 78654,
+     "structure_ng": 46725,
+     "reserve_sugar_ng": 44135,
+     "reserve_protein_ng": 105,
+     "maintenance_uj": 877057,
+     "growth_uj": 385489,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.83,
+      "P": 6.32,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 883,
+     "bridged_up": 7865425,
+     "death": null
+    },
+    {
+     "id": "l03",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.28,
+      "L3": 11.75,
+      "prepupa": 19.42,
+      "pupa": 21.84,
+      "adult": 27.06
+     },
+     "fed_sugar_ng": 119594,
+     "fed_protein_ng": 73823,
+     "structure_ng": 43865,
+     "reserve_sugar_ng": 43325,
+     "reserve_protein_ng": 4,
+     "maintenance_uj": 789343,
+     "growth_uj": 361894,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.72,
+      "P": 6.34,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 825,
+     "bridged_up": 7382371,
+     "death": null
+    },
+    {
+     "id": "l04",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.82,
+      "L3": 11,
+      "prepupa": 18.57,
+      "pupa": 21.15,
+      "adult": 26.55
+     },
+     "fed_sugar_ng": 115600,
+     "fed_protein_ng": 71358,
+     "structure_ng": 42442,
+     "reserve_sugar_ng": 41990,
+     "reserve_protein_ng": 22,
+     "maintenance_uj": 762300,
+     "growth_uj": 350163,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.58,
+      "P": 5.97,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 808,
+     "bridged_up": 7135824,
+     "death": null
+    },
+    {
+     "id": "l05",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.06,
+      "L3": 11.03,
+      "prepupa": 18.53,
+      "pupa": 21.11,
+      "adult": 26.25
+     },
+     "fed_sugar_ng": 115199,
+     "fed_protein_ng": 71111,
+     "structure_ng": 42253,
+     "reserve_sugar_ng": 42488,
+     "reserve_protein_ng": 27,
+     "maintenance_uj": 748473,
+     "growth_uj": 348595,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.21,
+      "P": 6.04,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 805,
+     "bridged_up": 7111100,
+     "death": null
+    },
+    {
+     "id": "l06",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.95,
+      "L3": 11.89,
+      "prepupa": 20.44,
+      "pupa": 23.07,
+      "adult": 28
+     },
+     "fed_sugar_ng": 128322,
+     "fed_protein_ng": 79211,
+     "structure_ng": 47082,
+     "reserve_sugar_ng": 45543,
+     "reserve_protein_ng": 68,
+     "maintenance_uj": 865557,
+     "growth_uj": 388443,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.5,
+      "P": 6.5,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 874,
+     "bridged_up": 7921171,
+     "death": null
+    },
+    {
+     "id": "l07",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.98,
+      "L3": 11.48,
+      "prepupa": 19.84,
+      "pupa": 22.27,
+      "adult": 27.36
+     },
+     "fed_sugar_ng": 125184,
+     "fed_protein_ng": 77274,
+     "structure_ng": 45901,
+     "reserve_sugar_ng": 45317,
+     "reserve_protein_ng": 51,
+     "maintenance_uj": 826864,
+     "growth_uj": 378691,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21,
+      "P": 6.36,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 864,
+     "bridged_up": 7727410,
+     "death": null
+    },
+    {
+     "id": "l08",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.87,
+      "L3": 11.65,
+      "prepupa": 19.71,
+      "pupa": 22.55,
+      "adult": 27.69
+     },
+     "fed_sugar_ng": 122667,
+     "fed_protein_ng": 75720,
+     "structure_ng": 45043,
+     "reserve_sugar_ng": 43065,
+     "reserve_protein_ng": 14,
+     "maintenance_uj": 834405,
+     "growth_uj": 371613,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.39,
+      "P": 6.3,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 855,
+     "bridged_up": 7572044,
+     "death": null
+    }
+   ]
+  },
+  {
+   "seed": 8,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 47286098,
+    "used": 156069942,
+    "initial": 11356040,
+    "produced": 192000000,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 6701,
+   "log_sha256": "87f0b6ac7f5c2e052cf1500e62673217d90a8d410d85aa05139b71f6ee2590af",
+   "state_sha256": "df57f6171ef7e70c9809f173ec9dd6e25f27c15f184d0c3f45f84505161be43d",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.49,
+      "L3": 10.7,
+      "prepupa": 18.78,
+      "pupa": 21.34,
+      "adult": 26.07
+     },
+     "fed_sugar_ng": 119240,
+     "fed_protein_ng": 73604,
+     "structure_ng": 43783,
+     "reserve_sugar_ng": 44864,
+     "reserve_protein_ng": 15,
+     "maintenance_uj": 759973,
+     "growth_uj": 361218,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.13,
+      "P": 5.94,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 836,
+     "bridged_up": 7360496,
+     "death": null
+    },
+    {
+     "id": "l02",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.31,
+      "L3": 11.85,
+      "prepupa": 18.55,
+      "pupa": 21.03,
+      "adult": 26.56
+     },
+     "fed_sugar_ng": 110647,
+     "fed_protein_ng": 68300,
+     "structure_ng": 40559,
+     "reserve_sugar_ng": 39953,
+     "reserve_protein_ng": 113,
+     "maintenance_uj": 732963,
+     "growth_uj": 334620,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.43,
+      "P": 6.13,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 769,
+     "bridged_up": 6830080,
+     "death": null
+    },
+    {
+     "id": "l03",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.16,
+      "L3": 12.51,
+      "prepupa": 21.33,
+      "pupa": 24.03,
+      "adult": 28.63
+     },
+     "fed_sugar_ng": 132584,
+     "fed_protein_ng": 81842,
+     "structure_ng": 48595,
+     "reserve_sugar_ng": 46413,
+     "reserve_protein_ng": 28,
+     "maintenance_uj": 904464,
+     "growth_uj": 400917,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.76,
+      "P": 6.86,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 878,
+     "bridged_up": 8184239,
+     "death": null
+    },
+    {
+     "id": "l04",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.98,
+      "L3": 11.1,
+      "prepupa": 19.78,
+      "pupa": 22.44,
+      "adult": 26.92
+     },
+     "fed_sugar_ng": 126658,
+     "fed_protein_ng": 78183,
+     "structure_ng": 46481,
+     "reserve_sugar_ng": 46798,
+     "reserve_protein_ng": 53,
+     "maintenance_uj": 822211,
+     "growth_uj": 383476,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.6,
+      "P": 6.32,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 873,
+     "bridged_up": 7818398,
+     "death": null
+    },
+    {
+     "id": "l05",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4,
+      "L3": 12.1,
+      "prepupa": 20.2,
+      "pupa": 22.64,
+      "adult": 27.53
+     },
+     "fed_sugar_ng": 124940,
+     "fed_protein_ng": 77123,
+     "structure_ng": 45856,
+     "reserve_sugar_ng": 45210,
+     "reserve_protein_ng": 40,
+     "maintenance_uj": 825874,
+     "growth_uj": 378328,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.08,
+      "P": 6.45,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 847,
+     "bridged_up": 7712351,
+     "death": null
+    },
+    {
+     "id": "l06",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.61,
+      "L3": 11.21,
+      "prepupa": 18.81,
+      "pupa": 21.26,
+      "adult": 26.41
+     },
+     "fed_sugar_ng": 116586,
+     "fed_protein_ng": 71967,
+     "structure_ng": 42730,
+     "reserve_sugar_ng": 43135,
+     "reserve_protein_ng": 14,
+     "maintenance_uj": 755848,
+     "growth_uj": 352539,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.41,
+      "P": 6,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 808,
+     "bridged_up": 7196708,
+     "death": null
+    },
+    {
+     "id": "l07",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.67,
+      "L3": 11.71,
+      "prepupa": 19.36,
+      "pupa": 21.61,
+      "adult": 26.6
+     },
+     "fed_sugar_ng": 119051,
+     "fed_protein_ng": 73488,
+     "structure_ng": 43691,
+     "reserve_sugar_ng": 44375,
+     "reserve_protein_ng": 48,
+     "maintenance_uj": 765468,
+     "growth_uj": 360459,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.45,
+      "P": 6.15,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 826,
+     "bridged_up": 7348871,
+     "death": null
+    },
+    {
+     "id": "l08",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.04,
+      "L3": 11.95,
+      "prepupa": 20,
+      "pupa": 22.64,
+      "adult": 27.98
+     },
+     "fed_sugar_ng": 123957,
+     "fed_protein_ng": 76516,
+     "structure_ng": 45439,
+     "reserve_sugar_ng": 43258,
+     "reserve_protein_ng": 87,
+     "maintenance_uj": 845641,
+     "growth_uj": 374880,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.55,
+      "P": 6.44,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 864,
+     "bridged_up": 7651694,
+     "death": null
+    }
+   ]
+  },
+  {
+   "seed": 9,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 47813274,
+    "used": 156394220,
+    "initial": 12207494,
+    "produced": 192000000,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 6649,
+   "log_sha256": "19cc4316d24747c667db6eaffce68a898f88e958acdf2e74ff3d2d4bf9bb0ec5",
+   "state_sha256": "93cb6b39bf34df3447122913ca8b593ed2976a8ff7da67f5ee8e99d7885a320f",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.07,
+      "L3": 11.02,
+      "prepupa": 19.15,
+      "pupa": 21.53,
+      "adult": 26.93
+     },
+     "fed_sugar_ng": 121082,
+     "fed_protein_ng": 74742,
+     "structure_ng": 44459,
+     "reserve_sugar_ng": 44050,
+     "reserve_protein_ng": 16,
+     "maintenance_uj": 798649,
+     "growth_uj": 366811,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.74,
+      "P": 6.19,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 837,
+     "bridged_up": 7474225,
+     "death": null
+    },
+    {
+     "id": "l02",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.2,
+      "L3": 11.3,
+      "prepupa": 18.64,
+      "pupa": 21.48,
+      "adult": 26.79
+     },
+     "fed_sugar_ng": 114740,
+     "fed_protein_ng": 70827,
+     "structure_ng": 42082,
+     "reserve_sugar_ng": 40905,
+     "reserve_protein_ng": 13,
+     "maintenance_uj": 768289,
+     "growth_uj": 347193,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.68,
+      "P": 6.11,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 796,
+     "bridged_up": 7082765,
+     "death": null
+    },
+    {
+     "id": "l03",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.02,
+      "L3": 12.2,
+      "prepupa": 20.03,
+      "pupa": 22.44,
+      "adult": 27.4
+     },
+     "fed_sugar_ng": 122619,
+     "fed_protein_ng": 75690,
+     "structure_ng": 45021,
+     "reserve_sugar_ng": 44511,
+     "reserve_protein_ng": 19,
+     "maintenance_uj": 809869,
+     "growth_uj": 371448,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.97,
+      "P": 6.42,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 841,
+     "bridged_up": 7569091,
+     "death": null
+    },
+    {
+     "id": "l04",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.3,
+      "L3": 11.79,
+      "prepupa": 19.46,
+      "pupa": 22.2,
+      "adult": 27.5
+     },
+     "fed_sugar_ng": 119606,
+     "fed_protein_ng": 73831,
+     "structure_ng": 43893,
+     "reserve_sugar_ng": 42096,
+     "reserve_protein_ng": 51,
+     "maintenance_uj": 811503,
+     "growth_uj": 362125,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.14,
+      "P": 6.36,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 830,
+     "bridged_up": 7383146,
+     "death": null
+    },
+    {
+     "id": "l05",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.83,
+      "L3": 10.03,
+      "prepupa": 17.95,
+      "pupa": 20.81,
+      "adult": 25.72
+     },
+     "fed_sugar_ng": 115397,
+     "fed_protein_ng": 71232,
+     "structure_ng": 42351,
+     "reserve_sugar_ng": 42956,
+     "reserve_protein_ng": 45,
+     "maintenance_uj": 743127,
+     "growth_uj": 349404,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 19.93,
+      "P": 5.79,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 795,
+     "bridged_up": 7123294,
+     "death": null
+    },
+    {
+     "id": "l06",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.17,
+      "L3": 11.31,
+      "prepupa": 19.13,
+      "pupa": 21.77,
+      "adult": 26.42
+     },
+     "fed_sugar_ng": 119304,
+     "fed_protein_ng": 73644,
+     "structure_ng": 43806,
+     "reserve_sugar_ng": 44386,
+     "reserve_protein_ng": 16,
+     "maintenance_uj": 769263,
+     "growth_uj": 361416,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.21,
+      "P": 6.21,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 822,
+     "bridged_up": 7364445,
+     "death": null
+    },
+    {
+     "id": "l07",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.11,
+      "L3": 12.12,
+      "prepupa": 20.75,
+      "pupa": 23.55,
+      "adult": 28.52
+     },
+     "fed_sugar_ng": 129864,
+     "fed_protein_ng": 80163,
+     "structure_ng": 47634,
+     "reserve_sugar_ng": 44809,
+     "reserve_protein_ng": 42,
+     "maintenance_uj": 894432,
+     "growth_uj": 392997,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.87,
+      "P": 6.65,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 878,
+     "bridged_up": 8016348,
+     "death": null
+    },
+    {
+     "id": "l08",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.21,
+      "L3": 11.91,
+      "prepupa": 19.98,
+      "pupa": 22.44,
+      "adult": 27.19
+     },
+     "fed_sugar_ng": 123967,
+     "fed_protein_ng": 76523,
+     "structure_ng": 45484,
+     "reserve_sugar_ng": 45494,
+     "reserve_protein_ng": 49,
+     "maintenance_uj": 810315,
+     "growth_uj": 375259,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.73,
+      "P": 6.46,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 850,
+     "bridged_up": 7652326,
+     "death": null
+    }
+   ]
+  },
+  {
+   "seed": 10,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 46888606,
+    "used": 158322331,
+    "initial": 13210937,
+    "produced": 192000000,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 6824,
+   "log_sha256": "20ccc0bc8f5c4b38810151338e04af53a1b725d6ca06b7fca9994b0d354f3646",
+   "state_sha256": "9a063b76ad25a90a5be25e829f74a929884a0cf68cd89cae0939864aa3bf4a22",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.85,
+      "L3": 11.52,
+      "prepupa": 19.82,
+      "pupa": 22.23,
+      "adult": 27.71
+     },
+     "fed_sugar_ng": 124621,
+     "fed_protein_ng": 76926,
+     "structure_ng": 45719,
+     "reserve_sugar_ng": 44161,
+     "reserve_protein_ng": 57,
+     "maintenance_uj": 839520,
+     "growth_uj": 377190,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.4,
+      "P": 6.31,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 868,
+     "bridged_up": 7692672,
+     "death": null
+    },
+    {
+     "id": "l02",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.95,
+      "L3": 11.22,
+      "prepupa": 18.83,
+      "pupa": 21.13,
+      "adult": 26.18
+     },
+     "fed_sugar_ng": 116760,
+     "fed_protein_ng": 72074,
+     "structure_ng": 42860,
+     "reserve_sugar_ng": 43889,
+     "reserve_protein_ng": 33,
+     "maintenance_uj": 746361,
+     "growth_uj": 353611,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.08,
+      "P": 6.1,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 815,
+     "bridged_up": 7207425,
+     "death": null
+    },
+    {
+     "id": "l03",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.61,
+      "L3": 11.72,
+      "prepupa": 20.51,
+      "pupa": 22.88,
+      "adult": 27.83
+     },
+     "fed_sugar_ng": 129928,
+     "fed_protein_ng": 80202,
+     "structure_ng": 47649,
+     "reserve_sugar_ng": 46852,
+     "reserve_protein_ng": 100,
+     "maintenance_uj": 862092,
+     "growth_uj": 393112,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.41,
+      "P": 6.42,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 881,
+     "bridged_up": 8020276,
+     "death": null
+    },
+    {
+     "id": "l04",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.73,
+      "L3": 12.04,
+      "prepupa": 20.49,
+      "pupa": 22.71,
+      "adult": 27.86
+     },
+     "fed_sugar_ng": 127976,
+     "fed_protein_ng": 78998,
+     "structure_ng": 46907,
+     "reserve_sugar_ng": 46107,
+     "reserve_protein_ng": 75,
+     "maintenance_uj": 849403,
+     "growth_uj": 386991,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.4,
+      "P": 6.46,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 875,
+     "bridged_up": 7899804,
+     "death": null
+    },
+    {
+     "id": "l05",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.8,
+      "L3": 10.4,
+      "prepupa": 18.63,
+      "pupa": 21.13,
+      "adult": 26.19
+     },
+     "fed_sugar_ng": 119653,
+     "fed_protein_ng": 73860,
+     "structure_ng": 43905,
+     "reserve_sugar_ng": 44586,
+     "reserve_protein_ng": 41,
+     "maintenance_uj": 770187,
+     "growth_uj": 362224,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.22,
+      "P": 5.97,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 824,
+     "bridged_up": 7386036,
+     "death": null
+    },
+    {
+     "id": "l06",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.18,
+      "L3": 12.03,
+      "prepupa": 20.68,
+      "pupa": 23.4,
+      "adult": 28.34
+     },
+     "fed_sugar_ng": 130015,
+     "fed_protein_ng": 80256,
+     "structure_ng": 47674,
+     "reserve_sugar_ng": 45407,
+     "reserve_protein_ng": 93,
+     "maintenance_uj": 886858,
+     "growth_uj": 393327,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.71,
+      "P": 6.62,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 881,
+     "bridged_up": 8025652,
+     "death": null
+    },
+    {
+     "id": "l07",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.22,
+      "L3": 11.51,
+      "prepupa": 19.28,
+      "pupa": 21.99,
+      "adult": 26.8
+     },
+     "fed_sugar_ng": 119667,
+     "fed_protein_ng": 73868,
+     "structure_ng": 43915,
+     "reserve_sugar_ng": 43654,
+     "reserve_protein_ng": 31,
+     "maintenance_uj": 785202,
+     "growth_uj": 362307,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.53,
+      "P": 6.27,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 826,
+     "bridged_up": 7386887,
+     "death": null
+    },
+    {
+     "id": "l08",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.27,
+      "L3": 11.85,
+      "prepupa": 20.04,
+      "pupa": 22.57,
+      "adult": 27.14
+     },
+     "fed_sugar_ng": 124590,
+     "fed_protein_ng": 76907,
+     "structure_ng": 45697,
+     "reserve_sugar_ng": 45943,
+     "reserve_protein_ng": 88,
+     "maintenance_uj": 813021,
+     "growth_uj": 377008,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.63,
+      "P": 6.51,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 854,
+     "bridged_up": 7690777,
+     "death": null
+    }
+   ]
+  },
+  {
+   "seed": 11,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 47421311,
+    "used": 155027626,
+    "initial": 10448937,
+    "produced": 192000000,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 6687,
+   "log_sha256": "a54d9df2ca9a1323f871fe2644e0cb3b16518a822bdbfec40857608d572f270c",
+   "state_sha256": "70e33fd84e8b5fb4248e52e40d033f4fa28edc6bd75a440243206e6b1ddd71cf",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.52,
+      "L3": 10.43,
+      "prepupa": 18.76,
+      "pupa": 21.17,
+      "adult": 26.18
+     },
+     "fed_sugar_ng": 120668,
+     "fed_protein_ng": 74486,
+     "structure_ng": 44300,
+     "reserve_sugar_ng": 45256,
+     "reserve_protein_ng": 26,
+     "maintenance_uj": 772134,
+     "growth_uj": 365491,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.25,
+      "P": 5.93,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 827,
+     "bridged_up": 7448650,
+     "death": null
+    },
+    {
+     "id": "l02",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.51,
+      "L3": 10.98,
+      "prepupa": 19.49,
+      "pupa": 22.14,
+      "adult": 27.11
+     },
+     "fed_sugar_ng": 124457,
+     "fed_protein_ng": 76825,
+     "structure_ng": 45613,
+     "reserve_sugar_ng": 45159,
+     "reserve_protein_ng": 122,
+     "maintenance_uj": 821634,
+     "growth_uj": 376315,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.97,
+      "P": 6.14,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 849,
+     "bridged_up": 7682559,
+     "death": null
+    },
+    {
+     "id": "l03",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.14,
+      "L3": 11.45,
+      "prepupa": 19.3,
+      "pupa": 21.95,
+      "adult": 26.95
+     },
+     "fed_sugar_ng": 120142,
+     "fed_protein_ng": 74161,
+     "structure_ng": 44093,
+     "reserve_sugar_ng": 43560,
+     "reserve_protein_ng": 45,
+     "maintenance_uj": 792924,
+     "growth_uj": 363775,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.7,
+      "P": 6.25,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 827,
+     "bridged_up": 7416183,
+     "death": null
+    },
+    {
+     "id": "l04",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.77,
+      "L3": 11.16,
+      "prepupa": 19.27,
+      "pupa": 21.92,
+      "adult": 26.74
+     },
+     "fed_sugar_ng": 121447,
+     "fed_protein_ng": 74967,
+     "structure_ng": 44565,
+     "reserve_sugar_ng": 44573,
+     "reserve_protein_ng": 55,
+     "maintenance_uj": 792231,
+     "growth_uj": 367669,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.61,
+      "P": 6.13,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 839,
+     "bridged_up": 7496753,
+     "death": null
+    },
+    {
+     "id": "l05",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.98,
+      "L3": 11.83,
+      "prepupa": 20.07,
+      "pupa": 22.89,
+      "adult": 28.1
+     },
+     "fed_sugar_ng": 125153,
+     "fed_protein_ng": 77254,
+     "structure_ng": 45964,
+     "reserve_sugar_ng": 43407,
+     "reserve_protein_ng": 2,
+     "maintenance_uj": 860112,
+     "growth_uj": 379203,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.68,
+      "P": 6.41,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 864,
+     "bridged_up": 7725497,
+     "death": null
+    },
+    {
+     "id": "l06",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.11,
+      "L3": 11.54,
+      "prepupa": 18.66,
+      "pupa": 21.31,
+      "adult": 26.12
+     },
+     "fed_sugar_ng": 113512,
+     "fed_protein_ng": 70069,
+     "structure_ng": 41652,
+     "reserve_sugar_ng": 42133,
+     "reserve_protein_ng": 18,
+     "maintenance_uj": 731676,
+     "growth_uj": 343645,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.03,
+      "P": 6.09,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 789,
+     "bridged_up": 7006962,
+     "death": null
+    },
+    {
+     "id": "l07",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.94,
+      "L3": 12.08,
+      "prepupa": 20.43,
+      "pupa": 22.84,
+      "adult": 27.99
+     },
+     "fed_sugar_ng": 127109,
+     "fed_protein_ng": 78462,
+     "structure_ng": 46637,
+     "reserve_sugar_ng": 45236,
+     "reserve_protein_ng": 67,
+     "maintenance_uj": 854568,
+     "growth_uj": 384763,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.49,
+      "P": 6.5,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 861,
+     "bridged_up": 7846259,
+     "death": null
+    },
+    {
+     "id": "l08",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.18,
+      "L3": 11.9,
+      "prepupa": 19.73,
+      "pupa": 22.19,
+      "adult": 27.07
+     },
+     "fed_sugar_ng": 121665,
+     "fed_protein_ng": 75101,
+     "structure_ng": 44664,
+     "reserve_sugar_ng": 44481,
+     "reserve_protein_ng": 29,
+     "maintenance_uj": 796669,
+     "growth_uj": 368478,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.69,
+      "P": 6.38,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 831,
+     "bridged_up": 7510190,
+     "death": null
+    }
+   ]
+  },
+  {
+   "seed": 12,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 47603835,
+    "used": 156024269,
+    "initial": 11628104,
+    "produced": 192000000,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 6705,
+   "log_sha256": "379a6749e64e4a8b354845834ac65ba2740b10127303f3619c27a14a52a08d78",
+   "state_sha256": "4a3965013493841dd20627c493575a480375fb1ca1cf3b10703c1d31f1633f7b",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.69,
+      "L3": 11.6,
+      "prepupa": 19.33,
+      "pupa": 22.03,
+      "adult": 26.72
+     },
+     "fed_sugar_ng": 119363,
+     "fed_protein_ng": 73681,
+     "structure_ng": 43777,
+     "reserve_sugar_ng": 43896,
+     "reserve_protein_ng": 89,
+     "maintenance_uj": 778008,
+     "growth_uj": 361168,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.56,
+      "P": 6.16,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 828,
+     "bridged_up": 7368127,
+     "death": null
+    },
+    {
+     "id": "l02",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.87,
+      "L3": 11.21,
+      "prepupa": 18.9,
+      "pupa": 21.35,
+      "adult": 26.46
+     },
+     "fed_sugar_ng": 117555,
+     "fed_protein_ng": 72565,
+     "structure_ng": 43153,
+     "reserve_sugar_ng": 43422,
+     "reserve_protein_ng": 32,
+     "maintenance_uj": 762564,
+     "growth_uj": 356020,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.39,
+      "P": 6.07,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 816,
+     "bridged_up": 7256516,
+     "death": null
+    },
+    {
+     "id": "l03",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.96,
+      "L3": 11.76,
+      "prepupa": 20.18,
+      "pupa": 22.61,
+      "adult": 28.17
+     },
+     "fed_sugar_ng": 126607,
+     "fed_protein_ng": 78152,
+     "structure_ng": 46429,
+     "reserve_sugar_ng": 44180,
+     "reserve_protein_ng": 62,
+     "maintenance_uj": 864897,
+     "growth_uj": 383047,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.71,
+      "P": 6.46,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 872,
+     "bridged_up": 7815270,
+     "death": null
+    },
+    {
+     "id": "l04",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.67,
+      "L3": 11.18,
+      "prepupa": 18.9,
+      "pupa": 21.59,
+      "adult": 26.69
+     },
+     "fed_sugar_ng": 117670,
+     "fed_protein_ng": 72636,
+     "structure_ng": 43197,
+     "reserve_sugar_ng": 42710,
+     "reserve_protein_ng": 29,
+     "maintenance_uj": 775533,
+     "growth_uj": 356383,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.67,
+      "P": 6.02,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 817,
+     "bridged_up": 7263636,
+     "death": null
+    },
+    {
+     "id": "l05",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.56,
+      "L3": 11.77,
+      "prepupa": 19.45,
+      "pupa": 22.07,
+      "adult": 27.25
+     },
+     "fed_sugar_ng": 119810,
+     "fed_protein_ng": 73956,
+     "structure_ng": 43981,
+     "reserve_sugar_ng": 42847,
+     "reserve_protein_ng": 31,
+     "maintenance_uj": 801223,
+     "growth_uj": 362851,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.82,
+      "P": 6.43,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 838,
+     "bridged_up": 7395691,
+     "death": null
+    },
+    {
+     "id": "l06",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.98,
+      "L3": 11.92,
+      "prepupa": 20.42,
+      "pupa": 22.96,
+      "adult": 28
+     },
+     "fed_sugar_ng": 127964,
+     "fed_protein_ng": 78990,
+     "structure_ng": 46848,
+     "reserve_sugar_ng": 45485,
+     "reserve_protein_ng": 104,
+     "maintenance_uj": 861630,
+     "growth_uj": 386496,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.46,
+      "P": 6.54,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 865,
+     "bridged_up": 7899060,
+     "death": null
+    },
+    {
+     "id": "l07",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.73,
+      "L3": 11.45,
+      "prepupa": 19.14,
+      "pupa": 21.64,
+      "adult": 26.85
+     },
+     "fed_sugar_ng": 118336,
+     "fed_protein_ng": 73047,
+     "structure_ng": 43427,
+     "reserve_sugar_ng": 43044,
+     "reserve_protein_ng": 50,
+     "maintenance_uj": 779130,
+     "growth_uj": 358281,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.73,
+      "P": 6.11,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 819,
+     "bridged_up": 7304708,
+     "death": null
+    },
+    {
+     "id": "l08",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.73,
+      "L3": 11.51,
+      "prepupa": 19.84,
+      "pupa": 22.39,
+      "adult": 27.69
+     },
+     "fed_sugar_ng": 124636,
+     "fed_protein_ng": 76936,
+     "structure_ng": 45705,
+     "reserve_sugar_ng": 44176,
+     "reserve_protein_ng": 18,
+     "maintenance_uj": 840064,
+     "growth_uj": 377074,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.38,
+      "P": 6.3,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 850,
+     "bridged_up": 7693608,
+     "death": null
+    }
+   ]
+  },
+  {
+   "seed": 13,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 47369448,
+    "used": 157335868,
+    "initial": 12705316,
+    "produced": 192000000,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 6764,
+   "log_sha256": "3ead2c59b123781c97b6553db4081f65b3515d5152fa7f2129bfc432b4c74c15",
+   "state_sha256": "d5508d83000122fcba0341eeb33cce85a736b3c54197b02736bb40f13a15b26d",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.78,
+      "L3": 10.85,
+      "prepupa": 18.17,
+      "pupa": 20.87,
+      "adult": 26.12
+     },
+     "fed_sugar_ng": 112620,
+     "fed_protein_ng": 69518,
+     "structure_ng": 41301,
+     "reserve_sugar_ng": 41270,
+     "reserve_protein_ng": 17,
+     "maintenance_uj": 735735,
+     "growth_uj": 340741,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.24,
+      "P": 5.88,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 792,
+     "bridged_up": 6951856,
+     "death": null
+    },
+    {
+     "id": "l02",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.07,
+      "L3": 11.32,
+      "prepupa": 19.4,
+      "pupa": 21.93,
+      "adult": 26.43
+     },
+     "fed_sugar_ng": 121962,
+     "fed_protein_ng": 75285,
+     "structure_ng": 44732,
+     "reserve_sugar_ng": 45813,
+     "reserve_protein_ng": 52,
+     "maintenance_uj": 778008,
+     "growth_uj": 369055,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.17,
+      "P": 6.26,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 848,
+     "bridged_up": 7528566,
+     "death": null
+    },
+    {
+     "id": "l03",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.11,
+      "L3": 11.5,
+      "prepupa": 20.21,
+      "pupa": 22.6,
+      "adult": 27.97
+     },
+     "fed_sugar_ng": 128470,
+     "fed_protein_ng": 79302,
+     "structure_ng": 47132,
+     "reserve_sugar_ng": 45475,
+     "reserve_protein_ng": 44,
+     "maintenance_uj": 867058,
+     "growth_uj": 388855,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.49,
+      "P": 6.48,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 885,
+     "bridged_up": 7930295,
+     "death": null
+    },
+    {
+     "id": "l04",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.68,
+      "L3": 11.53,
+      "prepupa": 20.19,
+      "pupa": 22.45,
+      "adult": 27.35
+     },
+     "fed_sugar_ng": 128029,
+     "fed_protein_ng": 79030,
+     "structure_ng": 46977,
+     "reserve_sugar_ng": 47067,
+     "reserve_protein_ng": 64,
+     "maintenance_uj": 835065,
+     "growth_uj": 387568,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.99,
+      "P": 6.36,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 880,
+     "bridged_up": 7903070,
+     "death": null
+    },
+    {
+     "id": "l05",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.53,
+      "L3": 12.04,
+      "prepupa": 20.21,
+      "pupa": 22.78,
+      "adult": 27.84
+     },
+     "fed_sugar_ng": 125486,
+     "fed_protein_ng": 77460,
+     "structure_ng": 45945,
+     "reserve_sugar_ng": 44563,
+     "reserve_protein_ng": 182,
+     "maintenance_uj": 844651,
+     "growth_uj": 379071,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.21,
+      "P": 6.63,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 858,
+     "bridged_up": 7746056,
+     "death": null
+    },
+    {
+     "id": "l06",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.04,
+      "L3": 11.3,
+      "prepupa": 19.98,
+      "pupa": 22.45,
+      "adult": 27.65
+     },
+     "fed_sugar_ng": 127508,
+     "fed_protein_ng": 78708,
+     "structure_ng": 46764,
+     "reserve_sugar_ng": 45552,
+     "reserve_protein_ng": 25,
+     "maintenance_uj": 852538,
+     "growth_uj": 385819,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.27,
+      "P": 6.39,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 870,
+     "bridged_up": 7870892,
+     "death": null
+    },
+    {
+     "id": "l07",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.79,
+      "L3": 10.94,
+      "prepupa": 18.71,
+      "pupa": 21.42,
+      "adult": 26.64
+     },
+     "fed_sugar_ng": 117288,
+     "fed_protein_ng": 72400,
+     "structure_ng": 43061,
+     "reserve_sugar_ng": 42496,
+     "reserve_protein_ng": 24,
+     "maintenance_uj": 775384,
+     "growth_uj": 355261,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.65,
+      "P": 5.99,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 813,
+     "bridged_up": 7240038,
+     "death": null
+    },
+    {
+     "id": "l08",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.88,
+      "L3": 11.68,
+      "prepupa": 19.14,
+      "pupa": 21.72,
+      "adult": 26.93
+     },
+     "fed_sugar_ng": 117004,
+     "fed_protein_ng": 72224,
+     "structure_ng": 42927,
+     "reserve_sugar_ng": 42319,
+     "reserve_protein_ng": 65,
+     "maintenance_uj": 775747,
+     "growth_uj": 354156,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.76,
+      "P": 6.17,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 818,
+     "bridged_up": 7222474,
+     "death": null
+    }
+   ]
+  },
+  {
+   "seed": 14,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 48119596,
+    "used": 155215042,
+    "initial": 11334638,
+    "produced": 192000000,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 6543,
+   "log_sha256": "c5beb77441c1fa0bc19edd285caffbbacca98a79a5c6a7602dff021adb698878",
+   "state_sha256": "149a9d585c1e1bce682b8616ee2201cdcdf2b0d9866e016da52516753415913c",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.23,
+      "L3": 10.41,
+      "prepupa": 18.64,
+      "pupa": 21.35,
+      "adult": 26.22
+     },
+     "fed_sugar_ng": 119509,
+     "fed_protein_ng": 73771,
+     "structure_ng": 43885,
+     "reserve_sugar_ng": 44359,
+     "reserve_protein_ng": 12,
+     "maintenance_uj": 772101,
+     "growth_uj": 362059,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.4,
+      "P": 5.82,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 822,
+     "bridged_up": 7377104,
+     "death": null
+    },
+    {
+     "id": "l02",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.37,
+      "L3": 11.6,
+      "prepupa": 19.15,
+      "pupa": 21.75,
+      "adult": 26.48
+     },
+     "fed_sugar_ng": 117952,
+     "fed_protein_ng": 72810,
+     "structure_ng": 43276,
+     "reserve_sugar_ng": 43697,
+     "reserve_protein_ng": 64,
+     "maintenance_uj": 762976,
+     "growth_uj": 357043,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.21,
+      "P": 6.27,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 806,
+     "bridged_up": 7281023,
+     "death": null
+    },
+    {
+     "id": "l03",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.15,
+      "L3": 10.87,
+      "prepupa": 18.33,
+      "pupa": 20.99,
+      "adult": 25.98
+     },
+     "fed_sugar_ng": 114262,
+     "fed_protein_ng": 70532,
+     "structure_ng": 41923,
+     "reserve_sugar_ng": 42406,
+     "reserve_protein_ng": 16,
+     "maintenance_uj": 736873,
+     "growth_uj": 345873,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20,
+      "P": 5.98,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 782,
+     "bridged_up": 7053234,
+     "death": null
+    },
+    {
+     "id": "l04",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.64,
+      "L3": 11.41,
+      "prepupa": 20.33,
+      "pupa": 23.06,
+      "adult": 28.31
+     },
+     "fed_sugar_ng": 129943,
+     "fed_protein_ng": 80211,
+     "structure_ng": 47656,
+     "reserve_sugar_ng": 45002,
+     "reserve_protein_ng": 30,
+     "maintenance_uj": 893277,
+     "growth_uj": 393162,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.93,
+      "P": 6.38,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 867,
+     "bridged_up": 8021193,
+     "death": null
+    },
+    {
+     "id": "l05",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.55,
+      "L3": 10.62,
+      "prepupa": 18.16,
+      "pupa": 20.3,
+      "adult": 24.94
+     },
+     "fed_sugar_ng": 113865,
+     "fed_protein_ng": 70287,
+     "structure_ng": 41769,
+     "reserve_sugar_ng": 44981,
+     "reserve_protein_ng": 9,
+     "maintenance_uj": 689502,
+     "growth_uj": 344602,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 19.15,
+      "P": 5.78,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 782,
+     "bridged_up": 7028754,
+     "death": null
+    },
+    {
+     "id": "l06",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.68,
+      "L3": 11.15,
+      "prepupa": 19.4,
+      "pupa": 22.18,
+      "adult": 26.95
+     },
+     "fed_sugar_ng": 122618,
+     "fed_protein_ng": 75690,
+     "structure_ng": 45008,
+     "reserve_sugar_ng": 44613,
+     "reserve_protein_ng": 38,
+     "maintenance_uj": 807675,
+     "growth_uj": 371332,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.82,
+      "P": 6.13,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 825,
+     "bridged_up": 7569055,
+     "death": null
+    },
+    {
+     "id": "l07",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.8,
+      "L3": 11.85,
+      "prepupa": 20.18,
+      "pupa": 22.71,
+      "adult": 27.79
+     },
+     "fed_sugar_ng": 125826,
+     "fed_protein_ng": 77670,
+     "structure_ng": 46126,
+     "reserve_sugar_ng": 44982,
+     "reserve_protein_ng": 77,
+     "maintenance_uj": 844783,
+     "growth_uj": 380556,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.38,
+      "P": 6.41,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 839,
+     "bridged_up": 7767054,
+     "death": null
+    },
+    {
+     "id": "l08",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.96,
+      "L3": 11.61,
+      "prepupa": 19.41,
+      "pupa": 21.9,
+      "adult": 27.07
+     },
+     "fed_sugar_ng": 120016,
+     "fed_protein_ng": 74084,
+     "structure_ng": 44079,
+     "reserve_sugar_ng": 43521,
+     "reserve_protein_ng": 0,
+     "maintenance_uj": 793749,
+     "growth_uj": 363660,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.84,
+      "P": 6.23,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 820,
+     "bridged_up": 7408446,
+     "death": null
+    }
+   ]
+  },
+  {
+   "seed": 15,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 48010416,
+    "used": 155918526,
+    "initial": 11928942,
+    "produced": 192000000,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 6564,
+   "log_sha256": "94030df145ea7348a88eb03c33559ea66de8f5eee9063cb9700b41b97b43d8d9",
+   "state_sha256": "c8cdd612b5d20cc3bf3f234a17165dcf86848983efbaed70c0285bc0224def61",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.8,
+      "L3": 11.16,
+      "prepupa": 18.68,
+      "pupa": 21.46,
+      "adult": 26.31
+     },
+     "fed_sugar_ng": 115794,
+     "fed_protein_ng": 71478,
+     "structure_ng": 42496,
+     "reserve_sugar_ng": 42610,
+     "reserve_protein_ng": 46,
+     "maintenance_uj": 753868,
+     "growth_uj": 350608,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.31,
+      "P": 6,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 797,
+     "bridged_up": 7147829,
+     "death": null
+    },
+    {
+     "id": "l02",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.93,
+      "L3": 11.38,
+      "prepupa": 18.73,
+      "pupa": 21.21,
+      "adult": 26.2
+     },
+     "fed_sugar_ng": 115041,
+     "fed_protein_ng": 71013,
+     "structure_ng": 42229,
+     "reserve_sugar_ng": 42789,
+     "reserve_protein_ng": 32,
+     "maintenance_uj": 740520,
+     "growth_uj": 348397,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.14,
+      "P": 6.05,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 795,
+     "bridged_up": 7101355,
+     "death": null
+    },
+    {
+     "id": "l03",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.07,
+      "L3": 11.42,
+      "prepupa": 18.75,
+      "pupa": 21.27,
+      "adult": 26.5
+     },
+     "fed_sugar_ng": 114922,
+     "fed_protein_ng": 70939,
+     "structure_ng": 42172,
+     "reserve_sugar_ng": 42020,
+     "reserve_protein_ng": 40,
+     "maintenance_uj": 752515,
+     "growth_uj": 347935,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.38,
+      "P": 6.12,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 805,
+     "bridged_up": 7093970,
+     "death": null
+    },
+    {
+     "id": "l04",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.59,
+      "L3": 11,
+      "prepupa": 18.87,
+      "pupa": 21.31,
+      "adult": 26.52
+     },
+     "fed_sugar_ng": 118538,
+     "fed_protein_ng": 73171,
+     "structure_ng": 43493,
+     "reserve_sugar_ng": 43608,
+     "reserve_protein_ng": 13,
+     "maintenance_uj": 770896,
+     "growth_uj": 358825,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.55,
+      "P": 5.97,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 818,
+     "bridged_up": 7317179,
+     "death": null
+    },
+    {
+     "id": "l05",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.07,
+      "L3": 11.99,
+      "prepupa": 20.11,
+      "pupa": 22.72,
+      "adult": 27.46
+     },
+     "fed_sugar_ng": 124490,
+     "fed_protein_ng": 76846,
+     "structure_ng": 45699,
+     "reserve_sugar_ng": 45075,
+     "reserve_protein_ng": 34,
+     "maintenance_uj": 825132,
+     "growth_uj": 377025,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.98,
+      "P": 6.48,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 833,
+     "bridged_up": 7684611,
+     "death": null
+    },
+    {
+     "id": "l06",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.04,
+      "L3": 11.37,
+      "prepupa": 19.01,
+      "pupa": 21.67,
+      "adult": 26.54
+     },
+     "fed_sugar_ng": 117832,
+     "fed_protein_ng": 72736,
+     "structure_ng": 43211,
+     "reserve_sugar_ng": 43330,
+     "reserve_protein_ng": 4,
+     "maintenance_uj": 767233,
+     "growth_uj": 356499,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.37,
+      "P": 6.16,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 809,
+     "bridged_up": 7273633,
+     "death": null
+    },
+    {
+     "id": "l07",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.87,
+      "L3": 10.69,
+      "prepupa": 18.87,
+      "pupa": 21.76,
+      "adult": 26.48
+     },
+     "fed_sugar_ng": 120402,
+     "fed_protein_ng": 74322,
+     "structure_ng": 44151,
+     "reserve_sugar_ng": 44140,
+     "reserve_protein_ng": 42,
+     "maintenance_uj": 786076,
+     "growth_uj": 364254,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.42,
+      "P": 6.06,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 833,
+     "bridged_up": 7432271,
+     "death": null
+    },
+    {
+     "id": "l08",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.82,
+      "L3": 12.34,
+      "prepupa": 21.25,
+      "pupa": 23.67,
+      "adult": 28.62
+     },
+     "fed_sugar_ng": 133192,
+     "fed_protein_ng": 82217,
+     "structure_ng": 48860,
+     "reserve_sugar_ng": 46804,
+     "reserve_protein_ng": 5,
+     "maintenance_uj": 903870,
+     "growth_uj": 403111,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.94,
+      "P": 6.68,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 874,
+     "bridged_up": 8221784,
+     "death": null
+    }
+   ]
+  },
+  {
+   "seed": 16,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 48506299,
+    "used": 157004989,
+    "initial": 13511288,
+    "produced": 192000000,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 6554,
+   "log_sha256": "5d5bba85df1174c9785d5c753bbb357e23adda6d570210fbed54736c91db1eb5",
+   "state_sha256": "fa9b0448104343f91fd0dada48a1e7c04316628a85565ca5b6cf359261933708",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.79,
+      "L3": 10.91,
+      "prepupa": 18.4,
+      "pupa": 20.88,
+      "adult": 25.98
+     },
+     "fed_sugar_ng": 114576,
+     "fed_protein_ng": 70726,
+     "structure_ng": 42006,
+     "reserve_sugar_ng": 42830,
+     "reserve_protein_ng": 8,
+     "maintenance_uj": 734827,
+     "growth_uj": 346549,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.06,
+      "P": 5.93,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 794,
+     "bridged_up": 7072633,
+     "death": null
+    },
+    {
+     "id": "l02",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.1,
+      "L3": 11.81,
+      "prepupa": 19.58,
+      "pupa": 21.92,
+      "adult": 26.93
+     },
+     "fed_sugar_ng": 120403,
+     "fed_protein_ng": 74323,
+     "structure_ng": 44152,
+     "reserve_sugar_ng": 44207,
+     "reserve_protein_ng": 3,
+     "maintenance_uj": 785400,
+     "growth_uj": 364270,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.59,
+      "P": 6.34,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 823,
+     "bridged_up": 7432345,
+     "death": null
+    },
+    {
+     "id": "l03",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.75,
+      "L3": 11.27,
+      "prepupa": 18.79,
+      "pupa": 21.27,
+      "adult": 26.11
+     },
+     "fed_sugar_ng": 116058,
+     "fed_protein_ng": 71641,
+     "structure_ng": 42580,
+     "reserve_sugar_ng": 43619,
+     "reserve_protein_ng": 59,
+     "maintenance_uj": 741576,
+     "growth_uj": 351301,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.08,
+      "P": 6.03,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 810,
+     "bridged_up": 7164114,
+     "death": null
+    },
+    {
+     "id": "l04",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.15,
+      "L3": 11.84,
+      "prepupa": 19.7,
+      "pupa": 22.27,
+      "adult": 27.14
+     },
+     "fed_sugar_ng": 121572,
+     "fed_protein_ng": 75044,
+     "structure_ng": 44624,
+     "reserve_sugar_ng": 44214,
+     "reserve_protein_ng": 38,
+     "maintenance_uj": 801421,
+     "growth_uj": 368148,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.78,
+      "P": 6.37,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 839,
+     "bridged_up": 7504474,
+     "death": null
+    },
+    {
+     "id": "l05",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.84,
+      "L3": 11.09,
+      "prepupa": 19,
+      "pupa": 21.56,
+      "adult": 26.4
+     },
+     "fed_sugar_ng": 119066,
+     "fed_protein_ng": 73497,
+     "structure_ng": 43714,
+     "reserve_sugar_ng": 44317,
+     "reserve_protein_ng": 23,
+     "maintenance_uj": 769164,
+     "growth_uj": 360657,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.3,
+      "P": 6.1,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 831,
+     "bridged_up": 7349778,
+     "death": null
+    },
+    {
+     "id": "l06",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.2,
+      "L3": 12.13,
+      "prepupa": 20.05,
+      "pupa": 22.53,
+      "adult": 27.67
+     },
+     "fed_sugar_ng": 122874,
+     "fed_protein_ng": 75848,
+     "structure_ng": 44994,
+     "reserve_sugar_ng": 43813,
+     "reserve_protein_ng": 136,
+     "maintenance_uj": 824274,
+     "growth_uj": 371217,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.12,
+      "P": 6.54,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 840,
+     "bridged_up": 7584821,
+     "death": null
+    },
+    {
+     "id": "l07",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.94,
+      "L3": 11.96,
+      "prepupa": 19.18,
+      "pupa": 21.74,
+      "adult": 26.58
+     },
+     "fed_sugar_ng": 115867,
+     "fed_protein_ng": 71523,
+     "structure_ng": 42511,
+     "reserve_sugar_ng": 42676,
+     "reserve_protein_ng": 31,
+     "maintenance_uj": 753571,
+     "growth_uj": 350724,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.37,
+      "P": 6.21,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 812,
+     "bridged_up": 7152339,
+     "death": null
+    },
+    {
+     "id": "l08",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.58,
+      "L3": 10.67,
+      "prepupa": 18.39,
+      "pupa": 20.73,
+      "adult": 25.67
+     },
+     "fed_sugar_ng": 115750,
+     "fed_protein_ng": 71451,
+     "structure_ng": 42480,
+     "reserve_sugar_ng": 44147,
+     "reserve_protein_ng": 46,
+     "maintenance_uj": 727798,
+     "growth_uj": 350476,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 19.8,
+      "P": 5.87,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 805,
+     "bridged_up": 7145117,
+     "death": null
+    }
+   ]
+  },
+  {
+   "seed": 17,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 48017020,
+    "used": 157083999,
+    "initial": 13101019,
+    "produced": 192000000,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 6650,
+   "log_sha256": "a977f7d2230360c2407af8f15aa97e2aee0fbbe72089b527d2112daa51ef90cd",
+   "state_sha256": "98e902b309aa1a00a69757ba52e9592409624ed436521b5fc77e35632a4da71b",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.81,
+      "L3": 10.9,
+      "prepupa": 18.58,
+      "pupa": 20.85,
+      "adult": 25.67
+     },
+     "fed_sugar_ng": 116216,
+     "fed_protein_ng": 71738,
+     "structure_ng": 42657,
+     "reserve_sugar_ng": 44652,
+     "reserve_protein_ng": 38,
+     "maintenance_uj": 726825,
+     "growth_uj": 351928,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 19.67,
+      "P": 6,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 807,
+     "bridged_up": 7173829,
+     "death": null
+    },
+    {
+     "id": "l02",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.03,
+      "L3": 11.72,
+      "prepupa": 19.73,
+      "pupa": 21.71,
+      "adult": 27.07
+     },
+     "fed_sugar_ng": 122643,
+     "fed_protein_ng": 75706,
+     "structure_ng": 44970,
+     "reserve_sugar_ng": 45314,
+     "reserve_protein_ng": 17,
+     "maintenance_uj": 796207,
+     "growth_uj": 371002,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.73,
+      "P": 6.33,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 835,
+     "bridged_up": 7570610,
+     "death": null
+    },
+    {
+     "id": "l03",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.77,
+      "L3": 10.93,
+      "prepupa": 18.76,
+      "pupa": 21.38,
+      "adult": 26.18
+     },
+     "fed_sugar_ng": 117829,
+     "fed_protein_ng": 72734,
+     "structure_ng": 43265,
+     "reserve_sugar_ng": 43980,
+     "reserve_protein_ng": 15,
+     "maintenance_uj": 757251,
+     "growth_uj": 356944,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.17,
+      "P": 6,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 815,
+     "bridged_up": 7273408,
+     "death": null
+    },
+    {
+     "id": "l04",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.87,
+      "L3": 11.61,
+      "prepupa": 19.44,
+      "pupa": 22.14,
+      "adult": 27.52
+     },
+     "fed_sugar_ng": 120332,
+     "fed_protein_ng": 74279,
+     "structure_ng": 44164,
+     "reserve_sugar_ng": 42395,
+     "reserve_protein_ng": 45,
+     "maintenance_uj": 815908,
+     "growth_uj": 364369,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.29,
+      "P": 6.23,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 829,
+     "bridged_up": 7427936,
+     "death": null
+    },
+    {
+     "id": "l05",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.85,
+      "L3": 11.77,
+      "prepupa": 19.91,
+      "pupa": 22.62,
+      "adult": 27.64
+     },
+     "fed_sugar_ng": 123690,
+     "fed_protein_ng": 76352,
+     "structure_ng": 45394,
+     "reserve_sugar_ng": 44122,
+     "reserve_protein_ng": 50,
+     "maintenance_uj": 832837,
+     "growth_uj": 374517,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.26,
+      "P": 6.37,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 847,
+     "bridged_up": 7635243,
+     "death": null
+    },
+    {
+     "id": "l06",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.19,
+      "L3": 12.05,
+      "prepupa": 19.59,
+      "pupa": 22.19,
+      "adult": 27.25
+     },
+     "fed_sugar_ng": 119411,
+     "fed_protein_ng": 73710,
+     "structure_ng": 43774,
+     "reserve_sugar_ng": 42948,
+     "reserve_protein_ng": 118,
+     "maintenance_uj": 794607,
+     "growth_uj": 361152,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.87,
+      "P": 6.37,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 826,
+     "bridged_up": 7371097,
+     "death": null
+    },
+    {
+     "id": "l07",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.02,
+      "L3": 10.83,
+      "prepupa": 19.41,
+      "pupa": 21.77,
+      "adult": 27.1
+     },
+     "fed_sugar_ng": 124750,
+     "fed_protein_ng": 77006,
+     "structure_ng": 45769,
+     "reserve_sugar_ng": 45314,
+     "reserve_protein_ng": 70,
+     "maintenance_uj": 822244,
+     "growth_uj": 377602,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.85,
+      "P": 6.25,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 862,
+     "bridged_up": 7700637,
+     "death": null
+    },
+    {
+     "id": "l08",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.07,
+      "L3": 12.13,
+      "prepupa": 19.55,
+      "pupa": 22.29,
+      "adult": 27.23
+     },
+     "fed_sugar_ng": 118533,
+     "fed_protein_ng": 73168,
+     "structure_ng": 43495,
+     "reserve_sugar_ng": 42446,
+     "reserve_protein_ng": 55,
+     "maintenance_uj": 791109,
+     "growth_uj": 358842,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.9,
+      "P": 6.33,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 829,
+     "bridged_up": 7316891,
+     "death": null
+    }
+   ]
+  },
+  {
+   "seed": 18,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 47797488,
+    "used": 156272710,
+    "initial": 12070198,
+    "produced": 192000000,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 6566,
+   "log_sha256": "558f0c0260e3cb82bb5d0185e640aebc9303d4fe20e9a6ed66724328af2354c8",
+   "state_sha256": "e5d37e5551307be89bb035fb667c9fefdb20be28fcd85642aad6453911388dc3",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.8,
+      "L3": 10.96,
+      "prepupa": 19.08,
+      "pupa": 21.8,
+      "adult": 26.79
+     },
+     "fed_sugar_ng": 120675,
+     "fed_protein_ng": 74490,
+     "structure_ng": 44198,
+     "reserve_sugar_ng": 44006,
+     "reserve_protein_ng": 91,
+     "maintenance_uj": 794029,
+     "growth_uj": 364650,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.66,
+      "P": 6.13,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 834,
+     "bridged_up": 7449096,
+     "death": null
+    },
+    {
+     "id": "l02",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.52,
+      "L3": 10.98,
+      "prepupa": 18.6,
+      "pupa": 21.13,
+      "adult": 26.3
+     },
+     "fed_sugar_ng": 115806,
+     "fed_protein_ng": 71485,
+     "structure_ng": 42499,
+     "reserve_sugar_ng": 42795,
+     "reserve_protein_ng": 49,
+     "maintenance_uj": 752449,
+     "growth_uj": 350625,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.39,
+      "P": 5.91,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 806,
+     "bridged_up": 7148578,
+     "death": null
+    },
+    {
+     "id": "l03",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.16,
+      "L3": 12.31,
+      "prepupa": 20.1,
+      "pupa": 22.79,
+      "adult": 27.96
+     },
+     "fed_sugar_ng": 122686,
+     "fed_protein_ng": 75732,
+     "structure_ng": 45039,
+     "reserve_sugar_ng": 42920,
+     "reserve_protein_ng": 30,
+     "maintenance_uj": 836269,
+     "growth_uj": 371580,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.46,
+      "P": 6.5,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 836,
+     "bridged_up": 7573248,
+     "death": null
+    },
+    {
+     "id": "l04",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.26,
+      "L3": 11.9,
+      "prepupa": 20.5,
+      "pupa": 22.89,
+      "adult": 28.63
+     },
+     "fed_sugar_ng": 128992,
+     "fed_protein_ng": 79625,
+     "structure_ng": 47374,
+     "reserve_sugar_ng": 44230,
+     "reserve_protein_ng": 3,
+     "maintenance_uj": 894118,
+     "growth_uj": 390852,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 22.04,
+      "P": 6.59,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 876,
+     "bridged_up": 7962522,
+     "death": null
+    },
+    {
+     "id": "l05",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.12,
+      "L3": 12.36,
+      "prepupa": 20.62,
+      "pupa": 23.24,
+      "adult": 28.05
+     },
+     "fed_sugar_ng": 127396,
+     "fed_protein_ng": 78639,
+     "structure_ng": 46707,
+     "reserve_sugar_ng": 45240,
+     "reserve_protein_ng": 55,
+     "maintenance_uj": 857670,
+     "growth_uj": 385341,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.46,
+      "P": 6.6,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 852,
+     "bridged_up": 7863976,
+     "death": null
+    },
+    {
+     "id": "l06",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.88,
+      "L3": 11.38,
+      "prepupa": 18.37,
+      "pupa": 20.87,
+      "adult": 26.23
+     },
+     "fed_sugar_ng": 111521,
+     "fed_protein_ng": 68840,
+     "structure_ng": 40941,
+     "reserve_sugar_ng": 40895,
+     "reserve_protein_ng": 26,
+     "maintenance_uj": 728161,
+     "growth_uj": 337771,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.27,
+      "P": 5.96,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 775,
+     "bridged_up": 6884044,
+     "death": null
+    },
+    {
+     "id": "l07",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.04,
+      "L3": 10.72,
+      "prepupa": 18.28,
+      "pupa": 20.88,
+      "adult": 26.16
+     },
+     "fed_sugar_ng": 114533,
+     "fed_protein_ng": 70699,
+     "structure_ng": 42042,
+     "reserve_sugar_ng": 42095,
+     "reserve_protein_ng": 34,
+     "maintenance_uj": 746476,
+     "growth_uj": 346863,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.22,
+      "P": 5.94,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 785,
+     "bridged_up": 7069967,
+     "death": null
+    },
+    {
+     "id": "l08",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.57,
+      "L3": 11.8,
+      "prepupa": 19.09,
+      "pupa": 21.49,
+      "adult": 26.3
+     },
+     "fed_sugar_ng": 115544,
+     "fed_protein_ng": 71323,
+     "structure_ng": 42431,
+     "reserve_sugar_ng": 43503,
+     "reserve_protein_ng": 7,
+     "maintenance_uj": 740899,
+     "growth_uj": 350064,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.22,
+      "P": 6.08,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 802,
+     "bridged_up": 7132374,
+     "death": null
+    }
+   ]
+  },
+  {
+   "seed": 19,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 47943688,
+    "used": 157088392,
+    "initial": 13032080,
+    "produced": 192000000,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 6600,
+   "log_sha256": "735248ade7cbd1997ce70f1d013702e49e6d863bb5f0f75df0956a03778930b8",
+   "state_sha256": "070970c78c417cf74cba0631801614f9ec25ed6425281b51e859f6bb32d70e65",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.35,
+      "L3": 10.82,
+      "prepupa": 18.96,
+      "pupa": 21.76,
+      "adult": 26.25
+     },
+     "fed_sugar_ng": 120277,
+     "fed_protein_ng": 74245,
+     "structure_ng": 44140,
+     "reserve_sugar_ng": 44926,
+     "reserve_protein_ng": 50,
+     "maintenance_uj": 772315,
+     "growth_uj": 364171,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.31,
+      "P": 5.94,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 826,
+     "bridged_up": 7424563,
+     "death": null
+    },
+    {
+     "id": "l02",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.76,
+      "L3": 10.98,
+      "prepupa": 18.46,
+      "pupa": 21.41,
+      "adult": 26.62
+     },
+     "fed_sugar_ng": 114649,
+     "fed_protein_ng": 70771,
+     "structure_ng": 42105,
+     "reserve_sugar_ng": 41024,
+     "reserve_protein_ng": 4,
+     "maintenance_uj": 765682,
+     "growth_uj": 347374,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.7,
+      "P": 5.92,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 786,
+     "bridged_up": 7077156,
+     "death": null
+    },
+    {
+     "id": "l03",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.11,
+      "L3": 11.84,
+      "prepupa": 19.7,
+      "pupa": 22.1,
+      "adult": 27.28
+     },
+     "fed_sugar_ng": 121668,
+     "fed_protein_ng": 75104,
+     "structure_ng": 44648,
+     "reserve_sugar_ng": 43992,
+     "reserve_protein_ng": 36,
+     "maintenance_uj": 805167,
+     "growth_uj": 368362,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.92,
+      "P": 6.36,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 836,
+     "bridged_up": 7510416,
+     "death": null
+    },
+    {
+     "id": "l04",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.94,
+      "L3": 11.73,
+      "prepupa": 20.34,
+      "pupa": 22.63,
+      "adult": 27.69
+     },
+     "fed_sugar_ng": 127932,
+     "fed_protein_ng": 78970,
+     "structure_ng": 46938,
+     "reserve_sugar_ng": 46205,
+     "reserve_protein_ng": 69,
+     "maintenance_uj": 848314,
+     "growth_uj": 387255,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.2,
+      "P": 6.5,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 851,
+     "bridged_up": 7897096,
+     "death": null
+    },
+    {
+     "id": "l05",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.09,
+      "L3": 11.28,
+      "prepupa": 19.36,
+      "pupa": 21.95,
+      "adult": 27.42
+     },
+     "fed_sugar_ng": 121761,
+     "fed_protein_ng": 75161,
+     "structure_ng": 44654,
+     "reserve_sugar_ng": 43083,
+     "reserve_protein_ng": 28,
+     "maintenance_uj": 820545,
+     "growth_uj": 368412,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.17,
+      "P": 6.25,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 837,
+     "bridged_up": 7516170,
+     "death": null
+    },
+    {
+     "id": "l06",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.85,
+      "L3": 12.38,
+      "prepupa": 20.11,
+      "pupa": 22.42,
+      "adult": 26.93
+     },
+     "fed_sugar_ng": 122324,
+     "fed_protein_ng": 75509,
+     "structure_ng": 44819,
+     "reserve_sugar_ng": 45843,
+     "reserve_protein_ng": 5,
+     "maintenance_uj": 783997,
+     "growth_uj": 369765,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.5,
+      "P": 6.42,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 836,
+     "bridged_up": 7550923,
+     "death": null
+    },
+    {
+     "id": "l07",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.59,
+      "L3": 9.88,
+      "prepupa": 17.78,
+      "pupa": 20.12,
+      "adult": 24.92
+     },
+     "fed_sugar_ng": 114582,
+     "fed_protein_ng": 70729,
+     "structure_ng": 42044,
+     "reserve_sugar_ng": 44711,
+     "reserve_protein_ng": 18,
+     "maintenance_uj": 702982,
+     "growth_uj": 346863,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 19.23,
+      "P": 5.68,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 786,
+     "bridged_up": 7072967,
+     "death": null
+    },
+    {
+     "id": "l08",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.58,
+      "L3": 11.1,
+      "prepupa": 19.45,
+      "pupa": 22.04,
+      "adult": 26.96
+     },
+     "fed_sugar_ng": 123260,
+     "fed_protein_ng": 76086,
+     "structure_ng": 45252,
+     "reserve_sugar_ng": 45068,
+     "reserve_protein_ng": 26,
+     "maintenance_uj": 808929,
+     "growth_uj": 373345,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.82,
+      "P": 6.14,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 842,
+     "bridged_up": 7608682,
+     "death": null
+    }
+   ]
+  },
+  {
+   "seed": 20,
+   "conservation_every_day": true,
+   "conservation_end": {
+    "ok": true,
+    "held": 47252588,
+    "used": 157830879,
+    "initial": 13083467,
+    "produced": 192000000,
+    "workers": 30,
+    "larvae": 8
+   },
+   "larva_feeds": 6795,
+   "log_sha256": "e4e9853a321b605fbdbc4a9d4b633b2b7f78bbfb33856d703c555a2647f153ce",
+   "state_sha256": "bf51f715c73bad093e1d8b8b7d5564f3f9d97cb4592bb1a61dfe46c2b2064688",
+   "larvae": [
+    {
+     "id": "l01",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.2,
+      "L3": 11.47,
+      "prepupa": 18.55,
+      "pupa": 21.07,
+      "adult": 26.13
+     },
+     "fed_sugar_ng": 112859,
+     "fed_protein_ng": 69666,
+     "structure_ng": 41367,
+     "reserve_sugar_ng": 41812,
+     "reserve_protein_ng": 72,
+     "maintenance_uj": 729003,
+     "growth_uj": 341286,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.04,
+      "P": 6.09,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 791,
+     "bridged_up": 6966629,
+     "death": null
+    },
+    {
+     "id": "l02",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.01,
+      "L3": 12.03,
+      "prepupa": 19.94,
+      "pupa": 22.4,
+      "adult": 27.4
+     },
+     "fed_sugar_ng": 122813,
+     "fed_protein_ng": 75810,
+     "structure_ng": 45067,
+     "reserve_sugar_ng": 44447,
+     "reserve_protein_ng": 56,
+     "maintenance_uj": 813318,
+     "growth_uj": 371811,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21,
+      "P": 6.4,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 849,
+     "bridged_up": 7581065,
+     "death": null
+    },
+    {
+     "id": "l03",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.3,
+      "L3": 11.16,
+      "prepupa": 19.03,
+      "pupa": 21.38,
+      "adult": 26.18
+     },
+     "fed_sugar_ng": 119338,
+     "fed_protein_ng": 73665,
+     "structure_ng": 43799,
+     "reserve_sugar_ng": 45074,
+     "reserve_protein_ng": 44,
+     "maintenance_uj": 758158,
+     "growth_uj": 361350,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 19.95,
+      "P": 6.23,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 832,
+     "bridged_up": 7366571,
+     "death": null
+    },
+    {
+     "id": "l04",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.91,
+      "L3": 11.55,
+      "prepupa": 19.62,
+      "pupa": 22.05,
+      "adult": 27.72
+     },
+     "fed_sugar_ng": 122477,
+     "fed_protein_ng": 75603,
+     "structure_ng": 44955,
+     "reserve_sugar_ng": 43090,
+     "reserve_protein_ng": 40,
+     "maintenance_uj": 831072,
+     "growth_uj": 370887,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.44,
+      "P": 6.28,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 852,
+     "bridged_up": 7560325,
+     "death": null
+    },
+    {
+     "id": "l05",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.9,
+      "L3": 11.78,
+      "prepupa": 19.42,
+      "pupa": 22.06,
+      "adult": 27.71
+     },
+     "fed_sugar_ng": 119193,
+     "fed_protein_ng": 73576,
+     "structure_ng": 43775,
+     "reserve_sugar_ng": 41411,
+     "reserve_protein_ng": 3,
+     "maintenance_uj": 816733,
+     "growth_uj": 361152,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.47,
+      "P": 6.24,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 839,
+     "bridged_up": 7357605,
+     "death": null
+    },
+    {
+     "id": "l06",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.53,
+      "L3": 11.69,
+      "prepupa": 19.79,
+      "pupa": 22.25,
+      "adult": 26.89
+     },
+     "fed_sugar_ng": 123227,
+     "fed_protein_ng": 76066,
+     "structure_ng": 45159,
+     "reserve_sugar_ng": 45786,
+     "reserve_protein_ng": 110,
+     "maintenance_uj": 795514,
+     "growth_uj": 372570,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 20.66,
+      "P": 6.23,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 856,
+     "bridged_up": 7606636,
+     "death": null
+    },
+    {
+     "id": "l07",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 3.93,
+      "L3": 11.98,
+      "prepupa": 20.8,
+      "pupa": 23.17,
+      "adult": 28.36
+     },
+     "fed_sugar_ng": 131217,
+     "fed_protein_ng": 80998,
+     "structure_ng": 48126,
+     "reserve_sugar_ng": 46260,
+     "reserve_protein_ng": 79,
+     "maintenance_uj": 888426,
+     "growth_uj": 397056,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.74,
+      "P": 6.61,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 890,
+     "bridged_up": 8099841,
+     "death": null
+    },
+    {
+     "id": "l08",
+     "stage": "adult",
+     "stage_entry_d": {
+      "L1": 0,
+      "L2": 4.02,
+      "L3": 11.96,
+      "prepupa": 20.64,
+      "pupa": 23,
+      "adult": 28.17
+     },
+     "fed_sugar_ng": 129911,
+     "fed_protein_ng": 80191,
+     "structure_ng": 47622,
+     "reserve_sugar_ng": 46106,
+     "reserve_protein_ng": 100,
+     "maintenance_uj": 874879,
+     "growth_uj": 392898,
+     "unmet_ng": 0,
+     "deficit_d": 0,
+     "max_bout_d": 0,
+     "limit_d": {
+      "none": 21.6,
+      "P": 6.57,
+      "E_growth": 0,
+      "E_deficit": 0
+     },
+     "feeds": 886,
+     "bridged_up": 8019199,
+     "death": null
+    }
+   ]
+  }
+ ],
+ "seconds": 1058.591
+}
