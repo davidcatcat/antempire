@@ -2,7 +2,9 @@
  * V6-2 experiment mode, P0-A2 world — drawing / text helpers for the page (canvas 2D + HTML strings). Reads only the
  * Worker's P0-A2 frame; never runs or changes the simulation. Candidate / experiment world, non-official (Owner #201).
  *  - the nest inset is SCHEMATIC (示意): the P0-A2 world has no positions inside the nest; workers are grouped by their
- *    ENGINE state, dot fill = the worker's own crop fill (engine), larva fill = its gut fill (engine).
+ *    ENGINE state, dot fill = the worker's own crop fill (engine), larva fill = its gut fill (engine). Both fills are
+ *    the Worker's projection to the frame's t_sim by the core's own metabolic rule (issue #225), not the value of the
+ *    individual's last settlement; the follow card names the last settlement instant separately.
  */
 import type { P0a2FrameMsg } from './experimental/worker-protocol.ts';
 import { INSET_ZONES, P0_LIGHT_LABEL, STATE_LABEL, insetSlots, stateCounts, type P0Pose } from './v62-p0a2-model.ts';
@@ -27,7 +29,7 @@ export function drawInset(g: CanvasRenderingContext2D, f: P0a2FrameMsg, R: Inset
   g.fillStyle = '#f3ead6'; g.font = '600 12px system-ui'; g.textBaseline = 'top';
   g.fillText('巢內（示意）', R.x + 8, R.y + 5);
   g.font = '10.5px system-ui'; g.fillStyle = '#cbbd9f';
-  g.fillText('巢內位置未模擬；分組＝引擎狀態，點的填色＝嗉囊（引擎）', R.x + 82, R.y + 6);
+  g.fillText('巢內位置未模擬；分組＝引擎狀態，點的填色＝嗉囊（引擎，推算至目前）', R.x + 82, R.y + 6);
   for (const z of INSET_ZONES) {
     const zx = R.x + z.x * R.w, zy = R.y + z.y * R.h, zw = z.w * R.w, zh = z.h * R.h - 4;
     g.fillStyle = 'rgba(255,255,255,0.05)'; g.beginPath(); g.roundRect(zx, zy, zw, zh, 6); g.fill();
@@ -66,6 +68,6 @@ export function cardHtml(f: P0a2FrameMsg, id: string, pose: P0Pose | undefined, 
     : pose?.where === 'search' ? '巢外搜尋：搜尋沒有空間模型，畫面位置為<b>示意</b>'
       : pose?.where === 'source' ? `在食源 ${esc(f.layout.source_id)}（引擎狀態；在食源周圍的排列只是畫面）`
         : pose?.interpolated ? `路線上：畫面位置＝兩個引擎紀錄點（${fmtWorldTime(w.since_s)} 出發、${fmtWorldTime(w.until_s ?? w.since_s)} 抵達）之間的<b>顯示插值</b>` : '路線端點（引擎紀錄點）';
-  const fv = following && followed && typeof followed === 'object' ? followed as { contacts?: unknown[]; begging?: unknown[]; consumed?: number; debt?: number; theta_forage?: number; theta_brood?: number; gain?: number } : null;
-  return `<b>${esc(id)}</b>　<span class="muted">P0-A2 小工蟻（${esc(f.status_zh)}）</span><br>活動：${esc(STATE_LABEL[w.state] ?? w.state)}（自 ${fmtWorldTime(w.since_s)}，引擎狀態）<br>位置：${where}<br>嗉囊：${(w.crop_fill * 100).toFixed(0)}%（自身生理，引擎）｜路線記憶：${w.route ? esc(w.route) : '無'}${fv ? `<br><span class="muted">追蹤中（Worker 唯讀副本）：近期接觸 ${fv.contacts?.length ?? 0}、碰到幼蟲 ${fv.begging?.length ?? 0}、已代謝 ${fv.consumed ?? '—'} µP、未滿足需求 ${fv.debt ?? '—'} µP；個體門檻 覓食 ${fv.theta_forage?.toFixed(2) ?? '—'}、育幼 ${fv.theta_brood?.toFixed(2) ?? '—'}</span>` : ''}<div class="row"><button id="followBtn" type="button">${following ? '取消追蹤' : '鏡頭追蹤'}</button><button id="closeCard" type="button" aria-label="關閉">✕</button></div>`;
+  const fv = following && followed && typeof followed === 'object' ? followed as { contacts?: unknown[]; begging?: unknown[]; consumed?: number; debt?: number; settled_s?: number; theta_forage?: number; theta_brood?: number; gain?: number } : null;
+  return `<b>${esc(id)}</b>　<span class="muted">P0-A2 小工蟻（${esc(f.status_zh)}）</span><br>活動：${esc(STATE_LABEL[w.state] ?? w.state)}（自 ${fmtWorldTime(w.since_s)}，引擎狀態）<br>位置：${where}<br>嗉囊：${(w.crop_fill * 100).toFixed(0)}%（自身生理，引擎；依核心代謝規則推算至 ${fmtWorldTime(f.t_sim)}）｜路線記憶：${w.route ? esc(w.route) : '無'}${fv ? `<br><span class="muted">追蹤中（Worker 唯讀副本）：已代謝 ${fv.consumed ?? '—'} µP、未滿足需求 ${fv.debt ?? '—'} µP（推算至 ${fmtWorldTime(f.t_sim)}；上次結帳 ${fv.settled_s === undefined ? '—' : fmtWorldTime(fv.settled_s)}）；接觸紀錄 ${fv.contacts?.length ?? 0}、幼蟲求食紀錄 ${fv.begging?.length ?? 0}（只在自身決策事件時依接觸窗修剪，非目前時刻計數）；個體門檻 覓食 ${fv.theta_forage?.toFixed(2) ?? '—'}、育幼 ${fv.theta_brood?.toFixed(2) ?? '—'}</span>` : ''}<div class="row"><button id="followBtn" type="button">${following ? '取消追蹤' : '鏡頭追蹤'}</button><button id="closeCard" type="button" aria-label="關閉">✕</button></div>`;
 }
