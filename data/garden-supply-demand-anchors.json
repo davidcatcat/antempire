@@ -1,6 +1,6 @@
 {
   "schema": "antempire.garden-supply-demand-anchors.v1",
-  "status": "研究稽核用的文獻錨點（#202 第 8 項）。不是引擎參數，引擎與正式推進都不讀本檔；只由 cli/reports/garden-supply-demand-audit.ts 讀取，用來把遊戲份數放到 mg 尺度上做量級比較。",
+  "status": "研究稽核用的文獻錨點（#202 第 8 項）。不是引擎參數，引擎與正式推進都不讀本檔；只由 tools/garden-supply-demand-audit.ts 讀取，用來把遊戲份數放到 mg 尺度上做量級比較。",
   "use_rule": "本檔的任何數值都不得用來反推花園供給、使蟻群存活或通過測試（CLAUDE.md §7；#202 Owner 裁示第 8 項）。換算係數是候選區間，不是已確立的單位。",
   "anchors": {
     "minor_fresh_mass_mg": {

@@ -1,6 +1,6 @@
 # 花園供給 vs 蟻群消耗：單位、時間尺度與守恆稽核（自動產生）
 
-> 由 `node cli/reports/garden-supply-demand-audit.ts --write` 產生；只讀參數檔與 `data/garden-supply-demand-anchors.json`，不執行引擎、不讀寫 saves/ 或 journal/。
+> 由 `node tools/garden-supply-demand-audit.ts --write` 產生；只讀參數檔與 `data/garden-supply-demand-anchors.json`，不執行引擎、不讀寫 saves/ 或 journal/。
 > **診斷，不是目標**：本報告任何數字都不得用來反推花園資源或讓蟻群存活（CLAUDE.md §7；#202 Owner 裁示第 8 項）。「份」（game portion）是遊戲單位，**不是 mg**；mg 欄位只是用明列的候選換算做量級比較。
 
 ## 1. 參數單位登錄（每個供給／需求參數）

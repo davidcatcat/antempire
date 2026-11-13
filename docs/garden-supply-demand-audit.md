@@ -2,7 +2,7 @@
 
 > 2026-11-13。**研究與稽核，不是規則更新**：本 PR 不改引擎、不改任何參數值、不改存檔或日誌，也不推進遊戲日。黃金測試逐位元組不變。
 > 依據：Owner 在 #202（2026-11-13 最新留言）第 8 項裁示——另開獨立研究，稽核花園供給與蟻群消耗的單位、時間尺度與質量／能量守恆，把花蜜、蜜露、昆蟲蛋白的外生生態產生分開；PR #204 的 90 日縮小診斷**不得**解讀為建群數量錯誤；**不得**反推花園資源以保證存活；要做有證據的敏感度與反例測試。
-> 自動產生的數字表：[`reports/garden-supply-demand-audit/audit.md`](../reports/garden-supply-demand-audit/audit.md)（`node cli/reports/garden-supply-demand-audit.ts --write`）。文獻錨點：[`data/garden-supply-demand-anchors.json`](../data/garden-supply-demand-anchors.json)。新文獻 R950～R955 見 [`references.md`](references.md)。
+> 自動產生的數字表：[`reports/garden-supply-demand-audit/audit.md`](../reports/garden-supply-demand-audit/audit.md)（`node tools/garden-supply-demand-audit.ts --write`）。文獻錨點：[`data/garden-supply-demand-anchors.json`](../data/garden-supply-demand-anchors.json)。新文獻 R950～R955 見 [`references.md`](references.md)。
 
 ## 0. 結論摘要
 

@@ -1,8 +1,8 @@
 /**
  * #202 item 8 — garden supply vs colony consumption: units, time scales and conservation audit (RESEARCH ONLY).
  *
- *   node cli/reports/garden-supply-demand-audit.ts            -> print the report (markdown) to stdout
- *   node cli/reports/garden-supply-demand-audit.ts --write    -> also write reports/garden-supply-demand-audit/{audit.md,audit.json}
+ *   node tools/garden-supply-demand-audit.ts            -> print the report (markdown) to stdout
+ *   node tools/garden-supply-demand-audit.ts --write    -> also write reports/garden-supply-demand-audit/{audit.md,audit.json}
  *
  * It READS the current parameter files (world/xitun-garden.json, species/pheidole-megacephala.json,
  * scenarios/day0/garden.json, scenarios/day0-budding-candidate.json, prototypes/p0a2-24h/params.json) and the literature
@@ -16,7 +16,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { readJson, readText, REPO_ROOT } from '../lib/load.ts';
+import { readJson, readText, REPO_ROOT } from '../cli/lib/load.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any -- raw parameter files
 export const OUT_DIR = 'reports/garden-supply-demand-audit';
@@ -323,7 +323,7 @@ const fmt = (x: Any): string => (Array.isArray(x) ? x.map(fmt).join('～') : x =
 export function renderMarkdown(a: Any): string {
   const L: string[] = [];
   L.push('# 花園供給 vs 蟻群消耗：單位、時間尺度與守恆稽核（自動產生）', '');
-  L.push('> 由 `node cli/reports/garden-supply-demand-audit.ts --write` 產生；只讀參數檔與 `' + a.anchors_file + '`，不執行引擎、不讀寫 saves/ 或 journal/。', '> **診斷，不是目標**：本報告任何數字都不得用來反推花園資源或讓蟻群存活（CLAUDE.md §7；#202 Owner 裁示第 8 項）。「份」（game portion）是遊戲單位，**不是 mg**；mg 欄位只是用明列的候選換算做量級比較。', '');
+  L.push('> 由 `node tools/garden-supply-demand-audit.ts --write` 產生；只讀參數檔與 `' + a.anchors_file + '`，不執行引擎、不讀寫 saves/ 或 journal/。', '> **診斷，不是目標**：本報告任何數字都不得用來反推花園資源或讓蟻群存活（CLAUDE.md §7；#202 Owner 裁示第 8 項）。「份」（game portion）是遊戲單位，**不是 mg**；mg 欄位只是用明列的候選換算做量級比較。', '');
   L.push('## 1. 參數單位登錄（每個供給／需求參數）', '', '| 檔案 | 參數 | 值 | 角色 | 食物 | 單位 | 時間尺度 | 來源類型 | 依據 | 旗標 | 備註 |', '|---|---|---:|---|---|---|---|---|---|---|---|');
   for (const x of a.registry) L.push(`| ${x.file} | \`${x.path}\` | ${fmt(x.value)} | ${x.role} | ${x.food} | ${x.unit} | ${x.time_scale} | ${x.origin} | ${fmt(x.basis)} | ${x.flags.join(' ') || '—'} | ${x.note || '—'} |`);
   const flagged = a.registry.filter((x: Any) => x.flags.includes('UNITLESS_PORTION')).length;
@@ -359,7 +359,7 @@ export function renderMarkdown(a: Any): string {
   return L.join('\n') + '\n';
 }
 
-const isMain = process.argv[1] !== undefined && path.resolve(process.argv[1]) === path.resolve(REPO_ROOT, 'cli/reports/garden-supply-demand-audit.ts');
+const isMain = process.argv[1] !== undefined && path.resolve(process.argv[1]) === path.resolve(REPO_ROOT, 'tools/garden-supply-demand-audit.ts');
 if (isMain) {
   const a = audit(), md = renderMarkdown(a);
   if (process.argv.includes('--write')) {

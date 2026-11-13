@@ -1,5 +1,5 @@
 /**
- * #202 item 8 — garden supply vs colony demand audit (cli/reports/garden-supply-demand-audit.ts). Research only.
+ * #202 item 8 — garden supply vs colony demand audit (tools/garden-supply-demand-audit.ts). Research only.
  *  1. the audit runs on the current parameter files and every food-related parameter is classified
  *     (registered with a unit and time scale, or excluded as not-a-food-quantity with a reason);
  *  2. every registered entry still exists in its file, has a declared unit and time scale, and every game-portion
@@ -17,7 +17,7 @@ import crypto from 'node:crypto';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { REPO_ROOT, readJson } from '../cli/lib/load.ts';
-import { ANCHORS_FILE, FILES, OUT_DIR, REGISTRY, audit, labelledLeaves, renderMarkdown, stationaryColonies, unclassified } from '../cli/reports/garden-supply-demand-audit.ts';
+import { ANCHORS_FILE, FILES, OUT_DIR, REGISTRY, audit, labelledLeaves, renderMarkdown, stationaryColonies, unclassified } from '../tools/garden-supply-demand-audit.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
@@ -62,7 +62,7 @@ edit(FILES.p0a2, (j) => { j.parameters.nectar_amount_portions = { value: 0.1, ev
 ok(unclassified(tmp).some((x) => x.endsWith('parameters.nectar_amount_portions')), '3: a new unregistered P0-A2 supply parameter is reported');
 edit(FILES.p0a2, (j) => { delete j.parameters.nectar_amount_portions; });
 ok(unclassified(tmp).length === 0, '3: removing the samples makes the copy clean again');
-const cli = spawnSync(process.execPath, [path.join(REPO_ROOT, 'cli/reports/garden-supply-demand-audit.ts')], { encoding: 'utf8' });
+const cli = spawnSync(process.execPath, [path.join(REPO_ROOT, 'tools/garden-supply-demand-audit.ts')], { encoding: 'utf8' });
 ok(cli.status === 0 && cli.stdout.includes('UNITLESS_PORTION'), '3: the CLI exits 0 on the current files and prints the flags');
 fs.rmSync(tmp, { recursive: true, force: true });
 
