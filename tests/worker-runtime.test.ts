@@ -177,6 +177,24 @@ send({ type: 'step_until', req: 8, t_sim: 100 });
 ok((last(send({ type: 'step_until', req: 9, t_sim: 50 })) as { code: string }).code === 'TIME_BACKWARDS', 'step_until backwards refused');
 const before = rt.current()!.snapshot().payload_sha256;
 ok((last(send({ type: 'restore', req: 10, snapshot: tamper((s) => { s.payload.ants[0].pos.x += 1; }) })) as { code: string }).code === 'HASH_MISMATCH' && rt.current()!.snapshot().payload_sha256 === before, 'a refused restore keeps the current world (no re-init)');
+// load-then-step contract (save2 test A race): the page's autostart after a load sends restore → set_speed → start; a
+// step_until that arrives after that start is REFUSED (RUNNING) and changes nothing, so a caller must wait for the
+// start acknowledgement and pause first; after the pause the same step_until reaches exactly its target.
+{
+  let wl = 0; const src = new Runtime(() => wl);
+  src.handle({ type: 'init', req: 1, world_id: 'exp-load-step', seed: 5 }); src.handle({ type: 'step_until', req: 2, t_sim: 6 * H });
+  const snap = src.current()!.snapshot();
+  const r = new Runtime(() => wl);
+  r.handle({ type: 'restore', req: 1, snapshot: snap }); r.handle({ type: 'set_speed', req: 2, speed: 1 });
+  ok(last(r.handle({ type: 'start', req: 3 })).type === 'ack' && r.isRunning(), 'after a load the autostart runs the world');
+  const h0 = r.current()!.snapshot().payload_sha256, t0 = r.current()!.tSim();
+  const refused = last(r.handle({ type: 'step_until', req: 4, t_sim: 12 * H })) as { type: string; code?: string };
+  ok(refused.type === 'error' && refused.code === 'RUNNING' && r.current()!.tSim() === t0 && r.current()!.snapshot().payload_sha256 === h0, 'step_until while running (after the autostart) is refused with RUNNING and changes nothing');
+  wl += 250; const p = last(r.handle({ type: 'pause', req: 5 })) as { type: string; pacing?: { running: boolean; started: boolean } };
+  ok(p.type === 'ack' && p.pacing!.running === false && p.pacing!.started === true, 'pause after the start acknowledgement is acknowledged');
+  const a = last(r.handle({ type: 'step_until', req: 6, t_sim: 12 * H })) as { type: string; frame?: { t_sim: number } };
+  ok(a.type === 'ack' && a.frame!.t_sim === 12 * H && r.current()!.tSim() === 12 * H, 'after the pause the same step_until reaches exactly its target');
+}
 // pacing scenario: speeds, pauses, irregular ticks and a tiny budget, then step to 48 h
 const paced = (plan: { speed: number; ticks: number[]; pauseAfter?: number }[], budget: number, follow: string | null) => {
   wall = 0; Runtime.BUDGET = budget; const r = new Runtime(() => wall); const evs: ExperimentEvent[] = []; let lagged = false;
