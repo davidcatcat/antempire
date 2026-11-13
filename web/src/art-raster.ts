@@ -120,8 +120,8 @@ export function drawAntHeadLive(g: CanvasRenderingContext2D, trunk: AntAtlas, he
 }
 /** Detail path (close-ups): the whole ant drawn live from a continuous pose (gait phase, walk weight, micro-pose).
  *  Not cached in the shared path cache (every frame is a new pose). */
-export function drawAntDetail(g: CanvasRenderingContext2D, lengthPx: number, x: number, y: number, heading: number, kind: Gait, phi: number, walkW: number, micro: MicroPose, palette: AntPalette, opts: { part?: 'both' | 'shadow' | 'body' } = {}) {
-  const u = lengthPx / 100, fr = antDrawListAt(antPoseAt(kind, phi, { walkW, micro }), palette), part = opts.part ?? 'both', L = light(), h = ANT_BODY_HEIGHT * u;
+export function drawAntDetail(g: CanvasRenderingContext2D, lengthPx: number, x: number, y: number, heading: number, kind: Gait, phi: number, walkW: number, micro: MicroPose, palette: AntPalette, opts: { part?: 'both' | 'shadow' | 'body'; stride?: number } = {}) {
+  const u = lengthPx / 100, fr = antDrawListAt(antPoseAt(kind, phi, { walkW, micro, ...(opts.stride !== undefined ? { stride: opts.stride } : {}) }), palette), part = opts.part ?? 'both', L = light(), h = ANT_BODY_HEIGHT * u;
   if (L.intensity > 0 && part !== 'body') { g.save(); g.globalAlpha = Math.min(1, 0.35 + L.intensity); g.translate(x + L.shadow.x * h, y + L.shadow.y * h); g.rotate(heading); g.scale(u, u); drawList(g, fr.shadow, u, false); g.restore(); }
   if (part === 'shadow') return;
   g.save(); g.translate(x, y); g.rotate(heading); g.scale(u, u); drawList(g, fr.body, u, false); g.restore();

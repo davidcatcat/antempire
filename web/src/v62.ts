@@ -30,12 +30,19 @@ import { hash32 } from './game-model.ts';
 import { ACTIVITY_LABEL, DEFAULT_SPEED, EventDigest, FPS_CAPS, LIGHT_LABEL, MODE_LABEL, NEST_PLACE, V62_SPEEDS, antInputs, displayTime, fmtWorldTime, posesAt, scenePositions, type Pose } from './v62-model.ts';
 import { P0A2_STATUS_LABEL, layoutOf, p0AntInputs, p0EventText, p0Light, p0Places, p0Poses, type P0Pose } from './v62-p0a2-model.ts';
 import { cardHtml, drawInset, hudStatus, insetRect, type InsetHit } from './v62-p0a2-view.ts';
+import { GardenRenderer, MINOR_LEN_CM } from './vis1-render.ts';
+import { VisModel, SEARCH_RADIUS_CM, PATH_LABEL, UNDERGROUND_LABEL } from './vis1-model.ts';
+import { UndergroundView, U_W, U_H, type UCam } from './vis1-underground.ts';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const canvas = $<HTMLCanvasElement>('scene');
-const ui = { play: $<HTMLButtonElement>('play'), speed: $<HTMLSelectElement>('speed'), fpsCap: $<HTMLSelectElement>('fpsCap'), follow: $<HTMLSelectElement>('follow'), time: $('time'), status: $('status'), card: $('card'), badge: $('badge'), info: $<HTMLButtonElement>('infoBtn'), about: $('about'), logBtn: $<HTMLButtonElement>('logBtn'), log: $('log'), home: $<HTMLButtonElement>('homeBtn'), zoomIn: $<HTMLButtonElement>('zoomIn'), zoomOut: $<HTMLButtonElement>('zoomOut'), decor: $<HTMLInputElement>('decor'), saveBtn: $<HTMLButtonElement>('saveBtn'), menuBtn: $<HTMLButtonElement>('menuBtn'), saveStatus: $('saveStatus'), notice: $('notice'), ro: $('roBanner'), nsBtn: $<HTMLButtonElement>('nsBtn'), notSim: $('notSim') };
+const ui = { viewBtn: $<HTMLButtonElement>('viewBtn'), legendBtn: $<HTMLButtonElement>('legendBtn'), legend: $('legend'), ugLabel: $('ugLabel'), closeBtn: $<HTMLButtonElement>('closeBtn'), play: $<HTMLButtonElement>('play'), speed: $<HTMLSelectElement>('speed'), fpsCap: $<HTMLSelectElement>('fpsCap'), follow: $<HTMLSelectElement>('follow'), time: $('time'), status: $('status'), card: $('card'), badge: $('badge'), info: $<HTMLButtonElement>('infoBtn'), about: $('about'), logBtn: $<HTMLButtonElement>('logBtn'), log: $('log'), home: $<HTMLButtonElement>('homeBtn'), zoomIn: $<HTMLButtonElement>('zoomIn'), zoomOut: $<HTMLButtonElement>('zoomOut'), decor: $<HTMLInputElement>('decor'), saveBtn: $<HTMLButtonElement>('saveBtn'), menuBtn: $<HTMLButtonElement>('menuBtn'), saveStatus: $('saveStatus'), notice: $('notice'), ro: $('roBanner'), nsBtn: $<HTMLButtonElement>('nsBtn'), notSim: $('notSim') };
 
 const R = new LayeredRenderer(canvas);
+/** VIS-1: the P0-A2 world is drawn by the garden renderer (drawing only; same canvas) */
+const G = new GardenRenderer(canvas), UG = new UndergroundView();
+let vis: VisModel | null = null, view: 'surface' | 'underground' = 'surface', zoomGoal: number | null = null, uTau = 0;
+const ucam = { x: U_W / 2, y: U_H / 2 - 4, s: 10 };
 const client = new ExperimentWorkerClient();
 let frame: AnyFrameMsg | null = null, pacing: PacingMsg | null = null, frameAt = 0, followedView: unknown = null, lastDisplay: number | null = null;
 let poses: Pose[] = [], p0poses: P0Pose[] = [], insetHits: InsetHit[] = [], sceneLight = '', selected: string | null = null, following: string | null = null, arenaR = 60;
@@ -67,25 +74,32 @@ client.onProtocolError = (w) => { protocolErrors.push(w); ui.status.textContent 
 
 function setScene() {
   if (isP0a2Frame(frame)) {
-    const P = p0Places(frame), light = p0Light(frame); sceneLight = light.label;
-    R.setScene({ decor: ui.decor.checked, seed: hash32(frame.world_id), places: P.places, pos: P.pos, routes: P.routes, sources: { [frame.layout.source_id]: { host_alive: null, hemipteran_colonies: null } }, weather: null, light });
+    const light = p0Light(frame); sceneLight = light.label;
+    if (!vis || !vis.matches(frame)) { vis = VisModel.of(frame); G.resetMotion(); }
+    G.setWorld(vis, light, nightOf(frame), ui.decor.checked);
     return;
   }
   sceneLight = '';
   R.setScene({ decor: ui.decor.checked, seed: hash32(frame?.world_id ?? 'exp'), places: [NEST_PLACE], pos: scenePositions(), routes: [], sources: {}, weather: null, light: SCHEMATIC_LIGHT });
   // no synchronous warm here: a toggle re-bakes chunks through the renderer's per-frame bake budget (the page stays responsive)
 }
+/** engine light state → night grade strength (drawing only) */
+const nightOf = (f: { env: { light: string } }) => (f.env.light === 'night' ? 1 : f.env.light === 'civil_twilight' ? 0.45 : 0);
 function homeCamera() {
+  zoomGoal = null;
   if (isP0a2Frame(frame)) {
-    // fit nest + route + source into the space between the top bar and the nest inset (display only)
-    const L = layoutOf(frame), w = canvas.clientWidth, h = canvas.clientHeight, ins = insetRect(w, h, bottomBarPx), top = topBarPx + 8, bottom = ins.y - 8;
-    cam.s = Math.min((w * 0.86) / (Math.abs(L.source.x) + 50), Math.max(40, bottom - top) / (Math.abs(L.source.y) + 70));
-    cam.x = L.source.x / 2; cam.y = L.source.y / 2 - (h / 2 - (top + bottom) / 2) / cam.s;
+    if (view === 'underground') { const w = canvas.clientWidth, h = canvas.clientHeight, top = topBarPx + 40, bottom = h - bottomBarPx - 8; ucam.s = Math.min((w - 16) / (U_W + 6), Math.max(60, bottom - top) / (U_H + 14)); ucam.x = U_W / 2; ucam.y = U_H / 2 - 5 - ((top + bottom) / 2 - h / 2) / ucam.s; return; }
+    // fit nest + display corridor + source between the top bar and the nest inset (display only)
+    const C = (vis ?? VisModel.of(frame)).corridor, w = canvas.clientWidth, h = canvas.clientHeight, ins = insetRect(w, h, bottomBarPx), top = topBarPx + 8, bottom = ins.y - 8;
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity; for (const p of C.line.pts) { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y); }
+    const mx = w < 640 ? 24 : 14; x0 -= mx; x1 += mx; y0 -= 14; y1 += 14;
+    cam.s = Math.min((w * 0.94) / (x1 - x0), Math.max(40, bottom - top) / (y1 - y0));
+    cam.x = (x0 + x1) / 2; cam.y = (y0 + y1) / 2 - (h / 2 - (top + bottom) / 2) / cam.s;
     return;
   }
   cam.x = 0; cam.y = 0; cam.s = Math.min(canvas.clientWidth, canvas.clientHeight - bottomBarPx - topBarPx) / (arenaR * 2.2);
 }
-function resize() { R.resize(); topBarPx = $('top').getBoundingClientRect().height; bottomBarPx = $('bottom').getBoundingClientRect().height; }
+function resize() { R.resize(); if (isP0a2Frame(frame)) G.resize(); topBarPx = $('top').getBoundingClientRect().height; bottomBarPx = $('bottom').getBoundingClientRect().height; }
 
 // ------------------------------------------------------------------ controls (scheduling / observation only)
 function syncControls() {
@@ -101,7 +115,19 @@ async function playPause() {
   if (!pacing.started) await client.start(); else if (pacing.running) { await client.pause(); void session?.request('pause'); } else await client.resume();
   lastDisplay = null; syncControls();
 }
+const pct = (a: readonly number[], q: number) => { if (!a.length) return null; const b = [...a].sort((x, y) => x - y); return +b[Math.min(b.length - 1, Math.floor(b.length * q))].toFixed(2); };
+const med = (a: readonly number[]) => pct(a, 0.5);
+/** close-up: zoom so that an ant is drawn ≈ 80 px long at TRUE scale (display only) */
+const CLOSE_UP_S = 80 / MINOR_LEN_CM;
+function closeUp(id: string | null) {
+  if (!isP0a2Frame(frame)) return;
+  if (view === 'underground') { ucam.s = Math.min(120, ucam.s * 2.2); return; }
+  const p = id ? p0poses.find((x) => x.id === id && x.vis !== 'in_nest') : undefined;
+  if (p) { cam.x = p.x + (p.slot?.dx ?? 0); cam.y = p.y + (p.slot?.dy ?? 0); }
+  zoomGoal = CLOSE_UP_S;
+}
 async function setFollow(id: string | null) {
+  if (id && id !== following && isP0a2Frame(frame) && cam.s < CLOSE_UP_S * 0.5 && view === 'surface' && p0poses.some((x) => x.id === id && x.vis !== 'in_nest')) zoomGoal = CLOSE_UP_S * 0.75;
   following = id; selected = id ?? selected; ui.follow.value = id ?? '';
   await client.follow(id); // observation only: the Worker attaches a read-only copy of the ant to each frame
   renderCard();
@@ -126,30 +152,69 @@ function drawFrame(dt: number, fms: number | null) {
   g.font = '11px system-ui'; g.fillStyle = '#fff6dc'; for (const d of draws) g.fillText(d.id, d.sx + L * 0.45, d.sy - L * 0.4);
   drawHud(t);
 }
-/** P0-A2 world: surface (route, source, travelling / feeding / searching workers) + the schematic nest inset */
+/** P0-A2 world (VIS-1): garden surface (garden renderer) or the underground concept view, plus the nest inset */
+let p0draws: { id: string; sx: number; sy: number; ex: number; ey: number }[] = [];
 function drawP0(dt: number, fms: number | null, t: number) {
   const f = frame; if (!isP0a2Frame(f)) return;
-  p0poses = p0Poses(f, t); poses = [];
-  if (following) { const p = p0poses.find((x) => x.id === following); if (p && p.vis !== 'in_nest') { cam.x += (p.x - cam.x) * Math.min(1, dt * 6); cam.y += (p.y - cam.y) * Math.min(1, dt * 6); } }
-  const c = camera(), L = antLengthPx(cam.s, minAntPx());
-  const ins = insetRect(canvas.clientWidth, canvas.clientHeight, bottomBarPx);
-  const draws = R.frame(c, p0AntInputs(p0poses), dt, fms, { uiBottom: canvas.clientWidth < 640 ? canvas.clientHeight - ins.y + 6 : bottomBarPx + 6, displayTurns: true, colourVariants: true, minAntPx: minAntPx(), showRoutes: true });
-  const g = R.g, lay = layoutOf(f), [nx, ny] = worldToScreen(c, lay.nest.x, lay.nest.y), [sx, sy] = worldToScreen(c, lay.source.x, lay.source.y);
-  g.save(); g.font = '11.5px system-ui'; g.fillStyle = '#fff6dc'; g.strokeStyle = 'rgba(20,12,6,0.7)'; g.lineWidth = 3;
-  const label = (x: number, y: number, s: string) => { g.strokeText(s, x, y); g.fillText(s, x, y); };
-  const narrow = canvas.clientWidth < 640;
-  label(nx + 10, ny + 22, '巢口（P0-A2 實驗巢）');
-  g.textAlign = sx > canvas.clientWidth * 0.6 ? 'right' : 'left'; label(sx + (g.textAlign === 'right' ? -10 : 10), sy + 22, `蜜露源 ${f.layout.source_id}（情境）`);
-  g.textAlign = 'center'; label((nx + sx) / 2, (ny + sy) / 2 + 26, narrow ? `路線 ${lay.distance_cm} cm（方向示意）` : `路線 ${lay.distance_cm} cm（長度＝引擎參數；方向示意）`); g.textAlign = 'left';
-  // searching workers: schematic ring (search has no spatial model)
-  if (p0poses.some((p) => p.where === 'search')) { g.setLineDash([3, 5]); g.strokeStyle = 'rgba(255,236,190,0.45)'; g.lineWidth = 1; g.beginPath(); g.arc(nx, ny, 36 * cam.s, 0, Math.PI * 2); g.stroke(); g.setLineDash([]); label(nx - 36 * cam.s, ny - 36 * cam.s - 4, '搜尋中（位置示意）'); }
-  const sel = selected ? draws.find((d) => d.id === selected) : undefined;
-  if (sel) { g.strokeStyle = following === selected ? '#9fe0ff' : '#ffe08a'; g.lineWidth = 2; g.beginPath(); g.arc(sel.sx, sel.sy, L * 0.62, 0, Math.PI * 2); g.stroke(); }
-  g.font = '11px system-ui'; g.fillStyle = '#fff6dc'; for (const d of draws) g.fillText(d.id, d.sx + L * 0.45, d.sy - L * 0.4);
-  g.restore();
-  insetHits = drawInset(g, f, ins, selected, following);
+  if (!vis || !vis.matches(f)) setScene();
+  const V = vis!, vp = V.poses(f, t); p0poses = vp; poses = [];
+  void fms;
+  if (pacing?.running) uTau += dt;
+  const fp = following ? vp.find((x) => x.id === following) : undefined;
+  // follow: switch between the surface and the underground concept view with the followed worker's ENGINE location
+  if (fp && fp.vis === 'in_nest' && view === 'surface') setView('underground');
+  else if (fp && fp.vis !== 'in_nest' && view === 'underground') setView('surface');
+  if (zoomGoal !== null && view === 'surface') { const k = 1 - Math.exp(-dt * 5); cam.s *= Math.pow(zoomGoal / cam.s, k); if (Math.abs(Math.log(zoomGoal / cam.s)) < 0.01) zoomGoal = null; }
+  const w = canvas.clientWidth, h = canvas.clientHeight, narrow = w < 640, ins = insetRect(w, h, bottomBarPx), g = G.g;
+  if (view === 'underground') {
+    const uc: UCam = { ...ucam, w, h };
+    if (fp && fp.vis === 'in_nest') { const hit = insetHits.find((x) => x.id === fp.id); if (hit) { const k = Math.min(1, dt * 4); ucam.x += ((hit.sx - w / 2) / ucam.s) * k; ucam.y += ((hit.sy - h / 2) / ucam.s) * k; } }
+    g.setTransform(G.quality().dpr, 0, 0, G.quality().dpr, 0, 0);
+    insetHits = UG.draw(g, uc, f, t, uTau, dt, selected, following, minAntPx(), nightOf(f));
+    G.trace = ['ground', 'decals', 'shadows', 'propsLow', 'routes', 'antShadows', 'ants', 'propsHigh', 'lighting', 'weather', 'ui'];
+    p0draws = [];
+    ui.ugLabel.style.top = `${topBarPx + 6}px`;
+    g.save(); g.textAlign = 'center'; g.strokeStyle = 'rgba(15,9,5,0.9)'; g.lineWidth = 4;
+    const ty = topBarPx + 32 + (narrow ? 4 : 0);
+    g.font = `${narrow ? 11 : 12}px system-ui`; g.fillStyle = '#f3ead6'; const sub = narrow ? '分組＝引擎狀態；巢室與位置＝示意' : '分組＝引擎狀態；巢室形狀、深度與室內位置＝示意；琥珀色＝嗉囊／幼蟲腸道量（引擎）；土層、根、石＝裝飾';
+    g.strokeText(sub, w / 2, ty + 18); g.fillText(sub, w / 2, ty + 18); g.restore();
+  } else {
+    if (fp && fp.vis !== 'in_nest') { const tx = fp.x + (fp.slot?.dx ?? 0), ty = fp.y + (fp.slot?.dy ?? 0), k = Math.min(1, dt * 6); cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k; }
+    const c = camera(), sw = selected ? f.workers.find((x) => x.id === selected && (x.state === 'outbound' || x.state === 'returning')) : undefined;
+    const draws = G.frame(c, vp, dt, { minAntPx: narrow ? 16 : 18, selected, following, running: !!pacing?.running, showIds: false, selectedPath: sw ? V.trip(sw).line : null });
+    p0draws = draws;
+    const lenPx = GardenRenderer.antLenPx(cam.s, narrow ? 16 : 18);
+    g.save(); g.font = '12px system-ui'; g.fillStyle = '#fff6dc'; g.strokeStyle = 'rgba(20,12,6,0.75)'; g.lineWidth = 3; g.textBaseline = 'alphabetic';
+    const label = (x: number, y: number, s: string, align: CanvasTextAlign = 'left') => { const tw = g.measureText(s).width, x0 = align === 'center' ? x - tw / 2 : x, cx = Math.max(8, Math.min(w - 8 - tw, x0)); g.textAlign = 'left'; g.strokeText(s, cx, y); g.fillText(s, cx, y); };
+    const C = V.corridor, [nx, ny] = worldToScreen(c, C.nest.x, C.nest.y), [sx, sy] = worldToScreen(c, C.source.x, C.source.y), r0 = Math.max(18, 3.4 * cam.s);
+    label(nx, ny + r0 + 14, narrow ? '巢口（P0-A2 實驗巢）' : '巢口（P0-A2 實驗巢；外觀示意）', 'center');
+    label(sx, sy + Math.max(22, 9 * cam.s) + 14, narrow ? `蜜露源 ${f.layout.source_id}（情境）` : `蜜露源 ${f.layout.source_id}（情境；寄主植物與蚜蟲圖像＝示意）`, 'center');
+    if (vp.some((p) => p.where === 'search')) { g.setLineDash([3, 6]); g.strokeStyle = 'rgba(255,236,190,0.5)'; g.lineWidth = 1.2; g.beginPath(); g.arc(nx, ny, SEARCH_RADIUS_CM * cam.s, 0, Math.PI * 2); g.stroke(); g.setLineDash([]); g.strokeStyle = 'rgba(20,12,6,0.75)'; g.lineWidth = 3; label(nx, ny - SEARCH_RADIUS_CM * cam.s - 6, '搜尋中（位置示意：搜尋沒有空間模型）', 'center'); }
+    if (lenPx >= 30) { g.font = '11px system-ui'; for (const d of draws) if (d.sx > 0 && d.sy > 0 && d.sx < w && d.sy < h) label(d.sx + lenPx * 0.5, d.sy - lenPx * 0.45, d.id); }
+    else if (selected) { const d = draws.find((x) => x.id === selected); if (d) { g.font = '11px system-ui'; label(d.sx + 12, d.sy - 10, d.id); } }
+    // magnification (truthful) + scale bar + data-class chip, bottom left above the inset / bar
+    const yb = (narrow ? ins.y : h - bottomBarPx) - 10, mag = lenPx / (MINOR_LEN_CM * cam.s);
+    const nice = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100].find((v) => v * cam.s >= 60) ?? 100, bar = nice * cam.s, bx = narrow ? 16 : 236, ly = yb - (narrow ? 44 : 28);
+    g.fillStyle = 'rgba(20,14,8,0.62)'; g.beginPath(); g.roundRect(8, yb - (narrow ? 62 : 46), narrow ? w - 16 : Math.min(ins.x - 16, 560), narrow ? 58 : 42, 8); g.fill();
+    g.font = '12px system-ui'; g.fillStyle = '#fff6dc'; g.textAlign = 'left';
+    g.fillText(mag > 1.05 ? `螞蟻放大顯示 ×${mag.toFixed(1)}` : '螞蟻實際比例（小工蟻約 2.5 mm）', 16, ly);
+    g.strokeStyle = '#fff6dc'; g.lineWidth = 2; const bxx = narrow ? w - 30 - bar : bx;
+    g.beginPath(); g.moveTo(bxx, ly - 4); g.lineTo(bxx + bar, ly - 4); g.moveTo(bxx, ly - 8); g.lineTo(bxx, ly); g.moveTo(bxx + bar, ly - 8); g.lineTo(bxx + bar, ly); g.stroke();
+    g.textAlign = narrow ? 'right' : 'left'; g.fillText(nice >= 1 ? `${nice} cm` : `${Math.round(nice * 10)} mm`, narrow ? bxx - 6 : bxx + bar + 6, ly);
+    g.textAlign = 'left'; g.font = '11px system-ui'; g.fillStyle = '#e9dcc0';
+    if (narrow) { g.fillText(PATH_LABEL, 16, yb - 26); g.fillText('地面景物＝裝飾（非障礙物、螞蟻不感知）', 16, yb - 10); }
+    else g.fillText(`${PATH_LABEL}｜地面景物＝裝飾`, 16, yb - 10);
+    g.restore();
+    insetHits = drawInset(g, f, ins, selected, following);
+  }
   setText('time', ui.time, `${fmtWorldTime(t)}（${f.env.date}）｜${pacing?.running ? `執行中 ${pacing.speed}×` : pacing?.started ? '已暫停' : '尚未開始'}${pacing?.lagging ? '（Worker 落後，事件照常逐一處理）' : ''}`);
   setText('status', ui.status, hudStatus(f, p0poses));
+}
+function setView(v: 'surface' | 'underground') {
+  if (view === v) return; view = v; zoomGoal = null;
+  ui.viewBtn.textContent = v === 'surface' ? '地下（概念圖）' : '回到地表'; ui.viewBtn.setAttribute('aria-pressed', String(v === 'underground'));
+  ui.ugLabel.hidden = v !== 'underground'; ui.ugLabel.textContent = `${UNDERGROUND_LABEL}｜分組＝引擎狀態，位置＝示意`; insetHits = [];
+  if (v === 'underground') homeCamera();
 }
 const hud: Record<string, string> = {};
 const setText = (k: string, el: HTMLElement, v: string) => { if (hud[k] !== v) { hud[k] = v; el.textContent = v; } };
@@ -196,13 +261,22 @@ function renderLog() {
 
 // ------------------------------------------------------------------ input (camera only)
 function zoomAt(sx: number, sy: number, k: number) {
+  zoomGoal = null;
+  if (isP0a2Frame(frame)) {
+    if (view === 'underground') { const w = canvas.clientWidth, h = canvas.clientHeight, ux = ucam.x + (sx - w / 2) / ucam.s, uy = ucam.y + (sy - h / 2) / ucam.s; ucam.s = Math.max(4, Math.min(120, ucam.s * k)); if (!following) { ucam.x = ux - (sx - w / 2) / ucam.s; ucam.y = uy - (sy - h / 2) / ucam.s; } return; }
+    const [wx, wy] = S2W(sx, sy); cam.s = Math.max(2, Math.min(480, cam.s * k));
+    if (!following) { const [nx, ny] = S2W(sx, sy); cam.x += wx - nx; cam.y += wy - ny; }
+    return;
+  }
   const fitS = Math.min(canvas.clientWidth, canvas.clientHeight) / (arenaR * 3);
   const [wx, wy] = S2W(sx, sy); cam.s = Math.max(fitS, Math.min(400, cam.s * k));
   if (!following) { const [nx, ny] = S2W(sx, sy); cam.x += wx - nx; cam.y += wy - ny; }
 }
+/** drawn ant records of the active renderer (P0-A2: garden renderer; synthetic: layered renderer) */
+const currentDraws = (): readonly { id: string; sx: number; sy: number; ex: number; ey: number }[] => (isP0a2Frame(frame) ? p0draws : R.lastDraws());
 function pick(sx: number, sy: number) {
   let best: string | null = null, bd = Math.max(22, antLengthPx(cam.s, minAntPx()) * 0.7);
-  for (const d of R.lastDraws()) { const dd = Math.hypot(d.sx - sx, d.sy - sy); if (dd < bd) { bd = dd; best = d.id; } }
+  for (const d of currentDraws()) { const dd = Math.hypot(d.sx - sx, d.sy - sy); if (dd < bd) { bd = dd; best = d.id; } }
   if (isP0a2Frame(frame)) for (const h of insetHits) { const dd = Math.hypot(h.sx - sx, h.sy - sy); if (dd <= h.r && dd < bd) { bd = dd; best = h.id; } }
   selected = best; if (!best && following) void setFollow(null); renderCard();
 }
@@ -211,7 +285,7 @@ function setupPointer() {
   canvas.addEventListener('pointerdown', (e) => { canvas.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.offsetX, y: e.offsetY }); downAt = { x: e.offsetX, y: e.offsetY, t: performance.now() }; if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch0 = Math.hypot(a.x - b.x, a.y - b.y); s0 = cam.s; } });
   canvas.addEventListener('pointermove', (e) => {
     const p = pts.get(e.pointerId); if (!p) return;
-    if (pts.size === 1) { const dx = e.offsetX - p.x, dy = e.offsetY - p.y; if (Math.hypot(e.offsetX - downAt.x, e.offsetY - downAt.y) > 4) { if (following) void setFollow(null); cam.x -= dx / cam.s; cam.y += dy / cam.s; } }
+    if (pts.size === 1) { const dx = e.offsetX - p.x, dy = e.offsetY - p.y; if (Math.hypot(e.offsetX - downAt.x, e.offsetY - downAt.y) > 4) { if (following) void setFollow(null); if (isP0a2Frame(frame) && view === 'underground') { ucam.x -= dx / ucam.s; ucam.y -= dy / ucam.s; } else { cam.x -= dx / cam.s; cam.y += dy / cam.s; } } }
     p.x = e.offsetX; p.y = e.offsetY;
     if (pts.size === 2 && pinch0 > 0) { const [a, b] = [...pts.values()]; zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, (s0 * Math.hypot(a.x - b.x, a.y - b.y)) / pinch0 / cam.s); }
   });
@@ -251,6 +325,9 @@ async function init() {
   ui.zoomIn.onclick = () => zoomAt(canvas.clientWidth / 2, canvas.clientHeight / 2, 1.5);
   ui.zoomOut.onclick = () => zoomAt(canvas.clientWidth / 2, canvas.clientHeight / 2, 1 / 1.5);
   ui.decor.onchange = () => setScene();
+  ui.viewBtn.onclick = () => { if (following) void setFollow(null); setView(view === 'surface' ? 'underground' : 'surface'); };
+  ui.legendBtn.onclick = () => { ui.legend.hidden = !ui.legend.hidden; ui.legendBtn.setAttribute('aria-expanded', String(!ui.legend.hidden)); };
+  ui.closeBtn.onclick = () => closeUp(selected);
   setupPointer();
   window.addEventListener('resize', () => { resize(); });
   // the bottom bar grows when its status text wraps: keep the renderer margin and the nest inset above it
@@ -274,7 +351,7 @@ async function init() {
   const st = await ExperimentSaveStore.open();
   session = st.ok ? new ExperimentSession(client, st.value) : null;
   if (session) {
-    session.onWorldStart = () => { digest = new EventDigest(); recent.length = 0; frame = null; p0poses = []; insetHits = []; };
+    session.onWorldStart = () => { digest = new EventDigest(); recent.length = 0; frame = null; p0poses = []; insetHits = []; p0draws = []; vis = null; };
     session.onRestored = (seq) => { digest.lastSeq = seq - 1; };
     session.onSaveState = (s) => { saveUi = s; };
     session.onLockLost = () => { ui.ro.hidden = false; ui.ro.textContent = session?.current?.readOnlyReason ?? '本分頁為唯讀'; };
@@ -287,6 +364,9 @@ async function init() {
 /** Show the world view for the world now in the Worker (new, loaded or temporary) and start it at 1×. */
 async function enterWorld(autostart: boolean) {
   // the scene must exist before the first drawn frame (the renderer bakes chunks from it): set it up, THEN activate
+  const p0 = isP0a2Frame(frame);
+  // VIS-1: the P0-A2 view opens on the garden surface with decoration on; the synthetic world keeps its plain ground
+  ui.decor.checked = p0; ui.viewBtn.hidden = ui.closeBtn.hidden = !p0; view = 'underground'; setView('surface'); ui.ugLabel.hidden = true;
   setScene(); resize(); homeCamera();
   active = true; $('menu').hidden = true;
   selected = null; following = null; lastDisplay = null; ui.follow.length = 1; ui.card.hidden = true; ui.notice.hidden = true;
@@ -298,7 +378,7 @@ async function enterWorld(autostart: boolean) {
   const snap = await client.snapshot();
   disclosure = snap.type === 'snapshot' ? notSimulatedOf(snap.snapshot) : { ok: false, reason: `無法讀取此世界的存檔中繼資料（${snap.type === 'error' ? snap.code : snap.type}）：「尚未模擬」清單未知，不得把畫面當成已模擬任何機制` }; ui.notSim.hidden = true; ui.nsBtn.setAttribute('aria-expanded', 'false'); renderNotSim();
   ui.badge.textContent = `${MODE_LABEL}｜${isP0a2Frame(frame) ? `${P0A2_STATUS_LABEL}｜P0-A2 24 小時個體行為世界` : '合成測試世界（不是螞蟻科學模型）'}｜${tempMode ? '臨時實驗（不存檔）' : `「${cur?.name ?? ''}」`}｜世界 ${frame?.world_id}｜種子 ${frame?.seed}｜規則指紋 ${frame?.rules_fingerprint.slice(0, 12)}…`;
-  R.warm(camera());
+  if (p0) G.warm(camera()); else R.warm(camera());
   if (autostart) await client.start();
   syncControls();
 }
@@ -341,12 +421,15 @@ function renderSave() {
   insetHits: () => insetHits.map((h) => ({ ...h })),
   sceneLight: () => sceneLight,
   disclosure: () => (disclosure ? JSON.parse(JSON.stringify(disclosure)) as NotSimulatedView : null),
-  draws: () => R.lastDraws().map((d) => ({ id: d.id, ex: d.ex, ey: d.ey, sx: d.sx, sy: d.sy })),
+  draws: () => currentDraws().map((d) => ({ id: d.id, ex: d.ex, ey: d.ey, sx: d.sx, sy: d.sy })),
   camera: () => camera(),
-  state: () => ({ selected, following, fpsCap, cam: { ...cam }, quality: R.quality().level, canvas_px: [canvas.width, canvas.height], layers: [...R.trace], lastDisplay }),
+  state: () => ({ selected, following, fpsCap, cam: { ...cam }, quality: isP0a2Frame(frame) ? G.quality().level : R.quality().level, canvas_px: [canvas.width, canvas.height], layers: [...(isP0a2Frame(frame) ? G.trace : R.trace)], lastDisplay, view, ucam: { ...ucam }, garden: { ...G.stats, frameMs: undefined, frame_p50_ms: med(G.stats.frameMs), frame_p95_ms: pct(G.stats.frameMs, 0.95) } }),
   fps: () => { const iv = [...stats.intervals].sort((a, b) => a - b), n = iv.length, mean = n ? iv.reduce((s, x) => s + x, 0) / n : null; return { frames: stats.frames, samples: n, mean_ms: mean, p50_ms: n ? iv[Math.floor(n * 0.5)] : null, p95_ms: n ? iv[Math.floor(n * 0.95)] : null, fps_mean: mean ? 1000 / mean : null }; },
   resetFps: () => { stats.intervals = []; stats.frames = 0; },
   zoomAt: (sx: number, sy: number, k: number) => zoomAt(sx, sy, k),
+  setView: (v: 'surface' | 'underground') => setView(v),
+  closeUp: (id?: string) => closeUp(id ?? selected),
+  corridor: () => (vis ? { nest: { ...vis.corridor.nest }, source: { ...vis.corridor.source }, route_cm: vis.corridor.route_cm, len: vis.corridor.line.len } : null),
   setFollow: (id: string | null) => setFollow(id),
 };
 
