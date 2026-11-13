@@ -1,6 +1,6 @@
 {
  "schema": "antempire.c4-causal-chain.v1",
- "engine_version": "antempire.v2-review.31-nurse-cue-same-place",
+ "engine_version": "antempire.v2-review.32-param-units",
  "official": false,
  "experiment_label": "非正式 Day0 experiment worlds — not the official world, not history",
  "design": {
@@ -2327,7 +2327,7 @@
  "code_facts": [
   {
    "fact": "one nest round per colony per day (the only route by which food reaches a larva)",
-   "where": "engine/day.ts:170",
+   "where": "engine/day.ts:174",
    "kind": "fixed count"
   },
   {

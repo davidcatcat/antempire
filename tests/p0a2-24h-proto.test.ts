@@ -20,6 +20,8 @@
  *     (2) adult–adult trophallaxis, (3) adult→brood feeding — separate parameters, separate guarded decision functions,
  *     per-individual mass balance from the event log, brood decisions read no colony total (negative fixtures),
  *     default-off brood candidates keep the reference log byte-identical, hunger diagnostics never feed back
+ *  7d. Owner #214 Q4 (rules version experiment-p0a2-24h/2): a bout_end logs the idle-walk contacts as `idle_larvae`, never
+ *     overwritten by the brood-care `larvae`; the log equals the worker's own begging[] buffer (regression for the defect)
  *  8b. Q4 same-instant tie-break hash32(seed|t|id) — a transitional ENGINEERING arbitration, not a natural rule:
  *     (a) fairness: first-served position is not biased by id (chi-square / binomial tests at p = 0.001, deterministic;
  *     negative fixtures prove the tests bite), (b) chunk / snapshot invariance at same-instant batch instants,
@@ -39,7 +41,7 @@ import { REPO_ROOT } from '../cli/lib/load.ts';
 import { sha256Hex } from '../engine/sha256.ts';
 import { hash32, rng } from '../engine/rng.ts';
 import { evaluateContract } from '../engine/scheduler/time-contract.ts';
-import { World, type WorldOptions, guardView, LocalityError, exactOfMs, tieOf, WORKER_KINDS, WORLD_KINDS, SOURCE_ID } from '../prototypes/p0a2-24h/world.ts';
+import { World, type WorldOptions, guardView, LOG_GENESIS, LocalityError, exactOfMs, tieOf, WORKER_KINDS, WORLD_KINDS, SOURCE_ID } from '../prototypes/p0a2-24h/world.ts';
 import { evidenceProblems, valueEntries, buildModel, variantNames } from '../prototypes/p0a2-24h/params.ts';
 import { canon } from '../prototypes/p0a2-24h/canon.ts';
 import { broodGivable, chooseInNest, decideFeedLarva, decideTransfer, ownNeed, ownReserve } from '../prototypes/p0a2-24h/decision.ts';
@@ -56,6 +58,11 @@ const noStrings = (s: string) => s.replace(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.
 const run = (seed: number, steps: number[], opts: WorldOptions = { captureLog: true }) => { const w = World.create(RAW, SC, seed, opts); for (const t of steps) w.advanceTo(t); return w; };
 const stepsOf = (end: number, dt: number) => { const out: number[] = []; for (let t = dt; t < end; t += dt) out.push(t); out.push(end); return out; };
 const logSha = (lines: readonly string[]) => sha256Hex(lines.join('\n'));
+/** the log hash chain of these lines as rules version experiment-p0a2-24h/1 would have written them (Owner #214 Q4):
+ *  a bout_end's idle-walk contacts are dropped when a brood choice logs its own `larvae` (the old overwrite), else
+ *  renamed back to `larvae`. Used only to tie the pins taken before 2026-11-13 to today's log (behaviour unchanged). */
+const v1Line = (l: string) => { const e = JSON.parse(l); if ('idle_larvae' in e.p) { const il = e.p.idle_larvae; delete e.p.idle_larvae; if (!('larvae' in e.p)) e.p.larvae = il; } return canon(e); };
+const v1LogHash = (lines: readonly string[]) => lines.reduce((h, l) => sha256Hex(h + v1Line(l)), sha256Hex(LOG_GENESIS));
 
 // ------------------------------------------------------------------ 1. parameters and evidence classes
 {
@@ -371,7 +378,7 @@ const FORMER = { reference_r190_log: '7d6e43afca735b6416faf0b2a2e868284b485ae507
 const BASE_SELF = { crop: 0, crop_room: 800_000, crop_fill: 0, theta_forage: 0.5, theta_brood: 1, gain: 1, thermal_offset_c: 0, ctmax_c: 42, has_route: true, recruit_contacts_recent: 0, begging_recent: 0, forage_interval_ms: null as number | null };
 const selfOf = (o: Partial<typeof BASE_SELF>) => guardView({ ...BASE_SELF, ...o }, 'self');
 {
-  ok(ref.logHash === FORMER.ft_flat_log, 'Q2 off + Q1: the new reference log is byte-identical to the former ft-flat variant log (the switched-off candidate changes no event)');
+  ok(v1LogHash(ref.lines!) === FORMER.ft_flat_log, 'Q2 off + Q1: the new reference log (projected to the v1 log form, §7d) is byte-identical to the former ft-flat variant log (the switched-off candidate changes no event)');
   ok(!ref.lines!.some((l) => l.includes('"reserve"') || l.includes('"crop_left"') || l.includes('"carer_reserve"')), 'reference log carries no retention fields (trophallaxis or brood)');
   // isolated run with the candidate on (fixed 6 h horizon), with the view inspector
   const selfKeys = new Set<string>();
@@ -485,6 +492,35 @@ function individualBalance(w: World, variant?: string): string[] {
   ok(canon(restored48.hunger()) === canon(hu), 'hunger diagnostics survive snapshot / restore unchanged (48 h == 24 h + restore + 24 h; state fields, chunk-invariant)');
 }
 
+// ------------------------------------------------------------------ 7d. idle-walk contacts in the event log (Owner #214 Q4, 2026-11-13)
+// Regression for the defect recorded in docs/p0a2-24h-prototype.md §12.5: a `bout_end` that ends an idle walk and then
+// chooses brood care logged the idle-walk contacts under `larvae`, and the brood-care contact list (also `larvae`)
+// overwrote them, so the log lost contacts the worker really had (its own begging[] buffer kept them). The fix logs the
+// idle-walk contacts under `idle_larvae`; behaviour, RNG draws and state are unchanged (only the log lines and hence the
+// log hash chain change; rules version experiment-p0a2-24h/2). Check: for every bout_end of seed 1 / 24 h, the
+// worker's begging[] entries at that instant equal, in order, the logged idle-walk contacts followed by the logged
+// brood-care contacts — so no contact the worker experienced is missing from (or invented in) the log.
+{
+  const w = World.create(RAW, SC, 1, { captureLog: true });
+  w.advanceTo(DAY);
+  const bouts = w.lines!.map((l) => JSON.parse(l)).filter((e) => e.k === 'bout_end');
+  const step = World.create(RAW, SC, 1);
+  let checked = 0, idleThenBrood = 0, idleThenBroodWithIdleContacts = 0, mismatched = 0;
+  const firstBad: string[] = [];
+  for (const e of bouts) {
+    if (step.t_now < e.t) step.advanceTo(e.t);
+    const seen = step.view().workers[e.a].begging.filter((b: any) => b.t === e.t).map((b: any) => `${b.larva}:${b.signal}`);
+    const logged = [...(e.p.idle_larvae ?? []), ...(e.p.larvae ?? [])].map((x: any) => `${x.larva}:${x.signal}`);
+    if (e.p.from === 'idle' && e.p.choice === 'brood') { idleThenBrood++; if (seen.length > (e.p.larvae ?? []).length) idleThenBroodWithIdleContacts++; }
+    if (JSON.stringify(seen) !== JSON.stringify(logged)) { mismatched++; if (firstBad.length < 3) firstBad.push(`${e.id} from ${e.p.from} -> ${e.p.choice}: begging[] ${seen.length}, logged ${logged.length}`); }
+    checked++;
+  }
+  ok(idleThenBroodWithIdleContacts > 0, `the defect's situation occurs: idle walk with contacts, then brood care in the same bout_end (${idleThenBroodWithIdleContacts} of ${idleThenBrood} idle -> brood bout_ends)`);
+  ok(mismatched === 0, `every bout_end logs exactly the larval contacts the worker experienced (begging[] = idle_larvae ++ larvae) — ${checked} bout_ends, ${mismatched} mismatched ${firstBad.join('; ')}`);
+  ok(bouts.every((e) => e.p.idle_larvae === undefined || (e.p.from === 'idle' && e.p.idle_larvae.every((x: any) => x.fed === 0))), 'idle_larvae appears only on a bout_end that ends an idle walk, and an idle walk never feeds');
+  ok(bouts.every((e) => e.p.larvae === undefined || e.p.choice === 'brood'), '`larvae` now means only the brood-care contacts of the chosen brood bout');
+}
+
 // ------------------------------------------------------------------ 8. time contract
 {
   const evs = cont48.lines!.map((l) => JSON.parse(l));
@@ -584,7 +620,7 @@ for (const variant of Object.keys(RAW.sensitivity_variants).filter((k) => k !== 
   // the reference / March / seed 1 / 2-day run is exactly cont48 (same parameters, scenario, seed and span): reuse it
   const isRef = variant === RAW.reference_variant && sc === SC, w = isRef ? cont48 : World.create(RAW, sc, 1, { captureLog: true, variant });
   if (!isRef) w.advanceTo(DAY);
-  if (variant === 'ft-r190' && sc === SC) ok(w.logHash === FORMER.reference_r190_log, 'Q1: the former reference (R190 anchors) survives byte-identically as the ft-r190 sensitivity scenario');
+  if (variant === 'ft-r190' && sc === SC) ok(v1LogHash(w.lines!) === FORMER.reference_r190_log, 'Q1: the former reference (R190 anchors) survives byte-identically (in the v1 log form, §7d) as the ft-r190 sensitivity scenario');
   if (!isRef) w.advanceTo(2 * DAY);
   if (variant === 'ft-r190' && sc === SC) {
     const evs = w.lines!.map((l) => JSON.parse(l)), declines = evs.filter((e) => e.k === 'at_entrance' && e.p.choice !== 'exit').length, backIns = evs.filter((e) => e.k === 'back_in').length;
@@ -609,7 +645,15 @@ for (const variant of Object.keys(RAW.sensitivity_variants).filter((k) => k !== 
 //   state 60f5e6e7…ccb2 -> 86c354e8…d93b  (parameter file sha: three new default-off brood parameters and the
 //         brood_feeding_variants section; new diagnostic-only state fields: workers empty_since / empty_ms / max_empty_ms,
 //         larvae received / empty_since / empty_ms / max_empty_ms — statistics, never in any decision view)
-const PINNED = { log: '0ca01939dbb611871e6bc14b41ea58a1a3bdefc17659e3ea0422ec129d1ef2db', state: '86c354e8cb1f1840b5f3622d03d6c5e49302725d1443ceb44d7141bbb8cad93b' };
+// Re-pinned for Owner #214 Q4 (2026-11-13, rules version experiment-p0a2-24h/2: the idle-walk contacts of a bout_end
+// are logged as `idle_larvae` instead of being overwritten by the brood-care `larvae`, §7d). Behaviour is unchanged:
+//   log   0ca01939…f2db -> b9e024c0…c4c8  (only log lines change: every bout_end that ends an idle walk; projected back
+//         to the v1 form, v1LogHash, the log is exactly the former 0ca01939…f2db — pinned below as v1_log)
+//   state 86c354e8…d93b -> 638f671d…9d96  (only state.log.hash, the log hash chain; the state without log.hash is
+//         be515923…cc4f before and after — pinned below as state_wo_log_hash)
+const PINNED = { log: 'b9e024c090314b1570a35dd8ed5413a78e00cea2713c8771b3dd67c6ccd0c4c8', state: '638f671d19c9d272edbe7e173244ac26f7971a819d6070d8df7bcc02c1219d96', v1_log: '0ca01939dbb611871e6bc14b41ea58a1a3bdefc17659e3ea0422ec129d1ef2db', state_wo_log_hash: 'be5159231a25368e08219d7fe10229f3ca114f463d423110c7048f2517bfcc4f' };
 ok(ref.logHash === PINNED.log, `pinned 24 h log hash (got ${ref.logHash})`);
 ok(refState === PINNED.state, `pinned 24 h state hash (got ${refState})`);
+ok(v1LogHash(ref.lines!) === PINNED.v1_log, 'Owner #214 Q4: the 24 h log projected to the v1 form equals the log of rules version /1 (only the logged key changed)');
+{ const st = JSON.parse(ref.snapshot()); delete st.log.hash; ok(sha256Hex(canon(st)) === PINNED.state_wo_log_hash, 'Owner #214 Q4: the 24 h state without the log hash chain is byte-identical to rules version /1 (individuals, queue, ledger, statistics unchanged)'); }
 console.log(JSON.stringify({ test: 'p0a2-24h-proto', checks, seconds: (Date.now() - T0) / 1000, events_24h_seed1: ref.lines!.length, log_sha_24h_seed1: ref.logHash, q4_fairness: fairness, diagnostic_not_a_target: diag }));

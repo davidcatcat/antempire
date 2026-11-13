@@ -1,0 +1,37 @@
+{
+  "schema": "antempire.colony-members.params.v1",
+  "status": "isolated_candidate_not_wired",
+  "label_zh": "非正式實驗世界／研究候選（CQ-1，尚未接入 P0-A2 世界）；不是 species/ 正式參數檔，不進規則指紋",
+  "doc": "docs/colony-members-cq1.md",
+  "worker_castes": {
+    "minor": {
+      "enabled": true,
+      "assumption": false,
+      "evidence": "literature_this_species",
+      "sources": ["R97", "R99"],
+      "note_zh": "本種工蟻二型（小工蟻／大工蟻）為形態學紀錄；開關只表示『此物種有此階級』，不含任何比例或數值"
+    },
+    "major": {
+      "enabled": true,
+      "assumption": false,
+      "evidence": "literature_this_species",
+      "sources": ["R97", "R99", "R132"],
+      "note_zh": "本種有大工蟻（頭寬 1.10–1.54 mm vs 小工蟻 0.50–0.61 mm，R99）；大工蟻比例不是輸入，須由個體發育湧現（research-design-p1a-majors.md §1）"
+    }
+  },
+  "queen_count": {
+    "default_candidates": [2, 3],
+    "sensitivity": [1, 3],
+    "assumption": true,
+    "evidence": "game_assumption",
+    "sources": ["R94", "R101", "R116", "R137"],
+    "note_zh": "Owner #202／2026-11-13：預設 2～3 后、1～3 后作敏感度；R94 的 2～7 后是華南實驗室巢片段計數，不是分巢單位分布；本模組不讀此值，只供日後情境初始化使用"
+  },
+  "candidates": {
+    "oviposition": null,
+    "egg_cost": null,
+    "caste_fate": null,
+    "metabolism": { "queen": null, "worker_minor": null, "worker_major": null, "worker_unknown": null },
+    "note_zh": "全部 null＝尚未模擬：營養→產卵關係、每卵成本、階級分化門檻、各型代謝數值都沒有本種證據，不設預設值"
+  }
+}
