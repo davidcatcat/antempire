@@ -19,7 +19,7 @@ import { canonicalJson as refCanonical } from './lib/canonical-json.ts';
 import {
   canonicalJson, sha256Hex, envelopeErrors, verifyEnvelope, sealEnvelope, MigrationRegistry, defaultMigrations, compatibility, planPromote, sweepable,
   recordProblem, buildExport, parseImport, AutosaveController, simDayTime, newWorldId, newSeed, headerOf, LABEL, RETAIN_VERIFIED, AUTOSAVE_INTERVAL_S, LOCK_PREFIX,
-  CURRENT_SCHEMA_VERSION, verificationOf, VERIFICATION_TEXT, NOT_NODE_VERIFIED, type SnapshotEnvelope, type SnapshotRecord, type Result, type SaveReason,
+  CURRENT_SCHEMA_VERSION, verificationOf, VERIFICATION_TEXT, NOT_NODE_VERIFIED, notSimulatedOf, summaryOf, NOT_SIMULATED_FORMAT, type SnapshotEnvelope, type SnapshotRecord, type Result, type SaveReason,
 } from '../web/src/experimental/save-format.ts';
 
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
@@ -69,9 +69,25 @@ ok(compatibility(e0, { rules_fingerprint: 'rules-v2', engine_version: 'worker-0'
 // verification status (#200): the browser never claims Node verification
 {
   const all = [true, false].flatMap((l) => [true, false].map((i) => verificationOf({ loadable: l, integrity_checked: i })));
-  ok(all.every((v) => v.level !== 'node_verified' && v.text.includes(NOT_NODE_VERIFIED)), 'verificationOf never yields node_verified and always says 未經 Node 驗證');
+  ok(all.every((v) => v.level !== 'node_verified' && v.text.includes(NOT_NODE_VERIFIED)), 'verificationOf never yields node_verified and always says 未經 Node 重算驗證');
   ok(verificationOf({ loadable: true, integrity_checked: false }).text.startsWith(VERIFICATION_TEXT.local_playable) && verificationOf({ loadable: true, integrity_checked: true }).text.startsWith(VERIFICATION_TEXT.integrity_ok) && verificationOf({ loadable: false, integrity_checked: true }).level === null, 'list = 本機可玩, after a checked load = 完整性檢查通過, unloadable = no level');
   ok(VERIFICATION_TEXT.local_playable === '本機可玩' && VERIFICATION_TEXT.integrity_ok === '完整性檢查通過' && VERIFICATION_TEXT.node_verified === 'Node 已重算驗證', 'the three status names of #200');
+  ok(NOT_NODE_VERIFIED === '未經 Node 重算驗證' && all.every((v) => !v.text.includes('未經 Node 驗證')), 'Owner #212 Q3 a wording: 未經 Node 重算驗證 (never the old 未經 Node 驗證)');
+}
+// Owner #212 Q2 a (matrix M43): the viewer shows only the list a snapshot's save metadata carries, never one of its own
+{
+  const list = { format: NOT_SIMULATED_FORMAT, source: 'docs/r2-acceptance-matrix.json', note_zh: '說明', items: [{ row: 'M15', status: '未接入', label_zh: '蟻后：尚未模擬' }, { row: 'M05', status: '簡化代理', label_zh: '天氣：簡化代理' }] };
+  const snap = (save_meta: unknown, world_kind = 'p0a2') => ({ payload: { world_kind, save_meta, state: { workers: { w1: {} }, larvae: {} } } });
+  const v = notSimulatedOf(snap({ not_simulated: list }));
+  ok(v.ok && v.unwired.length === 1 && v.unwired[0].label_zh === '蟻后：尚未模擬' && v.proxies.length === 1 && v.proxies[0].row === 'M05' && v.note_zh === '說明' && v.source === list.source, 'a well-formed list is shown as stored (unwired and proxies separated)');
+  const s = summaryOf(snap({ not_simulated: list }));
+  ok(s.not_simulated?.unwired === 1 && s.not_simulated?.proxies === 1, 'the save-list summary counts the stored list');
+  const old = notSimulatedOf(snap({ world_kind: 'p0a2-24h-v1' })), syn = notSimulatedOf(snap({ world_kind: 'synthetic-v1' }, 'synthetic')), none = notSimulatedOf(null);
+  ok(!old.ok && /舊格式/.test(old.reason) && summaryOf(snap({})).not_simulated === null, 'a P0-A2 save without the list says so (older format); nothing is filled in');
+  ok(!syn.ok && /合成測試世界不是螞蟻模型/.test(syn.reason) && !none.ok, 'the synthetic world has no list and says why');
+  for (const [why, bad] of [['wrong format', { ...list, format: 'x' }], ['bad status', { ...list, items: [{ row: 'M15', status: '已接入', label_zh: 'x' }] }], ['bad row id', { ...list, items: [{ row: '15', status: '未接入', label_zh: 'x' }] }], ['empty label', { ...list, items: [{ row: 'M15', status: '未接入', label_zh: '' }] }], ['items not an array', { ...list, items: {} }]] as const) {
+    const r = notSimulatedOf(snap({ not_simulated: bad })); ok(!r.ok && /格式不符/.test(r.reason), `a malformed list is not shown (${why})`);
+  }
 }
 const orig = deepFreeze(await env(4)), origText = canonicalJson(orig);
 const m2 = await reg2.migrate(orig);
