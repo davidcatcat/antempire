@@ -109,6 +109,8 @@
 | prototypes/p0a2-24h/params.json | `parameters.honeydew_amount_portions` | 0.05 | supply | sugar | game_portion sugar / production event | event (every honeydew_interval_s) | fixed_game_portion | 遊戲假設 | UNITLESS_PORTION | no hemipteran, plant, temperature or rain driver: a fixed scenario drip (synthetic) |
 | prototypes/p0a2-24h/params.json | `parameters.honeydew_interval_s` | 900 | supply_driver | sugar | s | event | fixed_game_portion | 遊戲假設 | — | — |
 | prototypes/p0a2-24h/params.json | `parameters.worker_sugar_daily_portions` | 0.1 | demand | sugar | game_portion sugar / worker / day, constant rate | continuous | colony_internal | 遊戲假設 | UNITLESS_PORTION | no Q10 (nest temperature not simulated) |
+| prototypes/p0a2-24h/params.json | `brood_feeding_variants.m-half.overrides.worker_sugar_daily_portions` | 0.05 | demand | sugar | game_portion sugar / worker / day, constant rate (sensitivity variant m-half / m-double, #208; default off) | continuous | colony_internal | 遊戲假設（敏感度） | UNITLESS_PORTION | isolated sensitivity override of the reference value; not the reference |
+| prototypes/p0a2-24h/params.json | `brood_feeding_variants.m-double.overrides.worker_sugar_daily_portions` | 0.2 | demand | sugar | game_portion sugar / worker / day, constant rate (sensitivity variant m-half / m-double, #208; default off) | continuous | colony_internal | 遊戲假設（敏感度） | UNITLESS_PORTION | isolated sensitivity override of the reference value; not the reference |
 | prototypes/p0a2-24h/params.json | `parameters.larva_sugar_daily_portions` | 0.025 | demand | sugar | game_portion sugar / larva / day | continuous | colony_internal | 遊戲假設 | UNITLESS_PORTION | — |
 | prototypes/p0a2-24h/params.json | `parameters.crop_capacity_portions` | 0.8 | handling_limit | sugar | game_portion per worker crop | state | colony_internal | 遊戲假設 | UNITLESS_PORTION | — |
 | prototypes/p0a2-24h/params.json | `parameters.larva_gut_capacity_portions` | 0.025 | handling_limit | sugar | game_portion per larva gut | state | colony_internal | 遊戲假設 | UNITLESS_PORTION | — |
@@ -119,7 +121,7 @@
 | prototypes/p0a2-24h/params.json | `parameters.colony_workers` | 30 | demand | sugar | workers | state | scenario_initial | 遊戲假設 | — | — |
 | prototypes/p0a2-24h/params.json | `parameters.colony_larvae` | 8 | demand | sugar | larvae | state | scenario_initial | 遊戲假設 | — | — |
 
-共 111 項；其中 49 項以「份」計（UNITLESS_PORTION：沒有質量單位）。未分類的食物相關參數：0（全部已登錄或已列為非食物量）。
+共 113 項；其中 51 項以「份」計（UNITLESS_PORTION：沒有質量單位）。未分類的食物相關參數：0（全部已登錄或已列為非食物量）。
 
 ## 2. 舊日程引擎：花園生產上限（份／日，世界過程的平均場計算）
 

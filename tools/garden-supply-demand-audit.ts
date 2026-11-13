@@ -131,6 +131,7 @@ export const REGISTRY: UnitEntry[] = [
   { file: 'p0a2', path: 'parameters.honeydew_amount_portions', role: 'supply', food: 'sugar', unit: gp('sugar / production event'), time_scale: 'event (every honeydew_interval_s)', physical_unit: null, origin: 'fixed_game_portion', note: 'no hemipteran, plant, temperature or rain driver: a fixed scenario drip (synthetic)' },
   { file: 'p0a2', path: 'parameters.honeydew_interval_s', role: 'supply_driver', food: 'sugar', unit: 's', time_scale: 'event', physical_unit: 's', origin: 'fixed_game_portion', note: '' },
   { file: 'p0a2', path: 'parameters.worker_sugar_daily_portions', role: 'demand', food: 'sugar', unit: gp('sugar / worker / day, constant rate'), time_scale: 'continuous', physical_unit: null, origin: 'colony_internal', note: 'no Q10 (nest temperature not simulated)' },
+  { file: 'p0a2', path: 'brood_feeding_variants.*.overrides.worker_sugar_daily_portions', role: 'demand', food: 'sugar', unit: gp('sugar / worker / day, constant rate (sensitivity variant m-half / m-double, #208; default off)'), time_scale: 'continuous', physical_unit: null, origin: 'colony_internal', note: 'isolated sensitivity override of the reference value; not the reference' },
   { file: 'p0a2', path: 'parameters.larva_sugar_daily_portions', role: 'demand', food: 'sugar', unit: gp('sugar / larva / day'), time_scale: 'continuous', physical_unit: null, origin: 'colony_internal', note: '' },
   { file: 'p0a2', path: 'parameters.crop_capacity_portions', role: 'handling_limit', food: 'sugar', unit: gp('per worker crop'), time_scale: 'state', physical_unit: null, origin: 'colony_internal', note: '' },
   { file: 'p0a2', path: 'parameters.larva_gut_capacity_portions', role: 'handling_limit', food: 'sugar', unit: gp('per larva gut'), time_scale: 'state', physical_unit: null, origin: 'colony_internal', note: '' },
@@ -166,6 +167,7 @@ export const NOT_FOOD: { file: FileKey; re: RegExp; reason: string }[] = [
   { file: 'species', re: /^foraging_trips\.repeat_trip_probability$/, reason: 'probability' },
   { file: 'species', re: /^trophallaxis\.max_trophallaxis_contacts$/, reason: 'count of contacts per unloading' },
   { file: 'p0a2', re: /^parameters\.(larva_begging_threshold|recruit_min_crop_fill|liquid_fill_minutes_full_crop)$/, reason: 'signal / fraction threshold, or handling time in minutes' },
+  { file: 'p0a2', re: /^(parameters|brood_feeding_variants\.[a-z0-9-]+\.overrides)\.brood_min_own_crop_fill$/, reason: 'carer own-crop fill threshold (fraction 0..1) for brood feeding (#188/#208): a decision threshold, not a food amount' },
   { file: 'candidate', re: /^fields\.(worker_crop_fill_fraction|stores_protein)$/, reason: 'colony entry state (Day0 founding candidate, #202); audited in docs/day0-founding-evidence.md, not a garden flow' },
 ];
 

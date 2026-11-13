@@ -1432,6 +1432,36 @@
     },
     {
       "file": "prototypes/p0a2-24h/params.json",
+      "path": "brood_feeding_variants.m-half.overrides.worker_sugar_daily_portions",
+      "value": 0.05,
+      "role": "demand",
+      "food": "sugar",
+      "unit": "game_portion sugar / worker / day, constant rate (sensitivity variant m-half / m-double, #208; default off)",
+      "time_scale": "continuous",
+      "origin": "colony_internal",
+      "basis": "遊戲假設（敏感度）",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "isolated sensitivity override of the reference value; not the reference"
+    },
+    {
+      "file": "prototypes/p0a2-24h/params.json",
+      "path": "brood_feeding_variants.m-double.overrides.worker_sugar_daily_portions",
+      "value": 0.2,
+      "role": "demand",
+      "food": "sugar",
+      "unit": "game_portion sugar / worker / day, constant rate (sensitivity variant m-half / m-double, #208; default off)",
+      "time_scale": "continuous",
+      "origin": "colony_internal",
+      "basis": "遊戲假設（敏感度）",
+      "flags": [
+        "UNITLESS_PORTION"
+      ],
+      "note": "isolated sensitivity override of the reference value; not the reference"
+    },
+    {
+      "file": "prototypes/p0a2-24h/params.json",
       "path": "parameters.larva_sugar_daily_portions",
       "value": 0.025,
       "role": "demand",
