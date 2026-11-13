@@ -57,12 +57,19 @@ export function runAdLib(c: Candidates, model_: 'flat' | 'linear_dd_A' | 'q10_re
   const p = params(c), M = model(p, { family: 'H0' });
   return drive(newEgg('E0001', 1), constantEnv(model_, T), M, 400, () => ({ s: 24_000, p: 24_000 }));
 }
-/** Phillips 1933 shaped history (R167): 25 °C, unfed for 14 d from hatch, then ad lib */
-export function runPhillips(c: Candidates, model_: 'flat' | 'linear_dd_A' | 'q10_refit'): Larva {
+/** Phillips 1933 shaped history (R167, thesis p. 29): 25 °C (77 °F cabinet), unfed for `withheld_d` days, then ad lib.
+ *  Phillips withheld food from the whole colony; when each larva stopped being fed, and at which instar, was not recorded.
+ *  "Unfed from hatch" is this model's assumption (an upper bound on the larva's own unfed time), not the source's. */
+export function runPhillips(c: Candidates, model_: 'flat' | 'linear_dd_A' | 'q10_refit', withheld_d: 14 | 21): Larva {
   const p = params(c), M = model(p, { family: 'H0' }), env = constantEnv(model_, 25), L = newEgg('E0001', 1);
   let hatch = Infinity;
-  return drive(L, env, M, 400, (s, t) => { if (s === 'L1' && hatch === Infinity) hatch = t; return t - hatch < 14 - 1e-9 ? { s: 0, p: 0 } : { s: 24_000, p: 24_000 }; });
+  return drive(L, env, M, 400, (s, t) => { if (s === 'L1' && hatch === Infinity) hatch = t; return t - hatch < withheld_d - 1e-9 ? { s: 0, p: 0 } : { s: 24_000, p: 24_000 }; });
 }
+/** R167 p. 29 treatment groups, kept separate (#226): the 2-week repeat and the accidental 3-week colony */
+export const PHILLIPS_OBSERVED: Readonly<Record<14 | 21, string>> = {
+  14: '重複試驗 2 週組：幼蟲期 32～36；恢復→化蛹未記錄',
+  21: '意外 3 週組：第 38 日仍未長成（起算點未記錄）；恢復後 8 日化蛹（重複試驗 3 週組：工蟻死亡、替補工蟻吃掉幼蟲，無資料）',
+};
 
 const larvalTime = (L: Larva) => (L.stage_entry.pupa ?? NaN) - (L.stage_entry.L1 ?? NaN);
 const reach = (L: Larva) => L.stage === 'adult' ? `成蟲（第 ${f2(L.stage_entry.adult as number)} 日）` : `第 45 日仍在 ${L.stage}`;
@@ -96,10 +103,10 @@ export function tables(c: Candidates): Record<string, string> {
   }
   out.distinguish = di.join('\n');
   // Phillips 1933 shape
-  const ph = ['| 溫度形狀 | 孵化→化蛹（含前蛹，日） | 恢復餵食→化蛹（日） | 本種觀察（R167，25°C） |', '|---|---|---|---|'];
-  for (const m of ['flat', 'linear_dd_A', 'q10_refit'] as const) {
-    const L = runPhillips(c, m);
-    ph.push(`| ${m} | ${f2(larvalTime(L))} | ${f2((L.stage_entry.pupa as number) - ((L.stage_entry.L1 as number) + 14))} | 幼蟲期 32～36；恢復後 8 日化蛹（起始齡期未知） |`);
+  const ph = ['| 停食（日；模型自孵化起） | 溫度形狀 | 孵化→化蛹（含前蛹，日） | 恢復餵食→化蛹（日） | 本種觀察（R167 p.29，25°C，整巢停食；同一處理組） |', '|---|---|---|---|---|'];
+  for (const w of [14, 21] as const) for (const m of ['flat', 'linear_dd_A', 'q10_refit'] as const) {
+    const L = runPhillips(c, m, w);
+    ph.push(`| ${w} | ${m} | ${f2(larvalTime(L))} | ${f2((L.stage_entry.pupa as number) - ((L.stage_entry.L1 as number) + w))} | ${PHILLIPS_OBSERVED[w]} |`);
   }
   out.phillips = ph.join('\n');
   return out;
