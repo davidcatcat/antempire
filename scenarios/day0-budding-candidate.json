@@ -1,9 +1,28 @@
 {
-  "schema": "antempire.day0-founding-candidate.v1",
-  "id": "BUD-CAND-1",
+  "schema": "antempire.day0-founding-candidate.v2",
+  "id": "BUD-CAND-2",
   "status": "候選／實驗，未經 Owner 啟用批准",
-  "status_note": "依 #202 Owner 裁示提出的「多后族群分巢單位遷入」候選初始條件。未經 #201 啟用批准，不是正式 Day0；不寫入 saves/ 或 journal/。所有數量都是抽樣規則，不是實測的分巢群組成。",
-  "issue_links": ["#202", "#201", "#193", "#194"],
+  "status_note": "依 #202 Owner 裁示提出的「多后族群分巢單位遷入」候選初始條件；2026-11-13 依 #202 八項暫定實驗規格改為 v2（蟻后預設 2～3、小工蟻 50～500 對數均勻、幼體零／低／中／高情境、固定入場日、基準種子、大工蟻隔離、母巢為模型邊界）。**這不是 #201 GO**：未經 #201 啟用批准，不是正式 Day0；不寫入 saves/ 或 journal/。所有數量都是抽樣規則，不是實測的分巢群組成。",
+  "activation": {
+    "activated": false,
+    "go_issue": "#201",
+    "state": "pending_owner_go",
+    "note": "#202（2026-11-13）是暫定實驗規格，不是 #201 GO。正式啟用前必須滿足 owner_ruling_202.items[*].before_activation 的全部條件，並由 Owner 在 #201 最後批准；目前全部未滿足（各項 met:false）。"
+  },
+  "supersedes": {
+    "id": "BUD-CAND-1",
+    "schema": "antempire.day0-founding-candidate.v1",
+    "commit": "4a45304",
+    "note": "v1（#204，2026-11-12）的內容保存在 git 歷史；reports/day0-founding-candidate/ 的多種子評估是以 v1 產生的，尚未以 v2 重跑（v1 的蟻后 1～3、幼體連續比例與全年均勻入場規則都已被 v2 取代）。"
+  },
+  "issue_links": [
+    "#202",
+    "#201",
+    "#193",
+    "#194",
+    "#214",
+    "#218"
+  ],
   "species_id": "pheidole-megacephala",
   "mode": "budding_propagule_from_polygynous_population",
   "default_for_new_day0": true,
@@ -13,7 +32,11 @@
       "mode": "independent_single_queen_founding",
       "default": false,
       "status": "文獻支持的非預設研究情境（R138 實驗室摘要；野外未驗證）；引擎不支援（見 scenarios/day0/founding-B.json 的 missing_mechanisms），本候選不執行",
-      "sources": ["R138", "R136", "R139"]
+      "sources": [
+        "R138",
+        "R136",
+        "R139"
+      ]
     }
   ],
   "evidence_document": "docs/day0-founding-evidence.md",
@@ -27,118 +50,310 @@
     "id_number_width": 4,
     "note": "識別碼與亂數命名空間（純標籤，不是生物數值）"
   },
+  "seed": {
+    "value": 20261113,
+    "role": "reproducibility_identifier",
+    "not_picked": true,
+    "note": "候選基準種子 20261113（#202 第 7 項）只是可重現標識（取自專案基準日 2026-11-13），**不是**依存活或任何模擬結果挑出的種子；沒有跑過其他種子來比較後選它。正式上線前依 #201 再釘選。多種子敏感度評估另用固定種子集並列出全部種子。",
+    "pin_before_activation": "#201"
+  },
   "sampling": {
-    "rng": "每一欄位獨立的命名亂數流：u = hash32(`${seed}|day0_budding_candidate|${欄位}`) / 2^32（engine/rng.ts）。同一種子＋同一候選檔＝同一組成；更換敏感度範圍時其他欄位的抽樣值不變（共用亂數）。",
-    "seed_rule": "世界種子由 Owner 在啟用時指定並寫入正式存檔；評估用 20 個固定種子（20270001～20270020），種子不依結果挑選。",
+    "prng": {
+      "id": "antempire.named-stream.sha256-u32.v1",
+      "implementation": "engine/day0/founding-sampler.ts（unitDraw；hash32 來自 engine/rng.ts，SHA-256 來自 engine/sha256.ts）",
+      "stream_key": "${seed}|${stream_namespace}|${欄位}",
+      "unit": "u = hash32(stream_key) / 2^32，u ∈ [0, 1)；hash32 = SHA-256(UTF-8(stream_key)) 前 4 位元組的小端 uint32",
+      "stream_namespace": "day0_budding_candidate",
+      "note": "每個欄位一條獨立的具名亂數流、每條只抽一次：同一種子＋同一候選檔＝同一組成；切換敏感度變體時其他欄位的抽樣值不變（共用亂數）。"
+    },
+    "order": [
+      "queens",
+      "minor_workers",
+      "major_fraction",
+      "eggs_per_minor",
+      "larvae_per_minor",
+      "pupae_per_minor",
+      "carried_brood_progress",
+      "worker_age_days_min",
+      "worker_age_days_max",
+      "worker_crop_fill_fraction",
+      "stores_protein",
+      "entry_day_full_year"
+    ],
+    "order_note": "抽樣順序固定如上並寫入初始條件紀錄。因為每個欄位用自己的具名亂數流，數值本身不依賴順序；固定順序是為了日後若改用有狀態的亂數產生器時不會靜默改變抽樣結果（改順序＝規則更新）。",
     "distributions": {
       "uniform_int": "min + floor(u × (max − min + 1))",
-      "log_uniform_int": "round(exp(ln(min) + u × (ln(max) − ln(min))))",
+      "log_uniform_int": "round(detExp(detLog(min) + u × (detLog(max) − detLog(min))))；detExp／detLog 是跨環境逐位元決定性的 fdlibm 實作（engine/clock/detmath.ts，#190）",
       "uniform": "min + u × (max − min)",
       "fixed": "value"
-    }
+    },
+    "checksum": {
+      "algorithm": "sha256(canonical-json.v1)",
+      "canonical_json": "物件鍵依 UTF-16 碼元排序、無空白、陣列保持順序、字串與有限數字以 JSON.stringify 表示；非有限數字或非 JSON 值拒絕（與 prototypes/p0a2-24h/canon.ts 同一定義）",
+      "scope": "整份候選檔（含文字說明）；任何改動都會改變 checksum。checksum 不存放在檔案本身，由 scenarioChecksum() 計算，tests/day0-initial-conditions.test.ts 釘選目前的值。"
+    },
+    "evaluation_seeds": "多種子敏感度評估用 20 個固定種子（20270001～20270020，cli/reports/day0-founding-candidate.ts），種子不依結果挑選、全部列出。"
   },
   "fields": {
     "queens": {
-      "distribution": "uniform_int", "min": 1, "max": 3,
-      "assumption": true, "basis": "遊戲假設",
-      "sources": ["R137", "R101", "R94"],
-      "description": "隨分巢單位遷入的已交配產卵蟻后數",
-      "basis_note": "R137（二手引 Beardsley 1982）：分巢＝一或多隻蟻后帶工蟻分出；R101 作者描述「一隻蟻后與少數工蟻離巢」。分巢單位的蟻后數沒有任何實測。R94 的 2～7 后是華南採集的巢片段在實驗室的計數，不是分巢事件，**不得**當作此分布；R101 的單巢最多 71 后與有效 1～4 后也不是分巢單位的組成。",
-      "sensitivity": { "low": { "min": 1, "max": 1 }, "high": { "min": 1, "max": 6 } },
+      "distribution": "uniform_int",
+      "min": 2,
+      "max": 3,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [
+        "R137",
+        "R101",
+        "R94"
+      ],
+      "description": "隨分巢單位遷入的已交配產卵蟻后數（#202 第 2 項：預設多后，候選 2～3）",
+      "basis_note": "R137（二手引 Beardsley 1982）：分巢＝一或多隻蟻后帶工蟻分出；R101 作者描述「一隻蟻后與少數工蟻離巢」。分巢單位的蟻后數沒有任何實測。預設 2～3 是 Owner 2026-11-13 暫准的開發假設（#202 第 2 項），1～3 作敏感度對照。R94 的 2～7 后是華南採集的巢片段在實驗室的計數，不是分巢事件，**不得**當作此分布；R101 的單巢最多 71 后與有效 1～4 后也不是分巢單位的組成。",
+      "sensitivity": {
+        "range_1_3": {
+          "min": 1,
+          "max": 3
+        }
+      },
       "engine_representable": false,
-      "engine_note": "引擎狀態只能表示一隻蟻后（engine/initialization.ts）。評估時只模擬 1 隻，其餘蟻后列為「未模擬」，不換算成其他東西。"
+      "engine_note": "舊引擎狀態只能表示一隻蟻后（engine/initialization.ts）；P0-A2 候選世界沒有蟻后。多后個體、產卵、死亡與存檔都**尚未模擬**。舊引擎評估時只模擬 1 隻，其餘蟻后列為「未模擬」，不換算成其他東西。",
+      "simulation_status": "尚未模擬"
     },
     "minor_workers": {
-      "distribution": "log_uniform_int", "min": 50, "max": 500,
-      "assumption": true, "basis": "遊戲假設",
-      "sources": ["R136", "R116", "R99", "R101"],
+      "distribution": "log_uniform_int",
+      "min": 50,
+      "max": 500,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [
+        "R136",
+        "R116",
+        "R99",
+        "R101"
+      ],
       "description": "隨分巢單位遷入的小工蟻數",
       "basis_note": "沒有分巢單位工蟻數的實測。邊界參考：R136 實驗室「蟻后＋10 野外小工蟻」很弱（人工餵食）；R116 實驗室以「1 后＋200 小工蟻」的巢做 35 日育幼實驗（沖繩採集，人工餵食）；R99 列本種群體大小「10,000+(?)」（無出處）；R101 只寫「少數工蟻」。範圍 50～500 是遊戲假設，用對數均勻表示「量級未知」。",
-      "sensitivity": { "low": { "min": 10, "max": 50 }, "high": { "min": 500, "max": 2000 } },
-      "engine_representable": true
+      "sensitivity": {
+        "low": {
+          "min": 10,
+          "max": 50
+        },
+        "high": {
+          "min": 500,
+          "max": 2000
+        }
+      },
+      "engine_representable": true,
+      "not_claimed_as": "本種臺中野外分巢單位的工蟻數分布",
+      "range_change_rule": "不依存活率或任何模擬結果改範圍（#202 第 1 項、CLAUDE.md §7）",
+      "simulation_status": "舊引擎可表示；P0-A2 候選世界尚未接入"
     },
     "major_fraction": {
-      "distribution": "uniform", "min": 0.06, "max": 0.25,
-      "assumption": true, "basis": "遊戲假設",
-      "sources": ["R97", "R94"],
-      "description": "大工蟻佔成年工蟻的比例；大工蟻數 = round(f × 小工蟻數 ÷ (1 − f))",
+      "distribution": "uniform",
+      "min": 0.06,
+      "max": 0.25,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [
+        "R97",
+        "R94"
+      ],
+      "description": "大工蟻佔成年工蟻的比例候選（隔離：只抽樣並記錄，不放入任何模擬、不改成小工蟻）；大工蟻數 = round(f × 小工蟻數 ÷ (1 − f))",
       "basis_note": "範圍取自 R97 五個引入族群野外巢樣本 0.06～0.25（本種；澳洲、夏威夷、佛州、模里西斯、南非，不含臺灣）；R94 28°C 新羽化群 11.86%（實驗室）。用到分巢單位是外推（分巢單位可能帶較少或較多大工蟻，無資料），因此標遊戲假設。",
-      "sensitivity": { "low": { "min": 0, "max": 0 }, "high": { "min": 0.25, "max": 0.4 } },
+      "sensitivity": {
+        "low": {
+          "min": 0,
+          "max": 0
+        },
+        "high": {
+          "min": 0.25,
+          "max": 0.4
+        }
+      },
       "engine_representable": false,
-      "engine_note": "引擎沒有大工蟻（species castes.major_worker_production_enabled=false；#25）。評估時大工蟻**不放入**，也**不改成小工蟻**，只列為「未模擬」。"
+      "engine_note": "引擎沒有大工蟻（species castes.major_worker_production_enabled=false；#25），P0-A2 候選世界也沒有。大工蟻個體、工作、能量與存檔都**尚未模擬**；本欄是隔離的比例候選，不得據以宣稱初始蟻群組成完整，也不指定為本種野外比例（#202 第 3 項）。",
+      "isolated": true,
+      "simulation_status": "尚未模擬"
     },
     "eggs_per_minor": {
-      "distribution": "uniform", "min": 0, "max": 0.5,
-      "assumption": true, "basis": "遊戲假設",
-      "sources": ["R94", "R136"],
+      "distribution": "fixed",
+      "value": 0.25,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [
+        "R94",
+        "R136"
+      ],
       "description": "隨行卵數 = round(比值 × 小工蟻數)",
-      "basis_note": "R94 採集的巢片段含幼體，R136 記錄蟻后成批產卵（每批 2～82 粒），但沒有分巢單位帶多少幼體的資料。",
-      "sensitivity": { "low": { "min": 0, "max": 0 }, "high": { "min": 0.5, "max": 1.0 } },
+      "basis_note": "R94 採集的巢片段含幼體，R136 記錄蟻后成批產卵（每批 2～82 粒），但沒有分巢單位帶多少幼體的資料。 零／低／中／高四個幼體負載情境是 2026-11-13 事前定義（#202 第 4 項），定義時沒有看任何模擬結果：中＝v1 預設範圍的中點、高＝v1 預設範圍的上端、低＝較少幼體、零＝不帶幼體。正式分布待 #214（營養需求與生命史）完成後決定，不得以存活率反推。",
+      "sensitivity": {
+        "zero": {
+          "value": 0
+        },
+        "low": {
+          "value": 0.1
+        },
+        "high": {
+          "value": 0.5
+        }
+      },
       "sensitivity_group": "brood",
       "engine_representable": true
     },
     "larvae_per_minor": {
-      "distribution": "uniform", "min": 0, "max": 0.3,
-      "assumption": true, "basis": "遊戲假設",
-      "sources": ["R94"],
-      "description": "隨行幼蟲數 = round(比值 × 小工蟻數)",
-      "basis_note": "同上；無實測。",
-      "sensitivity": { "low": { "min": 0, "max": 0 }, "high": { "min": 0.3, "max": 0.6 } },
+      "distribution": "fixed",
+      "value": 0.15,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [
+        "R94"
+      ],
+      "description": "隨行幼蟲數 = round(比值 × 小工蟻數)（幼齡未分；三齡區分待 #214）",
+      "basis_note": "同上；無實測。 零／低／中／高四個幼體負載情境是 2026-11-13 事前定義（#202 第 4 項），定義時沒有看任何模擬結果：中＝v1 預設範圍的中點、高＝v1 預設範圍的上端、低＝較少幼體、零＝不帶幼體。正式分布待 #214（營養需求與生命史）完成後決定，不得以存活率反推。",
+      "sensitivity": {
+        "zero": {
+          "value": 0
+        },
+        "low": {
+          "value": 0.05
+        },
+        "high": {
+          "value": 0.3
+        }
+      },
       "sensitivity_group": "brood",
       "engine_representable": true
     },
     "pupae_per_minor": {
-      "distribution": "uniform", "min": 0, "max": 0.2,
-      "assumption": true, "basis": "遊戲假設",
-      "sources": ["R136"],
+      "distribution": "fixed",
+      "value": 0.1,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [
+        "R136"
+      ],
       "description": "隨行蛹數 = round(比值 × 小工蟻數)",
-      "basis_note": "R136：實驗室「蟻后＋10 蛹」6/6 成長，顯示蛹（新羽化工蟻）對小群重要；但分巢單位帶蛹的比例無資料。",
-      "sensitivity": { "low": { "min": 0, "max": 0 }, "high": { "min": 0.2, "max": 0.4 } },
+      "basis_note": "R136：實驗室「蟻后＋10 蛹」6/6 成長，顯示蛹（新羽化工蟻）對小群重要；但分巢單位帶蛹的比例無資料。 零／低／中／高四個幼體負載情境是 2026-11-13 事前定義（#202 第 4 項），定義時沒有看任何模擬結果：中＝v1 預設範圍的中點、高＝v1 預設範圍的上端、低＝較少幼體、零＝不帶幼體。正式分布待 #214（營養需求與生命史）完成後決定，不得以存活率反推。",
+      "sensitivity": {
+        "zero": {
+          "value": 0
+        },
+        "low": {
+          "value": 0.05
+        },
+        "high": {
+          "value": 0.2
+        }
+      },
       "sensitivity_group": "brood",
       "engine_representable": true
     },
     "carried_brood_progress": {
-      "distribution": "uniform", "min": 0.1, "max": 0.9,
-      "assumption": true, "basis": "遊戲假設",
+      "distribution": "uniform",
+      "min": 0.1,
+      "max": 0.9,
+      "assumption": true,
+      "basis": "遊戲假設",
       "sources": [],
       "description": "帶來的卵／幼蟲／蛹在各自階段已完成的比例（每次抽一個值，全部隨行幼體共用；引擎只接受單一值）",
       "basis_note": "年齡未知。",
-      "sensitivity": { "low": { "min": 0, "max": 0.2 }, "high": { "min": 0.7, "max": 0.95 } },
+      "sensitivity": {
+        "low": {
+          "min": 0,
+          "max": 0.2
+        },
+        "high": {
+          "min": 0.7,
+          "max": 0.95
+        }
+      },
       "engine_representable": true
     },
     "worker_age_days_min": {
-      "distribution": "fixed", "value": 0,
-      "assumption": true, "basis": "遊戲假設",
-      "sources": ["R94"],
+      "distribution": "fixed",
+      "value": 0,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [
+        "R94"
+      ],
       "description": "遷入工蟻年齡下限（日）；引擎在 [min,max] 內依世界種子逐隻均勻抽樣",
       "basis_note": "R94：28°C、食物無限下小工蟻平均壽命 26.25 日（中位 28），所以上限取 40 日；較涼季節壽命較長但無本種資料。",
       "engine_representable": true
     },
     "worker_age_days_max": {
-      "distribution": "fixed", "value": 40,
-      "assumption": true, "basis": "遊戲假設",
-      "sources": ["R94"],
+      "distribution": "fixed",
+      "value": 40,
+      "assumption": true,
+      "basis": "遊戲假設",
+      "sources": [
+        "R94"
+      ],
       "description": "遷入工蟻年齡上限（日）",
       "basis_note": "同上。",
-      "sensitivity": { "low": { "value": 14 }, "high": { "value": 60 } },
+      "sensitivity": {
+        "low": {
+          "value": 14
+        },
+        "high": {
+          "value": 60
+        }
+      },
       "engine_representable": true
     },
     "worker_crop_fill_fraction": {
-      "distribution": "uniform", "min": 0, "max": 0.5,
-      "assumption": true, "basis": "遊戲假設",
+      "distribution": "uniform",
+      "min": 0,
+      "max": 0.5,
+      "assumption": true,
+      "basis": "遊戲假設",
       "sources": [],
       "description": "遷入工蟻嗉囊糖的填滿比例（× 物種嗉囊容量），每次抽一個值、全部工蟻共用；計入新巢糖帳（工蟻自己的身體，不是補給）",
       "basis_note": "工蟻遷移時是否帶糧無資料。這是能量狀態的唯一可表示部分。",
-      "sensitivity": { "low": { "min": 0, "max": 0 }, "high": { "min": 0.5, "max": 1.0 } },
+      "sensitivity": {
+        "low": {
+          "min": 0,
+          "max": 0
+        },
+        "high": {
+          "min": 0.5,
+          "max": 1.0
+        }
+      },
       "engine_representable": true
     },
     "stores_protein": {
-      "distribution": "fixed", "value": 0,
-      "assumption": true, "basis": "遊戲假設",
+      "distribution": "fixed",
+      "value": 0,
+      "assumption": true,
+      "basis": "遊戲假設",
       "sources": [],
       "description": "巢內固體蛋白存量（新巢沒有存糧；遷入時不搬固體食物）",
       "basis_note": "無資料；取 0 以免憑空帶入食物。",
       "engine_representable": true
+    }
+  },
+  "scenario_variants": {
+    "brood": {
+      "levels": [
+        "zero",
+        "low",
+        "mid",
+        "high"
+      ],
+      "default_level": "mid",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "note": "幼體負載情境（#202 第 4 項）：零／低／中／高全部事前定義、全部 assumption:true。單一候選世界需要一個值，因此預設用「中」（事前定義的中間情境，不是依結果選擇）；評估必須四個情境並列報告。正式分布待 #214 完成後決定。"
+    },
+    "queens": {
+      "levels": [
+        "default",
+        "range_1_3"
+      ],
+      "default_level": "default",
+      "assumption": true,
+      "basis": "遊戲假設",
+      "note": "預設 2～3；1～3 作敏感度對照（#202 第 2 項）。多后尚未模擬，舊引擎無法評估此敏感度。"
     }
   },
   "health_state": {
@@ -155,19 +370,109 @@
     "simulated_exchange": "none",
     "reason": "（1）本種的巢間距離、巢間流量、母巢大小全部沒有資料（R116 只有「野外常見約 1 m 內」的定性描述）；（2）引擎的蟻群狀態只有一個巢、一本帳（docs/day0-initialization.md D1、docs/odd-protocol.md D13），巢間往來需要多巢狀態與實體通路（docs/research-design-2026-11.md §1.3），尚未實作；（3）CLAUDE.md §2.3：沒有實際模擬的連通不能偷偷補給。因此本候選定義母巢在場景外且**完全分離**：Day0 之後沒有工蟻、幼體、蟻后或食物從母巢來或回母巢。",
     "consequence": "R116（本種，實驗室）顯示相連的巢共享工蟻與食物、切斷後育幼下降。完全分離因此是**保守的模型假設**，可能低估真實分巢單位的表現；這是已知偏差，不能用調參補償。",
-    "mass_balance": "Day0 蟻群的全部物質＝抽樣得到的蟻后、工蟻、卵、幼蟲、蛹＋工蟻嗉囊中的糖（計入 stores.sugar）；stores.protein = 0。這些量在 Day0 一次性進入場景，記為「遷入」，母巢的對應損失在場景外、不模擬。Day1 起所有收入只能來自花園中已登錄的自然來源（food_collected 事件，帶地點），所有支出由引擎的守恆檢查結算；邊界上沒有任何其他輸入。"
+    "mass_balance": "Day0 蟻群的全部物質＝抽樣得到的蟻后、工蟻、卵、幼蟲、蛹＋工蟻嗉囊中的糖（計入 stores.sugar）；stores.protein = 0。這些量在 Day0 一次性進入場景，記為「遷入」，母巢的對應損失在場景外、不模擬。Day1 起所有收入只能來自花園中已登錄的自然來源（food_collected 事件，帶地點），所有支出由引擎的守恆檢查結算；邊界上沒有任何其他輸入。",
+    "model_boundary": true,
+    "boundary_inflow": "Day0 帶入的蟻后、工蟻、幼體與工蟻嗉囊內容記為一筆一次性的「邊界流入」（母巢在場景外的對應損失不模擬）；之後沒有任何自動送入的工蟻、食物或幼體（#202 第 6 項）。母巢連通另以規則更新處理。"
   },
   "entry_date": {
-    "default_rule": "uniform_day_of_year",
-    "year": 2027,
+    "rule": "fixed",
+    "date": "2026-11-13",
+    "timezone": "Asia/Taipei",
     "assumption": true,
     "basis": "遊戲假設",
-    "rule_text": "入場日期 = 2027-01-01 + floor(u × 365) 日，u = hash32(`${seed}|day0_budding_candidate|entry_day`) / 2^32。與蟻群結果無關。",
-    "why": "臺灣／亞洲沒有本種分巢季節的資料：R94 只有實驗室中繁殖蟻幼體出現的季節（且原文「3～5 月」與「晚春到秋季」不一致）；R158 的「幼體只在 5～6 月搬」是 Linepithema humile（非本種）；R139 只說大雨後蟻數下降。在沒有證據時用全年均勻抽樣，避免為了存活挑季節。",
-    "alternatives_for_owner": [
-      "owner_activation_date：以 Owner 在 #201 批准啟用的實際日期（月份）為 Day0",
-      "fixed_documented_date：Owner 指定一個固定日期並寫明理由（不得依存活率）"
-    ],
-    "evaluation_note": "敏感度評估不用本規則，而是固定四季開始日（scenarios/day0/seasons.json），四季分開報告，不合併。"
+    "role": "專案測試基準日（#202 第 5 項）",
+    "not_optimal_season": "2026-11-13 **不是**科學上最佳的建巢季節，也不是依存活選的月份；臺灣／亞洲沒有本種分巢季節的資料（R94 只有實驗室中繁殖蟻幼體出現的季節，且原文「3～5 月」與「晚春到秋季」不一致；R158 是非本種）。",
+    "dynamic_date_forbidden": "不用「啟動當天」的動態日期；日期固定寫在本檔，與種子、牆鐘無關。",
+    "full_year_sensitivity": {
+      "rule": "uniform_day_offset",
+      "from": "2026-11-13",
+      "span_days": 365,
+      "stream_field": "entry_day_full_year",
+      "rule_text": "敏感度日期 = 2026-11-13 + floor(u × 365) 日（u 為 entry_day_full_year 的具名亂數流），涵蓋入場日起的一整年；只作敏感度情境、另列報告，不取代固定入場日。",
+      "evaluation_note": "舊引擎的多種子評估另用四季固定開始日（scenarios/day0/seasons.json），四季分開報告，不合併。"
+    },
+    "weather_note": "候選世界目前的天氣情境是 3 月（taichung-march-ref，情境日期 2026-03-26），與入場基準日不一致（矩陣 M05）；尚未接上 11 月天氣。"
+  },
+  "simulation_status": {
+    "label": "尚未模擬",
+    "not_simulated": [
+      "多后：蟻后個體、產卵、死亡與存檔（P0-A2 候選世界沒有蟻后；舊引擎只有一隻）",
+      "大工蟻：個體、工作、能量與存檔（隔離的比例候選，只抽樣不放入）",
+      "母巢連通（完全分離，模型邊界）",
+      "幼蟲三齡區分與正式幼體分布（待 #214）",
+      "本候選尚未接入 Worker 候選世界：P0-A2 世界仍是 30 隻小工蟻＋8 隻幼蟲的原型實驗群，存檔 save_meta 不含本候選的種子／PRNG／checksum"
+    ]
+  },
+  "garden_supply_demand": {
+    "audit": "docs/garden-supply-demand-audit.md（#218）",
+    "rule": "本候選的數量不得用來倒推花園資源以保證存活；花園供給／需求單位的稽核是獨立研究（#202 第 8 項）。"
+  },
+  "owner_ruling_202": {
+    "date": "2026-11-13",
+    "source": "https://github.com/davidcatcat/antempire/issues/202#issuecomment-6843320997",
+    "decision_record": "docs/owner-decisions-2026-11-13.md §4",
+    "nature": "暫定實驗規格，不是 #201 GO，也不是最終定值；缺據參數不得宣稱為實測",
+    "columns": {
+      "provisional": "暫准開發的假設",
+      "before_activation": "正式啟用前必須滿足"
+    },
+    "items": [
+      {
+        "item": "1 小工蟻數",
+        "provisional": "候選 50～500，對數均勻抽樣，assumption:true；不宣稱為本種臺中野外分布。",
+        "before_activation": "不因 90 日存活率改範圍；抽樣規則、分布與種子寫入存檔。",
+        "met": false,
+        "progress": "fields.minor_workers 為 50～500 對數均勻；抽樣規則、分布與種子已寫入本檔；尚未寫入 Worker 存檔。"
+      },
+      {
+        "item": "2 蟻后數",
+        "provisional": "預設多后；候選 2～3 后，保留 1～3 后作研究敏感度對照，全部標假設；2～7 后實驗室值不是分巢抽樣分布。",
+        "before_activation": "正式使用多后情境前，必須在候選世界正確實作多后個體、產卵、死亡與狀態存檔（M15、M17）；不得以一后代表多后或只寫成文字。",
+        "met": false,
+        "progress": "fields.queens 為預設 2～3、敏感度 1～3；多后個體、產卵、死亡與存檔尚未模擬。"
+      },
+      {
+        "item": "3 大工蟻",
+        "provisional": "可先用隔離、標假設的比例候選；無可信初始比例證據時不指定為本種野外比例。",
+        "before_activation": "正式宣稱完整的初始蟻群組成前，必須支援大工蟻的個體、工作、能量與存檔（M18）；未接入前只能標「尚未模擬」。",
+        "met": false,
+        "progress": "fields.major_fraction 已隔離（只抽樣、不放入）；大工蟻尚未模擬。"
+      },
+      {
+        "item": "4 隨行幼體",
+        "provisional": "卵／幼蟲（三齡）／蛹與各階段進度的候選分布全部標 assumption:true；做零、低、中、高幼體負載的事前定義情境測試。",
+        "before_activation": "可重現的初始化規則；正式分布待 #214（營養需求與生命史）完成後決定，不得以存活率反推（M16）。",
+        "met": false,
+        "progress": "零／低／中／高事前定義情境已寫入（scenario_variants.brood），初始化規則可重現；正式分布待 #214。"
+      },
+      {
+        "item": "5 入場日期",
+        "provisional": "固定、可重現的臺中當地日曆日期；第一個候選基準 2026-11-13（Asia/Taipei），是專案測試基準日，不是科學上最佳建巢季節。",
+        "before_activation": "寫入正式 scenario metadata；不用「啟動當天」動態日期、不為存活選月份；全年季節另列敏感度情境（M05 的天氣情境須對應）。",
+        "met": false,
+        "progress": "entry_date 固定為 2026-11-13（Asia/Taipei）並寫入候選 scenario metadata，全年敏感度另列；正式 scenario metadata 待 #201 啟用。"
+      },
+      {
+        "item": "6 母巢",
+        "provisional": "場景外母巢與分巢單位完全分離，標示為模型邊界／保守假設。",
+        "before_activation": "未實作連結前不得自動送入工蟻、食物或幼體；帶入的個體與嗉囊內容記為一筆邊界流入；母巢連通另以規則更新處理。",
+        "met": false,
+        "progress": "mother_nest 明示為模型邊界、完全分離、Day0 一筆邊界流入；母巢連通未實作。"
+      },
+      {
+        "item": "7 正式種子",
+        "provisional": "候選基準 seed 20261113，僅為可重現標識，不是挑出的最佳存活種子。",
+        "before_activation": "固定 PRNG 演算法、版本、抽樣順序與 scenario checksum，寫入存檔並驗證 Worker／Node 一致；正式上線前依 #201 再釘選。",
+        "met": false,
+        "progress": "PRNG（antempire.named-stream.sha256-u32.v1）、抽樣順序與 scenario checksum 已固定並有測試；尚未寫入 Worker 存檔、尚未驗證 Worker／Node 一致；依 #201 再釘選。"
+      },
+      {
+        "item": "8 花園供給／需求單位",
+        "provisional": "另開獨立規則更新研究 issue／PR，稽核供給與消耗的單位、時間尺度、物質與能量守恆，區分花蜜／蜜露／昆蟲蛋白的外生生成。",
+        "before_activation": "現有 90 日縮群診斷不得解釋成建群數量錯誤，也不得倒推花園資源保證存活；有依據的敏感度與反例測試（M07、M12）。",
+        "met": false,
+        "progress": "獨立稽核見 #218（docs/garden-supply-demand-audit.md）；本候選不倒推資源。"
+      }
+    ]
   }
 }
