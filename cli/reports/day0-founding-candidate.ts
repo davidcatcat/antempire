@@ -2,10 +2,10 @@
  * #202 multi-seed sensitivity evaluation of the budding candidate (scenarios/day0-budding-candidate.json).
  * DIAGNOSTIC ONLY — never a selection criterion, never a tuning target (CLAUDE.md §7). 候選／實驗，未經 Owner 啟用批准.
  *
- * For 20 fixed seeds × 4 season starts (scenarios/day0/seasons.json, reported separately) × (default + low/high of
+ * For 20 fixed seeds × 4 season starts (scenarios/day0/seasons.json, reported separately) × (default + every named variant of
  * every engine-representable factor), draws the candidate composition, builds its ENGINE PROJECTION (one queen, no
  * majors: those are listed as not simulated) and runs the current engine for HORIZON days from Day0.
- * Factors the engine cannot represent (queens, major_fraction) are NOT run: their low/high variants would give the
+ * Factors the engine cannot represent (queens, major_fraction) are NOT run: their variants would give the
  * identical projection, so the report says "not evaluable" instead of pretending a result.
  *   node cli/reports/day0-founding-candidate.ts [outDir] [--days N]   (default reports/day0-founding-candidate, 90 days)
  * Writes only to outDir; never reads or writes saves/ or journal/.
@@ -16,7 +16,8 @@ import { ENGINE_VERSION, initializeDay0, simulateWorldDay, type ParamBundle, typ
 import { loadBundle, REPO_ROOT } from '../lib/load.ts';
 import { day0Inputs, seasonStart, SEASONS, type Season } from '../lib/day0.ts';
 import { rulesFingerprint } from '../lib/fingerprint.ts';
-import { CANDIDATE_FILE, engineProjection, loadCandidate, referenceIds, sampleCandidate, sensitivityFactors, validateCandidate, type Overrides } from '../lib/day0-candidate.ts';
+import { CANDIDATE_FILE, engineProjection, loadCandidate, referenceIds, sampleCandidate, sensitivityFactors, validateCandidate, variantsOf, type Overrides } from '../lib/day0-candidate.ts';
+import { scenarioChecksum } from '../../engine/day0/founding-sampler.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any -- report rows
 export const CAND_SEEDS = Array.from({ length: 20 }, (_, i) => 20270001 + i);
@@ -85,7 +86,7 @@ export function generate(outDir: string, days = 90, bundle: ParamBundle = loadBu
   if (!Number.isInteger(days) || days < CPS[0]) throw Error(`--days must be an integer >= ${CPS[0]}`);
   const cand = loadCandidate(); validateCandidate(cand, referenceIds());
   const factors = sensitivityFactors(cand), evaluable = factors.filter((f) => Object.entries(cand.fields as Record<string, Any>).some(([k, x]) => (x.sensitivity_group ?? k) === f && x.engine_representable));
-  const variants: Overrides[] = [{}, ...evaluable.flatMap((f) => [{ [f]: 'low' as const }, { [f]: 'high' as const }])];
+  const variants: Overrides[] = [{}, ...evaluable.flatMap((f) => variantsOf(cand, f).map((v) => ({ [f]: v })))];
   const vname = (o: Overrides) => Object.entries(o).map(([k, v]) => `${k}=${v}`).join(',') || 'default';
   const runs: Any[] = [];
   for (const v of variants) for (const season of SEASONS) for (const seed of CAND_SEEDS) runs.push({ variant: vname(v), ...runCandidate(cand, season, seed, v, bundle, days) });
@@ -101,7 +102,7 @@ export function generate(outDir: string, days = 90, bundle: ParamBundle = loadBu
   const fp = rulesFingerprint();
   const doc = {
     schema: 'antempire.day0-founding-candidate-evaluation.v1', status: cand.status, diagnostic_not_target: true, not_a_selection_criterion: true,
-    candidate_file: CANDIDATE_FILE, candidate_id: cand.id, engine_version: ENGINE_VERSION, rules_fingerprint: { engine: fp.engine, params: fp.params }, official_saves_used: false,
+    candidate_file: CANDIDATE_FILE, candidate_id: cand.id, candidate_schema: cand.schema, scenario_checksum: scenarioChecksum(cand), entry_date_baseline_not_run: `${cand.entry_date.date}（${cand.entry_date.timezone}）基準日未在舊引擎評估；本報告用四季固定開始日`, engine_version: ENGINE_VERSION, rules_fingerprint: { engine: fp.engine, params: fp.params }, official_saves_used: false,
     seeds: CAND_SEEDS, horizon_days: days, checkpoints: CPS.filter((x) => x <= days), seasons: Object.fromEntries(SEASONS.map((s) => [s, seasonStart(s)])),
     engine_projection: '每次抽樣都投影成引擎能表示的狀態：只模擬 1 隻蟻后；大工蟻不放入、不改成小工蟻。投影的結果不能代表候選分巢單位的生物學。',
     factors_evaluated: evaluable, factors_not_evaluable: factors.filter((f) => !evaluable.includes(f)).map((f) => ({ factor: f, reason: cand.fields[f]?.engine_note ?? 'engine cannot represent' })),
@@ -139,7 +140,8 @@ export function tables(doc: Any): string {
   L.push('', `## 4. 預設抽樣中，抽樣值與 Day${last} 結果的等級相關（${doc.correlations_default.method}）`, '', '| 季節 | 抽樣量 | 對 工蟻數÷Day0 | 對 累計產卵 | 對 蟻后存活 |', '|---|---|---:|---:|---:|');
   for (const [season, o] of Object.entries(doc.correlations_default.by_season as Record<string, Any>)) for (const [k, c] of Object.entries(o as Record<string, Any>)) L.push(`| ${season} | ${k} | ${c.workers_ratio ?? '—'} | ${c.eggs_laid ?? '—'} | ${c.queen_alive ?? '—'} |`);
   L.push('', '> queens 與 major_workers 都不進引擎。queens 的相關係數只反映 n＝20 下的偶然關聯（不是蟻后數的效果）；major_workers ＝ round(f × 小工蟻數 ÷ (1−f))，與小工蟻數高度相關，所以它的係數反映的是小工蟻數，**不是**大工蟻的效果。');
-  L.push('', '## 5. 解讀（診斷）', '', '- 在目前引擎與花園下，無論初始小工蟻是 10～50、50～500 或 500～2000，工蟻數在 30～90 日內都降到約 0～20 隻（Day90 中位：低 12～17、預設 7～12、高 0～5）；死因以 `starvation_or_natural_competing_hazards_scenario` 為主，幼體死因以慢性缺蛋白為主。初始越大，Day90 的工蟻數÷Day0 越低（等級相關約 −0.9）。', '- 這表示**結果主要由引擎的花園食物量（遊戲份數）決定，而不是由初始組成決定**；花園供給與每隻工蟻的需求單位是為十幾隻工蟻的舊情境設定的遊戲假設（docs/day0-initialization.md D2）。這是需要 Owner 知道的模型限制，**不是**調整初始數量或花園供給的理由（CLAUDE.md §7）。', '- 幼體多寡主要改變累計羽化數，對 Day90 工蟻數影響小；年齡上限、嗉囊填滿、幼體進度的影響在 20 種子的雜訊範圍內。', '- 蟻后數、大工蟻比例、母巢連結都無法由引擎評估。');
+  if (doc.candidate_schema && !/\.v1$/.test(doc.candidate_schema)) L.push('', '## 5. 解讀（診斷）', '', `- 本報告以候選 ${doc.candidate_schema}（scenario checksum ${doc.scenario_checksum}）產生；下列 v1（2026-11-12）的文字解讀不適用，需人工審閱本次數據後重寫。`);
+  else L.push('', '## 5. 解讀（診斷）', '', '- 在目前引擎與花園下，無論初始小工蟻是 10～50、50～500 或 500～2000，工蟻數在 30～90 日內都降到約 0～20 隻（Day90 中位：低 12～17、預設 7～12、高 0～5）；死因以 `starvation_or_natural_competing_hazards_scenario` 為主，幼體死因以慢性缺蛋白為主。初始越大，Day90 的工蟻數÷Day0 越低（等級相關約 −0.9）。', '- 這表示**結果主要由引擎的花園食物量（遊戲份數）決定，而不是由初始組成決定**；花園供給與每隻工蟻的需求單位是為十幾隻工蟻的舊情境設定的遊戲假設（docs/day0-initialization.md D2）。這是需要 Owner 知道的模型限制，**不是**調整初始數量或花園供給的理由（CLAUDE.md §7）。', '- 幼體多寡主要改變累計羽化數，對 Day90 工蟻數影響小；年齡上限、嗉囊填滿、幼體進度的影響在 20 種子的雜訊範圍內。', '- 蟻后數、大工蟻比例、母巢連結都無法由引擎評估。');
   return L.join('\n') + '\n';
 }
 
