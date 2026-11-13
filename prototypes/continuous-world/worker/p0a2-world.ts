@@ -243,11 +243,23 @@ export class P0a2ExperimentWorld {
     return new P0a2ExperimentWorld(p.world_id, w, p.chain);
   }
 
-  /** read-only copy of one worker's full record (follow): own physiology, traits, route memory, experienced contacts */
-  antView(id: string): unknown { const v = this.world.view().workers[id]; return v ? { ...v, kind: 'p0a2_worker' } : null; }
+  /** read-only copy of one worker's full record (follow): own physiology, traits, route memory, experienced contacts.
+   *  Own-pool fields (crop, consumed, debt, carry, hunger spell fields) are PROJECTED to the world time t_now by the
+   *  core's own booking rule (World.projectedView, issue #225); `settled_s` is the instant the official record was last
+   *  booked (its own event or a real contact). The contact / begging buffers are as the record keeps them: pruned to
+   *  the contact window only at the worker's own decision events, so their length is not a count at t_now */
+  antView(id: string): unknown {
+    const v = this.world.projectedView().workers[id];
+    if (!v) return null;
+    const { settled_ms, ...rest } = v;
+    return { ...rest, kind: 'p0a2_worker', physiology_at_s: this.tSim(), settled_s: settled_ms / 1000 };
+  }
 
+  /** the viewer's state frame. crop_fill / gut_fill are each individual's own pool PROJECTED to t_sim by the core's own
+   *  booking rule (World.projectedView; lazy settlement would otherwise show the value of its last event, issue #225).
+   *  Observation only: books nothing, draws nothing, emits nothing (tests/p0a2-frame-projection.test.ts) */
   frame(): J {
-    const w = this.world, m = w.m, t = w.t_now, v = w.view(), env = w.env;
+    const w = this.world, m = w.m, t = w.t_now, v = w.projectedView(), env = w.env;
     const day = dayOf(t), minute = (t - day * MS_PER_DAY) / 60_000, L = env.lightTimes(day);
     const workers = Object.keys(v.workers).sort().map((id) => {
       const x = v.workers[id];

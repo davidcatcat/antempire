@@ -82,6 +82,15 @@ export function drainPool(x: Pool, have: number, rate: number, t: number): { tak
   return { take, short: need - take };
 }
 
+/** READ-ONLY projection of one individual's own pool to t (issue #225): the SAME booking rule as World #book /
+ *  #bookLarva (drainPool) applied to a deep COPY. Returns the projected copy (consumed, carry, last = t, hunger spell
+ *  fields), the food it would hold at t and the unmet need it would add. Books nothing, draws nothing, emits nothing:
+ *  observation (World.hunger, World.projectedView) only, never an input of any decision */
+export function projectPool<X extends Pool>(x: X, have: number, rate: number, t: number): { copy: X; held: number; take: number; short: number } {
+  const copy = JSON.parse(JSON.stringify(x)) as X, d = drainPool(copy, have, rate, t);
+  return { copy, held: have - d.take, take: d.take, short: d.short };
+}
+
 // ------------------------------------------------------------------ queue
 class Heap {
   a: QEvent[] = [];
@@ -269,13 +278,30 @@ export class World {
   hunger(): { workers: HungerRow[]; larvae: HungerRow[] } {
     const s = this.#s, T = s.t_now;
     const row = (id: string, x: Pool & { debt?: number; deficit?: number; received?: number }, have: number, rate: number): HungerRow => {
-      const c = JSON.parse(JSON.stringify(x)) as Pool, d = drainPool(c, have, rate, T);
-      return { id, unmet: (x.debt ?? x.deficit ?? 0) + d.short, empty_ms: c.empty_ms, max_empty_ms: c.max_empty_ms, empty_now: have - d.take === 0, received: x.received ?? null, held: have - d.take };
+      const { copy: c, held, short } = projectPool(x, have, rate, T);
+      return { id, unmet: (x.debt ?? x.deficit ?? 0) + short, empty_ms: c.empty_ms, max_empty_ms: c.max_empty_ms, empty_now: held === 0, received: x.received ?? null, held };
     };
     return {
       workers: this.#workerIds.map((id) => row(id, s.workers[id], s.workers[id].crop, this.m.worker_rate)),
       larvae: this.#larvaIds.map((id) => row(id, s.larvae[id], s.larvae[id].gut, this.m.larva_rate)),
     };
+  }
+  /** OBSERVATION COPY of view() with every individual's own pool PROJECTED to t_now (issue #225): crop / gut,
+   *  consumed, debt / deficit, carry and the hunger spell fields as the core's own booking (projectPool = drainPool,
+   *  the rule of #book / #bookLarva) would book them at t_now; `last` = t_now and `settled_ms` = the instant the
+   *  official state was last booked (its own event or a real contact). The official state is not touched: lazy
+   *  settlement stays lazy, so snapshot, log and every later event are the same whether or not this is called */
+  projectedView(): ReturnType<World['view']> & { workers: Record<string, Worker & { settled_ms: number }>; larvae: Record<string, Larva & { settled_ms: number }> } {
+    const v = this.view() as ReturnType<World['view']> & { workers: Record<string, Worker & { settled_ms: number }>; larvae: Record<string, Larva & { settled_ms: number }> }, T = v.t_now;
+    for (const id of this.#workerIds) {
+      const x = v.workers[id], settled = x.last, p = projectPool(x, x.crop, this.m.worker_rate, T);
+      v.workers[id] = { ...p.copy, crop: p.held, debt: x.debt + p.short, settled_ms: settled };
+    }
+    for (const id of this.#larvaIds) {
+      const x = v.larvae[id], settled = x.last, p = projectPool(x, x.gut, this.m.larva_rate, T);
+      v.larvae[id] = { ...p.copy, gut: p.held, deficit: x.deficit + p.short, settled_ms: settled };
+    }
+    return v;
   }
   #set(w: Worker, t: number, state: WorkerState, loc: Loc): void { this.#book(w, t); w.state = state; w.loc = loc; w.since = t; }
 
