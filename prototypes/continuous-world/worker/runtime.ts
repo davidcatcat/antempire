@@ -12,7 +12,7 @@
  * behaviour world). Both implement the same small interface; for the P0-A2 world the work budget counts events.
  */
 import { ExperimentRefused, ExperimentWorld, type ExperimentSnapshot } from './core.ts';
-import { P0A2_ENGINE_VERSION, P0a2ExperimentWorld, P0a2Refused, type P0a2Snapshot } from './p0a2-world.ts';
+import { P0A2_ENGINE_FAMILY, P0a2ExperimentWorld, P0a2Refused, type P0a2Snapshot } from './p0a2-world.ts';
 import { COMMAND_TYPES, EXPERIMENT_LABEL, MAX_SPEED, MIN_SPEED, PROTOCOL_VERSION, WORLD_KINDS, type AnyFrameMsg, type Command, type CommandType, type EventMsg, type PacingMsg, type Reply } from './protocol.ts';
 
 /** what the dispatcher needs of a world (both kinds) */
@@ -91,7 +91,7 @@ export class Runtime {
         case 'restore': {
           // the world kind follows the snapshot's engine version; throws (and changes nothing) on any mismatch
           const s = c.snapshot as { engine_version?: unknown } | null;
-          const w: RuntimeWorld = s && typeof s === 'object' && s.engine_version === P0A2_ENGINE_VERSION ? P0a2ExperimentWorld.restore(c.snapshot as P0a2Snapshot) : ExperimentWorld.restore(c.snapshot as ExperimentSnapshot);
+          const w: RuntimeWorld = s && typeof s === 'object' && typeof s.engine_version === 'string' && s.engine_version.startsWith(P0A2_ENGINE_FAMILY) ? P0a2ExperimentWorld.restore(c.snapshot as P0a2Snapshot) : ExperimentWorld.restore(c.snapshot as ExperimentSnapshot);
           this.world = w; this.started = false; this.running = false; this.lagging = false; this.follow = null; this.reanchor();
           return [this.ack(c.req, 'restore')];
         }
