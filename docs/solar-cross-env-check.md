@@ -137,3 +137,7 @@ PR #169（P0-A2 Worker 執行環境，`docs/experimental-worker-runtime.md` §6�
 
 ### 7.7 回滾
 - 還原本次提交即可：`solar.ts` 回到 `Math.*`、刪除 `detmath.ts`、`ENGINE_VERSION` 回到 `/1`、`sweep.json` 回到 v1 紀錄。回滾後 §3 的跨環境差異會重新出現，P0-A2 不得宣稱跨環境一致，`engine/clock` 進入正式歷史的前提也不再成立。實驗世界 `/2` 的快照在回滾後會被拒絕（`ENGINE_MISMATCH`）；正式存檔與日誌不受影響。
+
+## 附註（2026-11-13，#213 Q2 b；只新增）
+
+新增光照消費者 `engine/clock/surface-temperature.ts`（SURF-0 地表溫度候選）：只把 `solarAltitude()` 當作模型值的連續輸入，不產生任何事件、批次或光照狀態邊界；只用 `detmath.ts` 與 IEEE 基本運算；沒有任何模組匯入它。已在 `tests/solar-xenv.test.ts` 的消費者清單登錄。它的輸出跨環境逐位元相同的前提是**相同的氣溫輸入**；`WeatherSeries.temperature` 仍使用 `Math.sin／Math.exp`，跨環境未驗證。

@@ -63,8 +63,10 @@ ok(typeof C.C3_tick_flip === 'object' && C.C3_tick_flip.tick_label_a !== C.C3_ti
 ok(C.C4_state_at_own_value.node !== C.C4_state_at_own_value.with_neighbour_times_at_node_value, 'COUNTEREXAMPLE C4: the light state at the transition value differs between the two value sets');
 
 // 4. consumers of the light times (a new consumer must be reviewed against docs/solar-cross-env-check.md)
+//    surface-temperature.ts (SURF-0, #213 Q2 b; reviewed): reads solarAltitude() as a continuous input of a model value; it
+//    creates no event, batch or light-state boundary, uses only detmath / basic operations, and is imported by nothing.
 const walk = (d: string): string[] => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.name === 'node_modules' || e.name.startsWith('.') ? [] : e.isDirectory() ? walk(path.join(d, e.name)) : /\.(ts|js|cjs|mjs)$/.test(e.name) ? [path.join(d, e.name)] : []));
 const users = ['engine', 'cli', 'web/src', 'prototypes'].flatMap((d) => walk(path.join(REPO_ROOT, d))).filter((f) => /\b(lightTimes|lightStateAt|crossingMinute|solarAltitude)\b/.test(fs.readFileSync(f, 'utf8'))).map((f) => path.relative(REPO_ROOT, f)).sort();
-ok(JSON.stringify(users) === JSON.stringify(['engine/clock/environment.ts', 'engine/clock/solar.ts', 'engine/clock/weather-input.ts', 'prototypes/continuous-world/worker/core.ts', 'prototypes/p0a2-24h/environment.ts', 'prototypes/p0a2-24h/world.ts', 'prototypes/solar-xenv/sweep.ts']), `light-time consumers unchanged (${users.join(', ')})`);
+ok(JSON.stringify(users) === JSON.stringify(['engine/clock/environment.ts', 'engine/clock/solar.ts', 'engine/clock/surface-temperature.ts', 'engine/clock/weather-input.ts', 'prototypes/continuous-world/worker/core.ts', 'prototypes/p0a2-24h/environment.ts', 'prototypes/p0a2-24h/world.ts', 'prototypes/solar-xenv/sweep.ts']), `light-time consumers unchanged (${users.join(', ')})`);
 ok(!fs.readdirSync(path.join(REPO_ROOT, 'engine')).filter((f) => f.endsWith('.ts')).some((f) => /clock\//.test(fs.readFileSync(path.join(REPO_ROOT, 'engine', f), 'utf8'))), 'no top-level engine/*.ts (official day loop) references engine/clock');
 console.log(JSON.stringify({ test: 'solar-xenv', checks, bit_identical_values_recorded: compared, chromium: A.chromium, arm64: 'not verified', min_gap_us: B.min_gap_us }));

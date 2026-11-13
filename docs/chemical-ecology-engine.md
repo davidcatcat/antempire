@@ -229,3 +229,16 @@ CHEM-1 只實作路徑招募的兩個欄位後端；警戒與 CHC 留給 CHEM-4�
   3. 讀值：`range_mm > 0` 用 `exposure`（圓盤內的量）或 `mean_density_per_mm2`（面積加權平均），要在請求中明示用哪一個；`range_mm＝0`（點感測）時 `exposure` 恆為 0，**必須**用 `mean_density_per_mm2`。
   4. 診斷／重播要讀過去時刻時，另開函式（名稱 `sampleHistorical`），呼叫 `ChemStore.sampleHistorical(createDiagnosticCapability('diagnosis'), {signal_id, layer, at, sensor, purpose: 'diagnosis'})`；結果不得流入控制器。
 - **測試**（`tests/chem1b-sampling.test.ts` (D)）：即時讀取器只有三個鍵且凍結；提交序號與感測時刻分開記錄；提交前感測、讀舊狀態被拒；同一時刻重複關閉不新增提交；8 種子 × 兩後端、每個過去提交時刻的歷史重建與當時即時讀值逐位元相同且不改變 store；兩次提交之間的時刻正確重建並標示非提交時刻；未來／未提交時刻、偽造或缺少能力、用途不符、把感測查詢送進歷史 API、要求「行為」用途的能力全部被拒；三個型別層級分隔以 `@ts-expect-error` 由 typecheck 檢查。
+
+## 15. #213 裁示紀錄（2026-11-13；只新增）
+
+### 15.1 擴散尚未模擬（Q1 a）
+- CHEM-0 維持 `isotropic_diffusion: false`；CHEM-1／1b 的兩個後端都**沒有擴散、平流、吸附**。**擴散尚未模擬**：這只是目前模型的範圍，**不代表自然界的費洛蒙不會擴散或揮發到空氣中**。
+- 因此任何 CHEM 輸出都**不得**稱為「完整的自然化學場」；畫面若顯示化學欄位，要同時標示「擴散尚未模擬」。觀察器現有的費洛蒙圖層（`web/src/main.ts` 圖例，舊版引擎的路段強度，不是 CHEM 欄位）已加註同一句。
+- 將來有可靠證據或明確研究需求時，另開受控候選（新的 `spatial_support` 形式＋證據鏈），不改寫 CHEM-0 的預設。
+
+### 15.2 地表／接觸基質溫度候選（Q2 b）
+- CHEM-3 之前先建立簡單的地表溫度候選模型 SURF-0：[`surface-temperature-model.md`](surface-temperature-model.md)。它與蟻群完全無關、只接受環境輸入，輸出標「模型值（非實測）」，並保留氣溫代理作對照。CHEM-2 的 Q10 溫度項**仍以氣溫代理為輸入**；SURF-0 未接入任何化學欄位。
+
+### 15.3 CHEM-2 敏感度網格預先註冊（Q3 a）
+- 見 [`chem2-sensitivity-prereg.md`](chem2-sensitivity-prereg.md)（v1，以 `tests/chem2-prereg.test.ts` 鎖定雜湊）。這是**探索性敏感度範圍**，不是校準。
