@@ -37,7 +37,7 @@ export interface RuntimeInfo { rules_fingerprint: string; engine_version: string
 
 export type SaveErrorCode = 'quota_exceeded' | 'aborted' | 'verify_failed' | 'conflict' | 'not_writer' | 'write_failed' | 'world_exists'
   | 'unknown_world' | 'invalid_snapshot' | 'no_valid_snapshot' | 'unknown_schema' | 'newer_schema' | 'rules_mismatch' | 'migration_failed'
-  | 'unsupported' | 'invalid_import' | 'confirmation_required' | 'manual_limit' | 'import_too_large';
+  | 'unsupported' | 'invalid_import' | 'confirmation_required' | 'manual_limit' | 'import_too_large' | 'worker_failed';
 export type Result<T> = { ok: true; value: T } | { ok: false; code: SaveErrorCode; message: string };
 export const okR = <T>(value: T): Result<T> => ({ ok: true, value });
 export const errR = <T = never>(code: SaveErrorCode, message: string): Result<T> => ({ ok: false, code, message });
