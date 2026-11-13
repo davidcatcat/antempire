@@ -173,7 +173,14 @@ ok(/R167 更正（2026-11-13，#226/.test(refs), 'references.md: dated R167 corr
 
 // ---------- 4. isolation ----------
 const walk = (dir: string): string[] => fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? (e.name === 'node_modules' ? [] : walk(path.join(dir, e.name))) : /\.(ts|tsx|js|mjs)$/.test(e.name) ? [path.join(dir, e.name)] : []) : [];
+// T13 (design §7, implementation phase, BP-1): the isolated, default-off candidate lives in prototypes/p0a2-24h/brood/
+// (outside the experiment Worker graph; tests/bp1-brood.test.ts). That folder may NAME the candidate file (its schema
+// and documentation) but imports nothing from the design folder: the caller passes the candidate data in. Everything
+// else — official engine, cli, web, the P0-A2 core and the Worker — does not even mention the folder, as before.
+const BROOD = path.join(REPO_ROOT, 'prototypes/p0a2-24h/brood') + path.sep;
 const consumers = [...walk(path.join(REPO_ROOT, 'engine')), ...walk(path.join(REPO_ROOT, 'cli')), ...walk(path.join(REPO_ROOT, 'web/src')), ...walk(path.join(REPO_ROOT, 'prototypes/p0a2-24h')), ...walk(path.join(REPO_ROOT, 'prototypes/continuous-world'))];
-ok(consumers.every((f) => !fs.readFileSync(f, 'utf8').includes('brood-physiology')), 'no official, P0-A2 or Worker code imports the brood-physiology design folder');
+ok(consumers.filter((f) => !f.startsWith(BROOD)).every((f) => !fs.readFileSync(f, 'utf8').includes('brood-physiology')), 'no official, P0-A2 core or Worker code imports (or names) the brood-physiology design folder');
+const broodFiles = consumers.filter((f) => f.startsWith(BROOD));
+ok(broodFiles.length >= 2 && broodFiles.every((f) => !/(from\s+|import\s*\(\s*|import\s+)['"][^'"]*brood-physiology/.test(fs.readFileSync(f, 'utf8'))), 'the BP-1 candidate folder imports nothing from the design folder (candidate data is passed in by the caller)');
 
 console.log(`brood-physiology: ${checks} checks passed`);

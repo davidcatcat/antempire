@@ -57,7 +57,7 @@ export interface Worker {
 }
 /** a larva: own gut (µP), metabolism booking, unmet need (`deficit`), food received from carers (`received`, the growth
  *  proxy — development is NOT modelled) and the same hunger diagnostics as workers (statistics only; no death modelled) */
-export interface Larva { id: string; gut: number; last: number; carry: number; consumed: number; deficit: number; received: number; empty_since: number | null; empty_ms: number; max_empty_ms: number }
+export interface Larva { id: string; gut: number; last: number; carry: number; consumed: number; deficit: number; received: number; empty_since: number | null; empty_ms: number; max_empty_ms: number; /** BP-1 research candidate only (absent in the reference world): the larva's own brood physiology state */ bp?: Json }
 export interface Source { id: string; stock: number; produced: number; taken: number; n: number }
 
 /** a queued event: exact instant t (ms), round r (causal depth inside one instant), seeded tie-break q = hash32(seed|t|id)
@@ -88,6 +88,37 @@ export interface WorldState {
   queue: QEvent[];
   /** (t, r) of the last processed event and its actor, for the same-instant diagnostic */
   last_key: { t: number; r: number; a: string } | null;
+  /** BP-1 research candidate only (absent in the reference world): which brood hook and configuration ran */
+  brood?: { version: string; config: Json; config_sha: string };
+}
+
+/**
+ * BP-1 (Owner #222, 2026-11-13): brood physiology as an ISOLATED, DEFAULT-OFF research candidate. The caller injects an
+ * implementation through WorldOptions.brood; without it the world runs the reference (legacy µP larva pool) unchanged.
+ * The implementation (prototypes/p0a2-24h/brood/) is not part of the experiment Worker's module graph: only this
+ * interface is. Every method acts on ONE larva's own state (CLAUDE.md §2.1b); nothing receives a colony total.
+ */
+export interface BroodHook {
+  /** candidate version tag (stored in the state; a snapshot of another version is refused) */
+  readonly version: string;
+  readonly config: Json; readonly config_sha: string;
+  /** the larva's initial state at t; its initial legacy gut content (µP) enters through the candidate's bridge */
+  init(larvaId: string, seed: number, t: number, initGutUp: number): Json;
+  /** book the larva's own physiology up to t (mutates bp) */
+  book(bp: Json, t: number, seed: number): void;
+  /** what a carer perceives when it touches this larva: its own begging signal and room (µP); adults / dead larvae are
+   *  not brood (not contactable) */
+  contact(bp: Json, gutCapUp: number): { begging: number; room: number; contactable: boolean };
+  /** one completed feeding transfer of `up` µP from a carer's crop to this larva; returns raw + converted values to log */
+  feed(bp: Json, t: number, seed: number, up: number): { [k: string]: Json };
+  /** µP that left the legacy µP domain into this larva's mass ledgers (bridged) */
+  bridgedUp(bp: Json): number;
+  /** daily census line of this larva (drains its not-yet-logged stage transitions) */
+  census(bp: Json): { [k: string]: Json };
+  /** integer conservation problem of this larva's ledgers, or null */
+  problem(bp: Json): string | null;
+  /** a read-only copy booked to t (observation only) */
+  project(bp: Json, t: number, seed: number): Json;
 }
 
 // ------------------------------------------------------------------ decision inputs (LOCAL ONLY — CLAUDE.md §2.1/§2.1b)

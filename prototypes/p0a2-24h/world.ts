@@ -30,7 +30,7 @@ import { canon } from './canon.ts';
 import { chooseInNest, decideAtSource, decideExit, decideFeedLarva, decideTransfer, ownNeed, ownReserve } from './decision.ts';
 import { Environment, MS_PER_DAY, MS_PER_HOUR, dayOf, hourOfDay } from './environment.ts';
 import { type Model, buildModel } from './params.ts';
-import { type CarerView, type DonorView, type Json, type Larva, type Loc, type QEvent, type SelfView, type Stats, type Worker, type WorkerState, type WorldState, WORKER_STATES } from './types.ts';
+import { type BroodHook, type CarerView, type DonorView, type Json, type Larva, type Loc, type QEvent, type SelfView, type Stats, type Worker, type WorkerState, type WorldState, WORKER_STATES } from './types.ts';
 
 export const STATE_SCHEMA = 'antempire.p0a2-24h-proto.state.v1';
 export const LOG_GENESIS = 'antempire.p0a2-24h-proto.log.v1';
@@ -119,6 +119,11 @@ export interface WorldOptions {
   /** TEST INSTRUMENTATION ONLY: called with every guarded view handed to a decision (read-only, frozen); cannot change
    *  anything and does not change results (tests check the hashes with and without it). Not offered to any UI. */
   inspectViews?: (view: string, actor: string, t: number, v: object) => void;
+  /** BP-1 (Owner #222): an ISOLATED, DEFAULT-OFF brood physiology research candidate (prototypes/p0a2-24h/brood/).
+   *  Absent (the default) = the reference world, byte-identical to the world without this option. Present = a different
+   *  variant: the larvae carry their own physiology state, the state records the candidate version and configuration,
+   *  and a daily brood census is logged. A snapshot made with a candidate restores only with the same candidate. */
+  brood?: BroodHook;
 }
 
 export class World {
@@ -128,9 +133,17 @@ export class World {
   #s: WorldState; #heap = new Heap();
   #workerIds: string[]; #larvaIds: string[];
   readonly #inspect: WorldOptions['inspectViews'] | null;
+  /** BP-1 research candidate (null = reference world) */
+  readonly #bp: BroodHook | null;
 
   private constructor(m: Model, s: WorldState, opts: WorldOptions) {
     this.m = m; this.env = new Environment(m); this.#s = s; this.lines = opts.captureLog ? [] : null; this.#inspect = opts.inspectViews ?? null;
+    this.#bp = opts.brood ?? null;
+    if (s.brood !== undefined || this.#bp) {
+      const hook = this.#bp, b = s.brood;
+      if (!hook || !b) throw Error('P0A2: a brood physiology candidate snapshot restores only with that candidate (and a reference snapshot only without one)');
+      if (b.version !== hook.version || b.config_sha !== hook.config_sha || canon(b.config) !== canon(hook.config)) fail('brood physiology candidate version or configuration differs from the snapshot');
+    }
     for (const e of s.queue) this.#heap.push(e);
     s.queue = [];
     this.#workerIds = Object.keys(s.workers).sort(); this.#larvaIds = Object.keys(s.larvae).sort();
@@ -160,12 +173,20 @@ export class World {
       larvae[id] = { id, gut, last: 0, carry: 0, consumed: 0, deficit: 0, received: 0, empty_since: gut === 0 ? 0 : null, empty_ms: 0, max_empty_ms: 0 };
     }
     queue.push({ t: 0, r: 0, q: tieOf(seed, 0, 'env:d00000:day'), id: 'env:d00000:day', k: 'env_day', a: 'env', p: { day: 0 } });
+    const hook = opts.brood;
+    if (hook) {
+      // BP-1 candidate: each larva's initial legacy gut content enters its own mass ledgers through the candidate's
+      // versioned bridge (it leaves the µP domain: counted as bridged in conservation()); the legacy pool is then unused
+      for (const l of Object.values(larvae)) { l.bp = hook.init(l.id, seed, 0, l.gut); l.gut = 0; }
+      queue.push({ t: 0, r: 0, q: tieOf(seed, 0, 'brood:d00000'), id: 'brood:d00000', k: 'brood_day', a: 'brood', p: { day: 0 } });
+    }
     const pid = `${SOURCE_ID}#${pad(0, 8)}`;
     queue.push({ t: m.honeydew_ms, r: 0, q: tieOf(seed, m.honeydew_ms, pid), id: pid, k: 'produce', a: SOURCE_ID, p: {} });
     const s: WorldState = {
       schema: STATE_SCHEMA, official: false, params_sha: m.params_sha, scenario, variant, seed, t_now: 0,
       workers, larvae, sources: { [SOURCE_ID]: { id: SOURCE_ID, stock: 0, produced: 0, taken: 0, n: 1 } },
       ledger: { initial, produced: 0 }, log: { count: 0, hash: sha256Hex(LOG_GENESIS) }, stats: emptyStats(), queue, last_key: null,
+      ...(hook ? { brood: { version: hook.version, config: hook.config, config_sha: hook.config_sha } } : {}),
     };
     return new World(m, s, opts);
   }
@@ -207,10 +228,15 @@ export class World {
   conservation(): { ok: boolean; held: number; used: number; initial: number; produced: number; workers: number; larvae: number } {
     const s = this.#s; let held = 0, used = 0, prod = 0;
     for (const w of Object.values(s.workers)) { held += w.crop; used += w.consumed; if (w.crop < 0) fail(`${w.id} crop < 0`); }
-    for (const l of Object.values(s.larvae)) { held += l.gut; used += l.consumed; if (l.gut < 0) fail(`${l.id} gut < 0`); }
+    let massOk = true;
+    for (const l of Object.values(s.larvae)) {
+      held += l.gut; used += l.consumed; if (l.gut < 0) fail(`${l.id} gut < 0`);
+      // BP-1 candidate: µP bridged into the larva's mass ledgers left the µP domain; its own mass / energy books must close
+      if (this.#bp && l.bp !== undefined) { used += this.#bp.bridgedUp(l.bp); if (this.#bp.problem(l.bp) !== null) massOk = false; }
+    }
     for (const x of Object.values(s.sources)) { held += x.stock; prod += x.produced; if (x.stock < 0) fail(`${x.id} stock < 0`); }
     const workers = Object.keys(s.workers).length, larvae = Object.keys(s.larvae).length;
-    return { ok: held + used === s.ledger.initial + s.ledger.produced && prod === s.ledger.produced && workers === this.m.workers && larvae === this.m.larvae, held, used, initial: s.ledger.initial, produced: s.ledger.produced, workers, larvae };
+    return { ok: massOk && held + used === s.ledger.initial + s.ledger.produced && prod === s.ledger.produced && workers === this.m.workers && larvae === this.m.larvae, held, used, initial: s.ledger.initial, produced: s.ledger.produced, workers, larvae };
   }
 
   // ---------------------------------------------------------------- event execution
@@ -248,6 +274,7 @@ export class World {
     } else if (e.k === 'env_day') out = this.#envDay(e);
     else if (e.k === 'env_light') out = { to: e.p.to, date: e.p.date, minute_local: e.p.minute_local };
     else if (e.k === 'env_sample') out = { temp_c: this.env.airTemp(e.t), rh_percent: this.env.rh(e.t), rain: null, synthetic: true, assumption: true };
+    else if (e.k === 'brood_day' && this.#bp) out = this.#broodDay(e, this.#bp);
     else return fail(`unknown event kind ${e.k}`);
     const line = canon({ t: e.t, r: e.r, q: e.q, id: e.id, k: e.k, a: e.a, p: out });
     s.log.hash = sha256Hex(s.log.hash + line); s.log.count++;
@@ -274,7 +301,21 @@ export class World {
     // (1) own metabolism: from its own crop only; an unmet need is `debt` (diagnostic, not food)
     const d = drainPool(w, w.crop, this.m.worker_rate, t); w.crop -= d.take; w.debt += d.short;
   }
-  #bookLarva(l: Larva, t: number): void { const d = drainPool(l, l.gut, this.m.larva_rate, t); l.gut -= d.take; l.deficit += d.short; }
+  #bookLarva(l: Larva, t: number): void {
+    if (this.#bp) { this.#bp.book(l.bp as Json, t, this.#s.seed); return; } // BP-1 candidate: the larva's own physiology
+    const d = drainPool(l, l.gut, this.m.larva_rate, t); l.gut -= d.take; l.deficit += d.short;
+  }
+  /** BP-1 candidate: the legacy larval µP pool is not used (rate 0 in the observation projections) */
+  get #larvaRate(): number { return this.#bp ? 0 : this.m.larva_rate; }
+
+  /** BP-1 candidate: daily census of every larva's own physiology (statistics / observation; the booking itself cannot
+   *  change any larva's result, physiology runs on the absolute grid) and the next census */
+  #broodDay(e: QEvent, hook: BroodHook): { [k: string]: Json } {
+    const d = e.p.day as number, t = e.t;
+    const larvae = this.#larvaIds.map((id) => { const l = this.#s.larvae[id]; hook.book(l.bp as Json, t, this.#s.seed); return hook.census(l.bp as Json); });
+    this.#push({ t: t + MS_PER_DAY, r: 0, q: 0, id: `brood:d${pad(d + 1, 5)}`, k: 'brood_day', a: 'brood', p: { day: d + 1 } });
+    return { candidate: hook.version, label: '研究候選（隔離、預設關閉；非正式）', larvae };
+  }
 
   /** HUNGER, GROWTH-PROXY AND 'DEATH'-PROXY DIAGNOSTICS at t_now (statistics only: computed on copies, books nothing,
    *  never fed back). Development and starvation death are NOT modelled: `received` is food received (growth proxy)
@@ -287,7 +328,7 @@ export class World {
     };
     return {
       workers: this.#workerIds.map((id) => row(id, s.workers[id], s.workers[id].crop, this.m.worker_rate)),
-      larvae: this.#larvaIds.map((id) => row(id, s.larvae[id], s.larvae[id].gut, this.m.larva_rate)),
+      larvae: this.#larvaIds.map((id) => row(id, s.larvae[id], s.larvae[id].gut, this.#larvaRate)),
     };
   }
   /** OBSERVATION COPY of view() with every individual's own pool PROJECTED to t_now (issue #225): crop / gut,
@@ -302,8 +343,9 @@ export class World {
       v.workers[id] = { ...p.copy, crop: p.held, debt: x.debt + p.short, settled_ms: settled };
     }
     for (const id of this.#larvaIds) {
-      const x = v.larvae[id], settled = x.last, p = projectPool(x, x.gut, this.m.larva_rate, T);
+      const x = v.larvae[id], settled = x.last, p = projectPool(x, x.gut, this.#larvaRate, T);
       v.larvae[id] = { ...p.copy, gut: p.held, deficit: x.deficit + p.short, settled_ms: settled };
+      if (this.#bp && x.bp !== undefined) v.larvae[id].bp = this.#bp.project(x.bp, T, this.#s.seed);
     }
     return v;
   }
@@ -351,18 +393,25 @@ export class World {
     for (const id of this.#larvaIds) {
       if (!(g() < this.m.larva_contact_p)) continue;
       const l = this.#s.larvae[id]; this.#bookLarva(l, t);
-      const signal = 1 - l.gut / this.m.gut_cap;
+      // BP-1 candidate: the larva's own signal and room from its own state; adults / dead larvae are not brood
+      const bc = this.#bp ? this.#bp.contact(l.bp as Json, this.m.gut_cap) : null;
+      if (bc && !bc.contactable) continue;
+      const signal = bc ? bc.begging : 1 - l.gut / this.m.gut_cap, room = bc ? bc.room : this.m.gut_cap - l.gut;
       w.begging.push({ t, larva: id, signal });
+      let detail: { [k: string]: Json } | null = null;
       let fed = 0;
       if (feed) {
         // (3) adult→brood feeding: the carer's own view, the begging of THIS larva at THIS contact; the graded trigger
         // (isolated experiment only) draws one uniform from the event's own stream, the reference draws nothing
         const u = this.m.consts.brood.trigger === 'graded' ? g() : 0;
-        fed = decideFeedLarva(this.#carer(w, t), this.#gv({ begging: signal, room: this.m.gut_cap - l.gut }, 'larva', w.id, t), this.m.consts, u);
-        if (fed > w.crop || fed > this.m.gut_cap - l.gut) fail(`${w.id} -> ${id}: a feed beyond the carer's crop or the larva's room`);
-        if (fed > 0) { l.gut += fed; l.received += fed; w.crop -= fed; this.#s.stats.larva_feeds++; }
+        fed = decideFeedLarva(this.#carer(w, t), this.#gv({ begging: signal, room }, 'larva', w.id, t), this.m.consts, u);
+        if (fed > w.crop || fed > room) fail(`${w.id} -> ${id}: a feed beyond the carer's crop or the larva's room`);
+        if (fed > 0) {
+          if (this.#bp) { detail = this.#bp.feed(l.bp as Json, t, this.#s.seed, fed); l.received += fed; w.crop -= fed; this.#s.stats.larva_feeds++; }
+          else { l.gut += fed; l.received += fed; w.crop -= fed; this.#s.stats.larva_feeds++; }
+        }
       }
-      out.push({ larva: id, signal, fed });
+      out.push(detail ? { larva: id, signal, fed, bp: detail } : { larva: id, signal, fed });
     }
     return out;
   }
