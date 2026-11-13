@@ -5,7 +5,8 @@
  *  2. the reference calculation (prototypes/brood-physiology/reference-model.ts): per-larva conservation, determinism,
  *     chunk (booking) invariance, locality (signature + static), 28 °C anchor reproduction (calibration, by construction),
  *     sugar-vs-protein limitation distinguishable at the low, central and high demand corners WITHOUT any demand scaling,
- *     predicted own-event times consistent with booking, hazard families (H1 lower bound from R167);
+ *     predicted own-event times consistent with booking, hazard families (H1 mechanics; #226: R167 recorded as a
+ *     constraint on R + τ, not on τ — the 14–30 d τ interval is a game assumption);
  *  3. every table quoted in the design doc equals the analysis output verbatim;
  *  4. isolation: nothing official, the P0-A2 prototype or the experiment Worker imports the brood-physiology folder.
  * Design-phase only: no value is a target; failures mean the candidates and the doc disagree, not that biology failed.
@@ -123,11 +124,37 @@ ok(JSON.stringify(params(c, 'demand_low')) !== JSON.stringify(params(c, 'demand_
 {
   const run = (h: any, T: number) => { const L = newEgg('E0001', 1), m = model(p, h), e = constantEnv('flat', T); advance(L, 60, e, m); return L; }; // eslint-disable-line @typescript-eslint/no-explicit-any
   ok(run({ family: 'H0' }, 25).stage === 'L1', 'H0: an unfed larva never dies (diagnostic only) and does not develop (feeding-stage gate)');
-  const h1 = run({ family: 'H1', tau_d: c.parameters.haz_h1_tau_e_d.sensitivity.min }, 25);
-  ok(h1.stage === 'dead' && Math.abs((h1.stage_entry.dead as number) - (7.69 + 14)) < 1e-6, 'H1 at its lower bound τ = 14 d: death exactly 14 d after the deficit starts (hatch, reserve_at_hatch = 0)');
-  ok(c.parameters.haz_h1_tau_e_d.sensitivity.min >= 14, 'H1 lower bound respects R167 (larvae survived 14 d unfed at 25 °C)');
+  // H1 mechanics only (model contract, not a scientific bound): death exactly τ after the deficit starts
+  const tau0 = c.parameters.haz_h1_tau_e_d.sensitivity.min;
+  const h1 = run({ family: 'H1', tau_d: tau0 }, 25);
+  ok(h1.stage === 'dead' && Math.abs((h1.stage_entry.dead as number) - (7.69 + tau0)) < 1e-6, 'H1 mechanics: death exactly τ after the deficit starts (hatch, reserve_at_hatch = 0)');
+  // #226: R167 constrains (unfed time to death) = R + τ, not τ. In the reference model a larva with τ = 5 d (< 14) that
+  // had some reserve when feeding stopped still outlives Phillips' 14 and 21 d withholding windows → τ is not identifiable.
+  {
+    const m5 = model(p, { family: 'H1', tau_d: 5 }), e25 = constantEnv('flat', 25), L = newEgg('E0001', 1);
+    advance(L, 7.69, e25, m5); feed(L, 7.69, 5, 0, e25, m5);
+    const empty = predictNext(L, e25, m5, 100)!; advance(L, 60, e25, m5);
+    const unfedToDeath = (L.stage_entry.dead as number) - 7.69, R_d = empty.t - 7.69;
+    ok(empty.what === 'reserve_empty' && L.stage === 'dead' && unfedToDeath > 21 && Math.abs(unfedToDeath - (R_d + 5)) < 2 / 1440, 'H1 with τ = 5 d still survives > 21 d unfed when it had a reserve: unfed-to-death time = R + τ (R167 cannot bound τ alone)');
+  }
   const h2 = run({ family: 'H2', lambda_d: 21, k: 2 }, 25), g2 = ledger(h2);
   ok(h2.stage === 'dead' && Math.abs(g2.protein) < 1e-9 && h2.corpseP === 0 && h2.corpseS === 0, 'H2: death moves the (empty) body to the corpse pools; ledgers stay closed');
+}
+// #226: the R167 observation is recorded as a constraint on R + τ for the observed larvae, kept apart from the model's τ
+{
+  const ob = c.literature_observations?.r167_phillips_1933_food_withholding;
+  ok(ob && ob.source === 'R167' && ob.species === 'Pheidole megacephala' && /p\. 29/.test(ob.citation) && /10125\/13477/.test(ob.citation), 'R167 observation recorded with page and stable handle');
+  ok(ob.conditions.temperature_c === 25 && /整巢/.test(ob.conditions.deprivation_unit), 'R167: 25 °C, colony-level food withholding (larva-level unfed time not recorded)');
+  for (const k of ['instar_at_start', 'deprivation_start_relative_to_hatch_d', 'n_colonies_per_group', 'n_larvae', 'survival_fraction']) ok(ob.conditions[k] === null, `R167: ${k} not stated in the source → null`);
+  const g = Object.fromEntries(ob.groups.map((x: any) => [x.id, x])); // eslint-disable-line @typescript-eslint/no-explicit-any
+  ok(g.repeat_2wk.withheld_d === 14 && JSON.stringify(g.repeat_2wk.larval_period_d) === '[32,36]' && g.repeat_2wk.refeed_to_pupation_d === null, 'R167 2-week group: larval period 32–36 d; refeed→pupation not recorded');
+  ok(g.accidental_3wk.withheld_d === 21 && g.accidental_3wk.refeed_to_pupation_d === 8, 'R167 accidental 3-week group: pupated 8 d after refeeding (kept separate from the 2-week group)');
+  ok(g.repeat_3wk.larval_period_d === null && g.repeat_4wk.larval_period_d === null && /吃掉幼蟲/.test(g.repeat_3wk.observed), 'R167 repeated 3/4-week groups: workers died, larvae eaten → no larval tolerance data');
+  ok(/R \+ τ/.test(ob.constrains) && /τ 本身/.test(ob.does_not_constrain) && ob.not_a_hard_bound_for === 'haz_h1_tau_e_d', 'R167 constrains R + τ only, not τ');
+  ok(ob.non_identifiable.some((s: string) => s.startsWith('initial_reserve')) && ob.non_identifiable.some((s: string) => s.startsWith('deficit_start_time')), 'initial reserve and deficit start are listed as non-identifiable');
+  const h = c.parameters.haz_h1_tau_e_d;
+  ok(h.evidence_class === 'game_assumption' && h.sensitivity_basis === 'game_assumption' && h.assumption === true && /遊戲假設/.test(h.note) && /不是文獻下限/.test(h.note), 'τ candidate interval 14–30 d is labelled a game assumption, not a literature bound');
+  ok(!h.sources.includes('R167') && h.related_observation === 'r167_phillips_1933_food_withholding', 'τ does not cite R167 as its source; it points to the separate observation record');
 }
 
 // ---------- 3. the doc quotes the analysis output verbatim ----------
@@ -137,6 +164,12 @@ ok([...doc.matchAll(/<!-- bp:([a-z_0-9]+) -->/g)].every((m) => m[1] in rendered)
 ok(renderAll(c) === renderAll(c), 'analysis is deterministic');
 for (const id of ['R94', 'R167', 'R940', 'R941', 'R942', 'R943', 'R944']) ok(doc.includes(id), `doc cites ${id}`);
 ok(/28\.73/.test(doc) && /不得外推|不可外推/.test(doc), 'doc records the anchor and its extrapolation limits');
+// #226: the inference boundary for R167 is documented; the old "R167 proves τ ≥ 14" claim is gone
+ok(/R \+ τ/.test(doc) && /不可辨識/.test(doc) && /#226/.test(doc), 'doc: R167 constrains R + τ; initial reserve / deficit start non-identifiable (#226)');
+ok(!/下限 14 d 來自 R167|H1 下限 ≥ 14 d（R167）|唯一的本種約束是 R167/.test(doc), 'doc no longer claims R167 gives a τ lower bound');
+ok(/p\.29|p\. 29/.test(doc) && /意外 3 週組/.test(doc) && /重複試驗 2 週組/.test(doc), 'doc §9 cites the 2-week and accidental 3-week groups separately');
+ok(/#222 Q6/.test(doc), 'doc notes that the #222 Q6 ruling stands but the τ range basis changed');
+ok(/R167 更正（2026-11-13，#226/.test(refs), 'references.md: dated R167 correction note appended (#226)');
 
 // ---------- 4. isolation ----------
 const walk = (dir: string): string[] => fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? (e.name === 'node_modules' ? [] : walk(path.join(dir, e.name))) : /\.(ts|tsx|js|mjs)$/.test(e.name) ? [path.join(dir, e.name)] : []) : [];

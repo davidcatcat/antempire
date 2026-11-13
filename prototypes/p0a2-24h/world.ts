@@ -216,7 +216,11 @@ export class World {
       w.pending = null;
       this.#book(w, e.t);
       switch (e.k) {
-        case 'bout_end': out = { from: w.state, ...(w.state === 'idle' ? { larvae: this.#touchLarvae(w, e.t, g, false) } : {}), ...this.#decideInNest(w, e, g) }; break;
+        // the contacts of the idle walk that just ended are logged as `idle_larvae`, apart from the brood-care contacts
+        // (`larvae`) of a brood choice made at the same event (Owner #214 Q4, 2026-11-13: before, the brood list
+        // overwrote the idle list in the log; rules version experiment-p0a2-24h/2). Evaluation order is unchanged:
+        // the idle walk touches (and draws) first, then the in-nest decision.
+        case 'bout_end': out = { from: w.state, ...(w.state === 'idle' ? { idle_larvae: this.#touchLarvae(w, e.t, g, false) } : {}), ...this.#decideInNest(w, e, g) }; break;
         case 'wake': out = { from: w.state, ...this.#decideInNest(w, e, g) }; break;
         case 'at_entrance': out = this.#atEntrance(w, e, g); break;
         case 'back_in': this.#set(w, e.t, 'resting', 'nest'); this.#next(w, e, 'bout_end', this.#exp(g, this.m.rest_ms)); out = { to: 'resting' }; break;
