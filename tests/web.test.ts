@@ -82,11 +82,18 @@ try {
     checks += 4;
   }
   // 6. separation
+  const THREE_SPECIFIERS = ['three', 'three/addons/controls/OrbitControls.js', 'three/addons/utils/BufferGeometryUtils.js'];
   // recursive: sub-directories such as web/src/experimental/ are checked too
   const srcFiles = (d: string): string[] => fs.readdirSync(path.join(REPO_ROOT, 'web/src', d), { withFileTypes: true }).flatMap((e) => e.isDirectory() ? srcFiles(path.posix.join(d, e.name)) : [path.posix.join(d, e.name)]);
   for (const f of srcFiles('')) {
     const code = fs.readFileSync(path.join(REPO_ROOT, 'web/src', f), 'utf8');
-    for (const m of code.matchAll(/from\s+'([^']+)'/g)) ok(m[1].startsWith('./'), `web/src/${f} imports only viewer modules (${m[1]})`);
+    for (const m of code.matchAll(/from\s+'([^']+)'/g)) {
+      // relative imports must stay inside web/src (so never engine/, cli/ or the Worker dir); the Three.js 3D prototype
+      // (web/src/three/, #256) may also import the vendored, import-mapped three build — nothing else bare
+      const inside = (m[1].startsWith('./') || m[1].startsWith('../')) && !path.posix.relative('web/src', path.posix.normalize(path.posix.join('web/src', path.posix.dirname(f), m[1]))).startsWith('..');
+      const vendoredThree = f.startsWith('three/') && THREE_SPECIFIERS.includes(m[1]);
+      ok(inside || vendoredThree, `web/src/${f} imports only viewer modules (${m[1]})`);
+    }
     ok(!/Math\.random|localStorage\.setItem|method:\s*'(POST|PUT|DELETE)'/.test(code), `web/src/${f}: no randomness, no storage writes, no write requests`);
     ok(!/simulateWorldDay|simulateDay|initializeDay0/.test(code), `web/src/${f}: the renderer does not run the simulation`);
   }

@@ -19,6 +19,8 @@
 | typescript | 5.9.3 | Apache-2.0 | 型別檢查、可視化編譯（開發依賴） |
 | @types/node | 22.19.0 | MIT | Node 型別（開發依賴） |
 | undici-types | 6.21.0 | MIT | @types/node 的相依 |
+| three | 0.187.0（exact） | MIT（© 2010-2026 three.js authors；`node_modules/three/LICENSE`，`npm run web:build` 一併複製到 `web/vendor/three/LICENSE`） | Three.js 3D 原型頁 `web/three.html`（#256）；開發依賴，建置時複製 4 個檔到 `web/vendor/three/`（git-ignored，本機載入、不連 CDN）；不進引擎。來源 https://github.com/mrdoob/three.js |
+| @types/three | 0.187.0（exact） | MIT | three 的型別（開發依賴）；連帶 @types/stats.js 0.17.4、@types/webxr 0.5.24、@tweenjs/tween.js 23.1.3、fflate 0.8.3、meshoptimizer 1.1.1（皆 MIT，只用於型別檢查，不進頁面） |
 | Playwright＋Chromium | 環境預先安裝；CI 另行安裝 | Apache-2.0（Playwright）；Chromium 為 BSD 等 | 只用於瀏覽器檢查，不隨遊戲散布 |
 | 中央氣象署 1991～2020 平年值（臺中站） | — | 政府資料開放授權條款第 1 版（可重用，須標示來源） | 世界檔的氣候先驗（`world/xitun-garden.json`）；用作合成天氣的先驗，不是逐時實測 |
 - 引擎（`engine/`）沒有任何第三方執行期依賴。

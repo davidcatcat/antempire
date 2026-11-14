@@ -10,6 +10,8 @@
 
 兩者讀同一份 `data/`。遊戲畫面的資料分類（引擎紀錄、顯示插值、示意場景）見頁面上的「資料說明」與 `docs/viewer-v6-game.md`。
 
+- `three.html`＝**Three.js 3D 原型**（#256、#257，**原型・非正式**）：P0-A2 候選／實驗世界的 30 隻工蟻在立體花園與巢內剖面中，經實驗 Web Worker 即時模擬；可旋轉、縮放、平移、追蹤單隻。需要 `vendor/three/`（`npm run web:build` 由 `node_modules/three` 複製，MIT）與 `worker-dist/`。資料分類（引擎／顯示插值／示意）見頁面「資料說明」與 `docs/three-prototype.md`。`three.html?bench=1` 自動量測 30／100／1,000 隻並輸出 JSON（無頭或軟體繪圖下標「NOT a device result」）。`experiment.html` 是同一世界的 2D 實驗頁。
+
 ## 內容
 | 路徑 | 內容 |
 |---|---|
@@ -66,5 +68,7 @@ npx --yes http-server -p 8780      # 或
 - `web-v4-stats-node.json`：每日序列等於引擎日終紀錄；每個推得的速度都等於引擎的步行速度（沿跡或離跡）。
 - `web-v5-results.json`、`web-v5-observer-node.json`：V5 篩選、跨日跳轉、事件地圖、路線、巢內標示、每日事件數（桌面＋412×915 觸控）；`screenshots/*-v5-*.png` 是各功能截圖。
 - `web-v3-follow-node.json`：每一筆事件的跳轉時間、地點、相關工蟻都等於引擎紀錄；事件時刻工蟻畫在紀錄的地點；死亡與羽化的追蹤狀態。
+
+- `three-demo-results.json`、`screenshots/three-*.jpg`：Three.js 3D 原型（30 隻、追蹤、走動時步態相位推進、停下與暫停時不動、`uTime` 暫停時凍結、標示、手機無橫向捲動；桌面＋Pixel 7）。
 
 **限制**：手機測試是 Chromium 的 Android 尺寸與觸控模擬，不是實體手機。
