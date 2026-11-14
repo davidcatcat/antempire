@@ -48,6 +48,8 @@ const drawn = (V: VisModel, w: PW, t: number): { x: number; y: number } | null =
   const ang = (x: number, y: number) => Math.abs(Math.atan2(Math.sin(x - y), Math.cos(x - y)));
   const ha = V.pose(a, f0.t_sim).heading!, hb = V.pose(b, f1.t_sim).heading!, hc = V.pose(b, f1.t_sim + MS).heading!;
   ok(ang(ha, hb) < 1e-12 && ang(hb, hc) < 0.01, `#252: the drawn heading also turns smoothly (Δ ${ang(ha, hb).toExponential(2)} rad at the boundary, ${ang(hb, hc).toExponential(2)} rad in the next 1 ms)`);
+  const course = V.drawnCourse(b).pts, c0 = drawnPoint(V.pose(b, b.since_s));
+  ok(course[0].x === c0.x && course[0].y === c0.y && course[course.length - 1].x === V.corridor.nest.x && course[course.length - 1].y === V.corridor.nest.y, '#252: the dashed course of the selected ant starts at its drawn feeding spot and ends exactly at the nest');
   const end = V.pose(b, b.until_s!);
   ok(drawnPoint(end).x === V.corridor.nest.x && drawnPoint(end).y === V.corridor.nest.y && end.x === V.corridor.nest.x && !end.interpolated, '#252: the return trip still ends exactly at the nest at the engine arrival instant (no slot left)');
   ok(V.pose(b, b.since_s).x === V.corridor.source.x && V.pose(b, b.since_s).y === V.corridor.source.y, '#252: the engine pose at the departure instant is still exactly the source (slot = display arrangement only)');

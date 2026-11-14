@@ -47,6 +47,8 @@ export const TURN_CM = 1;
 /** bound of the drawn speed used by the continuity tests (× the engine trail speed route / travel time; display) */
 export const MAX_DRAWN_SPEED_FACTOR = 4;
 const smooth = (k: number) => k * k * (3 - 2 * k), dSmooth = (k: number) => 6 * k * (1 - k);
+/** weight of the feeding slot at path distance d (cm) from the source end: 1 at the spot, 0 beyond SLOT_BLEND_CM */
+const slotWeight = (d: number) => 1 - smooth(Math.max(0, Math.min(1, d / SLOT_BLEND_CM)));
 
 export class VisModel {
   readonly corridor: Corridor;
@@ -91,7 +93,7 @@ export class VisModel {
       const P = this.trip(w), q = poseOnTrip(P, t);
       let heading = q.heading, slot: { dx: number; dy: number } | undefined;
       if (!P.schematicStart) { // the trip touches the source: blend the feeding slot in (outbound end) / out (return start)
-        const out = w.state === 'outbound', d = out ? P.line.len - q.dist_cm : q.dist_cm, k = Math.max(0, Math.min(1, d / SLOT_BLEND_CM)), wt = 1 - smooth(k);
+        const out = w.state === 'outbound', d = out ? P.line.len - q.dist_cm : q.dist_cm, k = Math.max(0, Math.min(1, d / SLOT_BLEND_CM)), wt = slotWeight(d);
         const s = this.slot(w.id); slot = { dx: s.x * wt, dy: s.y * wt };
         if (k > 0 && k < 1) { const dw = -dSmooth(k) / SLOT_BLEND_CM * (out ? -1 : 1); heading = Math.atan2(Math.sin(q.heading) + s.y * dw, Math.cos(q.heading) + s.x * dw); }
         // turn between the feeding heading (facing the stem) and the walking heading over the TURN_CM next to the spot
@@ -110,6 +112,13 @@ export class VisModel {
       return { ...base, x: a.p.x * e, y: a.p.y * e, heading: Math.atan2(vy, vx), vis: 'walking', moving: true, schematic: true, where: 'search', dist_cm: Math.max(0, t - w.since_s) * this.speedCmS, walking: true, path: `search|${w.id}|${w.since_s}` };
     }
     return { ...base, x: 0, y: 0, heading: null, vis: 'in_nest', moving: false, where: 'nest', dist_cm: 0, walking: false, path: null };
+  }
+  /** the drawn course of a trip (path points plus the same slot blend as pose(); for the dashed selected-path line) */
+  drawnCourse(w: PW): { pts: Pt[] } {
+    const P = this.trip(w);
+    if (P.schematicStart) return { pts: P.line.pts };
+    const s = this.slot(w.id), out = w.state === 'outbound';
+    return { pts: P.line.pts.map((p, i) => { const wt = slotWeight(out ? P.line.len - P.line.cum[i] : P.line.cum[i]); return { x: p.x + s.x * wt, y: p.y + s.y * wt }; }) };
   }
   poses(f: P0a2FrameMsg, t: number): VisPose[] { return f.workers.map((w) => this.pose(w, t)); }
 }

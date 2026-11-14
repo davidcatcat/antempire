@@ -23,7 +23,7 @@ import { withLight, type LightState } from './art-core.ts';
 import { h01 } from './art-core.ts';
 import { hash32 } from './game-model.ts';
 import { Garden, fbm, fields, type Decor } from './vis1-garden.ts';
-import { ART_STRIDE_SCALE, gaitAdvance, type Polyline } from './vis1-path.ts';
+import { ART_STRIDE_SCALE, gaitAdvance } from './vis1-path.ts';
 import type { VisModel, VisPose } from './vis1-model.ts';
 
 export const MINOR_LEN_CM = 0.25;
@@ -38,7 +38,7 @@ function rnd(seed: number) { let s = seed >>> 0 || 1; return () => { s = (s + 0x
 
 export interface AntDrawRec { id: string; sx: number; sy: number; ex: number; ey: number; heading: number; lenPx: number; gait: Gait; phase: number; walkW: number; capped: boolean }
 interface Look { phase: number; dist: number; path: string | null; h: number; w: number; capped: boolean; amp: number }
-export interface GardenFrameOpts { minAntPx: number; selected: string | null; following: string | null; running: boolean; showIds: boolean; selectedPath: Polyline | null }
+export interface GardenFrameOpts { minAntPx: number; selected: string | null; following: string | null; running: boolean; showIds: boolean; selectedPath: { pts: readonly { x: number; y: number }[] } | null }
 
 export class GardenRenderer {
   readonly g: CanvasRenderingContext2D;
