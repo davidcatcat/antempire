@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>螞蟻帝國・Three.js 3D 原型</title>
+<!-- Three.js is served from this site (vendor/three, copied from node_modules by npm run web:build); no CDN -->
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
+</script>
+<style>
+  :root { --bar: rgba(20,15,10,0.6); --panel: rgba(24,18,12,0.9); --ink: #f3ead6; --muted: #cbbd9f; --accent: #e9b949; --line: rgba(243,234,214,0.22); color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #1d1712; color: var(--ink); font-family: system-ui, -apple-system, "Noto Sans TC", sans-serif; overflow: hidden; }
+  #scene { position: fixed; inset: 0; width: 100vw; height: 100dvh; display: block; touch-action: none; }
+  .bar { position: fixed; left: 0; right: 0; background: var(--bar); display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); backdrop-filter: blur(4px); z-index: 2; }
+  #top { top: 0; padding-block: calc(4px + env(safe-area-inset-top, 0px)) 5px; }
+  #bottom { bottom: 0; padding-block: 4px calc(6px + env(safe-area-inset-bottom, 0px)); }
+  h1 { font-size: 15px; margin: 0 4px 0 0; letter-spacing: 0.04em; white-space: nowrap; }
+  select, button, a.btn { font: inherit; font-size: 13px; min-height: 32px; color: var(--ink); background: rgba(255,255,255,0.08); border: 1px solid var(--line); border-radius: 8px; padding: 0 9px; }
+  button.primary { background: var(--accent); color: #2a1d0b; border-color: var(--accent); font-weight: 600; min-width: 60px; }
+  button:disabled { opacity: 0.45; }
+  option { color: #1d160e; }
+  a { color: var(--accent); } a.btn { display: inline-flex; align-items: center; text-decoration: none; }
+  label { font-size: 12.5px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  #flag { font-size: 12px; font-weight: 700; color: #2a1d0b; background: #f0b25a; border-radius: 6px; padding: 2px 8px; white-space: nowrap; }
+  #badge { font-size: 11px; color: #6b3410; background: rgba(246,227,209,0.92); border-radius: 6px; padding: 2px 7px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 260px; min-width: 0; }
+  #mag { width: 110px; accent-color: var(--accent); }
+  #magLabel { font-size: 11.5px; color: var(--muted); white-space: normal; }
+  #status { font-size: 11.5px; color: var(--muted); flex-basis: 100%; line-height: 1.45; }
+  #time { font-size: 12px; font-variant-numeric: tabular-nums; flex-basis: 100%; }
+  #card { position: fixed; left: max(10px, env(safe-area-inset-left, 0px)); top: 92px; max-width: min(430px, calc(100vw - 20px)); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 13px; line-height: 1.6; z-index: 3; }
+  #card .muted, .muted { color: var(--muted); font-size: 12px; }
+  #card .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+  #perf { position: fixed; right: max(10px, env(safe-area-inset-right, 0px)); top: 92px; width: min(430px, calc(100vw - 20px)); max-height: 46vh; overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; font: 11px/1.45 ui-monospace, monospace; white-space: pre-wrap; z-index: 3; user-select: text; }
+  #about { position: fixed; inset: 92px max(10px, env(safe-area-inset-right, 0px)) 110px max(10px, env(safe-area-inset-left, 0px)); max-width: 660px; margin-inline: auto; overflow: auto; background: rgba(24,18,12,0.96); border: 1px solid var(--line); border-radius: 12px; padding: 10px 16px; font-size: 13px; line-height: 1.65; z-index: 4; }
+  #about h2 { font-size: 15px; margin: 6px 0; }
+  #labels { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+  .lbl { position: absolute; left: 0; top: 0; font-size: 11.5px; color: #f6ead0; background: rgba(28,18,10,0.7); border-radius: 5px; padding: 1px 6px; white-space: nowrap; }
+  #toast { position: fixed; left: 50%; top: 20%; transform: translateX(-50%); max-width: min(560px, calc(100vw - 24px)); background: rgba(20,15,10,0.85); border: 1px solid var(--line); border-radius: 10px; padding: 7px 12px; font-size: 12.5px; z-index: 5; }
+  #opts { display: contents; }
+  #moreBtn { display: none; }
+  #time { cursor: pointer; }
+  [hidden] { display: none !important; }
+  @media (max-width: 639px) {
+    h1 { font-size: 14px; } #badge { flex-basis: 100%; font-size: 10.5px; }
+    #moreBtn { display: inline-block; min-width: 40px; }
+    #opts { display: none; flex-basis: 100%; flex-wrap: wrap; gap: 6px 8px; align-items: center; padding: 4px 0 2px; }
+    body.opts-open #opts { display: flex; }
+    #magLabel { flex-basis: 100%; }
+    #status { display: none; } body.status-open #status { display: block; }
+    #time { font-size: 11.5px; }
+    #card, #perf { top: 104px; } body.opts-open #card, body.opts-open #perf { top: 236px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="scene" aria-label="Three.js 3D 花園：P0-A2 實驗世界的螞蟻"></canvas>
+<div id="labels"></div>
+<div id="top" class="bar">
+  <h1>螞蟻帝國 3D</h1><span id="flag">原型・非正式</span><span id="badge">載入中…</span>
+  <button id="play" class="primary" type="button">暫停</button>
+  <label>速度 <select id="speed" aria-label="模擬速度（只改排程）"></select></label>
+  <select id="who" aria-label="追蹤螞蟻"></select>
+  <button id="moreBtn" type="button" aria-expanded="false" aria-label="更多設定">⋯</button>
+  <div id="opts">
+    <label><input id="mag" type="range" min="1" max="30" step="1" aria-label="螞蟻放大倍數"></label><span id="magLabel"></span>
+    <label><input id="route" type="checkbox" checked> 路線（示意）</label>
+    <select id="count" aria-label="效能量測：畫出的螞蟻數"></select>
+    <button id="benchBtn" type="button">量測 30／100／1000</button>
+    <button id="perfBtn" type="button">效能</button>
+    <button id="aboutBtn" type="button">資料說明</button>
+    <button id="homeBtn" type="button">回到起始視角</button>
+    <a class="btn" href="experiment.html">2D 實驗頁</a>
+  </div>
+</div>
+<div id="card" hidden></div>
+<pre id="perf" hidden></pre>
+<div id="toast" hidden></div>
+<div id="about" hidden>
+  <h2>這一頁是什麼</h2>
+  <p>Three.js 3D 渲染<b>原型</b>（Owner 2026-11-14，#256、#257），讓 Owner 決定是否採用 Three.js 作為主要 3D 架構。現有的 Canvas 遊戲畫面（<a href="index.html">index.html</a>）與 2D 實驗頁（<a href="experiment.html">experiment.html</a>）不變。</p>
+  <p>螞蟻來自<b>P0-A2 候選／實驗世界（非正式）</b>：模擬只在瀏覽器的實驗 Web Worker 中執行；本頁只送排程（開始、暫停、速度、開場跳到 09:00）與觀察（追蹤）指令，不能改變任何規則、參數、個體或事件，也不寫入任何存檔。</p>
+  <h2>畫面上的資料分三類</h2>
+  <p><b>引擎</b>：每隻工蟻的狀態（休息、巢內走動、育幼、往返巢口、去程、搜尋、取食、回程）與開始時刻、路線長度 200 cm 與走完時間、嗉囊與幼蟲腸道填充、光照（日／曙暮光／夜）。</p>
+  <p><b>顯示插值</b>：路線上與巢口通道上，兩個引擎紀錄時刻之間的位置。</p>
+  <p><b>示意</b>：P0-A2 沒有任何 2D 或 3D 座標。路線<b>方向</b>、搜尋中的位置、巢室形狀與每隻螞蟻在巢室中的位置、整座花園（土壤、落葉、草、植物、石頭、蚜蟲群）、陽光方向、夜間加亮、螞蟻的放大倍數，都是畫面。巢內的巢室是「依引擎狀態分組」，不是巢的真實結構。</p>
+  <h2>動作</h2>
+  <p>六足採三腳步態，相位由<b>畫面位置實際移動的距離</b>推進：引擎說停下，腳就停。轉身只在紀錄的朝向改變時畫（路線兩端）。休息或不動的螞蟻有原地、非週期性的觸角、頭、腹與腳的微動作；強度依引擎狀態（休息最小、搜尋最大），<b>不改變位置、不產生任何事件</b>。世界暫停時微動作也停止。</p>
+  <h2>效能量測</h2>
+  <p>30 隻＝這個世界；100／1,000 隻＝ 4／34 個<b>不同種子的獨立 P0-A2 世界</b>（各在自己的 Worker 執行、彼此不互動），只畫前 N 隻；它們的巢位置與路線方向是排版，巢內的個體畫在各自巢口下方的地下（看不到，但照樣繪製）。按「量測」後結果（含可複製 JSON）出現在效能面板。軟體繪圖（SwiftShader 等）或自動化下的數字會標示「NOT a device result」。</p>
+  <h2>操作</h2>
+  <p>手機：「⋯」打開放大倍數、路線、量測等設定；點下方時間列展開工蟻狀態統計。拖曳＝旋轉；滾輪或雙指捏合＝縮放；右鍵拖曳或雙指拖曳＝平移。點螞蟻＝選取；「鏡頭追蹤」或上方選單＝追蹤。</p>
+</div>
+<div id="bottom" class="bar">
+  <div id="time"></div>
+  <div id="status"></div>
+</div>
+<script type="module" src="dist/three/main.js"></script>
+</body>
+</html>
