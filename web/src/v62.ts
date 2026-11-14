@@ -194,7 +194,7 @@ function drawP0(dt: number, fms: number | null, t: number) {
   } else {
     if (fp && fp.vis !== 'in_nest') { const tx = fp.x + (fp.slot?.dx ?? 0), ty = fp.y + (fp.slot?.dy ?? 0), k = Math.min(1, dt * 6); cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k; }
     const c = camera(), sw = selected ? f.workers.find((x) => x.id === selected && (x.state === 'outbound' || x.state === 'returning')) : undefined;
-    const draws = G.frame(c, vp, dt, { minAntPx: minAntPx(), selected, following, running: !!pacing?.running, showIds: false, selectedPath: sw ? V.trip(sw).line : null });
+    const draws = G.frame(c, vp, dt, { minAntPx: minAntPx(), selected, following, running: !!pacing?.running, showIds: false, selectedPath: sw ? V.drawnCourse(sw) : null });
     p0draws = draws;
     const lenPx = GardenRenderer.antLenPx(cam.s, minAntPx());
     g.save(); g.font = '12px system-ui'; g.fillStyle = '#fff6dc'; g.strokeStyle = 'rgba(20,12,6,0.75)'; g.lineWidth = 3; g.textBaseline = 'alphabetic';
