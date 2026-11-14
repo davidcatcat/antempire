@@ -14,6 +14,9 @@
  *  - the underground view shows the concept label 「概念圖：巢室幾何尚未模擬」 and exactly the in-nest / transit workers;
  *  - surface ↔ underground, legend, close-up and follow do not change the event stream or the payload hash at the same
  *    t_sim (vs a page that only steps);
+ *  - issue #252: experiment.html?seed=7&autostart=0, stepUntil(33341.101) → follow w026 → 特寫 → 不追蹤 → stepUntil
+ *    (33341.102): at the fixed close-up camera the drawn ant moves ≤ 4 × trail speed × 1 ms × scale (was 415.9 px);
+ *    clips vis1-issue252-t33341101.jpg / -t33341102.jpg;
  *  - measurements (headless; reported, no target claimed): frame intervals, renderer CPU per frame, bake cost.
  */
 const fs = require('node:fs');
@@ -121,6 +124,28 @@ const { chromium, devices } = require('playwright');
       await P.click('#homeBtn'); await P.waitForTimeout(1500); await measure(P, 'pixel7-surface-60x-cpu4', 5000);
       await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
     }
+    await P.close(); await ctx.close();
+  }
+  // 9. issue #252 (desktop): feeding → returning of w026 (seed 7) at a FIXED close-up camera, 1 ms apart. Before the fix
+  //    the drawn ant jumped 415.9 px (3.153 cm: the feeding slot was dropped at the return departure). The drawn step must
+  //    stay within the display speed bound (MAX_DRAWN_SPEED_FACTOR × trail speed × 1 ms × camera scale).
+  if (!process.env.VIS1_PROFILE || process.env.VIS1_PROFILE === 'desktop') {
+    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const P = await open(ctx, 'issue252', '?seed=7&autostart=0');
+    const raf = () => P.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+    await P.evaluate(async () => { await window.__v62.client.stepUntil(33341.101); });
+    await P.selectOption('#follow', 'w026'); await P.waitForTimeout(300); await P.click('#closeBtn'); await P.waitForTimeout(3500);
+    await P.selectOption('#follow', ''); await P.waitForTimeout(400); await raf();
+    const rd = () => P.evaluate(() => { const V = window.__v62, f = V.frame(), w = f.workers.find((x) => x.id === 'w026'); return { t: f.t_sim, state: w.state, since: w.since_s, d: V.draws().find((x) => x.id === 'w026'), cam: V.camera(), speed: f.layout.source_distance_cm / f.layout.travel_s, following: V.state().following }; });
+    const a = await rd(); const clip = { x: a.d.sx - 360, y: a.d.sy - 225, width: 720, height: 450 };
+    await shot(P, 'issue252-t33341101', clip);
+    await P.evaluate(async () => { await window.__v62.client.stepUntil(33341.102); }); await raf(); await raf();
+    const b = await rd(); await shot(P, 'issue252-t33341102', clip);
+    const jump = Math.hypot(b.d.sx - a.d.sx, b.d.sy - a.d.sy), bound = 4 * a.speed * 0.001 * a.cam.s;
+    measurements.issue252 = { before: { t: a.t, state: a.state, sx: a.d.sx, sy: a.d.sy }, after: { t: b.t, state: b.state, sx: b.d.sx, sy: b.d.sy }, camera_s: a.cam.s, jump_px: +jump.toFixed(3), bound_px: +bound.toFixed(3), lenPx: a.d.lenPx };
+    check(a.state === 'feeding' && b.state === 'returning' && a.t === 33341.101 && b.t === 33341.102 && a.following === null && b.following === null, `issue252: w026 feeding @33341.101 → returning @33341.102 with no follow (engine instants as recorded)`);
+    check(a.cam.s === b.cam.s && a.cam.cx === b.cam.cx && a.cam.cy === b.cam.cy && a.cam.s > 100, `issue252: the camera is fixed at close-up (s=${a.cam.s.toFixed(3)} px/cm)`);
+    check(jump <= bound, `issue252: drawn ant moves ${jump.toFixed(3)} px in 1 ms at feeding → returning (bound ${bound.toFixed(3)} px; was 415.9 px)`);
     await P.close(); await ctx.close();
   }
   // 8. short video (desktop): following an ant at close range, then zooming out
