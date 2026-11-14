@@ -22,7 +22,7 @@ import raw from '../prototypes/p0a2-24h/params.json' with { type: 'json' };
 import cand from '../prototypes/brood-physiology/brood-physiology.candidates.json' with { type: 'json' };
 import variants from '../prototypes/p0a2-24h/brood/bp1-variants.json' with { type: 'json' };
 import { BP1_VERSION, bp1Config, bp1Hook, physModelOf, variantsProblems } from '../prototypes/p0a2-24h/brood/bp1.ts';
-import { type BpLarva, PROG, advance, contactOf, feedLiquid, feedMass, feedSolid, ledgerProblem, newLarva, summary, thresholdOf } from '../prototypes/p0a2-24h/brood/physiology.ts';
+import { type BpLarva, PROG, advance, contactOf, feedLiquid, feedMass, feedSolid, ledgerProblem, newLarva, structureMass, summary, thresholdOf } from '../prototypes/p0a2-24h/brood/physiology.ts';
 import { World } from '../prototypes/p0a2-24h/world.ts';
 import { canon } from '../prototypes/p0a2-24h/canon.ts';
 import { P0A2_CODE_FILES } from '../prototypes/continuous-world/worker/p0a2-code-hash.ts';
@@ -128,6 +128,44 @@ function adlib(m: ReturnType<typeof modelOf>, seed = 1, id = 'l01', until = 120 
   const s1 = spread(m1), s2 = spread(m2), s0 = spread(m);
   ok(s0[0] === s0[1] && s1[1] - s1[0] > 1 && s2[1] - s2[0] > 1, `S0: same day for every larva (known disagreement with R94, reported); M1 / M2 spread ${s1.map((x) => x.toFixed(2))} / ${s2.map((x) => x.toFixed(2))} d`);
 
+  // #253 (BP-1 v3): M1 / M2 thresholds change development TIME only. At ad-lib feeding every larva deposits the same
+  // structure per instar and reaches the same final mass as S0 (within integer rounding: the ceiling charge, the credit
+  // re-expressed at a stage change, and the < 1-step progress overshoot that S0 has too), while eclosion times differ.
+  {
+    const ref0 = adlib(m, 3, 'x0'), dep0 = ref0.stage_dep, mass0 = structureMass(ref0.protein.pools.structure, m);
+    ok(m.stage_cost === 'per_individual_target' && m1.stage_cost === 'per_individual_target', 'default growth cost: per individual stage target (#253)');
+    const tol = (mm: typeof m) => { // one step of progress at the fastest feeding rate, charged at the smallest θ the run drew, + 2 ng rounding per stage
+      const k = (s: string) => mm.stages[s];
+      return Math.max(...['L1', 'L2', 'L3'].map((s) => Math.ceil((k(s).dev_per_day * mm.step_ms / D) * k(s).p_need / (0.5 * PROG)))) + 2;
+    };
+    for (const [nm, mm] of [['M1', m1], ['M2', m2]] as const) {
+      const xs = Array.from({ length: 40 }, (_, i) => adlib(mm, 3, `x${i}`)), t = tol(mm);
+      const thetas = xs.map((L) => ['L1', 'L2', 'L3'].map((s) => thresholdOf(mm, 3, L.id, s as never) / PROG)).flat();
+      ok(Math.min(...thetas) >= 0.5, `${nm}: drawn θ >= 0.5 (tolerance basis)`);
+      const worst = Math.max(...xs.flatMap((L) => ['L1', 'L2', 'L3'].map((s) => Math.abs((L.stage_dep[s as never] ?? 0) - (dep0[s as never] ?? 0)))));
+      const worstMass = Math.max(...xs.map((L) => Math.abs(structureMass(L.protein.pools.structure, mm) - mass0)));
+      const ecl = xs.map((L) => days(L.stage_entry.adult));
+      ok(xs.every((L) => L.stage === 'adult' && ledgerProblem(L) === null) && worst <= t, `#253 ${nm} ad-lib: per-instar deposition = S0's within ${worst} ng (bound ${t} ng; S0 ${['L1', 'L2', 'L3'].map((s) => dep0[s as never]).join(' / ')} ng)`);
+      const tm = Math.ceil((3 * t * (mm.final_mass - mm.hatch_mass)) / mm.dep_total) + 1; // the structure bound through the linear mass map
+      ok(worstMass <= tm, `#253 ${nm} ad-lib: final fresh mass = S0's ${mass0} ng within ${worstMass} ng (bound ${tm} ng)`);
+      ok(Math.max(...ecl) - Math.min(...ecl) > 1, `#253 ${nm} ad-lib: eclosion still differs (${Math.min(...ecl).toFixed(2)}–${Math.max(...ecl).toFixed(2)} d): θ changes timing only`);
+    }
+    // the coupled timing–mass alternative: explicitly named, labelled (evidence level none), default off; reproduces the coupling
+    const cv = clone(variants) as any;
+    ok(variants.base.choices.stage_cost_scaling.value === 'per_individual_target' && Object.entries<any>(variants.variants).every(([n, v]) => (v.choices?.stage_cost_scaling?.value ?? 'per_individual_target') === 'per_individual_target' || n.endsWith('-coupled')), 'coupled timing–mass is used only by a variant named "-coupled"; the base is decoupled');
+    const cc = bp1Config(cand, variants, 'cf-protein-m1-cv015-coupled') as any, ca = cc.alternatives?.coupled_timing_mass;
+    ok(cc.choices.stage_cost_scaling === 'coupled_timing_mass' && ca && ca.assumption === true && ca.evidence_level === 'none' && /θ/.test(ca.formula) && ca.mechanism && !('alternatives' in (bp1Config(cand, variants, 'cf-protein-m1-cv015') as any)), 'coupled alternative config carries its label (assumption, evidence level none, mechanism, formula)');
+    delete cv.variants['cf-protein-m1-cv015-coupled'].choices.stage_cost_scaling.evidence_level;
+    ok(variantsProblems(cv).some((x) => /coupled_timing_mass needs/.test(x)), 'an unlabelled coupled alternative is a variants problem');
+    const mc = { ...m1, stage_cost: 'coupled_timing_mass' as const };
+    ok(canon(physModelOf(cc)) === canon({ ...physModelOf(bp1Config(cand, variants, 'cf-protein-m1-cv015')), stage_cost: 'coupled_timing_mass' }), 'the -coupled variant differs from its decoupled twin only in the growth-cost normalisation');
+    const xc = Array.from({ length: 40 }, (_, i) => adlib(mc, 3, `x${i}`)).map((L) => L.protein.pools.structure);
+    ok(Math.max(...xc) - Math.min(...xc) > 0.1 * m.dep_total, `coupled alternative: final structure ${Math.min(...xc)}–${Math.max(...xc)} ng (θ scales deposition; the #253 coupling, evidence level none)`);
+    // the S0 path is unchanged by the decoupling (θ = 1: den = PROG either way)
+    const s0c = adlib({ ...m, stage_cost: 'coupled_timing_mass' }, 3, 'x0');
+    ok(canon(s0c) === canon(ref0), 'S0: decoupled and coupled forms give a bit-identical larva');
+  }
+
   // sugar vs protein limitation through the N-d gate (same delivered mass, composition differs)
   const diet = (sugarShare: number) => {
     const L = newLarva(m, 'l01', 1, 0, 'L1');
@@ -157,6 +195,63 @@ function adlib(m: ReturnType<typeof modelOf>, seed = 1, id = 'l01', until = 120 
   };
   const ret = intermittent('retain'), rst = intermittent('reset');
   ok(ret.lambda_prev > 0 && (ret.stage === 'dead' || ret.lambda > rst.lambda) && canon(ret) !== canon(rst), `hazard retain vs reset differ under intermittent feeding (retain Λ ${ret.lambda.toFixed(3)}, reset Λ ${rst.lambda.toFixed(3)})`);
+
+  // #251 regression (BP-1 v2): the deficit interval is "accrued maintenance not covered" (a billed ng unpaid, or a sub-ng
+  // remainder outstanding with an empty reserve), not "reserve empty". SYNTHETIC boundary inputs on the real functions
+  // (exactly balanced supply and demand; not a species calibration, not a candidate value, not tuned for survival).
+  {
+    const MIN = 60_000;
+    /** sugar-only L1 with an exact maintenance rate of `perDay` ng/day (structure stays 0, so the mass and rate are constant) */
+    const exact = (perDay: number, hazard: any, recovery: 'retain' | 'reset' = 'retain') => {
+      const mm = { ...modelOf(), assim_s: { num: 1, den: 1 }, maint_per_ng_day: perDay / modelOf().hatch_mass, hazard, recovery, h3_debt_ng: hazard.family === 'H3' ? 1_000_000 : null };
+      assert.equal(Math.floor(mm.maint_per_ng_day * mm.hatch_mass), perDay); checks++;
+      return mm;
+    };
+    /** run `minutes` steps; feed(i) ng sugar delivered at minute i (absorbed at the next grid instant) */
+    const drive = (mm: ReturnType<typeof exact>, minutes: number, feed: (i: number) => number, id = 'x251', split = false) => {
+      const L = newLarva(mm, id, 1, 0, 'L1'), bouts: number[] = [];
+      for (let i = 0; i < minutes && L.stage === 'L1'; i++) {
+        const f = feed(i); if (f > 0) feedMass(L, mm, i * MIN, 1, f, 0, 'test:251');
+        if (split) advance(L, mm, i * MIN + 17_321, 1);
+        advance(L, mm, (i + 1) * MIN, 1); bouts.push(L.bout_ms);
+        const p = ledgerProblem(L); if (p) assert.fail(p);
+        if (mm.hazard.family === 'H3' && mm.recovery === 'retain') { assert.equal(L.debt_ng, L.unmet_ng, 'H3 debt = unpaid-maintenance ledger'); }
+      }
+      return { L, bouts };
+    };
+    // (a) the issue's minimal repro: 1 ng/min maintenance paid exactly every minute, reserve 0 at every step end
+    const a = drive(exact(1440, { family: 'H1', tau_d: 3 / 1440 }), 60, () => 1).L;
+    ok(a.stage === 'L1' && a.death === null && a.unmet_ng === 0 && a.deficit_ms === 0 && a.limit_ms.E_deficit === 0 && a.limit_ms.P === 60 * MIN && (a.sugar.pools.reserve ?? 0) === 0,
+      `#251 exact full payment (reserve 0 after paying): no deficit, H1 does not kill; limited by protein instead (deficit ${a.deficit_ms} ms, P ${a.limit_ms.P} ms)`);
+    ok(a.energy.sinks.maintenance === a.energy.sources['oxidation:sugar_energy_density@v1'] && a.sugar.sinks['oxidised:sugar_energy_density@v1'] === 60, '#251 exact payment: all 60 ng oxidised into maintenance (ledger closes)');
+    // (b) a real shortfall at the same rate: no food → deficit every step, H1 kills at τ with the unpaid ledger = 3 ng
+    const b = drive(exact(1440, { family: 'H1', tau_d: 3 / 1440 }), 60, () => 0).L;
+    ok(b.stage === 'dead' && b.stage_entry.dead === 3 * MIN && b.unmet_ng === 3 && b.deficit_ms === 3 * MIN, '#251 real shortfall: deficit from the first unpaid step, H1 kills at τ (unmet 3 ng)');
+    const half = drive(exact(1440, { family: 'H3', debt_fraction: 1 }), 40, (i) => (i % 2 === 0 ? 1 : 0)).L;
+    ok(half.deficit_ms === 20 * MIN && half.unmet_ng === 20 && half.limit_ms.E_deficit === 20 * MIN, '#251 half paid: deficit exactly on the 20 unpaid steps; H3 debt = unmet ledger at every step');
+    // (c) very low rate: 0.25 ng/min accrues a whole ng only every 4th step (integer accrual 0 ng in between)
+    const c0 = drive(exact(360, { family: 'H1', tau_d: 3 / 1440 }), 60, () => 0).L;
+    ok(c0.stage === 'dead' && c0.stage_entry.dead === 3 * MIN && c0.unmet_ng === 0 && c0.carry.maint === 3 * 360 * MIN,
+      '#251 low rate, no food: the accrued 0.75 ng (sub-ng remainder, reserve 0) is a real deficit although 0 ng was billed (no quantisation hole)');
+    const c1 = drive(exact(360, { family: 'H1', tau_d: 1 / 1440 }), 240, (i) => (i % 4 === 0 ? 1 : 0));
+    ok(c1.L.stage === 'L1' && c1.L.deficit_ms === 0 && c1.L.unmet_ng === 0 && c1.L.sugar.sinks['oxidised:sugar_energy_density@v1'] === 60,
+      '#251 low rate, 1 ng every 4 min (exactly the accrued 60 ng in 4 h): never in deficit, even at the steps that empty the reserve');
+    const c2 = drive(exact(360, { family: 'H3', debt_fraction: 1 }), 240, (i) => (i % 8 === 0 ? 1 : 0)).L;
+    ok(c2.unmet_ng === 30 && c2.deficit_ms > 0 && c2.limit_ms.E_deficit === c2.deficit_ms, `#251 low rate, half supply: 30 ng unpaid, deficit ${c2.deficit_ms / MIN} min (H3 debt = unmet ledger)`);
+    // (d) refeeding after a deficit: starve 5 min, then pay exactly 1 ng/min — the bout ends at the first exactly paid step
+    const refeed = (i: number) => (i >= 5 ? 1 : 0);
+    const d1 = drive(exact(1440, { family: 'H1', tau_d: 10 / 1440 }), 40, refeed);
+    ok(d1.L.stage === 'L1' && d1.L.deficit_ms === 5 * MIN && d1.L.max_bout_ms === 5 * MIN && d1.L.bout_ms === 0 && d1.L.unmet_ng === 5 && d1.bouts[5] === 0,
+      '#251 refeeding with exactly paid maintenance ends the bout (H1 τ 10 min does not kill; deficit 5 min = the 5 unpaid ng)');
+    const ret = drive(exact(1440, { family: 'H2', lambda_d: 1, k: 1 }, 'retain'), 40, refeed).L, rst = drive(exact(1440, { family: 'H2', lambda_d: 1, k: 1 }, 'reset'), 40, refeed).L;
+    ok(ret.stage === 'L1' && ret.lambda_prev === ret.lambda && Math.abs(ret.lambda - 5 / 1440) < 1e-12 && rst.lambda === 0 && rst.lambda_prev === 0,
+      '#251 refeeding: retain keeps Λ of the 5-min bout and does not grow it during exactly paid steps; reset forgets it');
+    // split invariance of the new rule (extra bookings inside each step change nothing)
+    for (const [r, f] of [[360, (i: number) => (i % 4 === 0 ? 1 : 0)], [1440, refeed]] as const) {
+      const mm = exact(r, { family: 'H2', lambda_d: 1, k: 1 });
+      ok(canon(drive(mm, 120, f).L) === canon(drive(mm, 120, f, 'x251', true).L), `#251 rule at ${r} ng/d: event split gives a bit-identical larva`);
+    }
+  }
 
   // solid protein: refused when off; L3 only when on (isolated candidate, non-species source R620)
   assert.throws(() => feedSolid(newLarva(m, 'l01', 1, 0, 'L1'), m, 0, 1, 1000, 'test:solid'), /solid protein candidate is off/); checks++;
