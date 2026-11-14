@@ -57,7 +57,18 @@ node cli/web-serve.ts    # 預設 8780；開 http://localhost:8780/three.html
 
 結果檔：[`reports/three-prototype/headless-bench-desktop.json`](../reports/three-prototype/headless-bench-desktop.json)（桌面 1280×800，DPR 1，暖機 4 s、量測 10 s）。
 
-PERF_TABLE
+| 頁面 | 螞蟻 | 世界／Worker | 平均 fps | 幀時間 p50／p95 ms | 主執行緒 JS ms/幀（p50） | draw calls | 三角形 | JS heap | 瀏覽器行程 RSS |
+|---|---|---|---|---|---|---|---|---|---|
+| `three.html`（high） | 30 | 1 | 1.12 | 883／973 | 2.9 | 232 | 約 88 萬 | 23 MB | 681 MB |
+| `three.html`（high） | 100 | 4（並行啟動 9.3 s） | 0.86 | 1,175／1,209 | 3.1 | 236 | 約 103 萬 | 23 MB | 837 MB |
+| `three.html`（high） | 1,000 | 34 | **未量到** | — | — | — | — | — | 啟動期間 renderer 行程 RSS 漲到 9.6～11.3 GB（主機 15.7 GB）後被系統以記憶體不足終止（兩次） |
+| `experiment.html?seed=1&world=p0a2`（Canvas 2D） | 30 | 1 | 60 | 16.7／16.8 | 0.4（繪製） | — | — | 10 MB | 582 MB |
+
+解讀（只在這個環境成立）：
+- 3D 頁每幀的主執行緒 JS 只有約 3 ms；慢的是 **SwiftShader 在 CPU 上算 WebGL**（約 88 萬個三角形，含陰影第二次繪製；草葉約 5,200 片、落葉約 900 片）。`?quality=low`（關抗鋸齒、陰影 1024、景物減量，約 25 萬三角形、132 draw calls）在同一環境另一次量到約 2.1 fps（high 同時段 0.6 fps，load 約 6）。真 GPU 上這個量級通常不是問題，但**沒有實機數據之前不能這樣宣稱**。
+- 30 → 100 隻幾乎不變（螞蟻是 2 個 InstancedMesh、2 個 draw call），成本在場景，不在螞蟻數。
+- **1,000 隻的失敗是發現，不是量測結果**：每個實驗 Worker 每 16 ms 送出一個完整的 P0-A2 狀態框（JSON 約 4.9 KB，`prototypes/continuous-world/worker/entry.ts` 的 `TICK_MS`），沒有背壓；34 個 Worker 約 10 MB/s，主執行緒被軟體繪圖卡住時佇列沒有被消化，與觀察到的約 10～11 MB/s 成長一致（推測，未在真 GPU 上驗證）。4 個 Worker 時 RSS 穩定（啟動 40 s 後連續 30 s 在 789～819 MB）。要讓 1,000 隻的量測在慢裝置上安全，需要 Worker 端的狀態框合併／背壓——這是 Worker 修改，**另開 PR**，不在本原型範圍。實機上若主執行緒跟得上，可能不會發生；請 Owner 量 1,000 隻時留意記憶體。
+- 用 `node tests/browser/three-bench.run.cjs <out.json> <url> 4 10 30,100` 重跑（小機器不要跑 1000）。
 
 ## 6. 實機量測（Owner，#192）
 1. 在要量的裝置（至少一支中階 Android、一支 iPhone、一台桌機）用瀏覽器開 `http://<電腦 IP>:8780/three.html?bench=1`（電腦先 `npm ci && npm run web:build && node cli/web-serve.ts`；或用 CI artifact `antempire-viewer-preview` 的 `site/` 以任一靜態伺服器提供）。
@@ -72,4 +83,12 @@ PERF_TABLE
 
 ## 8. 評估與建議
 
-RECOMMENDATION
+**依 [`visual-p0-scene-spec.md`](visual-p0-scene-spec.md) §10 的決策規則**（原本針對 PixiJS，對 Three.js 同樣適用：三項同時成立才改用 WebGL 後端，且保留 Canvas 2D 退路）：
+
+| 條件 | 現況 |
+|---|---|
+| (a) **實機**上 P0 場景 Canvas 2D 達不到 §9 目標而 WebGL 版本達到；或規格要求的畫質功能 Canvas 2D 無法在預算內實作 | **未知**：沒有實機數據。無頭環境 Canvas 2D 60 fps、3D 約 1 fps（軟體 GL，不可比）。另一方面，真正的 3D（可旋轉的立體花園、即時陰影、立體剖面、任意角度的六足步態）在 Canvas 2D 沒有對應實作，屬於「畫質功能」條件的候選，但規格 §9／§10 目前沒有把 3D 列為要求——這是產品方向，由 Owner 決定 |
+| (b) 兩個後端畫出的位置、時間、事件相同 | **部分成立**：3D 與 2D 實驗頁用同一個 `VisModel`（`tests/web-three-proto.test.ts` 逐點比對 24 小時、兩個種子）；Worker 只收排程與觀察指令。尚未做 2D／3D 的瀏覽器端輸入雜湊交錯比對與「UI 操作不改結果」完整套件（`three-demo.check.cjs` 只驗證暫停時世界時間不動） |
+| (c) 依賴與維護成本寫入 PR、WebGL 失敗時退回 Canvas 2D | 依賴：three 0.187.0（MIT，約 2.2 MB 未壓縮，本機 vendor）。**沒有自動退回**：本頁是獨立原型，WebGL 不可用時會顯示「載入失敗」，Canvas 頁不受影響 |
+
+**建議**：**目前不把 Three.js 定為主要架構**，保留本頁為可操作的原型，交給 Owner 觀看後決定方向。理由：(a) 缺實機數據；(b) 1,000 隻需要先解 Worker 狀態框背壓；(c) 沒有 WebGL 失敗退路。若 Owner 看過 Demo 後決定朝 3D 發展，下一步依序是：實機量測（§6）、Worker 狀態框合併／背壓（另開 PR）、場景減量與 LOD（草葉、陰影、石頭改 instanced）、WebGL 失敗退回 Canvas 2D、2D／3D 交錯雜湊比對。

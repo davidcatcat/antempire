@@ -1,0 +1,143 @@
+{
+ "schema": "antempire.three-bench-run.v1",
+ "when_utc": "2026-11-14T15:08:38.455Z",
+ "measurement_class": "NOT a device result",
+ "note": "Headless Chromium + SwiftShader software WebGL on a shared host: NOT a device result. Use only to compare within this run.",
+ "host": {
+  "cpus": 4,
+  "loadavg": [
+   4.22,
+   5.56,
+   6.15
+  ],
+  "mem_gb": 15.7
+ },
+ "three": {
+  "schema": "antempire.three-bench.v1",
+  "when_utc": "2026-11-14T15:09:27.142Z",
+  "page": "web/three.html",
+  "three": "187",
+  "measurement_class": "NOT a device result",
+  "gpu_renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+  "dpr": 1,
+  "viewport": {
+   "w": 1280,
+   "h": 800
+  },
+  "quality": "high",
+  "hardware_concurrency": 4,
+  "device_memory_gb": 16,
+  "magnification": 14,
+  "warm_s": 4,
+  "measure_s": 10,
+  "rows": [
+   {
+    "ants": 30,
+    "worlds": 1,
+    "drawn": 30,
+    "summary": {
+     "frames": 13,
+     "seconds": 11.65,
+     "fps_mean": 1.12,
+     "fps_p5_low": 1.03,
+     "frame_ms": {
+      "p50": 883.3,
+      "p95": 973.3,
+      "p99": 1021.3,
+      "max": 1033.3
+     },
+     "cpu_ms": {
+      "p50": 2.9,
+      "p95": 6.12
+     }
+    },
+    "draw_calls": 232,
+    "triangles": 879514,
+    "js_heap_mb": 23,
+    "hi": 30,
+    "lo": 0
+   },
+   {
+    "ants": 100,
+    "worlds": 4,
+    "drawn": 100,
+    "summary": {
+     "frames": 10,
+     "seconds": 11.6,
+     "fps_mean": 0.86,
+     "fps_p5_low": 0.83,
+     "frame_ms": {
+      "p50": 1174.95,
+      "p95": 1209.03,
+      "p99": 1215.01,
+      "max": 1216.5
+     },
+     "cpu_ms": {
+      "p50": 3.05,
+      "p95": 5.1
+     }
+    },
+    "draw_calls": 236,
+    "triangles": 1033888,
+    "js_heap_mb": 23,
+    "hi": 94,
+    "lo": 6
+   }
+  ],
+  "note": "100／1,000 隻＝多個獨立種子的 P0-A2 實驗世界（各在自己的 Worker），只畫前 N 隻；巢位置與路線方向為排版。軟體繪圖或自動化下的數字不是實機結果。"
+ },
+ "canvas2d": {
+  "page": "web/experiment.html?seed=1&world=p0a2",
+  "ants": 30,
+  "fps_mean": 60,
+  "frame_ms_p50": 16.7,
+  "frame_ms_p95": 16.8,
+  "main_thread_draw_ms_p50": 0.4,
+  "main_thread_draw_ms_p95": 0.6,
+  "js_heap_mb": 10,
+  "browser_rss_mb": 582,
+  "measurement_class": "NOT a device result"
+ },
+ "workers": [
+  {
+   "ants": 30,
+   "worlds": 1,
+   "startup_ms": 0,
+   "browser_rss_mb_before": 556,
+   "browser_rss_mb_after": 681,
+   "browser_processes": 6
+  },
+  {
+   "ants": 100,
+   "worlds": 4,
+   "startup_ms": 9347,
+   "browser_rss_mb_before": 682,
+   "browser_rss_mb_after": 837,
+   "browser_processes": 6
+  }
+ ],
+ "errors": [],
+ "not_measured": [
+  {
+   "ants": 1000,
+   "worlds": 34,
+   "measurement_class": "NOT a device result",
+   "outcome": "renderer process killed (out of memory) during start-up; no frame statistics",
+   "observed": {
+    "renderer_rss_mb": [
+     9638,
+     11310
+    ],
+    "after_s": [
+     768,
+     1007
+    ],
+    "host_mem_gb": 15.7,
+    "runs": 2
+   },
+   "probable_cause": "each experiment Worker posts a full P0-A2 state frame (~4.9 KB as JSON) every 16 ms (prototypes/continuous-world/worker/entry.ts TICK_MS) with no backpressure; 34 Workers ~ 10 MB/s; with the main thread starved by SwiftShader (< 1 fps) the queue is not drained. Consistent with the observed growth (~10-11 MB/s). Not verified on a real GPU.",
+   "follow_up": "Worker-side frame coalescing / backpressure (a Worker change: separate PR); real-device run by the Owner (#192)"
+  }
+ ]
+}
