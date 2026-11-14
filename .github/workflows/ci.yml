@@ -50,7 +50,7 @@ jobs:
   viewer-smoke:
     name: viewer browser tests + preview artifact (Playwright, Chromium)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -112,12 +112,19 @@ jobs:
         run: |
           set -o pipefail
           node tests/browser/worker-fatal.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/ | tee "$RUNNER_TEMP/viewer-shots/worker-fatal-results.json"
+      - name: Three.js 3D prototype (#256/#258; P0-A2 experiment world via worker-client, 30 ants, follow, gait phase from drawn distance, uTime frozen when paused, labels, no phone horizontal scroll; desktop 1280x800 + Pixel 7; non-official)
+        run: |
+          set -o pipefail
+          node tests/browser/three-demo.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/ | tee "$RUNNER_TEMP/viewer-shots/three-demo-results.json"
       - name: Assemble the static preview (page + compiled script + data + screenshots + test results + instructions)
         if: always()
         run: |
           P="$RUNNER_TEMP/antempire-viewer-preview"
           mkdir -p "$P/site" "$P/screenshots" "$P/test-results"
           cp web/index.html web/analysis.html "$P/site/" && cp -r web/dist web/data "$P/site/"
+          # experiment Worker build + the 3D prototype page and its vendored three (built by npm run web:build above)
+          cp web/experiment.html web/three.html "$P/site/" && cp -r web/worker-dist web/vendor "$P/site/"
+          cp "$RUNNER_TEMP"/viewer-shots/three-*.jpg "$P/screenshots/" 2>/dev/null || true
           cp web/PREVIEW.md "$P/README.md"
           cp "$RUNNER_TEMP"/viewer-shots/*.png "$P/screenshots/" 2>/dev/null || true
           cp "$RUNNER_TEMP"/viewer-shots/*.json "$P/test-results/" 2>/dev/null || true

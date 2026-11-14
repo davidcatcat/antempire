@@ -7,7 +7,7 @@
  * EVERYTHING here is SCENERY (示意): the P0-A2 candidate world models no garden geometry, no ground height, no leaves,
  * stones or plants, and no position inside the nest. The terrain only gives the ants something to stand on; it never
  * feeds back into the simulation (the page cannot send anything but scheduling / observation commands to the Worker).
- * Random placement uses a seeded hash PRNG so the scenery is identical on every load (no Math.random).
+ * Random placement uses a seeded hash PRNG so the scenery is identical on every load (no unseeded randomness).
  */
 
 /** the diorama block: ground top surface over [x0, x1] × [z0, z1]; the front cut face is at z = z1 */

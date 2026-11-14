@@ -18,13 +18,15 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { ExperimentWorkerClient } from '../experimental/worker-client.ts';
 import { isP0a2Frame, type P0a2FrameMsg, type PacingMsg } from '../experimental/worker-protocol.ts';
-import { p0Pose, layoutOf, STATE_LABEL, P0_LIGHT_LABEL } from '../v62-p0a2-model.ts';
+import { STATE_LABEL, P0_LIGHT_LABEL } from '../v62-p0a2-model.ts';
+import { VisModel, SEARCH_RADIUS_CM } from '../vis1-model.ts';
+import { CORRIDOR_BEARING_RAD } from '../vis1-path.ts';
 import { cardHtml, hudStatus } from '../v62-p0a2-view.ts';
 import { displayTime, fmtWorldTime } from '../v62-model.ts';
 import { hash32 } from '../game-model.ts';
 import { AntLayer, MINOR_LEN_CM, MODEL_LEN, antMaterial } from './ant-model.ts';
 import { buildGarden, type Garden } from './garden.ts';
-import { antsOf, ACTIVITY_LEVEL, MAIN_PLACE, moundOf, routeOf, type Ant3, type WorldPlace } from './placement.ts';
+import { antsOf, ACTIVITY_LEVEL, MAIN_PLACE, corridorOf, moundOf, place3, segmentsOf, type Ant3, type WorldPlace } from './placement.ts';
 import { newMotion, stepMotion, type Motion } from './motion.ts';
 import { CHAMBERS, larvaSlot } from './nest3d.ts';
 import { DIORAMA, FACE_Z, prng } from './terrain.ts';
@@ -69,7 +71,6 @@ const hemi = new THREE.HemisphereLight(0xcfe3ff, 0x6b4a2e, 0.9);
 const lamp = new THREE.DirectionalLight(0xffe2b8, 1.6); lamp.position.set(10, 12, 200); lamp.target.position.set(10, -14, FACE_Z); // observer's lamp on the cut face (示意)
 scene.add(sun, hemi, lamp, lamp.target);
 
-const mainRoute = { a: { x: 0, z: 0 }, b: { x: 200 * Math.cos(Math.PI / 7), z: -200 * Math.sin(Math.PI / 7) } }; // replaced by the frame's layout below
 let garden: Garden | null = null, routeObj: THREE.Object3D | null = null;
 const extraEntrances = new THREE.Group(); scene.add(extraEntrances);
 
@@ -88,18 +89,18 @@ const ring = new THREE.Mesh(new THREE.RingGeometry(0.66, 0.7, 48).rotateX(-Math.
 ring.visible = false; ring.renderOrder = 2; scene.add(ring);
 
 // ---------- worlds ----------
-interface Feed { client: ExperimentWorkerClient; place: WorldPlace; seed: number; frame: P0a2FrameMsg | null; pacing: PacingMsg | null; frameAt: number; last: number | null; t: number; followed: unknown }
+interface Feed { client: ExperimentWorkerClient; place: WorldPlace; seed: number; frame: P0a2FrameMsg | null; vis: VisModel | null; pacing: PacingMsg | null; frameAt: number; last: number | null; t: number; followed: unknown }
 const feeds: Feed[] = [];
 let speed = Number(q.get('speed') ?? 1), running = false;
 
 function benchPlace(i: number): WorldPlace {
   const r = prng(9000 + i), dx = -50 + r() * 120, dz = -70 + r() * 56, bearing = (-10 + r() * 80) * Math.PI / 180;
-  return { index: i, dx, dz, rot: bearing - Math.PI / 7, cutaway: false };
+  return { index: i, dx, dz, rot: bearing - CORRIDOR_BEARING_RAD, cutaway: false };
 }
 async function startFeed(i: number): Promise<Feed> {
   const seed = SEED + i, client = new ExperimentWorkerClient();
-  const f: Feed = { client, place: i === 0 ? MAIN_PLACE : benchPlace(i), seed, frame: null, pacing: null, frameAt: 0, last: null, t: 0, followed: null };
-  client.onState = (fr, p, fol) => { if (!isP0a2Frame(fr)) return; f.frame = fr; f.pacing = p; f.frameAt = performance.now(); f.followed = fol; };
+  const f: Feed = { client, place: i === 0 ? MAIN_PLACE : benchPlace(i), seed, frame: null, vis: null, pacing: null, frameAt: 0, last: null, t: 0, followed: null };
+  client.onState = (fr, p, fol) => { if (!isP0a2Frame(fr)) return; f.frame = fr; if (!f.vis || !f.vis.matches(fr)) f.vis = VisModel.of(fr); f.pacing = p; f.frameAt = performance.now(); f.followed = fol; };
   client.onProtocolError = (why) => toast(`Worker：${why}`);
   const r = await client.init(`exp-three-${seed}`, seed, 'p0a2');
   if (r.type === 'error') throw new Error(`${r.code}: ${r.message}`);
@@ -110,8 +111,10 @@ async function startFeed(i: number): Promise<Feed> {
   return f;
 }
 async function setWorldCount(n: number): Promise<void> {
-  while (feeds.length < n) {
-    const f = await startFeed(feeds.length); feeds.push(f);
+  // the extra worlds are independent: their Workers start (init + step_until) in parallel, then join in index order
+  const add = await Promise.all(Array.from({ length: Math.max(0, n - feeds.length) }, (_, k) => startFeed(feeds.length + k)));
+  for (const f of add) {
+    feeds.push(f);
     if (f.place.index > 0) addExtraEntrance(f.place);
     if (!running && f.pacing?.running) await f.client.pause();
   }
@@ -124,7 +127,7 @@ function addExtraEntrance(p: WorldPlace) {
 }
 
 // ---------- display state ----------
-let antCount = 30, mag = Number(q.get('mag') ?? (narrow() ? 16 : 12));
+let antCount = 30, mag = Number(q.get('mag') ?? (narrow() ? 18 : 14));
 const motions = new Map<string, Motion>();
 let selected: string | null = null, following: string | null = null, lastAnts: Ant3[] = [];
 const bodyLen = () => MINOR_LEN_CM * mag;
@@ -153,7 +156,7 @@ function collectAnts(): Ant3[] {
   for (const f of feeds) {
     if (!f.frame) continue;
     const run = !!f.pacing?.running; f.t = displayTime(f.frame.t_sim, run, f.pacing?.speed ?? speed, performance.now() - f.frameAt, f.last); f.last = run ? f.t : null;
-    for (const a of antsOf(f.frame, f.t, f.place, bodyLen(), mounds())) { if (out.length >= antCount) break; out.push(a); }
+    for (const a of antsOf(f.frame, f.t, f.place, bodyLen(), mounds(), f.vis!)) { if (out.length >= antCount) break; out.push(a); }
     if (out.length >= antCount) break;
   }
   return out;
@@ -236,7 +239,7 @@ let hudAt = 0;
 function updateHud() {
   const now = performance.now(); if (now - hudAt < 250) return; hudAt = now;
   const f = feeds[0]?.frame; if (!f) return;
-  const t = feeds[0].t, poses = f.workers.map((w) => p0Pose(w, t, layoutOf(f)));
+  const t = feeds[0].t, poses = feeds[0].vis!.poses(f, t);
   ui.status.textContent = hudStatus(f, poses);
   ui.time.textContent = `${fmtWorldTime(t)}（${f.env.date}）｜光照 ${P0_LIGHT_LABEL[f.env.light]}（引擎）｜${running ? `執行中 ${speed}×` : '已暫停'}｜畫出 ${lastAnts.length} 隻（${feeds.length} 個世界）`;
   setLight(f);
@@ -254,7 +257,7 @@ function renderCard() {
   if (a.world !== 0) {
     ui.card.innerHTML = `<b>${a.id}</b>　<span class="muted">效能量測用的第 ${a.world + 1} 個獨立 P0-A2 世界（種子 ${SEED + a.world}）</span><br>活動：${STATE_LABEL[a.state] ?? a.state}（引擎狀態）<div class="row"><button id="followBtn" type="button">${following === a.key ? '取消追蹤' : '鏡頭追蹤'}</button><button id="closeCard" type="button" aria-label="關閉">✕</button></div>`;
   } else {
-    const pose = p0Pose(f.workers.find((w) => w.id === a.id)!, feeds[0].t, layoutOf(f));
+    const pose = feeds[0].vis!.pose(f.workers.find((w) => w.id === a.id)!, feeds[0].t);
     ui.card.innerHTML = cardHtml(f, a.id, pose, following === a.key, following === a.key ? feeds[0].followed : null)
       + `<div class="muted">3D：${a.where === 'nest' ? '巢室與位置為示意（依引擎狀態分組）' : a.where === 'shaft' ? '巢口通道上的位置為顯示插值（依引擎的移動時間；通道形狀示意）' : a.schematic ? '畫面位置示意' : a.interpolated ? '兩個引擎紀錄點之間的顯示插值；方向示意' : '引擎紀錄點'}｜步態、轉身、原地微動作只是畫面</div>`;
   }
@@ -311,9 +314,9 @@ function resize() {
 addEventListener('resize', resize);
 
 function homeCamera() {
-  const r = mainRoute, mid = { x: (r.a.x + r.b.x) * 0.2, z: (r.a.z + r.b.z) * 0.2 };
-  controls.target.set(mid.x, -4, mid.z + 4);
-  if (narrow()) { controls.target.set(14, -6, -6); camera.position.set(-6, 70, 132); } else { controls.target.set(32, -8, -10); camera.position.set(-22, 46, 98); }
+  // closer than a whole-diorama view so the surface ants read at the default magnification (the far end of the
+  // route is still in frame); the whole garden is one zoom-out away
+  if (narrow()) { controls.target.set(16, -6, -10); camera.position.set(-2, 52, 98); } else { controls.target.set(20, -12, -8); camera.position.set(-14, 32, 80); }
   controls.update();
 }
 
@@ -384,10 +387,11 @@ async function main() {
   ui.badge.textContent = '載入中…';
   const f0 = await startFeed(0); feeds.push(f0); running = true;
   await new Promise<void>((r) => { const w = () => (f0.frame ? r() : setTimeout(w, 30)); w(); });
-  const fr = f0.frame!, R = routeOf(fr, MAIN_PLACE); mainRoute.a = R.a; mainRoute.b = R.b;
-  garden = buildGarden({ mounds: mounds(), keepOut: { routes: [R], nests: [{ x: 0, z: 0 }], routeHalfWidth: 6, nestRadius: 9 }, quality: lowQ ? 'low' : 'high', source: R.b });
+  // the corridor comes only from the frame (world seed + engine route length) through the shared VIS-1 display model
+  const fr = f0.frame!, course = corridorOf(f0.vis!, MAIN_PLACE), src = place3(f0.vis!.corridor.source, MAIN_PLACE);
+  garden = buildGarden({ mounds: mounds(), keepOut: { routes: segmentsOf(course), nests: [{ x: 0, z: 0 }], routeHalfWidth: 6, nestRadius: SEARCH_RADIUS_CM + 3 }, quality: lowQ ? 'low' : 'high', source: src });
   scene.add(garden.group);
-  routeObj = garden.routeLine(R.a, R.b); routeObj.visible = ui.route.checked; scene.add(routeObj);
+  routeObj = garden.routeLine(course); routeObj.visible = ui.route.checked; scene.add(routeObj);
   antMat.clippingPlanes = null;
   setLight(fr); homeCamera();
   ui.speed.value = String(speed); ui.play.textContent = '暫停';

@@ -12,7 +12,7 @@ import { DIORAMA, FACE_Z, fbm, groundHeight, isClear, prng, vnoise, type KeepOut
 import { CHAMBERS, GALLERIES, galleryEnds, shaftPath } from './nest3d.ts';
 
 export interface GardenOptions { mounds: Mound[]; keepOut: KeepOut; quality: 'high' | 'low'; source: { x: number; z: number } }
-export interface Garden { group: THREE.Group; clipPlane: THREE.Plane; dispose(): void; extraEntrance(x: number, z: number): void; routeLine(a: { x: number; z: number }, b: { x: number; z: number }): THREE.Object3D }
+export interface Garden { group: THREE.Group; clipPlane: THREE.Plane; dispose(): void; extraEntrance(x: number, z: number): void; routeLine(pts: readonly { x: number; z: number }[]): THREE.Object3D }
 
 const W = DIORAMA.x1 - DIORAMA.x0, D = DIORAMA.z1 - DIORAMA.z0;
 const col = (h: string) => new THREE.Color(h);
@@ -163,6 +163,9 @@ export function buildGarden(o: GardenOptions): Garden {
   // dark backing inside the block behind the nest, so a gap in the carved face never shows the sky
   const backing = new THREE.Mesh(keep(new THREE.PlaneGeometry(W, -4 - DIORAMA.bottom).translate((DIORAMA.x0 + DIORAMA.x1) / 2, (DIORAMA.bottom - 4) / 2, FACE_Z - 11)), keep(new THREE.MeshBasicMaterial({ color: col('#24170e'), side: THREE.DoubleSide })));
   group.add(backing);
+  // display stand under the diorama (decoration): so a low camera sees a dark plinth, not the sky below the block
+  const plinth = new THREE.Mesh(keep(new THREE.PlaneGeometry(4000, 4000).rotateX(-Math.PI / 2).translate((DIORAMA.x0 + DIORAMA.x1) / 2, DIORAMA.bottom - 0.5, (DIORAMA.z0 + DIORAMA.z1) / 2)), keep(new THREE.MeshBasicMaterial({ color: col('#17110c') })));
+  group.add(plinth);
 
   // nest cavities behind the front face (BackSide, clipped at the face): schematic chambers by engine-state group
   const cavMat = keep(new THREE.MeshStandardMaterial({ color: col('#b08a66'), emissive: col('#2a1a0e'), roughness: 1, side: THREE.BackSide, clippingPlanes: [clipPlane], map: grain }));
@@ -227,18 +230,18 @@ export function buildGarden(o: GardenOptions): Garden {
       if (!isClear(x, z, o.keepOut)) continue;
       E.set((rnd() - 0.5) * 0.5, rnd() * Math.PI * 2, (rnd() - 0.5) * 0.5); Q.setFromEuler(E);
       const hh = tall * (0.5 + rnd() * 0.6); M.compose(new THREE.Vector3(x, h(x, z) - 0.2, z), Q, new THREE.Vector3(0.25 + rnd() * 0.2, hh, hh * 0.9));
-      grass.setMatrixAt(ng, M); C.setHSL(0.22 + rnd() * 0.07, 0.42 + rnd() * 0.2, 0.26 + rnd() * 0.14); grass.setColorAt(ng, C); ng++;
+      grass.setMatrixAt(ng, M); C.setHSL(0.22 + rnd() * 0.07, 0.34 + rnd() * 0.18, 0.17 + rnd() * 0.1); grass.setColorAt(ng, C); ng++;
     }
   }
   grass.count = ng; grass.castShadow = hi; grass.receiveShadow = true; group.add(grass);
 
   // stones and pebbles
-  const stoneMat = keep(new THREE.MeshStandardMaterial({ roughness: 0.85, color: col('#ffffff'), vertexColors: false }));
+  const stoneMat = keep(new THREE.MeshStandardMaterial({ roughness: 0.95, color: col('#ffffff'), vertexColors: false }));
   const stoneGeos = Array.from({ length: 6 }, () => keep(stoneGeometry(rnd)));
   for (let i = 0; i < (hi ? 46 : 24); i++) {
     const p = spot(8); if (!p) continue;
     const s = 1.6 + rnd() * rnd() * 11, m = new THREE.Mesh(stoneGeos[i % stoneGeos.length], stoneMat.clone()); keep(m.material as THREE.Material);
-    (m.material as THREE.MeshStandardMaterial).color.setHSL(0.07 + rnd() * 0.06, 0.06 + rnd() * 0.1, 0.24 + rnd() * 0.2);
+    (m.material as THREE.MeshStandardMaterial).color.setHSL(0.07 + rnd() * 0.06, 0.06 + rnd() * 0.1, 0.13 + rnd() * 0.12); // muted: pale stones washed out in strong light
     m.scale.set(s * (0.8 + rnd() * 0.5), s, s * (0.7 + rnd() * 0.5)); m.rotation.y = rnd() * Math.PI * 2;
     m.position.set(p.x, h(p.x, p.z) + s * 0.15, p.z); m.castShadow = true; m.receiveShadow = true; group.add(m);
   }
@@ -247,7 +250,7 @@ export function buildGarden(o: GardenOptions): Garden {
     const p = spot(1); if (!p) continue;
     const s = 0.12 + rnd() * rnd() * 0.75; E.set(rnd() * 3, rnd() * 3, rnd() * 3); Q.setFromEuler(E);
     M.compose(new THREE.Vector3(p.x, h(p.x, p.z) + s * 0.3, p.z), Q, new THREE.Vector3(s, s * 0.7, s * (0.8 + rnd() * 0.4)));
-    pebbles.setMatrixAt(np, M); C.setHSL(0.07 + rnd() * 0.06, 0.08 + rnd() * 0.14, 0.22 + rnd() * 0.24); pebbles.setColorAt(np, C); np++;
+    pebbles.setMatrixAt(np, M); C.setHSL(0.07 + rnd() * 0.06, 0.08 + rnd() * 0.14, 0.15 + rnd() * 0.16); pebbles.setColorAt(np, C); np++;
   }
   pebbles.count = np; pebbles.castShadow = hi; pebbles.receiveShadow = true; group.add(pebbles);
 
@@ -284,8 +287,9 @@ export function buildGarden(o: GardenOptions): Garden {
     group, clipPlane,
     dispose: () => { for (const d of disposables) d.dispose(); },
     extraEntrance: (x, z) => addEntrance(x, z, 120),
-    routeLine: (a, b) => {
-      const pts: THREE.Vector3[] = []; for (let i = 0; i <= 80; i++) { const k = i / 80, x = a.x + (b.x - a.x) * k, z = a.z + (b.z - a.z) * k; pts.push(new THREE.Vector3(x, h(x, z) + 0.15, z)); }
+    routeLine: (course) => {
+      // the display corridor (the same polyline the 2-D experiment page draws; its length is the engine route length)
+      const pts: THREE.Vector3[] = course.map((p) => new THREE.Vector3(p.x, h(p.x, p.z) + 0.15, p.z));
       const line = new THREE.Line(keep(new THREE.BufferGeometry().setFromPoints(pts)), keep(new THREE.LineDashedMaterial({ color: 0xf6e3a0, dashSize: 2, gapSize: 2.5, transparent: true, opacity: 0.75 })));
       line.computeLineDistances(); return line;
     },

@@ -2,18 +2,20 @@
  * Three.js 3D prototype — where each simulated worker is drawn. Pure: no DOM, no Three.js, no engine import.
  *
  * Input: ONLY a P0-A2 frame from the experiment Worker (via web/src/experimental/worker-client.ts) and the display
- * time. The surface positions come from the SAME display model as the 2-D experiment page (p0Pose in
- * v62-p0a2-model.ts), so the two renderers can never disagree:
- *  - outbound / returning: on the straight route between the recorded ends; exact at since_s and until_s, display
- *    interpolation in between (interpolated: true). The route LENGTH is the engine's; its DIRECTION is schematic.
- *  - feeding: at the source (engine); the ring around it is display arrangement.
- *  - searching: schematic point near the nest (search has no spatial model) — schematic: true.
+ * time. The surface positions come from the SAME display model as the 2-D experiment page (VisModel in vis1-model.ts,
+ * VIS-1), so the two renderers draw the same display path for the same trip:
+ *  - outbound / returning: on the trip's display path (curved corridor, length = the engine route length); exactly at
+ *    the nest / source at the recorded departure / arrival instants (engine), display interpolation in between
+ *    (interpolated: true). The route LENGTH and timing are the engine's; its DIRECTION and shape are schematic.
+ *  - feeding: at the source (engine); the spot around it is display arrangement (slot, widened with the magnification).
+ *  - searching: search has no spatial model → the same schematic orbit around the nest as the 2-D page
+ *    (schematic: true); the legs step because the engine says the worker is out searching, not because it goes anywhere.
  *  - in the nest: in the chamber of its engine-state group (nest3d.ts, schematic); to_entrance / from_entrance move
  *    along the drawn shaft with the engine's move timing (interpolated: true, path schematic).
  * No route, waypoint or position here is invented: with no frame there are no ants.
  */
 import type { P0a2FrameMsg } from '../experimental/worker-protocol.ts';
-import { layoutOf, p0Pose, type P0Layout } from '../v62-p0a2-model.ts';
+import { VisModel } from '../vis1-model.ts';
 import { hash32 } from '../game-model.ts';
 import { groundHeight, to3, type Mound } from './terrain.ts';
 import { CHAMBERS, alongPath, chamberOf, chamberSlot, shaftPath } from './nest3d.ts';
@@ -40,8 +42,18 @@ export function place3(p: { x: number; y: number }, w: WorldPlace): { x: number;
 }
 /** the mound (entrance) of each world */
 export const moundOf = (w: WorldPlace): Mound => ({ x: w.dx, z: w.dz });
-/** route ends of a world in 3-D (for scenery keep-out and the optional schematic route line) */
-export function routeOf(f: Pick<P0a2FrameMsg, 'layout'>, w: WorldPlace) { const L = layoutOf(f); return { a: place3(L.nest, w), b: place3(L.source, w) }; }
+/** the display corridor of a world in 3-D (every `step`-th polyline point; scenery keep-out and the schematic route line) */
+export function corridorOf(vis: VisModel, w: WorldPlace, step = 10): { x: number; z: number }[] {
+  const P = vis.corridor.line.pts, out: { x: number; z: number }[] = [];
+  for (let i = 0; i < P.length; i += step) out.push(place3(P[i], w));
+  if ((P.length - 1) % step !== 0) out.push(place3(P[P.length - 1], w));
+  return out;
+}
+/** consecutive corridor points as keep-out segments */
+export const segmentsOf = (pts: readonly { x: number; z: number }[]) => pts.slice(1).map((b, i) => ({ a: pts[i], b }));
+/** display widening of the feeding spots around the source: the real-scale slots (≤ 3.4 cm) would make magnified ants
+ *  overlap; the spot stays a display arrangement (示意) either way */
+export const slotSpread = (antLen: number) => Math.max(1, antLen / 1.2);
 
 /** a short slope sample along the heading so a walking ant pitches with the ground (display) */
 function slopePitch(x: number, z: number, yaw: number, mounds: readonly Mound[]): number {
@@ -50,29 +62,23 @@ function slopePitch(x: number, z: number, yaw: number, mounds: readonly Mound[])
 }
 
 /**
- * Every worker of one frame at display time t. antLen = the drawn body length (cm), used only for slot spacing in the
- * schematic chambers. mounds = all entrances in the scene (ground height).
+ * Every worker of one frame at display time t. vis = the display model of this frame's world (VisModel.of(frame)).
+ * antLen = the drawn body length (cm), used only for slot spacing (display arrangement). mounds = all entrances.
  */
-export function antsOf(f: P0a2FrameMsg, t: number, w: WorldPlace, antLen: number, mounds: readonly Mound[]): Ant3[] {
-  const L: P0Layout = layoutOf(f), out: Ant3[] = [];
-  const src3 = place3(L.source, w);
+export function antsOf(f: P0a2FrameMsg, t: number, w: WorldPlace, antLen: number, mounds: readonly Mound[], vis: VisModel): Ant3[] {
+  const out: Ant3[] = [], spread = slotSpread(antLen);
   // chamber membership by engine state, stable order (frame order)
   const members = new Map<string, string[]>();
   for (const k of f.workers) { const c = chamberOf(k.state); if (c) { const l = members.get(c.key) ?? []; l.push(k.id); members.set(c.key, l); } }
   for (const k of f.workers) {
     const base = { key: `${w.index}:${k.id}`, id: k.id, world: w.index, state: k.state };
-    const p = p0Pose(k, t, L);
+    const p = vis.pose(k, t);
     if (p.where !== 'nest') {
-      let q = place3({ x: p.x, y: p.y }, w), yaw: number | null = null, schematic = p.schematic;
-      if (p.where === 'source' && p.slot) {
-        // display ring around the source; facing the source
-        const s = rot2(p.slot.dx, p.slot.dy, w.rot), s3 = to3(s); q = { x: src3.x + s3.x * 0.6, z: src3.z + s3.z * 0.6 };
-        yaw = Math.atan2(src3.z - q.z, src3.x - q.x);
-      } else if (p.heading !== null) {
-        const d = rot2(Math.cos(p.heading), Math.sin(p.heading), w.rot), d3 = to3(d); yaw = Math.atan2(d3.z, d3.x);
-      }
+      const q = place3({ x: p.x + (p.slot?.dx ?? 0) * spread, y: p.y + (p.slot?.dy ?? 0) * spread }, w);
+      let yaw: number | null = null;
+      if (p.heading !== null) { const d = rot2(Math.cos(p.heading), Math.sin(p.heading), w.rot), d3 = to3(d); yaw = Math.atan2(d3.z, d3.x); }
       const y = groundHeight(q.x, q.z, mounds);
-      out.push({ ...base, x: q.x, y, z: q.z, yaw, pitch: yaw === null ? 0 : slopePitch(q.x, q.z, yaw, mounds), where: p.where, moving: p.moving, interpolated: p.interpolated, schematic, buried: false });
+      out.push({ ...base, x: q.x, y, z: q.z, yaw, pitch: yaw === null ? 0 : slopePitch(q.x, q.z, yaw, mounds), where: p.where, moving: p.walking, interpolated: p.interpolated, schematic: p.schematic, buried: false });
       continue;
     }
     // in the nest
