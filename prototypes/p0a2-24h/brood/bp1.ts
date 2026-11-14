@@ -22,7 +22,8 @@ import {
   advance, contactOf, feedLiquid, ledgerProblem, newLarva, summary,
 } from './physiology.ts';
 
-export const BP1_VERSION = 'p0a2-bp1/1';
+/** v1 (#249) → v2 (#251: deficit interval = unpaid or unbacked accrued maintenance, not "reserve empty") */
+export const BP1_VERSION = 'p0a2-bp1/2';
 export const BP1_CONFIG_SCHEMA = 'antempire.p0a2-bp1.config.v1';
 export const BP1_VARIANTS_SCHEMA = 'antempire.p0a2-bp1.variants.v1';
 export const BP1_LABEL_ZH = '研究候選（隔離、預設關閉；非正式）';

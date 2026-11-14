@@ -1,7 +1,10 @@
 # BP-1：P0-A2 育幼生理隔離候選：多種子結果（#222、#219）
 
+> **封存（候選版本 `p0a2-bp1/1`，#249）**：本資料夾是 v1 的原始結果，**保留作證據，不再重算、不覆寫**。v1 的「維持未付」危險時鐘把「剛好付清、期末儲備為 0」也算成虧損（#251），v2 起修正；比較見上一層 [`README.md`](../README.md)。原檔雜湊見 [`SHA256SUMS`](SHA256SUMS)（`README.md` 的雜湊是 #249 原檔；本檔只加了這段說明並把文件連結多上一層）。
+
+
 > **地位：研究候選，隔離、預設關閉；非正式實驗世界，不屬於正式遊戲歷史。** 這裡沒有任何數字是目標。28°C 重現 28.73 日只是**校準**，不是驗證；所有參數都是候選檔或 `bp1-variants.json` 的假設值（`assumption: true`）。沒有為了結果調整參數、種子或情境。
-> 設計與實作紀錄：[`docs/p0a2-brood-physiology-design.md`](../../docs/p0a2-brood-physiology-design.md) §5.4；程式：`prototypes/p0a2-24h/brood/`；測試：`tests/bp1-brood.test.ts`。
+> 設計與實作紀錄：[`docs/p0a2-brood-physiology-design.md`](../../../docs/p0a2-brood-physiology-design.md) §5.4；程式：`prototypes/p0a2-24h/brood/`；測試：`tests/bp1-brood.test.ts`。
 
 ## 怎麼跑（可重現）
 
