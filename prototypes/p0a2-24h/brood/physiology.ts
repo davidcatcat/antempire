@@ -39,8 +39,10 @@ import {
   proteinNg, rational, scaleWithCarry, sugarNg, transfer,
 } from '../../../engine/units/mass-energy.ts';
 
-/** v2 (#251): the deficit interval no longer counts exactly paid maintenance with an empty reserve (see step 2) */
-export const BP1_PHYSIOLOGY_VERSION = 'p0a2-bp1-physiology/2';
+/** v2 (#251): the deficit interval no longer counts exactly paid maintenance with an empty reserve (see step 2).
+ *  v3 (#253): a feeding stage's growth cost is charged per the larva's OWN stage target progress (θ·PROG), so the stage
+ *  threshold θ (M1 / M2) changes development time only; the coupled form is a named, default-off alternative. */
+export const BP1_PHYSIOLOGY_VERSION = 'p0a2-bp1-physiology/3';
 export type Stage = 'egg' | 'L1' | 'L2' | 'L3' | 'prepupa' | 'pupa' | 'adult' | 'dead';
 export const STAGES: readonly Stage[] = ['egg', 'L1', 'L2', 'L3', 'prepupa', 'pupa'];
 export const FEEDING: readonly Stage[] = ['L1', 'L2', 'L3'];
@@ -56,6 +58,13 @@ const isFeeding = (s: Stage) => s === 'L1' || s === 'L2' || s === 'L3';
 export type TempModel = 'flat' | 'linear_dd_A' | 'linear_dd_B' | 'q10_refit';
 export type HazardSpec = { family: 'H0' } | { family: 'H1'; tau_d: number } | { family: 'H2'; lambda_d: number; k: number } | { family: 'H3'; debt_fraction: number };
 export type Variance = { model: 'S0' } | { model: 'M1' | 'M2'; cv: { egg: number; larva: number; pupa: number } };
+/** how a feeding stage's material cost relates to the larva's stage threshold θ (#253):
+ *  - per_individual_target (default): progress dp costs dp·need / thr ng, thr = θ·PROG the larva's own stage target, so a
+ *    whole stage costs `need` whatever θ is: θ changes the stage's DURATION only (development-time heterogeneity, #222 Q7 A);
+ *  - coupled_timing_mass (alternative candidate, default off, evidence level: none): dp costs dp·need / PROG, so a whole
+ *    stage costs θ·need — θ scales the stage's deposition, growth energy and, through the structure, fresh mass and
+ *    maintenance (the v1 / v2 behaviour; no source gives a per-individual timing–mass link, R94 gives timing only). */
+export type StageCost = 'per_individual_target' | 'coupled_timing_mass';
 /** per-stage integer constants at the larva's (constant) nest temperature, derived once from the candidate values */
 export interface StageConst {
   /** development rate, progress units per day at full nutrition */ dev_per_day: number;
@@ -76,6 +85,8 @@ export interface PhysModel {
   /** assimilation / retention fractions as exact rationals (num / den) */
   assim_s: { num: number; den: number }; assim_p: { num: number; den: number }; assim_solid: { num: number; den: number } | null; retention: { num: number; den: number };
   hazard: HazardSpec; recovery: 'retain' | 'reset';
+  /** growth-cost normalisation of the feeding stages (#253; see StageCost) */
+  stage_cost: StageCost;
   /** H3 threshold: unmet maintenance (ng sugar) >= debt_fraction × adult structural protein (ng); null unless H3 */
   h3_debt_ng: number | null;
   variance: Variance;
@@ -101,6 +112,8 @@ export interface BpLarva {
   /** H2 cumulative hazard (Λ), its value at the end of the last bout, the own Exp(1) draw; H3 debt since last reset */
   lambda: number; lambda_prev: number; hazard_draw: number; debt_ng: number;
   stage_entry: Partial<Record<Stage, number>>;
+  /** structural protein deposited during each feeding stage (ng; diagnostic, #253) */
+  stage_dep: Partial<Record<Stage, number>>;
   /** raw legacy µP received through the bridge (the world's µP books count this as having left the µP domain) */
   bridged_up: number;
   feeds: number;
@@ -144,7 +157,7 @@ export function newLarva(m: PhysModel, id: string, seed: number, t: number, stag
     id, v: BP1_PHYSIOLOGY_VERSION, stage, prog: 0, thr: thresholdOf(m, seed, id, stage), grid: Math.floor(t / m.step_ms) * m.step_ms,
     sugar: createLedger('sugar'), protein: createLedger('protein'), energy: createLedger('energy'),
     carry: {}, limit_ms: { none: 0, P: 0, E_growth: 0, E_deficit: 0 }, unmet_ng: 0, deficit_ms: 0, bout_ms: 0, max_bout_ms: 0,
-    lambda: 0, lambda_prev: 0, hazard_draw: -detLog(1 - u), debt_ng: 0, stage_entry: { [stage]: t }, bridged_up: 0, feeds: 0, unlogged: [], death: null,
+    lambda: 0, lambda_prev: 0, hazard_draw: -detLog(1 - u), debt_ng: 0, stage_entry: { [stage]: t }, stage_dep: {}, bridged_up: 0, feeds: 0, unlogged: [], death: null,
   };
 }
 
@@ -163,24 +176,30 @@ const P = (L: BpLarva, pool: string) => poolOf(L.protein, pool) as number;
 export function freshMass(L: BpLarva, m: PhysModel): number {
   if (L.stage === 'egg') return 0;
   if (m.maintenance_mass === 'stage_mean') return m.stages[L.stage].mean_mass;
-  const st = P(L, 'structure');
-  return m.hatch_mass + Math.floor((st * (m.final_mass - m.hatch_mass)) / m.dep_total);
+  return structureMass(P(L, 'structure'), m);
 }
-/** Growth is charged IN ADVANCE (ceiling): progress dp costs dp·need/PROG ng, paid from a prepaid remainder
- *  `L.carry[k]` (numerator units, 0 <= prepaid < PROG) and then whole ng from the pool. So no progress is ever made
- *  without the material it needs (a floor carry would let the first ng of progress through on credit), and
- *  Σ ng paid · PROG = Σ dp·need + prepaid exactly. affordable = largest dp with dp·need <= prepaid + have·PROG. */
-function affordable(have: number, need: number, prepaid: number): number {
+/** fresh mass (ng) implied by a deposited structure (ng): linear between hatch and final larval mass (game assumption) */
+export function structureMass(structure: number, m: PhysModel): number {
+  return m.hatch_mass + Math.floor((structure * (m.final_mass - m.hatch_mass)) / m.dep_total);
+}
+/** Growth is charged IN ADVANCE (ceiling): progress dp costs dp·need/den ng (den = the stage target thr, or PROG in the
+ *  coupled alternative; #253), paid from a prepaid remainder `L.carry[k]` (numerator units, 0 <= prepaid < den; i.e.
+ *  prepaid/den ng of material already moved) and then whole ng from the pool. So no progress is ever made without the
+ *  material it needs (a floor carry would let the first ng of progress through on credit), and
+ *  Σ ng paid · den = Σ dp·need + prepaid exactly. affordable = largest dp with dp·need <= prepaid + have·den. */
+function affordable(have: number, need: number, prepaid: number, den: number): number {
   if (need <= 0) return Number.MAX_SAFE_INTEGER;
-  return Number((BigInt(have) * BigInt(PROG) + BigInt(prepaid)) / BigInt(need));
+  return Number((BigInt(have) * BigInt(den) + BigInt(prepaid)) / BigInt(need));
 }
-function charge(L: BpLarva, k: string, dp: number, need: number): number {
-  const cost = BigInt(dp) * BigInt(need), pre = BigInt(c0(L, k));
+function charge(L: BpLarva, k: string, dp: number, need: number, den: number): number {
+  const cost = BigInt(dp) * BigInt(need), pre = BigInt(c0(L, k)), D = BigInt(den);
   if (cost <= pre) { L.carry[k] = Number(pre - cost); return 0; }
-  const r = cost - pre, n = (r + BigInt(PROG) - 1n) / BigInt(PROG);
-  L.carry[k] = Number(n * BigInt(PROG) - r);
+  const r = cost - pre, n = (r + D - 1n) / D;
+  L.carry[k] = Number(n * D - r);
   return Number(n);
 }
+/** the growth-cost denominator of the current stage (#253) */
+const costDen = (L: BpLarva, m: PhysModel) => (m.stage_cost === 'coupled_timing_mass' ? PROG : L.thr);
 
 // ------------------------------------------------------------------------------------------------ physiology
 /** advance the larva's own physiology to t (every grid instant <= t); never backwards */
@@ -230,12 +249,12 @@ function step(L: BpLarva, m: PhysModel, g: number, seed: number): void {
   if (feeding) {
     let dpf = 0;
     if (!deficit) {
-      const maxP = affordable(P(L, 'reserve'), k.p_need, c0(L, 'grow_p')), maxE = affordable(S(L, 'reserve'), k.e_need, c0(L, 'grow_e'));
+      const den = costDen(L, m), maxP = affordable(P(L, 'reserve'), k.p_need, c0(L, 'grow_p'), den), maxE = affordable(S(L, 'reserve'), k.e_need, c0(L, 'grow_e'), den);
       dpf = Math.min(dp, maxP, maxE);
       if (dpf < dp) limit = maxP <= maxE ? 'P' : 'E_growth';
       if (dpf > 0) {
-        const cp = charge(L, 'grow_p', dpf, k.p_need), ce = charge(L, 'grow_e', dpf, k.e_need);
-        if (cp > 0) { const kept = scaled(L, 'ret', cp, m.retention); transfer(L.protein, 'reserve', 'structure', proteinNg(kept)); outflow(L.protein, 'reserve', 'excreted:nitrogenous', proteinNg(cp - kept)); }
+        const cp = charge(L, 'grow_p', dpf, k.p_need, den), ce = charge(L, 'grow_e', dpf, k.e_need, den);
+        if (cp > 0) { const kept = scaled(L, 'ret', cp, m.retention); transfer(L.protein, 'reserve', 'structure', proteinNg(kept)); if (kept > 0) L.stage_dep[s] = (L.stage_dep[s] ?? 0) + kept; outflow(L.protein, 'reserve', 'excreted:nitrogenous', proteinNg(cp - kept)); }
         if (ce > 0) { const o = oxidise(L.sugar, 'reserve', sugarNg(ce), L.energy, 'released', SUGAR_ENERGY_V1, c0(L, 'ox_g')); L.carry.ox_g = o.carry; outflow(L.energy, 'released', 'growth_cost', o.value); }
       }
     }
@@ -250,7 +269,12 @@ function step(L: BpLarva, m: PhysModel, g: number, seed: number): void {
     if (s === 'L3') for (const pool of ['gut', 'gut_solid', 'meconium']) { const a = P(L, pool); if (a > 0) outflow(L.protein, pool, 'egested:meconium', proteinNg(a)); }
     const next: Stage = STAGES[STAGES.indexOf(s) + 1] ?? 'adult';
     L.unlogged.push({ t: g, from: s, to: next }); L.stage = next; L.prog = 0; L.stage_entry[next] = g;
-    L.thr = next === 'adult' ? PROG : thresholdOf(m, seed, L.id, next);
+    const thrOld = L.thr; L.thr = next === 'adult' ? PROG : thresholdOf(m, seed, L.id, next);
+    // the prepaid growth credit is material (prepaid/den ng): re-express it over the new stage's den, rounding down
+    // (never free material; at most < 1 ng of credit forgone per stage). S0 and the coupled form keep den = PROG.
+    if (m.stage_cost === 'per_individual_target' && L.thr !== thrOld) for (const ck of ['grow_p', 'grow_e']) {
+      if (L.carry[ck] !== undefined) L.carry[ck] = Number((BigInt(L.carry[ck]) * BigInt(L.thr)) / BigInt(thrOld));
+    }
   }
   // 5. deficit bookkeeping and hazard (H0: diagnostics only, never lethal)
   L.unmet_ng += unmet;
@@ -338,7 +362,7 @@ export function summary(L: BpLarva): { [k: string]: unknown } {
     id: L.id, stage: L.stage, prog: L.prog, thr: L.thr, stage_entry: { ...L.stage_entry },
     sugar_ng: { ...L.sugar.pools }, protein_ng: { ...L.protein.pools },
     fed_sugar_ng: tot(L.sugar.sources), fed_protein_ng: tot(L.protein.sources), energy_uj: { ...L.energy.sinks },
-    unmet_ng: L.unmet_ng, deficit_ms: L.deficit_ms, max_bout_ms: L.max_bout_ms, limit_ms: { ...L.limit_ms },
+    stage_dep_ng: { ...L.stage_dep }, unmet_ng: L.unmet_ng, deficit_ms: L.deficit_ms, max_bout_ms: L.max_bout_ms, limit_ms: { ...L.limit_ms },
     lambda: L.lambda, feeds: L.feeds, bridged_up: L.bridged_up, death: L.death,
   };
 }
