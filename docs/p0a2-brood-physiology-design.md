@@ -278,7 +278,7 @@ G_s(t)  = §4.4 的營養閘門          （L1、L2、L3）
 **位置與開關**
 - 程式：`prototypes/p0a2-24h/brood/physiology.ts`（一隻幼蟲的純函式）、`bp1.ts`（組態與 `BroodHook`）、`bp1-variants.json`（Owner 裁示的選擇與每個數值的假設標註）；Node 多種子報告工具 `prototypes/brood-physiology/bp1-report.ts`（工具在設計資料夾內，候選資料夾本身不匯入設計資料夾）。
 - 開關：`World.create(…, { brood: bp1Hook(候選檔, 變體檔, 名稱) })`。沒有這個選項時（預設）世界與 main 逐位元相同（`tests/p0a2-24h-proto` 釘住的 24 h 日誌與狀態雜湊、`tests/save-verify` 的事件與狀態雜湊、`tests/worker-runtime` 都不變）。P0-A2 核心只認得 `types.ts` 中的 `BroodHook` 介面；實作資料夾不在實驗 Worker 的模組圖內（`P0A2_CODE_FILES` 不含它，Worker 白名單未擴充），所以 Worker 世界、存檔格式與規則版本 `experiment-p0a2-24h/3` 都不變（程式碼雜湊因 `world.ts`／`types.ts` 的程式碼改變而重新產生，與 #225 的作法相同）。
-- 啟用候選就是另一個變體：狀態多出 `brood: {version: "p0a2-bp1/1", config, config_sha}`、每隻幼蟲多出 `bp`、日誌多出每日 `brood_day` 普查與餵食項目的 `bp` 欄位；還原時必須帶同一個候選與同一份組態（否則拒絕）。
+- 啟用候選就是另一個變體：狀態多出 `brood: {version: "p0a2-bp1/1", config, config_sha}`（v2 起版本號隨規則更新遞增，見下「虧損狀態」）、每隻幼蟲多出 `bp`、日誌多出每日 `brood_day` 普查與餵食項目的 `bp` 欄位；還原時必須帶同一個候選與同一份組態（否則拒絕）。
 
 **對設計的實作選擇（都已寫進程式註解與測試）**
 - **單位**：糖、蛋白各一本 `Ledger`（整數 ng），能量一本（整數 µJ）；維持與成長成本以 `oxidise`（`sugar_energy_density@v1`）把糖從質量帳燒進能量帳，匯分成 `maintenance`、`growth_cost`。設計中的「糖當量 µg」就是糖質量帳（`docs/mass-energy-contract.md` §5）。
@@ -288,6 +288,13 @@ G_s(t)  = §4.4 的營養閘門          （L1、L2、L3）
 - **成長的整數收費**：N-d 閘門以「預付」方式收費（進度所需的蛋白與糖以天花板整數扣除），所以沒有材料就不會有任何進度（樓板式餘數會讓第一個 ng 的進度先賒帳）。
 - **維持（Q8 A）**：依自己的鮮重；鮮重由自己已沉積的結構蛋白在孵化鮮重與末齡鮮重之間線性推得（遊戲假設）。`stage_mean` 對照用設計表的階段平均鮮重。一齡倍數（null）不套用、`protein_hatch_fraction`（null）視為 0（§6 的兩條規則，寫入組態 `null_rules`）。
 - **虧損狀態**：「在虧損中」定義為維持在跑（速率 > 0）且付完能付的之後糖儲備為 0；未付的量以整數精確累積（`unmet_ng`）。這避免低維持速率時「這一格累積到 0 ng」被誤當成沒有虧損。
+  - **v2 更正（#251，候選版本 `p0a2-bp1/2`、生理 `p0a2-bp1-physiology/2`）**：上一句（v1）把「本格維持剛好全額付清、期末儲備為 0」也算成虧損，H1／H2 因此可在 `unmet_ng = 0` 時判死，混淆了「零緩衝儲備」與「維持未付」（#222 Q4 要分開；Q6 是缺食死亡候選）。v2 的虧損區間＝**到這個格點為止已累積的維持量沒有被支付或儲備支撐**：本格有整數 ng 未付（`unmet > 0`），或有尚未成整數的已累積維持量（維持餘數 `carry.maint > 0`，即 `carry.maint ÷ 86 400 000` ng）而糖儲備為 0。於是：
+    - 剛好付清（本格應付全額付出、餘數為 0）而儲備為 0：**不是虧損**；成長由蛋白（`P`）或成長能量（`E_growth`）限制分類，不是 `E_deficit`。
+    - 低速率時本格整數應計為 0 ng：只要已累積的分數部分沒有儲備支撐就是虧損，所以**沒有重新引入量化漏洞**（不是單純改成 `unmet > 0`）。
+    - `unmet > 0` 一定落在虧損格內，所以 H1／H2 的危險時鐘、`deficit_ms`、`limit_ms.E_deficit` 與 H3 的未付量（`debt_ng`，保留時等於 `unmet_ng`）都用同一個區間；這也與浮點參考計算的 `unmet > EPS` 一致（`reference-model.ts`）。
+    - 恢復餵食：第一個「付清且沒有未支撐餘數」的格點就結束虧損段；`retain` 保留 Λ（付清的格點不再增加），`reset` 歸零。
+    - 測試：`tests/bp1-brood.test.ts` 的 #251 區塊（合成邊界輸入：剛好付清、真正不足、半付、0.25 ng／分的低速率無食與剛好付清、恢復餵食 retain／reset、切分不變）；修正前在 main 上 6 項失敗。
+    - 報告：v1 結果封存於 `reports/bp1-brood/v1/`（原檔雜湊 `SHA256SUMS`），v2 重算於 `reports/bp1-brood/v2/`，比較見 [`reports/bp1-brood/README.md`](../reports/bp1-brood/README.md)。
 - **危險函數**：H0（預設）只記錄虧損時間、最長連續虧損與未付量，不致死。H1（連續虧損 τ）、H2（Weibull，自己的 Exp(1) 抽樣）、H3（累積未付 ≥ 比例 × 成蟲結構蛋白）只有在組態給了明示值時才可啟用；候選檔的 null 不被補值。恢復餵食時預設保留累積 hazard（`retain`），`reset` 為對照。死亡時身體各池移到 `corpse` 池（仍在帳上）。
 - **個體差異**：S0 決定性；M1（Gamma 門檻）、M2（Erlang）的 CV 必須明示（null 時拒絕）；每隻幼蟲每個階段的門檻與危險抽樣都來自自己的命名亂數流 `seed|bp1-…|幼蟲 ID|階段`，其他個體的增刪不影響。
 - **溫度**：巢溫動態尚未模擬，以情境常數（`nest_temp_c`，標假設）代入；`linear_dd_B` 的門檻讀自候選檔註記（17.74／13.84／19.56°C）。`briere` 不提供。

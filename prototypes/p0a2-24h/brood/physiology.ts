@@ -39,7 +39,8 @@ import {
   proteinNg, rational, scaleWithCarry, sugarNg, transfer,
 } from '../../../engine/units/mass-energy.ts';
 
-export const BP1_PHYSIOLOGY_VERSION = 'p0a2-bp1-physiology/1';
+/** v2 (#251): the deficit interval no longer counts exactly paid maintenance with an empty reserve (see step 2) */
+export const BP1_PHYSIOLOGY_VERSION = 'p0a2-bp1-physiology/2';
 export type Stage = 'egg' | 'L1' | 'L2' | 'L3' | 'prepupa' | 'pupa' | 'adult' | 'dead';
 export const STAGES: readonly Stage[] = ['egg', 'L1', 'L2', 'L3', 'prepupa', 'pupa'];
 export const FEEDING: readonly Stage[] = ['L1', 'L2', 'L3'];
@@ -206,15 +207,22 @@ function step(L: BpLarva, m: PhysModel, g: number, seed: number): void {
     if (m.assim_solid) absorb('gut_solid', k.abs_solid, 'abs_solid', 'ass_solid', m.assim_solid, 'protein');
   }
   // 2. maintenance from the reserve (sugar; protein_catabolism false: protein is never burned)
-  // In deficit = its maintenance runs (rate > 0) and its sugar reserve is exhausted after paying what it could. The state
-  // does not depend on whether this step's integer accrual happened to be 0 ng (low rates accrue 1 ng only every few
-  // steps); the unpaid amount itself is accrued exactly (unmet_ng).
+  // Maintenance accrues exactly as a rational: the whole ng billed this step (`need`) plus the sub-ng remainder kept in
+  // L.carry.maint (numerator over MS_PER_DAY ng·ms/day: maintenance already accrued but not yet a whole ng). In deficit
+  // (#251, BP-1 v2) = the larva's own maintenance accrued up to this grid instant is not covered: a billed ng went unpaid
+  // (unmet > 0), or a positive sub-ng remainder is outstanding while the sugar reserve is empty. So
+  //  - an exactly paid step (need paid in full, remainder 0) with an empty reserve is NOT a deficit (zero buffer ≠ unpaid);
+  //  - a low rate whose integer accrual is 0 ng this step IS a deficit when the reserve cannot back the accrued fraction
+  //    (no quantisation hole: the accrued fraction is real maintenance the larva has nothing to pay with);
+  //  - unmet > 0 always lies inside a deficit step, so the unpaid ledger (unmet_ng) and H3's debt use the same interval.
+  // (v1 used `rate > 0 && reserve === 0`, which also counted exactly paid steps: #251.)
   let unmet = 0, deficit = false;
   if (s !== 'egg') {
     const rate = Math.floor(m.maint_per_ng_day * freshMass(L, m) * k.maint_mult);
     const need = accrueStep(L, 'maint', rate, dt), paid = Math.min(need, S(L, 'reserve'));
     if (paid > 0) { const o = oxidise(L.sugar, 'reserve', sugarNg(paid), L.energy, 'released', SUGAR_ENERGY_V1, c0(L, 'ox_m')); L.carry.ox_m = o.carry; outflow(L.energy, 'released', 'maintenance', o.value); }
-    unmet = need - paid; deficit = rate > 0 && S(L, 'reserve') === 0;
+    unmet = need - paid;
+    deficit = unmet > 0 || (rate > 0 && c0(L, 'maint') > 0 && S(L, 'reserve') === 0);
   }
   // 3. development: non-feeding stages by temperature only; feeding stages through the N-d stoichiometric gate
   const dp = scaled(L, 'dev', dt, { num: k.dev_per_day, den: MS_PER_DAY });
