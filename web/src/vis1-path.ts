@@ -113,21 +113,25 @@ export function poseOnTrip(P: TripPath, t: number): PathPose {
   return { x: a.p.x, y: a.p.y, heading: Math.atan2(a.ty, a.tx), dist_cm: s, k, interpolated: true };
 }
 
-/** Schematic search loop (search has NO spatial model): a closed wandering loop that starts and ends at the nest
- *  entrance, walked at the trail speed from since_s on (repeats while the engine state stays 'searching'). 示意. */
-export function searchLoop(antId: string, since: number, radiusCm: number): Polyline {
-  const seed = hash32(`search|${antId}|${since}`) >>> 0, pts: Pt[] = [], n = 400, a0 = h01(seed, 3, 3, 3) * Math.PI * 2;
+/** Schematic search ORBIT of one ant (search has NO spatial model): a closed wandering loop AROUND the nest (never through
+ *  it), within radiusCm, depending only on the ant id. The ant's place on it depends only on the absolute display time
+ *  (orbitArc), so the place where a search ends can be computed from that instant alone — a failed searcher's way home
+ *  starts exactly there (issue #252: the drawn point must not jump at state boundaries). 示意. */
+export function searchOrbit(antId: string, radiusCm: number): Polyline {
+  const seed = hash32(`orbit|${antId}`) >>> 0, pts: Pt[] = [], n = 480, a0 = h01(seed, 3, 3, 3) * Math.PI * 2;
+  const k = [1 + Math.floor(h01(seed, 4, 4, 4) * 3), 2 + Math.floor(h01(seed, 5, 5, 5) * 3)], ph = [h01(seed, 6, 6, 6), h01(seed, 7, 7, 7), h01(seed, 8, 8, 8)].map((x) => x * Math.PI * 2);
   for (let i = 0; i <= n; i++) {
-    const u = i / n, r = radiusCm * Math.sin(Math.PI * u) * (0.55 + 0.45 * Math.abs(bspline(seed, u * 4))), ang = a0 + (u - 0.5) * 2.2 + 0.5 * bspline(seed + 7, u * 3);
-    pts.push(i === 0 || i === n ? { x: 0, y: 0 } : { x: r * Math.cos(ang) + WOBBLE_CM * 2 * bspline(seed + 11, u * 60), y: r * Math.sin(ang) + WOBBLE_CM * 2 * bspline(seed + 13, u * 60) });
+    const u = (i % n) / n, w = Math.PI * 2 * u; // periodic in u → closed and smooth at the seam
+    const r = radiusCm * (0.62 + 0.2 * Math.sin(k[0] * w + ph[0]) + 0.1 * Math.sin(k[1] * w + ph[1])), ang = a0 + w + 0.35 * Math.sin(2 * w + ph[2]);
+    pts.push({ x: r * Math.cos(ang), y: r * Math.sin(ang) });
   }
   return polyline(pts);
 }
-export function poseOnLoop(L: Polyline, since: number, t: number, speedCmS: number): PathPose {
-  const d = Math.max(0, (t - since) * speedCmS), s = d % L.len, a = atArc(L, s);
-  return { x: a.p.x, y: a.p.y, heading: Math.atan2(a.ty, a.tx), dist_cm: d, k: s / L.len, interpolated: false };
+/** place on the orbit at absolute display time t (cm along it), walked at speedCmS; per-ant phase offset (示意) */
+export function orbitArc(L: Polyline, antId: string, t: number, speedCmS: number): number {
+  const off = h01(hash32(`orbit|${antId}`) >>> 0, 9, 9, 9) * L.len, d = t * speedCmS + off;
+  return d - Math.floor(d / L.len) * L.len;
 }
-
 /** Display stride λ (body lengths per gait cycle; 示意 drawing parameter, NOT a species stride — docs/visual-p0-scene-
  *  spec §6.1 suggests 0.5–0.8, default 0.6). The art kit's leg sweep (art-ant STRIDE: 0.2 body length per cycle) is
  *  scaled by ART_STRIDE_SCALE so a stance foot stays planted at the drawn size. */
