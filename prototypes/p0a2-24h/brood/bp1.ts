@@ -18,12 +18,13 @@ import { makePortionBridge, rationalFromDecimal } from '../../../engine/units/ma
 import { canon } from '../canon.ts';
 import type { BroodHook, Json } from '../types.ts';
 import {
-  type BpLarva, type HazardSpec, type PhysModel, type Stage, type StageConst, type TempModel, type Variance, BP1_PHYSIOLOGY_VERSION, PROG, STAGES,
+  type BpLarva, type HazardSpec, type PhysModel, type Stage, type StageConst, type StageCost, type TempModel, type Variance, BP1_PHYSIOLOGY_VERSION, PROG, STAGES,
   advance, contactOf, feedLiquid, ledgerProblem, newLarva, summary,
 } from './physiology.ts';
 
-/** v1 (#249) → v2 (#251: deficit interval = unpaid or unbacked accrued maintenance, not "reserve empty") */
-export const BP1_VERSION = 'p0a2-bp1/2';
+/** v1 (#249) → v2 (#251: deficit interval = unpaid or unbacked accrued maintenance, not "reserve empty")
+ *  → v3 (#253: M1 / M2 thresholds change development time only; the coupled timing–mass form is a named alternative) */
+export const BP1_VERSION = 'p0a2-bp1/3';
 export const BP1_CONFIG_SCHEMA = 'antempire.p0a2-bp1.config.v1';
 export const BP1_VARIANTS_SCHEMA = 'antempire.p0a2-bp1.variants.v1';
 export const BP1_LABEL_ZH = '研究候選（隔離、預設關閉；非正式）';
@@ -35,7 +36,7 @@ const NUM_KEYS = ['dev_d28_egg', 'dev_d28_l1', 'dev_d28_l2', 'dev_d28_l3', 'dev_
 const LD_B_RE = /B[^0-9]*?(\d+\.\d+)/;
 const CHOICES: Record<string, readonly unknown[]> = {
   temperature_model: ['flat', 'linear_dd_A', 'linear_dd_B', 'q10_refit'], nutrition_gate: ['N-d'], protein_catabolism: [false], maintenance_mass: ['actual', 'stage_mean'],
-  hazard_family: ['H0', 'H1', 'H2', 'H3'], hazard_recovery: ['retain', 'reset'], variance_model: ['S0', 'M1', 'M2'], solid_protein_enabled: [false, true], init_stage: ['egg', 'L1'],
+  hazard_family: ['H0', 'H1', 'H2', 'H3'], hazard_recovery: ['retain', 'reset'], variance_model: ['S0', 'M1', 'M2'], stage_cost_scaling: ['per_individual_target', 'coupled_timing_mass'], solid_protein_enabled: [false, true], init_stage: ['egg', 'L1'],
 };
 const REFUSED: Record<string, Record<string, string>> = {
   temperature_model: { briere: 'briere needs Tmax (temp_tmax_c = null): not offered (#222 Q3)' },
@@ -57,7 +58,15 @@ export function variantsProblems(v: any): string[] {
   }
   for (const [sec, o] of sections) for (const [k, e] of Object.entries(o)) {
     if (!e || typeof e !== 'object' || !('value' in e)) { p.push(`${sec}.${k}: not a labelled entry`); continue; }
-    if (sec.endsWith('choices')) { if (typeof e.ruling !== 'string' || !e.ruling) p.push(`${sec}.${k}: ruling required`); continue; }
+    if (sec.endsWith('choices')) {
+      if (typeof e.ruling !== 'string' || !e.ruling) p.push(`${sec}.${k}: ruling required`);
+      // the coupled timing–mass alternative (#253) has no evidence: it must say so, with its mechanism and formula
+      if (k === 'stage_cost_scaling' && e.value === 'coupled_timing_mass') {
+        const c = e as Entry & { evidence_level?: string; mechanism?: string; formula?: string };
+        if (c.assumption !== true || c.evidence_level !== 'none' || !c.mechanism || !c.formula) p.push(`${sec}.${k}: coupled_timing_mass needs assumption true, evidence_level "none", mechanism and formula`);
+      }
+      continue;
+    }
     if (e.assumption !== true) p.push(`${sec}.${k}: assumption must be true`);
     if (!['this_species', 'other_species_extrapolated', 'general_physiology', 'game_assumption'].includes(e.evidence_class ?? '')) p.push(`${sec}.${k}: evidence_class`);
     if (typeof e.basis !== 'string' || !e.basis) p.push(`${sec}.${k}: basis required`);
@@ -102,10 +111,14 @@ export function bp1Config(candidates: any, variants: any, name: string): { [k: s
   need('sugar_bridge_mg_per_portion', 'feeding through the legacy-portion bridge');
   if (typeof vals.nest_temp_c !== 'number' || !Number.isFinite(vals.nest_temp_c)) fail('nest_temp_c must be a number');
   if (!Number.isSafeInteger(vals.step_ms) || (vals.step_ms as number) < 1000 || 86_400_000 % (vals.step_ms as number) !== 0) fail('step_ms must be an integer >= 1000 dividing one day');
+  // the coupled timing–mass alternative (#253) carries its own label (mechanism, formula, evidence level none) into the config
+  const sc = (va.choices?.stage_cost_scaling ?? variants.base.choices.stage_cost_scaling) as Record<string, Json>;
+  const alt: Record<string, Json> = ch.stage_cost_scaling === 'coupled_timing_mass'
+    ? { coupled_timing_mass: { label: 'coupled timing–mass（時間與質量耦合；替代候選、預設關閉）', assumption: true, evidence_level: 'none', mechanism: sc.mechanism, formula: sc.formula, ruling: sc.ruling } } : {};
   return {
     schema: BP1_CONFIG_SCHEMA, version: BP1_VERSION, physiology: BP1_PHYSIOLOGY_VERSION, variant: name, group: va.group, label: va.label, status: va.status,
     candidate_file_sha256: sha256Hex(canon(candidates)), variants_file_sha256: sha256Hex(canon(variants)),
-    choices: ch, values: vals, candidate_values: cand, null_rules: nullRules, assumption: true, official: false,
+    choices: ch, values: vals, candidate_values: cand, null_rules: nullRules, ...(Object.keys(alt).length ? { alternatives: alt } : {}), assumption: true, official: false,
   };
 }
 
@@ -154,7 +167,7 @@ export function physModelOf(cfg: any): PhysModel {
     version: BP1_PHYSIOLOGY_VERSION, step_ms: v.step_ms, temp_c: T, temp_model: tm, stages, maint_per_ng_day: spec(T), maintenance_mass: ch.maintenance_mass,
     hatch_mass: Math.round(start.L1), final_mass: Math.round(M), dep_total: Math.round(depTotal),
     assim_s: rat(c.sugar_assim), assim_p: rat(c.protein_assim_liquid), assim_solid: ch.solid_protein_enabled ? rat(v.protein_assim_solid) : null, retention: rat(c.protein_net_retention),
-    hazard, recovery: ch.hazard_recovery, h3_debt_ng: hz === 'H3' ? Math.round(v.h3_debt_fraction * adultP) : null, variance,
+    hazard, recovery: ch.hazard_recovery, stage_cost: ch.stage_cost_scaling as StageCost, h3_debt_ng: hz === 'H3' ? Math.round(v.h3_debt_fraction * adultP) : null, variance,
     solid: { enabled: ch.solid_protein_enabled === true, instars: ch.solid_protein_instars as Stage[] }, sugar_bridge: sugarBridge, protein_bridge: proteinBridge, protein_catabolism: false,
   };
 }

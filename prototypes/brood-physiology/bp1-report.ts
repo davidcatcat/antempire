@@ -20,6 +20,7 @@ import cand from './brood-physiology.candidates.json' with { type: 'json' };
 import variants from '../p0a2-24h/brood/bp1-variants.json' with { type: 'json' };
 import { World } from '../p0a2-24h/world.ts';
 import { BP1_VERSION, bp1Hook } from '../p0a2-24h/brood/bp1.ts';
+import { structureMass } from '../p0a2-24h/brood/physiology.ts';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const VER = /^p0a2-bp1\/(\d+)$/.exec(BP1_VERSION)?.[1] ?? (() => { throw Error(`BP1_VERSION ${BP1_VERSION}`); })();
@@ -42,7 +43,7 @@ function runOne(name: string, seed: number, days: number) {
     const b = l.bp;
     return {
       id: l.id, stage: b.stage, stage_entry_d: Object.fromEntries(Object.entries(b.stage_entry).map(([k, x]) => [k, r2((x as number) / D)])),
-      fed_sugar_ng: b.fed_sugar_ng, fed_protein_ng: b.fed_protein_ng, structure_ng: b.protein_ng.structure ?? 0, reserve_sugar_ng: b.sugar_ng.reserve ?? 0, reserve_protein_ng: b.protein_ng.reserve ?? 0,
+      fed_sugar_ng: b.fed_sugar_ng, fed_protein_ng: b.fed_protein_ng, structure_ng: b.protein_ng.structure ?? 0, stage_dep_ng: b.stage_dep_ng, fresh_mass_ng: structureMass(b.protein_ng.structure ?? 0, hook.model), reserve_sugar_ng: b.sugar_ng.reserve ?? 0, reserve_protein_ng: b.protein_ng.reserve ?? 0,
       maintenance_uj: b.energy_uj.maintenance ?? 0, growth_uj: b.energy_uj.growth_cost ?? 0, unmet_ng: b.unmet_ng, deficit_d: r2(b.deficit_ms / D), max_bout_d: r2(b.max_bout_ms / D),
       limit_d: Object.fromEntries(Object.entries(b.limit_ms).map(([k, x]) => [k, r2((x as number) / D)])), feeds: b.feeds, bridged_up: b.bridged_up, death: b.death,
     };
@@ -84,11 +85,30 @@ if (process.argv[2] === 'run') {
     });
   }
   fs.writeFileSync(path.join(OUT, 'results.json'), JSON.stringify({ schema: 'antempire.bp1-results.v1', bp1_version: BP1_VERSION, official: false, note: '每個變體的每個種子全部列出（per_seed），沒有挑選；數字是模型在假設下的行為，不是目標或驗證。', rows }, null, 1) + '\n');
+  // #253: S0 / M1 / M2 (and the coupled alternative) side by side — what each larva deposited per instar, its final mass,
+  // what it ate and what it burned for maintenance; eclosed larvae only (the comparison is over a completed larval period)
+  const cmpNames = ['cf-protein', 'cf-protein-m1-cv006', 'cf-protein-m1-cv015', 'cf-protein-m2-cv015', 'cf-protein-m1-cv015-coupled'];
+  let cmp = '| 變體 | 已羽化／全部 | L1 沉積（ng，最小／中位／最大） | L2 沉積 | L3 沉積 | 結構蛋白合計 | 終點鮮重（µg） | 餵入蛋白（µg） | 餵入糖（µg） | 維持能量（mJ） | 羽化（日） |\n|---|---|---|---|---|---|---|---|---|---|---|\n';
+  const cmpRows: any[] = [];
+  for (const nm of cmpNames) {
+    const f = path.join(OUT, 'runs', `${nm}.json`); if (!fs.existsSync(f)) continue;
+    const R = JSON.parse(fs.readFileSync(f, 'utf8')), all = R.runs.flatMap((r: any) => r.larvae), A = all.filter((x: any) => x.stage === 'adult');
+    const q3 = (xs: number[], k = 1) => { const a = [...xs].sort((p, r) => p - r); return a.length ? [a[0], a[Math.floor((a.length - 1) / 2)], a[a.length - 1]].map((x) => r2(x / k)) : null; };
+    const row = {
+      variant: nm, eclosed: A.length, larvae: all.length,
+      dep_L1_ng: q3(A.map((x: any) => x.stage_dep_ng?.L1 ?? 0)), dep_L2_ng: q3(A.map((x: any) => x.stage_dep_ng?.L2 ?? 0)), dep_L3_ng: q3(A.map((x: any) => x.stage_dep_ng?.L3 ?? 0)),
+      structure_ng: q3(A.map((x: any) => x.structure_ng)), fresh_mass_ug: q3(A.map((x: any) => x.fresh_mass_ng), 1000), fed_protein_ug: q3(A.map((x: any) => x.fed_protein_ng), 1000),
+      fed_sugar_ug: q3(A.map((x: any) => x.fed_sugar_ng), 1000), maintenance_mj: q3(A.map((x: any) => x.maintenance_uj), 1000), adult_d: q3(A.map((x: any) => x.stage_entry_d.adult)),
+    };
+    cmpRows.push(row);
+    cmp += `| ${nm} | ${row.eclosed}／${row.larvae} | ${[row.dep_L1_ng, row.dep_L2_ng, row.dep_L3_ng, row.structure_ng, row.fresh_mass_ug, row.fed_protein_ug, row.fed_sugar_ug, row.maintenance_mj, row.adult_d].map((x) => (x ? x.join(' / ') : '—')).join(' | ')} |\n`;
+  }
+  fs.writeFileSync(path.join(OUT, 'variance-comparison.json'), JSON.stringify({ schema: 'antempire.bp1-variance-comparison.v1', bp1_version: BP1_VERSION, official: false, note: '#253：S0／M1／M2（與耦合替代候選）在反事實蛋白世界中已羽化個體的各齡沉積、終點質量、攝入與維持能量（最小／中位／最大；每個種子每隻全部納入）。', rows: cmpRows }, null, 1) + '\n');
   const fmt = (x: any) => (x === null ? '—' : Array.isArray(x) ? x.join(' / ') : String(x));
   let md = '| 變體 | 群組 | 種子×幼蟲 | 期末齡期（隻數） | 全守恆 | 進 L2（日，最小／中位／最大） | 化蛹（日） | 羽化（日） | 死亡（日） | 平均蛋白限制（日） | 平均能量成長限制（日） | 平均維持未付（日） | 平均餵入糖（µg） | 平均餵入蛋白（µg） | 平均未付維持（µg） |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n';
   for (const r of rows) md += `| ${r.variant} | ${r.group} | ${r.seeds}×${r.larvae / r.seeds} | ${Object.entries(r.stages_at_end).map(([k, x]) => `${k} ${x}`).join('、')} | ${r.all_conserved ? '是' : '**否**'} | ${fmt(r.L2_entry_d_min_med_max)} | ${fmt(r.pupa_entry_d_min_med_max)} | ${fmt(r.adult_d_min_med_max)} | ${fmt(r.death_d_min_med_max)} | ${r.mean_limit_d.P} | ${r.mean_limit_d.E_growth} | ${r.mean_limit_d.E_deficit} | ${r.mean_fed_sugar_ug} | ${r.mean_fed_protein_ug} | ${r.mean_unmet_ug} |\n`;
   let seedMd = '| 變體 | 種子 | 守恆 | 照護餵食次數 | 8 隻幼蟲期末齡期 | 羽化日（每隻） | 死亡日（每隻） |\n|---|---|---|---|---|---|---|\n';
   for (const r of rows) for (const s of r.per_seed) seedMd += `| ${r.variant} | ${s.seed} | ${s.conserved ? '是' : '**否**'} | ${s.larva_feeds} | ${s.stages} | ${s.adult_d.map((x: any) => x ?? '—').join(' ')} | ${s.dead_d.map((x: any) => x ?? '—').join(' ')} |\n`;
-  fs.writeFileSync(path.join(OUT, 'tables.md'), `<!-- 由 prototypes/brood-physiology/bp1-report.ts summarize 產生；不要手改 -->\n\n候選版本：\`${BP1_VERSION}\`\n\n## 變體彙總\n\n${md}\n## 每個種子（全部列出）\n\n${seedMd}`);
+  fs.writeFileSync(path.join(OUT, 'tables.md'), `<!-- 由 prototypes/brood-physiology/bp1-report.ts summarize 產生；不要手改 -->\n\n候選版本：\`${BP1_VERSION}\`\n\n## 變體彙總\n\n${md}\n## S0／M1／M2 的沉積、質量、攝入與維持（#253；已羽化個體，最小／中位／最大）\n\n${cmp}\n## 每個種子（全部列出）\n\n${seedMd}`);
   console.log(`summarised ${rows.length} variants`);
 } else console.log('usage: report.ts run <variant> [--seeds N] [--days D] | summarize');

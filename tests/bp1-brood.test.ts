@@ -22,7 +22,7 @@ import raw from '../prototypes/p0a2-24h/params.json' with { type: 'json' };
 import cand from '../prototypes/brood-physiology/brood-physiology.candidates.json' with { type: 'json' };
 import variants from '../prototypes/p0a2-24h/brood/bp1-variants.json' with { type: 'json' };
 import { BP1_VERSION, bp1Config, bp1Hook, physModelOf, variantsProblems } from '../prototypes/p0a2-24h/brood/bp1.ts';
-import { type BpLarva, PROG, advance, contactOf, feedLiquid, feedMass, feedSolid, ledgerProblem, newLarva, summary, thresholdOf } from '../prototypes/p0a2-24h/brood/physiology.ts';
+import { type BpLarva, PROG, advance, contactOf, feedLiquid, feedMass, feedSolid, ledgerProblem, newLarva, structureMass, summary, thresholdOf } from '../prototypes/p0a2-24h/brood/physiology.ts';
 import { World } from '../prototypes/p0a2-24h/world.ts';
 import { canon } from '../prototypes/p0a2-24h/canon.ts';
 import { P0A2_CODE_FILES } from '../prototypes/continuous-world/worker/p0a2-code-hash.ts';
@@ -127,6 +127,44 @@ function adlib(m: ReturnType<typeof modelOf>, seed = 1, id = 'l01', until = 120 
   const spread = (mm: typeof m1) => { const x = Array.from({ length: 40 }, (_, i) => days(adlib(mm, 3, `x${i}`).stage_entry.adult)); return [Math.min(...x), Math.max(...x)]; };
   const s1 = spread(m1), s2 = spread(m2), s0 = spread(m);
   ok(s0[0] === s0[1] && s1[1] - s1[0] > 1 && s2[1] - s2[0] > 1, `S0: same day for every larva (known disagreement with R94, reported); M1 / M2 spread ${s1.map((x) => x.toFixed(2))} / ${s2.map((x) => x.toFixed(2))} d`);
+
+  // #253 (BP-1 v3): M1 / M2 thresholds change development TIME only. At ad-lib feeding every larva deposits the same
+  // structure per instar and reaches the same final mass as S0 (within integer rounding: the ceiling charge, the credit
+  // re-expressed at a stage change, and the < 1-step progress overshoot that S0 has too), while eclosion times differ.
+  {
+    const ref0 = adlib(m, 3, 'x0'), dep0 = ref0.stage_dep, mass0 = structureMass(ref0.protein.pools.structure, m);
+    ok(m.stage_cost === 'per_individual_target' && m1.stage_cost === 'per_individual_target', 'default growth cost: per individual stage target (#253)');
+    const tol = (mm: typeof m) => { // one step of progress at the fastest feeding rate, charged at the smallest θ the run drew, + 2 ng rounding per stage
+      const k = (s: string) => mm.stages[s];
+      return Math.max(...['L1', 'L2', 'L3'].map((s) => Math.ceil((k(s).dev_per_day * mm.step_ms / D) * k(s).p_need / (0.5 * PROG)))) + 2;
+    };
+    for (const [nm, mm] of [['M1', m1], ['M2', m2]] as const) {
+      const xs = Array.from({ length: 40 }, (_, i) => adlib(mm, 3, `x${i}`)), t = tol(mm);
+      const thetas = xs.map((L) => ['L1', 'L2', 'L3'].map((s) => thresholdOf(mm, 3, L.id, s as never) / PROG)).flat();
+      ok(Math.min(...thetas) >= 0.5, `${nm}: drawn θ >= 0.5 (tolerance basis)`);
+      const worst = Math.max(...xs.flatMap((L) => ['L1', 'L2', 'L3'].map((s) => Math.abs((L.stage_dep[s as never] ?? 0) - (dep0[s as never] ?? 0)))));
+      const worstMass = Math.max(...xs.map((L) => Math.abs(structureMass(L.protein.pools.structure, mm) - mass0)));
+      const ecl = xs.map((L) => days(L.stage_entry.adult));
+      ok(xs.every((L) => L.stage === 'adult' && ledgerProblem(L) === null) && worst <= t, `#253 ${nm} ad-lib: per-instar deposition = S0's within ${worst} ng (bound ${t} ng; S0 ${['L1', 'L2', 'L3'].map((s) => dep0[s as never]).join(' / ')} ng)`);
+      const tm = Math.ceil((3 * t * (mm.final_mass - mm.hatch_mass)) / mm.dep_total) + 1; // the structure bound through the linear mass map
+      ok(worstMass <= tm, `#253 ${nm} ad-lib: final fresh mass = S0's ${mass0} ng within ${worstMass} ng (bound ${tm} ng)`);
+      ok(Math.max(...ecl) - Math.min(...ecl) > 1, `#253 ${nm} ad-lib: eclosion still differs (${Math.min(...ecl).toFixed(2)}–${Math.max(...ecl).toFixed(2)} d): θ changes timing only`);
+    }
+    // the coupled timing–mass alternative: explicitly named, labelled (evidence level none), default off; reproduces the coupling
+    const cv = clone(variants) as any;
+    ok(variants.base.choices.stage_cost_scaling.value === 'per_individual_target' && Object.entries<any>(variants.variants).every(([n, v]) => (v.choices?.stage_cost_scaling?.value ?? 'per_individual_target') === 'per_individual_target' || n.endsWith('-coupled')), 'coupled timing–mass is used only by a variant named "-coupled"; the base is decoupled');
+    const cc = bp1Config(cand, variants, 'cf-protein-m1-cv015-coupled') as any, ca = cc.alternatives?.coupled_timing_mass;
+    ok(cc.choices.stage_cost_scaling === 'coupled_timing_mass' && ca && ca.assumption === true && ca.evidence_level === 'none' && /θ/.test(ca.formula) && ca.mechanism && !('alternatives' in (bp1Config(cand, variants, 'cf-protein-m1-cv015') as any)), 'coupled alternative config carries its label (assumption, evidence level none, mechanism, formula)');
+    delete cv.variants['cf-protein-m1-cv015-coupled'].choices.stage_cost_scaling.evidence_level;
+    ok(variantsProblems(cv).some((x) => /coupled_timing_mass needs/.test(x)), 'an unlabelled coupled alternative is a variants problem');
+    const mc = { ...m1, stage_cost: 'coupled_timing_mass' as const };
+    ok(canon(physModelOf(cc)) === canon({ ...physModelOf(bp1Config(cand, variants, 'cf-protein-m1-cv015')), stage_cost: 'coupled_timing_mass' }), 'the -coupled variant differs from its decoupled twin only in the growth-cost normalisation');
+    const xc = Array.from({ length: 40 }, (_, i) => adlib(mc, 3, `x${i}`)).map((L) => L.protein.pools.structure);
+    ok(Math.max(...xc) - Math.min(...xc) > 0.1 * m.dep_total, `coupled alternative: final structure ${Math.min(...xc)}–${Math.max(...xc)} ng (θ scales deposition; the #253 coupling, evidence level none)`);
+    // the S0 path is unchanged by the decoupling (θ = 1: den = PROG either way)
+    const s0c = adlib({ ...m, stage_cost: 'coupled_timing_mass' }, 3, 'x0');
+    ok(canon(s0c) === canon(ref0), 'S0: decoupled and coupled forms give a bit-identical larva');
+  }
 
   // sugar vs protein limitation through the N-d gate (same delivered mass, composition differs)
   const diet = (sugarShare: number) => {

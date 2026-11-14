@@ -144,7 +144,7 @@
 | ID | 研究／權威物種資料 | 能套的機制與條件限制 |
 |---|---|---|
 | R93 | [臺灣生命大百科：熱帶大頭家蟻 Pheidole megacephala](https://taieol.tw/pages/97561/articles) | 本種臺灣分布、森林邊緣／都市綠地及土、石下生活、雜食和大／小工蟻二態；尺寸按來源族群，**不是本群個體測量**。 |
-| R94 | Yuan et al. (2026), *Life History of the Invasive Big-Headed Ant Pheidole megacephala*. *Insects* 17(10), 992. [DOI](https://doi.org/10.3390/insects17100992) | 廣西28±1°C、70±5%RH完整實驗：卵孵化7.69±0.63天、非繁殖卵→成蟻28.73±2.83天、繁殖蟻37.60±3.20天；幼蟲三齡、卵批次產、生殖多后/單后創巢既有報告、偏好濕陰縫隙。數值**不直接設成本巢速率**。 |
+| R94 | Yuan et al. (2026), *Life History of the Invasive Big-Headed Ant Pheidole megacephala*. *Insects* 17(10), 992. [DOI](https://doi.org/10.3390/insects17100992) | 廣西28±1°C、70±5%RH完整實驗：卵孵化7.69±0.63天、非繁殖卵→成蟻28.73±2.83天、繁殖蟻37.60±3.20天；幼蟲三齡、卵批次產、生殖多后/單后創巢既有報告、偏好濕陰縫隙。數值**不直接設成本巢速率**。外推限制（#253）：只給發育時程與不同步，沒有個體發育時間與體重／蛋白需求的關係；BP-1 的 M1／M2 門檻只改時間，時間—質量耦合是無證據的替代候選。 |
 | R95 | University of Florida IFAS, *Bigheaded Ant, Pheidole megacephala*. [UF Extension](https://ask.ifas.ufl.edu/publication/IN712) | 此物種的覓食招募、種子／昆蟲／蜜露飲食、大小工蟻口對口交換、可多蟻后；引述較早／其他溫度的較長階段發育研究，不和R94的28°C總日數混合。 |
 | R96 | Dussutour et al. (2009), *The role of multiple pheromones in food recruitment by ants*. *J Exp Biol* 212:2337–2348. [PubMed](https://pubmed.ncbi.nlm.nih.gov/19617426/) | P. megacephala覓食資料**與雙費洛蒙行為模型一致**；R102 (2023) 提出單費洛蒙替代模型也能解釋關鍵資料，**沒有證實招募必然使用兩種不同化學分子**；同R21。 |
 | R97 | *Body size variation and caste ratios in geographically distinct populations of invasive Pheidole megacephala* (2014). [Oxford Academic](https://academic.oup.com/biolinnean/article/113/2/423/2416021) | 大小工蟻形態與角色、比例依族群環境變動；不拿研究比例隨機替14隻老工蟻派「major」。 |
