@@ -108,14 +108,14 @@ export function buildScene(o: SceneOptions): Scene2 {
     }
     gg.setAttribute('color', new THREE.BufferAttribute(c, 3));
     const ix = gg.index!, keep: number[] = [];
-    for (let i = 0; i < ix.count; i += 3) { const a = ix.getX(i), b = ix.getX(i + 1), d = ix.getX(i + 2), cx = (p.getX(a) + p.getX(b) + p.getX(d)) / 3, cz = (p.getZ(a) + p.getZ(b) + p.getZ(d)) / 3; if (Math.hypot(cx, cz) > 1.7) keep.push(a, b, d); }
+    for (let i = 0; i < ix.count; i += 3) { const a = ix.getX(i), b = ix.getX(i + 1), d = ix.getX(i + 2), cx = (p.getX(a) + p.getX(b) + p.getX(d)) / 3, cz = (p.getZ(a) + p.getZ(b) + p.getZ(d)) / 3; if (Math.hypot(cx, cz) > 1.7 && !(Math.abs(cx) < 1.8 && cz > 0)) keep.push(a, b, d); } // the hole, open toward the cut face
     gg.setIndex(keep); gg.computeVertexNormals(); }
   const grain = soilGrain(rnd, '#9b7d60', 2600); grain.repeat.set(W / 16, D / 16);
   const groundMesh = new THREE.Mesh(gg, lam({ map: grain, vertexColors: true, color: col('#f2dcc0') })); groundMesh.receiveShadow = true; group.add(groundMesh);
   // entrance rim: the funnel of excavated soil around the hole (follows the ground; clipped at the cut face)
   { const pos: number[] = [], idx: number[] = [], colr: number[] = [], rings = [1.0, 1.25, 1.7, 2.4, 3.3, 4.6], NA = 40;
     rings.forEach((r, ri) => { for (let a = 0; a <= NA; a++) { const th = (a / NA) * Math.PI * 2, x = Math.cos(th) * r, z = Math.min(faceZ - 0.01, Math.sin(th) * r), y = ri === 0 ? ground(0, 0) - 1.4 : ground(x, z) + 0.1 + 0.12 * Math.sin(ri * 1.3 + a * 0.9) * (ri < 5 ? 1 : 0); pos.push(x, y, z); const k = ri === 0 ? 0.35 : 0.8 + 0.2 * vnoise(x * 3, z * 3, 5); colr.push(k, k * 0.94, k * 0.86); } });
-    for (let ri = 0; ri < rings.length - 1; ri++) for (let a = 0; a < NA; a++) { const p0 = ri * (NA + 1) + a, p1 = p0 + NA + 1; idx.push(p0, p1, p0 + 1, p1, p1 + 1, p0 + 1); }
+    for (let ri = 0; ri < rings.length - 1; ri++) for (let a = 0; a < NA; a++) { const p0 = ri * (NA + 1) + a, p1 = p0 + NA + 1, mx = (pos[p0 * 3] + pos[p1 * 3 + 3]) / 2, mz = (pos[p0 * 3 + 2] + pos[p1 * 3 + 5]) / 2; if (Math.abs(mx) < 1.8 && mz > 0.6) continue; idx.push(p0, p1, p0 + 1, p1, p1 + 1, p0 + 1); }
     const rg = new THREE.BufferGeometry(); rg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); rg.setAttribute('color', new THREE.Float32BufferAttribute(colr, 3)); rg.setIndex(idx); rg.computeVertexNormals();
     const rim = new THREE.Mesh(rg, lam({ vertexColors: true, color: col('#c9a67c'), side: THREE.DoubleSide })); rim.receiveShadow = true; group.add(rim); }
 

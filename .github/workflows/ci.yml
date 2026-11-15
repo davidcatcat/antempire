@@ -116,6 +116,10 @@ jobs:
         run: |
           set -o pipefail
           node tests/browser/three-demo.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/ | tee "$RUNNER_TEMP/viewer-shots/three-demo-results.json"
+      - name: Demo 2 (surface + nest cross-section in one world; P0-A2 experiment world via worker-client; 30 engine workers on the surface and underground, natural vs labelled demo-scenario mode, views, tap select, follow, one worker through a full trip with step_until - same id, continuous drawn point, never inside the soil; pause freezes; save -> reload -> continue; desktop 1440x900 + Pixel 7; non-official)
+        run: |
+          set -o pipefail
+          node tests/browser/demo2.check.cjs "$RUNNER_TEMP/viewer-shots" http://localhost:8781/ | tee "$RUNNER_TEMP/viewer-shots/demo2-results.json"
       - name: Assemble the static preview (page + compiled script + data + screenshots + test results + instructions)
         if: always()
         run: |
@@ -123,8 +127,10 @@ jobs:
           mkdir -p "$P/site" "$P/screenshots" "$P/test-results"
           cp web/index.html web/analysis.html "$P/site/" && cp -r web/dist web/data "$P/site/"
           # experiment Worker build + the 3D prototype page and its vendored three (built by npm run web:build above)
-          cp web/experiment.html web/three.html "$P/site/" && cp -r web/worker-dist web/vendor "$P/site/"
-          cp "$RUNNER_TEMP"/viewer-shots/three-*.jpg "$P/screenshots/" 2>/dev/null || true
+          # Demo 2 (web/demo2.html) needs the same vendor directory: vendor/three and vendor/demo2/nest-layout.json
+          cp web/experiment.html web/three.html web/demo2.html "$P/site/" && cp -r web/worker-dist web/vendor "$P/site/"
+          cp "$RUNNER_TEMP"/viewer-shots/three-*.jpg "$RUNNER_TEMP"/viewer-shots/demo2-*.jpg "$P/screenshots/" 2>/dev/null || true
+          cp docs/demo2.md "$P/" 2>/dev/null || true
           cp web/PREVIEW.md "$P/README.md"
           cp "$RUNNER_TEMP"/viewer-shots/*.png "$P/screenshots/" 2>/dev/null || true
           cp "$RUNNER_TEMP"/viewer-shots/*.json "$P/test-results/" 2>/dev/null || true

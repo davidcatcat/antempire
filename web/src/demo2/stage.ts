@@ -254,14 +254,15 @@ export class ColonyStage {
         cur = this.endPos(fl); tc = tm + H; shown++; continue;
       }
       // a partner without a deadline: it waits where it is drawn (a walking one pauses), the forager walks up to it
-      const pp = this.posAt(p, tc), route = g.route(cur, pp, r.lane), tm = tc + Math.max(0, route.len - gap) / v;
+      // (a walking partner stops where it is drawn NOW, at t — never at a place it has not reached yet)
+      const still = this.legAt(p, t), moving = !!still && still.leg.a !== still.leg.b && still.u < 1 || p.legs[p.legs.length - 1].t1 !== Infinity;
+      const pp = this.posAt(p, moving ? t : tc), route = g.route(cur, pp, r.lane), tm = tc + Math.max(0, route.len - gap) / v;
       const H = Math.min(TROPH_HOLD_S, deadline - tm - back(pp));
       if (!(H >= MIN_HOLD_S) || tm - t > CATCHUP_MAX_S) continue;
       const fl: Leg = { t0: tc, t1: tm, path: route, a: 0, b: Math.max(0, route.len - gap), pose: 'walk', partner: null, cls: 'display', f: null }, fdir = this.dirAt(fl);
       out.push(fl, { ...this.hold(this.endPos(fl), tm, tm + H, 'troph', null, p.id), f: fdir });
-      const still = this.legAt(p, tc), moving = !!still && still.leg.a !== still.leg.b && still.u < 1;
       const pface: P3 = { x: -fdir.x, y: -fdir.y, z: -fdir.z };
-      if (moving) { p.legs = [this.hold(pp, tc, tm + H, 'stand', null)]; p.resume = tm + H; p.over = { t0: tm, t1: tm + H, pose: 'troph', partner: r.id, f: pface }; }
+      if (moving) { p.legs = [this.hold(pp, t, tm + H, 'stand', null)]; p.resume = tm + H; p.over = { t0: tm, t1: tm + H, pose: 'troph', partner: r.id, f: pface }; }
       else p.over = { t0: tm, t1: tm + H, pose: 'troph', partner: r.id, f: pface };
       cur = this.endPos(fl); tc = tm + H; shown++;
     }

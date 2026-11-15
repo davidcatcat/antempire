@@ -147,8 +147,8 @@ function viewCam(v: View): Cam {
   const aspect = innerWidth / Math.max(1, innerHeight), hfov = 2 * Math.atan(Math.tan((camera.fov * Math.PI) / 360) * aspect), fit = (halfW: number) => halfW / Math.tan(hfov / 2);
   const mk = (tx: number, ty: number, tz: number, el: number, az: number, dist: number): Cam => { const e = (el * Math.PI) / 180, a = (az * Math.PI) / 180; return { tgt: new THREE.Vector3(tx, ty, tz), pos: new THREE.Vector3(tx + Math.sin(a) * Math.cos(e) * dist, ty + Math.sin(e) * dist, tz + Math.cos(a) * Math.cos(e) * dist) }; };
   if (v === 'surface') return narrow() ? mk(22, 0, -14, 50, -10, Math.min(260, fit(30))) : mk(48, 0, -26, 46, -12, Math.min(260, fit(84)));
-  if (v === 'under') return narrow() ? mk(5, -15, 0, 4, 0, Math.min(230, fit(24))) : mk(5, -17, 0, 3, 0, Math.min(260, fit(47)));
-  return narrow() ? mk(5, -8, 0, 14, -4, Math.min(240, fit(26))) : mk(8, -10, 0, 14, -7, Math.min(260, fit(50)));
+  if (v === 'under') return narrow() ? mk(5, -19, 0, 4, 0, Math.min(230, fit(24))) : mk(5, -17, 0, 3, 0, Math.min(260, fit(47)));
+  return narrow() ? mk(5, -15, 0, 12, -4, Math.min(240, fit(26))) : mk(8, -10, 0, 14, -7, Math.min(260, fit(50)));
 }
 let tween: { from: Cam; to: Cam; t: number; dur: number } | null = null, userBusy = false, followAdjust = 0;
 function goView(v: View, instant = false) {
@@ -203,6 +203,8 @@ function interestingAnt(): string | null {
 
 // ---------- per frame ----------
 const frameIv: number[] = [], cpuMs: number[] = [];
+/** automation only: skip the GPU draw (software rendering is slow); the world, the display director and the camera run on */
+let renderOn = true;
 let lastNow = performance.now(), lowFpsSince = 0;
 
 function place(layer: RigLayer, i: number, p: P3, qt: THREE.Quaternion, scale: number, color: THREE.Color, g: Gait, crop: number, seed: number) {
@@ -246,7 +248,7 @@ function drawStatics(dtAnim: number) {
 }
 
 function tick(now: number) {
-  const dtReal = Math.min(0.1, (now - lastNow) / 1000); frameIv.push(now - lastNow); lastNow = now; if (frameIv.length > 600) frameIv.shift();
+  const dtWall = Math.min(1, (now - lastNow) / 1000), dtReal = Math.min(0.1, dtWall); frameIv.push(now - lastNow); lastNow = now; if (frameIv.length > 600) frameIv.shift();
   const c0 = performance.now(), dtAnim = running ? dtReal : 0;
   if (frame && vis) {
     const run = !!pacing?.running; tNow = displayTime(frame.t_sim, run, pacing?.speed ?? speed, performance.now() - frameAt, lastT); lastT = run ? tNow : null;
@@ -272,8 +274,8 @@ function tick(now: number) {
     const plan = selected ? stage.plannedRoute(selected, tNow) : [];
     planLine.visible = plan.length > 1; if (planLine.visible) { planLine.geometry.dispose(); planLine.geometry = new THREE.BufferGeometry().setFromPoints(plan.map((p) => new THREE.Vector3(p.x, p.y + 0.25, p.z + 0.1))); planLine.computeLineDistances(); }
   }
-  stepCamera(dtReal);
-  renderer.render(scene, camera);
+  stepCamera(dtWall); // camera moves follow the wall clock (a slow frame must not stretch a view change)
+  if (renderOn) renderer.render(scene, camera);
   cpuMs.push(performance.now() - c0); if (cpuMs.length > 600) cpuMs.shift();
   updateLabels(); updateHud(now);
   // automatic quality: step down when the frame rate stays low (never while a level is forced by ?quality=)
@@ -299,7 +301,7 @@ function updateLabels() {
     if (c.role === 'pupa') { text += `｜${part('pupa')}`; cls = ns('pupa') ? (mode === 'demo' ? 'demo' : 'ns') : ''; }
     items.push({ key: `ch-${c.id}`, p: { x: (c.x0 + c.x1) / 2, y: c.floor + c.height + 0.9, z: graph.faceZ }, text, cls, face: true });
   }
-  items.push({ key: 'face', p: { x: -40, y: -5.5, z: graph.faceZ }, text: `巢體幾何＝展示假設${ns('major') ? (mode === 'demo' ? `｜大工蟻 ${n('major').demo}（示範資料）` : '｜大工蟻：尚未模擬') : ''}`, cls: ns('major') && mode !== 'demo' ? 'ns' : mode === 'demo' ? 'demo' : '', face: true });
+  items.push({ key: 'face', p: { x: -24, y: -7, z: graph.faceZ }, text: `巢體幾何＝展示假設${ns('major') ? (mode === 'demo' ? `｜大工蟻 ${n('major').demo}（示範資料）` : '｜大工蟻：尚未模擬') : ''}`, cls: ns('major') && mode !== 'demo' ? 'ns' : mode === 'demo' ? 'demo' : '', face: true });
   items.push({ key: 'entrance', p: { x: 0, y: ground(0, 0) + 3.2, z: 0 }, text: '巢口', cls: '', face: false });
   items.push({ key: 'host', p: world.anchors.hostPlant, text: `蜜露來源（引擎）存量 ${frame.source.stock_portions.toFixed(1)} 份｜寄主植物外形＝裝飾`, cls: '', face: false });
   if (mode === 'demo') { items.push({ key: 'nectar', p: world.anchors.nectar, text: DEMO_FOOD_PROPS[0].label_zh, cls: 'demo', face: false }); items.push({ key: 'insect', p: world.anchors.insect, text: DEMO_FOOD_PROPS[1].label_zh, cls: 'demo', face: false }); }
@@ -313,8 +315,8 @@ function updateLabels() {
     let el = labelEls.get(it.key); if (!el) { el = document.createElement('div'); ui.labels.appendChild(el); labelEls.set(it.key, el); }
     seen.add(it.key);
     const s = V.set(it.p.x, it.p.y, it.p.z).project(camera), on = s.z < 1 && Math.abs(s.x) < 1.05 && Math.abs(s.y) < 1.05 && (!it.face || (frontal > 0.45 && dist < 330)) && (it.cls === 'pin' || dist < 420);
-    el.hidden = !on; if (!on) continue;
     el.className = `lbl ${it.cls}`; if (el.textContent !== it.text) el.textContent = it.text;
+    el.hidden = !on; if (!on) continue;
     el.style.transform = `translate(${((s.x + 1) / 2) * w}px, ${((1 - s.y) / 2) * h}px) translate(-50%, -100%)`;
   }
   for (const [k, el] of labelEls) if (!seen.has(k)) el.hidden = true;
@@ -350,7 +352,7 @@ function renderLegend() {
   ui.legend.innerHTML = `<h2>畫面上的四類資料</h2><ul>
 <li><span class="tag engine">引擎</span>工蟻的活動狀態與開始時刻、出發／抵達時刻、嗉囊量（腹部脹大程度）、路線記憶、幼蟲腸道量、交哺與餵幼蟲事件（誰、何時、多少）、路線長度 ${frame?.layout.source_distance_cm ?? 200} cm、光照與合成氣溫。</li>
 <li><span class="tag interp">顯示插值</span>兩個引擎紀錄點之間的位置：地表路線上的行走（出發／抵達時刻＝引擎，路徑形狀＝示意）；走向巢口／從巢口回巢內（起訖時刻＝引擎，巢內路線＝展示假設）。插值不寫回引擎、不產生事件。</li>
-<li><span class="tag assume">展示假設</span>${esc(L.label_zh)}。巢內每個位置與走法：引擎沒有巢內座標，狀態改變後工蟻沿通道走到新狀態的位置，最長 ${CATCHUP_MAX_S} 秒（模擬時間）內到達；休息的工蟻站定不走；「巢內走動」的閒逛路線、同通道的前後錯位（避讓）、步態、轉身、觸角與姿勢都只是畫面。螞蟻放大 ${mag} 倍（2.5 mm 畫成 ${(MINOR_LEN_CM * mag * 10).toFixed(0)} mm），通道也依放大後體型畫寬；路線長度不放大。花園景物（土、石、草、落葉、磚、盆栽、寄主植物外形）是裝飾，不是障礙物。搜尋中的位置是示意（搜尋沒有空間模型）。</li>
+<li><span class="tag assume">展示假設</span>${esc(L.label_zh)}。巢內每個位置與走法：引擎沒有巢內座標，狀態改變後工蟻沿通道走到新狀態的位置，每段走動最長 ${CATCHUP_MAX_S} 秒（模擬時間）；途中演出交哺時先走到對象旁，合計上限 ${2 * CATCHUP_MAX_S + 6} 秒；休息的工蟻站定不走；「巢內走動」的閒逛路線、同通道的前後錯位（避讓）、步態、轉身、觸角與姿勢都只是畫面。螞蟻放大 ${mag} 倍（2.5 mm 畫成 ${(MINOR_LEN_CM * mag * 10).toFixed(0)} mm），通道也依放大後體型畫寬；路線長度不放大。花園景物（土、石、草、落葉、磚、盆栽、寄主植物外形）是裝飾，不是障礙物。搜尋中的位置是示意（搜尋沒有空間模型）。</li>
 <li><span class="tag demo">示範資料</span>只在「展示情境」模式：蟻后 2（Owner #202 暫定 2～3）、大工蟻、卵、蛹與兩個不可取食的食物道具。固定種子、可重現、${esc(DEMO_ROUTINE_LABEL)}；不存檔、不送進 Worker。自然模式完全不畫。</li></ul>
 <h2>沒有畫的東西</h2><ul><li>費洛蒙：尚未模擬，畫面不畫任何氣味路徑；黃色虛線只是「顯示路線」（長度＝引擎路線長度，方向示意）。</li><li>固體食物搬運、其他食物種類（花蜜、昆蟲屍體）：引擎尚未模擬；只在展示情境當不可取食的道具。</li><li>身體碰撞與巢口容量：尚未模擬；畫面上的錯位只是顯示。</li></ul>
 <h2>已列出的畫面跳位</h2><ul>${STAGE_DISCONTINUITIES.map((d) => `<li>${esc(d.label_zh)}</li>`).join('')}</ul>
@@ -388,12 +390,15 @@ function renderCard() {
       : `<b>${esc(d.id)}</b>　<span class="tag demo">示範資料</span>${CASTE_LABEL[d.caste]}<br>動作：${esc(d.state ?? '')}<br>位置：${esc(ch)}（展示假設）<br><span class="muted">${DEMO_BADGE}：引擎尚未模擬這個階級；此個體不存檔、不影響任何引擎個體</span>`;
   } else { ui.card.hidden = true; return; }
   const canFollow = !!(a && w);
-  ui.card.innerHTML = `${html}<div class="row">${canFollow ? `<button id="cardFollow" type="button">${following === selected ? '停止跟隨' : '跟隨這隻'}</button>` : ''}<button id="cardClose" type="button" aria-label="關閉">關閉</button></div>`;
+  const full = `${html}<div class="row">${canFollow ? `<button id="cardFollow" type="button">${following === selected ? '停止跟隨' : '跟隨這隻'}</button>` : ''}<button id="cardClose" type="button" aria-label="關閉">關閉</button></div>`;
   ui.card.hidden = false;
+  if (full === cardHtmlNow) return; // unchanged: keep the buttons in place (a tap must not land on a replaced node)
+  cardHtmlNow = full; ui.card.innerHTML = full;
   if (canFollow) $('cardFollow').onclick = () => setFollow(following === selected ? null : selected);
   $('cardClose').onclick = () => select(null);
 }
-function select(id: string | null) { selected = id; if (!id) { ui.card.hidden = true; if (following) setFollow(null); } else renderCard(); }
+let cardHtmlNow = '';
+function select(id: string | null) { cardHtmlNow = ''; selected = id; if (!id) { ui.card.hidden = true; if (following) setFollow(null); } else renderCard(); }
 
 // picking: nearest drawn individual on screen
 function pick(sx: number, sy: number): string | null {
@@ -513,8 +518,12 @@ async function main() {
       session.onWorldStart = onWorldStart; session.onSaveState = (s) => { saveUi = s; };
       session.onLockLost = () => { toast('另一個分頁接手了這個世界：本分頁改為唯讀（不再存檔）', 8000); renderWorldInfo(); };
       let resumed = false;
+      // The session reads what each world kind expects of a snapshot from throw-away probe worlds in the SAME Worker
+      // (session.ts runtimeInfo). All probes must run BEFORE the demo world exists: list() runs them once (cached).
+      let rows: Awaited<ReturnType<ExperimentSession['list']>> = [];
+      try { rows = await session.list(); } catch { rows = []; }
       if (!q.has('new')) { // continue the world this browser played last (SAVE-2), if it is a loadable P0-A2 world
-        try { const id = await st.value.lastPlayed(), row = id ? (await session.list()).find((w) => w.world_id === id) : null; if (row && row.compat === 'compatible' && row.engine_version.startsWith('experiment-p0a2-24h/')) resumed = await openWorld(row.world_id); } catch { resumed = false; }
+        try { const id = await st.value.lastPlayed(), row = id ? rows.find((w) => w.world_id === id) : null; if (row && row.compat === 'compatible' && row.engine_version.startsWith('experiment-p0a2-24h/')) resumed = await openWorld(row.world_id); } catch { resumed = false; }
       }
       if (!resumed) await newWorld(String(DEFAULT_SEED));
       if (!frame) { tempMode = true; session = null; onWorldStart(); await client.init(`exp-demo2-${DEFAULT_SEED}`, DEFAULT_SEED, 'p0a2'); await afterWorldReady(START_T); toast('無法使用存檔（可能另一個分頁正在使用）：改用不存檔的臨時世界', 7000); }
@@ -561,9 +570,12 @@ const hooks: Record<string, unknown> = {
   screenOf: (id: string) => { const a = drawn.find((x) => x.id === id) ?? statics.map((s) => ({ id: s.ind.id, ...s.p })).find((x) => x.id === id); if (!a) return null; const p = new THREE.Vector3(a.x, a.y, a.z).project(camera); return { x: ((p.x + 1) / 2) * ui.canvas.clientWidth, y: ((1 - p.y) / 2) * ui.canvas.clientHeight, z: p.z }; },
   select: (id: string | null) => select(id), follow: (id: string | null) => setFollow(id), setRunning: (on: boolean) => setRunning(on), setSpeed: (s: number) => setSpeed(s),
   setView: (v: View, instant = true) => goView(v, instant), setMode: (m: Mode) => setMode(m), setQuality: (k: Quality) => applyQuality(k), openSide: (t: string | null) => openSide(t),
+  setRender: (on: boolean) => { renderOn = on; },
   /** scheduling only: run the world to t (paused pages then show exactly the frame's instant) */
   stepUntil: async (t: number) => { await client.stepUntil(t); },
-  save: async () => { const r = await session?.request('manual'); return !!r && r.ok; },
+  /** the drawn workers for the latest frame at ITS instant (a paused page shows exactly this; no wait for a repaint) */
+  sampleNow: () => { if (!frame || !vis) return null; tNow = frame.t_sim; drawn = stage.update(frame, vis, tNow, 0); return { t: tNow, ants: drawn.map((a) => ({ id: a.id, state: a.state, realm: a.realm, x: a.x, y: a.y, z: a.z, place: a.place, pose: a.pose, absorbed: a.absorbed })) }; },
+  save: async () => { const r = await session?.request('manual'); return r ? (r.ok ? { ok: true } : { ok: false, code: r.code, message: r.message }) : { ok: false, code: 'no_session', message: '' }; },
   view: (pos: number[], tgt: number[]) => { tween = null; camera.position.fromArray(pos); controls.target.fromArray(tgt); controls.update(); },
   perf: () => ({ ...summarise(frameIv.slice(-240), cpuMs.slice(-240)), calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, quality, dpr: renderer.getPixelRatio(), gl: glInfo, measurement_class: measurementClass(glInfo, automated), scene_triangles: world?.triangles() ?? 0 }),
 };
