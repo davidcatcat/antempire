@@ -26,7 +26,7 @@ import { P0a2ExperimentWorld } from '../prototypes/continuous-world/worker/p0a2-
 import type { EventMsg, P0a2FrameMsg } from '../web/src/experimental/worker-protocol.ts';
 import { VisModel, SEARCH_EMERGE_S } from '../web/src/vis1-model.ts';
 import { NestGraph, parseLayout, pathAt, upFor, type Pos } from '../web/src/demo2/nest-graph.ts';
-import { ColonyStage, OUTSIDE, CATCHUP_MAX_S, TROPH_HOLD_S, ABSORB_MAX_CM, DRAWN_SPEED_BOUND, STAGE_DISCONTINUITIES, CLASS_LABEL, YAW_RATE_BOUND, TURN_RATE, MEET_GAP_BODY, lateral, LANE_BODY, MEANDER_BODY, type DrawnAnt } from '../web/src/demo2/stage.ts';
+import { ColonyStage, OUTSIDE, CATCHUP_MAX_S, TROPH_HOLD_S, ABSORB_MAX_CM, DRAWN_SPEED_BOUND, STAGE_DISCONTINUITIES, CLASS_LABEL, YAW_RATE_BOUND, TURN_RATE, MEET_GAP_BODY, MEET_ANTENNA, lateral, LANE_BODY, MEANDER_BODY, type DrawnAnt } from '../web/src/demo2/stage.ts';
 import { BLOCK, FOLD_CM, fold, ground, surfacePose, corridor3 } from '../web/src/demo2/surface.ts';
 import { roster, colonyOf, engineFeed, demoFeed, missingCastes, engineCastes, DEMO_COUNTS, DEMO_BADGE, NATURAL_BADGE, DEMO_FOOD_PROPS } from '../web/src/demo2/feed.ts';
 import { larvaSpot, carerSpot, queenSpot, queenPlace, eggSpot, pupaSpot, majorSpot, chamberPlaces, placeFrame, BODY } from '../web/src/demo2/places.ts';
@@ -232,6 +232,7 @@ function run(seed: number, t0: number, t1: number, dt = 0.1, every = 2): { trace
   const sf = separate([B('a', 0, 0, 1, 1, 'surface'), B('b', 1.0, 0.05, -1, 1, 'surface')]);
   ok(sf.size === 2 && Math.abs(sf.get('a')!.x) < 1e-9 && Math.abs(sf.get('a')!.z) > 0.1, 'on the surface a body is moved sideways to its heading');
   ok(Math.abs(axisDistance(B('a', 0, 0, 1), B('b', 3, 0, 1)).d - (3 - 2 * BODY.half * L)) < 1e-9, 'body model: a capsule along the heading');
+  ok(MEET_ANTENNA === 0 && POSE_TARGET.troph.conv === 1 && POSE_TARGET.brood.conv > 0 && POSE_TARGET.walk.conv === 0 && POSE_TARGET.stand.conv === 0, 'the forward-antenna pose exists only in poses staged from an engine event (trophallaxis, larva contact); not for display-only meetings');
   ok(MEET_GAP_BODY * L - 2 * BODY.half * L >= 2 * BODY.r * L, 'two ants meeting head to head stop where their bodies do not overlap');
   for (let d = 0; d < 200; d += 3.7) { const lat = lateral('w004', 100, d, Math.min(d, 200 - d), L); ok(lat >= 0 && lat <= (LANE_BODY + MEANDER_BODY) * L + 1e-9 && (Math.min(d, 200 - d) < 4 || lat >= (LANE_BODY - MEANDER_BODY) * L - 1e-9), 'surface trips keep to the right of the display path (bounded, none at the two ends)'); }
   ok(lateral('w004', 100, 0, 0, L) === 0 && 2 * (LANE_BODY - MEANDER_BODY) * L >= 2 * BODY.r * L - 0.3 && new Set([10, 20, 30, 40, 50].map((d) => lateral('w004', 100, d, 50, L).toFixed(3))).size >= 4, 'the lane vanishes at the nest and at the source (engine instants unchanged); it meanders; opposite directions pass on opposite sides');
@@ -319,7 +320,7 @@ function run(seed: number, t0: number, t1: number, dt = 0.1, every = 2): { trace
     ok(m.rest_pairs > 1000 && m.rest_front_overlap_pct <= 0.2 && m.rest_same_facing_pct <= 6 && m.rest_same_row_pct <= 5 && m.rest_nn_spacing_cv >= 0.15, `seed ${m.seed}: resting workers are arranged irregularly (front-view overlap ${m.rest_front_overlap_pct}% of pairs, same facing ${m.rest_same_facing_pct}%, same row ${m.rest_same_row_pct}%, nearest-neighbour spacing CV ${m.rest_nn_spacing_cv})`);
     ok(m.turn_in_place_samples > 200 && m.turnMoved === 0, `seed ${m.seed}: large heading changes are turned in place (${m.turn_in_place_samples} samples; the body does not travel while it turns)`);
     ok(m.start_speed < 0.75 * m.walk_speed, `seed ${m.seed}: a walk starts with a speed ramp (first 0.15 s: ${m.start_speed} cm/s, walking: ${m.walk_speed} cm/s)`);
-    ok(m.meet > 0 && m.restScan === 0 && m.tilt, `seed ${m.seed}: antennae converge when two walkers meet head-on (${m.meet} samples), a settled resting ant does not scan, surface ants stand on the drawn ground`);
+    ok(m.meet === 0 && m.restScan === 0 && m.tilt, `seed ${m.seed}: a walking ant never shows an antennation pose (two ants that merely pass on screen are not an engine contact: ${m.meet} samples), a settled resting ant does not scan, surface ants stand on the drawn ground`);
   }
   // --- frame-rate invariance: the same frames sampled at different rates give the same drawn ants at the same instant ---
   {

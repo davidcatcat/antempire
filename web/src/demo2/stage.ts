@@ -39,7 +39,8 @@
  *   - the odometer (distance the drawn point walked, plus steps taken to turn) drives the gait phase (gait.ts);
  *   - resting / standing places are irregular (places.ts); a second tier of resting places is on the chamber's back wall;
  *   - bodies are kept apart per instant (separate.ts): in the nest along the cavity depth only, never into the soil;
- *   - two ants meeting head-on point their antennae at each other (display; the engine records no such contact).
+ *   - the antennae point forward only in a contact the ENGINE recorded (trophallaxis, larva contact / feeding); two ants
+ *     that merely pass each other on screen show no antennation (MEET_ANTENNA = 0).
  */
 import type { EventMsg, P0a2FrameMsg } from '../experimental/worker-protocol.ts';
 import type { VisModel } from '../vis1-model.ts';
@@ -76,9 +77,10 @@ export const TURN_STEP_PER_RAD = 0.6;
 const REACH_BLEND_S = 0.25;
 /** speed profile of a walk: ramp length at both ends (× body length) and how much a bend slows the walk */
 export const RAMP_BODY = 0.6, BEND_SLOW = 1.6;
-/** how far the antennae of two workers coming head-on turn toward each other (0 = not at all). A POSE only: the engine has
- *  no antennal contact and nothing is recognised or signalled (docs/demo2-engine-gap.md §3.3) */
-export const MEET_ANTENNA = 0.9;
+/** how far the antennae of two workers that merely pass each other on screen turn toward each other. 0 (coordinator decision
+ *  2026-11-15): such a pose would depict a contact the engine never recorded (docs/demo2-engine-gap.md §3.3). The forward
+ *  antenna pose is shown only where an ENGINE event exists: trophallaxis (arrive_nest.touched) and larva contact / feeding */
+export const MEET_ANTENNA = 0;
 /** the drawn body frame never turns faster than this (rad per simulated second) — asserted by the tests */
 export const YAW_RATE_BOUND = 8;
 /** bound of the drawn speed (× the engine trail speed) used by the jump detector and the continuity tests */
@@ -630,7 +632,7 @@ export class ColonyStage {
       const { r, a, o } = raws[i], b = bodies[i], s0 = sep.get(r.id), s = s0 && a.mobK > 0 && a.pose !== 'rest' ? { x: s0.x * a.mobK, z: s0.z * a.mobK } : undefined, fw = qFwd(a.q), up = qUp(a.q), w = r.w;
       let x = b.x + (s?.x ?? 0), z = b.z + (s?.z ?? 0), y = b.y; if (a.realm === 'surface' && s) { z = Math.min(z, BLOCK.z1 - 0.8); y = ground(x, z) + o.y; }
       const pv = poseValues(a.prev, a.pose, a.since);
-      // two ants coming head-on point their antennae at each other (display; the engine records no such contact)
+      // display-only meetings: no antennation pose unless MEET_ANTENNA > 0 (it is 0: the engine records no such contact)
       let meet = 0;
       for (let j = 0; j < bodies.length; j++) {
         if (j === i || bodies[j].realm !== b.realm) continue; const c = bodies[j], dx = c.x - b.x, dy = c.y - b.y, dz = c.z - b.z, d = Math.hypot(dx, dy, dz); if (d > 1.7 * L || d < 1e-6) continue;
