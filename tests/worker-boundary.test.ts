@@ -28,6 +28,11 @@ const p0Allowed = B.allowed_import_prefixes.filter((p) => p.startsWith(P0));
 ok(p0Allowed.length > 0 && p0Allowed.every((p) => /^prototypes\/p0a2-24h\/[a-z0-9-]+\.(ts|json)$/.test(p)), `P0-A2 allowlist entries are single core files (${p0Allowed.join(', ')})`);
 ok(B.denied_import_prefixes.includes(`${P0}tools/`) && B.denied_import_prefixes.includes(`${P0}out/`), 'P0-A2 tools/ and out/ are denied');
 ok((B.pure_module_prefixes ?? []).includes('engine/') && (B.pure_module_prefixes ?? []).includes(P0), 'engine/ and the P0-A2 core are held to the purity rules');
+// colony-members candidate world (rules update 2026-11-15, docs/colony-candidate-world.md): engine/colony/ and exactly
+// one engine/day0 file, both held to the engine purity rules; no scenario directory, no research prototype directory
+ok(B.allowed_import_prefixes.includes('engine/colony/') && B.allowed_import_prefixes.includes('engine/day0/founding-sampler.ts'), 'colony candidate: engine/colony/ and the Day0 sampler file are allowlisted');
+ok(B.allowed_import_prefixes.filter((p) => p.startsWith('engine/day0')).join() === 'engine/day0/founding-sampler.ts' && !B.allowed_import_prefixes.some((p) => p.startsWith('scenarios') || p.startsWith('prototypes/colony-members') || p.startsWith('prototypes/p0a2-24h/brood')), 'colony candidate: only the single sampler file of engine/day0; no scenarios/, CQ-1 research or BP-1 directory');
+ok(/p0a2-colony-v1/.test(B.decision as string) && /2026-11-15/.test(B.decision as string), 'the boundary file records the colony-candidate rules update');
 ok(/Owner/.test(B.how_to_extend as string) && /2026-11-12/.test(B.how_to_extend as string), 'how_to_extend records the Owner authorisation that replaces the Codex fixed-SHA step');
 ok(B.node_verifier !== undefined && JSON.stringify(B.node_verifier.files) === '["cli/verify-save.ts"]' && ['writeFile', 'child_process', 'fetch('].every((x) => B.node_verifier!.forbidden_in_files.includes(x)), 'Node verifier exception (#200): exactly cli/verify-save.ts, read-only');
 ok(B.experimental_save_store.files.every((f) => f.startsWith('web/src/experimental/')) && B.experimental_save_store.database_name_prefix === 'antempire-experiment-', 'save store is confined to web/src/experimental and experiment-prefixed databases');
@@ -107,6 +112,17 @@ const cases: [string, (m: Map<string, string>) => void, string][] = [
   ['wall clock in a P0-A2 core module', (m) => { m.set('prototypes/p0a2-24h/decision.ts', 'export const d = () => Date.now();'); m.set(`${W}p0.ts`, "import { d } from '../../p0a2-24h/decision.ts';"); }, 'engine-impurity'],
   ['P0-A2 core module imports node', (m) => { m.set('prototypes/p0a2-24h/params.ts', "import fs from 'node:fs';\nexport const p = 1;"); m.set(`${W}p0.ts`, "import { p } from '../../p0a2-24h/params.ts';"); }, 'node-import'],
   ['P0-A2 core module leaks to cli', (m) => { m.set('prototypes/p0a2-24h/canon.ts', "import { advance } from '../../cli/advance.ts';\nexport const c = 1;"); m.set(`${W}p0.ts`, "import { c } from '../../p0a2-24h/canon.ts';"); }, 'denied-module'],
+  // colony-members candidate world (rules update 2026-11-15): engine/colony and the Day0 sampler in the Worker graph
+  ['colony module uses Math.random', (m) => { m.set('engine/colony/roster.ts', 'export const r = () => Math.random();'); m.set(`${W}col.ts`, "import { r } from '../../../engine/colony/roster.ts';"); }, 'engine-impurity'],
+  ['colony module reads the wall clock', (m) => { m.set('engine/colony/members.ts', 'export const t = () => Date.now();'); m.set(`${W}col.ts`, "import { t } from '../../../engine/colony/members.ts';"); }, 'engine-impurity'],
+  ['colony module leaks to the official day loop', (m) => { m.set('engine/day.ts', 'export const d = 1;'); m.set('engine/colony/roster.ts', "import { d } from '../day.ts';\nexport const r = d;"); m.set(`${W}col.ts`, "import { r } from '../../../engine/colony/roster.ts';"); }, 'denied-module'],
+  ['colony module imports a non-allowlisted engine module (official queen)', (m) => { m.set('engine/queen.ts', 'export const q = 1;'); m.set('engine/colony/roster.ts', "import { q } from '../queen.ts';\nexport const r = q;"); m.set(`${W}col.ts`, "import { r } from '../../../engine/colony/roster.ts';"); }, 'not-allowlisted'],
+  ['colony module uses Math.pow', (m) => { m.set('engine/colony/roster.ts', 'export const r = (x: number) => Math.pow(x, 0.75);'); m.set(`${W}col.ts`, "import { r } from '../../../engine/colony/roster.ts';"); }, 'approximated-math'],
+  ['colony module uses a storage API', (m) => { m.set('engine/colony/roster.ts', "export const r = () => localStorage.getItem('k');"); m.set(`${W}col.ts`, "import { r } from '../../../engine/colony/roster.ts';"); }, 'forbidden-global'],
+  ['another engine/day0 module (only the sampler file is allowlisted)', (m) => { m.set('engine/day0/other.ts', 'export const o = 1;'); m.set(`${W}col.ts`, "import { o } from '../../../engine/day0/other.ts';"); }, 'not-allowlisted'],
+  ['Day0 sampler with Math.log', (m) => { m.set('engine/day0/founding-sampler.ts', 'export const s = (u: number) => Math.log(u);'); m.set(`${W}col.ts`, "import { s } from '../../../engine/day0/founding-sampler.ts';"); }, 'approximated-math'],
+  ['scenario file imported by the Worker', (m) => { m.set('scenarios/day0-budding-candidate.json', '{}'); m.set(`${W}col.ts`, "import s from '../../../scenarios/day0-budding-candidate.json' with { type: 'json' };"); }, 'not-allowlisted'],
+  ['CQ-1 research parameter file imported by the Worker', (m) => { m.set('prototypes/colony-members/cq1-params.json', '{}'); m.set(`${W}col.ts`, "import s from '../../colony-members/cq1-params.json' with { type: 'json' };"); }, 'not-allowlisted'],
   // deterministic math (Owner #190 scheme A, extended to exp / log / ** by the detmath-exp rules update)
   ['Math.exp in an engine/clock module', (m) => { m.set('engine/clock/weather-input.ts', 'export const es = (T: number) => 0.6108 * Math.exp(17.27 * T / (T + 237.3));'); m.set(`${W}p0.ts`, "import { es } from '../../../engine/clock/weather-input.ts';"); }, 'approximated-math'],
   ['Math.log in a P0-A2 core module', (m) => { m.set('prototypes/p0a2-24h/world.ts', 'export const w = (u: number) => -Math.log(1 - u);'); m.set(`${W}p0.ts`, "import { w } from '../../p0a2-24h/world.ts';"); }, 'approximated-math'],
@@ -135,6 +151,7 @@ for (const d of ['engine', 'cli', 'web/src', B.worker_entry_dir, 'prototypes/p0a
 const r = checkBoundary(real, B);
 ok(r.violations.length === 0, `real repository respects the Worker boundary (${JSON.stringify(r.violations.slice(0, 5))})`);
 for (const f of ['prototypes/p0a2-24h/world.ts', 'prototypes/p0a2-24h/decision.ts', 'prototypes/p0a2-24h/params.json']) ok(r.reached.includes(f), `the Worker graph reaches the P0-A2 core (${f})`);
+ok(!r.reached.some((f) => f.startsWith('scenarios/') || f.startsWith('prototypes/colony-members/') || f.startsWith('prototypes/p0a2-24h/brood/')), 'the Worker graph reaches no scenario file, CQ-1 research file or BP-1 module');
 ok(!r.reached.some((f) => f.startsWith('prototypes/p0a2-24h/tools/') || f.startsWith('prototypes/p0a2-24h/out/') || f === 'prototypes/p0a2-24h/observer.ts'), 'the Worker graph reaches no P0-A2 tool, output or observer module');
 checks += r.checks;
 // 4. the allowlist is closed: every allowlisted engine module's own transitive imports stay inside the allowlist
@@ -143,6 +160,9 @@ const allowedEngine = [...real.keys()].filter((f) => f.startsWith('engine/') && 
 ok(allowedEngine.includes('engine/rng.ts'), 'allowlisted engine modules found');
 const probe = new Map(real);
 probe.set(`${B.worker_entry_dir}/__allowlist_closure_probe__.ts`, allowedEngine.map((f) => `import '${path.posix.relative(B.worker_entry_dir, f)}';`).join('\n'));
+// the colony-candidate allowlist entries exist as real modules and are covered by this closure probe (purity,
+// deterministic maths, no denied import), whether or not a Worker module imports them yet
+for (const f of ['engine/colony/members.ts', 'engine/day0/founding-sampler.ts']) ok(allowedEngine.includes(f), `allowlisted colony-candidate module ${f} exists and is probed`);
 const closure = checkBoundary(probe, B);
 ok(closure.violations.length === 0, `allowlist is closed under imports (${JSON.stringify(closure.violations.slice(0, 5))})`);
 ok(allowedEngine.every((f) => closure.reached.includes(f)), 'closure probe reached every allowlisted engine module');
