@@ -45,16 +45,50 @@
   .lbl.ns { border: 1px dashed rgba(255,170,150,0.8); color: #ffd9cf; } .lbl.demo { border: 1px solid var(--demo); color: #d8f1ff; } .lbl.pin { background: var(--accent); color: #2a1d0b; font-weight: 700; } .lbl.act { background: rgba(60,100,60,0.85); }
   #toast { position: fixed; left: 50%; top: 22%; transform: translateX(-50%); max-width: min(560px, calc(100vw - 24px)); background: rgba(20,15,10,0.9); border: 1px solid var(--line); border-radius: 10px; padding: 8px 13px; font-size: 13px; z-index: 6; }
   #fatal { position: fixed; inset: 0; z-index: 9; background: #1d1712; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center; font-size: 15px; line-height: 1.8; }
-  #sheetBtn { display: none; }
+  /* order: the title and the two markings stay first on wide screens (the mode chip lives in the status row) */
+  h1 { order: -3; } #flag { order: -2; } #statusRow { display: contents; } #modeBadge { order: -1; }
+  #more { display: contents; } #moreBtn, #peek, #grip, .narrow-only, #card .sum, #cardDetail { display: none; }
+  #tourChip { position: fixed; z-index: 4; right: max(8px, env(safe-area-inset-right, 0px)); top: calc(var(--top, 70px) + 6px); min-height: 36px; border-radius: 18px; background: rgba(20,15,10,0.86); border-color: var(--accent); font-size: 12.5px; }
+  body:not(.side-closed) #tourChip { right: 360px; }
+  #tabs button[data-tab="ant"] { display: none; }
   [hidden] { display: none !important; }
   @media (max-width: 760px) {
+    /* phone (portrait): ONE compact control row + a one-line status row; everything else in the 更多 menu or the sheet.
+       The bottom sheet is closed (a small floating 面板 pill with key counts), half or full; --sheet (set by the page) is
+       its height, --cover what it and the compact individual card cover: labels and the legend stay above that. */
     .lbl { font-size: 10.5px; line-height: 1.25; padding: 1px 4px; }
-    body:not(.side-closed) #labels { bottom: 44dvh; } body:not(.side-closed) #lblLegend { bottom: calc(44dvh + 6px); }
-    h1 { font-size: 13.5px; } .chip { font-size: 10.5px; padding: 2px 6px; } #hud { font-size: 11px; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
-    select, button, a.btn { min-height: 36px; padding: 0 8px; font-size: 12.5px; }
+    #labels { bottom: var(--cover, 0px); } #lblLegend { bottom: calc(var(--cover, 0px) + 6px + env(safe-area-inset-bottom, 0px)); } body.pill #lblLegend { max-width: calc(100vw - 176px); }
+    #top { gap: 4px 5px; padding: calc(4px + env(safe-area-inset-top, 0px)) max(8px, env(safe-area-inset-right, 0px)) 3px max(8px, env(safe-area-inset-left, 0px)); flex-wrap: wrap; }
+    h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } /* the page title stays for assistive tech; the 非正式 chip leads the row */
+    .chip { font-size: 10.5px; padding: 2px 6px; } #flag { order: 0; margin-right: auto; } .wide-only { display: none; }
+    select, button, a.btn, input[type=text] { min-height: 44px; min-width: 44px; padding: 0 8px; font-size: 12.5px; }
+    button.primary { min-width: 44px; } #speed { padding: 0 4px; }
+    #moreBtn { display: inline-block; font-size: 18px; font-weight: 700; } .narrow-only { display: inline-block; }
+    #more { display: none; position: absolute; right: max(8px, env(safe-area-inset-right, 0px)); top: 100%; z-index: 5; flex-direction: column; gap: 4px; padding: 6px; min-width: 190px; background: var(--panel); border: 1px solid var(--line); border-radius: 0 0 12px 12px; }
+    body.more-open #more { display: flex; } #more button { width: 100%; text-align: left; }
+    #statusRow { display: flex; flex: 1 1 100%; min-width: 0; gap: 5px; align-items: center; position: relative; cursor: pointer; }
+    #statusRow::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 44px; } /* a 44 px tap target for the short status row */
+    #modeBadge { order: 0; flex: 0 0 auto; } #hud { flex: 1 1 0; min-width: 0; font-size: 11px; line-height: 1.5; }
+    body.hud-open #hud { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+    #tourChip { min-height: 44px; }  body:not(.side-closed) #tourChip { right: max(8px, env(safe-area-inset-right, 0px)); }
 
-    #side { left: 0; right: 0; top: auto; bottom: 0; width: auto; height: 44dvh; border-radius: 14px 14px 0 0; border-width: 1px 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
-    #card { top: auto; bottom: 12px; max-height: 34dvh; overflow: auto; font-size: 12.5px; line-height: 1.5; } body:not(.side-closed) #card { display: none; }
+    #side { left: 0; right: 0; top: auto; bottom: 0; width: auto; height: var(--sheet, 46dvh); border-radius: 14px 14px 0 0; border-width: 1px 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); overflow: visible; }
+    #side .pane { min-height: 0; }
+    #grip { display: block; flex: 0 0 20px; position: relative; touch-action: none; cursor: grab; }
+    #grip::before { content: ""; position: absolute; left: 50%; top: 8px; width: 44px; height: 4px; margin-left: -22px; border-radius: 2px; background: var(--muted); }
+    #grip::after { content: ""; position: absolute; left: 0; right: 0; top: -24px; height: 44px; } /* a 44 px handle: tap closes, drag resizes */
+    #peek { position: fixed; z-index: 3; right: max(8px, env(safe-area-inset-right, 0px)); bottom: calc(6px + env(safe-area-inset-bottom, 0px)); max-width: 160px; border-radius: 22px; background: var(--panel); font-size: 12px; white-space: nowrap; touch-action: none; }
+    body.pill #peek { display: inline-flex; align-items: center; } body.dragging #peek { display: inline-flex; opacity: 0; }
+    #tabs { flex-wrap: nowrap; overflow-x: auto; flex: 0 0 auto; } #tabs button { min-height: 44px; flex: 0 0 auto; } #tabs button[data-tab="ant"] { display: inline-block; }
+    .pane label { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; } .pane input[type=checkbox] { width: 22px; height: 22px; }
+    /* the individual card on phones: a two-line summary + 跟隨 / 詳情, lying on the bottom edge (or on top of the open sheet); details open in the sheet */
+    #card { left: 0; right: 0; top: auto; bottom: var(--card-bottom, 0px); width: auto; height: 56px; z-index: 4; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 10px; border-radius: 14px 14px 0 0; border-width: 1px 0 0; font-size: 12.5px; line-height: 1.35; }
+    body.sheet-full #card { display: none; }
+    #card .sum { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: 1 1 0; min-width: 0; } #card .detail, #cardClose { display: none; }
+    #card .row { margin: 0; flex: 0 0 auto; flex-wrap: nowrap; gap: 4px; } #cardDetail { display: inline-block; }
+  }
+  @media (max-width: 380px) { #flag { order: 9; margin-right: 0; } }
+  @media (min-width: 761px) { #pane-ant { display: none; } 
   }
 </style>
 </head>
@@ -63,20 +97,29 @@
 <div id="labels"></div>
 <div id="lblLegend" hidden></div>
 <div id="top">
-  <h1>螞蟻帝國 Demo 2</h1><span id="flag" class="chip">非正式實驗世界</span><span id="modeBadge" class="chip">載入中…</span>
+  <h1>螞蟻帝國 Demo 2</h1><span id="flag" class="chip">非正式實驗世界</span>
   <button id="play" class="primary" type="button">暫停</button>
   <select id="speed" aria-label="模擬速度（只改排程）"></select>
-  <span class="seg" role="group" aria-label="視角"><button id="viewFull" type="button" aria-pressed="true">完整剖面</button><button id="viewSurface" type="button" aria-pressed="false">地表</button><button id="viewUnder" type="button" aria-pressed="false">地下</button></span>
-  <button id="modeBtn" type="button" aria-pressed="false">展示情境</button>
-  <button id="followBtn" type="button" aria-pressed="false">跟隨螞蟻</button>
-  <button id="sideBtn" type="button" aria-expanded="false">統計／說明／存檔</button>
-  <div id="hud">載入中…</div>
-</div>
-<div id="card" hidden></div>
-<aside id="side" aria-label="觀察面板">
-  <div id="tabs" role="tablist">
-    <button type="button" data-tab="stats" aria-pressed="true">統計</button><button type="button" data-tab="legend" aria-pressed="false">資料分類</button><button type="button" data-tab="notsim" aria-pressed="false">尚未模擬</button><button type="button" data-tab="saves" aria-pressed="false">存檔／重開</button><button type="button" data-tab="perf" aria-pressed="false">效能</button>
+  <span class="seg" role="group" aria-label="視角"><button id="viewFull" type="button" aria-pressed="true" aria-label="完整剖面">完整<span class="wide-only">剖面</span></button><button id="viewSurface" type="button" aria-pressed="false">地表</button><button id="viewUnder" type="button" aria-pressed="false">地下</button></span>
+  <button id="moreBtn" type="button" aria-expanded="false" aria-controls="more" aria-label="更多">⋯</button>
+  <div id="more">
+    <button id="modeBtn" type="button" aria-pressed="false">展示情境</button>
+    <button id="followBtn" type="button" aria-pressed="false">跟隨螞蟻</button>
+    <button id="tourBtn" type="button" aria-pressed="true">自動導覽：開</button>
+    <button id="sideBtn" type="button" aria-expanded="false">統計／說明／存檔</button>
+    <button id="perfBtn" class="narrow-only" type="button">畫面風格／渲染器／效能</button>
   </div>
+  <div id="statusRow"><span id="modeBadge" class="chip">載入中…</span><div id="hud" role="button" tabindex="0" aria-expanded="false" aria-label="狀態列（點一下展開）">載入中…</div></div>
+</div>
+<button id="tourChip" type="button" hidden>自動導覽中・點一下接手</button>
+<div id="card" hidden><div class="sum"></div><div class="detail"></div><div class="row"></div></div>
+<button id="peek" type="button" aria-label="開啟面板：統計／說明／存檔（點一下或往上拖）"><span id="peekText">▲ 面板</span></button>
+<aside id="side" aria-label="觀察面板">
+  <div id="grip" role="button" tabindex="0" aria-label="面板把手（點一下收合，拖曳調整高度）"></div>
+  <div id="tabs" role="tablist">
+    <button type="button" data-tab="ant" aria-pressed="false">個體</button><button type="button" data-tab="stats" aria-pressed="true">統計</button><button type="button" data-tab="legend" aria-pressed="false">資料分類</button><button type="button" data-tab="notsim" aria-pressed="false">尚未模擬</button><button type="button" data-tab="saves" aria-pressed="false">存檔／重開</button><button type="button" data-tab="perf" aria-pressed="false">效能</button>
+  </div>
+  <div class="pane" id="pane-ant" hidden></div>
   <div class="pane" id="pane-stats"></div>
   <div class="pane" id="pane-legend" hidden></div>
   <div class="pane" id="pane-notsim" hidden></div>

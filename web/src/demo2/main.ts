@@ -38,6 +38,7 @@ import { MORPHS, RigLayer, rigMaterial, larvaGeometry, pupaGeometry, eggGeometry
 import { rigNodeMaterial, type RigNodeMaterial } from './ant-rig-tsl.ts';
 import { buildScene, type Quality, type Scene2 } from './scene.ts';
 import { Hd2dPipeline, PIXEL_FACTORS, type Hd2dEffects } from './hd2d.ts';
+import { nextShot, tourMayRun, TOUR_IDLE_S, TOUR_REASON_ZH, type TourCue, type TourShot } from './tour.ts';
 
 const q = new URLSearchParams(location.search);
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -46,6 +47,7 @@ const ui = {
   viewFull: $<HTMLButtonElement>('viewFull'), viewSurface: $<HTMLButtonElement>('viewSurface'), viewUnder: $<HTMLButtonElement>('viewUnder'), modeBtn: $<HTMLButtonElement>('modeBtn'),
   followBtn: $<HTMLButtonElement>('followBtn'), sideBtn: $<HTMLButtonElement>('sideBtn'), card: $('card'), labels: $('labels'), lblLegend: $('lblLegend'), top: $('top'), side: $('side'), toast: $('toast'), fatal: $('fatal'),
   stats: $('pane-stats'), legend: $('pane-legend'), notsim: $('pane-notsim'), perf: $('pane-perf'), worldInfo: $('worldInfo'), saveBtn: $<HTMLButtonElement>('saveBtn'), saveStatus: $('saveStatus'),
+  more: $('more'), moreBtn: $<HTMLButtonElement>('moreBtn'), tourBtn: $<HTMLButtonElement>('tourBtn'), perfBtn: $<HTMLButtonElement>('perfBtn'), tourChip: $<HTMLButtonElement>('tourChip'), statusRow: $('statusRow'), peek: $('peek'), grip: $('grip'), peekText: $('peekText'), paneAnt: $('pane-ant'),
   seedIn: $<HTMLInputElement>('seedIn'), restartBtn: $<HTMLButtonElement>('restartBtn'), resetDemoBtn: $<HTMLButtonElement>('resetDemoBtn'), demoInfo: $('demoInfo'), saveList: $('saveList'), importBtn: $<HTMLButtonElement>('importBtn'), importFile: $<HTMLInputElement>('importFile'),
 };
 const narrow = () => innerWidth < 760;
@@ -202,12 +204,12 @@ function viewCam(v: View): Cam {
   { const d = fit(tall ? 27 : 50); return tall ? mk(4, (0.53 - 0.5) * 2 * vh(d), 0, 22, 0, d) : mk(8, -10, 0, 14, -7, Math.min(640, d)); }
 }
 let tween: { from: Cam; to: Cam; t: number; dur: number } | null = null, userBusy = false, followAdjust = 0;
-function goView(v: View, instant = false) {
+function goView(v: View, instant = false, dur = 0.9) {
   view = v; for (const [b, k] of [[ui.viewFull, 'full'], [ui.viewSurface, 'surface'], [ui.viewUnder, 'under']] as const) b.setAttribute('aria-pressed', String(k === v));
   if (following) setFollow(null);
   const to = viewCam(v);
   if (instant) { camera.position.copy(to.pos); controls.target.copy(to.tgt); controls.update(); tween = null; return; }
-  tween = { from: { pos: camera.position.clone(), tgt: controls.target.clone() }, to, t: 0, dur: 0.9 };
+  tween = { from: { pos: camera.position.clone(), tgt: controls.target.clone() }, to, t: 0, dur };
 }
 const smooth = (k: number) => k * k * (3 - 2 * k);
 function stepCamera(dt: number) {
@@ -228,6 +230,8 @@ function stepCamera(dt: number) {
         const phi = a.realm === 'nest' ? (84 * Math.PI) / 180 : (50 * Math.PI) / 180, th = a.realm === 'nest' ? Math.max(-0.2, Math.min(0.2, sph.theta)) : sph.theta;
         sph.phi += (phi - sph.phi) * kk; sph.theta += (th - sph.theta) * kk; camera.position.copy(controls.target).add(off.setFromSpherical(sph));
       }
+      // 自動導覽 moves in slowly instead of jumping to the worker (camera only)
+      if (tourFollows() && !userBusy) { const off = camera.position.clone().sub(controls.target), len = off.length(), want = Math.max(antLen() * 14, 26); camera.position.copy(controls.target).add(off.setLength(len + (want - len) * (1 - Math.exp(-dt * 1.4)))); }
     }
   }
   // keep the view on the block
@@ -235,15 +239,51 @@ function stepCamera(dt: number) {
   controls.update();
 }
 let followRealm: 'surface' | 'nest' | null = null;
-function setFollow(id: string | null) {
+/** the worker the Worker was last asked to report with each frame (observation only); 自動導覽 never changes it */
+let observed: string | null = null;
+/** byTour = the idle camera tour is following (or letting go of) a worker: CAMERA ONLY, nothing is sent to the Worker */
+function setFollow(id: string | null, byTour = false) {
+  if (!byTour && tour) endTour();
   following = id; followRealm = null; tween = null;
   ui.followBtn.setAttribute('aria-pressed', String(!!id)); ui.followBtn.textContent = id ? `停止跟隨 ${id}` : '跟隨螞蟻';
   if (id) {
-    selected = id; const a = drawn.find((x) => x.id === id);
-    if (a) { const dir = camera.position.clone().sub(controls.target).normalize(), d = Math.max(antLen() * 11, 20); controls.target.set(a.x, a.y, a.z); camera.position.copy(controls.target).addScaledVector(dir, d); followRealm = a.realm; followAdjust = 1.6; }
+    if (selected !== id) cardNow.btn = ''; selected = id; userSel = !byTour; const a = drawn.find((x) => x.id === id);
+    if (a && !byTour) { const dir = camera.position.clone().sub(controls.target).normalize(), d = Math.max(antLen() * 11, 20); controls.target.set(a.x, a.y, a.z); camera.position.copy(controls.target).addScaledVector(dir, d); followRealm = a.realm; followAdjust = 1.6; }
   }
-  void client.follow(id).catch(() => {}); // observation only: the Worker sends this worker's own record with each frame
+  // observation only: the Worker sends this worker's own record with each frame (never for a tour follow)
+  if (!byTour && (id !== null || observed !== null)) { observed = id; void client.follow(id).catch(() => {}); }
   renderCard();
+}
+/** 下一隻／上一隻 while following: the next worker id in order */
+function stepFollow(dir: 1 | -1) {
+  const ids = drawn.map((a) => a.id).sort(), i = following ? ids.indexOf(following) : -1; if (!ids.length) return;
+  setFollow(ids[(i + dir + ids.length) % ids.length]);
+}
+
+// ---------- 自動導覽: idle camera tour (camera only; web/src/demo2/tour.ts decides the shots from engine states / events) ----------
+const tourParam = q.get('tour');
+/** on by default; under automation only when asked for (`?tour=<idle seconds>`), so checks keep their own camera */
+let tourOn = tourParam !== null ? tourParam !== '0' : !automated;
+const tourIdle = Number(tourParam) > 0 ? Number(tourParam) : TOUR_IDLE_S;
+let tour: { k: number; shot: TourShot; until: number } | null = null, tourLast: string | null = null, lastInput = performance.now(), userSel = false;
+const tourCues: TourCue[] = [], tourLog: ({ k: number; t_sim: number } & TourShot)[] = [];
+const tourFollows = () => tour !== null && tour.shot.kind === 'follow' && following === tour.shot.id;
+function endTour() { tour = null; ui.tourChip.hidden = true; }
+/** any input hands the camera back: the tour stops where it is (a followed worker stays selected, the camera stops following) */
+function stopTour() { if (!tour) return; const wasFollow = tourFollows(); endTour(); tween = null; /* an overview move in progress stops too */ if (wasFollow) setFollow(null, true); }
+function userInput() { lastInput = performance.now(); stopTour(); }
+for (const ev of ['pointerdown', 'wheel', 'keydown', 'touchstart'] as const) addEventListener(ev, userInput, { capture: true, passive: true });
+function syncTourBtn() { ui.tourBtn.setAttribute('aria-pressed', String(tourOn)); ui.tourBtn.textContent = `自動導覽：${tourOn ? '開' : '關'}`; ui.tourBtn.title = `沒有操作 ${tourIdle} 秒後，鏡頭自動巡覽並跟隨正在活動的個體（只動鏡頭，不影響模擬）`; }
+function stepTour(now: number) {
+  if (!frame || !hooks.ready) return;
+  const may = tourMayRun({ on: tourOn, idle_s: (now - lastInput) / 1000, need_idle_s: tourIdle, running, userFollowing: !!following && !tourFollows(), userSelected: userSel && !!selected, sheetOpen: narrow() && sheet !== 'peek' });
+  if (!may) { stopTour(); return; }
+  if (tour && now < tour.until) return;
+  const k = tour ? tour.k + 1 : 0, shot = nextShot(k, frame.seed, frame.t_sim, frame.workers, tourCues, tourLast);
+  tour = { k, shot, until: now + shot.hold_s * 1000 }; tourLog.push({ k, t_sim: frame.t_sim, ...shot }); if (tourLog.length > 64) tourLog.shift();
+  if (shot.kind === 'view') { if (following) setFollow(null, true); selected = null; userSel = false; hideCard(); goView(shot.view, false, 2.4); }
+  else { tourLast = shot.id; setFollow(shot.id, true); }
+  ui.tourChip.hidden = false;
 }
 /** the worker the 「跟隨螞蟻」 button picks when none is selected: one that is about to leave or is on a trip (engine state) */
 function interestingAnt(): string | null {
@@ -327,6 +367,7 @@ function tick(now: number) {
     const plan = selected ? stage.plannedRoute(selected, tNow) : [];
     planLine.visible = plan.length > 1; if (planLine.visible) { planLine.geometry.dispose(); planLine.geometry = new THREE.BufferGeometry().setFromPoints(plan.map((p) => new THREE.Vector3(p.x, p.y + 0.25, p.z + 0.1))); planLine.computeLineDistances(); }
   }
+  stepTour(now);
   stepCamera(dtWall); // camera moves follow the wall clock (a slow frame must not stretch a view change)
   if (renderOn && !gpuLost) {
     if (offRT) renderer.setRenderTarget(offRT as unknown as THREE.WebGLRenderTarget);
@@ -404,7 +445,7 @@ function updateLabels() {
     boxes.push({ key: it.key, x: ax, y: ((1 - s.y) / 2) * h, w: el.offsetWidth, h: el.offsetHeight, prio: it.prio }); els.set(it.key, el);
   }
   // collision avoidance: labels never overlap each other, stay below the top bar and above the legend / the open sheet
-  const placed = placeLabels(boxes, { left: 2, top: ui.top.getBoundingClientRect().bottom + 2, right: rightLimit, bottom: sceneBottom() - (legend ? ui.lblLegend.offsetHeight + 4 : 2) });
+  const placed = placeLabels(boxes, { left: 2, top: ui.top.getBoundingClientRect().bottom + 2, right: rightLimit, bottom: ui.canvas.clientHeight - Math.max(pill ? PILL_ZONE_PX : 0, sheetPx() + (legend ? ui.lblLegend.offsetHeight + 4 : 2)) });
   const got = new Set(placed.map((p) => p.key));
   for (const p of placed) els.get(p.key)!.style.transform = `translate(${Math.round(p.left)}px, ${Math.round(p.top)}px)`;
   for (const [k, el] of els) if (!got.has(k)) el.hidden = true;
@@ -412,7 +453,27 @@ function updateLabels() {
 }
 const NS_MARK = '※';
 /** the height of the bottom sheet covering the scene (narrow screens with the panel open), else 0 */
-const sheetPx = () => narrow() && !document.body.classList.contains('side-closed') ? ui.side.getBoundingClientRect().height : 0;
+const sheetPx = () => narrow() ? coverNow : 0;
+/** phone bottom sheet: closed ('peek': only a small floating pill with key counts), half, full; the selected
+ *  individual's compact card lies on the bottom edge, or on top of the open sheet */
+type Sheet = 'peek' | 'half' | 'full';
+const CARD_PX = 56, PILL_ZONE_PX = 52;
+let sheet: Sheet = 'peek', sheetNow = 0, coverNow = 0, pill = false;
+function sheetTarget(s: Sheet): number { return s === 'peek' ? 0 : s === 'half' ? Math.round(innerHeight * 0.46) : Math.max(120, Math.round(innerHeight - ui.top.getBoundingClientRect().bottom - 28)) /* the grip's 44 px tap area stays below the bar */; }
+/** CSS variables the layout reads: --sheet = the sheet's height, --cover = what the sheet and the compact card cover
+ *  (labels and the legend stay above it; the scene is framed into the rest), --top = bottom of the top bar */
+function chromeVars(dragPx?: number) {
+  const nw = narrow(), safe = parseFloat(getComputedStyle(ui.side).paddingBottom) || 0, card = nw && !ui.card.hidden && sheet !== 'full';
+  sheetNow = nw ? dragPx ?? sheetTarget(sheet) : 0;
+  const cardBottom = sheetNow > 0 ? sheetNow : safe; coverNow = card ? cardBottom + CARD_PX : sheetNow;
+  pill = nw && sheet === 'peek' && dragPx === undefined && !card; document.body.classList.toggle('pill', pill);
+  const st = document.body.style; st.setProperty('--sheet', `${sheetNow}px`); st.setProperty('--cover', `${coverNow}px`); st.setProperty('--card-bottom', `${cardBottom}px`); st.setProperty('--top', `${Math.round(ui.top.getBoundingClientRect().bottom)}px`);
+}
+function layoutChrome(dragPx?: number) { chromeVars(dragPx); if (renderer) reframe(); }
+function setSheet(s: Sheet) {
+  sheet = s; document.body.classList.toggle('side-closed', s === 'peek'); document.body.classList.toggle('sheet-full', s === 'full'); ui.sideBtn.setAttribute('aria-expanded', String(s !== 'peek'));
+  layoutChrome();
+}
 const sceneBottom = () => ui.canvas.clientHeight - sheetPx();
 /** do all chamber ends and tops project inside the visible scene (below the top bar, above the sheet)? */
 function nestOnScreen() {
@@ -422,16 +483,19 @@ function nestOnScreen() {
 }
 
 // ---------- HUD and panels ----------
-let hudAt = 0, tab = 'stats';
+let hudAt = 0, tab = 'stats', hudOpen = false;
 function updateHud(now: number) {
   if (now - hudAt < 300) return; hudAt = now;
   if (!frame) return;
   setLight(frame);
   const out = drawn.filter((a) => a.realm === 'surface').length, temp = frame.env.temperature_c === null ? '—' : frame.env.temperature_c.toFixed(1);
-  // narrow screens: a short status line that wraps (the 非正式 chip above carries the status label)
-  ui.hud.textContent = narrow()
-    ? `第 ${Math.floor(tNow / 86400)} 天 ${clockOf(tNow)}｜${P0_LIGHT_LABEL[frame.env.light]} ${temp}°C（合成）｜${running ? `${speed}×` : '暫停'}｜種子 ${frame.seed}｜巢外 ${out}・巢內 ${drawn.length - out}`
-    : `${fmtWorldTime(tNow)}（${frame.env.date}）｜光照 ${P0_LIGHT_LABEL[frame.env.light]}・氣溫 ${temp}°C（合成）｜${running ? `執行中 ${speed}×` : '已暫停'}｜種子 ${frame.seed}｜工蟻 巢外 ${out}・巢內 ${drawn.length - out}｜${P0A2_STATUS_LABEL}`;
+  // narrow screens: ONE short status line (the 非正式 chip above carries the status label); a tap expands it
+  const short = `第 ${Math.floor(tNow / 86400)} 天 ${clockOf(tNow)}｜${P0_LIGHT_LABEL[frame.env.light]} ${temp}°C（合成）｜${running ? `${speed}×` : '暫停'}`;
+  const text = !narrow() ? `${fmtWorldTime(tNow)}（${frame.env.date}）｜光照 ${P0_LIGHT_LABEL[frame.env.light]}・氣溫 ${temp}°C（合成）｜${running ? `執行中 ${speed}×` : '已暫停'}｜種子 ${frame.seed}｜工蟻 巢外 ${out}・巢內 ${drawn.length - out}｜${P0A2_STATUS_LABEL}`
+    : hudOpen ? `${short}｜${frame.env.date}｜種子 ${frame.seed}｜巢外 ${out}・巢內 ${drawn.length - out}｜${P0A2_STATUS_LABEL}` : short;
+  if (ui.hud.textContent !== text) ui.hud.textContent = text;
+  const peek = `▲ 巢外 ${out}・巢內 ${drawn.length - out}`; // phone: key counts on the pill that opens the sheet
+  if (ui.peekText.textContent !== peek) ui.peekText.textContent = peek;
   if (selected) renderCard();
   if (!document.body.classList.contains('side-closed')) { if (tab === 'stats') renderStats(); else if (tab === 'perf') renderPerf(); else if (tab === 'saves') renderSaveStatus(); }
 }
@@ -492,11 +556,12 @@ function renderPerf() {
 }
 let perfCtlNow = '';
 function renderCard() {
-  if (!frame || !selected) { ui.card.hidden = true; return; }
+  if (!frame || !selected) { hideCard(); return; }
   const a = drawn.find((x) => x.id === selected), w = frame.workers.find((x) => x.id === selected), st = statics.find((x) => x.ind.id === selected);
-  let html = '';
+  let html = '', sum = '';
   if (a && w) {
     const place = a.realm === 'surface' ? a.place : a.place === 'tunnel' ? '通道' : graph.chamber(a.place).label_zh;
+    sum = `<b>${esc(a.id)}</b> 小工蟻・${esc(STATE_LABEL[w.state] ?? w.state)}<br><span class="muted">${tourFollows() && tour!.shot.kind === 'follow' ? `自動導覽：選取時${TOUR_REASON_ZH[tour!.shot.reason]}` : `嗉囊 ${(w.crop_fill * 100).toFixed(0)}%（引擎）｜${esc(place)}`}</span>`;
     html = `<b>${esc(a.id)}</b>　<span class="tag engine">引擎個體</span>小工蟻
 <br>活動：${esc(STATE_LABEL[w.state] ?? w.state)}（引擎狀態）
 <br>開始：${clockOf(w.since_s)}${w.until_s !== null ? `　預定結束：${clockOf(w.until_s)}（引擎固定時長）` : ''}
@@ -505,21 +570,33 @@ function renderCard() {
 <br><span class="muted">畫面位置類別：${esc(CLASS_LABEL[a.cls])}｜步態、轉身、觸角與姿勢只是畫面</span>`;
   } else if (st) {
     const d = st.ind, ch = st.chamber ? graph.chamber(st.chamber).label_zh : '';
+    sum = `<b>${esc(d.id)}</b> ${CASTE_LABEL[d.caste]}・${d.source === 'engine' ? '引擎個體' : '示範資料'}<br><span class="muted">${esc(ch)}${d.source === 'engine' && d.caste === 'larva' ? `｜腸道 ${((d.fill ?? 0) * 100).toFixed(0)}%（引擎）` : d.notes ? '｜生理與行為尚未模擬' : ''}</span>`;
     html = d.source === 'engine' && d.caste === 'larva'
       ? `<b>${esc(d.id)}</b>　<span class="tag engine">引擎個體</span>${CASTE_LABEL[d.caste]}<br>腸道量：${((d.fill ?? 0) * 100).toFixed(0)}%（引擎）${stage.fedNow(d.id, tNow) ? '　正在被餵食（引擎事件；畫面演出）' : ''}<br>位置：${esc(ch)}（展示假設）<br><span class="muted">幼蟲只被餵食與代謝；發育、化蛹、羽化尚未模擬</span>`
       : d.notes ? `<b>${esc(d.id)}</b>　<span class="tag engine">引擎個體</span><span class="tag assume">候選世界・數量為情境假設</span>${CASTE_LABEL[d.caste]}<br>狀態：${esc(d.state ?? '')}<br>位置：${esc(ch)}（展示假設；引擎沒有巢內座標）<br>此個體<b>尚未模擬</b>的項目（${d.notes.length}）：<ul style="margin:2px 0;padding-left:18px">${d.notes.map((x) => `<li>${esc(x)}</li>`).join('')}</ul><span class="muted">原地微動作只是畫面</span>`
       : `<b>${esc(d.id)}</b>　<span class="tag demo">示範資料</span>${CASTE_LABEL[d.caste]}<br>動作：${esc(d.state ?? '')}<br>位置：${esc(ch)}（展示假設）<br><span class="muted">${DEMO_BADGE}：引擎尚未模擬這個階級；此個體不存檔、不影響任何引擎個體</span>`;
-  } else { ui.card.hidden = true; return; }
-  const canFollow = !!(a && w);
-  const full = `${html}<div class="row">${canFollow ? `<button id="cardFollow" type="button">${following === selected ? '停止跟隨' : '跟隨這隻'}</button>` : ''}<button id="cardClose" type="button" aria-label="關閉">關閉</button></div>`;
-  ui.card.hidden = false;
-  if (full === cardHtmlNow) return; // unchanged: keep the buttons in place (a tap must not land on a replaced node)
-  cardHtmlNow = full; ui.card.innerHTML = full;
+  } else { hideCard(); return; }
+  const canFollow = !!(a && w), fol = canFollow && following === selected;
+  // three parts, each rewritten only when it changes (a tap must not land on a replaced button):
+  // .sum = the phone's two-line summary, .detail = the full card (wide screens; phones show it in the sheet's 個體 tab), .row = buttons
+  const [sumEl, detailEl, rowEl] = ui.card.children as unknown as HTMLElement[];
+  if (ui.card.hidden) { ui.card.hidden = false; layoutChrome(); }
+  if (sum !== cardNow.sum) { cardNow.sum = sum; sumEl.innerHTML = sum; }
+  if (html !== cardNow.detail) { cardNow.detail = html; detailEl.innerHTML = html; ui.paneAnt.innerHTML = html; }
+  const btn = `${selected}|${canFollow}|${fol}`;
+  if (btn === cardNow.btn) return;
+  cardNow.btn = btn;
+  rowEl.innerHTML = `${fol ? '<button id="cardPrev" type="button" aria-label="上一隻">◀<span class="wide-only"> 上一隻</span></button><button id="cardNext" type="button" aria-label="下一隻">▶<span class="wide-only"> 下一隻</span></button>' : ''}${canFollow ? `<button id="cardFollow" type="button" aria-pressed="${fol}">${fol ? '停止<span class="wide-only">跟隨</span>' : '跟隨<span class="wide-only">這隻</span>'}</button>` : ''}<button id="cardDetail" type="button">詳情</button><button id="cardClose" type="button" aria-label="關閉">關閉</button>`;
   if (canFollow) $('cardFollow').onclick = () => setFollow(following === selected ? null : selected);
+  if (fol) { $('cardPrev').onclick = () => stepFollow(-1); $('cardNext').onclick = () => stepFollow(1); }
+  $('cardDetail').onclick = () => openSide('ant');
+  sumEl.onclick = () => { if (narrow()) openSide('ant'); };
   $('cardClose').onclick = () => select(null);
 }
-let cardHtmlNow = '';
-function select(id: string | null) { cardHtmlNow = ''; selected = id; if (!id) { ui.card.hidden = true; if (following) setFollow(null); } else renderCard(); }
+const NO_ANT_HTML = '<div class="muted">還沒有選取個體：點一下畫面上的螞蟻、幼蟲、蟻后、卵或蛹。</div>';
+const cardNow = { sum: '', detail: '', btn: '' };
+function hideCard() { if (!ui.card.hidden) { ui.card.hidden = true; layoutChrome(); } if (cardNow.detail !== '' || ui.paneAnt.innerHTML === '') { cardNow.sum = cardNow.detail = cardNow.btn = ''; ui.paneAnt.innerHTML = NO_ANT_HTML; } }
+function select(id: string | null) { cardNow.btn = ''; selected = id; userSel = !!id; if (!id) { hideCard(); if (following) setFollow(null); if (tab === 'ant' && narrow() && sheet !== 'peek') openSide(null); } else renderCard(); }
 
 // picking: nearest drawn individual on screen
 function pick(sx: number, sy: number): string | null {
@@ -529,7 +606,9 @@ function pick(sx: number, sy: number): string | null {
   for (const s of statics) test(s.ind.id, s.p.x, s.p.y, s.p.z, true);
   return best;
 }
-function resize() { const w = innerWidth, h = innerHeight, sh = sheetPx(); renderer.setSize(w, h, false); if (hd2d) { const pr = renderer.getPixelRatio(); hd2d.setSize(Math.round(w * pr), Math.round(h * pr), pxFactor); } if (offscreen && rendererKind === 'webgpu') { const pr = renderer.getPixelRatio(); if (!offRT) offRT = new THREE.RenderTarget(Math.round(w * pr), Math.round(h * pr), { depthBuffer: true }); else offRT.setSize(Math.round(w * pr), Math.round(h * pr)); } camera.aspect = w / h; if (sh > 0) camera.setViewOffset(w, h, 0, Math.round(sh / 2), w, h); else camera.clearViewOffset(); camera.updateProjectionMatrix(); }
+function resize() { chromeVars(); const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); if (hd2d) { const pr = renderer.getPixelRatio(); hd2d.setSize(Math.round(w * pr), Math.round(h * pr), pxFactor); } if (offscreen && rendererKind === 'webgpu') { const pr = renderer.getPixelRatio(); if (!offRT) offRT = new THREE.RenderTarget(Math.round(w * pr), Math.round(h * pr), { depthBuffer: true }); else offRT.setSize(Math.round(w * pr), Math.round(h * pr)); } reframe(); }
+/** the camera's part of a layout change: the scene is framed into the part the sheet leaves free (no buffer is reallocated) */
+function reframe() { const w = innerWidth, h = innerHeight, sh = sheetPx(); camera.aspect = w / h; if (sh > 0) camera.setViewOffset(w, h, 0, Math.round(sh / 2), w, h); else camera.clearViewOffset(); camera.updateProjectionMatrix(); }
 
 // ---------- mode (自然 / 展示情境) ----------
 function setMode(m: Mode) {
@@ -543,7 +622,7 @@ function setMode(m: Mode) {
 }
 
 // ---------- world lifecycle (Worker scheduling + SAVE-2 session) ----------
-function onWorldStart() { frame = null; pacing = null; lastT = null; drawn = []; statics = []; gaits.clear(); quats.clear(); stage?.reset(antLen()); eventsSeen = 0; disclosure = null; selected = null; following = null; ui.card.hidden = true; }
+function onWorldStart() { frame = null; pacing = null; lastT = null; drawn = []; statics = []; gaits.clear(); quats.clear(); stage?.reset(antLen()); eventsSeen = 0; disclosure = null; selected = null; following = null; userSel = false; endTour(); tourCues.length = 0; tourLog.length = 0; tourLast = null; hideCard(); }
 async function afterWorldReady(startAt: number | null) {
   if (startAt !== null && (frame?.t_sim ?? 0) < startAt) await client.stepUntil(startAt);
   await new Promise<void>((r) => { const w = () => (frame ? r() : setTimeout(w, 20)); w(); });
@@ -647,7 +726,7 @@ async function main() {
   buildMeshes();
 
   client.onState = (fr, p, fol) => { if (!isP0a2Frame(fr) || fr.world_id === PROBE_ID) return; if (p.running && frame && fr.t_sim !== frame.t_sim) session?.markDirty(); frame = fr; pacing = p; frameAt = performance.now(); followedView = fol; if (rost) rost = roster(mode, fr, demoSeed); };
-  client.onEvents = (evs: EventMsg[]) => { if (evs[0]?.world_id === PROBE_ID) return; eventsSeen += evs.length; stage.onEvents(evs); session?.markDirty(); };
+  client.onEvents = (evs: EventMsg[]) => { if (evs[0]?.world_id === PROBE_ID) return; eventsSeen += evs.length; stage.onEvents(evs); noteCues(evs); session?.markDirty(); };
   client.onProtocolError = (why) => toast(`Worker：${why}`, 8000);
 
   ui.speed.innerHTML = SPEEDS.map((s) => `<option value="${s}">${s}×</option>`).join(''); ui.seedIn.value = String(DEFAULT_SEED);
@@ -684,13 +763,58 @@ async function main() {
   hooks.ready = true;
 }
 
+/** engine events the tour may point the camera at: who passed food to a nestmate, who fed a larva (read only) */
+function noteCues(evs: readonly EventMsg[]) {
+  for (const e of evs) {
+    if (!e.entity) continue; const d = e.data as { touched?: { amount: number }[]; larvae?: { fed: number }[] };
+    if (Array.isArray(d.touched) && d.touched.some((x) => x.amount > 0)) tourCues.push({ id: e.entity, kind: 'troph', t_sim: e.t_sim });
+    if (Array.isArray(d.larvae) && d.larvae.some((x) => x.fed > 0)) tourCues.push({ id: e.entity, kind: 'larva_feed', t_sim: e.t_sim });
+  }
+  if (tourCues.length > 32) tourCues.splice(0, tourCues.length - 32);
+}
+
 // ---------- controls ----------
 function openSide(t: string | null) {
-  const closed = t === null; document.body.classList.toggle('side-closed', closed); ui.sideBtn.setAttribute('aria-expanded', String(!closed));
-  if (renderer) resize(); // narrow screens: the scene moves up into the part the sheet leaves free
-  if (t) { tab = t; document.querySelectorAll<HTMLButtonElement>('#tabs button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tab === t))); for (const k of ['stats', 'legend', 'notsim', 'saves', 'perf']) $(`pane-${k}`).hidden = k !== t; if (t === 'stats') renderStats(); if (t === 'perf') renderPerf(); if (t === 'saves') { renderSaveStatus(); void refreshSaveList(); } }
+  // wide screens: the side panel opens / closes; phones: the sheet goes to its peek row (closed) or at least half
+  if (t === null) { setSheet('peek'); return; }
+  if (sheet === 'peek') setSheet('half'); // the scene is re-framed into the part the sheet leaves free
+  openTab(t);
 }
-ui.sideBtn.onclick = () => openSide(document.body.classList.contains('side-closed') ? tab : null);
+function openTab(t: string) {
+  { tab = t; document.querySelectorAll<HTMLButtonElement>('#tabs button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tab === t))); for (const k of ['ant', 'stats', 'legend', 'notsim', 'saves', 'perf']) $(`pane-${k}`).hidden = k !== t; if (t === 'stats') renderStats(); if (t === 'perf') renderPerf(); if (t === 'saves') { renderSaveStatus(); void refreshSaveList(); } }
+}
+const openTabName = () => (tab === 'ant' && (!selected || !narrow()) ? 'stats' : tab);
+ui.sideBtn.onclick = () => openSide(document.body.classList.contains('side-closed') ? openTabName() : null);
+ui.perfBtn.onclick = () => openSide('perf');
+// phone: the 更多 menu (展示情境, 跟隨, 自動導覽, 面板, 畫面與效能); it closes after a choice or a tap outside
+const setMore = (on: boolean) => { document.body.classList.toggle('more-open', on); ui.moreBtn.setAttribute('aria-expanded', String(on)); };
+ui.moreBtn.onclick = () => setMore(!document.body.classList.contains('more-open'));
+ui.more.addEventListener('click', () => setMore(false));
+addEventListener('pointerdown', (e) => { if (document.body.classList.contains('more-open') && !(e.target as HTMLElement).closest('#more, #moreBtn')) setMore(false); }, true);
+// phone: the status row is one short line; a tap (or Enter) expands / collapses it
+const toggleHud = () => { if (!narrow()) return; hudOpen = !hudOpen; document.body.classList.toggle('hud-open', hudOpen); ui.hud.setAttribute('aria-expanded', String(hudOpen)); hudAt = 0; updateHud(performance.now()); layoutChrome(); };
+ui.statusRow.onclick = toggleHud; ui.hud.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') toggleHud(); };
+ui.tourBtn.onclick = () => { tourOn = !tourOn; syncTourBtn(); toast(tourOn ? `自動導覽已開啟：沒有操作 ${tourIdle} 秒後開始（只動鏡頭，不影響模擬）` : '自動導覽已關閉'); };
+ui.tourChip.onclick = () => stopTour(); syncTourBtn();
+/** phone: the floating 面板 pill (sheet closed) and the grip on top of the open sheet: tap = open / close, drag = closed / half / full */
+function bindSheetHandle(el: HTMLElement) {
+  let d: { y: number; h: number; moved: boolean } | null = null;
+  el.addEventListener('pointerdown', (e) => { if (!narrow()) return; d = { y: e.clientY, h: sheetNow, moved: false }; el.setPointerCapture(e.pointerId); });
+  el.addEventListener('pointermove', (e) => {
+    if (!d) return; const dy = d.y - e.clientY; if (!d.moved && Math.abs(dy) > 6) { d.moved = true; document.body.classList.add('dragging'); document.body.classList.remove('side-closed'); openTab(openTabName()); }
+    if (d.moved) layoutChrome(Math.max(1, Math.min(sheetTarget('full'), d.h + dy)));
+  });
+  const end = () => {
+    if (!d) return; const was = d; d = null; document.body.classList.remove('dragging');
+    if (!was.moved) { openSide(sheet === 'peek' ? openTabName() : null); return; }
+    const near = (['peek', 'half', 'full'] as const).map((k) => [k, Math.abs(sheetTarget(k) - sheetNow)] as const).sort((x, y) => x[1] - y[1])[0][0];
+    if (near === 'peek') openSide(null); else { setSheet(near); openSide(openTabName()); }
+  };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+  el.addEventListener('keydown', (e) => { if (e.target === el && (e.key === 'Enter' || e.key === ' ')) openSide(sheet === 'peek' ? openTabName() : null); });
+}
+bindSheetHandle(ui.peek); bindSheetHandle(ui.grip);
+chromeVars(); hideCard();
 document.querySelectorAll<HTMLButtonElement>('#tabs button').forEach((b) => { b.onclick = () => openSide(b.dataset.tab!); });
 ui.play.onclick = () => void setRunning(!running);
 ui.speed.onchange = () => void setSpeed(Number(ui.speed.value));
@@ -732,6 +856,12 @@ const hooks: Record<string, unknown> = {
     g2.putImageData(img, 0, 0); return { url: c.toDataURL('image/jpeg', q2), w, h, lit_fraction: lit / (w * h) };
   },
   nestOnScreen: () => nestOnScreen(),
+  /** phone layout: the sheet state and the part of the page height the scene keeps (below the top bar, above the sheet) */
+  layout: () => { const top = ui.top.getBoundingClientRect().bottom; return { narrow: narrow(), sheet, sheet_px: sheetPx(), top_px: top, scene_fraction: (innerHeight - top - sheetPx()) / innerHeight, hud_open: hudOpen }; },
+  setSheet: (s: Sheet) => { if (s === 'peek') openSide(null); else { setSheet(s); openSide(openTabName()); } },
+  /** 自動導覽 (camera only): whether it is on / running, the current shot and the shots so far */
+  tour: () => ({ on: tourOn, idle_s: tourIdle, idle_for_s: (performance.now() - lastInput) / 1000, active: tour !== null, k: tour?.k ?? null, shot: tour?.shot ?? null, follows: tourFollows(), observed, cues: tourCues.length, log: tourLog.map((x) => ({ ...x })) }),
+  setTour: (on: boolean) => { tourOn = on; syncTourBtn(); if (!on) stopTour(); },
   /** screen rectangles of the visible in-scene labels and of the legend line */
   labelRects: () => [...labelEls.entries()].filter(([, el]) => !el.hidden).map(([key, el]) => { const r = el.getBoundingClientRect(); return { key, text: el.textContent, left: r.left, top: r.top, w: r.width, h: r.height }; }),
   /** does the soil (block or its extension wall) cover the bottom corners and bottom centre of the visible scene? */

@@ -77,6 +77,10 @@ jobs:
         run: |
           set -o pipefail
           node tests/browser/demo2-hd2d.check.cjs "$RUNNER_TEMP/demo2-shots" http://localhost:8782/ | tee "$RUNNER_TEMP/demo2-shots/demo2-hd2d-results.json"
+      - name: Demo 2 phone UI and watching without touching (Pixel 7 - one control row, scene at least 80 percent of the page height, both markings always visible, 44 px controls, bottom sheet closed / half / full, compact individual card with follow stepper; the world runs with no input and the idle camera tour follows workers chosen from engine states; the Worker message log is identical with the tour on and off; desktop and landscape do not regress; non-official)
+        run: |
+          set -o pipefail
+          node tests/browser/demo2-ui.check.cjs "$RUNNER_TEMP/demo2-shots" http://localhost:8782/ | tee "$RUNNER_TEMP/demo2-shots/demo2-ui-results.json"
       - name: Upload screenshots and results
         if: always()
         continue-on-error: true
