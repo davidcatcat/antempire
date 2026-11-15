@@ -141,7 +141,7 @@ const { chromium, devices } = require('playwright');
     await shot(page, `demo2-${tag}-panel`);
     for (const t of ['legend', 'notsim', 'perf']) await page.click(`#tabs button[data-tab="${t}"]`);
     const panes = await page.evaluate(() => ({ legend: document.querySelector('#pane-legend').textContent, ns: document.querySelector('#pane-notsim').textContent, perf: document.querySelector('#pane-perf').textContent }));
-    check(['引擎', '顯示插值', '展示假設', '示範資料', '費洛蒙：尚未模擬', 'R290'].every((s) => panes.legend.includes(s)) && /尚未模擬（未接入）\d+ 項/.test(panes.ns) && panes.ns.includes('蟻后') && panes.perf.includes('WebGL 2') && panes.perf.includes('NOT a device result'), `${tag}: legend, the world's own 尚未模擬 list, and the performance panel`);
+    check(['引擎', '顯示插值', '展示假設', '示範資料', '費洛蒙：尚未模擬', 'R290', '動作都是畫面', 'M21、M22：尚未模擬', '交替三腳步態', '觸角'].every((s) => panes.legend.includes(s)) && /尚未模擬（未接入）\d+ 項/.test(panes.ns) && panes.ns.includes('蟻后') && panes.perf.includes('WebGL 2') && panes.perf.includes('NOT a device result'), `${tag}: legend, the world's own 尚未模擬 list, and the performance panel`);
     await page.click('#sideBtn');
     report[tag] = { perf: await page.evaluate(() => window.__demo2.perf()), viewport: await page.evaluate(() => ({ w: innerWidth, h: innerHeight, dpr: devicePixelRatio })) };
 
@@ -175,6 +175,22 @@ const { chromium, devices } = require('playwright');
       await page.waitForTimeout(2500);
       const g2 = await page.evaluate(() => Object.fromEntries(window.__demo2.ants().map((a) => [a.id, [a.phase, a.moving]])));
       check(g1.length > 0 && g1.some(([id, ph]) => g2[id] && g2[id][0] !== ph), 'desktop: walking workers advance their gait phase while running');
+      // round 4 — motion quality as actually drawn by the page (display only; the Node test measures the same rules on real worlds)
+      const mo = await page.evaluate(async () => {
+        const D = window.__demo2, rows = [], t0 = performance.now();
+        while (performance.now() - t0 < 6000) { await new Promise((r) => requestAnimationFrame(r)); rows.push({ t: D.state().t, a: D.ants().map((x) => ({ id: x.id, realm: x.realm, p: [x.x, x.y, x.z], f: [x.fx, x.fy, x.fz], u: [x.ux, x.uy, x.uz], amp: x.amp, moving: x.moving, pose: x.pose, scan: x.pv.scan, legs: x.pv.legs, crouch: x.pv.crouch, phase: x.phase, odo: x.odo, len: x.len, turning: x.turning })) }); }
+        return rows;
+      });
+      let maxRate = 0, strideBad = 0, strides = 0, restBad = 0, walkAmp = 0, flips = 0; const ang = (a, b) => Math.acos(Math.max(-1, Math.min(1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2])));
+      for (let i = 1; i < mo.length; i++) { const dt = mo[i].t - mo[i - 1].t; if (!(dt > 1e-6)) continue; const prev = new Map(mo[i - 1].a.map((x) => [x.id, x]));
+        for (const a of mo[i].a) { const p = prev.get(a.id); if (!p || p.realm !== a.realm || Math.hypot(a.p[0] - p.p[0], a.p[1] - p.p[1], a.p[2] - p.p[2]) > 4.5 * 1.7 * dt + 0.05) continue;
+          const w = Math.max(ang(a.f, p.f), ang(a.u, p.u)); maxRate = Math.max(maxRate, w / dt); if (w > 2.2 && dt < 0.25) flips++;
+          const dOdo = a.odo - p.odo, dPh = a.phase - p.phase; if (dOdo > 0.05) { strides++; const stride = dOdo / (dPh / (Math.PI * 2)); if (!(stride > 0.43 * a.len && stride < 0.57 * a.len)) strideBad++; } else if (Math.abs(dOdo) < 1e-12 && Math.abs(dPh) > 1e-9) strideBad++;
+          if (a.moving && a.amp > 0 && a.legs === 1) walkAmp++;
+          if (a.pose === 'rest' && p.pose === 'rest' && a.crouch === 1 && (a.scan !== 0 || a.legs !== 0)) restBad++; } }
+      check(mo.length >= 8 && maxRate <= 8.0001 && flips === 0, `desktop: no drawn worker turns faster than the bound while running (max ${maxRate.toFixed(2)} rad per simulated second over ${mo.length} rendered frames; no heading flip)`);
+      check(strides > 20 && strideBad === 0 && walkAmp > 0, `desktop: gait phase follows the odometer at each worker's own stride (${strides} steps checked), a standing worker's phase stands still, walking legs have their stride reach`);
+      check(restBad === 0, 'desktop: a settled resting worker does not scan with its antennae and its legs are at rest');
     }
     await ctx.close();
   }

@@ -98,7 +98,10 @@ function stoneGeometry(rnd: () => number, detail: number): THREE.BufferGeometry 
 
 export function buildScene(o: SceneOptions): Scene2 {
   const rnd = prng(20261115), group = new THREE.Group(), demoProps = new THREE.Group(), g = o.graph, faceZ = g.faceZ, backZ = g.backZ, casters: THREE.Object3D[] = [];
-  const keepOut: KeepOut = { routes: o.corridor.slice(1).map((b, i) => ({ a: o.corridor[i], b })), nests: [{ x: 0, z: 0 }], routeHalfWidth: 5.5, nestRadius: o.searchRadius + 2 };
+  // scenery keeps clear of where workers are drawn: the display route, the search area round the nest, and (round 4) the
+  // feeding spots round the source (two short crossing stretches: with the route half-width they clear about 7 cm round it)
+  const sx = o.source.x, sz = o.source.z, y0 = o.source.y, arm = 3.5;
+  const keepOut: KeepOut = { routes: [...o.corridor.slice(1).map((b, i) => ({ a: o.corridor[i], b })), { a: { x: sx - arm, y: y0, z: sz }, b: { x: sx + arm, y: y0, z: sz } }, { a: { x: sx, y: y0, z: sz - arm }, b: { x: sx, y: y0, z: sz + arm } }], nests: [{ x: 0, z: 0 }], routeHalfWidth: 5.5, nestRadius: o.searchRadius + 2 };
   const scalable: { mesh: THREE.InstancedMesh; full: number }[] = [];
   const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), E = new THREE.Euler(), C = new THREE.Color(), V = new THREE.Vector3(), S = new THREE.Vector3();
   const lam = (p: THREE.MeshLambertMaterialParameters) => new THREE.MeshLambertMaterial(p);

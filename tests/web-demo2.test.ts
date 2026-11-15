@@ -13,6 +13,7 @@
  *  3. ColonyFeed: natural mode = engine individuals only; demo individuals are labelled, seeded, reproducible, only for
  *     castes the engine lacks, and are in no snapshot; a frame that supplies a caste switches that caste to the engine.
  *  4. gait: phase advances only with drawn distance, nothing changes while paused; surface fold keeps points behind the
+ *     (round 4: 4m. motion quality — foot slip, turning rate, body overlap, irregular resting, frame-rate invariance)
  *     cut face and is continuous.
  *  5. source scans: no engine / Worker / cli import, no Math.random, Worker only through worker-client with scheduling /
  *     observation commands, no CDN, labels present, demo data never sent to the Worker or the save store.
@@ -25,11 +26,12 @@ import { P0a2ExperimentWorld } from '../prototypes/continuous-world/worker/p0a2-
 import type { EventMsg, P0a2FrameMsg } from '../web/src/experimental/worker-protocol.ts';
 import { VisModel, SEARCH_EMERGE_S } from '../web/src/vis1-model.ts';
 import { NestGraph, parseLayout, pathAt, upFor, type Pos } from '../web/src/demo2/nest-graph.ts';
-import { ColonyStage, OUTSIDE, CATCHUP_MAX_S, TROPH_HOLD_S, ABSORB_MAX_CM, DRAWN_SPEED_BOUND, STAGE_DISCONTINUITIES, CLASS_LABEL, type DrawnAnt } from '../web/src/demo2/stage.ts';
+import { ColonyStage, OUTSIDE, CATCHUP_MAX_S, TROPH_HOLD_S, ABSORB_MAX_CM, DRAWN_SPEED_BOUND, STAGE_DISCONTINUITIES, CLASS_LABEL, YAW_RATE_BOUND, TURN_RATE, MEET_GAP_BODY, lateral, LANE_BODY, MEANDER_BODY, type DrawnAnt } from '../web/src/demo2/stage.ts';
 import { BLOCK, FOLD_CM, fold, ground, surfacePose, corridor3 } from '../web/src/demo2/surface.ts';
 import { roster, colonyOf, engineFeed, demoFeed, missingCastes, engineCastes, DEMO_COUNTS, DEMO_BADGE, NATURAL_BADGE, DEMO_FOOD_PROPS } from '../web/src/demo2/feed.ts';
-import { larvaSpot, carerSpot, queenSpot, eggSpot, pupaSpot, majorSpot } from '../web/src/demo2/places.ts';
-import { newGait, stepGait, STRIDE_PER_BODY, POSE_TARGET } from '../web/src/demo2/gait.ts';
+import { larvaSpot, carerSpot, queenSpot, queenPlace, eggSpot, pupaSpot, majorSpot, chamberPlaces, placeFrame, BODY } from '../web/src/demo2/places.ts';
+import { separate, penetration, axisDistance, type Body } from '../web/src/demo2/separate.ts';
+import { STRIDE_PER_BODY, STRIDE_SPREAD, MODEL_LEN, POSE_TARGET, strideCm, phase0, gaitPhase, stanceAmp, poseValues, footTip, legCycle, tripodGroup, HIPS } from '../web/src/demo2/gait.ts';
 import { placeLabels, anyOverlap, type LabelBox } from '../web/src/demo2/labels.ts';
 import { RIG, glf } from '../web/src/demo2/rig-params.ts';
 /** the night grade of hd2d.ts is the identity tint with saturation 1 (read from the source: the module needs three) */
@@ -82,7 +84,7 @@ function run(seed: number, t0: number, t1: number, dt = 0.1, every = 2): { trace
   stage.onEvents(events as unknown as EventMsg[]); stage.onEvents(world.advanceTo(t0).events as unknown as EventMsg[]);
   let f = frameOf(world); const vis = VisModel.of(f), v = f.layout.source_distance_cm / f.layout.travel_s, E = g.point(g.entrancePos());
   const prev = new Map<string, DrawnAnt>(), prevW = new Map<string, P0a2FrameMsg['workers'][number]>(), restAt = new Map<string, { x: number; y: number; z: number }>(), cuts: Record<string, number> = {};
-  let n = 0, exits = 0, entries = 0, trace = '', maxLag = 0, restMoves = 0, maxAbs = 0, troph = 0, brood = 0;
+  let n = 0, exits = 0, entries = 0, trace = '', maxLag = 0, restMoves = 0, maxAbs = 0, troph = 0, brood = 0, odoStill = 0;
   const steps = Math.round((t1 - t0) / dt);
   for (let i = 0; i <= steps; i++) {
     const t = t0 + i * dt;
@@ -92,6 +94,8 @@ function run(seed: number, t0: number, t1: number, dt = 0.1, every = 2): { trace
     for (const a of ants) {
       n++; const w = f.workers.find((x) => x.id === a.id)!, p = prev.get(a.id), pw = prevW.get(a.id);
       maxAbs = Math.max(maxAbs, a.absorbed); if (a.pose === 'troph') troph++; if (a.pose === 'brood') brood++;
+      // the odometer never runs backward, never jumps (a cut of the drawn point is not a walk), and stands still for a standing ant
+      if (p) { const d = a.odo - p.odo; if (d < -1e-9 || d > DRAWN_SPEED_BOUND * v * dt + 0.6 * L * TURN_RATE * 1.5 * dt + 0.05) ok(false, `${a.id}: odometer step ${d.toFixed(3)} cm at t=${t.toFixed(1)}`); if (!a.moving && !p.moving && !a.turning && !p.turning && a.pose === p.pose && Math.abs(d) > 1e-9 && a.realm === 'nest') odoStill++; }
       if ((a.realm === 'surface') !== OUTSIDE.has(w.state)) ok(false, `${a.id}: realm follows the engine state`);
       if (a.realm === 'nest') {
         if (a.z < g.backZ - ABSORB_MAX_CM || a.z > g.faceZ + 1e-9 && a.absorbed === 0) ok(false, `${a.id}: outside the cavity depth`);
@@ -123,6 +127,7 @@ function run(seed: number, t0: number, t1: number, dt = 0.1, every = 2): { trace
   ok(n === 30 * (steps + 1), `seed ${seed}: ${n} drawn points checked`);
   ok(exits > 20 && entries > 20, `seed ${seed}: workers pass the entrance with the same id, continuously (${exits} out, ${entries} in)`);
   ok(restMoves === 0, `seed ${seed}: an arrived resting worker never translates`);
+  ok(odoStill === 0, `seed ${seed}: a standing worker's odometer (and so its gait phase) does not advance`);
   ok(maxLag <= 2 * CATCHUP_MAX_S + TROPH_HOLD_S + 1, `seed ${seed}: display travel after a state change is bounded (${maxLag.toFixed(1)} s ≤ ${2 * CATCHUP_MAX_S + TROPH_HOLD_S + 1} s)`);
   ok(maxAbs <= ABSORB_MAX_CM + 1e-9, `seed ${seed}: absorbed jumps stay ≤ ${ABSORB_MAX_CM} cm (${maxAbs.toFixed(2)})`);
   ok(troph > 0 && brood > 0 && stage.stats.troph_shown > 0 && stage.stats.troph_shown <= stage.stats.troph_events, `seed ${seed}: engine trophallaxis / larva events are shown (${stage.stats.troph_shown} of ${stage.stats.troph_events} meetings)`);
@@ -173,18 +178,171 @@ function run(seed: number, t0: number, t1: number, dt = 0.1, every = 2): { trace
 
 // 4. gait and surface fold
 {
-  const m = newGait(); stepGait(m, { x: 0, y: 0, z: 0, moving: true, pose: 'walk' }, 0.016, L);
-  const p0 = m.phase; stepGait(m, { x: 1, y: 0, z: 0, moving: true, pose: 'walk' }, 0.016, L);
-  ok(Math.abs(m.phase - p0 - (1 / (STRIDE_PER_BODY * L)) * Math.PI * 2) < 1e-9, 'gait phase = drawn distance / stride');
-  const p1 = m.phase; for (let i = 0; i < 50; i++) stepGait(m, { x: 1, y: 0, z: 0, moving: false, pose: 'rest' }, 0.016, L);
-  ok(m.phase === p1 && m.walk < 0.01 && m.crouch > 0.8, 'a standing ant: no phase advance, walk weight eases out, resting pose eases in');
-  const snap = JSON.stringify(m); stepGait(m, { x: 1, y: 0, z: 0, moving: false, pose: 'feed' }, 0, L); ok(JSON.stringify(m) === snap, 'paused (dt = 0): nothing changes');
-  stepGait(m, { x: 50, y: 0, z: 0, moving: true, pose: 'walk' }, 0.016, L); ok(m.cut && m.phase === p1, 'a jump larger than the cut length is a cut, not a walk');
-  ok(POSE_TARGET.feed.pitch > 0.3 && POSE_TARGET.rest.crouch === 1 && POSE_TARGET.troph.antUp > 0.5, 'pose targets: feeding head down, resting crouched, trophallaxis antennae forward');
+  // gait (round 4): every value is a function of the odometer / of simulated time — nothing is integrated per frame
+  const ids = Array.from({ length: 30 }, (_, i) => `w${String(i + 1).padStart(3, '0')}`), st = strideCm('w007', L);
+  ok(Math.abs(gaitPhase('w007', 4, L) - gaitPhase('w007', 3, L) - (1 / st) * Math.PI * 2) < 1e-9 && gaitPhase('w007', 3, L) === gaitPhase('w007', 3, L), 'gait phase = drawn distance / stride (a function of the odometer: the same distance gives the same phase)');
+  ok(ids.every((id) => strideCm(id, L) >= STRIDE_PER_BODY * L * (1 - STRIDE_SPREAD) - 1e-9 && strideCm(id, L) <= STRIDE_PER_BODY * L * (1 + STRIDE_SPREAD) + 1e-9) && new Set(ids.map((id) => strideCm(id, L).toFixed(4))).size >= 28 && new Set(ids.map((id) => phase0(id).toFixed(3))).size >= 28, 'stride and starting phase vary per individual within the stated spread (no lockstep)');
+  const far = poseValues('walk', 'rest', 60), at0 = poseValues('walk', 'rest', 0);
+  ok(far.crouch === 1 && far.legs === 0 && far.scan === 0 && JSON.stringify(at0) === JSON.stringify(POSE_TARGET.walk) && JSON.stringify(poseValues('walk', 'rest', 0.2)) === JSON.stringify(poseValues('walk', 'rest', 0.2)), 'a pose change blends from the previous pose (continuous at the change) to the new one; a function of simulated time');
+  ok(POSE_TARGET.walk.scan === 1 && POSE_TARGET.rest.scan === 0 && POSE_TARGET.troph.conv === 1 && POSE_TARGET.brood.conv > 0.5 && POSE_TARGET.stand.scan > 0 && POSE_TARGET.stand.scan < 1, 'antennae: scanning while walking, less while standing, still at rest, toward the partner / larva in a contact');
   for (let y = -30; y <= 30; y += 0.37) { const a = fold({ x: 3, y }, 0.4), b = fold({ x: 3, y: y + 0.001 }, 0.4); ok(a.y >= -FOLD_CM - 1e-9 && Math.abs(a.y - b.y) <= 0.001 + 1e-9, 'fold: behind the cut, continuous'); }
   const { world } = P0a2ExperimentWorld.create('exp-demo2-test', 1); world.advanceTo(9 * 3600); const f = frameOf(world), vis = VisModel.of(f);
   for (const w of f.workers) if (OUTSIDE.has(w.state)) { const s = surfacePose(vis, w, f.t_sim, L); ok(s.z <= FOLD_CM + 1e-9 && Math.abs(s.y - ground(s.x, s.z)) < 1e-9 && s.x > BLOCK.x0 && s.x < BLOCK.x1 && s.z > BLOCK.z0, 'surface pose on the drawn ground, inside the block'); }
   const C = corridor3(vis); ok(C.every((p) => p.x > BLOCK.x0 + 5 && p.x < BLOCK.x1 - 5 && p.z > BLOCK.z0 + 5 && p.z < BLOCK.z1), 'the whole display route lies on the block');
+}
+
+// 4m. motion quality (round 4; display only — the world has no kinematics, body contact or antennation: M21 / M22)
+{
+  const pct = (a: number[], q: number) => { if (!a.length) return 0; const srt = [...a].sort((x, y) => x - y); return srt[Math.min(srt.length - 1, Math.floor(q * srt.length))]; };
+  const mean = (a: number[]) => a.reduce((x, y) => x + y, 0) / Math.max(1, a.length);
+  // --- the leg rule (gait.ts footTip = the CPU form of what both shader rigs compute from rig-params.ts) ---
+  const legsSrc = read('web/src/three/ant-model.ts'), rows = [...legsSrc.matchAll(/\{ hip: \[([^\]]+)\], knee: \[[^\]]+\], foot: \[[^\]]+\], tip: \[([^\]]+)\] \}/g)].map((m) => ({ hip: m[1].split(',').map(Number), tip: m[2].split(',').map(Number) }));
+  ok(rows.length === 3 && rows.every((r, i) => r.hip.every((v, k) => v === HIPS[i][k]) && Math.abs(r.tip[0] - r.hip[0] - RIG.leg.reach[i][0]) < 1e-12 && Math.abs(r.tip[2] - r.hip[2] - RIG.leg.reach[i][1]) < 1e-12) && new RegExp(`MODEL_LEN = ${MODEL_LEN}\\b`).test(legsSrc), 'the leg rule uses the hips and the neutral reach of the drawn ant model (ant-model.ts LEGS)');
+  ok([0, 2, 4].every((l) => tripodGroup(l) === 0) && [1, 3, 5].every((l) => tripodGroup(l) === 1), 'alternating tripod: fore + hind of one side with the mid leg of the other');
+  let worstSlip = 0, tripod = true, lifts = true, fwd = true;
+  for (const id of ['w001', 'w013', 'w027']) {
+    const stride = strideCm(id, L), A = stanceAmp(stride, L), strideModel = (stride / L) * MODEL_LEN, down = new Map<number, number>();
+    ok(Math.abs(4 * A - strideModel) < 1e-12, 'stance amplitude: the stance sweep (2A) is half a stride');
+    for (let i = 0; i <= 4000; i++) {
+      const odoModel = (i / 4000) * strideModel * 5, ph = phase0(id) + (odoModel / strideModel) * Math.PI * 2; let inStance = 0;
+      for (let leg = 0; leg < 6; leg++) {
+        const tp = footTip(leg, ph, A), world = odoModel + tp.x, c = legCycle(leg, ph).cyc;
+        if (tp.stance) { inStance++; if (tp.y !== 0) lifts = false; const at = down.get(leg); if (at === undefined) down.set(leg, world); else worstSlip = Math.max(worstSlip, Math.abs(world - at)); }
+        else { down.delete(leg); if (tp.y < 0 || (c > 0.55 && c < 0.95 && tp.y <= 0)) lifts = false; const nx = footTip(leg, ph + 1e-4, A); if (!nx.stance && nx.x < tp.x - 1e-12) fwd = false; }
+      }
+      if (inStance !== 3 && Math.min(...[0, 1, 2, 3, 4, 5].map((l) => { const c = legCycle(l, ph).cyc; return Math.min(Math.abs(c - 0.5), c, 1 - c); })) > 1e-6) tripod = false;
+    }
+  }
+  ok(worstSlip < 1e-9, `walking straight, a stance foot does not move over the ground at all (worst ${worstSlip.toExponential(1)} model units, at any speed: phase follows distance)`);
+  ok(tripod && lifts && fwd, 'three feet on the ground at every instant; a swinging foot is lifted and only moves forward');
+  ok(JSON.stringify(footTip(2, 1.3, 0)) === JSON.stringify(footTip(2, 4.4 + Math.PI * 2 * 7, 0, 0)) || footTip(2, 1.3, 0).x === HIPS[2][0] + RIG.leg.reach[2][0], 'no stride reach (turning in place) or no stride pose (resting): the foot is at its neutral place');
+  const rigSrc = read('web/src/demo2/ant-rig.ts'), tslSrc = read('web/src/demo2/ant-rig-tsl.ts');
+  ok(/D = A \* \(1\.0 - 4\.0 \* cyc\)/.test(rigSrc) && /K\.leg\.reach\[0\]/.test(rigSrc) && /aMore/.test(rigSrc) && /aMore/.test(tslSrc) && /leg\.reach/.test(tslSrc) && /uTime\.value = tNow % CLOCK_WRAP_S/.test(read('web/src/demo2/main.ts')), 'both rigs take the stance sweep, the reach and the stride amplitude from the shared table / the per-instance values; the micro-motion clock is simulated time');
+
+  // --- display separation of bodies (separate.ts) ---
+  const B = (id: string, x: number, z: number, fx: number, mob = 1, realm: 'nest' | 'surface' = 'nest'): Body => ({ id, realm, x, y: 0, z, fx, fy: 0, fz: 0, len: L, mob, zLo: -2.5, zHi: 1.8, partner: null });
+  const pair = [B('a', 0, 0.02, 1), B('b', 1.2, 0, -1)], S1 = separate(pair), S2 = separate([...pair].reverse());
+  const moved = (bs: Body[], m: Map<string, { x: number; z: number }>) => bs.map((b) => ({ ...b, x: b.x + (m.get(b.id)?.x ?? 0), z: b.z + (m.get(b.id)?.z ?? 0) }));
+  ok(penetration(pair[0], pair[1]) > 0.5 && penetration(...(moved(pair, S1) as [Body, Body])) <= 1e-6 && [...S1.values()].every((o) => o.x === 0) && JSON.stringify([...S1].sort()) === JSON.stringify([...S2].sort()), 'two bodies meeting head-on in the nest are moved apart along the cavity depth only; the result does not depend on the order of the list');
+  const withRest = [B('a', 0, 0, 1), B('r', 0.6, 0.1, 1, 0)], S3 = separate(withRest);
+  ok(!S3.has('r') && penetration(...(moved(withRest, S3) as [Body, Body])) <= 1e-6, 'a resting body is never moved: the walker gives way');
+  ok(separate([B('a', 0, 0, 1), B('b', 5, 0, -1)]).size === 0 && separate([B('a', 0, 1.7, 1), B('b', 0.3, 1.75, 1)]).get('b')!.z + 1.75 <= 1.8 + 1e-9, 'bodies apart are not touched; a correction stays inside the cavity depth');
+  let steep = 0; { let prevO = 0; for (let gx = 4; gx >= -4; gx -= 0.01) { const o = separate([B('a', 0, 0.05, 1), B('b', gx, 0, -1)]).get('a')?.z ?? 0; steep = Math.max(steep, Math.abs(o - prevO)); prevO = o; } }
+  ok(steep < 0.03, `the correction changes continuously as two bodies pass each other (largest change per 0.01 cm of travel: ${steep.toFixed(4)} cm)`);
+  const sf = separate([B('a', 0, 0, 1, 1, 'surface'), B('b', 1.0, 0.05, -1, 1, 'surface')]);
+  ok(sf.size === 2 && Math.abs(sf.get('a')!.x) < 1e-9 && Math.abs(sf.get('a')!.z) > 0.1, 'on the surface a body is moved sideways to its heading');
+  ok(Math.abs(axisDistance(B('a', 0, 0, 1), B('b', 3, 0, 1)).d - (3 - 2 * BODY.half * L)) < 1e-9, 'body model: a capsule along the heading');
+  ok(MEET_GAP_BODY * L - 2 * BODY.half * L >= 2 * BODY.r * L, 'two ants meeting head to head stop where their bodies do not overlap');
+  for (let d = 0; d < 200; d += 3.7) { const lat = lateral('w004', 100, d, Math.min(d, 200 - d), L); ok(lat >= 0 && lat <= (LANE_BODY + MEANDER_BODY) * L + 1e-9 && (Math.min(d, 200 - d) < 4 || lat >= (LANE_BODY - MEANDER_BODY) * L - 1e-9), 'surface trips keep to the right of the display path (bounded, none at the two ends)'); }
+  ok(lateral('w004', 100, 0, 0, L) === 0 && 2 * (LANE_BODY - MEANDER_BODY) * L >= 2 * BODY.r * L - 0.3 && new Set([10, 20, 30, 40, 50].map((d) => lateral('w004', 100, d, 50, L).toFixed(3))).size >= 4, 'the lane vanishes at the nest and at the source (engine instants unchanged); it meanders; opposite directions pass on opposite sides');
+
+  // --- irregular places (places.ts) ---
+  const restChambers = [...g.chambersOf('rest'), ...g.chambersOf('exchange')].map((c) => c.id), all = restChambers.flatMap((c) => chamberPlaces(g, c, L, true));
+  const bodyAt = (pl: ReturnType<typeof chamberPlaces>[number], id = pl.id): Body => { const p = g.point(pl.pos), fr = placeFrame(pl); return { id, realm: 'nest', x: p.x, y: p.y + pl.lift, z: p.z, fx: fr.f.x, fy: fr.f.y, fz: fr.f.z, len: L, mob: 0, zLo: p.z, zHi: p.z, partner: null }; };
+  ok(all.length >= 31, `irregular resting places for all 30 workers (${all.length}: ${all.filter((x) => !x.wall).length} on the floor, ${all.filter((x) => x.wall).length} on the back wall)`);
+  let frontOv = 0, pen3 = 0, sameFace = 0, sameRow = 0, prs = 0, inside = true; const cvs: number[] = [];
+  for (const c of restChambers) {
+    const P = chamberPlaces(g, c, L, true), bs = P.map((x) => bodyAt(x)), ex = (b: Body) => L * (BODY.half * Math.abs(b.fx) + BODY.r), ey = (b: Body) => L * (BODY.half * Math.abs(b.fy) + BODY.r);
+    for (const b of bs) if (!(g.sdf(b.x, b.y + 0.3) < 0) || b.z < g.backZ || b.z > g.faceZ) inside = false;
+    for (let i = 0; i < bs.length; i++) for (let j = i + 1; j < bs.length; j++) {
+      prs++; if (Math.abs(bs[i].x - bs[j].x) < ex(bs[i]) + ex(bs[j]) && Math.abs(bs[i].y - bs[j].y) < ey(bs[i]) + ey(bs[j])) frontOv++;
+      if (penetration(bs[i], bs[j]) > 0) pen3++; if (bs[i].fx * bs[j].fx + bs[i].fy * bs[j].fy + bs[i].fz * bs[j].fz > Math.cos((5 * Math.PI) / 180)) sameFace++; if (Math.abs(bs[i].z - bs[j].z) < 0.05 && Math.abs(bs[i].y - bs[j].y) < 0.05) sameRow++;
+    }
+    const nn = bs.map((a) => Math.min(...bs.filter((b) => b !== a).map((b) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z)))); cvs.push(Math.sqrt(mean(nn.map((d) => (d - mean(nn)) ** 2))) / mean(nn));
+    for (let i = 0; i < 4; i++) { const m = majorSpot(g, i, 1, L); if (g.edges[m.pos.edge].chamber !== c) continue; const mp = g.point(m.pos), mb: Body = { id: 'm', realm: 'nest', x: mp.x, y: mp.y, z: mp.z, fx: Math.cos(m.yaw), fy: 0, fz: Math.sin(m.yaw), len: L * 1.45, mob: 0, zLo: 0, zHi: 0, partner: null }; for (const b of bs) if (penetration(b, mb) > 0) pen3++; }
+  }
+  ok(inside && frontOv === 0 && pen3 === 0, 'resting places: inside the cavity; no two overlap when seen from the front; none overlaps another or a major');
+  // the round-3 arrangement for comparison: the slot grid of nest-graph.ts (rows and columns, two facings)
+  const gridCv = restChambers.map((c) => { const S = g.slots(c, L).map((x) => g.point(x.pos)), nn = S.map((a) => Math.min(...S.filter((b) => b !== a).map((b) => Math.hypot(a.x - b.x, a.z - b.z)))); return Math.sqrt(mean(nn.map((d) => (d - mean(nn)) ** 2))) / mean(nn); });
+  ok(sameFace / prs < 0.06 && sameRow / prs < 0.05 && Math.min(...cvs) >= 0.15 && cvs.every((x, i) => x > 2 * gridCv[i]), `resting places are irregular: ${(100 * sameFace / prs).toFixed(1)}% of pairs face the same way (±5°), ${sameRow} of ${prs} pairs level with each other (two wall places at the same height), nearest-neighbour spacing CV ${cvs.map((x) => x.toFixed(2)).join(' / ')} (the round-3 slot grid: ${gridCv.map((x) => x.toFixed(2)).join(' / ')})`);
+  summary.rest_places = { grid_nn_spacing_cv_round3: gridCv.map((x) => Number(x.toFixed(3))), capacity: all.length, same_facing_pct: Number((100 * sameFace / prs).toFixed(2)), nn_spacing_cv: cvs.map((x) => Number(x.toFixed(3))) };
+  const entry = chamberPlaces(g, g.chambersOf('entry')[0].id, L, false), eb = entry.map((x) => bodyAt(x));
+  ok(entry.length >= 4 && eb.every((a, i) => eb.every((b, j) => j <= i || penetration(a, b) <= 0)) && new Set(entry.map((x) => x.yaw.toFixed(2))).size === entry.length, `standing places in the entry chamber: ${entry.length}, no overlap, every heading different`);
+  for (const [name, spot, n, dmin] of [['larvae', larvaSpot, 8, 0.45 * L], ['larvae (many)', larvaSpot, 24, 0.25 * L], ['pupae', pupaSpot, 10, 0.35 * L]] as const) {
+    const pts = Array.from({ length: n }, (_, i) => g.point(spot(g, i, n, L))); let dm = Infinity; for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) dm = Math.min(dm, Math.hypot(pts[i].x - pts[j].x, pts[i].z - pts[j].z));
+    ok(dm >= dmin && new Set(pts.map((q) => q.x.toFixed(3))).size === n && new Set(pts.map((q) => q.z.toFixed(3))).size === n && JSON.stringify(pts) === JSON.stringify(Array.from({ length: n }, (_, i) => g.point(spot(g, i, n, L)))), `${name}: an irregular pile (no rows or columns, nearest pair ${dm.toFixed(2)} cm apart), deterministic`);
+  }
+  for (const n of [2, 3]) { const qs = Array.from({ length: n }, (_, i) => queenPlace(g, i, n, L)), qb = qs.map((q, i): Body => { const p = g.point(q.pos); return { id: `q${i}`, realm: 'nest', x: p.x, y: p.y, z: p.z, fx: Math.cos(q.yaw), fy: 0, fz: Math.sin(q.yaw), len: L * 2.5, mob: 0, zLo: 0, zHi: 0, partner: null }; });
+    ok(qb.every((a, i) => qb.every((b, j) => j <= i || penetration(a, b) <= 0)) && new Set(qs.map((q) => q.yaw.toFixed(2))).size === n && qs.every((q) => g.edges[q.pos.edge].chamber === g.chambersOf('queen')[0].id), `${n} queens: in the queen chamber, not overlapping, not facing the same way`); }
+
+  // --- the display director over real worlds: turning, slip, overlap, resting arrangement ---
+  function motion(seed: number, h0: number, minutes: number, every = 4) {
+    const { world, events } = P0a2ExperimentWorld.create('exp-demo2-test', seed), stage = new ColonyStage(g, L), dt = 0.05, T0 = h0 * 3600, steps = Math.round((minutes * 60) / dt);
+    stage.onEvents(events as unknown as EventMsg[]); stage.onEvents(world.advanceTo(T0).events as unknown as EventMsg[]); let f = frameOf(world); const vis = VisModel.of(f), v = f.layout.source_distance_cm / f.layout.travel_s;
+    const prev = new Map<string, DrawnAnt>(), stance = new Map<string, { x: number; y: number; z: number; m: number; w: boolean }>(), slips: number[] = [], yaws: number[] = [], startSp: number[] = [], walkSp: number[] = [], since = new Map<string, number>();
+    let maxYaw = 0, close = 0, pen = 0, deep = 0, restPairs = 0, front = 0, same = 0, row = 0, turnSamples = 0, turnMoved = 0, meet = 0, restScan = 0, tilt = true; const cv: number[] = [];
+    for (let i = 0; i <= steps; i++) {
+      const t = T0 + i * dt; if (i % every === 0) { stage.onEvents(world.advanceTo(t).events as unknown as EventMsg[]); f = frameOf(world); }
+      const ants = stage.update(f, vis, t, 0);
+      if (i === 100) ok(JSON.stringify(stage.at(t)) === JSON.stringify(ants) && JSON.stringify(stage.at(t)) === JSON.stringify(ants), 'paused: the same instant drawn again is identical (nothing advances without simulated time)');
+      for (const a of ants) {
+        const p = prev.get(a.id), jump = p ? Math.hypot(a.x - p.x, a.y - p.y, a.z - p.z) : 0, cut = !p || p.realm !== a.realm || jump > DRAWN_SPEED_BOUND * v * dt + 0.05;
+        if (Math.abs(Math.hypot(a.fx, a.fy, a.fz) - 1) > 1e-6 || Math.abs(Math.hypot(a.ux, a.uy, a.uz) - 1) > 1e-6 || Math.abs(a.fx * a.ux + a.fy * a.uy + a.fz * a.uz) > 1e-6) ok(false, `${a.id}: the drawn body frame is not orthonormal`);
+        if (p && !cut) {
+          const w = Math.max(Math.acos(Math.max(-1, Math.min(1, a.fx * p.fx + a.fy * p.fy + a.fz * p.fz))), Math.acos(Math.max(-1, Math.min(1, a.ux * p.ux + a.uy * p.uy + a.uz * p.uz)))) / dt; yaws.push(w); maxYaw = Math.max(maxYaw, w);
+          if (a.turning && p.turning) { turnSamples++; if (a.sep === 0 && p.sep === 0 && a.absorbed === 0 && p.absorbed === 0 && jump > 1e-9) turnMoved++; }
+          if (a.moving && a.realm === 'nest' && a.sep === 0 && p.sep === 0) { if (!p.moving) since.set(a.id, 0); const k = since.get(a.id); if (k !== undefined && k < 3) { startSp.push(jump / dt); since.set(a.id, k + 1); } else walkSp.push(jump / dt); }
+        }
+        if (a.pose === 'walk' && a.pv.conv > 0.3) meet++;
+        if (a.pose === 'rest' && !a.moving && p && p.pose === 'rest' && a.pv.crouch === 1 && a.pv.scan !== 0) restScan++;
+        // foot slip: how far a stance tarsus moves over the ground between touch-down and lift-off (walking stances only)
+        const zx = a.fy * a.uz - a.fz * a.uy, zy = a.fz * a.ux - a.fx * a.uz, zz = a.fx * a.uy - a.fy * a.ux, sc = L / MODEL_LEN;
+        for (let leg = 0; leg < 6; leg++) {
+          const key = `${a.id}|${leg}`, tp = footTip(leg, a.phase, a.amp, a.pv.legs), st = stance.get(key), wx = a.x + (a.fx * tp.x + a.ux * tp.y + zx * tp.z) * sc, wy = a.y + (a.fy * tp.x + a.uy * tp.y + zy * tp.z) * sc, wz = a.z + (a.fz * tp.x + a.uz * tp.y + zz * tp.z) * sc;
+          if (cut || !tp.stance) { if (st && !cut && st.w) slips.push(st.m); stance.delete(key); if (tp.stance && !cut) stance.set(key, { x: wx, y: wy, z: wz, m: 0, w: a.moving }); continue; }
+          if (!st) { stance.set(key, { x: wx, y: wy, z: wz, m: 0, w: a.moving }); continue; }
+          st.w = st.w && a.moving; st.m = Math.max(st.m, Math.hypot(wx - st.x, wy - st.y, wz - st.z));
+        }
+        prev.set(a.id, a);
+      }
+      if (i % 20 === 0) {
+        const bs = ants.map((a): Body => ({ id: a.id, realm: a.realm, x: a.x, y: a.y, z: a.z, fx: a.fx, fy: a.fy, fz: a.fz, len: L, mob: 1, zLo: 0, zHi: 0, partner: null }));
+        for (let x = 0; x < bs.length; x++) for (let y = x + 1; y < bs.length; y++) { if (bs[x].realm !== bs[y].realm || Math.hypot(bs[x].x - bs[y].x, bs[x].y - bs[y].y, bs[x].z - bs[y].z) > L * 1.2) continue; close++; const d = penetration(bs[x], bs[y]); if (d > 0.02 * L) pen++; if (d > 0.3) deep++; }
+        const by = new Map<string, DrawnAnt[]>(); for (const a of ants) if (a.pose === 'rest' && !a.moving && a.partner === null) by.set(a.place, [...(by.get(a.place) ?? []), a]);
+        for (const l of by.values()) {
+          const ex = (a: DrawnAnt) => L * (BODY.half * Math.abs(a.fx) + BODY.r), ey = (a: DrawnAnt) => L * (BODY.half * Math.abs(a.fy) + BODY.r);
+          for (let x = 0; x < l.length; x++) for (let y = x + 1; y < l.length; y++) { restPairs++; if (Math.abs(l[x].x - l[y].x) < ex(l[x]) + ex(l[y]) && Math.abs(l[x].y - l[y].y) < ey(l[x]) + ey(l[y])) front++; if (l[x].fx * l[y].fx + l[x].fy * l[y].fy + l[x].fz * l[y].fz > Math.cos((5 * Math.PI) / 180)) same++; if (Math.abs(l[x].z - l[y].z) < 0.05 && Math.abs(l[x].y - l[y].y) < 0.05) row++; }
+          if (l.length >= 4) { const nn = l.map((a) => Math.min(...l.filter((b) => b !== a).map((b) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z)))); cv.push(Math.sqrt(mean(nn.map((d) => (d - mean(nn)) ** 2))) / mean(nn)); }
+        }
+        for (const a of ants) if (a.realm === 'surface' && a.sep === 0 && a.absorbed === 0) { const s2 = Math.hypot(a.x, a.z) > 6; if (s2 && Math.abs(a.y - ground(a.x, a.z)) > 1e-6) tilt = false; }
+      }
+    }
+    return { seed, h0, minutes, max_turn_rate: Number(maxYaw.toFixed(2)), turn_rate_p999: Number(pct(yaws, 0.999).toFixed(2)), walk_stances: slips.length, walk_slip_mean_cm: Number(mean(slips).toFixed(3)), walk_slip_p95_cm: Number(pct(slips, 0.95).toFixed(3)), walk_slip_max_cm: Number(pct(slips, 1).toFixed(3)), stride_cm: STRIDE_PER_BODY * L,
+      close_pairs: close, overlapping_pct: Number((100 * pen / Math.max(1, close)).toFixed(2)), deep_overlaps: deep, rest_pairs: restPairs, rest_front_overlap_pct: Number((100 * front / Math.max(1, restPairs)).toFixed(3)), rest_same_facing_pct: Number((100 * same / Math.max(1, restPairs)).toFixed(2)), rest_same_row_pct: Number((100 * row / Math.max(1, restPairs)).toFixed(2)), rest_nn_spacing_cv: Number(mean(cv).toFixed(3)),
+      turn_in_place_samples: turnSamples, turnMoved, start_speed: Number(mean(startSp).toFixed(2)), walk_speed: Number(mean(walkSp).toFixed(2)), meet, restScan, tilt };
+  }
+  const M = [motion(1, 9, 20), motion(3, 22, 20)]; summary.motion = M;
+  for (const m of M) {
+    ok(m.max_turn_rate <= YAW_RATE_BOUND, `seed ${m.seed}: the drawn body never turns faster than ${YAW_RATE_BOUND} rad/s — no heading flip (max ${m.max_turn_rate}, 99.9th percentile ${m.turn_rate_p999}; turn rate ${TURN_RATE} rad/s, eased peak × 1.5)`);
+    ok(m.walk_stances > 20000 && m.walk_slip_mean_cm <= 0.1 * m.stride_cm && m.walk_slip_p95_cm <= 0.32 * m.stride_cm, `seed ${m.seed}: walking stance feet stay planted (slip mean ${m.walk_slip_mean_cm} cm, 95th percentile ${m.walk_slip_p95_cm} cm, stride ${m.stride_cm} cm; ${m.walk_stances} stances; bends, lane changes and give-way moves are what is left)`);
+    ok(m.close_pairs > 5000 && m.overlapping_pct <= 2.5, `seed ${m.seed}: bodies are kept apart (${m.overlapping_pct}% of ${m.close_pairs} close pairs overlap by more than 2% of a body length; ${m.deep_overlaps} deeper than 0.3 cm)`);
+    ok(m.rest_pairs > 1000 && m.rest_front_overlap_pct <= 0.2 && m.rest_same_facing_pct <= 6 && m.rest_same_row_pct <= 5 && m.rest_nn_spacing_cv >= 0.15, `seed ${m.seed}: resting workers are arranged irregularly (front-view overlap ${m.rest_front_overlap_pct}% of pairs, same facing ${m.rest_same_facing_pct}%, same row ${m.rest_same_row_pct}%, nearest-neighbour spacing CV ${m.rest_nn_spacing_cv})`);
+    ok(m.turn_in_place_samples > 200 && m.turnMoved === 0, `seed ${m.seed}: large heading changes are turned in place (${m.turn_in_place_samples} samples; the body does not travel while it turns)`);
+    ok(m.start_speed < 0.75 * m.walk_speed, `seed ${m.seed}: a walk starts with a speed ramp (first 0.15 s: ${m.start_speed} cm/s, walking: ${m.walk_speed} cm/s)`);
+    ok(m.meet > 0 && m.restScan === 0 && m.tilt, `seed ${m.seed}: antennae converge when two walkers meet head-on (${m.meet} samples), a settled resting ant does not scan, surface ants stand on the drawn ground`);
+  }
+  // --- frame-rate invariance: the same frames sampled at different rates give the same drawn ants at the same instant ---
+  {
+    const mk = () => { const { world, events } = P0a2ExperimentWorld.create('exp-demo2-test', 5), stage = new ColonyStage(g, L); stage.onEvents(events as unknown as EventMsg[]); stage.onEvents(world.advanceTo(11 * 3600).events as unknown as EventMsg[]); return { world, stage }; };
+    const A = mk(), Bq = mk(), C = mk(), T0 = 11 * 3600, at: string[][] = [[], [], []]; let fA = frameOf(A.world), fB = frameOf(Bq.world), fC = frameOf(C.world); const vis = VisModel.of(fA);
+    for (let i = 0; i <= 1500 * 4; i++) { // A: 20 samples per simulated second
+      const t = T0 + i * 0.05; if (i % 4 === 0) { A.stage.onEvents(A.world.advanceTo(t).events as unknown as EventMsg[]); fA = frameOf(A.world); } const d = A.stage.update(fA, vis, t, 0.05); if (i % 20 === 0) at[0].push(JSON.stringify(d));
+    }
+    for (let i = 0; i <= 1500; i++) { // B: 5 samples per second (one per frame), and a different "wall dt"
+      const t = T0 + i * 0.2; Bq.stage.onEvents(Bq.world.advanceTo(t).events as unknown as EventMsg[]); fB = frameOf(Bq.world); const d = Bq.stage.update(fB, vis, t, 0.2); if (i % 5 === 0) at[1].push(JSON.stringify(d));
+    }
+    for (let i = 0; i <= 1500; i++) { // C: frames ingested as they come; drawn only once per simulated second, plus irregular extra instants
+      const t = T0 + i * 0.2; C.stage.onEvents(C.world.advanceTo(t).events as unknown as EventMsg[]); fC = frameOf(C.world); C.stage.ingest(fC, vis); if (i % 7 === 3) C.stage.at(t + 0.137); if (i % 5 === 0) at[2].push(JSON.stringify(C.stage.at(t)));
+    }
+    const diff = (x: string[], y: string[]) => x.findIndex((v, i) => v !== y[i]);
+    ok(at[0].length === 301 && diff(at[0], at[1]) === -1 && diff(at[0], at[2]) === -1, `the same frames drawn at 20 / 5 / 1 samples per simulated second give identical ants at the same instants (first difference at second ${diff(at[0], at[1])} / ${diff(at[0], at[2])})`);
+    // a different FRAME cadence (a higher playback speed delivers fewer frames per simulated second) is a different input: the
+    // engine instants still hold (checked by run() above at two cadences); the display walk between them may differ
+    const D = mk(); let fD = frameOf(D.world), worst = 0; const prevD = new Map<string, DrawnAnt>();
+    for (let i = 0; i <= 6000; i++) { const t = T0 + i * 0.05; if (i % 40 === 0) { D.stage.onEvents(D.world.advanceTo(t).events as unknown as EventMsg[]); fD = frameOf(D.world); }
+      for (const a of D.stage.update(fD, vis, t, 0)) { const p = prevD.get(a.id); if (p && p.realm === a.realm && Math.hypot(a.x - p.x, a.y - p.y, a.z - p.z) < 0.4) worst = Math.max(worst, Math.max(Math.acos(Math.max(-1, Math.min(1, a.fx * p.fx + a.fy * p.fy + a.fz * p.fz))), Math.acos(Math.max(-1, Math.min(1, a.ux * p.ux + a.uy * p.uy + a.uz * p.uz)))) / 0.05); prevD.set(a.id, a); } }
+    ok(worst <= YAW_RATE_BOUND, `with one frame per 2 simulated seconds (a high playback speed) the turning bound still holds (max ${worst.toFixed(2)} rad/s)`);
+  }
 }
 
 // 4b. label placement: placed labels never overlap, stay inside the area, deterministic; crowded anchors are separated
@@ -213,7 +371,7 @@ function run(seed: number, t0: number, t1: number, dt = 0.1, every = 2): { trace
   const structural = new Set([0, 1, 2, 3, 4, 0.5, 1.5, 2.5, 3.5]);
   ok(lits.length > 10 && lits.every((v) => structural.has(v)), `the TSL rig has no constants of its own (literals: ${[...new Set(lits)].join(', ')})`);
   ok(glf(1) === '1.0' && glf(0.42) === '0.42' && /qn: \{ amp:/.test(params), 'GLSL float literals');
-  for (const x of ['nest-graph.ts', 'stage.ts', 'surface.ts', 'feed.ts', 'places.ts', 'gait.ts', 'labels.ts', 'rig-params.ts']) ok(!/renderer|webgpu|webgl/i.test(read(`web/src/demo2/${x}`).replace(/\/\*[\s\S]*?\*\//g, '')), `${x}: no reference to any renderer (the director's output cannot depend on it)`);
+  for (const x of ['nest-graph.ts', 'stage.ts', 'surface.ts', 'feed.ts', 'places.ts', 'gait.ts', 'separate.ts', 'labels.ts', 'rig-params.ts']) ok(!/renderer|webgpu|webgl/i.test(read(`web/src/demo2/${x}`).replace(/\/\*[\s\S]*?\*\//g, '')), `${x}: no reference to any renderer (the director's output cannot depend on it)`);
   const main = read('web/src/demo2/main.ts');
   ok(/stage\.update\(frame, vis, tNow, dtAnim\)/.test(main) && !/stage\.update\([^)]*(renderer|rendererKind|rigNode)/.test(main) && !/new ColonyStage\([^)]*(renderer|rendererKind)/.test(main), 'main.ts passes only the frame, the display model and time to the director');
   ok(/isWebGPUBackend === true/.test(main) && /不是 WebGPU/.test(main) && /已改用 WebGL 2/.test(main) && /待 Owner 實機確認/.test(main), 'main.ts reports the ACTUAL backend, says when it fell back, and states what is not verified');
@@ -223,7 +381,7 @@ function run(seed: number, t0: number, t1: number, dt = 0.1, every = 2): { trace
 {
   const hd = read('web/src/demo2/hd2d.ts'), scene = read('web/src/demo2/scene.ts'), main = read('web/src/demo2/main.ts');
   ok([...hd.matchAll(/from\s+'([^']+)'/g)].every((m) => m[1] === 'three'), 'hd2d.ts imports only three');
-  for (const x of ['nest-graph.ts', 'stage.ts', 'surface.ts', 'feed.ts', 'places.ts', 'gait.ts', 'labels.ts', 'rig-params.ts']) ok(!/hd2d|pixelat|bloom|vignette|\bstyle\b/i.test(read(`web/src/demo2/${x}`)), `${x}: no reference to the picture style (the director's output cannot depend on it)`);
+  for (const x of ['nest-graph.ts', 'stage.ts', 'surface.ts', 'feed.ts', 'places.ts', 'gait.ts', 'separate.ts', 'labels.ts', 'rig-params.ts']) ok(!/hd2d|pixelat|bloom|vignette|\bstyle\b/i.test(read(`web/src/demo2/${x}`)), `${x}: no reference to the picture style (the director's output cannot depend on it)`);
   ok(/hd2d!\.render\(scene, camera, focus, frame\?\.env\.light \?\? 'day', fx\)/.test(main) && !/client\.\w+\([^)]*(style|pxFactor|fx\b)/.test(main) && !/session\.(request|newGame|open)\([^)]*(style|pxFactor)/.test(main), 'the style reaches only the renderer: never the Worker, the session or the director');
   ok(/world\.setAtmosphere\(frame\.env\.light,/.test(main) && /HD2D_GRADE\[light\]/.test(hd), 'light shafts, dust and the colour grade take the ENGINE light state');
   ok(HD2D_GRADE_NIGHT_NEUTRAL(hd), 'night: no warm grade (the style does not invent a time of day)');
@@ -238,12 +396,12 @@ function run(seed: number, t0: number, t1: number, dt = 0.1, every = 2): { trace
 // 5. source scans
 {
   const dir = 'web/src/demo2', files = fs.readdirSync(path.join(REPO_ROOT, dir)).filter((x) => x.endsWith('.ts')), html = read('web/demo2.html'), main = read(`${dir}/main.ts`);
-  ok(['nest-graph.ts', 'stage.ts', 'surface.ts', 'feed.ts', 'places.ts', 'gait.ts', 'ant-rig.ts', 'ant-rig-tsl.ts', 'rig-params.ts', 'labels.ts', 'hd2d.ts', 'scene.ts', 'main.ts'].every((x) => files.includes(x)), 'Demo 2 modules present');
+  ok(['nest-graph.ts', 'stage.ts', 'surface.ts', 'feed.ts', 'places.ts', 'gait.ts', 'separate.ts', 'ant-rig.ts', 'ant-rig-tsl.ts', 'rig-params.ts', 'labels.ts', 'hd2d.ts', 'scene.ts', 'main.ts'].every((x) => files.includes(x)), 'Demo 2 modules present');
   for (const x of files) {
     const code = read(`${dir}/${x}`);
     for (const m of code.matchAll(/from\s+'([^']+)'/g)) ok(m[1] === 'three' || m[1].startsWith('three/addons/') || (x === 'ant-rig-tsl.ts' && (m[1] === 'three/webgpu' || m[1] === 'three/tsl')) || ((m[1].startsWith('./') || m[1].startsWith('../')) && !/engine\/|cli\/|prototypes\/|worker-dist/.test(m[1]) && !path.posix.normalize(path.posix.join(dir, m[1])).startsWith('web/src/../')), `${x}: imports only viewer modules and vendored three (${m[1]})`);
     ok(!/Math\.random|Date\.now\(\)\s*[*%]|new Worker\(/.test(code), `${x}: no unseeded randomness, no Worker of its own`);
-    if (['nest-graph.ts', 'stage.ts', 'surface.ts', 'feed.ts', 'places.ts', 'gait.ts', 'labels.ts', 'rig-params.ts'].includes(x)) ok(!/from 'three|document\.|window\.|performance\.|worker-client|session\.ts|save-store/.test(code), `${x}: pure (no DOM, no three, no Worker client, no save store)`);
+    if (['nest-graph.ts', 'stage.ts', 'surface.ts', 'feed.ts', 'places.ts', 'gait.ts', 'separate.ts', 'labels.ts', 'rig-params.ts'].includes(x)) ok(!/from 'three|document\.|window\.|performance\.|worker-client|session\.ts|save-store/.test(code), `${x}: pure (no DOM, no three, no Worker client, no save store)`);
   }
   const cmds = new Set([...main.matchAll(/client\.(\w+)\(/g)].map((m) => m[1]));
   ok([...cmds].every((c) => ['init', 'stepUntil', 'start', 'pause', 'resume', 'setSpeed', 'follow', 'snapshot'].includes(c)), `main.ts sends only scheduling / observation commands (${[...cmds].join(', ')})`);

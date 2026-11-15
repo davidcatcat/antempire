@@ -33,6 +33,7 @@ attribute vec3 aPart;
 attribute vec3 aPivot;
 attribute vec4 aAnim;
 attribute vec4 aPose;
+attribute vec4 aMore;
 uniform float uTime;
 float qn(float t, float s) { return ${f(K.qn.amp[0])} * sin(t * ${f(K.qn.freq[0])} + s * ${f(K.qn.phase[0])}) + ${f(K.qn.amp[1])} * sin(t * ${f(K.qn.freq[1])} + s * ${f(K.qn.phase[1])}) + ${f(K.qn.amp[2])} * sin(t * ${f(K.qn.freq[2])} + s * ${f(K.qn.phase[2])}); }
 mat3 rY(float a) { float c = cos(a), s = sin(a); return mat3(c, 0.0, -s, 0.0, 1.0, 0.0, s, 0.0, c); }
@@ -60,16 +61,26 @@ vec3 antRig(vec3 p, out mat3 R) {
     float side = idx < 2.5 ? 1.0 : -1.0;
     float pair = mod(idx, 3.0);
     float grp = abs(pair - 1.0) < 0.5 ? (side > 0.0 ? 1.0 : 0.0) : (side > 0.0 ? 0.0 : 1.0);
-    float lp = ph + grp * 3.14159265;
-    float ang = side * (${f(K.leg.swing)} * walk * sin(lp) + ${f(K.leg.idle)} * act * still * qn(t * ${f(K.leg.idleFreq)}, seed + idx * ${f(K.leg.idleSeed)}));
+    float cyc = fract((ph + grp * 3.14159265) / 6.2831853);
+    float legs = aMore.x, A = aMore.w, D, lift;
+    // stance (first half of the cycle): the tip goes straight back at the body's own speed; swing: carried forward, lifted
+    if (cyc < 0.5) { D = A * (1.0 - 4.0 * cyc); lift = 0.0; } else { float u = (cyc - 0.5) * 2.0; D = -A * cos(3.14159265 * u); lift = ${f(K.leg.lift)} * sin(3.14159265 * u); }
+    D *= legs; lift *= legs;
+    vec2 r0 = pair < 0.5 ? vec2(${K.leg.reach[0].map(f).join(', ')}) : pair < 1.5 ? vec2(${K.leg.reach[1].map(f).join(', ')}) : vec2(${K.leg.reach[2].map(f).join(', ')});
+    float k = length(vec2(r0.x + D, r0.y)) / length(r0);
+    float ang = -side * (atan(r0.y, r0.x + D) - atan(r0.y, r0.x)) + side * ${f(K.leg.idle)} * act * still * qn(t * ${f(K.leg.idleFreq)}, seed + idx * ${f(K.leg.idleSeed)});
     R = rY(ang);
-    vec3 q = aPivot + R * (p - aPivot);
-    q.y += w * (${f(K.leg.lift)} * walk * max(0.0, cos(lp)) + ${f(K.leg.idleLift)} * act * still * max(0.0, qn(t * ${f(K.leg.idleLiftFreq)}, seed + idx * ${f(K.leg.idleLiftSeed)}) - ${f(K.leg.idleGate)}));
-    q.y += drop * w; // the feet stay planted while the body crouches
-    return q + off;
+    vec3 d = R * (p - aPivot);
+    d.xz *= k; if (d.y > 0.0) d.y /= pow(k, ${f(K.leg.kneeFlat)});
+    vec3 q = aPivot + d;
+    q.y += w * (lift + ${f(K.leg.idleLift)} * act * still * max(0.0, qn(t * ${f(K.leg.idleLiftFreq)}, seed + idx * ${f(K.leg.idleLiftSeed)}) - ${f(K.leg.idleGate)}));
+    q.y += drop * w + off.y * (1.0 - w); // the feet stay planted while the body bobs or crouches
+    return q;
   } else {
     float side = idx < 0.5 ? 1.0 : -1.0;
-    mat3 Ra = rY(side * (${f(K.antenna.yaw)} * act * qn(t * ${f(K.antenna.yawFreq)}, seed + idx * ${f(K.antenna.yawSeed)}) + ${f(K.antenna.walkYaw)} * walk * sin(ph * 0.5))) * rZ(${f(K.antenna.nod)} * act * qn(t * ${f(K.antenna.nodFreq)}, seed + idx * ${f(K.antenna.nodSeed)} + ${f(K.antenna.nodSeed0)}) - ${f(K.antenna.walkNod)} * walk + ${f(K.antenna.up)} * antUp);
+    float scan = aMore.y, conv = aMore.z;
+    float sweep = scan * ${f(K.antenna.scan)} * sin(t * ${f(K.antenna.scanFreq)} + (idx < 0.5 ? 0.0 : ${f(K.antenna.scanLag)}) + seed * 6.2831853);
+    mat3 Ra = rY(side * (${f(K.antenna.yaw)} * act * qn(t * ${f(K.antenna.yawFreq)}, seed + idx * ${f(K.antenna.yawSeed)}) + ${f(K.antenna.walkYaw)} * walk * sin(ph * 0.5) - conv * ${f(K.antenna.conv)}) + sweep) * rZ(${f(K.antenna.nod)} * act * qn(t * ${f(K.antenna.nodFreq)}, seed + idx * ${f(K.antenna.nodSeed)} + ${f(K.antenna.nodSeed0)}) - ${f(K.antenna.walkNod)} * walk + ${f(K.antenna.up)} * antUp + conv * ${f(K.antenna.convUp)} + scan * ${f(K.antenna.scanNod)} * sin(t * ${f(K.antenna.scanFreq)} * 2.0 + seed * 6.2831853 + idx));
     R = Rh * Ra;
     vec3 q = aPivot + Ra * (p - aPivot);
     return headPiv + Rh * (q - headPiv) + off;
@@ -85,7 +96,7 @@ export function rigMaterial(uTime: { value: number }): THREE.MeshStandardMateria
       .replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\n  mat3 antR; vec3 antP = antRig(position, antR);\n  objectNormal = antR * objectNormal;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\n  transformed = antP;');
   };
-  m.customProgramCacheKey = () => 'antempire-demo2-rig-v2';
+  m.customProgramCacheKey = () => 'antempire-demo2-rig-v3';
   return m;
 }
 
@@ -96,16 +107,19 @@ export class RigLayer {
    *  instanceMatrix. Only the TSL rig reads it (three's node pipeline applies the instance matrix BEFORE positionNode,
    *  so the rig, which works in model space, has to carry its joint offsets into instance space itself). */
   readonly xf: THREE.InterleavedBufferAttribute; readonly scl: THREE.InterleavedBufferAttribute;
+  /** per instance: leg stride pose weight, antenna scan, antenna convergence, stance amplitude A (model units) */
+  readonly more: THREE.InterleavedBufferAttribute;
   /** the four per-instance attributes share ONE interleaved buffer (WebGPU allows 8 vertex buffers per pipeline) */
   private readonly inst: THREE.InstancedInterleavedBuffer;
   readonly caste: RigCaste; readonly triangles: number;
   constructor(caste: RigCaste, level: 'hi' | 'lo', capacity: number, mat: THREE.Material) {
     const g = buildAntGeometry(level, MORPHS[caste].morph);
     this.caste = caste;
-    this.inst = new THREE.InstancedInterleavedBuffer(new Float32Array(capacity * 13), 13); this.inst.setUsage(THREE.DynamicDrawUsage);
+    this.inst = new THREE.InstancedInterleavedBuffer(new Float32Array(capacity * 17), 17); this.inst.setUsage(THREE.DynamicDrawUsage);
     this.anim = new THREE.InterleavedBufferAttribute(this.inst, 4, 0); this.pose = new THREE.InterleavedBufferAttribute(this.inst, 4, 4);
     this.xf = new THREE.InterleavedBufferAttribute(this.inst, 4, 8); this.scl = new THREE.InterleavedBufferAttribute(this.inst, 1, 12);
-    g.setAttribute('aAnim', this.anim); g.setAttribute('aPose', this.pose); g.setAttribute('aXf', this.xf); g.setAttribute('aScl', this.scl);
+    this.more = new THREE.InterleavedBufferAttribute(this.inst, 4, 13);
+    g.setAttribute('aAnim', this.anim); g.setAttribute('aPose', this.pose); g.setAttribute('aXf', this.xf); g.setAttribute('aScl', this.scl); g.setAttribute('aMore', this.more);
     this.mesh = new THREE.InstancedMesh(g, mat, capacity);
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.mesh.setColorAt(0, new THREE.Color(1, 1, 1)); this.mesh.instanceColor!.setUsage(THREE.DynamicDrawUsage);

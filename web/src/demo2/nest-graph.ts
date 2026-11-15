@@ -37,6 +37,8 @@ export interface Slot { id: string; chamber: string; pos: Pos; x: number }
 
 /** clearance between the walk line and the tunnel wall below it (cm): the feet walk just above the lower wall */
 export const FLOOR_CLEAR_CM = 0.45;
+/** how far along a chamber floor a route takes to step over to its walking lane / to its end depth (cm; display) */
+export const LANE_STEP_CM = 2.0;
 /** how far the dome of a chamber overhangs its floor ends, and how far the cavity reaches below the floor line (cm) */
 const DOME_OVERHANG = 0.6, FLOOR_UNDER = 0.35;
 /** how far above the entrance node the entrance tunnel's cavity stays open (cm; it cuts through the surface) */
@@ -151,9 +153,10 @@ export class NestGraph {
   }
   /**
    * Shortest route along the graph from a to b. lane = the depth lane used inside tunnels and at joints (cm); the
-   * path leaves a.z and arrives at b.z. Every vertex is a graph point (edge, arc length).
+   * path leaves a.z and arrives at b.z; floorLane = the lane kept along chamber floors. Every vertex is a graph point
+   * (edge, arc length).
    */
-  route(a: Pos, b: Pos, lane = 0): Path {
+  route(a: Pos, b: Pos, lane = 0, floorLane = lane): Path {
     const runs: { k: number; v: { p: P2; s: number }[] }[] = [];
     if (a.edge === b.edge) runs.push({ k: a.edge, v: this.run(a.edge, a.s, b.s) });
     else {
@@ -166,8 +169,17 @@ export class NestGraph {
     }
     const pts: P3[] = [], edge: number[] = [], es: number[] = [];
     runs.forEach((r, ri) => {
-      const first = ri === 0, last = ri === runs.length - 1, z0 = first ? a.z : lane, z1 = last ? b.z : lane, total = Math.abs(r.v[r.v.length - 1].s - r.v[0].s);
-      for (const v of r.v) { const u = total > 0 ? Math.abs(v.s - r.v[0].s) / total : (first && last ? 0 : 1); pts.push({ x: v.p.x, y: v.p.y, z: z0 + (z1 - z0) * u }); edge.push(r.k); es.push(v.s); }
+      const first = ri === 0, last = ri === runs.length - 1, z0 = first ? a.z : lane, z1 = last ? b.z : lane, s0 = r.v[0].s, s1 = r.v[r.v.length - 1].s, total = Math.abs(s1 - s0), floor = this.edges[r.k].kind === 'floor' && total > 1e-9;
+      // On a chamber floor the route steps over to the walking lane (floorLane) within LANE_STEP_CM of where it starts,
+      // keeps that lane, and steps to its end depth within the last LANE_STEP_CM (a short run stays near the straight line):
+      // a walker does not travel along the back of a chamber through the places where others stand or rest.
+      const d = Math.min(LANE_STEP_CM, total / 2), k = Math.max(0, Math.min(1, (total - 1.5) / 4)), fl = (z0 + z1) / 2 + (floorLane - (z0 + z1) / 2) * k;
+      let vs = r.v;
+      if (floor) { const sg = s1 >= s0 ? 1 : -1, pt = (q: number) => { const g = this.point({ edge: r.k, s: q, z: 0 }); return { p: { x: g.x, y: g.y }, s: q }; }; vs = [...r.v, pt(s0 + sg * d), ...(d < total / 2 - 1e-9 ? [pt(s1 - sg * d)] : [])].sort((x, y) => Math.abs(x.s - s0) - Math.abs(y.s - s0)); }
+      vs.forEach((v, vi) => { // a run of zero length (the route starts or ends exactly on a node) still changes lane from its first vertex to its last
+        const dist = Math.abs(v.s - s0), u = total > 0 ? dist / total : first && last ? 0 : vs.length > 1 ? vi / (vs.length - 1) : first ? 0 : 1;
+        const z = floor ? (dist < d - 1e-9 ? z0 + (fl - z0) * (dist / d) : total - dist < d - 1e-9 ? z1 + (fl - z1) * ((total - dist) / d) : fl) : z0 + (z1 - z0) * u;
+        pts.push({ x: v.p.x, y: v.p.y, z }); edge.push(r.k); es.push(v.s); });
     });
     const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + hyp(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y, pts[i].z - pts[i - 1].z));
     return { pts, cum, len: cum[cum.length - 1], edge, es };
