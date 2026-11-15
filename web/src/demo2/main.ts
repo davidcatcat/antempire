@@ -459,7 +459,7 @@ function updateLabels() {
   else if (selS) items.push({ key: 'pin', p: { x: selS.p.x, y: selS.p.y + antLen() * 0.9, z: selS.p.z }, text: `▼ ${selS.ind.id}`, cls: 'pin', face: false, prio: 100 });
   const off = camera.position.clone().sub(controls.target), dist = off.length(), frontal = off.z / dist, seen = new Set<string>();
   // one-line legend under the scene (narrow screens): what ※ means, and that the nest can be dragged sideways
-  const partial = compact && !nestOnScreen().inside, legend = [marked ? `${NS_MARK}＝引擎個體，生理與行為尚未模擬` : '', cued && compact ? `${CUE_MARK}＝引擎事件（標籤位置與停留＝畫面）` : '', partial ? '左右拖曳可看其他巢室' : ''].filter(Boolean).join('｜');
+  const partial = compact && !nestOnScreen().inside, legend = [marked ? `${NS_MARK}＝引擎個體，生理與行為尚未模擬` : '', cued && compact ? `${CUE_MARK}＝引擎事件` : '', partial ? '左右拖曳可看其他巢室' : ''].filter(Boolean).join('｜');
   if (ui.lblLegend.textContent !== legend) ui.lblLegend.textContent = legend; ui.lblLegend.hidden = !legend;
   const boxes: LabelBox[] = [], els = new Map<string, HTMLElement>(), rightLimit = !compact && !document.body.classList.contains('side-closed') ? ui.side.getBoundingClientRect().left - 4 : w - 2;
   for (const it of items) {
