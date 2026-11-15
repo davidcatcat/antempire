@@ -42,6 +42,7 @@ const { chromium, devices } = require('playwright');
     if (!mobile) { await shot(std.page, 'demo2-std-desktop-full'); await std.page.evaluate(() => window.__demo2.setView('under')); await std.page.waitForTimeout(1200); await shot(std.page, 'demo2-std-desktop-underground'); await std.page.evaluate(() => window.__demo2.setView('full')); }
     else await shot(std.page, 'demo2-std-pixel7-full', 55);
     // switch with the toggle in the 效能 tab
+    if (mobile) await std.page.click('#moreBtn'); // phones keep the panel button in the 更多 menu
     await std.page.click('#sideBtn'); await std.page.click('#tabs button[data-tab="perf"]'); await std.page.waitForTimeout(400);
     await std.page.click('#pane-perf button[data-style="hd2d"]'); await std.page.waitForTimeout(1500);
     const t1 = await std.page.evaluate(() => ({ st: window.__demo2.style(), perf: document.querySelector('#pane-perf').textContent, legendBtn: !!document.querySelector('#tabs button[data-tab="legend"]') }));
