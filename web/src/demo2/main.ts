@@ -33,6 +33,7 @@ import { BLOCK, corridor3, ground, source3 } from './surface.ts';
 import { roster, colonyOf, CASTES, CASTE_LABEL, DEMO_BADGE, NATURAL_BADGE, DEMO_FOOD_PROPS, DEMO_ROUTINE_LABEL, type Individual, type Mode, type Roster } from './feed.ts';
 import { eggSpot, larvaSpot, majorSpot, pupaSpot, queenSpot } from './places.ts';
 import { newGait, stepGait, type Gait } from './gait.ts';
+import { placeLabels, type LabelBox } from './labels.ts';
 import { MORPHS, RigLayer, rigMaterial, larvaGeometry, pupaGeometry, eggGeometry, type RigCaste } from './ant-rig.ts';
 import { buildScene, type Quality, type Scene2 } from './scene.ts';
 
@@ -41,7 +42,7 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 const ui = {
   canvas: $<HTMLCanvasElement>('scene'), badge: $('modeBadge'), play: $<HTMLButtonElement>('play'), speed: $<HTMLSelectElement>('speed'), hud: $('hud'),
   viewFull: $<HTMLButtonElement>('viewFull'), viewSurface: $<HTMLButtonElement>('viewSurface'), viewUnder: $<HTMLButtonElement>('viewUnder'), modeBtn: $<HTMLButtonElement>('modeBtn'),
-  followBtn: $<HTMLButtonElement>('followBtn'), sideBtn: $<HTMLButtonElement>('sideBtn'), card: $('card'), labels: $('labels'), toast: $('toast'), fatal: $('fatal'),
+  followBtn: $<HTMLButtonElement>('followBtn'), sideBtn: $<HTMLButtonElement>('sideBtn'), card: $('card'), labels: $('labels'), lblLegend: $('lblLegend'), top: $('top'), side: $('side'), toast: $('toast'), fatal: $('fatal'),
   stats: $('pane-stats'), legend: $('pane-legend'), notsim: $('pane-notsim'), perf: $('pane-perf'), worldInfo: $('worldInfo'), saveBtn: $<HTMLButtonElement>('saveBtn'), saveStatus: $('saveStatus'),
   seedIn: $<HTMLInputElement>('seedIn'), restartBtn: $<HTMLButtonElement>('restartBtn'), resetDemoBtn: $<HTMLButtonElement>('resetDemoBtn'), demoInfo: $('demoInfo'), saveList: $('saveList'), importBtn: $<HTMLButtonElement>('importBtn'), importFile: $<HTMLInputElement>('importFile'),
 };
@@ -154,9 +155,13 @@ function viewCam(v: View): Cam {
   // portrait: 完整剖面 and 地下 fit the whole nest (its bounds from the layout) into the width; the soil wall extends
   // far below and beside the block (scene.ts), so no empty void shows under it
   const nb = graph.bounds(0), cx = (nb.x0 + nb.x1) / 2, half = (nb.x1 - nb.x0) / 2 + 1, tall = aspect < 1, vh = (d: number) => d * Math.tan((camera.fov * Math.PI) / 360);
+  // Portrait: the nest is much wider than the screen. The default shows the entrance and the central chambers large
+  // enough to read the ants (the rest is one sideways drag away; the legend line says so), tilted so the garden surface
+  // fills the upper part and the soil wall the rest (it extends far below and beside the block: no void).
+  void cx; void half;
   if (v === 'surface') return tall ? mk(22, 0, -14, 50, -10, Math.min(300, fit(34))) : mk(48, 0, -26, 46, -12, Math.min(260, fit(84)));
-  if (v === 'under') { const d = Math.min(640, fit(tall ? half : 47)); return tall ? mk(cx, -16 + vh(d) * 0.06, 0, 3, 0, d) : mk(5, -17, 0, 3, 0, d); }
-  { const d = Math.min(640, fit(tall ? half : 50)); return tall ? mk(cx, -14 + vh(d) * 0.26, 0, 12, -3, d) : mk(8, -10, 0, 14, -7, d); }
+  if (v === 'under') { const d = fit(tall ? 23 : 47); return tall ? mk(4, -(0.5 - 0.27) * 2 * vh(d), 0, 3, 0, d) : mk(5, -17, 0, 3, 0, Math.min(640, d)); }
+  { const d = fit(tall ? 27 : 50); return tall ? mk(4, (0.53 - 0.5) * 2 * vh(d), 0, 22, 0, d) : mk(8, -10, 0, 14, -7, Math.min(640, d)); }
 }
 let tween: { from: Cam; to: Cam; t: number; dur: number } | null = null, userBusy = false, followAdjust = 0;
 function goView(v: View, instant = false) {
@@ -301,38 +306,62 @@ const QUALITY_LABEL: Record<Quality, string> = { high: '高', medium: '中', low
 const labelEls = new Map<string, HTMLElement>();
 function updateLabels() {
   if (!frame || !rost || !world) return;
-  const w = ui.canvas.clientWidth, h = ui.canvas.clientHeight, items: { key: string; p: P3; text: string; cls: string; face: boolean }[] = [];
+  const w = ui.canvas.clientWidth, h = ui.canvas.clientHeight, items: { key: string; p: P3; text: string; cls: string; face: boolean; prio: number }[] = [];
   const ns = (c: 'queen' | 'major' | 'egg' | 'pupa') => rost!.missing.includes(c), n = (c: 'queen' | 'major' | 'egg' | 'pupa') => rost!.counts[c];
+  // Narrow screens use SHORT labels: chamber name + counts, with ※ for "engine individual whose physiology and behaviour
+  // are 尚未模擬" (explained by the one-line legend under the scene). The full wording stays on wide screens, in the
+  // tap card and in the stats panel.
+  const compact = narrow(); let marked = false;
+  const SHORT: Record<'queen' | 'major' | 'egg' | 'pupa', string> = { queen: '后', major: '大工蟻', egg: '卵', pupa: '蛹' };
   // an engine individual of the candidate world exists in the engine, but its physiology / behaviour is 尚未模擬
-  const eng = (c: 'queen' | 'major' | 'egg' | 'pupa') => `${CASTE_LABEL[c]} ${n(c).engine}（引擎個體；生理與行為尚未模擬）`;
-  const part = (c: 'queen' | 'egg' | 'pupa') => ns(c) ? (mode === 'demo' ? `${CASTE_LABEL[c]} ${n(c).demo}（示範資料）` : `${CASTE_LABEL[c]}：尚未模擬`) : eng(c);
+  const eng = (c: 'queen' | 'major' | 'egg' | 'pupa') => { if (compact) { marked = true; return `${SHORT[c]} ${n(c).engine}${NS_MARK}`; } return `${CASTE_LABEL[c]} ${n(c).engine}（引擎個體；生理與行為尚未模擬）`; };
+  const part = (c: 'queen' | 'major' | 'egg' | 'pupa') => ns(c) ? (mode === 'demo' ? (compact ? `${SHORT[c]} ${n(c).demo}（示範）` : `${CASTE_LABEL[c]} ${n(c).demo}（示範資料）`) : (compact ? `${SHORT[c]}：未模擬` : `${CASTE_LABEL[c]}：尚未模擬`)) : eng(c);
   for (const c of graph.layout.chambers) {
     const here = drawn.filter((a) => a.place === c.id).length; let text = `${c.label_zh}${here ? ` ${here}` : ''}`, cls = '';
-    if (c.role === 'brood') text += `｜幼蟲 ${rost.counts.larva.engine}（引擎）`;
-    if (c.role === 'queen') { text += `｜${part('queen')}・${part('egg')}`; cls = ns('queen') ? (mode === 'demo' ? 'demo' : 'ns') : ''; }
+    if (c.role === 'brood') text += compact ? `｜幼蟲 ${rost.counts.larva.engine}` : `｜幼蟲 ${rost.counts.larva.engine}（引擎）`;
+    if (c.role === 'queen') { text += compact ? `｜${part('queen')} ${part('egg')}` : `｜${part('queen')}・${part('egg')}`; cls = ns('queen') ? (mode === 'demo' ? 'demo' : 'ns') : ''; }
     if (c.role === 'pupa') { text += `｜${part('pupa')}`; cls = ns('pupa') ? (mode === 'demo' ? 'demo' : 'ns') : ''; }
-    items.push({ key: `ch-${c.id}`, p: { x: (c.x0 + c.x1) / 2, y: c.floor + c.height + 0.9, z: graph.faceZ }, text, cls, face: true });
+    items.push({ key: `ch-${c.id}`, p: { x: (c.x0 + c.x1) / 2, y: c.floor + c.height + 0.9, z: graph.faceZ }, text, cls, face: true, prio: 50 });
   }
-  items.push({ key: 'face', p: { x: -24, y: -7, z: graph.faceZ }, text: `巢體幾何＝展示假設${ns('major') ? (mode === 'demo' ? `｜大工蟻 ${n('major').demo}（示範資料）` : '｜大工蟻：尚未模擬') : `｜${eng('major')}`}`, cls: ns('major') && mode !== 'demo' ? 'ns' : mode === 'demo' ? 'demo' : '', face: true });
-  items.push({ key: 'entrance', p: { x: 0, y: ground(0, 0) + 3.2, z: 0 }, text: '巢口', cls: '', face: false });
-  items.push({ key: 'host', p: world.anchors.hostPlant, text: `蜜露來源（引擎）存量 ${frame.source.stock_portions.toFixed(1)} 份｜寄主植物外形＝裝飾`, cls: '', face: false });
-  if (mode === 'demo') { items.push({ key: 'nectar', p: world.anchors.nectar, text: DEMO_FOOD_PROPS[0].label_zh, cls: 'demo', face: false }); items.push({ key: 'insect', p: world.anchors.insect, text: DEMO_FOOD_PROPS[1].label_zh, cls: 'demo', face: false }); }
-  for (const a of drawn) if (a.pose === 'troph' && a.partner && a.id < a.partner) items.push({ key: `tr-${a.id}`, p: { x: a.x, y: a.y + antLen() * 0.9, z: a.z }, text: '交哺（引擎事件）', cls: 'act', face: true });
-  for (const a of drawn) if (a.pose === 'brood' && a.partner && stage.fedNow(a.partner, tNow)) items.push({ key: `br-${a.id}`, p: { x: a.x, y: a.y + antLen() * 0.9, z: a.z }, text: '餵幼蟲（引擎事件）', cls: 'act', face: true });
+  items.push({ key: 'face', p: { x: -24, y: -7, z: graph.faceZ }, text: compact ? `巢體＝展示假設｜${part('major')}` : `巢體幾何＝展示假設${ns('major') ? (mode === 'demo' ? `｜大工蟻 ${n('major').demo}（示範資料）` : '｜大工蟻：尚未模擬') : `｜${eng('major')}`}`, cls: ns('major') && mode !== 'demo' ? 'ns' : mode === 'demo' ? 'demo' : '', face: true, prio: 40 });
+  items.push({ key: 'entrance', p: { x: 0, y: ground(0, 0) + 3.2, z: 0 }, text: '巢口', cls: '', face: false, prio: 60 });
+  items.push({ key: 'host', p: world.anchors.hostPlant, text: compact ? `蜜露來源（引擎）${frame.source.stock_portions.toFixed(1)} 份` : `蜜露來源（引擎）存量 ${frame.source.stock_portions.toFixed(1)} 份｜寄主植物外形＝裝飾`, cls: '', face: false, prio: 30 });
+  if (mode === 'demo') { items.push({ key: 'nectar', p: world.anchors.nectar, text: compact ? '花蜜（示範道具）' : DEMO_FOOD_PROPS[0].label_zh, cls: 'demo', face: false, prio: 20 }); items.push({ key: 'insect', p: world.anchors.insect, text: compact ? '昆蟲屍體（示範道具）' : DEMO_FOOD_PROPS[1].label_zh, cls: 'demo', face: false, prio: 20 }); }
+  for (const a of drawn) if (a.pose === 'troph' && a.partner && a.id < a.partner) items.push({ key: `tr-${a.id}`, p: { x: a.x, y: a.y + antLen() * 0.9, z: a.z }, text: '交哺（引擎事件）', cls: 'act', face: true, prio: 80 });
+  for (const a of drawn) if (a.pose === 'brood' && a.partner && stage.fedNow(a.partner, tNow)) items.push({ key: `br-${a.id}`, p: { x: a.x, y: a.y + antLen() * 0.9, z: a.z }, text: '餵幼蟲（引擎事件）', cls: 'act', face: true, prio: 80 });
   const selA = drawn.find((a) => a.id === selected), selS = statics.find((s) => s.ind.id === selected);
-  if (selA) items.push({ key: 'pin', p: { x: selA.x, y: selA.y + antLen() * (selA.realm === 'nest' ? 1.0 : 0.9), z: selA.z }, text: `▼ ${selA.id}`, cls: 'pin', face: false });
-  else if (selS) items.push({ key: 'pin', p: { x: selS.p.x, y: selS.p.y + antLen() * 0.9, z: selS.p.z }, text: `▼ ${selS.ind.id}`, cls: 'pin', face: false });
+  if (selA) items.push({ key: 'pin', p: { x: selA.x, y: selA.y + antLen() * (selA.realm === 'nest' ? 1.0 : 0.9), z: selA.z }, text: `▼ ${selA.id}`, cls: 'pin', face: false, prio: 100 });
+  else if (selS) items.push({ key: 'pin', p: { x: selS.p.x, y: selS.p.y + antLen() * 0.9, z: selS.p.z }, text: `▼ ${selS.ind.id}`, cls: 'pin', face: false, prio: 100 });
   const off = camera.position.clone().sub(controls.target), dist = off.length(), frontal = off.z / dist, seen = new Set<string>();
+  // one-line legend under the scene (narrow screens): what ※ means, and that the nest can be dragged sideways
+  const partial = compact && !nestOnScreen().inside, legend = [marked ? `${NS_MARK}＝引擎個體，生理與行為尚未模擬` : '', partial ? '左右拖曳可看其他巢室' : ''].filter(Boolean).join('｜');
+  if (ui.lblLegend.textContent !== legend) ui.lblLegend.textContent = legend; ui.lblLegend.hidden = !legend;
+  const boxes: LabelBox[] = [], els = new Map<string, HTMLElement>(), rightLimit = !compact && !document.body.classList.contains('side-closed') ? ui.side.getBoundingClientRect().left - 4 : w - 2;
   for (const it of items) {
     let el = labelEls.get(it.key); if (!el) { el = document.createElement('div'); ui.labels.appendChild(el); labelEls.set(it.key, el); }
     seen.add(it.key);
     const s = V.set(it.p.x, it.p.y, it.p.z).project(camera), on = s.z < 1 && Math.abs(s.x) < 1.05 && Math.abs(s.y) < 1.05 && (!it.face || (frontal > 0.45 && dist < 700)) && (it.cls === 'pin' || dist < 700);
     el.className = `lbl ${it.cls}`; if (el.textContent !== it.text) el.textContent = it.text;
     el.hidden = !on; if (!on) continue;
-    const half = Math.min(el.offsetWidth / 2, w / 2 - 2), lx = it.cls === 'pin' ? ((s.x + 1) / 2) * w : Math.max(half + 2, Math.min(w - half - 2, ((s.x + 1) / 2) * w)); // labels stay inside the screen
-    el.style.transform = `translate(${lx}px, ${((1 - s.y) / 2) * h}px) translate(-50%, -100%)`;
+    const ax = ((s.x + 1) / 2) * w; if (ax > rightLimit) { el.hidden = true; continue; } // under the open side panel (wide screens)
+    boxes.push({ key: it.key, x: ax, y: ((1 - s.y) / 2) * h, w: el.offsetWidth, h: el.offsetHeight, prio: it.prio }); els.set(it.key, el);
   }
+  // collision avoidance: labels never overlap each other, stay below the top bar and above the legend / the open sheet
+  const placed = placeLabels(boxes, { left: 2, top: ui.top.getBoundingClientRect().bottom + 2, right: rightLimit, bottom: sceneBottom() - (legend ? ui.lblLegend.offsetHeight + 4 : 2) });
+  const got = new Set(placed.map((p) => p.key));
+  for (const p of placed) els.get(p.key)!.style.transform = `translate(${Math.round(p.left)}px, ${Math.round(p.top)}px)`;
+  for (const [k, el] of els) if (!got.has(k)) el.hidden = true;
   for (const [k, el] of labelEls) if (!seen.has(k)) el.hidden = true;
+}
+const NS_MARK = '※';
+/** the height of the bottom sheet covering the scene (narrow screens with the panel open), else 0 */
+const sheetPx = () => narrow() && !document.body.classList.contains('side-closed') ? ui.side.getBoundingClientRect().height : 0;
+const sceneBottom = () => ui.canvas.clientHeight - sheetPx();
+/** do all chamber ends and tops project inside the visible scene (below the top bar, above the sheet)? */
+function nestOnScreen() {
+  const w = ui.canvas.clientWidth, h = sceneBottom(), top = ui.top.getBoundingClientRect().bottom; let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const c of graph.layout.chambers) for (const [x, y] of [[c.x0, c.floor], [c.x1, c.floor], [(c.x0 + c.x1) / 2, c.floor + c.height]]) { const p = new THREE.Vector3(x, y, graph.faceZ).project(camera), sx = ((p.x + 1) / 2) * w, sy = ((1 - p.y) / 2) * ui.canvas.clientHeight; x0 = Math.min(x0, sx); x1 = Math.max(x1, sx); y0 = Math.min(y0, sy); y1 = Math.max(y1, sy); }
+  return { inside: x0 >= 0 && x1 <= w && y0 >= top && y1 <= h, box: [Math.round(x0), Math.round(y0), Math.round(x1), Math.round(y1)], w, h, top: Math.round(top) };
 }
 
 // ---------- HUD and panels ----------
@@ -342,7 +371,10 @@ function updateHud(now: number) {
   if (!frame) return;
   setLight(frame);
   const out = drawn.filter((a) => a.realm === 'surface').length, temp = frame.env.temperature_c === null ? '—' : frame.env.temperature_c.toFixed(1);
-  ui.hud.textContent = `${fmtWorldTime(tNow)}（${frame.env.date}）｜光照 ${P0_LIGHT_LABEL[frame.env.light]}・氣溫 ${temp}°C（合成）｜${running ? `執行中 ${speed}×` : '已暫停'}｜種子 ${frame.seed}｜工蟻 巢外 ${out}・巢內 ${drawn.length - out}｜${P0A2_STATUS_LABEL}`;
+  // narrow screens: a short status line that wraps (the 非正式 chip above carries the status label)
+  ui.hud.textContent = narrow()
+    ? `第 ${Math.floor(tNow / 86400)} 天 ${clockOf(tNow)}｜${P0_LIGHT_LABEL[frame.env.light]} ${temp}°C（合成）｜${running ? `${speed}×` : '暫停'}｜種子 ${frame.seed}｜巢外 ${out}・巢內 ${drawn.length - out}`
+    : `${fmtWorldTime(tNow)}（${frame.env.date}）｜光照 ${P0_LIGHT_LABEL[frame.env.light]}・氣溫 ${temp}°C（合成）｜${running ? `執行中 ${speed}×` : '已暫停'}｜種子 ${frame.seed}｜工蟻 巢外 ${out}・巢內 ${drawn.length - out}｜${P0A2_STATUS_LABEL}`;
   if (selected) renderCard();
   if (!document.body.classList.contains('side-closed')) { if (tab === 'stats') renderStats(); else if (tab === 'perf') renderPerf(); else if (tab === 'saves') renderSaveStatus(); }
 }
@@ -422,7 +454,7 @@ function pick(sx: number, sy: number): string | null {
   for (const s of statics) test(s.ind.id, s.p.x, s.p.y, s.p.z, true);
   return best;
 }
-function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+function resize() { const w = innerWidth, h = innerHeight, sh = sheetPx(); renderer.setSize(w, h, false); camera.aspect = w / h; if (sh > 0) camera.setViewOffset(w, h, 0, Math.round(sh / 2), w, h); else camera.clearViewOffset(); camera.updateProjectionMatrix(); }
 
 // ---------- mode (自然 / 展示情境) ----------
 function setMode(m: Mode) {
@@ -556,6 +588,7 @@ async function main() {
 // ---------- controls ----------
 function openSide(t: string | null) {
   const closed = t === null; document.body.classList.toggle('side-closed', closed); ui.sideBtn.setAttribute('aria-expanded', String(!closed));
+  if (renderer) resize(); // narrow screens: the scene moves up into the part the sheet leaves free
   if (t) { tab = t; document.querySelectorAll<HTMLButtonElement>('#tabs button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tab === t))); for (const k of ['stats', 'legend', 'notsim', 'saves', 'perf']) $(`pane-${k}`).hidden = k !== t; if (t === 'stats') renderStats(); if (t === 'perf') renderPerf(); if (t === 'saves') { renderSaveStatus(); void refreshSaveList(); } }
 }
 ui.sideBtn.onclick = () => openSide(document.body.classList.contains('side-closed') ? tab : null);
@@ -586,8 +619,12 @@ const hooks: Record<string, unknown> = {
   select: (id: string | null) => select(id), follow: (id: string | null) => setFollow(id), setRunning: (on: boolean) => setRunning(on), setSpeed: (s: number) => setSpeed(s),
   setView: (v: View, instant = true) => goView(v, instant), setMode: (m: Mode) => setMode(m), setQuality: (k: Quality) => applyQuality(k), openSide: (t: string | null) => openSide(t),
   setRender: (on: boolean) => { renderOn = on; },
-  /** do all chamber ends and tops project inside the canvas (below the top bar)? */
-  nestOnScreen: () => { const w = ui.canvas.clientWidth, h = ui.canvas.clientHeight, top = $('top').getBoundingClientRect().bottom; let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity; for (const c of graph.layout.chambers) for (const [x, y] of [[c.x0, c.floor], [c.x1, c.floor], [(c.x0 + c.x1) / 2, c.floor + c.height]]) { const p = new THREE.Vector3(x, y, graph.faceZ).project(camera), sx = ((p.x + 1) / 2) * w, sy = ((1 - p.y) / 2) * h; x0 = Math.min(x0, sx); x1 = Math.max(x1, sx); y0 = Math.min(y0, sy); y1 = Math.max(y1, sy); } return { inside: x0 >= 0 && x1 <= w && y0 >= top && y1 <= h, box: [Math.round(x0), Math.round(y0), Math.round(x1), Math.round(y1)], w, h, top: Math.round(top) }; },
+  nestOnScreen: () => nestOnScreen(),
+  /** screen rectangles of the visible in-scene labels and of the legend line */
+  labelRects: () => [...labelEls.entries()].filter(([, el]) => !el.hidden).map(([key, el]) => { const r = el.getBoundingClientRect(); return { key, text: el.textContent, left: r.left, top: r.top, w: r.width, h: r.height }; }),
+  /** does the soil (block or its extension wall) cover the bottom corners and bottom centre of the visible scene? */
+  soilAtBottom: () => [0.02, 0.5, 0.98].every((u) => { const ray = new THREE.Raycaster(); ray.setFromCamera(new THREE.Vector2(u * 2 - 1, 1 - (2 * (sceneBottom() - 2)) / ui.canvas.clientHeight), camera); const o = ray.ray.origin, d = ray.ray.direction; if (d.z >= 0) return false; const k = (graph.faceZ - o.z) / d.z, y = o.y + d.y * k, x = o.x + d.x * k; return k > 0 && y < ground(Math.max(BLOCK.x0, Math.min(BLOCK.x1, x)), graph.faceZ) && y > BLOCK.bottom - 700 && x > BLOCK.x0 - 900 && x < BLOCK.x1 + 900; }),
+  antPx: () => { const a = drawn.find((x) => x.realm === 'nest'); if (!a) return 0; const d = camera.position.distanceTo(new THREE.Vector3(a.x, a.y, a.z)); return (antLen() / d) * (ui.canvas.clientHeight / 2 / Math.tan((camera.fov * Math.PI) / 360)); },
   /** scheduling only: run the world to t (paused pages then show exactly the frame's instant) */
   stepUntil: async (t: number) => { await client.stepUntil(t); },
   /** the drawn workers for the latest frame at ITS instant (a paused page shows exactly this; no wait for a repaint) */

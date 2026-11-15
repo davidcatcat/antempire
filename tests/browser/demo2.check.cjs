@@ -15,7 +15,10 @@
  *    step) except the listed engine-defined discontinuity, every underground point inside the cavity;
  *  - pause freezes the world time, the micro-motion clock and every drawn point;
  *  - save → reload → the same world continues from the saved instant (SAVE-2 session; desktop);
- *  - phone: no horizontal scroll; the panel opens as a bottom sheet.
+ *  - labels never overlap each other and stay on screen; the status line is not clipped; soil reaches the bottom edge;
+ *    with the panel open no scene label lies under it;
+ *  - phone: no horizontal scroll; short labels with ※ + legend; legible ants at the default portrait framing; the panel
+ *    opens as a bottom sheet.
  * Writes demo2-<profile>-*.jpg (and, with DEMO2_VIDEO=1, demo2-desktop-follow.webm) into <outDir>; prints a JSON
  * report (performance numbers are software-rendered: NOT device results).
  */
@@ -44,18 +47,30 @@ const { chromium, devices } = require('playwright');
     check(st.ants === 30 && st.hi + st.lo === 30 && st.larvae === 8, `${tag}: 30 engine workers and 8 engine larvae drawn (${st.ants}, ${st.larvae})`);
     check(ants.some((a) => a.realm === 'surface') && ants.some((a) => a.realm === 'nest'), `${tag}: workers on the surface (${ants.filter((a) => a.realm === 'surface').length}) and underground (${ants.filter((a) => a.realm === 'nest').length}) in one scene`);
     const txt = await page.evaluate(() => ({ flag: document.querySelector('#flag').textContent, badge: document.querySelector('#modeBadge').textContent, labels: document.querySelector('#labels').textContent, hud: document.querySelector('#hud').textContent, backend: window.__demo2.backend(), rev: window.__demo2.three, noScroll: document.documentElement.scrollWidth <= innerWidth && document.body.scrollWidth <= innerWidth }));
-    check(txt.flag.includes('非正式實驗世界') && txt.badge.includes('自然模式') && txt.hud.includes('非正式'), `${tag}: non-official and natural-mode badges`);
+    check(txt.flag.includes('非正式實驗世界') && txt.badge.includes('自然模式') && (mobile || txt.hud.includes('非正式')), `${tag}: non-official and natural-mode badges`);
     check(txt.rev === '187' && txt.backend.includes('WebGL 2') && txt.backend.includes('WebGPU'), `${tag}: backend string shown (${txt.backend.slice(0, 40)}…)`);
     check(txt.noScroll, `${tag}: no horizontal scroll`);
     // the Worker build decides: plain P0-A2 (no queens / majors / eggs / pupae) or the candidate world p0a2-colony (engine individuals)
     const col = await page.evaluate(() => { const c = window.__demo2.frame().colony; return c ? { q: c.queens.length, m: c.majors.length, e: c.eggs.length, p: c.pupae.length } : null; });
     report[`${tag}_world`] = col ? { kind: 'p0a2-colony', ...col } : { kind: 'p0a2' };
+    // wide screens: the full wording in the scene labels; narrow screens: short labels with ※ and a one-line legend that explains it
+    const legendTxt = await page.evaluate(() => { const e = document.querySelector('#lblLegend'); return e.hidden ? '' : e.textContent; });
+    const wording = mobile ? /后 \d+※/.test(txt.labels) && /大工蟻 \d+※/.test(txt.labels) && /蛹 \d+※/.test(txt.labels) && legendTxt.includes('※＝引擎個體，生理與行為尚未模擬') && !txt.labels.includes('（引擎個體；') : /蟻后 \d+（引擎個體；生理與行為尚未模擬）/.test(txt.labels) && /大工蟻（大頭） \d+（引擎個體；生理與行為尚未模擬）/.test(txt.labels) && legendTxt === '';
     if (!col) check(st.queens === 0 && st.majors === 0 && st.eggs === 0 && st.pupae === 0 && /蟻后：尚未模擬/.test(txt.labels) && /蛹：尚未模擬/.test(txt.labels) && /大工蟻：尚未模擬/.test(txt.labels) && txt.labels.includes('展示假設'), `${tag}: natural mode draws no queen / major / egg / pupa and labels them 尚未模擬`);
-    else check(st.queens === col.q && st.majors === col.m && st.eggs === col.e && st.pupae === col.p && /蟻后 \d+（引擎個體；生理與行為尚未模擬）/.test(txt.labels) && /大工蟻（大頭） \d+（引擎個體；生理與行為尚未模擬）/.test(txt.labels) && !/蟻后：尚未模擬/.test(txt.labels) && !/示範資料/.test(txt.labels) && txt.labels.includes('展示假設'), `${tag}: natural mode draws the candidate world's ENGINE queens / majors / eggs / pupae (${JSON.stringify(col)}), labelled 引擎`);
+    else check(st.queens === col.q && st.majors === col.m && st.eggs === col.e && st.pupae === col.p && wording && !/蟻后：尚未模擬/.test(txt.labels) && !/示範資料/.test(txt.labels) && txt.labels.includes('展示假設'), `${tag}: natural mode draws the candidate world's ENGINE queens / majors / eggs / pupae (${JSON.stringify(col)}), labelled 引擎`);
     await shot(page, `demo2-${tag}-full`);
     // framing: the whole nest is on screen in the default view (every chamber centre and both chamber ends project inside the canvas)
     const framed = async () => page.evaluate(() => { const V = window.__demo2.nestOnScreen(); return V; });
-    const fr0 = await framed(); check(fr0.inside, `${tag}: 完整剖面 frames the whole nest (${JSON.stringify(fr0.box)})`);
+    const fr0 = await framed();
+    // labels: none overlaps another, all inside the screen; status line not clipped; soil down to the bottom edge
+    const lay = async (what) => { const L = await page.evaluate(() => { const D = window.__demo2, r = D.labelRects(), hud = document.querySelector('#hud'), hb = hud.getBoundingClientRect(), top = document.querySelector('#top').getBoundingClientRect(); let over = []; for (let i = 0; i < r.length; i++) for (let j = i + 1; j < r.length; j++) if (r[i].left < r[j].left + r[j].w && r[j].left < r[i].left + r[i].w && r[i].top < r[j].top + r[j].h && r[j].top < r[i].top + r[i].h) over.push(`${r[i].text} × ${r[j].text}`); return { n: r.length, over, out: r.filter((x) => x.left < 0 || x.left + x.w > innerWidth + 0.5 || x.top < top.bottom - 0.5 || x.top + x.h > innerHeight + 0.5).map((x) => x.text), keys: r.map((x) => x.key), maxLines: Math.max(...r.map((x) => Math.round(x.h / 15))), hudClip: hud.scrollWidth > hud.clientWidth + 1 || hud.scrollHeight > hud.clientHeight + 1 || hb.right > innerWidth + 0.5 || hb.bottom > top.bottom + 0.5, hud: hud.textContent, soil: D.soilAtBottom(), px: D.antPx() }; });
+      check(L.n >= 4 && L.over.length === 0 && L.out.length === 0, `${tag}: ${what} — ${L.n} labels, none overlapping, all on screen (${JSON.stringify(L.over.concat(L.out))})`);
+      check(!L.hudClip && L.hud.length > 20, `${tag}: ${what} — the status line is not clipped (「${L.hud.slice(-18)}」)`);
+      check(L.soil, `${tag}: ${what} — soil down to the bottom edge of the scene (no void)`);
+      return L; };
+    const L0 = await lay('完整剖面');
+    if (mobile) check(L0.keys.includes('entrance') && L0.px >= 18 && L0.maxLines <= 1 && /左右拖曳/.test(await page.textContent('#lblLegend')), `${tag}: 完整剖面 (portrait) shows the entrance with legible ants (${L0.px.toFixed(0)} px long), one-line labels, and says the nest can be dragged sideways`);
+    else check(fr0.inside, `${tag}: 完整剖面 frames the whole nest (${JSON.stringify(fr0.box)})`);
     if (col) { // an ENGINE queen of the candidate world: selectable, with its own 尚未模擬 list and the assumption label
       const qid = await page.evaluate(() => window.__demo2.frame().colony.queens[0].id);
       const qp = await page.evaluate((id) => window.__demo2.screenOf(id), qid);
@@ -80,7 +95,8 @@ const { chromium, devices } = require('playwright');
     check(vu.view === 'under' && (mobile || vu.target[1] < -10) && Math.abs(vu.cam[1] - vu.target[1]) < 40, // portrait: the target is set by the fit-to-nest framing (checked below)
       `${tag}: 地下 view (level, target y ${vu.target[1].toFixed(0)})`);
     await shot(page, `demo2-${tag}-underground`);
-    const fr1 = await framed(); check(fr1.inside, `${tag}: 地下 frames the whole nest (${JSON.stringify(fr1.box)})`);
+    const fr1 = await framed(), L1 = await lay('地下');
+    if (mobile) check(L1.px >= 18 && L1.keys.includes('ch-A'), `${tag}: 地下 (portrait) shows the entry chamber with legible ants (${L1.px.toFixed(0)} px)`); else check(fr1.inside, `${tag}: 地下 frames the whole nest (${JSON.stringify(fr1.box)})`);
 
     // 展示情境 toggle
     await page.click('#modeBtn'); await page.waitForTimeout(900);
@@ -119,6 +135,9 @@ const { chromium, devices } = require('playwright');
     await page.click('#sideBtn'); await page.waitForTimeout(500);
     const pane = await page.evaluate(() => ({ stats: document.querySelector('#pane-stats').textContent, box: document.querySelector('#side').getBoundingClientRect().toJSON(), w: innerWidth, h: innerHeight }));
     check(['引擎', '示範資料', '尚未模擬', '小工蟻', '巢內休息'].every((s) => pane.stats.includes(s)) && (mobile ? pane.box.width >= pane.w - 2 && pane.box.bottom >= pane.h - 2 : pane.box.width < 400), `${tag}: stats panel (engine vs demo counts, states)${mobile ? ' as a bottom sheet' : ''}`);
+    await page.waitForTimeout(600);
+    const under = await page.evaluate(() => { const side = document.querySelector('#side').getBoundingClientRect(), r = window.__demo2.labelRects(), lg = document.querySelector('#lblLegend'), lb = lg.hidden ? null : lg.getBoundingClientRect(); return { n: r.length, hidden: r.filter((x) => x.top + x.h > side.top + 0.5 && x.left + x.w > side.left && x.left < side.right).map((x) => x.text), legendUnder: !!lb && lb.bottom > side.top + 0.5 && innerWidth < 760, opaque: getComputedStyle(document.querySelector('#side')).backgroundColor }; });
+    check(under.hidden.length === 0 && !under.legendUnder && /^rgb\(/.test(under.opaque), `${tag}: with the panel open no scene label lies under it (${JSON.stringify(under.hidden)}); the panel is opaque (${under.opaque})`);
     await shot(page, `demo2-${tag}-panel`);
     for (const t of ['legend', 'notsim', 'perf']) await page.click(`#tabs button[data-tab="${t}"]`);
     const panes = await page.evaluate(() => ({ legend: document.querySelector('#pane-legend').textContent, ns: document.querySelector('#pane-notsim').textContent, perf: document.querySelector('#pane-perf').textContent }));
