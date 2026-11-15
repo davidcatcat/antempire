@@ -150,7 +150,7 @@ const { chromium, devices } = require('playwright');
   let tourRun = null;
   for (const [tag, opts] of [['pixel7', { ...devices['Pixel 7'] }], ['desktop', { viewport: { width: 1440, height: 900 } }]]) {
     const video = process.env.DEMO2_VIDEO === '1' && tag === 'pixel7';
-    const { ctx, page } = await open(video ? { ...opts, recordVideo: { dir: out, size: opts.viewport } } : opts, 'seed=1&quality=low&speed=10&tour=4', `tour-${tag}`, LOG);
+    const { ctx, page } = await open(video ? { ...opts, recordVideo: { dir: out, size: opts.viewport } } : opts, 'seed=1&quality=low&speed=10&tour=8', `tour-${tag}`, LOG);
     const s0 = await page.evaluate(() => ({ s: window.__demo2.state(), tour: window.__demo2.tour(), play: document.querySelector('#play').textContent }));
     check(s0.s.running && s0.play.includes('暫停') && s0.tour.on, `tour ${tag}: the world is running right after load with no input; 自動導覽 is on`);
     // wait (no input at all) until the tour has shown an overview and followed a worker
@@ -170,11 +170,14 @@ const { chromium, devices } = require('playwright');
     // samples are taken inside ONE in-page call, within the idle time (after it the tour may rightly start again; on a
     // slow runner two separate calls can straddle that moment, so a late sample is retaken, never accepted).
     // takeOver(kind): wait until the tour is in a shot of that kind (for 'view': while its camera move is still running), tap, sample
+    // "stays where it is": OrbitControls rebuilds position and target from spherical coordinates every frame, which
+    // moves the last floating-point digit; 1e-6 cm is far below anything visible (a running camera move is centimetres)
+    const STILL_CM = 1e-6, still = (p, q2) => Math.hypot(p[0] - q2[0], p[1] - q2[1], p[2] - q2[2]) < STILL_CM;
     const takeOver = async (kind) => {
     let stop = null, taps = 0, moving = null;
     for (; taps < 4; ) {
       await page.waitForFunction((k) => { const t = window.__demo2.tour(); return t.active && t.shot.kind === k && !document.querySelector('#tourChip').hidden; }, kind, { timeout: 90000 });
-      if (kind === 'view') moving = await page.evaluate(async () => { const D = window.__demo2, a = D.state().cam; await new Promise((r) => setTimeout(r, 250)); return { moved: JSON.stringify(D.state().cam) !== JSON.stringify(a), still_view: D.tour().active && D.tour().shot.kind === 'view' }; });
+      if (kind === 'view') moving = await page.evaluate(async () => { const D = window.__demo2, a = D.state().cam, t0 = performance.now(); let moved = false; while (!moved && performance.now() - t0 < 1500) { await new Promise((r) => requestAnimationFrame(r)); moved = JSON.stringify(D.state().cam) !== JSON.stringify(a); } return { moved, still_view: D.tour().active && D.tour().shot.kind === 'view' }; });
       if (kind === 'view' && !(moving.moved && moving.still_view)) { await page.waitForTimeout(500); continue; } // the overview move already ended: wait for the next one
       // (coordinates, not a locator: the page hands the camera back on pointerdown, which hides the chip at once)
       const cp = await page.evaluate(() => { const r = document.querySelector('#tourChip').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
@@ -182,10 +185,12 @@ const { chromium, devices } = require('playwright');
       taps++;
       stop = await page.evaluate(async () => {
         const D = window.__demo2, snap = () => ({ t: D.tour(), s: D.state(), chip: document.querySelector('#tourChip').hidden });
-        const a = snap(), hold = Math.min(900, (a.t.idle_s - a.t.idle_for_s - 0.8) * 1000);
-        if (hold < 300) return { a, b: null, hold };
-        await new Promise((r) => setTimeout(r, hold));
-        return { a, b: snap(), hold };
+        // hold for up to 900 ms of REAL time, but never past the idle window (timers run late on a loaded machine:
+        // the elapsed time is measured, not assumed)
+        const a = snap(), t0 = performance.now(), room = () => a.t.idle_s - D.tour().idle_for_s;
+        if (room() < 2.5) return { a, b: null, hold: 0 };
+        while (performance.now() - t0 < 900 && room() > 2) await new Promise((r) => setTimeout(r, 50));
+        return { a, b: snap(), hold: performance.now() - t0 };
       });
       if (stop.b && stop.b.t.idle_for_s < stop.b.t.idle_s) break; // both samples lie inside the idle window
     }
@@ -194,10 +199,10 @@ const { chromium, devices } = require('playwright');
     const { stop, taps } = await takeOver('follow');
     const sa = stop.a, sb = stop.b;
     check(!!sb && sb.t.idle_for_s < sb.t.idle_s && stop.hold >= 300, `tour ${tag}: both samples after the tap were taken within the idle time (${sb ? sb.t.idle_for_s.toFixed(2) : '—'} s of ${sa.t.idle_s} s; ${taps} tap${taps > 1 ? 's' : ''})`);
-    check(!!sb && !sa.t.active && sa.chip && sa.s.following === null && sa.s.running && !sb.t.active && sb.chip && sb.s.following === null && sb.s.running && sb.s.frame_t >= sa.s.frame_t && JSON.stringify(sb.s.cam) === JSON.stringify(sa.s.cam) && JSON.stringify(sb.s.target) === JSON.stringify(sa.s.target), `tour ${tag}: one tap stops the tour (chip gone, the camera stays where it is for the next ${Math.round(stop.hold)} ms, the world keeps running)`);
+    check(!!sb && !sa.t.active && sa.chip && sa.s.following === null && sa.s.running && !sb.t.active && sb.chip && sb.s.following === null && sb.s.running && sb.s.frame_t >= sa.s.frame_t && still(sb.s.cam, sa.s.cam) && still(sb.s.target, sa.s.target), `tour ${tag}: one tap stops the tour (chip gone, the camera stays where it is for the next ${Math.round(stop.hold)} ms, the world keeps running) ${JSON.stringify(sb ? { a: [sa.t.active, sa.chip, sa.s.following, sa.s.running, sa.s.cam, sa.s.target, sa.s.frame_t], b: [sb.t.active, sb.chip, sb.s.following, sb.s.running, sb.s.cam, sb.s.target, sb.s.frame_t] } : null)}`);
     // … and the same while an overview move is under way (the tour starts again after the idle time; its first shot is an overview)
     const v = await takeOver('view'), va = v.stop.a, vb = v.stop.b;
-    check(!!vb && v.moving && v.moving.moved && vb.t.idle_for_s < vb.t.idle_s && !va.t.active && va.chip && !vb.t.active && vb.s.running && JSON.stringify(vb.s.cam) === JSON.stringify(va.s.cam) && JSON.stringify(vb.s.target) === JSON.stringify(va.s.target), `tour ${tag}: a tap during an overview move stops the camera where it is (it was moving; then still for ${Math.round(v.stop.hold)} ms; ${v.taps} tap${v.taps > 1 ? 's' : ''})`);
+    check(!!vb && v.moving && v.moving.moved && vb.t.idle_for_s < vb.t.idle_s && v.stop.hold >= 300 && !va.t.active && va.chip && !vb.t.active && vb.s.running && still(vb.s.cam, va.s.cam) && still(vb.s.target, va.s.target), `tour ${tag}: a tap during an overview move stops the camera where it is (it was moving; then still for ${Math.round(v.stop.hold)} ms; ${v.taps} tap${v.taps > 1 ? 's' : ''}) ${JSON.stringify(vb ? { moving: v.moving, a: [va.t.active, va.chip, va.s.cam, va.s.target], b: [vb.t.active, vb.t.idle_for_s, vb.s.running, vb.s.cam, vb.s.target] } : null)}`);
     if (tag === 'desktop') {
       // the same run with the tour OFF: the Worker received exactly the same messages, and the worlds are the same
       const off = await open(opts, 'seed=1&quality=low&speed=10&tour=0', 'tour-off', LOG);
