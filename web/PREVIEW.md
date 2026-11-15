@@ -70,7 +70,8 @@ npx --yes http-server -p 8780      # 或
 - `web-v5-results.json`、`web-v5-observer-node.json`：V5 篩選、跨日跳轉、事件地圖、路線、巢內標示、每日事件數（桌面＋412×915 觸控）；`screenshots/*-v5-*.png` 是各功能截圖。
 - `web-v3-follow-node.json`：每一筆事件的跳轉時間、地點、相關工蟻都等於引擎紀錄；事件時刻工蟻畫在紀錄的地點；死亡與羽化的追蹤狀態。
 
-- `demo2-webgpu-results.json`、`screenshots/demo2-webgpu-*.jpg`：Demo 2 選用的 WebGPU 渲染器（`demo2.html?renderer=webgpu`；預設仍是 WebGL 2）。報告中的 `webgpu_offscreen_verified`／`webgpu_onscreen_verified` 說明這次執行實際驗證到哪裡：無頭環境只能在軟體 WebGPU 上離屏繪圖後讀回，不能驗證畫面直接呈現與真實 GPU。
+- （另一個 CI 工作 `demo2-optional` 的 artifact `demo2-optional-screenshots`，不在本預覽包內）`demo2-hd2d-results.json`、`demo2-hd2d-*.jpg`／`demo2-std-*.jpg`：Demo 2 選用的 HD-2D 畫面風格（`demo2.html?style=hd2d` 或「效能」分頁切換；只是畫面效果，僅 WebGL 2）與標準畫面的對照。
+- （同上，`demo2-optional-screenshots`）`demo2-webgpu-results.json`、`demo2-webgpu-*.jpg`：Demo 2 選用的 WebGPU 渲染器（`demo2.html?renderer=webgpu`；預設仍是 WebGL 2）。報告中的 `webgpu_offscreen_verified`／`webgpu_onscreen_verified` 說明這次執行實際驗證到哪裡：無頭環境只能在軟體 WebGPU 上離屏繪圖後讀回，不能驗證畫面直接呈現與真實 GPU。
 - `demo2-results.json`、`screenshots/demo2-*.jpg`：Demo 2（30 隻引擎工蟻同時在地表與地下、自然模式與展示情境的標示、視角切換、點選、跟隨、以 step_until 跟一隻工蟻走完整趟——同一 ID、畫面位置連續、不進土裡；暫停凍結；存檔→重新載入→繼續；桌面 1440×900＋Pixel 7；效能數字為軟體繪圖，不是實機結果）。
 - `three-demo-results.json`、`screenshots/three-*.jpg`：Three.js 3D 原型（30 隻、追蹤、走動時步態相位推進、停下與暫停時不動、`uTime` 暫停時凍結、標示、手機無橫向捲動；桌面＋Pixel 7）。
 

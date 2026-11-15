@@ -37,6 +37,7 @@ import { placeLabels, type LabelBox } from './labels.ts';
 import { MORPHS, RigLayer, rigMaterial, larvaGeometry, pupaGeometry, eggGeometry, type RigCaste } from './ant-rig.ts';
 import { rigNodeMaterial, type RigNodeMaterial } from './ant-rig-tsl.ts';
 import { buildScene, type Quality, type Scene2 } from './scene.ts';
+import { Hd2dPipeline, PIXEL_FACTORS, type Hd2dEffects } from './hd2d.ts';
 
 const q = new URLSearchParams(location.search);
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -68,6 +69,21 @@ const wantWebGPU = q.get('renderer') === 'webgpu', forceNodeGL = wantWebGPU && q
  *  (headless Chromium's software WebGPU cannot present to a canvas; see docs/demo2.md) */
 const offscreen = wantWebGPU && q.get('present') === 'offscreen';
 let offRT: THREE.RenderTarget | null = null;
+// ---------- picture style: 標準 (default) or the opt-in HD-2D post-processing look (WebGL 2 only; display only) ----------
+type Style = 'standard' | 'hd2d';
+let style: Style = q.get('style') === 'hd2d' ? 'hd2d' : 'standard', hd2d: Hd2dPipeline | null = null;
+let pxFactor = (PIXEL_FACTORS as readonly number[]).includes(Number(q.get('px'))) ? Number(q.get('px')) : 3;
+/** post effects that are on (auto quality switches depth of field off first, then bloom) */
+const fx: Hd2dEffects = { dof: q.get('dof') !== '0', bloom: q.get('bloom') !== '0' };
+const HD2D_ONLY_WEBGL2 = 'HD-2D 目前僅 WebGL 2';
+const hd2dActive = () => style === 'hd2d' && hd2d !== null;
+const fxText = () => hd2dActive() ? [`像素化 ${pxFactor === 1 ? '關' : `${pxFactor}×`}`, fx.dof ? '景深' : null, fx.bloom ? '泛光' : null, '色調', '暗角', '加密草葉', '浮塵', '光束（依引擎光照；夜間不畫）'].filter(Boolean).join('、') : '無（標準畫面）';
+function setStyle(st: Style) {
+  if (st === 'hd2d' && rendererKind !== 'webgl2') { style = 'standard'; toast(`${HD2D_ONLY_WEBGL2}：這個渲染器維持標準畫面`, 6000); }
+  else style = st;
+  world?.setStyle(style === 'hd2d'); if (renderer) resize(); perfCtlNow = ''; if (tab === 'perf' && !document.body.classList.contains('side-closed')) renderPerf();
+}
+function setPixelFactor(f: number) { pxFactor = f; if (renderer) resize(); perfCtlNow = ''; if (tab === 'perf' && !document.body.classList.contains('side-closed')) renderPerf(); }
 /** draw calls and triangles of the last frame, whichever renderer runs */
 const rInfo = () => { const r = renderer.info.render as unknown as { calls: number; drawCalls?: number; triangles: number }; return { calls: r.drawCalls ?? r.calls, triangles: r.triangles }; };
 /** the WebGPU device was lost (or a draw failed): stop drawing, say so, offer the WebGL 2 page. The world keeps running. */
@@ -314,15 +330,28 @@ function tick(now: number) {
   stepCamera(dtWall); // camera moves follow the wall clock (a slow frame must not stretch a view change)
   if (renderOn && !gpuLost) {
     if (offRT) renderer.setRenderTarget(offRT as unknown as THREE.WebGLRenderTarget);
-    if (rendererKind === 'webgl2') renderer.render(scene, camera);
+    renderer.info.reset(); // draw calls / triangles of the whole frame (the HD-2D chain draws several passes)
+    if (hd2dActive()) {
+      // focus plane: the followed ant, else the camera target (distance along the view direction)
+      const fa = following ? drawn.find((x) => x.id === following) : null, fp = fa ? V.set(fa.x, fa.y, fa.z) : V.copy(controls.target);
+      const focus = Math.max(camera.near * 2, fp.sub(camera.position).dot(camera.getWorldDirection(X)));
+      if (frame && world) world.setAtmosphere(frame.env.light, Y.copy(sun.position).sub(sunTarget.position).normalize(), sun.color, uTime.value);
+      hd2d!.render(scene, camera, focus, frame?.env.light ?? 'day', fx);
+    } else if (rendererKind === 'webgl2') { renderer.setRenderTarget(null); renderer.render(scene, camera); }
     else try { renderer.render(scene, camera); } catch (e) { webgpuLost((e as Error).message); } // a lost WebGPU device must not stop the page
   }
   cpuMs.push(performance.now() - c0); if (cpuMs.length > 600) cpuMs.shift();
   updateLabels(); updateHud(now);
   // automatic quality: step down when the frame rate stays low (never while a level is forced by ?quality=)
-  if (!qualityLocked && frameIv.length > 90 && quality !== 'low') {
+  if (!qualityLocked && frameIv.length > 90 && (quality !== 'low' || (hd2dActive() && (fx.dof || fx.bloom)))) {
     const fps = 1000 / (frameIv.slice(-90).reduce((a, b) => a + b, 0) / 90);
-    if (fps < 24) { if (!lowFpsSince) lowFpsSince = now; else if (now - lowFpsSince > 3000) { applyQuality(quality === 'high' ? 'medium' : 'low'); lowFpsSince = 0; frameIv.length = 0; toast(`畫面更新偏慢：已自動降低畫質為「${QUALITY_LABEL[quality]}」（只影響繪圖，不影響模擬）`); } } else lowFpsSince = 0;
+    if (fps < 24) { if (!lowFpsSince) lowFpsSince = now; else if (now - lowFpsSince > 3000) {
+      lowFpsSince = 0; frameIv.length = 0;
+      // HD-2D: drop the post effects first (depth of field, then bloom), then the quality level
+      if (hd2dActive() && fx.dof) { fx.dof = false; perfCtlNow = ''; toast('畫面更新偏慢：已自動關閉 HD-2D 的景深（只影響繪圖，不影響模擬）'); }
+      else if (hd2dActive() && fx.bloom) { fx.bloom = false; perfCtlNow = ''; toast('畫面更新偏慢：已自動關閉 HD-2D 的泛光（只影響繪圖，不影響模擬）'); }
+      else { applyQuality(quality === 'high' ? 'medium' : 'low'); toast(`畫面更新偏慢：已自動降低畫質為「${QUALITY_LABEL[quality]}」（只影響繪圖，不影響模擬）`); }
+    } } else lowFpsSince = 0;
   }
   requestAnimationFrame(tick);
 }
@@ -427,6 +456,7 @@ function renderLegend() {
 <li><span class="tag interp">顯示插值</span>兩個引擎紀錄點之間的位置：地表路線上的行走（出發／抵達時刻＝引擎，路徑形狀＝示意）；走向巢口／從巢口回巢內（起訖時刻＝引擎，巢內路線＝展示假設）。插值不寫回引擎、不產生事件。</li>
 <li><span class="tag assume">展示假設</span>${esc(L.label_zh)}。巢內每個位置與走法：引擎沒有巢內座標，狀態改變後工蟻沿通道走到新狀態的位置，每段走動最長 ${CATCHUP_MAX_S} 秒（模擬時間）；途中演出交哺時先走到對象旁，合計上限 ${2 * CATCHUP_MAX_S + 6} 秒；休息的工蟻站定不走；「巢內走動」的閒逛路線、同通道的前後錯位（避讓）、步態、轉身、觸角與姿勢都只是畫面。螞蟻放大 ${mag} 倍（2.5 mm 畫成 ${(MINOR_LEN_CM * mag * 10).toFixed(0)} mm），通道也依放大後體型畫寬；路線長度不放大。花園景物（土、石、草、落葉、磚、盆栽、寄主植物外形）是裝飾，不是障礙物。搜尋中的位置是示意（搜尋沒有空間模型）。</li>
 <li><span class="tag demo">示範資料</span>只在「展示情境」模式：蟻后 2（Owner #202 暫定 2～3）、大工蟻、卵、蛹與兩個不可取食的食物道具。固定種子、可重現、${esc(DEMO_ROUTINE_LABEL)}；不存檔、不送進 Worker。自然模式完全不畫。</li></ul>
+<h2>畫面效果（HD-2D 風格，選用）</h2><div class="muted">「效能」分頁可切換「畫面風格：標準／HD-2D」。HD-2D 只改繪圖：降低內部解析度再放大（像素化）、景深（焦點＝鏡頭目標或跟隨的螞蟻）、泛光、色調、暗角，以及加密的草葉、落葉與地被葉、空中的浮塵、光束。這些全部是<b>畫面效果／裝飾</b>：不是生物、不是食物來源、螞蟻不感知；沒有加入任何蝴蝶、螢火蟲、其他昆蟲或會被當成蜜源的花。光線方向與顏色仍然依引擎的光照狀態（日／曙暮光／夜），夜間不畫光束；HD-2D 不會改變時間。${HD2D_ONLY_WEBGL2}。</div>
 <h2>沒有畫的東西</h2><ul><li>費洛蒙：尚未模擬，畫面不畫任何氣味路徑；黃色虛線只是「顯示路線」（長度＝引擎路線長度，方向示意）。</li><li>固體食物搬運、其他食物種類（花蜜、昆蟲屍體）：引擎尚未模擬；只在展示情境當不可取食的道具。</li><li>身體碰撞與巢口容量：尚未模擬；畫面上的錯位只是顯示。</li></ul>
 <h2>已列出的畫面跳位</h2><ul>${STAGE_DISCONTINUITIES.map((d) => `<li>${esc(d.label_zh)}</li>`).join('')}</ul>
 <h2>巢體幾何的來源</h2><div class="muted">${esc(prov.what_is_assumed_zh)}<br>${esc(prov.scale_note_zh)}<br>${esc(prov.literature_direction_zh)}</div>
@@ -444,11 +474,18 @@ function renderPerf() {
 <div class="row">渲染器 <span class="seg"><button type="button" data-r="webgl2" aria-pressed="${rendererKind === 'webgl2'}">WebGL 2（預設）</button><button type="button" data-r="webgpu" aria-pressed="${rendererKind !== 'webgl2'}">WebGPU（實驗）</button></span></div>
 <div class="muted">${WEBGPU_STATUS}切換會重新載入頁面（世界由存檔接續；臨時世界會重開）。兩種渲染器畫的是同一份引擎狀態與同一份顯示位置，只有繪圖方式不同。</div>
 <h2>畫面</h2><div id="perfNums"></div>
+<div class="row">畫面風格 <span class="seg"><button type="button" data-style="standard" aria-pressed="${style === 'standard'}">標準</button><button type="button" data-style="hd2d" aria-pressed="${style === 'hd2d'}" ${rendererKind === 'webgl2' ? '' : 'disabled'}>HD-2D</button></span>${rendererKind === 'webgl2' ? '' : `<span class="tag none">${HD2D_ONLY_WEBGL2}</span>`}</div>
+<div class="row" ${style === 'hd2d' ? '' : 'hidden'}>像素化 <span class="seg">${PIXEL_FACTORS.map((k) => `<button type="button" data-px="${k}" aria-pressed="${pxFactor === k}">${k === 1 ? '關' : `${k}×`}</button>`).join('')}</span><label><input type="checkbox" id="fxDof" ${fx.dof ? 'checked' : ''}> 景深</label><label><input type="checkbox" id="fxBloom" ${fx.bloom ? 'checked' : ''}> 泛光</label></div>
+<div class="muted" id="fxNow">作用中的畫面效果：${fxText()}。HD-2D 只是畫面效果：同一份引擎狀態、同一份顯示位置；光線方向與顏色仍依引擎的光照狀態。</div>
 <div class="row">畫質 <span class="seg">${(['high', 'medium', 'low'] as const).map((k) => `<button type="button" data-q="${k}" aria-pressed="${quality === k}">${QUALITY_LABEL[k]}</button>`).join('')}</span></div>
 <div class="muted">量測類別：${measurementClass(glInfo, automated)}。軟體繪圖或自動化環境的數字不是實機結果。模擬時間與畫面更新分開：畫面變慢不會改變任何事件。</div>`;
   if (ctl !== perfCtlNow) {
     perfCtlNow = ctl; ui.perf.innerHTML = ctl;
     ui.perf.querySelectorAll<HTMLButtonElement>('button[data-r]').forEach((b) => { b.onclick = () => { const u = new URL(location.href); if (b.dataset.r === 'webgpu') u.searchParams.set('renderer', 'webgpu'); else { u.searchParams.delete('renderer'); u.searchParams.delete('backend'); } u.searchParams.set('panel', 'perf'); location.href = u.href; }; });
+    ui.perf.querySelectorAll<HTMLButtonElement>('button[data-style]').forEach((b) => { b.onclick = () => setStyle(b.dataset.style as Style); });
+    ui.perf.querySelectorAll<HTMLButtonElement>('button[data-px]').forEach((b) => { b.onclick = () => setPixelFactor(Number(b.dataset.px)); });
+    const cd = ui.perf.querySelector<HTMLInputElement>('#fxDof'), cb = ui.perf.querySelector<HTMLInputElement>('#fxBloom');
+    if (cd) cd.onchange = () => { fx.dof = cd.checked; perfCtlNow = ''; renderPerf(); }; if (cb) cb.onchange = () => { fx.bloom = cb.checked; perfCtlNow = ''; renderPerf(); };
     ui.perf.querySelectorAll<HTMLButtonElement>('button[data-q]').forEach((b) => { b.onclick = () => { applyQuality(b.dataset.q as Quality); renderPerf(); }; });
   }
   $('perfNums').innerHTML = nums;
@@ -492,7 +529,7 @@ function pick(sx: number, sy: number): string | null {
   for (const s of statics) test(s.ind.id, s.p.x, s.p.y, s.p.z, true);
   return best;
 }
-function resize() { const w = innerWidth, h = innerHeight, sh = sheetPx(); renderer.setSize(w, h, false); if (offscreen && rendererKind === 'webgpu') { const pr = renderer.getPixelRatio(); if (!offRT) offRT = new THREE.RenderTarget(Math.round(w * pr), Math.round(h * pr), { depthBuffer: true }); else offRT.setSize(Math.round(w * pr), Math.round(h * pr)); } camera.aspect = w / h; if (sh > 0) camera.setViewOffset(w, h, 0, Math.round(sh / 2), w, h); else camera.clearViewOffset(); camera.updateProjectionMatrix(); }
+function resize() { const w = innerWidth, h = innerHeight, sh = sheetPx(); renderer.setSize(w, h, false); if (hd2d) { const pr = renderer.getPixelRatio(); hd2d.setSize(Math.round(w * pr), Math.round(h * pr), pxFactor); } if (offscreen && rendererKind === 'webgpu') { const pr = renderer.getPixelRatio(); if (!offRT) offRT = new THREE.RenderTarget(Math.round(w * pr), Math.round(h * pr), { depthBuffer: true }); else offRT.setSize(Math.round(w * pr), Math.round(h * pr)); } camera.aspect = w / h; if (sh > 0) camera.setViewOffset(w, h, 0, Math.round(sh / 2), w, h); else camera.clearViewOffset(); camera.updateProjectionMatrix(); }
 
 // ---------- mode (自然 / 展示情境) ----------
 function setMode(m: Mode) {
@@ -512,7 +549,7 @@ async function afterWorldReady(startAt: number | null) {
   await new Promise<void>((r) => { const w = () => (frame ? r() : setTimeout(w, 20)); w(); });
   vis = VisModel.of(frame!); rost = roster(mode, frame!, demoSeed);
   if (!world) { world = buildScene({ graph, corridor: corridor3(vis), source: source3(vis), searchRadius: SEARCH_RADIUS_CM }); scene.add(world.group); applyQuality(quality); }
-  setLight(frame!); setMode(mode);
+  setLight(frame!); setMode(mode); world.setStyle(style === 'hd2d');
   const snap = await client.snapshot();
   disclosure = snap.type === 'snapshot' ? notSimulatedOf(snap.snapshot) : { ok: false, reason: '無法讀取此世界的存檔中繼資料：「尚未模擬」清單未知，不得把畫面當成已模擬任何機制' };
   renderNotSim(); renderLegend(); renderWorldInfo();
@@ -591,6 +628,8 @@ async function main() {
     try { renderer = new THREE.WebGLRenderer({ canvas: ui.canvas, antialias: quality !== 'low', powerPreference: 'high-performance' }); } catch (e) { fatal(`無法建立 WebGL 繪圖環境（${esc((e as Error).message)}）。`); return; }
     const gl = renderer.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info'); glInfo = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : String(gl.getParameter(gl.RENDERER));
   }
+  renderer.info.autoReset = false;
+  if (rendererKind === 'webgl2') hd2d = new Hd2dPipeline(renderer); else if (style === 'hd2d') { style = 'standard'; rendererNote = rendererNote || `${HD2D_ONLY_WEBGL2}（已改用標準畫面）`; }
   renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.98; renderer.shadowMap.type = rendererKind === 'webgl2' ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
   backend = rendererKind === 'webgpu' ? `WebGPU（three r${THREE.REVISION} WebGPURenderer；實際 backend＝WebGPU）｜實驗` : rendererKind === 'webgpu-webgl2' ? `three r${THREE.REVISION} WebGPURenderer 的 WebGL 2 backend（node material 路徑；不是 WebGPU）` : `WebGL 2（three r${THREE.REVISION} WebGLRenderer）｜WebGPU：此瀏覽器${'gpu' in navigator ? '有提供' : '未提供'}${wantWebGPU ? '（要求了 WebGPU，但已退回 WebGL 2）' : '，可在此面板切換（實驗）'}`;
   ui.canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); toast('繪圖環境遺失（WebGL context lost）：請重新整理頁面；模擬與存檔不受影響', 10000); });
@@ -682,6 +721,8 @@ const hooks: Record<string, unknown> = {
   select: (id: string | null) => select(id), follow: (id: string | null) => setFollow(id), setRunning: (on: boolean) => setRunning(on), setSpeed: (s: number) => setSpeed(s),
   setView: (v: View, instant = true) => goView(v, instant), setMode: (m: Mode) => setMode(m), setQuality: (k: Quality) => applyQuality(k), openSide: (t: string | null) => openSide(t),
   setRender: (on: boolean) => { renderOn = on; },
+  setStyle: (st: Style) => setStyle(st), setPixelFactor: (f: number) => setPixelFactor(f), setFx: (d: boolean, b: boolean) => { fx.dof = d; fx.bloom = b; perfCtlNow = ''; },
+  style: () => ({ style, active: hd2dActive(), px: pxFactor, fx: { ...fx }, text: fxText(), low: hd2d ? [hd2d.lowW, hd2d.lowH] : null, scene: world?.styleState() ?? null, light: frame?.env.light ?? null, buf: [ui.canvas.width, ui.canvas.height], renderer: rendererKind }),
   /** verification only: the offscreen WebGPU image as a JPEG data URL (linear → sRGB here; no tone mapping) */
   grab: async (q2 = 0.8) => {
     if (!offRT) return null;

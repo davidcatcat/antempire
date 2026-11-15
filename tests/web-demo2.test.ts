@@ -32,6 +32,8 @@ import { larvaSpot, carerSpot, queenSpot, eggSpot, pupaSpot, majorSpot } from '.
 import { newGait, stepGait, STRIDE_PER_BODY, POSE_TARGET } from '../web/src/demo2/gait.ts';
 import { placeLabels, anyOverlap, type LabelBox } from '../web/src/demo2/labels.ts';
 import { RIG, glf } from '../web/src/demo2/rig-params.ts';
+/** the night grade of hd2d.ts is the identity tint with saturation 1 (read from the source: the module needs three) */
+const HD2D_GRADE_NIGHT_NEUTRAL = (src: string) => /night: \{ tint: \[1\.0, 1\.0, 1\.0\], sat: 1\.0,/.test(src);
 /** the GLSL rig text, taken from ant-rig.ts without loading three in Node: the template is evaluated with the shared table */
 const RIG_GLSL_TEXT = (): string => { const src = fs.readFileSync(path.join(REPO_ROOT, 'web/src/demo2/ant-rig.ts'), 'utf8'), a = src.indexOf('export const RIG_GLSL = /* glsl */ `') + 'export const RIG_GLSL = /* glsl */ `'.length, b = src.indexOf('`;', a); return new Function('K', 'f', 'return `' + src.slice(a, b) + '`;')(RIG, glf) as string; };
 
@@ -217,10 +219,26 @@ function run(seed: number, t0: number, t1: number, dt = 0.1, every = 2): { trace
   ok(/isWebGPUBackend === true/.test(main) && /不是 WebGPU/.test(main) && /已改用 WebGL 2/.test(main) && /待 Owner 實機確認/.test(main), 'main.ts reports the ACTUAL backend, says when it fell back, and states what is not verified');
 }
 
+// 4d. HD-2D picture style: rendering only
+{
+  const hd = read('web/src/demo2/hd2d.ts'), scene = read('web/src/demo2/scene.ts'), main = read('web/src/demo2/main.ts');
+  ok([...hd.matchAll(/from\s+'([^']+)'/g)].every((m) => m[1] === 'three'), 'hd2d.ts imports only three');
+  for (const x of ['nest-graph.ts', 'stage.ts', 'surface.ts', 'feed.ts', 'places.ts', 'gait.ts', 'labels.ts', 'rig-params.ts']) ok(!/hd2d|pixelat|bloom|vignette|\bstyle\b/i.test(read(`web/src/demo2/${x}`)), `${x}: no reference to the picture style (the director's output cannot depend on it)`);
+  ok(/hd2d!\.render\(scene, camera, focus, frame\?\.env\.light \?\? 'day', fx\)/.test(main) && !/client\.\w+\([^)]*(style|pxFactor|fx\b)/.test(main) && !/session\.(request|newGame|open)\([^)]*(style|pxFactor)/.test(main), 'the style reaches only the renderer: never the Worker, the session or the director');
+  ok(/world\.setAtmosphere\(frame\.env\.light,/.test(main) && /HD2D_GRADE\[light\]/.test(hd), 'light shafts, dust and the colour grade take the ENGINE light state');
+  ok(HD2D_GRADE_NIGHT_NEUTRAL(hd), 'night: no warm grade (the style does not invent a time of day)');
+  const a = scene.indexOf('const buildHd = () => {'), b = scene.indexOf('let tris = 0;', a), extras = scene.slice(a, b);
+  ok(a > 0 && b > a && !/petal|flower|butterfl|firefl|insect|aphid|nectar|beetle/i.test(extras.replace(/\/\/.*$/gm, '')), 'the HD-2D scenery adds foliage, dust and light only: no flower, no insect, nothing that reads as an individual or a food source');
+  ok(/hd\.shafts\.visible = k > 0/.test(scene) && /light === 'civil_twilight' \? 0\.7 : 0/.test(scene), 'light shafts are hidden at night');
+  ok(main.includes('HD-2D 目前僅 WebGL 2') && /if \(st === 'hd2d' && rendererKind !== 'webgl2'\)/.test(main), 'HD-2D is refused, with a message, on the WebGPU renderer');
+  ok(/if \(hd2dActive\(\) && fx\.dof\) \{ fx\.dof = false;[\s\S]{0,200}else if \(hd2dActive\(\) && fx\.bloom\) \{ fx\.bloom = false;/.test(main), 'auto quality drops depth of field first, then bloom, then the quality level');
+  ok(main.includes('畫面效果（HD-2D 風格，選用）') && main.includes('不是生物、不是食物來源'), 'the legend lists the style as display-only');
+}
+
 // 5. source scans
 {
   const dir = 'web/src/demo2', files = fs.readdirSync(path.join(REPO_ROOT, dir)).filter((x) => x.endsWith('.ts')), html = read('web/demo2.html'), main = read(`${dir}/main.ts`);
-  ok(['nest-graph.ts', 'stage.ts', 'surface.ts', 'feed.ts', 'places.ts', 'gait.ts', 'ant-rig.ts', 'ant-rig-tsl.ts', 'rig-params.ts', 'labels.ts', 'scene.ts', 'main.ts'].every((x) => files.includes(x)), 'Demo 2 modules present');
+  ok(['nest-graph.ts', 'stage.ts', 'surface.ts', 'feed.ts', 'places.ts', 'gait.ts', 'ant-rig.ts', 'ant-rig-tsl.ts', 'rig-params.ts', 'labels.ts', 'hd2d.ts', 'scene.ts', 'main.ts'].every((x) => files.includes(x)), 'Demo 2 modules present');
   for (const x of files) {
     const code = read(`${dir}/${x}`);
     for (const m of code.matchAll(/from\s+'([^']+)'/g)) ok(m[1] === 'three' || m[1].startsWith('three/addons/') || (x === 'ant-rig-tsl.ts' && (m[1] === 'three/webgpu' || m[1] === 'three/tsl')) || ((m[1].startsWith('./') || m[1].startsWith('../')) && !/engine\/|cli\/|prototypes\/|worker-dist/.test(m[1]) && !path.posix.normalize(path.posix.join(dir, m[1])).startsWith('web/src/../')), `${x}: imports only viewer modules and vendored three (${m[1]})`);
