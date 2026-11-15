@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>螞蟻帝國・Demo 2 效能測試（非正式；不是遊戲世界）</title>
+<!-- Three.js is served from this site (vendor/three, copied from node_modules by npm run web:build); no CDN -->
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/", "three/webgpu": "./vendor/three/three.webgpu.js", "three/tsl": "./vendor/three/three.tsl.js" } }
+</script>
+<style>
+  :root { --panel: rgba(26,20,14,0.93); --ink: #f3ead6; --muted: #cbbd9f; --accent: #e9b949; --line: rgba(243,234,214,0.22); color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #1d1712; color: var(--ink); font-family: system-ui, -apple-system, "Noto Sans TC", "PingFang TC", sans-serif; overflow: hidden; }
+  #scene { position: fixed; inset: 0; width: 100vw; height: 100dvh; display: block; }
+  /* the watermark covers the WHOLE screen in every test: bench pictures can never pass for a world */
+  #mark { position: fixed; inset: -20%; z-index: 2; pointer-events: none; display: grid; grid-template-columns: repeat(2, 1fr); align-content: space-around; justify-items: center; transform: rotate(-24deg); }
+  #mark span { font-size: clamp(15px, 3.4vw, 26px); font-weight: 800; letter-spacing: 0.06em; color: rgba(255,255,255,0.34); text-shadow: 0 0 3px rgba(0,0,0,0.75); white-space: nowrap; padding: 3vh 2vw; }
+  #mark[data-mode="render"] span { color: rgba(255,214,120,0.42); }
+  #panel { position: fixed; z-index: 3; left: 0; right: 0; top: 0; max-height: 100dvh; overflow: auto; background: var(--panel); border-bottom: 1px solid var(--line); padding: calc(6px + env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px)); font-size: 13px; line-height: 1.55; }
+  body.running #panel, body.folded #panel { max-height: none; overflow: hidden; }
+  body.running .idle, body.folded .idle, body.folded .res { display: none; }
+  body:not(.has-results) .res { display: none; } /* results come first once there are any (phones: no scrolling past the notes) */
+  h1 { font-size: 15px; margin: 0; display: inline; } .chip { font-size: 11px; font-weight: 700; border-radius: 6px; padding: 2px 7px; white-space: nowrap; color: #2a1d0b; background: #f0b25a; margin-left: 6px; }
+  #cls { display: inline-block; font-weight: 700; border-radius: 6px; padding: 2px 8px; background: #6b3030; } #cls[data-cls="real_gpu"] { background: #3f6b3a; } #cls[data-cls="unknown"] { background: #6b5a2a; }
+  select, button, a.btn { font: inherit; font-size: 13px; min-height: 44px; min-width: 44px; color: var(--ink); background: rgba(255,255,255,0.09); border: 1px solid var(--line); border-radius: 8px; padding: 0 12px; }
+  button { cursor: pointer; } button:disabled { opacity: 0.45; } button.primary { background: var(--accent); color: #2a1d0b; border-color: var(--accent); font-weight: 700; }
+  option { color: #1d160e; } a { color: var(--accent); } a.btn { display: inline-flex; align-items: center; text-decoration: none; }
+  .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 6px 0; } .muted { color: var(--muted); font-size: 12px; }
+  #progress { font-weight: 600; font-variant-numeric: tabular-nums; }
+  #table { overflow-x: auto; } table { border-collapse: collapse; font-size: 12px; white-space: nowrap; } th, td { text-align: left; padding: 3px 8px 3px 0; border-bottom: 1px solid rgba(243,234,214,0.14); }
+  tr.failed td, tr.skipped td { color: #ffb4a6; }
+  textarea { width: 100%; height: 84px; font: 11px/1.4 ui-monospace, monospace; color: var(--ink); background: rgba(0,0,0,0.35); border: 1px solid var(--line); border-radius: 8px; padding: 6px; }
+  ol { margin: 4px 0; padding-left: 20px; } [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<canvas id="scene" aria-label="Demo 2 效能測試畫面（不是遊戲世界）"></canvas>
+<div id="mark" data-mode="idle" aria-hidden="true"></div>
+<div id="panel">
+  <div><h1>Demo 2 效能測試</h1><span class="chip">非正式・不是遊戲世界・不存檔</span> <button id="fold" type="button" aria-label="收合／展開面板">▲▼</button></div>
+  <div class="row"><span id="cls">辨識中…</span><span id="progress">載入中…</span><button id="stop" type="button" hidden>取消</button></div>
+  <div class="res">
+    <div id="table"></div>
+    <div class="row idle"><button id="copy" type="button">複製結果 JSON</button><span class="muted">把整段 JSON 貼回給開發者；裡面有 GPU 辨識與量測類別。</span></div>
+    <textarea id="json" class="idle" readonly aria-label="結果 JSON"></textarea>
+  </div>
+  <div class="idle">
+    <div class="muted" id="gpu"></div>
+    <div class="row">
+      <button id="all" class="primary" type="button">一鍵跑完整矩陣（30／100／300／1,000 × 純渲染／完整模擬）</button>
+    </div>
+    <div class="row">
+      <select id="mode" aria-label="測試種類"><option value="render">純渲染（合成資料，非模擬）</option><option value="sim">完整模擬（引擎個體）</option></select>
+      <select id="n" aria-label="隻數"></select>
+      <button id="one" type="button">只跑這一項</button>
+      <a id="back" class="btn" href="demo2.html">回 Demo 2</a>
+    </div>
+    <div class="muted">
+      <b>純渲染</b>：Demo 2 的場景加 N 個由固定公式產生的合成個體，<b>沒有啟動任何 Worker、沒有世界、不是模擬</b>；整個畫面有「效能測試・合成資料，非模擬」浮水印。<br>
+      <b>完整模擬</b>：N 隻全部是引擎個體。P0-A2 實驗世界固定 30 隻小工蟻，本頁不修改任何世界參數，所以 N 隻＝⌈N/30⌉ 個<b>互不相干的獨立蟻群</b>（不同種子、各自的 Worker），只畫前 N 隻；<b>不是一個 N 隻的蟻群</b>。跟不上時測試會自己停止並回報失敗，不會跑到記憶體不足。<br>
+      本頁不顯示任何引擎統計、不存檔、與 Demo 2 的世界無關。網址參數：<code>auto=1</code>、<code>sizes=30,100</code>、<code>modes=render,sim</code>、<code>warm=</code>、<code>dur=</code>、<code>speed=</code>、<code>quality=high|medium|low</code>、<code>renderer=webgpu</code>。
+    </div>
+    <div class="muted" id="rule"></div>
+  </div>
+</div>
+<script type="module" src="dist/demo2/bench.js"></script>
+</body>
+</html>

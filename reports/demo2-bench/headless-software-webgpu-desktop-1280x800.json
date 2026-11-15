@@ -1,0 +1,688 @@
+{
+ "schema": "antempire.demo2-bench-run.v1",
+ "runner": "tests/browser/demo2-bench.run.cjs",
+ "url_query": "auto=1&renderer=webgpu&present=offscreen",
+ "host": {
+  "cpus": 4,
+  "cpu_model": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+  "mem_gb": 15.7,
+  "platform": "linux x64",
+  "loadavg_end": [
+   10.04,
+   6.17,
+   4.95
+  ]
+ },
+ "crashed": null,
+ "page_errors": [],
+ "workers_started": 49,
+ "tree_rss_mb": {
+  "note": "resident memory of the whole browser process tree (ps); includes Workers and message queues",
+  "max": 1435,
+  "series": [
+   {
+    "t_s": 0.6,
+    "rss_mb": 496,
+    "progress": ""
+   },
+   {
+    "t_s": 5.7,
+    "rss_mb": 617,
+    "progress": "(1/8) 純渲染（合成資料，非模擬） 30 隻：量測 8 秒"
+   },
+   {
+    "t_s": 10.7,
+    "rss_mb": 616,
+    "progress": "(1/8) 純渲染（合成資料，非模擬） 30 隻：量測 3 秒"
+   },
+   {
+    "t_s": 15.8,
+    "rss_mb": 628,
+    "progress": "(2/8) 純渲染（合成資料，非模擬） 100 隻：暖機 1 秒"
+   },
+   {
+    "t_s": 20.9,
+    "rss_mb": 621,
+    "progress": "(2/8) 純渲染（合成資料，非模擬） 100 隻：量測 6 秒"
+   },
+   {
+    "t_s": 26,
+    "rss_mb": 622,
+    "progress": "(2/8) 純渲染（合成資料，非模擬） 100 隻：量測 1 秒"
+   },
+   {
+    "t_s": 31,
+    "rss_mb": 620,
+    "progress": "(3/8) 純渲染（合成資料，非模擬） 300 隻：量測 9 秒"
+   },
+   {
+    "t_s": 36.1,
+    "rss_mb": 613,
+    "progress": "(3/8) 純渲染（合成資料，非模擬） 300 隻：量測 4 秒"
+   },
+   {
+    "t_s": 41.2,
+    "rss_mb": 622,
+    "progress": "(4/8) 純渲染（合成資料，非模擬） 1000 隻：暖機 3 秒"
+   },
+   {
+    "t_s": 46.2,
+    "rss_mb": 615,
+    "progress": "(4/8) 純渲染（合成資料，非模擬） 1000 隻：量測 8 秒"
+   },
+   {
+    "t_s": 51.3,
+    "rss_mb": 607,
+    "progress": "(4/8) 純渲染（合成資料，非模擬） 1000 隻：量測 3 秒"
+   },
+   {
+    "t_s": 56.4,
+    "rss_mb": 649,
+    "progress": "(5/8) 完整模擬（引擎個體） 30 隻：暖機 2 秒"
+   },
+   {
+    "t_s": 61.5,
+    "rss_mb": 638,
+    "progress": "(5/8) 完整模擬（引擎個體） 30 隻：量測 7 秒"
+   },
+   {
+    "t_s": 66.6,
+    "rss_mb": 641,
+    "progress": "(5/8) 完整模擬（引擎個體） 30 隻：量測 1 秒"
+   },
+   {
+    "t_s": 71.7,
+    "rss_mb": 730,
+    "progress": "(6/8) 完整模擬（引擎個體） 100 隻：暖機 2 秒"
+   },
+   {
+    "t_s": 76.8,
+    "rss_mb": 731,
+    "progress": "(6/8) 完整模擬（引擎個體） 100 隻：量測 7 秒"
+   },
+   {
+    "t_s": 81.9,
+    "rss_mb": 760,
+    "progress": "(6/8) 完整模擬（引擎個體） 100 隻：量測 2 秒"
+   },
+   {
+    "t_s": 86.9,
+    "rss_mb": 885,
+    "progress": "(7/8) 完整模擬（引擎個體） 300 隻：啟動 10 個 Worker 並排程到開始時刻…"
+   },
+   {
+    "t_s": 92,
+    "rss_mb": 880,
+    "progress": "(7/8) 完整模擬（引擎個體） 300 隻：量測 9 秒"
+   },
+   {
+    "t_s": 97.1,
+    "rss_mb": 897,
+    "progress": "(7/8) 完整模擬（引擎個體） 300 隻：量測 4 秒"
+   },
+   {
+    "t_s": 102.4,
+    "rss_mb": 938,
+    "progress": "(8/8) 完整模擬（引擎個體） 1000 隻：啟動 34 個 Worker 並排程到開始時刻…"
+   },
+   {
+    "t_s": 107.6,
+    "rss_mb": 1125,
+    "progress": "(8/8) 完整模擬（引擎個體） 1000 隻：啟動 34 個 Worker 並排程到開始時刻…"
+   },
+   {
+    "t_s": 113,
+    "rss_mb": 1168,
+    "progress": "(8/8) 完整模擬（引擎個體） 1000 隻：啟動 34 個 Worker 並排程到開始時刻…"
+   },
+   {
+    "t_s": 118.2,
+    "rss_mb": 1338,
+    "progress": "(8/8) 完整模擬（引擎個體） 1000 隻：啟動 34 個 Worker 並排程到開始時刻…"
+   },
+   {
+    "t_s": 123.3,
+    "rss_mb": 1412,
+    "progress": "(8/8) 完整模擬（引擎個體） 1000 隻：量測 8 秒"
+   },
+   {
+    "t_s": 128.5,
+    "rss_mb": 1434,
+    "progress": "(8/8) 完整模擬（引擎個體） 1000 隻：量測 3 秒"
+   },
+   {
+    "t_s": 132.6,
+    "rss_mb": 1275,
+    "progress": "done"
+   }
+  ]
+ },
+ "result": {
+  "schema": "antempire.demo2-bench.v1",
+  "when_utc": "2026-11-15T21:22:58.481Z",
+  "page": "web/demo2-bench.html",
+  "three": "187",
+  "gpu": {
+   "api": "webgpu",
+   "webgl_unmasked_vendor": "Google Inc. (Google)",
+   "webgl_unmasked_renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+   "webgl_vendor": "WebKit",
+   "webgl_renderer": "WebKit WebGL",
+   "webgpu_adapter": {
+    "vendor": "google",
+    "architecture": "swiftshader",
+    "device": "",
+    "description": "",
+    "isFallbackAdapter": true
+   }
+  },
+  "gpu_class": "software",
+  "gpu_rule": "WebGPU adapter isFallbackAdapter = true",
+  "measurement_class": "software",
+  "label_zh": "軟體算繪，不是裝置結果",
+  "frame_pacing": "raf_after_gpu_queue_done",
+  "renderer_requested": "webgpu",
+  "renderer_api": "webgpu",
+  "renderer_note": "（離屏繪圖：畫到 render target，沒有呈現到螢幕）",
+  "automated": true,
+  "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+  "viewport": {
+   "w": 1280,
+   "h": 800,
+   "dpr": 1
+  },
+  "hardware_concurrency": 4,
+  "device_memory_gb": 16,
+  "cases": [
+   {
+    "mode": "render",
+    "n": 30,
+    "status": "ok",
+    "reason": null,
+    "warm_s": 3,
+    "dur_s": 10,
+    "frames": 46,
+    "fps_mean": 4.58,
+    "fps_p5_low": 4,
+    "frame_ms": {
+     "p50": 216.6,
+     "p95": 250,
+     "p99": 250,
+     "max": 250
+    },
+    "cpu_ms": {
+     "p50": 1.6,
+     "p95": 2.67
+    },
+    "draw_calls": 65,
+    "triangles": 111947,
+    "heap_mb": {
+     "start": 19,
+     "end": 27,
+     "max": 27
+    },
+    "heap_series_mb": [
+     23,
+     24,
+     24,
+     25,
+     25,
+     26,
+     26,
+     26,
+     27,
+     27
+    ],
+    "quality": "medium",
+    "dpr": 1,
+    "canvas": [
+     1280,
+     800
+    ],
+    "sim": null
+   },
+   {
+    "mode": "render",
+    "n": 100,
+    "status": "ok",
+    "reason": null,
+    "warm_s": 3,
+    "dur_s": 10,
+    "frames": 40,
+    "fps_mean": 4.04,
+    "fps_p5_low": 3.53,
+    "frame_ms": {
+     "p50": 249.9,
+     "p95": 283.4,
+     "p99": 283.4,
+     "max": 283.4
+    },
+    "cpu_ms": {
+     "p50": 1.6,
+     "p95": 2.21
+    },
+    "draw_calls": 65,
+    "triangles": 237807,
+    "heap_mb": {
+     "start": 22,
+     "end": 22,
+     "max": 24
+    },
+    "heap_series_mb": [
+     23,
+     22,
+     23,
+     23,
+     22,
+     23,
+     23,
+     22,
+     23,
+     23
+    ],
+    "quality": "medium",
+    "dpr": 1,
+    "canvas": [
+     1280,
+     800
+    ],
+    "sim": null
+   },
+   {
+    "mode": "render",
+    "n": 300,
+    "status": "ok",
+    "reason": null,
+    "warm_s": 3,
+    "dur_s": 10,
+    "frames": 25,
+    "fps_mean": 2.46,
+    "fps_p5_low": 2.17,
+    "frame_ms": {
+     "p50": 416.6,
+     "p95": 460.04,
+     "p99": 479.39,
+     "max": 483.4
+    },
+    "cpu_ms": {
+     "p50": 2.2,
+     "p95": 4.36
+    },
+    "draw_calls": 65,
+    "triangles": 640607,
+    "heap_mb": {
+     "start": 23,
+     "end": 23,
+     "max": 23
+    },
+    "heap_series_mb": [
+     23,
+     23,
+     22,
+     22,
+     23,
+     23,
+     23,
+     22,
+     22,
+     23
+    ],
+    "quality": "medium",
+    "dpr": 1,
+    "canvas": [
+     1280,
+     800
+    ],
+    "sim": null
+   },
+   {
+    "mode": "render",
+    "n": 1000,
+    "status": "ok",
+    "reason": null,
+    "warm_s": 3,
+    "dur_s": 10,
+    "frames": 11,
+    "fps_mean": 1.1,
+    "fps_p5_low": 1.03,
+    "frame_ms": {
+     "p50": 900,
+     "p95": 975,
+     "p99": 981.64,
+     "max": 983.3
+    },
+    "cpu_ms": {
+     "p50": 2.6,
+     "p95": 3.95
+    },
+    "draw_calls": 65,
+    "triangles": 2077287,
+    "heap_mb": {
+     "start": 23,
+     "end": 17,
+     "max": 24
+    },
+    "heap_series_mb": [
+     23,
+     23,
+     24,
+     16,
+     16,
+     17,
+     16,
+     16,
+     16,
+     16
+    ],
+    "quality": "medium",
+    "dpr": 1,
+    "canvas": [
+     1280,
+     800
+    ],
+    "sim": null
+   },
+   {
+    "mode": "sim",
+    "n": 30,
+    "status": "ok",
+    "reason": null,
+    "warm_s": 3,
+    "dur_s": 10,
+    "frames": 36,
+    "fps_mean": 3.56,
+    "fps_p5_low": 2.7,
+    "frame_ms": {
+     "p50": 250.05,
+     "p95": 370.85,
+     "p99": 394.16,
+     "max": 400
+    },
+    "cpu_ms": {
+     "p50": 2,
+     "p95": 7.98
+    },
+    "draw_calls": 65,
+    "triangles": 125345,
+    "heap_mb": {
+     "start": 16,
+     "end": 24,
+     "max": 24
+    },
+    "heap_series_mb": [
+     20,
+     22,
+     24,
+     19,
+     22,
+     19,
+     21,
+     19,
+     20,
+     22
+    ],
+    "quality": "medium",
+    "dpr": 1,
+    "canvas": [
+     1280,
+     800
+    ],
+    "sim": {
+     "worlds": 1,
+     "drawn": 30,
+     "seeds": [
+      1
+     ],
+     "start_s": 0.8,
+     "msgs_per_s": 57.4,
+     "bytes_per_s_est": 828058,
+     "frame_bytes_est": 14423,
+     "sim_events_per_s": 0.7,
+     "ratio_requested": 5,
+     "ratio_achieved_mean": 5,
+     "ratio_achieved_min": 5,
+     "lag_s_max": 0.02
+    }
+   },
+   {
+    "mode": "sim",
+    "n": 100,
+    "status": "ok",
+    "reason": null,
+    "warm_s": 3,
+    "dur_s": 10,
+    "frames": 33,
+    "fps_mean": 3.31,
+    "fps_p5_low": 2.86,
+    "frame_ms": {
+     "p50": 300,
+     "p95": 350,
+     "p99": 361.29,
+     "max": 366.6
+    },
+    "cpu_ms": {
+     "p50": 3,
+     "p95": 5.14
+    },
+    "draw_calls": 65,
+    "triangles": 274617,
+    "heap_mb": {
+     "start": 17,
+     "end": 38,
+     "max": 43
+    },
+    "heap_series_mb": [
+     24,
+     25,
+     33,
+     41,
+     36,
+     19,
+     27,
+     36,
+     43,
+     37
+    ],
+    "quality": "medium",
+    "dpr": 1,
+    "canvas": [
+     1280,
+     800
+    ],
+    "sim": {
+     "worlds": 4,
+     "drawn": 100,
+     "seeds": [
+      1,
+      2,
+      3,
+      4
+     ],
+     "start_s": 2,
+     "msgs_per_s": 233,
+     "bytes_per_s_est": 3611192,
+     "frame_bytes_est": 15497,
+     "sim_events_per_s": 3.1,
+     "ratio_requested": 5,
+     "ratio_achieved_mean": 5,
+     "ratio_achieved_min": 5,
+     "lag_s_max": 0.01
+    }
+   },
+   {
+    "mode": "sim",
+    "n": 300,
+    "status": "ok",
+    "reason": null,
+    "warm_s": 3,
+    "dur_s": 10,
+    "frames": 19,
+    "fps_mean": 1.84,
+    "fps_p5_low": 1.58,
+    "frame_ms": {
+     "p50": 549.9,
+     "p95": 633.31,
+     "p99": 633.38,
+     "max": 633.4
+    },
+    "cpu_ms": {
+     "p50": 4.6,
+     "p95": 11.94
+    },
+    "draw_calls": 65,
+    "triangles": 717403,
+    "heap_mb": {
+     "start": 31,
+     "end": 29,
+     "max": 59
+    },
+    "heap_series_mb": [
+     55,
+     35,
+     43,
+     54,
+     35,
+     42,
+     59,
+     34,
+     41,
+     55
+    ],
+    "quality": "medium",
+    "dpr": 1,
+    "canvas": [
+     1280,
+     800
+    ],
+    "sim": {
+     "worlds": 10,
+     "drawn": 300,
+     "seeds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+     ],
+     "start_s": 3.9,
+     "msgs_per_s": 584.7,
+     "bytes_per_s_est": 9369509,
+     "frame_bytes_est": 16025,
+     "sim_events_per_s": 7,
+     "ratio_requested": 5,
+     "ratio_achieved_mean": 5,
+     "ratio_achieved_min": 4.99,
+     "lag_s_max": 0.04
+    }
+   },
+   {
+    "mode": "sim",
+    "n": 1000,
+    "status": "ok",
+    "reason": null,
+    "warm_s": 3,
+    "dur_s": 10,
+    "frames": 4,
+    "fps_mean": 0.36,
+    "fps_p5_low": 0.32,
+    "frame_ms": {
+     "p50": 2799.9,
+     "p95": 3159.89,
+     "p99": 3191.9,
+     "max": 3199.9
+    },
+    "cpu_ms": {
+     "p50": 51.3,
+     "p95": 59.13
+    },
+    "draw_calls": 65,
+    "triangles": 2218491,
+    "heap_mb": {
+     "start": 32,
+     "end": 78,
+     "max": 107
+    },
+    "heap_series_mb": [
+     89,
+     70,
+     44,
+     78,
+     58,
+     107,
+     67,
+     39,
+     78,
+     51
+    ],
+    "quality": "medium",
+    "dpr": 1,
+    "canvas": [
+     1280,
+     800
+    ],
+    "sim": {
+     "worlds": 34,
+     "drawn": 1000,
+     "seeds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34
+     ],
+     "start_s": 16.9,
+     "msgs_per_s": 1901.2,
+     "bytes_per_s_est": 30197349,
+     "frame_bytes_est": 15883,
+     "sim_events_per_s": 25.9,
+     "ratio_requested": 5,
+     "ratio_achieved_mean": 5.01,
+     "ratio_achieved_min": 5,
+     "lag_s_max": 0.03
+    }
+   }
+  ],
+  "notes_zh": [
+   "純渲染＝合成資料，非模擬：沒有啟動任何 Worker，數字只代表繪圖與本頁的每幀工作。",
+   "完整模擬＝每 30 隻一個獨立的 P0-A2 候選世界（不同種子、各自的 Worker、互不相干），只畫前 N 隻；不是一個 N 隻的蟻群。沒有修改任何世界參數。",
+   "JS heap 只含本頁主執行緒（Chromium 才有）；不含各 Worker 的記憶體與尚未處理的訊息佇列。Worker→主執行緒位元組數是以抽樣狀態框的 JSON 長度估計。",
+   "WebGPU：每一幀等 GPU 佇列執行完（onSubmittedWorkDone）才要求下一幀，幀時間包含 GPU 完成時間。",
+   "模擬時間與畫面更新分開：畫面變慢不會改變任何事件；本頁只送排程指令（init、step_until、set_speed、start），不存檔。",
+   "軟體算繪，不是裝置結果：不能代表任何手機或電腦的 GPU 效能。"
+  ]
+ }
+}
