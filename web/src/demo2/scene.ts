@@ -25,6 +25,13 @@ export interface Scene2 {
   /** label anchors (cm) for the HTML overlay */
   anchors: { hostPlant: P3; nectar: P3; insect: P3 };
   setQuality(q: Quality): void; triangles(): number;
+  /** HD-2D picture style (畫面效果): denser grass, leaf litter and ground-cover leaves, floating dust and light shafts.
+   *  Scenery only — no organism, no food source, nothing an ant senses. Built on first use, hidden in the standard style. */
+  setStyle(hd: boolean): void;
+  /** light shafts and dust follow the ENGINE's light state and the drawn sun direction (never a time of day of their own) */
+  setAtmosphere(light: 'day' | 'civil_twilight' | 'night', sunDir: THREE.Vector3, sunColor: THREE.Color, clock: number): void;
+  /** what the HD-2D extras currently show (tests / the 效能 tab) */
+  styleState(): { built: boolean; on: boolean; shafts: boolean; dust: number; extra_instances: number };
 }
 const W = BLOCK.x1 - BLOCK.x0, D = BLOCK.z1 - BLOCK.z0, FACE_TOP = 8;
 const col = (h: string) => new THREE.Color(h);
@@ -262,10 +269,46 @@ export function buildScene(o: SceneOptions): Scene2 {
   const routeGeo = new THREE.BufferGeometry().setFromPoints(o.corridor.map((p) => new THREE.Vector3(p.x, p.y + 0.18, p.z)));
   const route = new THREE.Line(routeGeo, new THREE.LineDashedMaterial({ color: 0xf6e3a0, dashSize: 2, gapSize: 2.4, transparent: true, opacity: 0.8 })); route.computeLineDistances(); group.add(route);
 
+  // ---- HD-2D style extras (畫面效果): built on first use with their own seed, so the standard scenery never changes ----
+  const UP = new THREE.Vector3(0, 1, 0), WHITE = new THREE.Color(0xffffff);
+  let hd: { group: THREE.Group; dust: THREE.Points; dustMat: THREE.PointsMaterial; shafts: THREE.Group; shaftMat: THREE.MeshBasicMaterial } | null = null;
+  const buildHd = () => {
+    const r2 = prng(20261116), gph = new THREE.Group(), inBlock = (x: number, z: number) => x > BLOCK.x0 + 1 && x < BLOCK.x1 - 1 && z > BLOCK.z0 + 1 && z < faceZ - 1;
+    // denser grass (same blade geometry), everywhere the route and the entrance area are not
+    { const N = 5600, m = new THREE.InstancedMesh(bladeGeometry(), lam({ vertexColors: true, side: THREE.DoubleSide }), N); let n = 0;
+      for (let i = 0; i < N * 4 && n < N; i++) { const x = BLOCK.x0 + r2() * W, z = BLOCK.z0 + r2() * D; if (!inBlock(x, z) || !isClear(x, z, keepOut)) continue; const dense = 0.35 + 0.65 * vnoise(x * 0.03, z * 0.03, 91); if (r2() > dense) continue; const hh = 2 + r2() * r2() * 9; M.compose(V.set(x, ground(x, z) - 0.15, z), Q.setFromEuler(E.set((r2() - 0.5) * 0.5, r2() * Math.PI * 2, (r2() - 0.5) * 0.5)), S.set(0.22 + r2() * 0.2, hh, hh * 0.9)); m.setMatrixAt(n, M); m.setColorAt(n++, C.setHSL(0.22 + r2() * 0.08, 0.42 + r2() * 0.2, 0.2 + r2() * 0.12)); }
+      m.count = n; m.receiveShadow = true; gph.add(m); }
+    // ground-cover leaves (small, low, green: foliage only — no flowers, nothing presented as food) and more leaf litter
+    { const N = 1500, m = new THREE.InstancedMesh(leafG, lam({ vertexColors: true, side: THREE.DoubleSide }), N); let n = 0;
+      for (let i = 0; i < N * 4 && n < N; i++) { const x = BLOCK.x0 + r2() * W, z = BLOCK.z0 + r2() * D; if (!inBlock(x, z) || !isClear(x, z, keepOut)) continue; const litter = r2() < 0.3, L = litter ? 2 + r2() * 5 : 0.9 + r2() * 1.6; M.compose(V.set(x, ground(x, z) + (litter ? 0.12 : 0.25) + r2() * 0.2, z), Q.setFromEuler(E.set((r2() - 0.5) * 0.5, r2() * Math.PI * 2, (r2() - 0.5) * 0.5)), S.set(L, L * 0.6, L * (0.5 + r2() * 0.4))); m.setMatrixAt(n, M);
+        if (litter) C.setHSL(0.07 + r2() * 0.05, 0.45 + r2() * 0.2, 0.22 + r2() * 0.14); else C.setHSL(0.26 + r2() * 0.08, 0.5 + r2() * 0.15, 0.26 + r2() * 0.1); m.setColorAt(n++, C); }
+      m.count = n; m.receiveShadow = true; gph.add(m); }
+    // floating dust: tiny pale motes in the air above the garden (not organisms: no shape, no flight path, slow drift)
+    const dn = 260, dp = new Float32Array(dn * 3); for (let i = 0; i < dn; i++) { dp[i * 3] = BLOCK.x0 + 20 + r2() * (W - 40); dp[i * 3 + 1] = 1.5 + r2() * r2() * 38; dp[i * 3 + 2] = BLOCK.z0 + 10 + r2() * (D - 12); }
+    const dg = new THREE.BufferGeometry(); dg.setAttribute('position', new THREE.Float32BufferAttribute(dp, 3));
+    const dustMat = new THREE.PointsMaterial({ size: 0.42, sizeAttenuation: true, transparent: true, opacity: 0.42, depthWrite: false, blending: THREE.AdditiveBlending, color: 0xfff2d8 }), dust = new THREE.Points(dg, dustMat); dust.frustumCulled = false; gph.add(dust);
+    // light shafts: a few soft additive sheets along the drawn sun direction (decoration; hidden at night)
+    const shaftTex = canvasTex(32, 128, (g2, w, h) => { const gr = g2.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.5, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g2.fillStyle = gr; g2.fillRect(0, 0, w, h); const gv = g2.createLinearGradient(0, 0, 0, h); gv.addColorStop(0, 'rgba(0,0,0,0.75)'); gv.addColorStop(0.35, 'rgba(0,0,0,0)'); gv.addColorStop(1, 'rgba(0,0,0,0.9)'); g2.globalCompositeOperation = 'destination-out'; g2.fillStyle = gv; g2.fillRect(0, 0, w, h); });
+    const shaftMat = new THREE.MeshBasicMaterial({ map: shaftTex, transparent: true, opacity: 0.085, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false }), shafts = new THREE.Group();
+    for (const [x, z, wd] of [[-30, -40, 22], [25, -70, 30], [70, -30, 20], [120, -90, 34], [165, -50, 24]] as const) { const m = new THREE.Mesh(new THREE.PlaneGeometry(wd, 150).translate(0, 70, 0), shaftMat); m.position.set(x, ground(x, z) - 2, z); m.renderOrder = 4; shafts.add(m); }
+    gph.add(shafts);
+    return { group: gph, dust, dustMat, shafts, shaftMat };
+  };
+
   let tris = 0; group.traverse((x) => { const m = x as THREE.Mesh; if (m.isMesh && m.geometry) { const gI = m.geometry.index, n = (gI ? gI.count : m.geometry.attributes.position.count) / 3; tris += n * ((m as unknown as THREE.InstancedMesh).isInstancedMesh ? (m as unknown as THREE.InstancedMesh).count : 1); } });
   return {
     group, demoProps, route, shadowCasters: casters,
     anchors: { hostPlant: { x: hx - 2, y: ground(hx, hz) + 30, z: hz }, nectar: { x: nectar.x, y: ground(nectar.x, nectar.z) + 18, z: nectar.z }, insect: { x: insect.x, y: ground(insect.x, insect.z) + 3, z: insect.z } },
+    styleState: () => ({ built: !!hd, on: !!hd && hd.group.visible, shafts: !!hd && hd.group.visible && hd.shafts.visible, dust: hd ? hd.dust.geometry.attributes.position.count : 0, extra_instances: hd ? hd.group.children.reduce((a, c) => a + ((c as THREE.InstancedMesh).isInstancedMesh ? (c as THREE.InstancedMesh).count : 0), 0) : 0 }),
+    setStyle: (on) => { if (on && !hd) { hd = buildHd(); group.add(hd.group); } if (hd) hd.group.visible = on; },
+    setAtmosphere: (light, sunDir, sunColor, clock) => {
+      if (!hd || !hd.group.visible) return;
+      const k = light === 'day' ? 1 : light === 'civil_twilight' ? 0.7 : 0;
+      hd.shafts.visible = k > 0; hd.shaftMat.opacity = 0.085 * k; hd.shaftMat.color.copy(sunColor);
+      for (const m of hd.shafts.children) m.quaternion.setFromUnitVectors(UP, sunDir);
+      hd.dustMat.opacity = light === 'night' ? 0.12 : 0.42; hd.dustMat.color.copy(sunColor).lerp(WHITE, 0.5);
+      hd.dust.position.set(Math.sin(clock * 0.07) * 3, Math.sin(clock * 0.11) * 1.2, Math.cos(clock * 0.05) * 3); // slow drift (display clock; frozen while paused)
+    },
     setQuality: (q) => { const k = q === 'high' ? 1 : q === 'medium' ? 0.6 : 0.3; for (const s of scalable) s.mesh.count = Math.max(1, Math.floor(s.full * k)); for (const c of casters) c.castShadow = q === 'high'; },
     triangles: () => tris,
   };
