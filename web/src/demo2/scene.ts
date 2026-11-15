@@ -133,8 +133,18 @@ export function buildScene(o: SceneOptions): Scene2 {
   group.add(new THREE.Mesh(strip(xs.map((x) => ({ x, z: BLOCK.z0 })), (p) => (p.x - BLOCK.x0) / W), sideMat));
   group.add(new THREE.Mesh(strip(zs.map((z) => ({ x: BLOCK.x0, z })), (p) => (p.z - BLOCK.z0) / W), sideMat));
   group.add(new THREE.Mesh(strip(zs.map((z) => ({ x: BLOCK.x1, z })), (p) => (p.z - BLOCK.z0) / W), sideMat));
-  // display stand (decoration): a soft dark table under the block, so a low camera never sees an empty void
-  group.add(new THREE.Mesh(new THREE.CircleGeometry(520, 48).rotateX(-Math.PI / 2).translate((BLOCK.x0 + BLOCK.x1) / 2, BLOCK.bottom - 0.4, (BLOCK.z0 + BLOCK.z1) / 2), new THREE.MeshBasicMaterial({ color: col('#2b241d') })));
+  // the soil wall continues below and beside the block (decoration): a tall or wide view never shows an empty void
+  { const pos: number[] = [], colr: number[] = [], idx: number[] = [], X0 = BLOCK.x0 - 900, X1 = BLOCK.x1 + 900, Y0 = BLOCK.bottom - 700, stops: [number, string][] = [[FACE_TOP, '#4b3525'], [-2, '#5e422c'], [-12, '#7b5839'], [-26, '#93714c'], [BLOCK.bottom, '#9c7d59'], [Y0, '#6f5539']];
+    const cAt = (y: number) => { for (let i = 0; i < stops.length - 1; i++) if (y <= stops[i][0] && y >= stops[i + 1][0]) return col(stops[i][1]).lerp(col(stops[i + 1][1]), (stops[i][0] - y) / (stops[i][0] - stops[i + 1][0])); return col(stops[0][1]); };
+    const rect = (xa: number, xb: number, ys: number[], topA: number, topB: number) => { ys.forEach((y, i) => { const b0 = pos.length / 3, ya = i === 0 ? topA : y, yb = i === 0 ? topB : y, c = cAt(y); pos.push(xa, ya, faceZ - 0.03, xb, yb, faceZ - 0.03); colr.push(c.r, c.g, c.b, c.r, c.g, c.b); if (i > 0) idx.push(b0 - 2, b0, b0 - 1, b0 - 1, b0, b0 + 1); }); };
+    const side = [0, -2, -12, -26, BLOCK.bottom];
+    rect(X0, BLOCK.x0, side, ground(BLOCK.x0, faceZ), ground(BLOCK.x0, faceZ)); rect(BLOCK.x1, X1, side, ground(BLOCK.x1, faceZ), ground(BLOCK.x1, faceZ)); rect(X0, X1, [BLOCK.bottom, BLOCK.bottom - 60, Y0], BLOCK.bottom, BLOCK.bottom);
+    const uv: number[] = []; for (let i = 0; i < pos.length; i += 3) uv.push(pos[i] / 36, pos[i + 1] / 36);
+    const eg = new THREE.BufferGeometry(); eg.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); eg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); eg.setAttribute('color', new THREE.Float32BufferAttribute(colr, 3)); eg.setIndex(idx); eg.computeVertexNormals();
+    const wallTex = soilGrain(rnd, '#e9dccb', 1800); wallTex.repeat.set(1, 1);
+    const em = new THREE.Mesh(eg, lam({ map: wallTex, vertexColors: true, side: THREE.DoubleSide })); group.add(em); }
+  // display stand (decoration): a table under and behind the block (never in front of the soil wall)
+  group.add(new THREE.Mesh(new THREE.PlaneGeometry(2400, 1400).rotateX(-Math.PI / 2).translate((BLOCK.x0 + BLOCK.x1) / 2, BLOCK.bottom - 0.4, faceZ - 0.1 - 700), new THREE.MeshLambertMaterial({ color: col('#8a8460') })));
 
   // ---- cavity: back wall + walls (marching squares over the same sdf the routing and the mask use) ----
   const B = g.bounds(1);

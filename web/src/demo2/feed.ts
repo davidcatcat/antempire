@@ -12,11 +12,10 @@
  * Engine roster of the opt-in candidate world 'p0a2-colony' (PR #263, docs/colony-candidate-world.md): its frame is a
  * P0-A2 frame that also carries `colony` with queens / majors / eggs / pupae as ENGINE individuals (static: none of them
  * eats, lays, develops or moves in the engine; each lists what is 尚未模擬). When `frame.colony` is present those castes
- * come from the engine (ENGINE_CASTE_READERS) and the demo provider stops supplying them; without it (plain P0-A2, or a
- * Worker build that does not know the kind) they stay 「尚未模擬」 / demo. The colony part is read structurally (this
- * module does not depend on the protocol file of that PR).
+ * come from the engine (ENGINE_CASTE_READERS, protocol guard isP0a2ColonyFrame) and the demo provider stops supplying
+ * them; without it (plain P0-A2, `?world=p0a2`) they stay 「尚未模擬」 / demo.
  */
-import type { P0a2FrameMsg } from '../experimental/worker-protocol.ts';
+import { isP0a2ColonyFrame, type P0a2ColonyMsg, type P0a2FrameMsg } from '../experimental/worker-protocol.ts';
 import { hash32 } from '../game-model.ts';
 
 export type Caste = 'minor' | 'major' | 'queen' | 'egg' | 'larva' | 'pupa';
@@ -40,14 +39,10 @@ export interface Individual {
 }
 export interface ColonyFeed { readonly source: DataSource; readonly label_zh: string; individuals(): Individual[] }
 
-/** the fields of the candidate world's colony roster this page reads (subset of P0a2ColonyMsg, PR #263) */
-export interface ColonyItem { id: string; state?: string; alive?: boolean; not_simulated?: string[] }
-export interface ColonyPart { world_kind: string; status_zh?: string; queens: ColonyItem[]; majors: ColonyItem[]; eggs: ColonyItem[]; pupae: ColonyItem[]; not_simulated_fields?: Record<string, string>; assumptions?: Record<string, unknown> }
-/** the colony roster of a frame, or null (plain P0-A2 world) */
-export function colonyOf(f: P0a2FrameMsg): ColonyPart | null {
-  const c = (f as unknown as { colony?: ColonyPart }).colony;
-  return c && c.world_kind === 'p0a2-colony' && Array.isArray(c.queens) && Array.isArray(c.majors) && Array.isArray(c.eggs) && Array.isArray(c.pupae) ? c : null;
-}
+/** the colony roster of a frame (candidate world 'p0a2-colony'), or null (plain P0-A2 world) */
+export function colonyOf(f: P0a2FrameMsg): P0a2ColonyMsg | null { return isP0a2ColonyFrame(f) ? f.colony : null; }
+/** label of an engine individual of the candidate world: it exists in the engine; its physiology and behaviour do not */
+export const COLONY_ENGINE_NOTE = '引擎個體（候選世界；數量為情境假設）｜生理與行為尚未模擬';
 const STATIC_STATE = '在巢內（引擎；不進食、不產卵、不發育、不移動：尚未模擬）';
 const fromColony = (f: P0a2FrameMsg, key: 'queens' | 'majors' | 'eggs' | 'pupae', caste: Caste): Individual[] | null => {
   const c = colonyOf(f); if (!c) return null;

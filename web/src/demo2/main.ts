@@ -69,15 +69,10 @@ const sunTarget = new THREE.Object3D(); sunTarget.position.set(60, 0, -50);
 
 // ---------- world / display state ----------
 const client = new ExperimentWorkerClient();
-/** the opt-in candidate world with queens / majors / eggs / pupae as engine individuals (PR #263). Used when this
- *  Worker build knows it (feature check below), else the plain P0-A2 world. `?world=p0a2` forces the plain world. */
-const COLONY_KIND = 'p0a2-colony' as WorldKind;
-let worldKind: WorldKind = 'p0a2';
+/** New Demo worlds are the candidate world 'p0a2-colony' (queens / majors / eggs / pupae as ENGINE individuals, static;
+ *  docs/colony-candidate-world.md). `?world=p0a2` starts the plain P0-A2 world (those castes then 尚未模擬 / demo). */
+const worldKind: WorldKind = q.get('world') === 'p0a2' ? 'p0a2' : 'p0a2-colony';
 const PROBE_ID = 'exp-runtime-probe';
-async function detectWorldKind(): Promise<void> {
-  if (q.get('world') === 'p0a2') return;
-  try { const r = await client.init(PROBE_ID, 0, COLONY_KIND); if (r.type !== 'error') worldKind = COLONY_KIND; } catch { /* the plain world stays */ }
-}
 const isDemoWorld = (engine_version: string) => engine_version.startsWith('experiment-p0a2-');
 let session: ExperimentSession | null = null, tempMode = q.has('seed');
 let frame: P0a2FrameMsg | null = null, pacing: PacingMsg | null = null, frameAt = 0, lastT: number | null = null, tNow = 0, followedView: unknown = null;
@@ -140,7 +135,7 @@ function skyTint(bg: number) {
   if (bg === skyNow) return; skyNow = bg;
   if (!skyCanvas) { skyCanvas = document.createElement('canvas'); skyCanvas.width = 4; skyCanvas.height = 256; skyTex = new THREE.CanvasTexture(skyCanvas); skyTex.colorSpace = THREE.SRGBColorSpace; scene.background = skyTex; }
   const g2 = skyCanvas.getContext('2d')!, c = new THREE.Color(bg), hex = (k: THREE.Color) => `#${k.getHexString()}`, gr = g2.createLinearGradient(0, 0, 0, 256);
-  gr.addColorStop(0, hex(c.clone().multiplyScalar(0.86))); gr.addColorStop(0.42, hex(c.clone().lerp(new THREE.Color(0xffffff), 0.25))); gr.addColorStop(0.6, hex(c.clone().lerp(new THREE.Color(0x3a322a), 0.75))); gr.addColorStop(1, '#241e18');
+  gr.addColorStop(0, hex(c.clone().multiplyScalar(0.86))); gr.addColorStop(0.42, hex(c.clone().lerp(new THREE.Color(0xffffff), 0.25))); gr.addColorStop(0.6, hex(c.clone().lerp(new THREE.Color(0x7d7a58), 0.7))); gr.addColorStop(1, hex(c.clone().lerp(new THREE.Color(0x5f5a40), 0.85)));
   g2.fillStyle = gr; g2.fillRect(0, 0, 4, 256); skyTex.needsUpdate = true;
 }
 function applyQuality(qn: Quality) {
@@ -156,9 +151,12 @@ interface Cam { pos: THREE.Vector3; tgt: THREE.Vector3 }
 function viewCam(v: View): Cam {
   const aspect = innerWidth / Math.max(1, innerHeight), hfov = 2 * Math.atan(Math.tan((camera.fov * Math.PI) / 360) * aspect), fit = (halfW: number) => halfW / Math.tan(hfov / 2);
   const mk = (tx: number, ty: number, tz: number, el: number, az: number, dist: number): Cam => { const e = (el * Math.PI) / 180, a = (az * Math.PI) / 180; return { tgt: new THREE.Vector3(tx, ty, tz), pos: new THREE.Vector3(tx + Math.sin(a) * Math.cos(e) * dist, ty + Math.sin(e) * dist, tz + Math.cos(a) * Math.cos(e) * dist) }; };
-  if (v === 'surface') return narrow() ? mk(22, 0, -14, 50, -10, Math.min(260, fit(30))) : mk(48, 0, -26, 46, -12, Math.min(260, fit(84)));
-  if (v === 'under') return narrow() ? mk(5, -19, 0, 4, 0, Math.min(230, fit(24))) : mk(5, -17, 0, 3, 0, Math.min(260, fit(47)));
-  return narrow() ? mk(5, -15, 0, 12, -4, Math.min(240, fit(26))) : mk(8, -10, 0, 14, -7, Math.min(260, fit(50)));
+  // portrait: 完整剖面 and 地下 fit the whole nest (its bounds from the layout) into the width; the soil wall extends
+  // far below and beside the block (scene.ts), so no empty void shows under it
+  const nb = graph.bounds(0), cx = (nb.x0 + nb.x1) / 2, half = (nb.x1 - nb.x0) / 2 + 1, tall = aspect < 1, vh = (d: number) => d * Math.tan((camera.fov * Math.PI) / 360);
+  if (v === 'surface') return tall ? mk(22, 0, -14, 50, -10, Math.min(300, fit(34))) : mk(48, 0, -26, 46, -12, Math.min(260, fit(84)));
+  if (v === 'under') { const d = Math.min(640, fit(tall ? half : 47)); return tall ? mk(cx, -16 + vh(d) * 0.06, 0, 3, 0, d) : mk(5, -17, 0, 3, 0, d); }
+  { const d = Math.min(640, fit(tall ? half : 50)); return tall ? mk(cx, -14 + vh(d) * 0.26, 0, 12, -3, d) : mk(8, -10, 0, 14, -7, d); }
 }
 let tween: { from: Cam; to: Cam; t: number; dur: number } | null = null, userBusy = false, followAdjust = 0;
 function goView(v: View, instant = false) {
@@ -190,7 +188,7 @@ function stepCamera(dt: number) {
     }
   }
   // keep the view on the block
-  controls.target.x = Math.max(BLOCK.x0, Math.min(BLOCK.x1, controls.target.x)); controls.target.z = Math.max(BLOCK.z0, Math.min(BLOCK.z1 + 2, controls.target.z)); controls.target.y = Math.max(BLOCK.bottom, Math.min(40, controls.target.y));
+  controls.target.x = Math.max(BLOCK.x0, Math.min(BLOCK.x1, controls.target.x)); controls.target.z = Math.max(BLOCK.z0, Math.min(BLOCK.z1 + 2, controls.target.z)); controls.target.y = Math.max(BLOCK.bottom - 120, Math.min(40, controls.target.y));
   controls.update();
 }
 let followRealm: 'surface' | 'nest' | null = null;
@@ -305,7 +303,9 @@ function updateLabels() {
   if (!frame || !rost || !world) return;
   const w = ui.canvas.clientWidth, h = ui.canvas.clientHeight, items: { key: string; p: P3; text: string; cls: string; face: boolean }[] = [];
   const ns = (c: 'queen' | 'major' | 'egg' | 'pupa') => rost!.missing.includes(c), n = (c: 'queen' | 'major' | 'egg' | 'pupa') => rost!.counts[c];
-  const part = (c: 'queen' | 'egg' | 'pupa') => ns(c) ? (mode === 'demo' ? `${CASTE_LABEL[c]} ${n(c).demo}（示範資料）` : `${CASTE_LABEL[c]}：尚未模擬`) : `${CASTE_LABEL[c]} ${n(c).engine}（引擎）`;
+  // an engine individual of the candidate world exists in the engine, but its physiology / behaviour is 尚未模擬
+  const eng = (c: 'queen' | 'major' | 'egg' | 'pupa') => `${CASTE_LABEL[c]} ${n(c).engine}（引擎個體；生理與行為尚未模擬）`;
+  const part = (c: 'queen' | 'egg' | 'pupa') => ns(c) ? (mode === 'demo' ? `${CASTE_LABEL[c]} ${n(c).demo}（示範資料）` : `${CASTE_LABEL[c]}：尚未模擬`) : eng(c);
   for (const c of graph.layout.chambers) {
     const here = drawn.filter((a) => a.place === c.id).length; let text = `${c.label_zh}${here ? ` ${here}` : ''}`, cls = '';
     if (c.role === 'brood') text += `｜幼蟲 ${rost.counts.larva.engine}（引擎）`;
@@ -313,7 +313,7 @@ function updateLabels() {
     if (c.role === 'pupa') { text += `｜${part('pupa')}`; cls = ns('pupa') ? (mode === 'demo' ? 'demo' : 'ns') : ''; }
     items.push({ key: `ch-${c.id}`, p: { x: (c.x0 + c.x1) / 2, y: c.floor + c.height + 0.9, z: graph.faceZ }, text, cls, face: true });
   }
-  items.push({ key: 'face', p: { x: -24, y: -7, z: graph.faceZ }, text: `巢體幾何＝展示假設${ns('major') ? (mode === 'demo' ? `｜大工蟻 ${n('major').demo}（示範資料）` : '｜大工蟻：尚未模擬') : ''}`, cls: ns('major') && mode !== 'demo' ? 'ns' : mode === 'demo' ? 'demo' : '', face: true });
+  items.push({ key: 'face', p: { x: -24, y: -7, z: graph.faceZ }, text: `巢體幾何＝展示假設${ns('major') ? (mode === 'demo' ? `｜大工蟻 ${n('major').demo}（示範資料）` : '｜大工蟻：尚未模擬') : `｜${eng('major')}`}`, cls: ns('major') && mode !== 'demo' ? 'ns' : mode === 'demo' ? 'demo' : '', face: true });
   items.push({ key: 'entrance', p: { x: 0, y: ground(0, 0) + 3.2, z: 0 }, text: '巢口', cls: '', face: false });
   items.push({ key: 'host', p: world.anchors.hostPlant, text: `蜜露來源（引擎）存量 ${frame.source.stock_portions.toFixed(1)} 份｜寄主植物外形＝裝飾`, cls: '', face: false });
   if (mode === 'demo') { items.push({ key: 'nectar', p: world.anchors.nectar, text: DEMO_FOOD_PROPS[0].label_zh, cls: 'demo', face: false }); items.push({ key: 'insect', p: world.anchors.insect, text: DEMO_FOOD_PROPS[1].label_zh, cls: 'demo', face: false }); }
@@ -326,10 +326,11 @@ function updateLabels() {
   for (const it of items) {
     let el = labelEls.get(it.key); if (!el) { el = document.createElement('div'); ui.labels.appendChild(el); labelEls.set(it.key, el); }
     seen.add(it.key);
-    const s = V.set(it.p.x, it.p.y, it.p.z).project(camera), on = s.z < 1 && Math.abs(s.x) < 1.05 && Math.abs(s.y) < 1.05 && (!it.face || (frontal > 0.45 && dist < 330)) && (it.cls === 'pin' || dist < 420);
+    const s = V.set(it.p.x, it.p.y, it.p.z).project(camera), on = s.z < 1 && Math.abs(s.x) < 1.05 && Math.abs(s.y) < 1.05 && (!it.face || (frontal > 0.45 && dist < 700)) && (it.cls === 'pin' || dist < 700);
     el.className = `lbl ${it.cls}`; if (el.textContent !== it.text) el.textContent = it.text;
     el.hidden = !on; if (!on) continue;
-    el.style.transform = `translate(${((s.x + 1) / 2) * w}px, ${((1 - s.y) / 2) * h}px) translate(-50%, -100%)`;
+    const half = Math.min(el.offsetWidth / 2, w / 2 - 2), lx = it.cls === 'pin' ? ((s.x + 1) / 2) * w : Math.max(half + 2, Math.min(w - half - 2, ((s.x + 1) / 2) * w)); // labels stay inside the screen
+    el.style.transform = `translate(${lx}px, ${((1 - s.y) / 2) * h}px) translate(-50%, -100%)`;
   }
   for (const [k, el] of labelEls) if (!seen.has(k)) el.hidden = true;
 }
@@ -349,7 +350,7 @@ function renderStats() {
   if (!frame || !rost) return;
   const by = new Map<string, number>(); for (const w of frame.workers) by.set(w.state, (by.get(w.state) ?? 0) + 1);
   const places = new Map<string, number>(); for (const a of drawn) { const k = a.realm === 'surface' ? a.place : a.place === 'tunnel' ? '通道' : graph.chamber(a.place).label_zh; places.set(k, (places.get(k) ?? 0) + 1); }
-  const row = (c: typeof CASTES[number]) => { const k = rost!.counts[c], miss = rost!.missing.includes(c); return `<tr><td>${CASTE_LABEL[c]}</td><td class="n">${miss ? '<span class="tag none">尚未模擬</span>' : k.engine}</td><td class="n">${mode === 'demo' ? k.demo : '—'}</td></tr>`; };
+  const row = (c: typeof CASTES[number]) => { const k = rost!.counts[c], miss = rost!.missing.includes(c); return `<tr><td>${CASTE_LABEL[c]}${!miss && colonyOf(frame!) && c !== 'minor' && c !== 'larva' ? '<br><span class="muted">候選世界・數量為假設；生理與行為尚未模擬</span>' : ''}</td><td class="n">${miss ? '<span class="tag none">尚未模擬</span>' : k.engine}</td><td class="n">${mode === 'demo' ? k.demo : '—'}</td></tr>`; };
   const st = stage.stats;
   ui.stats.innerHTML = `<h2>生命階段與階級</h2><table><tr><th></th><th class="n">引擎</th><th class="n">示範資料</th></tr>${CASTES.map(row).join('')}</table>
 <div class="muted">${mode === 'demo' ? `${DEMO_BADGE}：示範個體只在本模式顯示，${DEMO_ROUTINE_LABEL}；不存檔、不影響引擎。` : `${NATURAL_BADGE}：引擎沒有的階級不畫，巢室標示「尚未模擬」。`}</div>
@@ -399,7 +400,7 @@ function renderCard() {
     const d = st.ind, ch = st.chamber ? graph.chamber(st.chamber).label_zh : '';
     html = d.source === 'engine' && d.caste === 'larva'
       ? `<b>${esc(d.id)}</b>　<span class="tag engine">引擎個體</span>${CASTE_LABEL[d.caste]}<br>腸道量：${((d.fill ?? 0) * 100).toFixed(0)}%（引擎）${stage.fedNow(d.id, tNow) ? '　正在被餵食（引擎事件；畫面演出）' : ''}<br>位置：${esc(ch)}（展示假設）<br><span class="muted">幼蟲只被餵食與代謝；發育、化蛹、羽化尚未模擬</span>`
-      : d.notes ? `<b>${esc(d.id)}</b>　<span class="tag engine">引擎個體</span>${CASTE_LABEL[d.caste]}<br>狀態：${esc(d.state ?? '')}<br>位置：${esc(ch)}（展示假設；引擎沒有巢內座標）<br><span class="muted">此個體尚未模擬的項目：${d.notes.map(esc).join('；') || '—'}｜原地微動作只是畫面</span>`
+      : d.notes ? `<b>${esc(d.id)}</b>　<span class="tag engine">引擎個體</span><span class="tag assume">候選世界・數量為情境假設</span>${CASTE_LABEL[d.caste]}<br>狀態：${esc(d.state ?? '')}<br>位置：${esc(ch)}（展示假設；引擎沒有巢內座標）<br>此個體<b>尚未模擬</b>的項目（${d.notes.length}）：<ul style="margin:2px 0;padding-left:18px">${d.notes.map((x) => `<li>${esc(x)}</li>`).join('')}</ul><span class="muted">原地微動作只是畫面</span>`
       : `<b>${esc(d.id)}</b>　<span class="tag demo">示範資料</span>${CASTE_LABEL[d.caste]}<br>動作：${esc(d.state ?? '')}<br>位置：${esc(ch)}（展示假設）<br><span class="muted">${DEMO_BADGE}：引擎尚未模擬這個階級；此個體不存檔、不影響任何引擎個體</span>`;
   } else { ui.card.hidden = true; return; }
   const canFollow = !!(a && w);
@@ -451,7 +452,8 @@ async function afterWorldReady(startAt: number | null) {
 }
 function renderWorldInfo() {
   const cur = session?.current;
-  ui.worldInfo.innerHTML = frame ? `${colonyOf(frame) ? '候選世界 p0a2-colony：蟻后、大工蟻、卵、蛹是引擎個體（靜態；不進食、不產卵、不發育、不移動）' : `P0-A2 世界：只有小工蟻與幼蟲${worldKind === 'p0a2' && q.get('world') !== 'p0a2' ? '（這個 Worker 版本沒有候選世界 p0a2-colony）' : ''}`}<br>世界 ${esc(frame.world_id)}｜種子 ${frame.seed}｜規則指紋 ${esc(frame.rules_fingerprint.slice(0, 12))}…<br>${tempMode ? '臨時世界（網址帶 seed：不存檔）' : cur ? `「${esc(cur.name)}」｜${cur.writer ? '本分頁可存檔' : esc(cur.readOnlyReason ?? '唯讀')}｜${esc(cur.verification)}` : '未連結存檔'}` : '';
+  const col = frame ? colonyOf(frame) : null;
+  ui.worldInfo.innerHTML = frame ? `${col ? `候選世界 p0a2-colony（${esc(col.status_zh)}）：蟻后 ${col.queens.length}、大工蟻 ${col.majors.length}、卵 ${col.eggs.length}、蛹 ${col.pupae.length} 是引擎個體，數量全部是情境假設（情境 ${esc(col.scenario.id)}）；牠們在引擎中不進食、不產卵、不發育、不移動（尚未模擬）` : 'P0-A2 世界：只有小工蟻與幼蟲（蟻后、大工蟻、卵、蛹尚未模擬）'}<br>世界 ${esc(frame.world_id)}｜種子 ${frame.seed}｜規則指紋 ${esc(frame.rules_fingerprint.slice(0, 12))}…<br>${tempMode ? '臨時世界（網址帶 seed：不存檔）' : cur ? `「${esc(cur.name)}」｜${cur.writer ? '本分頁可存檔' : esc(cur.readOnlyReason ?? '唯讀')}｜${esc(cur.verification)}` : '未連結存檔'}` : '';
   ui.saveBtn.disabled = tempMode || !cur?.writer;
 }
 function renderSaveStatus() {
@@ -501,7 +503,7 @@ async function main() {
   backend = `WebGL 2（three r${THREE.REVISION} WebGLRenderer）｜WebGPU：此瀏覽器${'gpu' in navigator ? '有提供' : '未提供'}，本頁目前不使用（見 docs/demo2.md）`;
   ui.canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); toast('繪圖環境遺失（WebGL context lost）：請重新整理頁面；模擬與存檔不受影響', 10000); });
   controls = new OrbitControls(camera, ui.canvas);
-  controls.enableDamping = true; controls.dampingFactor = 0.1; controls.screenSpacePanning = true; controls.minDistance = 4; controls.maxDistance = 420;
+  controls.enableDamping = true; controls.dampingFactor = 0.1; controls.screenSpacePanning = true; controls.minDistance = 4; controls.maxDistance = 700;
   controls.minPolarAngle = 0.12; controls.maxPolarAngle = Math.PI * 0.53; controls.minAzimuthAngle = -1.15; controls.maxAzimuthAngle = 1.15; controls.zoomToCursor = true;
   controls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE }; controls.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_ROTATE };
   controls.addEventListener('start', () => { userBusy = true; tween = null; }); controls.addEventListener('end', () => { userBusy = false; });
@@ -520,7 +522,6 @@ async function main() {
   ui.speed.innerHTML = SPEEDS.map((s) => `<option value="${s}">${s}×</option>`).join(''); ui.seedIn.value = String(DEFAULT_SEED);
   goView('full', true); requestAnimationFrame((t) => { lastNow = t; requestAnimationFrame(tick); });
 
-  await detectWorldKind();
   if (tempMode) { // ?seed=N: a temporary, unsaved world (tests and quick looks)
     const seed = Number(q.get('seed')), r = await client.init(`exp-demo2-${seed}`, seed, worldKind);
     if (r.type === 'error') { fatal(`無法建立實驗世界：${esc(r.code)} ${esc(r.message)}`); return; }
@@ -585,6 +586,8 @@ const hooks: Record<string, unknown> = {
   select: (id: string | null) => select(id), follow: (id: string | null) => setFollow(id), setRunning: (on: boolean) => setRunning(on), setSpeed: (s: number) => setSpeed(s),
   setView: (v: View, instant = true) => goView(v, instant), setMode: (m: Mode) => setMode(m), setQuality: (k: Quality) => applyQuality(k), openSide: (t: string | null) => openSide(t),
   setRender: (on: boolean) => { renderOn = on; },
+  /** do all chamber ends and tops project inside the canvas (below the top bar)? */
+  nestOnScreen: () => { const w = ui.canvas.clientWidth, h = ui.canvas.clientHeight, top = $('top').getBoundingClientRect().bottom; let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity; for (const c of graph.layout.chambers) for (const [x, y] of [[c.x0, c.floor], [c.x1, c.floor], [(c.x0 + c.x1) / 2, c.floor + c.height]]) { const p = new THREE.Vector3(x, y, graph.faceZ).project(camera), sx = ((p.x + 1) / 2) * w, sy = ((1 - p.y) / 2) * h; x0 = Math.min(x0, sx); x1 = Math.max(x1, sx); y0 = Math.min(y0, sy); y1 = Math.max(y1, sy); } return { inside: x0 >= 0 && x1 <= w && y0 >= top && y1 <= h, box: [Math.round(x0), Math.round(y0), Math.round(x1), Math.round(y1)], w, h, top: Math.round(top) }; },
   /** scheduling only: run the world to t (paused pages then show exactly the frame's instant) */
   stepUntil: async (t: number) => { await client.stepUntil(t); },
   /** the drawn workers for the latest frame at ITS instant (a paused page shows exactly this; no wait for a repaint) */

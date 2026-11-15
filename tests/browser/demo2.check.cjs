@@ -31,7 +31,7 @@ const { chromium, devices } = require('playwright');
   const browser = await chromium.launch();
   const ready = (page) => page.waitForFunction(() => window.__demo2 && window.__demo2.ready && window.__demo2.state().ants > 0, null, { timeout: 120000 });
   const S = (page) => page.evaluate(() => window.__demo2.state());
-  const shot = async (page, name, q = 70) => { const f = path.join(out, `${name}.jpg`); await page.screenshot({ path: f, type: 'jpeg', quality: q }); files.push(f); };
+  const shot = async (page, name, q = name.includes('pixel7') ? 55 : 70) => { const f = path.join(out, `${name}.jpg`); await page.screenshot({ path: f, type: 'jpeg', quality: q }); files.push(f); };
   const profiles = [['desktop', { viewport: { width: 1440, height: 900 } }], ['pixel7', { ...devices['Pixel 7'] }]];
   for (const [tag, opts] of profiles) {
     const mobile = tag === 'pixel7';
@@ -51,8 +51,25 @@ const { chromium, devices } = require('playwright');
     const col = await page.evaluate(() => { const c = window.__demo2.frame().colony; return c ? { q: c.queens.length, m: c.majors.length, e: c.eggs.length, p: c.pupae.length } : null; });
     report[`${tag}_world`] = col ? { kind: 'p0a2-colony', ...col } : { kind: 'p0a2' };
     if (!col) check(st.queens === 0 && st.majors === 0 && st.eggs === 0 && st.pupae === 0 && /蟻后：尚未模擬/.test(txt.labels) && /蛹：尚未模擬/.test(txt.labels) && /大工蟻：尚未模擬/.test(txt.labels) && txt.labels.includes('展示假設'), `${tag}: natural mode draws no queen / major / egg / pupa and labels them 尚未模擬`);
-    else check(st.queens === col.q && st.majors === col.m && st.eggs === col.e && st.pupae === col.p && /蟻后 \d+（引擎）/.test(txt.labels) && !/示範資料/.test(txt.labels) && txt.labels.includes('展示假設'), `${tag}: natural mode draws the candidate world's ENGINE queens / majors / eggs / pupae (${JSON.stringify(col)}), labelled 引擎`);
+    else check(st.queens === col.q && st.majors === col.m && st.eggs === col.e && st.pupae === col.p && /蟻后 \d+（引擎個體；生理與行為尚未模擬）/.test(txt.labels) && /大工蟻（大頭） \d+（引擎個體；生理與行為尚未模擬）/.test(txt.labels) && !/蟻后：尚未模擬/.test(txt.labels) && !/示範資料/.test(txt.labels) && txt.labels.includes('展示假設'), `${tag}: natural mode draws the candidate world's ENGINE queens / majors / eggs / pupae (${JSON.stringify(col)}), labelled 引擎`);
     await shot(page, `demo2-${tag}-full`);
+    // framing: the whole nest is on screen in the default view (every chamber centre and both chamber ends project inside the canvas)
+    const framed = async () => page.evaluate(() => { const V = window.__demo2.nestOnScreen(); return V; });
+    const fr0 = await framed(); check(fr0.inside, `${tag}: 完整剖面 frames the whole nest (${JSON.stringify(fr0.box)})`);
+    if (col) { // an ENGINE queen of the candidate world: selectable, with its own 尚未模擬 list and the assumption label
+      const qid = await page.evaluate(() => window.__demo2.frame().colony.queens[0].id);
+      const qp = await page.evaluate((id) => window.__demo2.screenOf(id), qid);
+      if (mobile) await page.touchscreen.tap(qp.x, qp.y); else await page.mouse.click(qp.x, qp.y);
+      await page.waitForTimeout(500);
+      const qc = await page.evaluate(() => ({ sel: window.__demo2.state().selected, card: document.querySelector('#card').hidden ? '' : document.querySelector('#card').textContent, n: document.querySelectorAll('#card li').length, ns: window.__demo2.frame().colony.queens[0].not_simulated.length }));
+      check(qc.card.includes('引擎個體') && qc.card.includes('情境假設') && qc.card.includes('尚未模擬') && qc.n > 0 && !qc.card.includes('示範資料') && /^(q|m|e|p)\d+/.test(qc.sel || ''), `${tag}: ${mobile ? 'tap' : 'click'} on an engine queen selects a colony individual (${qc.sel}) and its card lists what is 尚未模擬 (${qc.n} items)`);
+      await page.evaluate((id) => window.__demo2.select(id), qid); await page.waitForTimeout(300);
+      const q2 = await page.evaluate(() => ({ n: document.querySelectorAll('#card li').length, ns: window.__demo2.frame().colony.queens[0].not_simulated.length, t: document.querySelector('#card').textContent }));
+      check(q2.n === q2.ns && q2.t.includes('蟻后'), `${tag}: the queen's card shows exactly its engine not_simulated list (${q2.n} = ${q2.ns})`);
+      if (!mobile) { await page.evaluate(() => window.__demo2.view([4, -27.5, 26], [1, -28.6, 0])); await page.waitForTimeout(900); }
+      await shot(page, `demo2-${tag}-engine-queen`);
+      await page.evaluate(() => { window.__demo2.select(null); window.__demo2.setView('full'); }); await page.waitForTimeout(300);
+    }
 
     // views
     const cam0 = st.cam;
@@ -60,8 +77,10 @@ const { chromium, devices } = require('playwright');
     check(vs.view === 'surface' && vs.cam[1] > cam0[1] + 20 && await page.getAttribute('#viewSurface', 'aria-pressed') === 'true', `${tag}: 地表 view (camera rises to ${vs.cam[1].toFixed(0)} cm)`);
     await shot(page, `demo2-${tag}-surface`);
     await page.click('#viewUnder'); await page.waitForTimeout(1600); const vu = await S(page);
-    check(vu.view === 'under' && vu.target[1] < -10 && Math.abs(vu.cam[1] - vu.target[1]) < 25, `${tag}: 地下 view (level, target y ${vu.target[1].toFixed(0)})`);
+    check(vu.view === 'under' && (mobile || vu.target[1] < -10) && Math.abs(vu.cam[1] - vu.target[1]) < 40, // portrait: the target is set by the fit-to-nest framing (checked below)
+      `${tag}: 地下 view (level, target y ${vu.target[1].toFixed(0)})`);
     await shot(page, `demo2-${tag}-underground`);
+    const fr1 = await framed(); check(fr1.inside, `${tag}: 地下 frames the whole nest (${JSON.stringify(fr1.box)})`);
 
     // 展示情境 toggle
     await page.click('#modeBtn'); await page.waitForTimeout(900);
@@ -156,16 +175,30 @@ const { chromium, devices } = require('playwright');
     await page.waitForTimeout(2500);
     await page.evaluate(() => window.__demo2.setRunning(false)); await page.waitForTimeout(400);
     const a = await S(page), saved = await page.evaluate(() => window.__demo2.save());
+    const kindA = await page.evaluate(() => !!window.__demo2.frame().colony);
+    check(kindA, 'save: a new Demo world is the candidate world p0a2-colony by default');
     check(!a.temp && a.seed === 20261113 && saved.ok, `save: a new saved world (seed ${a.seed}) was stored with the SAVE-2 session (${JSON.stringify(saved)})`);
     await page.evaluate(() => window.__demo2.setMode('demo'));
     await page.goto(new URL('demo2.html?quality=low&autostart=0', base).href); await ready(page);
     const b = await S(page);
-    check(b.world_id === a.world_id && b.seed === a.seed && Math.abs(b.frame_t - a.frame_t) < 1e-9 && b.mode === 'natural', `save: reload continues the same world at the saved instant (${a.frame_t} s → ${b.frame_t} s); the 展示情境 toggle is not saved`);
+    check(b.world_id === a.world_id && b.seed === a.seed && Math.abs(b.frame_t - a.frame_t) < 1e-9 && b.mode === 'natural' && b.queens === a.queens && b.queens >= 2 && await page.evaluate(() => !!window.__demo2.frame().colony), `save: reload re-opens the saved colony world at the saved instant (${a.frame_t} s → ${b.frame_t} s); the 展示情境 toggle is not saved`);
     await page.evaluate(() => window.__demo2.setRunning(true)); await page.waitForTimeout(1500);
     const c = await S(page); check(c.frame_t > b.frame_t && c.ants === 30, `save: the loaded world runs on (${c.frame_t.toFixed(1)} s)`);
     await page.click('#sideBtn'); await page.click('#tabs button[data-tab="saves"]'); await page.waitForTimeout(800);
     const list = await page.textContent('#saveList'); check(list.includes('Demo 2') && list.includes('20261113'), 'save: the save list shows the world');
     await shot(page, 'demo2-desktop-saves');
+    await ctx.close();
+  }
+  // ?world=p0a2: the plain world still works — those castes are 尚未模擬 in natural mode and labelled demo data in 展示情境
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } }), page = await ctx.newPage();
+    page.on('pageerror', (e) => errors.push(`p0a2: ${e.stack || e}`)); page.on('console', (m) => { if (m.type() === 'error') errors.push(`p0a2: ${m.text()}`); });
+    await page.goto(new URL('demo2.html?seed=1&world=p0a2&quality=low', base).href); await ready(page); await page.waitForTimeout(1200);
+    const a = await page.evaluate(() => ({ s: window.__demo2.state(), colony: !!window.__demo2.frame().colony, labels: document.querySelector('#labels').textContent }));
+    check(!a.colony && a.s.queens === 0 && a.s.majors === 0 && a.s.eggs === 0 && a.s.pupae === 0 && /蟻后：尚未模擬/.test(a.labels) && /大工蟻：尚未模擬/.test(a.labels), 'p0a2: plain world — natural mode draws no queen / major / egg / pupa and labels them 尚未模擬');
+    await page.click('#modeBtn'); await page.waitForTimeout(700);
+    const b = await page.evaluate(() => ({ s: window.__demo2.state(), r: window.__demo2.roster() }));
+    check(b.s.queens === 2 && b.s.majors === 4 && b.s.eggs === 36 && b.s.pupae === 9 && b.r.individuals.filter((x) => x.caste === 'queen').every((x) => x.source === 'demo'), 'p0a2: 展示情境 adds the labelled demo individuals');
     await ctx.close();
   }
   await browser.close();
