@@ -1,17 +1,20 @@
 /**
  * Demo 2 — ONE interface for "who is in the colony", two providers. Pure: no DOM, no Three.js, no engine import.
  *
- *  (a) engineFeed(frame): the individuals the experiment Worker reports (truth). Today (P0-A2): 30 minor workers and
- *      8 larvae. Nothing is added, removed or renamed.
+ *  (a) engineFeed(frame): the individuals the experiment Worker reports (truth). P0-A2: 30 minor workers and 8
+ *      larvae; the candidate world 'p0a2-colony' adds queens, majors, eggs and pupae. Nothing is added or renamed.
  *  (b) demoFeed(seed, castes): a deterministic, seeded 展示情境 roster for the castes the engine does NOT supply
  *      (queens, major workers, eggs, pupae). Every individual is labelled source: 'demo' and 示範資料; it never
  *      enters a snapshot, a save, an export or any message to the Worker (this module cannot reach the Worker).
  * roster(mode, frame, seed): natural mode = engine individuals only; demo mode = engine individuals + demo individuals
  * for the castes the engine lacks. A caste the engine supplies is NEVER duplicated by demo data.
  *
- * Forward compatibility: when a later rules PR lets the Worker frame carry queens / majors / eggs / pupae, only
- * engineFeed() changes (see ENGINE_CASTE_READERS): those castes then leave MISSING and the demo provider stops
- * supplying them.
+ * Engine roster of the opt-in candidate world 'p0a2-colony' (PR #263, docs/colony-candidate-world.md): its frame is a
+ * P0-A2 frame that also carries `colony` with queens / majors / eggs / pupae as ENGINE individuals (static: none of them
+ * eats, lays, develops or moves in the engine; each lists what is 尚未模擬). When `frame.colony` is present those castes
+ * come from the engine (ENGINE_CASTE_READERS) and the demo provider stops supplying them; without it (plain P0-A2, or a
+ * Worker build that does not know the kind) they stay 「尚未模擬」 / demo. The colony part is read structurally (this
+ * module does not depend on the protocol file of that PR).
  */
 import type { P0a2FrameMsg } from '../experimental/worker-protocol.ts';
 import { hash32 } from '../game-model.ts';
@@ -32,27 +35,41 @@ export interface Individual {
   fill: number | null;
   /** index among the individuals of the same caste and source (stable order) */
   index: number;
+  /** engine individuals of the candidate world: what the engine does NOT simulate for this individual (labels) */
+  notes?: string[];
 }
 export interface ColonyFeed { readonly source: DataSource; readonly label_zh: string; individuals(): Individual[] }
 
-type Frame = P0a2FrameMsg & Partial<Record<'queens' | 'majors' | 'eggs' | 'pupae', { id: string; state?: string }[]>>;
-/** how each caste is read from a Worker frame. P0-A2 supplies workers (all minor) and larvae; the optional arrays are
- *  read only if a future world kind sends them (they do not exist today: nothing is invented when they are absent). */
-const ENGINE_CASTE_READERS: Record<Caste, (f: Frame) => Individual[] | null> = {
-  minor: (f) => f.workers.filter((w) => (w as { caste?: string }).caste !== 'major').map((w, i) => ({ id: w.id, caste: 'minor', source: 'engine', state: w.state, fill: w.crop_fill, index: i })),
-  major: (f) => { const m = f.workers.filter((w) => (w as { caste?: string }).caste === 'major'); const extra = f.majors ?? []; return m.length + extra.length === 0 ? null : [...m.map((w) => ({ id: w.id, state: w.state })), ...extra].map((w, i) => ({ id: w.id, caste: 'major' as const, source: 'engine' as const, state: w.state ?? null, fill: null, index: i })); },
+/** the fields of the candidate world's colony roster this page reads (subset of P0a2ColonyMsg, PR #263) */
+export interface ColonyItem { id: string; state?: string; alive?: boolean; not_simulated?: string[] }
+export interface ColonyPart { world_kind: string; status_zh?: string; queens: ColonyItem[]; majors: ColonyItem[]; eggs: ColonyItem[]; pupae: ColonyItem[]; not_simulated_fields?: Record<string, string>; assumptions?: Record<string, unknown> }
+/** the colony roster of a frame, or null (plain P0-A2 world) */
+export function colonyOf(f: P0a2FrameMsg): ColonyPart | null {
+  const c = (f as unknown as { colony?: ColonyPart }).colony;
+  return c && c.world_kind === 'p0a2-colony' && Array.isArray(c.queens) && Array.isArray(c.majors) && Array.isArray(c.eggs) && Array.isArray(c.pupae) ? c : null;
+}
+const STATIC_STATE = '在巢內（引擎；不進食、不產卵、不發育、不移動：尚未模擬）';
+const fromColony = (f: P0a2FrameMsg, key: 'queens' | 'majors' | 'eggs' | 'pupae', caste: Caste): Individual[] | null => {
+  const c = colonyOf(f); if (!c) return null;
+  return c[key].filter((x) => x.alive !== false).map((x, i) => ({ id: x.id, caste, source: 'engine' as const, state: STATIC_STATE, fill: null, index: i, notes: (x.not_simulated ?? []).map((k) => c.not_simulated_fields?.[k] ?? k) }));
+};
+/** how each caste is read from a Worker frame: workers (minor) and larvae from every P0-A2 frame; queens, majors, eggs
+ *  and pupae only from the candidate world's colony roster (nothing is invented when it is absent) */
+const ENGINE_CASTE_READERS: Record<Caste, (f: P0a2FrameMsg) => Individual[] | null> = {
+  minor: (f) => f.workers.map((w, i) => ({ id: w.id, caste: 'minor', source: 'engine', state: w.state, fill: w.crop_fill, index: i })),
+  major: (f) => fromColony(f, 'majors', 'major'),
   larva: (f) => f.larvae.map((l, i) => ({ id: l.id, caste: 'larva', source: 'engine', state: null, fill: l.gut_fill, index: i })),
-  queen: (f) => f.queens ? f.queens.map((q, i) => ({ id: q.id, caste: 'queen', source: 'engine', state: q.state ?? null, fill: null, index: i })) : null,
-  egg: (f) => f.eggs ? f.eggs.map((q, i) => ({ id: q.id, caste: 'egg', source: 'engine', state: null, fill: null, index: i })) : null,
-  pupa: (f) => f.pupae ? f.pupae.map((q, i) => ({ id: q.id, caste: 'pupa', source: 'engine', state: null, fill: null, index: i })) : null,
+  queen: (f) => fromColony(f, 'queens', 'queen'),
+  egg: (f) => fromColony(f, 'eggs', 'egg'),
+  pupa: (f) => fromColony(f, 'pupae', 'pupa'),
 };
 /** the castes the engine frame supplies (possibly with zero individuals) */
-export function engineCastes(f: P0a2FrameMsg): Caste[] { return CASTES.filter((c) => ENGINE_CASTE_READERS[c](f as Frame) !== null); }
+export function engineCastes(f: P0a2FrameMsg): Caste[] { return CASTES.filter((c) => ENGINE_CASTE_READERS[c](f) !== null); }
 /** the castes the engine frame does not supply at all: shown as 「尚未模擬」 in natural mode, as demo data in demo mode */
-export function missingCastes(f: P0a2FrameMsg): Caste[] { return CASTES.filter((c) => ENGINE_CASTE_READERS[c](f as Frame) === null); }
+export function missingCastes(f: P0a2FrameMsg): Caste[] { return CASTES.filter((c) => ENGINE_CASTE_READERS[c](f) === null); }
 
 export function engineFeed(f: P0a2FrameMsg): ColonyFeed {
-  return { source: 'engine', label_zh: '引擎個體（實驗 Worker 回報）', individuals: () => CASTES.flatMap((c) => ENGINE_CASTE_READERS[c](f as Frame) ?? []) };
+  return { source: 'engine', label_zh: '引擎個體（實驗 Worker 回報）', individuals: () => CASTES.flatMap((c) => ENGINE_CASTE_READERS[c](f) ?? []) };
 }
 
 /** how many demo individuals of each caste the 展示情境 shows. Queens: 2 (Owner #202 provisional ruling: default 2–3,

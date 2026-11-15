@@ -27,7 +27,7 @@ import { VisModel, SEARCH_EMERGE_S } from '../web/src/vis1-model.ts';
 import { NestGraph, parseLayout, pathAt, upFor, type Pos } from '../web/src/demo2/nest-graph.ts';
 import { ColonyStage, OUTSIDE, CATCHUP_MAX_S, TROPH_HOLD_S, ABSORB_MAX_CM, DRAWN_SPEED_BOUND, STAGE_DISCONTINUITIES, CLASS_LABEL, type DrawnAnt } from '../web/src/demo2/stage.ts';
 import { BLOCK, FOLD_CM, fold, ground, surfacePose, corridor3 } from '../web/src/demo2/surface.ts';
-import { roster, engineFeed, demoFeed, missingCastes, engineCastes, DEMO_COUNTS, DEMO_BADGE, NATURAL_BADGE, DEMO_FOOD_PROPS } from '../web/src/demo2/feed.ts';
+import { roster, colonyOf, engineFeed, demoFeed, missingCastes, engineCastes, DEMO_COUNTS, DEMO_BADGE, NATURAL_BADGE, DEMO_FOOD_PROPS } from '../web/src/demo2/feed.ts';
 import { larvaSpot, carerSpot, queenSpot, eggSpot, pupaSpot, majorSpot } from '../web/src/demo2/places.ts';
 import { newGait, stepGait, STRIDE_PER_BODY, POSE_TARGET } from '../web/src/demo2/gait.ts';
 
@@ -152,9 +152,15 @@ function run(seed: number, t0: number, t1: number, dt = 0.1, every = 2): { trace
   ok(JSON.stringify(demo.individuals.filter((x) => x.source === 'engine')) === JSON.stringify(nat.individuals), 'the engine individuals are identical in both modes');
   ok(JSON.stringify(roster('demo', f, 5)) === JSON.stringify(demo) && JSON.stringify(demoFeed(6, missingCastes(f)).individuals()) !== JSON.stringify(demoFeed(5, missingCastes(f)).individuals()), 'demo roster: seeded and reproducible');
   ok(!d.some((x) => f.workers.some((w) => w.id === x.id) || f.larvae.some((l) => l.id === x.id)), 'no demo id collides with an engine id');
-  // a frame that supplies queens / majors (a later world kind): the engine individuals are used, the demo ones dropped
-  const f2 = { ...f, queens: [{ id: 'q001' }, { id: 'q002' }], workers: [...f.workers.slice(0, 29), { ...f.workers[29], caste: 'major' }] } as unknown as P0a2FrameMsg, r2 = roster('demo', f2, 5);
-  ok(r2.counts.queen.engine === 2 && r2.counts.queen.demo === 0 && r2.counts.major.engine === 1 && r2.counts.major.demo === 0 && r2.counts.minor.engine === 29 && r2.counts.egg.demo === DEMO_COUNTS.egg, 'a caste the engine supplies is never duplicated by demo data');
+  // the candidate world 'p0a2-colony' (PR #263): its frame carries `colony`; those castes become ENGINE individuals
+  // (with their own 尚未模擬 labels) and the demo provider stops supplying them — also in 展示情境
+  const item = (id: string) => ({ id, state: 'in_nest', alive: true, not_simulated: ['feeding', 'x'] });
+  const colony = { world_kind: 'p0a2-colony', queens: [item('q01'), item('q02'), item('q03')], majors: [item('m01'), item('m02')], eggs: Array.from({ length: 8 }, (_, i) => item(`e0${i + 1}`)), pupae: [item('p01'), { ...item('p02'), alive: false }], not_simulated_fields: { feeding: '進食：尚未模擬' } };
+  const f2 = { ...f, colony } as unknown as P0a2FrameMsg, n2 = roster('natural', f2, 5), r2 = roster('demo', f2, 5);
+  ok(colonyOf(f) === null && colonyOf(f2) !== null && colonyOf({ ...f, colony: { ...colony, world_kind: 'x' } } as unknown as P0a2FrameMsg) === null, 'the colony roster is read only from a p0a2-colony frame');
+  ok(missingCastes(f2).length === 0 && n2.counts.queen.engine === 3 && n2.counts.major.engine === 2 && n2.counts.egg.engine === 8 && n2.counts.pupa.engine === 1 && n2.counts.minor.engine === 30 && n2.individuals.every((x) => x.source === 'engine'), 'candidate world: queens, majors, eggs, pupae are engine individuals in natural mode (a dead one is not drawn)');
+  ok(r2.individuals.every((x) => x.source === 'engine') && JSON.stringify(r2.individuals) === JSON.stringify(n2.individuals), 'a caste the engine supplies is never duplicated by demo data');
+  const q1 = n2.individuals.find((x) => x.id === 'q01')!; ok(q1.caste === 'queen' && JSON.stringify(q1.notes) === JSON.stringify(['進食：尚未模擬', 'x']) && q1.state!.includes('尚未模擬'), 'an engine queen carries its own 尚未模擬 labels');
   ok(engineFeed(f).source === 'engine' && demoFeed(1, ['queen']).source === 'demo' && demoFeed(1, ['queen']).individuals().every((x) => x.caste === 'queen'), 'two providers behind one interface');
   ok(DEMO_FOOD_PROPS.every((p) => p.label_zh.includes('示範道具') && p.label_zh.includes('尚未模擬')), 'demo food props are labelled inert');
 }

@@ -20,7 +20,7 @@ import { ExperimentWorkerClient } from '../experimental/worker-client.ts';
 import { ExperimentSession } from '../experimental/session.ts';
 import { ExperimentSaveStore } from '../experimental/save-store.ts';
 import { notSimulatedOf, type NotSimulatedView, type SaveUiState } from '../experimental/save-format.ts';
-import { isP0a2Frame, type EventMsg, type P0a2FrameMsg, type PacingMsg } from '../experimental/worker-protocol.ts';
+import { isP0a2Frame, type EventMsg, type P0a2FrameMsg, type PacingMsg, type WorldKind } from '../experimental/worker-protocol.ts';
 import { STATE_LABEL, P0_LIGHT_LABEL, P0A2_STATUS_LABEL } from '../v62-p0a2-model.ts';
 import { VisModel, SEARCH_RADIUS_CM } from '../vis1-model.ts';
 import { displayTime, fmtWorldTime, clockOf } from '../v62-model.ts';
@@ -30,7 +30,7 @@ import { summarise, measurementClass } from '../three/perf.ts';
 import { NestGraph, parseLayout, type P3, type Pos } from './nest-graph.ts';
 import { ColonyStage, CLASS_LABEL, STAGE_DISCONTINUITIES, CATCHUP_MAX_S, type DrawnAnt } from './stage.ts';
 import { BLOCK, corridor3, ground, source3 } from './surface.ts';
-import { roster, CASTES, CASTE_LABEL, DEMO_BADGE, NATURAL_BADGE, DEMO_FOOD_PROPS, DEMO_ROUTINE_LABEL, type Individual, type Mode, type Roster } from './feed.ts';
+import { roster, colonyOf, CASTES, CASTE_LABEL, DEMO_BADGE, NATURAL_BADGE, DEMO_FOOD_PROPS, DEMO_ROUTINE_LABEL, type Individual, type Mode, type Roster } from './feed.ts';
 import { eggSpot, larvaSpot, majorSpot, pupaSpot, queenSpot } from './places.ts';
 import { newGait, stepGait, type Gait } from './gait.ts';
 import { MORPHS, RigLayer, rigMaterial, larvaGeometry, pupaGeometry, eggGeometry, type RigCaste } from './ant-rig.ts';
@@ -69,6 +69,16 @@ const sunTarget = new THREE.Object3D(); sunTarget.position.set(60, 0, -50);
 
 // ---------- world / display state ----------
 const client = new ExperimentWorkerClient();
+/** the opt-in candidate world with queens / majors / eggs / pupae as engine individuals (PR #263). Used when this
+ *  Worker build knows it (feature check below), else the plain P0-A2 world. `?world=p0a2` forces the plain world. */
+const COLONY_KIND = 'p0a2-colony' as WorldKind;
+let worldKind: WorldKind = 'p0a2';
+const PROBE_ID = 'exp-runtime-probe';
+async function detectWorldKind(): Promise<void> {
+  if (q.get('world') === 'p0a2') return;
+  try { const r = await client.init(PROBE_ID, 0, COLONY_KIND); if (r.type !== 'error') worldKind = COLONY_KIND; } catch { /* the plain world stays */ }
+}
+const isDemoWorld = (engine_version: string) => engine_version.startsWith('experiment-p0a2-');
 let session: ExperimentSession | null = null, tempMode = q.has('seed');
 let frame: P0a2FrameMsg | null = null, pacing: PacingMsg | null = null, frameAt = 0, lastT: number | null = null, tNow = 0, followedView: unknown = null;
 let vis: VisModel | null = null, graph: NestGraph, stage: ColonyStage, world: Scene2 | null = null;
@@ -224,9 +234,11 @@ function drawStatics(dtAnim: number) {
     larvaMesh.setColorAt(i, lv.id === selected ? C.setRGB(1.25, 1.1, 0.6) : C.setRGB(0.8 + 0.16 * k, 0.76 + 0.17 * k, 0.62 + 0.2 * k)); out.push({ ind: lv, p, chamber: brood });
   });
   larvaMesh.count = larvae.length; larvaMesh.instanceMatrix.needsUpdate = true; larvaMesh.instanceColor!.needsUpdate = true;
-  // 展示情境 only: demo queens, majors, eggs, pupae (示範資料; in-place idle micro-motion only)
+  // queens, majors, eggs, pupae: ENGINE individuals when the world supplies them (candidate world; the engine has no
+  // nest coordinates and they do not move: static in their chamber, in-place micro-motion only), otherwise — 展示情境
+  // only — labelled demo individuals (示範資料)
   let nq = 0, nm = 0, ne = 0, np = 0;
-  const demo = rost.individuals.filter((x) => x.source === 'demo'), count = (c: string) => demo.filter((x) => x.caste === c).length;
+  const demo = rost.individuals.filter((x) => x.caste !== 'minor' && x.caste !== 'larva'), count = (c: string) => demo.filter((x) => x.caste === c).length;
   for (const d of demo) {
     const g = gaits.get(d.id) ?? newGait(); gaits.set(d.id, g); const seed = (hash32(d.id) % 9973) / 9973, sel = d.id === selected;
     if (d.caste === 'queen' || d.caste === 'major') {
@@ -385,8 +397,9 @@ function renderCard() {
 <br><span class="muted">畫面位置類別：${esc(CLASS_LABEL[a.cls])}｜步態、轉身、觸角與姿勢只是畫面</span>`;
   } else if (st) {
     const d = st.ind, ch = st.chamber ? graph.chamber(st.chamber).label_zh : '';
-    html = d.source === 'engine'
+    html = d.source === 'engine' && d.caste === 'larva'
       ? `<b>${esc(d.id)}</b>　<span class="tag engine">引擎個體</span>${CASTE_LABEL[d.caste]}<br>腸道量：${((d.fill ?? 0) * 100).toFixed(0)}%（引擎）${stage.fedNow(d.id, tNow) ? '　正在被餵食（引擎事件；畫面演出）' : ''}<br>位置：${esc(ch)}（展示假設）<br><span class="muted">幼蟲只被餵食與代謝；發育、化蛹、羽化尚未模擬</span>`
+      : d.notes ? `<b>${esc(d.id)}</b>　<span class="tag engine">引擎個體</span>${CASTE_LABEL[d.caste]}<br>狀態：${esc(d.state ?? '')}<br>位置：${esc(ch)}（展示假設；引擎沒有巢內座標）<br><span class="muted">此個體尚未模擬的項目：${d.notes.map(esc).join('；') || '—'}｜原地微動作只是畫面</span>`
       : `<b>${esc(d.id)}</b>　<span class="tag demo">示範資料</span>${CASTE_LABEL[d.caste]}<br>動作：${esc(d.state ?? '')}<br>位置：${esc(ch)}（展示假設）<br><span class="muted">${DEMO_BADGE}：引擎尚未模擬這個階級；此個體不存檔、不影響任何引擎個體</span>`;
   } else { ui.card.hidden = true; return; }
   const canFollow = !!(a && w);
@@ -438,7 +451,7 @@ async function afterWorldReady(startAt: number | null) {
 }
 function renderWorldInfo() {
   const cur = session?.current;
-  ui.worldInfo.innerHTML = frame ? `世界 ${esc(frame.world_id)}｜種子 ${frame.seed}｜規則指紋 ${esc(frame.rules_fingerprint.slice(0, 12))}…<br>${tempMode ? '臨時世界（網址帶 seed：不存檔）' : cur ? `「${esc(cur.name)}」｜${cur.writer ? '本分頁可存檔' : esc(cur.readOnlyReason ?? '唯讀')}｜${esc(cur.verification)}` : '未連結存檔'}` : '';
+  ui.worldInfo.innerHTML = frame ? `${colonyOf(frame) ? '候選世界 p0a2-colony：蟻后、大工蟻、卵、蛹是引擎個體（靜態；不進食、不產卵、不發育、不移動）' : `P0-A2 世界：只有小工蟻與幼蟲${worldKind === 'p0a2' && q.get('world') !== 'p0a2' ? '（這個 Worker 版本沒有候選世界 p0a2-colony）' : ''}`}<br>世界 ${esc(frame.world_id)}｜種子 ${frame.seed}｜規則指紋 ${esc(frame.rules_fingerprint.slice(0, 12))}…<br>${tempMode ? '臨時世界（網址帶 seed：不存檔）' : cur ? `「${esc(cur.name)}」｜${cur.writer ? '本分頁可存檔' : esc(cur.readOnlyReason ?? '唯讀')}｜${esc(cur.verification)}` : '未連結存檔'}` : '';
   ui.saveBtn.disabled = tempMode || !cur?.writer;
 }
 function renderSaveStatus() {
@@ -448,7 +461,7 @@ function renderSaveStatus() {
 async function newWorld(seedText: string) {
   if (!session) return;
   ui.restartBtn.disabled = true; toast('建立新世界…');
-  const r = await session.newGame(`Demo 2・${new Date().toLocaleString('zh-TW', { hour12: false })}`, seedText, 'p0a2');
+  const r = await session.newGame(`Demo 2・${new Date().toLocaleString('zh-TW', { hour12: false })}`, seedText, worldKind);
   ui.restartBtn.disabled = false;
   if (!r.ok) { toast(`無法建立新世界（${r.code}）：${r.message}`, 6000); return; }
   await afterWorldReady(START_T); goView(view, true); void session.request('manual'); void refreshSaveList();
@@ -465,7 +478,7 @@ async function openWorld(id: string, steal = false): Promise<boolean> {
 async function refreshSaveList() {
   if (!session) { ui.saveList.textContent = tempMode ? '臨時世界（網址帶 seed）不使用存檔。' : '無法使用本機存檔。'; return; }
   let rows; try { rows = await session.list(); } catch { ui.saveList.textContent = '無法讀取存檔清單'; return; }
-  const p0 = rows.filter((w) => w.engine_version.startsWith('experiment-p0a2-24h/'));
+  const p0 = rows.filter((w) => isDemoWorld(w.engine_version));
   ui.saveList.innerHTML = p0.length ? p0.map((w) => `<div class="row" style="border-bottom:1px solid rgba(243,234,214,0.1);padding-bottom:5px"><span style="flex:1 1 150px">${esc(w.name)}<br><span class="muted">種子 ${w.seed}｜${w.sim_day !== null ? `第 ${w.sim_day} 天 ${esc(w.sim_clock ?? '')}` : '—'}｜${w.compat === 'compatible' ? '可載入' : esc(String(w.compat))}${w.world_id === session!.current?.world_id ? '｜目前開啟' : ''}</span></span><button type="button" data-open="${esc(w.world_id)}" ${w.compat !== 'compatible' || w.world_id === session!.current?.world_id ? 'disabled' : ''}>載入</button><button type="button" data-export="${esc(w.world_id)}">匯出</button></div>`).join('') : '還沒有存檔。';
   ui.saveList.querySelectorAll<HTMLButtonElement>('button[data-open]').forEach((b) => { b.onclick = () => void openWorld(b.dataset.open!); });
   ui.saveList.querySelectorAll<HTMLButtonElement>('button[data-export]').forEach((b) => { b.onclick = async () => { const r = await session!.store.exportWorld(b.dataset.export!); if (!r.ok) { toast(`匯出失敗（${r.code}）：${r.message}`); return; } const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([r.value.text], { type: 'application/json' })); a.download = r.value.filename; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }; });
@@ -500,15 +513,16 @@ async function main() {
   graph = new NestGraph(parseLayout(raw), ground(0, 0)); stage = new ColonyStage(graph, antLen());
   buildMeshes();
 
-  client.onState = (fr, p, fol) => { if (!isP0a2Frame(fr) || fr.world_id === 'exp-runtime-probe') return; if (p.running && frame && fr.t_sim !== frame.t_sim) session?.markDirty(); frame = fr; pacing = p; frameAt = performance.now(); followedView = fol; if (rost && mode === 'natural' && rost.counts.minor.engine !== fr.workers.length) rost = roster(mode, fr, demoSeed); else if (rost) rost = roster(mode, fr, demoSeed); };
-  client.onEvents = (evs: EventMsg[]) => { if (evs[0]?.world_id === 'exp-runtime-probe') return; eventsSeen += evs.length; stage.onEvents(evs); session?.markDirty(); };
+  client.onState = (fr, p, fol) => { if (!isP0a2Frame(fr) || fr.world_id === PROBE_ID) return; if (p.running && frame && fr.t_sim !== frame.t_sim) session?.markDirty(); frame = fr; pacing = p; frameAt = performance.now(); followedView = fol; if (rost) rost = roster(mode, fr, demoSeed); };
+  client.onEvents = (evs: EventMsg[]) => { if (evs[0]?.world_id === PROBE_ID) return; eventsSeen += evs.length; stage.onEvents(evs); session?.markDirty(); };
   client.onProtocolError = (why) => toast(`Worker：${why}`, 8000);
 
   ui.speed.innerHTML = SPEEDS.map((s) => `<option value="${s}">${s}×</option>`).join(''); ui.seedIn.value = String(DEFAULT_SEED);
   goView('full', true); requestAnimationFrame((t) => { lastNow = t; requestAnimationFrame(tick); });
 
+  await detectWorldKind();
   if (tempMode) { // ?seed=N: a temporary, unsaved world (tests and quick looks)
-    const seed = Number(q.get('seed')), r = await client.init(`exp-demo2-${seed}`, seed, 'p0a2');
+    const seed = Number(q.get('seed')), r = await client.init(`exp-demo2-${seed}`, seed, worldKind);
     if (r.type === 'error') { fatal(`無法建立實驗世界：${esc(r.code)} ${esc(r.message)}`); return; }
     await afterWorldReady(START_T);
   } else {
@@ -523,11 +537,11 @@ async function main() {
       let rows: Awaited<ReturnType<ExperimentSession['list']>> = [];
       try { rows = await session.list(); } catch { rows = []; }
       if (!q.has('new')) { // continue the world this browser played last (SAVE-2), if it is a loadable P0-A2 world
-        try { const id = await st.value.lastPlayed(), row = id ? rows.find((w) => w.world_id === id) : null; if (row && row.compat === 'compatible' && row.engine_version.startsWith('experiment-p0a2-24h/')) resumed = await openWorld(row.world_id); } catch { resumed = false; }
+        try { const id = await st.value.lastPlayed(), row = id ? rows.find((w) => w.world_id === id) : null; if (row && row.compat === 'compatible' && isDemoWorld(row.engine_version)) resumed = await openWorld(row.world_id); } catch { resumed = false; }
       }
       if (!resumed) await newWorld(String(DEFAULT_SEED));
-      if (!frame) { tempMode = true; session = null; onWorldStart(); await client.init(`exp-demo2-${DEFAULT_SEED}`, DEFAULT_SEED, 'p0a2'); await afterWorldReady(START_T); toast('無法使用存檔（可能另一個分頁正在使用）：改用不存檔的臨時世界', 7000); }
-    } else { tempMode = true; toast(`無法使用本機存檔（${st.code}）：改用不存檔的臨時世界`, 7000); await client.init(`exp-demo2-${DEFAULT_SEED}`, DEFAULT_SEED, 'p0a2'); await afterWorldReady(START_T); }
+      if (!frame) { tempMode = true; session = null; onWorldStart(); await client.init(`exp-demo2-${DEFAULT_SEED}`, DEFAULT_SEED, worldKind); await afterWorldReady(START_T); toast('無法使用存檔（可能另一個分頁正在使用）：改用不存檔的臨時世界', 7000); }
+    } else { tempMode = true; toast(`無法使用本機存檔（${st.code}）：改用不存檔的臨時世界`, 7000); await client.init(`exp-demo2-${DEFAULT_SEED}`, DEFAULT_SEED, worldKind); await afterWorldReady(START_T); }
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') void session?.request('hidden'); });
     addEventListener('pagehide', () => { void session?.request('pagehide'); });
   }

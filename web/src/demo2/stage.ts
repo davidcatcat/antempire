@@ -146,7 +146,7 @@ export class ColonyStage {
     let best: { id: string; pos: Pos } | null = null, cost = Infinity;
     for (const c of chambers) for (const s of this.graph.slots(c, this.antLen)) {
       const own = this.slotOwner.get(s.id); if (own && own !== id) continue;
-      const k = (from ? this.graph.route(from, s.pos).len : 0) + 6 * u01(`slot|${id}|${s.id}`);
+      const k = (from ? this.graph.route(from, s.pos).len : 0) + 14 * u01(`slot|${id}|${s.id}`);
       if (k < cost) { cost = k; best = { id: s.id, pos: s.pos }; }
     }
     if (!best) { const all = chambers.flatMap((c) => this.graph.slots(c, this.antLen)), s = all[hash32(`over|${id}`) % all.length]; best = { id: s.id, pos: { ...s.pos, z: s.pos.z + 0.3 } }; }

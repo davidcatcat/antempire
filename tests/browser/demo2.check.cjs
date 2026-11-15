@@ -34,8 +34,8 @@ const { chromium, devices } = require('playwright');
   const shot = async (page, name, q = 70) => { const f = path.join(out, `${name}.jpg`); await page.screenshot({ path: f, type: 'jpeg', quality: q }); files.push(f); };
   const profiles = [['desktop', { viewport: { width: 1440, height: 900 } }], ['pixel7', { ...devices['Pixel 7'] }]];
   for (const [tag, opts] of profiles) {
-    const mobile = tag === 'pixel7', video = !mobile && process.env.DEMO2_VIDEO === '1';
-    const ctx = await browser.newContext(video ? { ...opts, recordVideo: { dir: out, size: { width: 960, height: 600 } } } : opts), page = await ctx.newPage();
+    const mobile = tag === 'pixel7';
+    const ctx = await browser.newContext(opts), page = await ctx.newPage();
     page.on('pageerror', (e) => errors.push(`${tag}: ${e.stack || e}`)); page.on('console', (m) => { if (m.type() === 'error') errors.push(`${tag}: ${m.text()}`); });
     await page.goto(new URL(`demo2.html?seed=1&quality=${mobile ? 'medium' : 'high'}&speed=5`, base).href);
     await ready(page); await page.waitForTimeout(2500);
@@ -47,7 +47,11 @@ const { chromium, devices } = require('playwright');
     check(txt.flag.includes('非正式實驗世界') && txt.badge.includes('自然模式') && txt.hud.includes('非正式'), `${tag}: non-official and natural-mode badges`);
     check(txt.rev === '187' && txt.backend.includes('WebGL 2') && txt.backend.includes('WebGPU'), `${tag}: backend string shown (${txt.backend.slice(0, 40)}…)`);
     check(txt.noScroll, `${tag}: no horizontal scroll`);
-    check(st.queens === 0 && st.majors === 0 && st.eggs === 0 && st.pupae === 0 && /蟻后：尚未模擬/.test(txt.labels) && /蛹：尚未模擬/.test(txt.labels) && /大工蟻：尚未模擬/.test(txt.labels) && txt.labels.includes('展示假設'), `${tag}: natural mode draws no queen / major / egg / pupa and labels them 尚未模擬`);
+    // the Worker build decides: plain P0-A2 (no queens / majors / eggs / pupae) or the candidate world p0a2-colony (engine individuals)
+    const col = await page.evaluate(() => { const c = window.__demo2.frame().colony; return c ? { q: c.queens.length, m: c.majors.length, e: c.eggs.length, p: c.pupae.length } : null; });
+    report[`${tag}_world`] = col ? { kind: 'p0a2-colony', ...col } : { kind: 'p0a2' };
+    if (!col) check(st.queens === 0 && st.majors === 0 && st.eggs === 0 && st.pupae === 0 && /蟻后：尚未模擬/.test(txt.labels) && /蛹：尚未模擬/.test(txt.labels) && /大工蟻：尚未模擬/.test(txt.labels) && txt.labels.includes('展示假設'), `${tag}: natural mode draws no queen / major / egg / pupa and labels them 尚未模擬`);
+    else check(st.queens === col.q && st.majors === col.m && st.eggs === col.e && st.pupae === col.p && /蟻后 \d+（引擎）/.test(txt.labels) && !/示範資料/.test(txt.labels) && txt.labels.includes('展示假設'), `${tag}: natural mode draws the candidate world's ENGINE queens / majors / eggs / pupae (${JSON.stringify(col)}), labelled 引擎`);
     await shot(page, `demo2-${tag}-full`);
 
     // views
@@ -62,13 +66,13 @@ const { chromium, devices } = require('playwright');
     // 展示情境 toggle
     await page.click('#modeBtn'); await page.waitForTimeout(900);
     const dm = await page.evaluate(() => ({ s: window.__demo2.state(), badge: document.querySelector('#modeBadge').textContent, labels: document.querySelector('#labels').textContent, r: window.__demo2.roster(), demoClass: document.body.classList.contains('demo') }));
-    check(dm.s.mode === 'demo' && dm.badge === '展示情境・示範資料' && dm.demoClass && dm.s.queens === 2 && dm.s.majors === 4 && dm.s.eggs === 36 && dm.s.pupae === 9 && /示範資料/.test(dm.labels), `${tag}: 展示情境 badge and labelled demo individuals (queens ${dm.s.queens}, majors ${dm.s.majors}, eggs ${dm.s.eggs}, pupae ${dm.s.pupae})`);
+    check(dm.s.mode === 'demo' && dm.badge === '展示情境・示範資料' && dm.demoClass && (col ? dm.s.queens === col.q && dm.s.majors === col.m && dm.s.eggs === col.e && dm.s.pupae === col.p && dm.r.individuals.every((x) => x.source === 'engine') : dm.s.queens === 2 && dm.s.majors === 4 && dm.s.eggs === 36 && dm.s.pupae === 9) && /示範/.test(dm.labels), `${tag}: 展示情境 badge and labelled demo individuals (queens ${dm.s.queens}, majors ${dm.s.majors}, eggs ${dm.s.eggs}, pupae ${dm.s.pupae})`);
     check(dm.s.ants === 30 && dm.r.counts.minor.engine === 30 && dm.r.counts.minor.demo === 0 && dm.r.individuals.filter((x) => x.source === 'demo').every((x) => x.id.startsWith('demo-')), `${tag}: the 30 engine workers are unchanged in 展示情境`);
     await shot(page, `demo2-${tag}-scenario`);
     if (!mobile) { await page.evaluate(() => window.__demo2.view([4, -27.5, 24], [1, -28.6, 0])); await page.waitForTimeout(900); await shot(page, 'demo2-desktop-scenario-queens'); await page.evaluate(() => window.__demo2.setView('under')); }
     await page.click('#modeBtn'); await page.waitForTimeout(600);
     const nm = await S(page);
-    check(nm.mode === 'natural' && nm.queens === 0 && nm.majors === 0 && nm.eggs === 0 && nm.pupae === 0 && (await page.textContent('#modeBadge')).includes('自然模式'), `${tag}: back to natural mode: no demo individual left`);
+    check(nm.mode === 'natural' && (col ? nm.queens === col.q : nm.queens === 0 && nm.majors === 0 && nm.eggs === 0 && nm.pupae === 0) && (await page.textContent('#modeBadge')).includes('自然模式'), `${tag}: back to natural mode: no demo individual left`);
 
     // select by tap / click, card, follow
     await page.evaluate(() => window.__demo2.setRunning(false)); await page.waitForTimeout(500);
@@ -130,12 +134,18 @@ const { chromium, devices } = require('playwright');
       // a running close-up for the video / motion check
       await page.evaluate(() => { window.__demo2.setSpeed(2); return window.__demo2.setRunning(true); });
       const g1 = await page.evaluate(() => window.__demo2.ants().filter((a) => a.moving).map((a) => [a.id, a.phase]));
-      await page.waitForTimeout(video ? 9000 : 2500);
+      await page.waitForTimeout(2500);
       const g2 = await page.evaluate(() => Object.fromEntries(window.__demo2.ants().map((a) => [a.id, [a.phase, a.moving]])));
       check(g1.length > 0 && g1.some(([id, ph]) => g2[id] && g2[id][0] !== ph), 'desktop: walking workers advance their gait phase while running');
     }
     await ctx.close();
-    if (video) { const v = await page.video().path(), dst = path.join(out, 'demo2-desktop-follow.webm'); fs.renameSync(v, dst); files.push(dst); }
+  }
+  // optional short clip (DEMO2_VIDEO=1): following a worker that is about to leave the nest (software rendering: low frame rate)
+  if (process.env.DEMO2_VIDEO === '1') {
+    const ctx = await browser.newContext({ viewport: { width: 800, height: 500 }, recordVideo: { dir: out, size: { width: 800, height: 500 } } }), page = await ctx.newPage();
+    await page.goto(new URL('demo2.html?seed=1&quality=low&speed=5&t=32520', base).href); await ready(page);
+    await page.click('#followBtn'); await page.waitForTimeout(16000);
+    await ctx.close(); const dst = path.join(out, 'demo2-desktop-follow.webm'); fs.renameSync(await page.video().path(), dst); files.push(dst);
   }
 
   // save → reload → continue (SAVE-2 session; one context keeps its IndexedDB across the reload)

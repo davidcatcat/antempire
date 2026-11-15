@@ -49,9 +49,9 @@
   @media (max-width: 760px) {
     h1 { font-size: 13.5px; } .chip { font-size: 10.5px; padding: 2px 6px; } #hud { font-size: 11px; white-space: normal; max-height: 2.8em; }
     select, button, a.btn { min-height: 36px; padding: 0 8px; font-size: 12.5px; }
-    #sheetBtn { display: inline-block; }
+
     #side { left: 0; right: 0; top: auto; bottom: 0; width: auto; height: 44dvh; border-radius: 14px 14px 0 0; border-width: 1px 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
-    #card { top: auto; bottom: calc(44dvh + 8px); max-height: 34dvh; overflow: auto; } body.side-closed #card { bottom: 12px; }
+    #card { top: auto; bottom: 12px; max-height: 34dvh; overflow: auto; font-size: 12.5px; line-height: 1.5; } body:not(.side-closed) #card { display: none; }
   }
 </style>
 </head>
