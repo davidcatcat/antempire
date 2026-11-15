@@ -242,7 +242,7 @@ Worker 把世界的**每一行事件紀錄**原樣送到頁面（`P0a2Experiment
 | O-4 | 旅行時間改由運動學決定（D2E-12／VIS-7c） | 改變核心架構與所有事件時刻 |
 | O-5 | 任何 R2 驗收矩陣列狀態的升級，或把候選機制算入 #201 門檻 | #201 的最後批准權在 Owner |
 
-另有一處文件不一致，建議在後續文件 PR 處理（不涉及裁示）：`docs/colony-candidate-world.md` §6 寫「沒有任何頁面或選單會以本種類開新遊戲」，但 Demo 2 的新世界預設就是 `p0a2-colony`（`web/src/demo2/main.ts` 的 `worldKind`；`docs/demo2.md`「與引擎的邊界」）。
+（原先在此列出的文件不一致——`docs/colony-candidate-world.md` §6 對「預設關閉」的說明沒有提到 Demo 2 選用候選世界——已在本 PR 一併更正。）
 
 ## 7. 這份稽核沒有做、或沒有驗證的事
 
