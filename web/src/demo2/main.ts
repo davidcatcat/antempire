@@ -270,7 +270,7 @@ const tourCues: TourCue[] = [], tourLog: ({ k: number; t_sim: number } & TourSho
 const tourFollows = () => tour !== null && tour.shot.kind === 'follow' && following === tour.shot.id;
 function endTour() { tour = null; ui.tourChip.hidden = true; }
 /** any input hands the camera back: the tour stops where it is (a followed worker stays selected, the camera stops following) */
-function stopTour() { if (!tour) return; const wasFollow = tourFollows(); endTour(); if (wasFollow) setFollow(null, true); }
+function stopTour() { if (!tour) return; const wasFollow = tourFollows(); endTour(); tween = null; /* an overview move in progress stops too */ if (wasFollow) setFollow(null, true); }
 function userInput() { lastInput = performance.now(); stopTour(); }
 for (const ev of ['pointerdown', 'wheel', 'keydown', 'touchstart'] as const) addEventListener(ev, userInput, { capture: true, passive: true });
 function syncTourBtn() { ui.tourBtn.setAttribute('aria-pressed', String(tourOn)); ui.tourBtn.textContent = `自動導覽：${tourOn ? '開' : '關'}`; ui.tourBtn.title = `沒有操作 ${tourIdle} 秒後，鏡頭自動巡覽並跟隨正在活動的個體（只動鏡頭，不影響模擬）`; }
