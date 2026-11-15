@@ -10,16 +10,19 @@
  *
  * World kinds: 'synthetic' (core.ts; default of init) and 'p0a2' (p0a2-world.ts, the P0-A2 24-hour individual-
  * behaviour world). Both implement the same small interface; for the P0-A2 world the work budget counts events.
+ * 'p0a2-colony' (p0a2-colony-world.ts) is the opt-in colony-members candidate: the P0-A2 world plus roster individuals;
+ * it is created only when init names it and restored only from a snapshot of its own engine family.
  */
 import { ExperimentRefused, ExperimentWorld, type ExperimentSnapshot } from './core.ts';
 import { P0A2_ENGINE_FAMILY, P0a2ExperimentWorld, P0a2Refused, type P0a2Snapshot } from './p0a2-world.ts';
+import { P0A2_COLONY_ENGINE_FAMILY, P0a2ColonyWorld, type P0a2ColonySnapshot } from './p0a2-colony-world.ts';
 import { COMMAND_TYPES, EXPERIMENT_LABEL, MAX_SPEED, MIN_SPEED, PROTOCOL_VERSION, WORLD_KINDS, type AnyFrameMsg, type Command, type CommandType, type EventMsg, type PacingMsg, type Reply } from './protocol.ts';
 
 /** what the dispatcher needs of a world (both kinds) */
 interface RuntimeWorld {
   tSim(): number;
   advanceTo(t: number, budget?: number): { events: unknown[]; done: boolean };
-  snapshot(): ExperimentSnapshot | P0a2Snapshot;
+  snapshot(): ExperimentSnapshot | P0a2Snapshot | P0a2ColonySnapshot;
   frame(): unknown;
   antView(id: string): unknown;
   antIds(): string[];
@@ -63,7 +66,7 @@ export class Runtime {
         case 'init': {
           const kind = c.kind ?? 'synthetic';
           if (!WORLD_KINDS.includes(kind)) return err('BAD_WORLD_KIND', `kind must be one of ${WORLD_KINDS.join(', ')}`);
-          const r = kind === 'p0a2' ? P0a2ExperimentWorld.create(c.world_id, c.seed) : ExperimentWorld.create(c.world_id, c.seed);
+          const r: { world: RuntimeWorld; events: unknown[] } = kind === 'p0a2-colony' ? P0a2ColonyWorld.create(c.world_id, c.seed) : kind === 'p0a2' ? P0a2ExperimentWorld.create(c.world_id, c.seed) : ExperimentWorld.create(c.world_id, c.seed);
           this.world = r.world; this.started = false; this.running = false; this.lagging = false; this.follow = null;
           return [...this.eventsMsg(r.events as EventMsg[]), this.ack(c.req, 'init')];
         }
@@ -91,7 +94,8 @@ export class Runtime {
         case 'restore': {
           // the world kind follows the snapshot's engine version; throws (and changes nothing) on any mismatch
           const s = c.snapshot as { engine_version?: unknown } | null;
-          const w: RuntimeWorld = s && typeof s === 'object' && typeof s.engine_version === 'string' && s.engine_version.startsWith(P0A2_ENGINE_FAMILY) ? P0a2ExperimentWorld.restore(c.snapshot as P0a2Snapshot) : ExperimentWorld.restore(c.snapshot as ExperimentSnapshot);
+          const ev = s && typeof s === 'object' && typeof s.engine_version === 'string' ? s.engine_version : '';
+          const w: RuntimeWorld = ev.startsWith(P0A2_COLONY_ENGINE_FAMILY) ? P0a2ColonyWorld.restore(c.snapshot as P0a2ColonySnapshot) : ev.startsWith(P0A2_ENGINE_FAMILY) ? P0a2ExperimentWorld.restore(c.snapshot as P0a2Snapshot) : ExperimentWorld.restore(c.snapshot as ExperimentSnapshot);
           this.world = w; this.started = false; this.running = false; this.lagging = false; this.follow = null; this.reanchor();
           return [this.ack(c.req, 'restore')];
         }
@@ -114,7 +118,7 @@ export class Runtime {
     const target = this.anchorSim + (this.speed * (this.wallMs() - this.anchorWall)) / 1000;
     if (!(target > w.tSim())) return [];
     try {
-      const r = w.advanceTo(target, w instanceof P0a2ExperimentWorld ? Runtime.P0A2_BUDGET : Runtime.BUDGET);
+      const r = w.advanceTo(target, w instanceof P0a2ExperimentWorld || w instanceof P0a2ColonyWorld ? Runtime.P0A2_BUDGET : Runtime.BUDGET);
       this.lagging = !r.done; if (!r.done) this.reanchor();
       return r.events as EventMsg[];
     } catch (e) { if ((e instanceof ExperimentRefused || e instanceof P0a2Refused) && e.code === 'TIME_BACKWARDS') return []; throw e; }

@@ -1,5 +1,5 @@
 {
-  "//": "Independent build of the NON-OFFICIAL experiment Worker (Owner decision #39). WebWorker lib only (no DOM, no Node types); include is this directory plus the allowlisted modules (prototypes/continuous-world/worker-boundary.json: engine clock / scheduler and the P0-A2 core files, params.json as a JSON module). Output web/worker-dist/ is a build product (gitignored).",
+  "//": "Independent build of the NON-OFFICIAL experiment Worker (Owner decision #39). WebWorker lib only (no DOM, no Node types); include is this directory plus the allowlisted modules (prototypes/continuous-world/worker-boundary.json: engine clock / scheduler, the P0-A2 core files with params.json as a JSON module, and - only for the opt-in colony-members candidate world - engine/colony, the Day0 sampler and p0a2-colony-params.json). Output web/worker-dist/ is a build product (gitignored).",
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
@@ -24,6 +24,10 @@
     "../../../engine/scheduler/world-events.ts",
     "../../../engine/clock/solar.ts",
     "../../../engine/clock/time-frames.ts",
+    "../../../engine/colony/members.ts",
+    "../../../engine/colony/roster.ts",
+    "../../../engine/day0/founding-sampler.ts",
+    "./p0a2-colony-params.json",
     "../../p0a2-24h/canon.ts",
     "../../p0a2-24h/decision.ts",
     "../../p0a2-24h/environment.ts",

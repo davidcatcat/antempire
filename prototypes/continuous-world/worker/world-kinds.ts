@@ -7,12 +7,15 @@
  * that satisfies WorldKind; nothing else in the verifier changes.
  *
  * Registered: 'synthetic-v1' (core.ts, the synthetic test world) and 'p0a2-24h-v1' (p0a2-world.ts, the P0-A2 24 h
- * individual-behaviour world: candidate / experiment world, non-official).
+ * individual-behaviour world: candidate / experiment world, non-official) and 'p0a2-colony-v1' (p0a2-colony-world.ts, the
+ * opt-in colony-members candidate: the P0-A2 world plus the colony roster individuals of that candidate; default
+ * off, non-official; docs/colony-candidate-world.md).
  */
 import { ENGINE_VERSION, ExperimentWorld, RULES_FINGERPRINT, SCHEMA_VERSION, WORLD_KIND, type ExperimentSnapshot } from './core.ts';
 import { DEFAULT_PARAMS } from './params.ts';
 import { hashJson } from './sha256.ts';
 import { P0A2_ENGINE_VERSION, P0A2_PARAMS_SHA, P0A2_RULES_FINGERPRINT, P0A2_SAVE_WORLD_KIND, P0A2_SCHEMA_VERSION, P0a2ExperimentWorld, type P0a2Snapshot } from './p0a2-world.ts';
+import { P0A2_COLONY_ENGINE_VERSION, P0A2_COLONY_PARAMS_SHA, P0A2_COLONY_RULES_FINGERPRINT, P0A2_COLONY_SAVE_WORLD_KIND, P0A2_COLONY_SCHEMA_VERSION, P0a2ColonyWorld, type P0a2ColonySnapshot } from './p0a2-colony-world.ts';
 import type { ChainState } from './chain.ts';
 import type { ExactTime } from '../../../engine/scheduler/world-events.ts';
 
@@ -53,4 +56,13 @@ export const P0A2_WORLD: WorldKind = {
   restore: (s) => P0a2ExperimentWorld.restore(s as P0a2Snapshot),
 };
 
-export const WORLD_KINDS: Readonly<Record<string, WorldKind>> = Object.freeze({ [SYNTHETIC_WORLD.id]: SYNTHETIC_WORLD, [P0A2_WORLD.id]: P0A2_WORLD });
+/** the colony-members candidate: params_sha256 covers the base parameter file, the candidate's parameter file and the
+ *  checksum of the whole candidate scenario file */
+export const P0A2_COLONY_WORLD: WorldKind = {
+  id: P0A2_COLONY_SAVE_WORLD_KIND, engine_version: P0A2_COLONY_ENGINE_VERSION, schema_version: P0A2_COLONY_SCHEMA_VERSION, rules_fingerprint: P0A2_COLONY_RULES_FINGERPRINT,
+  params_sha256: P0A2_COLONY_PARAMS_SHA,
+  create: (worldId, seed) => P0a2ColonyWorld.create(worldId, seed),
+  restore: (s) => P0a2ColonyWorld.restore(s as P0a2ColonySnapshot),
+};
+
+export const WORLD_KINDS: Readonly<Record<string, WorldKind>> = Object.freeze({ [SYNTHETIC_WORLD.id]: SYNTHETIC_WORLD, [P0A2_WORLD.id]: P0A2_WORLD, [P0A2_COLONY_WORLD.id]: P0A2_COLONY_WORLD });

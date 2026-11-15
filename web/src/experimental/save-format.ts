@@ -276,13 +276,22 @@ export function simDayTime(t_sim: number | null): { day: number; clock: string }
   return { day, clock: `${p2(Math.floor(sec / 3600))}:${p2(Math.floor(sec / 60) % 60)}:${p2(sec % 60)}` };
 }
 
-/** Individuals in a Worker snapshot payload, for the save list. Neither world has a queen (null, not 0). */
+/** Individuals in a Worker snapshot payload, for the save list. The synthetic and the default P0-A2 world have no queen
+ *  (null, not 0); the colony-members candidate world reports the queens its snapshot holds. */
 export function summaryOf(snapshot: unknown): WorldSummary {
   const ns = notSimulatedOf(snapshot), not_simulated = ns.ok ? { unwired: ns.unwired.length, proxies: ns.proxies.length } : null;
   const p0 = (snapshot as { payload?: { world_kind?: unknown; state?: { workers?: object; larvae?: object } } })?.payload;
   if (p0?.world_kind === 'p0a2') {
     const nw = p0.state?.workers ? Object.keys(p0.state.workers).length : null, nl = p0.state?.larvae ? Object.keys(p0.state.larvae).length : null;
     return { queens: null, workers: nw, larvae: nl, individuals: nw === null || nl === null ? null : nw + nl, note: 'P0-A2 候選／實驗世界（非正式）：小工蟻與幼蟲，沒有蟻后（尚未模擬）', not_simulated };
+  }
+  // the opt-in colony-members candidate (docs/colony-candidate-world.md): counts of the individuals the snapshot holds
+  if (p0?.world_kind === 'p0a2-colony') {
+    const pc = (snapshot as { payload?: { base?: { payload?: { state?: { workers?: object; larvae?: object } } }; colony?: { members?: { queens?: object; workers?: object }; items?: Record<string, { stage?: unknown }> } } }).payload;
+    const st = pc?.base?.payload?.state, m = pc?.colony?.members, it = pc?.colony?.items;
+    if (!st?.workers || !st.larvae || !m?.queens || !m.workers || !it) return { queens: null, workers: null, larvae: null, individuals: null, note: 'P0-A2 蟻群成員候選世界（非正式）：存檔內容不完整，無法計數', not_simulated };
+    const nq = Object.keys(m.queens).length, nw = Object.keys(st.workers).length + Object.keys(m.workers).length, nl = Object.keys(st.larvae).length, nb = Object.keys(it).length;
+    return { queens: nq, workers: nw, larvae: nl, individuals: nq + nw + nl + nb, note: `P0-A2 蟻群成員候選世界（非正式，預設關閉）：蟻后 ${nq}、工蟻 ${nw}（含大工蟻 ${Object.keys(m.workers).length}）、幼蟲 ${nl}、卵與蛹 ${nb}；蟻后、大工蟻、卵、蛹的生理、行為、發育與死亡尚未模擬`, not_simulated };
   }
   const ants = (snapshot as { payload?: { ants?: unknown[] } })?.payload?.ants;
   const n = Array.isArray(ants) ? ants.length : null;
@@ -305,7 +314,7 @@ export function notSimulatedOf(snapshot: unknown): NotSimulatedView {
   const p = (snapshot as { payload?: { world_kind?: unknown; save_meta?: { not_simulated?: unknown } } } | null)?.payload;
   const x = p?.save_meta?.not_simulated;
   if (x === undefined || x === null) {
-    return { ok: false, reason: p?.world_kind === 'p0a2'
+    return { ok: false, reason: p?.world_kind === 'p0a2' || p?.world_kind === 'p0a2-colony'
       ? '此存檔的中繼資料沒有「尚未模擬」清單（舊格式）：不得把畫面當成已模擬任何機制'
       : '合成測試世界不是螞蟻模型：存檔中繼資料沒有「尚未模擬」清單，螞蟻的生理、發育、繁殖、死亡與生態都不在這個世界中' };
   }

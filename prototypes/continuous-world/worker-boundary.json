@@ -1,6 +1,6 @@
 {
   "schema": "antempire.worker-boundary.v1",
-  "decision": "Owner decision #39 (2026-11-08): limited CLAUDE.md §9 exception for the non-official experiment Worker (P0-A2 phase 3, #156); Owner SAVE requirement (2026-11-08): minimal exception for local IndexedDB saves of non-official experiment worlds; Owner authorisation (2026-11-12, #156 phase 3): the P0-A2 24 h prototype core files run in the experiment Worker (candidate / experiment world, non-official, Owner #201)",
+  "decision": "Owner decision #39 (2026-11-08): limited CLAUDE.md §9 exception for the non-official experiment Worker (P0-A2 phase 3, #156); Owner SAVE requirement (2026-11-08): minimal exception for local IndexedDB saves of non-official experiment worlds; Owner authorisation (2026-11-12, #156 phase 3): the P0-A2 24 h prototype core files run in the experiment Worker (candidate / experiment world, non-official, Owner #201); rules update 2026-11-15 (colony-members candidate world, #202 / #219 / #222; self-reviewed under the Owner authorisation of 2026-11-12, boundary evidence in tests/worker-boundary.test.ts and tests/p0a2-colony-world.test.ts): engine/colony/ (CQ-1 members and the candidate roster) and engine/day0/founding-sampler.ts (the #202 sampler) are reachable ONLY from the opt-in candidate world kind p0a2-colony-v1; the default P0-A2 world does not import them",
   "mode": "non_official_experiment_only",
   "label_zh": "非正式實驗世界／不屬於正式遊戲歷史",
   "worker_entry_dir": "prototypes/continuous-world/worker",
@@ -53,6 +53,8 @@
     "engine/scheduler/",
     "engine/rng.ts",
     "engine/sha256.ts",
+    "engine/colony/",
+    "engine/day0/founding-sampler.ts",
     "prototypes/p0a2-24h/canon.ts",
     "prototypes/p0a2-24h/decision.ts",
     "prototypes/p0a2-24h/environment.ts",

@@ -58,6 +58,15 @@ V6-2 UI ──► Worker Client (web/src/experimental/worker-client.ts)
 - **介接方式**：Worker 目錄內的薄轉接層 `prototypes/continuous-world/worker/p0a2-world.ts`（不改 P0-A2 任何行為檔），見 [`experimental-worker-runtime.md`](experimental-worker-runtime.md) §9。P0-A2 核心仍是平台無關（`prototypes/p0a2-24h/tsconfig.json`：無 DOM、無 Node 型別），Worker 的獨立 tsconfig 只多列這些檔案。
 - 規則指紋包含 P0-A2 參數檔 SHA-256 與「程式碼 SHA-256」（P0-A2 轉接層的執行期匯入圖中每個 TypeScript 檔，`prototypes/continuous-world/tools/p0a2-code-hash.ts` 產生、`tests/worker-runtime.test.ts` 檢查是否過期）；任何一個檔案改變，舊存檔載入時都會被拒絕（`FINGERPRINT_MISMATCH`），不會在不同規則下默默接續。
 
+## 4e. 蟻群成員候選世界（規則更新 2026-11-15；#202、#219、#222）
+
+- **加入白名單**：`engine/colony/`（`members.ts`：CQ-1 蟻群成員；`roster.ts`：候選名冊）與**單一檔案** `engine/day0/founding-sampler.ts`（#202 取樣器）。沒有加入 `engine/day0/` 整個目錄、`scenarios/`、`prototypes/colony-members/` 或 BP-1（`prototypes/p0a2-24h/brood/`）。情境檔不進 Worker：Worker 讀的是工具產生的摘錄 `worker/p0a2-colony-scenario.ts`（含整份情境檔的 checksum）。
+- **誰匯入**：只有預設關閉的候選世界轉接層 `worker/p0a2-colony-world.ts`（世界種類 `p0a2-colony-v1`）。預設 P0-A2 世界的匯入圖（`p0a2-code-hash.ts` 的 17 個檔）不含這些模組，雜湊不變。
+- **純度與決定性數學**：三個模組都在 `engine/` 之下，套用 `forbidden_in_engine_modules` 與 `deterministic_math_in_worker_graph`（只用 `Math.floor`／`round`／`min`，對數均勻抽樣走 `detLog`／`detExp`）。
+- **負面樣本**（`tests/worker-boundary.test.ts` 10 個、`tests/p0a2-colony-world.test.ts` 11 個，全部必須失敗）：蟻群模組用 `Math.random`、`Date.now`、`Math.pow`／`Math.exp`、儲存 API、匯入正式每日迴圈或未列入白名單的 `engine/queen.ts`；匯入 `engine/day0/` 的其他模組；取樣器用 `Math.log`；Worker 直接匯入情境檔、CQ-1 研究參數檔或 BP-1；轉接層用 `fetch` 或寫出正式存檔路徑。
+- **授權**：依 Owner 2026-11-12 授權自審並附上述邊界測試證據（CLAUDE.md §9 B）；獨立審查待恢復後另行安排。
+- 說明文件：[`colony-candidate-world.md`](colony-candidate-world.md)。
+
 ## 4b. 實驗世界本地存檔例外（SAVE）
 
 Owner 2026-11-08 授權非正式實驗世界的本地即時存檔：

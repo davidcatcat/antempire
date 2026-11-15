@@ -1,5 +1,7 @@
 # CQ-1：蟻群成員模組（多后、大小工蟻、幼體來源）——隔離實作
 
+> **2026-11-15 更新**：本模組現在有一個使用者——**預設關閉**的蟻群成員候選世界 `p0a2-colony-v1`（[`colony-candidate-world.md`](colony-candidate-world.md)）。它只用 `addQueen`／`addWorker` 建立初始情境的蟻后與大工蟻個體（各自的 id、事件計數、雜湊鏈、帳本），所有生理候選接口仍是 null（不產卵、不代謝、不決定階級命運）。預設的 P0-A2 世界、正式引擎、`cli/`、`web/src` 仍未匯入本模組；下文「尚未接入」指的是這些預設路徑與所有生理機制。接入計畫的進度見 §7。
+>
 > 狀態：**隔離模組＋測試＋設計**。`engine/colony/members.ts` **尚未接入** P0-A2 世界、實驗 Worker 或正式引擎；沒有改任何科學參數值、存檔、日誌，也**不推進遊戲時間**。
 > 授權：Owner 2026-11-13（#219 留言 6846471035、#222 留言 6846471780）：「大工蟻與多后系統的資料結構、個體事件、行為與存檔可同步排程」；「先做個體類型、蟻后獨立繁殖及死亡帳、各自代謝接口、幼體來源／階級分化資料欄位、存檔與可視化。營養數值及階級分化門檻未獲證據前保持假設／隔離。不得用單后演算法假裝多后，也不得憑空增加幼體。」；#202：預設 2～3 后（1～3 敏感度），多后個體、產卵、死亡與存檔須真正實作；大工蟻須支援個體／工作／能量／存檔。
 > 相關：[`research-design-p1a-majors.md`](research-design-p1a-majors.md)（P1-A 大工蟻設計）、[`day0-founding-evidence.md`](day0-founding-evidence.md)（蟻后數證據）、[`r2-day0-official-spec.md`](r2-day0-official-spec.md)（M09、M15～M18）、[`p0a2-24h-prototype.md`](p0a2-24h-prototype.md)、[`p0a2-brood-physiology-design.md`](p0a2-brood-physiology-design.md)。
@@ -81,6 +83,21 @@
 3. **BP-1**（育幼生理隔離候選）：卵／幼體的代謝與發育；`eclose` 由其成蟲事件觸發。
 4. **整合 PR（規則更新）**：P0-A2 `world.ts` 以 `addQueen` 建立 2～3 后（情境抽樣，標假設）、以實際交哺事件呼叫 `receiveFood`、把 `oviposit`／`decideCasteFate`／`bookMetabolism` 排入 P0-A0 事件佇列（每成員自己的事件、`hash32(seed|id)` 亂數流）；擴充 `prototypes/continuous-world/worker-boundary.json` 白名單加入 `engine/colony/`（屬規則修改，附邊界測試）；存檔格式升版；`web/src` 依 §6 顯示階級、母后與「尚未模擬」標籤。
 5. 驗證：多種子、多后 1～3 敏感度、候選關閉時的參考紀錄逐位元組不變、事件切分與快照重播不變、整數守恆。
+
+### 7.1 進度（2026-11-15：蟻群成員候選世界，規則更新 PR）
+
+| 計畫項目 | 狀態 |
+|---|---|
+| 以 `addQueen` 建立 2～3 后（情境抽樣，標假設） | **已做，但只在預設關閉的候選世界** `p0a2-colony-v1`：不是改 P0-A2 `world.ts`，而是在未修改的 P0-A2 世界之外組合一份名冊（`engine/colony/roster.ts`） |
+| 大工蟻個體（`addWorker(caste: 'major')`，`caste_source: initial_scenario`） | **已做**（同上）；全程 `in_nest`，`major_behaviour = in_nest_only` 是標示的假設；`as_minor` 只宣告、被拒絕 |
+| 初始情境的卵、蛹 | **已做**為名冊的不發育個體（`BroodItem`：階段、來源；母后、階段進度、階級命運未知）。它們不是 CQ-1 的 `Brood`（那只能由存活蟻后的產卵事件建立）；接入 BP-1 時要與幼體紀錄合併為同一實體（第 1 項仍待辦） |
+| Worker 白名單加入 `engine/colony/` | **已做**（另加單一檔案 `engine/day0/founding-sampler.ts`），附邊界負面樣本 |
+| 存檔與 Node 驗證 | **已做**：新世界種類 `p0a2-colony-v1`（不是把預設種類的存檔格式升版），`save_meta.colony` 含情境 checksum／PRNG／種子／抽樣值，`cli/verify-save.ts` 以同一模組重算 |
+| 檢視器資料 | **已做**訊框欄位（`frame.colony`，每個個體帶「尚未模擬」鍵）；既有檢視器的繪製是後續工作 |
+| 以實際交哺事件呼叫 `receiveFood`（蟻后餵食） | **未做**：C3a 規則只在舊每日引擎，沒有移植 |
+| `oviposit`／`decideCasteFate`／`bookMetabolism` 排入事件佇列 | **未做**：候選接口全部 null，沒有可排程的模型 |
+| MEC-0 單位綁定、幼體紀錄 v2 合併、BP-1 接入 | **未做** |
+| 多后 1～3 敏感度 | **未做**（本候選只用情境預設 2～3） |
 
 ## 8. 測試
 
