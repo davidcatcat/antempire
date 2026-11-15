@@ -270,7 +270,7 @@ function run(seed: number, t0: number, t1: number, dt = 0.1, every = 2): { trace
   function motion(seed: number, h0: number, minutes: number, every = 4) {
     const { world, events } = P0a2ExperimentWorld.create('exp-demo2-test', seed), stage = new ColonyStage(g, L), dt = 0.05, T0 = h0 * 3600, steps = Math.round((minutes * 60) / dt);
     stage.onEvents(events as unknown as EventMsg[]); stage.onEvents(world.advanceTo(T0).events as unknown as EventMsg[]); let f = frameOf(world); const vis = VisModel.of(f), v = f.layout.source_distance_cm / f.layout.travel_s;
-    const prev = new Map<string, DrawnAnt>(), stance = new Map<string, { x: number; y: number; z: number; m: number; w: boolean }>(), slips: number[] = [], yaws: number[] = [], startSp: number[] = [], walkSp: number[] = [], since = new Map<string, number>();
+    const prev = new Map<string, DrawnAnt>(), stance = new Map<string, { x: number; y: number; z: number; m: number; w: boolean }>(), slips: number[] = [], yaws: number[] = [], startSp: number[] = [], walkSp: number[] = [], since = new Map<string, number>(), walkRun = new Map<string, number>();
     let maxYaw = 0, close = 0, pen = 0, deep = 0, restPairs = 0, front = 0, same = 0, row = 0, turnSamples = 0, turnMoved = 0, meet = 0, restScan = 0, tilt = true; const cv: number[] = [];
     for (let i = 0; i <= steps; i++) {
       const t = T0 + i * dt; if (i % every === 0) { stage.onEvents(world.advanceTo(t).events as unknown as EventMsg[]); f = frameOf(world); }
@@ -284,7 +284,8 @@ function run(seed: number, t0: number, t1: number, dt = 0.1, every = 2): { trace
           if (a.turning && p.turning) { turnSamples++; if (a.sep === 0 && p.sep === 0 && a.absorbed === 0 && p.absorbed === 0 && jump > 1e-9) turnMoved++; }
           if (a.moving && a.realm === 'nest' && a.sep === 0 && p.sep === 0) { if (!p.moving) since.set(a.id, 0); const k = since.get(a.id); if (k !== undefined && k < 3) { startSp.push(jump / dt); since.set(a.id, k + 1); } else walkSp.push(jump / dt); }
         }
-        if (a.pose === 'walk' && a.pv.conv > 0.3) meet++;
+        // (the pose of an engine contact fades out over POSE_BLEND_S after it ends: only ants that have been walking for a second count)
+        walkRun.set(a.id, a.pose === 'walk' ? (walkRun.get(a.id) ?? 0) + 1 : 0); if (a.pose === 'walk' && walkRun.get(a.id)! > 20 && a.pv.conv > 0.02) meet++;
         if (a.pose === 'rest' && !a.moving && p && p.pose === 'rest' && a.pv.crouch === 1 && a.pv.scan !== 0) restScan++;
         // foot slip: how far a stance tarsus moves over the ground between touch-down and lift-off (walking stances only)
         const zx = a.fy * a.uz - a.fz * a.uy, zy = a.fz * a.ux - a.fx * a.uz, zz = a.fx * a.uy - a.fy * a.ux, sc = L / MODEL_LEN;
