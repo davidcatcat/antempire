@@ -1,7 +1,7 @@
 /**
  * Demo 2 — display-only body separation (畫面). Pure: no DOM, no Three.js, no engine import.
  *
- * The P0-A2 world has no bodies and no contact (matrix row M22: 尚未模擬). So that two DRAWN ants are not drawn inside
+ * The P0-A2 world has no bodies and no contact (matrix row M21: 尚未模擬). So that two DRAWN ants are not drawn inside
  * each other, the drawn points of one instant are moved apart here. This is a drawing rule, not physics:
  *  - a body is a capsule along its heading (places.ts BODY);
  *  - the correction is a function of the positions of THAT instant only (no memory, no time step): the same world

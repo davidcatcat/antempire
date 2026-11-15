@@ -76,6 +76,9 @@ export const TURN_STEP_PER_RAD = 0.6;
 const REACH_BLEND_S = 0.25;
 /** speed profile of a walk: ramp length at both ends (× body length) and how much a bend slows the walk */
 export const RAMP_BODY = 0.6, BEND_SLOW = 1.6;
+/** how far the antennae of two workers coming head-on turn toward each other (0 = not at all). A POSE only: the engine has
+ *  no antennal contact and nothing is recognised or signalled (docs/demo2-engine-gap.md §3.3) */
+export const MEET_ANTENNA = 0.9;
 /** the drawn body frame never turns faster than this (rad per simulated second) — asserted by the tests */
 export const YAW_RATE_BOUND = 8;
 /** bound of the drawn speed (× the engine trail speed) used by the jump detector and the continuity tests */
@@ -633,7 +636,7 @@ export class ColonyStage {
         if (j === i || bodies[j].realm !== b.realm) continue; const c = bodies[j], dx = c.x - b.x, dy = c.y - b.y, dz = c.z - b.z, d = Math.hypot(dx, dy, dz); if (d > 1.7 * L || d < 1e-6) continue;
         meet = Math.max(meet, Math.max(0, (fw.x * dx + fw.y * dy + fw.z * dz) / d) * Math.max(0, -(c.fx * dx + c.fy * dy + c.fz * dz) / d) * smooth((1.7 * L - d) / (0.9 * L)));
       }
-      if (a.pose !== 'rest' || a.prev !== 'rest') { pv.conv = Math.max(pv.conv, meet * 0.9); pv.antUp += meet * 0.3; }
+      if (a.pose !== 'rest' || a.prev !== 'rest') { pv.conv = Math.max(pv.conv, meet * MEET_ANTENNA); pv.antUp += meet * MEET_ANTENNA / 3; }
       const stride = strideCm(r.id, L);
       out.push({ id: w.id, state: w.state, realm: a.realm, x, y, z, fx: fw.x, fy: fw.y, fz: fw.z, ux: up.x, uy: up.y, uz: up.z, heading: a.heading, moving: a.moving, pose: a.pose, crop: w.crop_fill, partner: a.partner, cls: a.cls, place: a.place, edge: a.edge,
         absorbed: Math.hypot(o.x, o.y, o.z), sep: s ? Math.hypot(s.x, s.z) : 0, odo: a.odo, phase: gaitPhase(r.id, a.odo, L), amp: stanceAmp(stride, L) * a.ampK, walk: a.walk, pv, turning: a.turning, len: L });

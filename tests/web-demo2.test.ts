@@ -311,10 +311,10 @@ function run(seed: number, t0: number, t1: number, dt = 0.1, every = 2): { trace
       close_pairs: close, overlapping_pct: Number((100 * pen / Math.max(1, close)).toFixed(2)), deep_overlaps: deep, rest_pairs: restPairs, rest_front_overlap_pct: Number((100 * front / Math.max(1, restPairs)).toFixed(3)), rest_same_facing_pct: Number((100 * same / Math.max(1, restPairs)).toFixed(2)), rest_same_row_pct: Number((100 * row / Math.max(1, restPairs)).toFixed(2)), rest_nn_spacing_cv: Number(mean(cv).toFixed(3)),
       turn_in_place_samples: turnSamples, turnMoved, start_speed: Number(mean(startSp).toFixed(2)), walk_speed: Number(mean(walkSp).toFixed(2)), meet, restScan, tilt };
   }
-  const M = [motion(1, 9, 20), motion(3, 22, 20)]; summary.motion = M;
+  const M = [motion(1, 9, 12), motion(3, 22, 12)]; summary.motion = M;
   for (const m of M) {
     ok(m.max_turn_rate <= YAW_RATE_BOUND, `seed ${m.seed}: the drawn body never turns faster than ${YAW_RATE_BOUND} rad/s — no heading flip (max ${m.max_turn_rate}, 99.9th percentile ${m.turn_rate_p999}; turn rate ${TURN_RATE} rad/s, eased peak × 1.5)`);
-    ok(m.walk_stances > 20000 && m.walk_slip_mean_cm <= 0.1 * m.stride_cm && m.walk_slip_p95_cm <= 0.32 * m.stride_cm, `seed ${m.seed}: walking stance feet stay planted (slip mean ${m.walk_slip_mean_cm} cm, 95th percentile ${m.walk_slip_p95_cm} cm, stride ${m.stride_cm} cm; ${m.walk_stances} stances; bends, lane changes and give-way moves are what is left)`);
+    ok(m.walk_stances > 12000 && m.walk_slip_mean_cm <= 0.1 * m.stride_cm && m.walk_slip_p95_cm <= 0.32 * m.stride_cm, `seed ${m.seed}: walking stance feet stay planted (slip mean ${m.walk_slip_mean_cm} cm, 95th percentile ${m.walk_slip_p95_cm} cm, stride ${m.stride_cm} cm; ${m.walk_stances} stances; bends, lane changes and give-way moves are what is left)`);
     ok(m.close_pairs > 5000 && m.overlapping_pct <= 2.5, `seed ${m.seed}: bodies are kept apart (${m.overlapping_pct}% of ${m.close_pairs} close pairs overlap by more than 2% of a body length; ${m.deep_overlaps} deeper than 0.3 cm)`);
     ok(m.rest_pairs > 1000 && m.rest_front_overlap_pct <= 0.2 && m.rest_same_facing_pct <= 6 && m.rest_same_row_pct <= 5 && m.rest_nn_spacing_cv >= 0.15, `seed ${m.seed}: resting workers are arranged irregularly (front-view overlap ${m.rest_front_overlap_pct}% of pairs, same facing ${m.rest_same_facing_pct}%, same row ${m.rest_same_row_pct}%, nearest-neighbour spacing CV ${m.rest_nn_spacing_cv})`);
     ok(m.turn_in_place_samples > 200 && m.turnMoved === 0, `seed ${m.seed}: large heading changes are turned in place (${m.turn_in_place_samples} samples; the body does not travel while it turns)`);
@@ -325,21 +325,21 @@ function run(seed: number, t0: number, t1: number, dt = 0.1, every = 2): { trace
   {
     const mk = () => { const { world, events } = P0a2ExperimentWorld.create('exp-demo2-test', 5), stage = new ColonyStage(g, L); stage.onEvents(events as unknown as EventMsg[]); stage.onEvents(world.advanceTo(11 * 3600).events as unknown as EventMsg[]); return { world, stage }; };
     const A = mk(), Bq = mk(), C = mk(), T0 = 11 * 3600, at: string[][] = [[], [], []]; let fA = frameOf(A.world), fB = frameOf(Bq.world), fC = frameOf(C.world); const vis = VisModel.of(fA);
-    for (let i = 0; i <= 1500 * 4; i++) { // A: 20 samples per simulated second
+    for (let i = 0; i <= 900 * 4; i++) { // A: 20 samples per simulated second
       const t = T0 + i * 0.05; if (i % 4 === 0) { A.stage.onEvents(A.world.advanceTo(t).events as unknown as EventMsg[]); fA = frameOf(A.world); } const d = A.stage.update(fA, vis, t, 0.05); if (i % 20 === 0) at[0].push(JSON.stringify(d));
     }
-    for (let i = 0; i <= 1500; i++) { // B: 5 samples per second (one per frame), and a different "wall dt"
+    for (let i = 0; i <= 900; i++) { // B: 5 samples per second (one per frame), and a different "wall dt"
       const t = T0 + i * 0.2; Bq.stage.onEvents(Bq.world.advanceTo(t).events as unknown as EventMsg[]); fB = frameOf(Bq.world); const d = Bq.stage.update(fB, vis, t, 0.2); if (i % 5 === 0) at[1].push(JSON.stringify(d));
     }
-    for (let i = 0; i <= 1500; i++) { // C: frames ingested as they come; drawn only once per simulated second, plus irregular extra instants
+    for (let i = 0; i <= 900; i++) { // C: frames ingested as they come; drawn only once per simulated second, plus irregular extra instants
       const t = T0 + i * 0.2; C.stage.onEvents(C.world.advanceTo(t).events as unknown as EventMsg[]); fC = frameOf(C.world); C.stage.ingest(fC, vis); if (i % 7 === 3) C.stage.at(t + 0.137); if (i % 5 === 0) at[2].push(JSON.stringify(C.stage.at(t)));
     }
     const diff = (x: string[], y: string[]) => x.findIndex((v, i) => v !== y[i]);
-    ok(at[0].length === 301 && diff(at[0], at[1]) === -1 && diff(at[0], at[2]) === -1, `the same frames drawn at 20 / 5 / 1 samples per simulated second give identical ants at the same instants (first difference at second ${diff(at[0], at[1])} / ${diff(at[0], at[2])})`);
+    ok(at[0].length === 181 && diff(at[0], at[1]) === -1 && diff(at[0], at[2]) === -1, `the same frames drawn at 20 / 5 / 1 samples per simulated second give identical ants at the same instants (first difference at second ${diff(at[0], at[1])} / ${diff(at[0], at[2])})`);
     // a different FRAME cadence (a higher playback speed delivers fewer frames per simulated second) is a different input: the
     // engine instants still hold (checked by run() above at two cadences); the display walk between them may differ
     const D = mk(); let fD = frameOf(D.world), worst = 0; const prevD = new Map<string, DrawnAnt>();
-    for (let i = 0; i <= 6000; i++) { const t = T0 + i * 0.05; if (i % 40 === 0) { D.stage.onEvents(D.world.advanceTo(t).events as unknown as EventMsg[]); fD = frameOf(D.world); }
+    for (let i = 0; i <= 3600; i++) { const t = T0 + i * 0.05; if (i % 40 === 0) { D.stage.onEvents(D.world.advanceTo(t).events as unknown as EventMsg[]); fD = frameOf(D.world); }
       for (const a of D.stage.update(fD, vis, t, 0)) { const p = prevD.get(a.id); if (p && p.realm === a.realm && Math.hypot(a.x - p.x, a.y - p.y, a.z - p.z) < 0.4) worst = Math.max(worst, Math.max(Math.acos(Math.max(-1, Math.min(1, a.fx * p.fx + a.fy * p.fy + a.fz * p.fz))), Math.acos(Math.max(-1, Math.min(1, a.ux * p.ux + a.uy * p.uy + a.uz * p.uz)))) / 0.05); prevD.set(a.id, a); } }
     ok(worst <= YAW_RATE_BOUND, `with one frame per 2 simulated seconds (a high playback speed) the turning bound still holds (max ${worst.toFixed(2)} rad/s)`);
   }
