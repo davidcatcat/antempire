@@ -860,7 +860,7 @@ const hooks: Record<string, unknown> = {
   layout: () => { const top = ui.top.getBoundingClientRect().bottom; return { narrow: narrow(), sheet, sheet_px: sheetPx(), top_px: top, scene_fraction: (innerHeight - top - sheetPx()) / innerHeight, hud_open: hudOpen }; },
   setSheet: (s: Sheet) => { if (s === 'peek') openSide(null); else { setSheet(s); openSide(openTabName()); } },
   /** 自動導覽 (camera only): whether it is on / running, the current shot and the shots so far */
-  tour: () => ({ on: tourOn, idle_s: tourIdle, active: tour !== null, k: tour?.k ?? null, shot: tour?.shot ?? null, follows: tourFollows(), observed, cues: tourCues.length, log: tourLog.map((x) => ({ ...x })) }),
+  tour: () => ({ on: tourOn, idle_s: tourIdle, idle_for_s: (performance.now() - lastInput) / 1000, active: tour !== null, k: tour?.k ?? null, shot: tour?.shot ?? null, follows: tourFollows(), observed, cues: tourCues.length, log: tourLog.map((x) => ({ ...x })) }),
   setTour: (on: boolean) => { tourOn = on; syncTourBtn(); if (!on) stopTour(); },
   /** screen rectangles of the visible in-scene labels and of the legend line */
   labelRects: () => [...labelEls.entries()].filter(([, el]) => !el.hidden).map(([key, el]) => { const r = el.getBoundingClientRect(); return { key, text: el.textContent, left: r.left, top: r.top, w: r.width, h: r.height }; }),

@@ -150,7 +150,7 @@ const { chromium, devices } = require('playwright');
   let tourRun = null;
   for (const [tag, opts] of [['pixel7', { ...devices['Pixel 7'] }], ['desktop', { viewport: { width: 1440, height: 900 } }]]) {
     const video = process.env.DEMO2_VIDEO === '1' && tag === 'pixel7';
-    const { ctx, page } = await open(video ? { ...opts, recordVideo: { dir: out, size: opts.viewport } } : opts, 'seed=1&quality=low&speed=10&tour=2', `tour-${tag}`, LOG);
+    const { ctx, page } = await open(video ? { ...opts, recordVideo: { dir: out, size: opts.viewport } } : opts, 'seed=1&quality=low&speed=10&tour=4', `tour-${tag}`, LOG);
     const s0 = await page.evaluate(() => ({ s: window.__demo2.state(), tour: window.__demo2.tour(), play: document.querySelector('#play').textContent }));
     check(s0.s.running && s0.play.includes('暫停') && s0.tour.on, `tour ${tag}: the world is running right after load with no input; 自動導覽 is on`);
     // wait (no input at all) until the tour has shown an overview and followed a worker
@@ -166,17 +166,28 @@ const { chromium, devices } = require('playwright');
     await shot(page, `demo2-ui-${tag}-idle-tour`);
     if (video) await page.waitForTimeout(26000); // a few more shots for the clip
     const logOn = await page.evaluate(() => window.__workerLog.slice());
-    // one tap hands the camera back
-    const cam0 = await page.evaluate(() => window.__demo2.state());
-    // (coordinates, not a locator: the page hands the camera back on pointerdown, which hides the chip at once)
-    const cp = await page.evaluate(() => { const r = document.querySelector('#tourChip').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
-    if (tag === 'pixel7') await page.touchscreen.tap(cp.x, cp.y); else await page.mouse.click(cp.x, cp.y);
-    await page.waitForTimeout(700);
-    const t2 = await page.evaluate(() => ({ t: window.__demo2.tour(), s: window.__demo2.state(), chip: document.querySelector('#tourChip').hidden }));
-    await page.waitForTimeout(700);
-    const t3 = await page.evaluate(() => window.__demo2.state());
-    check(!t2.t.active && t2.chip && t2.s.following === null && t2.s.running && JSON.stringify(t3.cam) === JSON.stringify(t2.s.cam), `tour ${tag}: one tap stops the tour (chip gone, the camera stays where it is, the world keeps running)`);
-    void cam0;
+    // one tap hands the camera back. The camera must then stay put for as long as the user is not idle again: both
+    // samples are taken inside ONE in-page call, within the idle time (after it the tour may rightly start again; on a
+    // slow runner two separate calls can straddle that moment, so a late sample is retaken, never accepted).
+    let stop = null, taps = 0;
+    for (; taps < 4; ) {
+      await page.waitForFunction(() => window.__demo2.tour().active && !document.querySelector('#tourChip').hidden, null, { timeout: 60000 });
+      // (coordinates, not a locator: the page hands the camera back on pointerdown, which hides the chip at once)
+      const cp = await page.evaluate(() => { const r = document.querySelector('#tourChip').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+      if (tag === 'pixel7') await page.touchscreen.tap(cp.x, cp.y); else await page.mouse.click(cp.x, cp.y);
+      taps++;
+      stop = await page.evaluate(async () => {
+        const D = window.__demo2, snap = () => ({ t: D.tour(), s: D.state(), chip: document.querySelector('#tourChip').hidden });
+        const a = snap(), hold = Math.min(900, (a.t.idle_s - a.t.idle_for_s - 0.8) * 1000);
+        if (hold < 300) return { a, b: null, hold };
+        await new Promise((r) => setTimeout(r, hold));
+        return { a, b: snap(), hold };
+      });
+      if (stop.b && stop.b.t.idle_for_s < stop.b.t.idle_s) break; // both samples lie inside the idle window
+    }
+    const sa = stop.a, sb = stop.b;
+    check(!!sb && sb.t.idle_for_s < sb.t.idle_s && stop.hold >= 300, `tour ${tag}: both samples after the tap were taken within the idle time (${sb ? sb.t.idle_for_s.toFixed(2) : '—'} s of ${sa.t.idle_s} s; ${taps} tap${taps > 1 ? 's' : ''})`);
+    check(!!sb && !sa.t.active && sa.chip && sa.s.following === null && sa.s.running && !sb.t.active && sb.chip && sb.s.following === null && sb.s.running && sb.s.frame_t >= sa.s.frame_t && JSON.stringify(sb.s.cam) === JSON.stringify(sa.s.cam) && JSON.stringify(sb.s.target) === JSON.stringify(sa.s.target), `tour ${tag}: one tap stops the tour (chip gone, the camera stays where it is for the next ${Math.round(stop.hold)} ms, the world keeps running)`);
     if (tag === 'desktop') {
       // the same run with the tour OFF: the Worker received exactly the same messages, and the worlds are the same
       const off = await open(opts, 'seed=1&quality=low&speed=10&tour=0', 'tour-off', LOG);

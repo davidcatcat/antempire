@@ -42,7 +42,7 @@ npm ci && npm run web:build && node cli/web-serve.ts
 - **只動鏡頭**：自動導覽不對 Worker 送任何訊息（導覽的跟隨連「回報這隻工蟻的資料」的觀察指令都不送）。瀏覽器測試記錄送給 Worker 的每一則訊息：開導覽與關導覽的訊息紀錄**完全相同**（init、step_until、snapshot、set_speed、start），導覽後把兩個世界排程到同一模擬時刻，整幀 JSON 相同（#144：鏡頭不改變命運）。
 - 自動化環境（`navigator.webdriver`）預設不啟動導覽，除非網址帶 `tour=<秒>`，讓其他瀏覽器測試保有自己的鏡頭。
 
-截圖（`docs/vis/demo2/`；無頭 Chromium 軟體算繪）：改版前 `demo2-ui-before-pixel7-default.jpg`、`demo2-ui-before-pixel7-panel.jpg`、`demo2-ui-before-desktop-default.jpg`、`demo2-ui-before-desktop-panel.jpg`；改版後 `demo2-ui-pixel7-default.jpg`、`-more.jpg`、`-card.jpg`、`-follow.jpg`、`-detail.jpg`、`-sheet-half.jpg`、`-sheet-full.jpg`、`-idle-tour.jpg`、`demo2-ui-desktop-default.jpg`、`-follow.jpg`、`-idle-tour.jpg`、`demo2-ui-landscape-default.jpg`；自動導覽短片 `demo2-ui-pixel7-idle-tour.webm`（閒置門檻設 2 秒、10× 速度錄製；軟體算繪幀率低，不代表實機流暢度）。
+截圖（`docs/vis/demo2/`；無頭 Chromium 軟體算繪）：改版前 `demo2-ui-before-pixel7-default.jpg`、`demo2-ui-before-pixel7-panel.jpg`、`demo2-ui-before-desktop-default.jpg`、`demo2-ui-before-desktop-panel.jpg`；改版後 `demo2-ui-pixel7-default.jpg`、`-more.jpg`、`-card.jpg`、`-follow.jpg`、`-detail.jpg`、`-sheet-half.jpg`、`-sheet-full.jpg`、`-idle-tour.jpg`、`demo2-ui-desktop-default.jpg`、`-follow.jpg`、`-idle-tour.jpg`、`demo2-ui-landscape-default.jpg`；自動導覽短片 `demo2-ui-pixel7-idle-tour.webm`（閒置門檻設幾秒、10× 速度錄製；軟體算繪幀率低，不代表實機流暢度）。
 
 尚未做到／已知限制：實機（Owner 的 Android 手機、嵌入頁內）尚未驗證；自動導覽的鏡頭節奏（全景 8 秒、跟隨 16 秒）是展示用的固定值；導覽只跟隨小工蟻（蟻后、大工蟻、卵、蛹在引擎中沒有行為可看）；寬度 ≤ 380 px 的手機「非正式實驗世界」標記會換到第二行。
 
