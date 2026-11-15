@@ -67,6 +67,7 @@ V6-2 UI ──► Worker Client (web/src/experimental/worker-client.ts)
 - **純度與決定性數學**：這些模組都在 `engine/` 之下，套用 `forbidden_in_engine_modules` 與 `deterministic_math_in_worker_graph`（只用 `Math.floor`／`round`／`min`，對數均勻抽樣走 `detLog`／`detExp`）。因為還沒有匯入者，證據來自 `tests/worker-boundary.test.ts` 第 4 段的「白名單封閉性探針」：探針模組匯入每一個白名單內的 engine 模組（含這兩個），整張圖必須零違規；`tests/day0-initial-conditions.test.ts` 第 7 項另以探針證明取樣器通過邊界、移除該項就被拒絕、`engine/day0/` 的其他模組仍被拒絕。
 - **負面樣本**（`tests/worker-boundary.test.ts` 新增 10 個，全部必須失敗）：蟻群模組用 `Math.random`、`Date.now`（engine-impurity）、`Math.pow`（approximated-math）、儲存 API（forbidden-global）、匯入正式每日迴圈（denied-module）或未列入白名單的 `engine/queen.ts`（not-allowlisted）；匯入 `engine/day0/` 的其他模組（not-allowlisted）；取樣器用 `Math.log`（approximated-math）；Worker 直接匯入情境檔或 CQ-1 研究參數檔（not-allowlisted）。
 - **授權**：依 Owner 2026-11-12 授權自審並附上述邊界測試證據（CLAUDE.md §9 B）；獨立審查待恢復後另行安排。
+- **匯入者（疊放的候選世界 PR 加入）**：唯一匯入者是預設關閉的候選世界轉接層 `worker/p0a2-colony-world.ts`；`engine/colony/roster.ts`（候選名冊）加入同一目錄。情境檔不進 Worker：轉接層讀工具產生的摘錄 `worker/p0a2-colony-scenario.ts`（含整份情境檔的 checksum）。真實 Worker 圖到達這三個模組並通過全部檢查（`tests/worker-boundary.test.ts` 第 3 段）；`tests/p0a2-colony-world.test.ts` 第 13 段另有 11 個負面樣本（含匯入 BP-1、`fetch`、正式存檔路徑字樣）。說明文件：[`colony-candidate-world.md`](colony-candidate-world.md)。
 
 ## 4b. 實驗世界本地存檔例外（SAVE）
 

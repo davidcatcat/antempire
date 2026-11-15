@@ -153,7 +153,7 @@ for (const d of ['engine', B.worker_entry_dir, 'prototypes/p0a2-24h']) for (cons
 ok(B.allowed_import_prefixes.includes(SAMPLER) && !B.allowed_import_prefixes.includes('engine/day0/'), '7: the sampler is allowlisted as exactly one file (not the whole engine/day0/ directory)');
 { // importers inside the Worker directory: none, or only the opt-in colony-members candidate adapter (stacked PR)
   const importers = [...files].filter(([f, src]) => f.startsWith(B.worker_entry_dir) && /\bfrom\s*'[^']*day0\/founding-sampler/.test(src)).map(([f]) => f);
-  ok(importers.every((f) => f === `${B.worker_entry_dir}/p0a2-colony-world.ts`), `7: no Worker module imports the sampler except the opt-in colony-members candidate adapter (${importers.join() || 'none'})`);
+  ok(importers.join() === `${B.worker_entry_dir}/p0a2-colony-world.ts`, `7: the only Worker module that imports the sampler is the opt-in colony-members candidate adapter (${importers.join() || 'none'})`);
   ok(/p0a2-world\.ts/.test(files.get(`${B.worker_entry_dir}/p0a2-code-hash.ts`)!) && !/day0\/founding-sampler|engine\/colony|p0a2-colony/.test(files.get(`${B.worker_entry_dir}/p0a2-code-hash.ts`)!) && !/founding-sampler|p0a2-colony/.test(files.get(`${B.worker_entry_dir}/p0a2-world.ts`)!), '7: the default P0-A2 world (its code graph and adapter) does not use the sampler');
 }
 const probe = new Map(files), hypothetical = { ...B, allowed_import_prefixes: [...B.allowed_import_prefixes, 'engine/day0/'] };

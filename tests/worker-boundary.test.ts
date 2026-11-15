@@ -151,6 +151,7 @@ for (const d of ['engine', 'cli', 'web/src', B.worker_entry_dir, 'prototypes/p0a
 const r = checkBoundary(real, B);
 ok(r.violations.length === 0, `real repository respects the Worker boundary (${JSON.stringify(r.violations.slice(0, 5))})`);
 for (const f of ['prototypes/p0a2-24h/world.ts', 'prototypes/p0a2-24h/decision.ts', 'prototypes/p0a2-24h/params.json']) ok(r.reached.includes(f), `the Worker graph reaches the P0-A2 core (${f})`);
+for (const f of ['engine/colony/members.ts', 'engine/colony/roster.ts', 'engine/day0/founding-sampler.ts']) ok(r.reached.includes(f), `the Worker graph reaches the colony-candidate module ${f} (and it passed every purity / deterministic-math check above)`);
 ok(!r.reached.some((f) => f.startsWith('scenarios/') || f.startsWith('prototypes/colony-members/') || f.startsWith('prototypes/p0a2-24h/brood/')), 'the Worker graph reaches no scenario file, CQ-1 research file or BP-1 module');
 ok(!r.reached.some((f) => f.startsWith('prototypes/p0a2-24h/tools/') || f.startsWith('prototypes/p0a2-24h/out/') || f === 'prototypes/p0a2-24h/observer.ts'), 'the Worker graph reaches no P0-A2 tool, output or observer module');
 checks += r.checks;

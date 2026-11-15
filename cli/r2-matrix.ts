@@ -17,6 +17,15 @@
  *    (「近似範圍」, condition 3); a 未接入 row's probe, if given, is ABSENT from the candidate-world sources (so wiring a
  *    mechanism without updating the matrix fails);
  *  - a 未接入 probe may list extra texts (probe.any); a hit of ANY of them in the candidate world fails the row;
+ *  - OPT-IN candidate world kinds (candidate_world.opt_in_candidates; e.g. the colony-members candidate p0a2-colony-v1):
+ *    a world kind that is default OFF may hold individuals or code of a mechanism the DEFAULT candidate world does not
+ *    have. The matrix must then declare it: its id, default_off:true, its document, its BLOCKING tests, the rows it
+ *    touches and the exact files that implement or declare it. For those rows only, a 未接入 probe hit inside those
+ *    files does not fail the row — but (a) every declared file must be a candidate-world source that is NOT part of the
+ *    default world's code graph (worker/p0a2-code-hash.ts), (b) a declared row may not be 已接入 on the strength of an
+ *    opt-in kind, and its candidate_world_now must name the kind (the matrix records it), and (c) a hit in any other
+ *    file, or for any other row, still fails; and (d) for those rows the declared files do not count as wiring either
+ *    (a 已接入 / 簡化代理 probe must be found outside them). An opt-in kind never changes a status by itself;
  *  - assumption flags: a row whose basis includes a non-measured class is flagged assumption:true;
  *  - owner decision codes exist; the verdict is NO-GO iff some row blocks R2.
  * Owner ruling #212 Q2 a (2026-11-13): completeness may be relaxed (an unwired mechanism need not block), but
@@ -68,10 +77,14 @@ export interface Row {
   tests: string[]; known_defects: number[]; limits: string; player_view: string;
   r2_conditions: number[]; blocks_r2: boolean; blocker_reason: string; owner_decision?: string;
 }
+/** a default-OFF world kind of the Worker (see the module comment): declared, never a status by itself */
+export interface OptInCandidate { id: string; default_off: boolean; doc: string; tests: string[]; rows: string[]; files: string[]; note: string }
+/** the generated file that lists the DEFAULT P0-A2 world's code graph (prototypes/continuous-world/tools/p0a2-code-hash.ts) */
+export const DEFAULT_WORLD_GRAPH_FILE = 'prototypes/continuous-world/worker/p0a2-code-hash.ts';
 export interface Matrix {
   schema: string; as_of: string; base_commit: string;
   statuses: Record<string, string>;
-  candidate_world: { description: string; sources: string[] };
+  candidate_world: { description: string; sources: string[]; opt_in_candidates?: OptInCandidate[] };
   r2_conditions: Record<string, string>;
   required_modules: string[];
   owner_decisions: Record<string, string>;
@@ -123,6 +136,36 @@ export function validateMatrix(m: Matrix, root = REPO_ROOT): string[] {
   for (const s of sources) if (!exists(root, s)) err('candidate_world', `source ${s} does not exist`);
   const corpus = sources.flatMap((s) => listFiles(root, s)).map((f) => ({ f, text: read(root, f) }));
 
+  // opt-in (default-off) candidate world kinds: declared files in which a declared row's 未接入 probe may appear
+  const optInFiles = new Map<string, Set<string>>();
+  {
+    const graph = exists(root, DEFAULT_WORLD_GRAPH_FILE) ? read(root, DEFAULT_WORLD_GRAPH_FILE) : null;
+    const seen = new Set<string>();
+    for (const c of m.candidate_world?.opt_in_candidates ?? []) {
+      const w = `opt_in_candidate ${c?.id ?? '(no id)'}`;
+      if (typeof c?.id !== 'string' || c.id === '' || seen.has(c.id)) err(w, 'needs a unique id'); else seen.add(c.id);
+      if (c.default_off !== true) err(w, 'an opt-in candidate must be default_off: true (a default-on mechanism is wired: change the row status instead)');
+      if (typeof c.note !== 'string' || c.note.trim() === '') err(w, 'note missing');
+      if (typeof c.doc !== 'string' || !exists(root, c.doc)) err(w, `doc ${c.doc} does not exist`);
+      if (!Array.isArray(c.tests) || c.tests.length === 0) err(w, 'needs at least one test');
+      for (const t of c.tests ?? []) { const n = /^tests\/([a-z0-9-]+)\.test\.ts$/.exec(t); if (!n || !exists(root, t) || !blocking.has(n[1])) err(w, `test ${t} must be an existing BLOCKING tests/<name>.test.ts`); }
+      if (graph === null) err(w, `${DEFAULT_WORLD_GRAPH_FILE} is missing: cannot show that the files are outside the default world`);
+      if (!Array.isArray(c.files) || c.files.length === 0) err(w, 'needs its files');
+      for (const f of c.files ?? []) {
+        if (!within(f, sources) || !exists(root, f)) err(w, `file ${f} is not a candidate-world source`);
+        if (graph !== null && graph.includes(`'${f}'`)) err(w, `file ${f} is part of the DEFAULT world's code graph: a mechanism there is wired into the default world, not opt-in`);
+      }
+      if (!Array.isArray(c.rows) || c.rows.length === 0) err(w, 'needs the rows it touches');
+      for (const id of c.rows ?? []) {
+        const r = m.rows.find((y) => y.id === id);
+        if (!r) { err(w, `row ${id} does not exist`); continue; }
+        if (r.status === '已接入') err(w, `row ${id} is 已接入: an opt-in candidate cannot be the basis of 已接入`);
+        if (!(r.candidate_world_now ?? '').includes(c.id)) err(w, `row ${id} does not name ${c.id} in candidate_world_now (the matrix must record the opt-in candidate)`);
+        const set = optInFiles.get(id) ?? new Set<string>(); for (const f of c.files ?? []) set.add(f); optInFiles.set(id, set);
+      }
+    }
+  }
+
   const nonRelaxable = new Set(m.non_relaxable_modules ?? []), exempt = new Set(m.disclosure_exempt_modules ?? []);
   const ids = new Set<string>(), modules = new Map<string, number>();
   for (const r of m.rows) {
@@ -164,7 +207,8 @@ export function validateMatrix(m: Matrix, root = REPO_ROOT): string[] {
       if (!r.probe?.text) err(w, `${r.status} needs a wiring probe`);
       else {
         if (r.probe.file !== undefined && (!within(r.probe.file, sources) || !exists(root, r.probe.file))) err(w, `probe file ${r.probe.file} is not a candidate-world source`);
-        const pool = r.probe.file ? corpus.filter((x) => x.f === r.probe!.file) : corpus;
+        // a mechanism that exists only in the files of an opt-in (default-off) candidate is NOT found in the candidate world
+        const pool = (r.probe.file ? corpus.filter((x) => x.f === r.probe!.file) : corpus).filter((x) => !optInFiles.get(r.id)?.has(x.f));
         if (!pool.some((x) => x.text.includes(r.probe!.text))) err(w, `${r.status} but "${r.probe.text}" is not found in the candidate world${r.probe.file ? ` (${r.probe.file})` : ''}`);
       }
     }
@@ -172,7 +216,7 @@ export function validateMatrix(m: Matrix, root = REPO_ROOT): string[] {
     if (r.status === '簡化代理' && !/近似範圍/.test(r.limits ?? '')) err(w, '簡化代理 must state its approximation range (近似範圍) in limits (#201 condition 3)');
     if (r.status === '未接入' && r.probe?.text) {
       for (const t of [r.probe.text, ...(r.probe.any ?? [])]) {
-        const hit = corpus.find((x) => x.text.includes(t));
+        const hit = corpus.find((x) => x.text.includes(t) && !optInFiles.get(r.id)?.has(x.f));
         if (hit) err(w, `marked 未接入 but "${t}" appears in candidate-world source ${hit.f}: update the matrix`);
         // the generated list is a candidate-world source: no disclosure may contain an unwired mechanism's probe
         const said = m.rows.find((y) => (y.disclosure_zh ?? '').includes(t));
@@ -233,7 +277,18 @@ export function renderBlockers(m: Matrix): string {
     '|---|---|---|---|---|---|---|',
     ...b.map((r) => `| ${r.id} | ${cell(r.name_zh)} | ${r.status} | ${r.r2_conditions.join('、')} | ${cell(r.blocker_reason)} | ${defects(r)} | ${r.owner_decision ?? '—'} |`),
   ];
-  return out.join('\n');
+  return out.join('\n') + renderOptIn(m);
+}
+
+/** the opt-in (default-off) candidate world kinds, shown under the generated tables so that a reader of the matrix
+ *  sees them and sees that they do not count as 已接入 (empty string when there is none) */
+export function renderOptIn(m: Matrix): string {
+  const oc = m.candidate_world?.opt_in_candidates ?? [];
+  if (oc.length === 0) return '';
+  return ['', '', '**預設關閉候選（不計入已接入；下列各列的狀態不因此改變）**', '',
+    '| 候選世界種類 | 標示 | 涉及的列（狀態不變） | 文件 | 測試 |', '|---|---|---|---|---|',
+    ...oc.map((c) => `| \`${c.id}\` | 預設關閉候選，不計入已接入 | ${c.rows.map((id) => `${id}（${m.rows.find((r) => r.id === id)?.status ?? '?'}）`).join('、')} | \`${c.doc}\` | ${c.tests.map((t) => `\`${t}\``).join(' ')} |`),
+  ].join('\n');
 }
 
 /** the full matrix table quoted in the spec (generated) */
@@ -242,7 +297,7 @@ export function renderTable(m: Matrix): string {
     '| 列 | 模組 | 狀態 | 阻擋 R2 | 測試 | 文獻 | 缺陷 |',
     '|---|---|---|---|---|---|---|',
     ...m.rows.map((r) => `| ${r.id} | ${cell(r.name_zh)} | ${r.status} | ${r.blocks_r2 ? '是' : '否'} | ${r.tests.length} | ${r.evidence_refs.length ? r.evidence_refs.join(' ') : '—'} | ${defects(r)} |`),
-  ].join('\n');
+  ].join('\n') + renderOptIn(m);
 }
 
 /** is the row on the 「尚未模擬／簡化代理」 list (未接入 except exempt / disclosure rows; every 簡化代理) */

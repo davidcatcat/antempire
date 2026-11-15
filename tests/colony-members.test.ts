@@ -1,5 +1,7 @@
 /**
- * CQ-1 colony members (engine/colony/members.ts, docs/colony-members-cq1.md) — isolated module, NOT wired into a world.
+ * CQ-1 colony members (engine/colony/members.ts, docs/colony-members-cq1.md) — isolated module. It is NOT wired into the
+ * default worlds; its only user is the opt-in colony-members candidate world (p0a2-colony-v1, default off;
+ * tests/p0a2-colony-world.test.ts), which runs it with every physiology candidate null.
  *
  *  1. parameter file: schema, caste switches with evidence classes and existing sources; negative fixtures
  *  2. multi-queen independence: adding / removing / killing queen B, or interleaving calls differently, never changes
@@ -15,7 +17,8 @@
  *  8. snapshot / restore byte-identical; split + restore + continue == one run; metabolism booking split-invariant
  *  9. locality: static (no colony identifiers; candidates are called only with own-view builders that take one member)
  *     and runtime (views have exactly the own keys; a counterfactual crowd of other members does not change them)
- * 10. isolation: nothing official / Worker / P0-A2 imports engine/colony; engine/colony imports only ../rng.ts, ../sha256.ts;
+ * 10. isolation: nothing official / P0-A2 / default Worker world imports engine/colony — the ONLY importer is the opt-in
+ *     candidate world adapter (worker/p0a2-colony-world.ts); engine/colony imports only ../rng.ts, ../sha256.ts;
  *     deterministic-math rule of the worker boundary; no platform API
  * 11. viewer data shape (caste, queen id, mother id, candidate ids, 尚未模擬 list)
  *
@@ -274,7 +277,15 @@ const queenTrace = (s: MembersState, q: string) => ({ queen: s.queens[q], eggs: 
   const scanned = [...fs.readdirSync(path.join(REPO_ROOT, 'engine')).filter((f) => f.endsWith('.ts')).map((f) => path.join(REPO_ROOT, 'engine', f)),
     ...walk(path.join(REPO_ROOT, 'cli')), ...walk(path.join(REPO_ROOT, 'web/src')), ...walk(path.join(REPO_ROOT, 'prototypes/continuous-world')), ...walk(path.join(REPO_ROOT, 'prototypes/p0a2-24h'))];
   ok(scanned.length > 50, 'isolation scan covers the official engine, cli, web, Worker and P0-A2');
-  for (const f of scanned) ok(!refersTo(fs.readFileSync(f, 'utf8')), `${path.relative(REPO_ROOT, f)} does not import engine/colony (not wired yet)`);
+  // the one allowed user: the opt-in colony-members candidate world (default off). Everything else stays unwired.
+  const refersToColony = (s: string) => /\b(from|import)\s*\(?\s*['"`][^'"`\n]*colony\/(members|roster)[^'"`\n]*['"`]/.test(s);
+  ok(!refersToColony("const files = ['engine/colony/members.ts'];"), 'a path in a generated file list is not an import');
+  ok(refersToColony("import { x } from '../../../engine/colony/roster.ts';"), 'engine/colony import detector bites');
+  const CANDIDATE_ADAPTER = 'prototypes/continuous-world/worker/p0a2-colony-world.ts';
+  const users = scanned.filter((f) => { const t = fs.readFileSync(f, 'utf8'); return refersToColony(t); }).map((f) => path.relative(REPO_ROOT, f).split(path.sep).join('/'));
+  eq(users, [CANDIDATE_ADAPTER], 'the only importer of engine/colony is the opt-in candidate world adapter (official engine, cli, web, P0-A2 core and the default Worker world do not import it)');
+  const defaultGraph = /P0A2_CODE_FILES[^=]*=\s*\[([^\]]*)\]/.exec(fs.readFileSync(path.join(REPO_ROOT, 'prototypes/continuous-world/worker/p0a2-code-hash.ts'), 'utf8'))![1];
+  ok(defaultGraph.includes('p0a2-world.ts') && !/engine\/colony|p0a2-colony/.test(defaultGraph), 'the default P0-A2 world\'s code graph contains no engine/colony module and no candidate file');
   const boundary = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'prototypes/continuous-world/worker-boundary.json'), 'utf8'));
   const allowedMath = new Set<string>(boundary.deterministic_math_in_worker_graph.allowed_math_members);
   for (const f of fs.readdirSync(path.join(REPO_ROOT, 'engine/colony'))) {
