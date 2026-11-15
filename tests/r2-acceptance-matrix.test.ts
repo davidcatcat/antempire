@@ -54,6 +54,9 @@ mutate('簡化代理 without a probe', (x) => { delete row(x, 'individual_behavi
   ok(oc.length === 1 && oc[0].id === 'p0a2-colony-v1' && oc[0].default_off === true && JSON.stringify(oc[0].rows) === '["M09","M15","M16","M18"]', 'the matrix declares the colony-members candidate world as an opt-in, default-off kind for M09 / M15 / M16 / M18');
   for (const id of oc[0].rows) { const r = m.rows.find((y) => y.id === id)!; ok(r.status === '未接入' && r.candidate_world_now.includes('p0a2-colony-v1') && r.candidate_world_now.includes('預設關閉') && r.blocks_r2 === true, `${id}: still 未接入 and blocking; the row records the default-off candidate`); }
   ok(oc[0].files.every((f) => !/p0a2-world\.ts$|not-simulated\.ts$|prototypes\/p0a2-24h\//.test(f)), 'no file of the default world is declared as an opt-in file');
+  // the generated documents show the candidate, labelled as not counted
+  for (const file of [GO_NO_GO_FILE, SPEC_FILE]) { const t = fs.readFileSync(path.join(REPO_ROOT, file), 'utf8'); ok(t.includes('| `p0a2-colony-v1` | 預設關閉候選，不計入已接入 | M09（未接入）、M15（未接入）、M16（未接入）、M18（未接入） |'), `${file} lists the opt-in candidate as 預設關閉候選，不計入已接入 with its rows' unchanged statuses`); }
+  { const x = structuredClone(m); x.candidate_world.opt_in_candidates![0].rows = ['M09']; ok(staleBlocks(x).length >= 2, 'a changed opt-in declaration makes the generated documents stale'); }
 }
 mutate('an opt-in candidate that is not default-off', (x) => { x.candidate_world.opt_in_candidates![0].default_off = false; }, /must be default_off: true/);
 mutate('an opt-in candidate file that belongs to the default world\'s code graph', (x) => { x.candidate_world.opt_in_candidates![0].files.push('prototypes/p0a2-24h/world.ts'); }, /is part of the DEFAULT world's code graph/);

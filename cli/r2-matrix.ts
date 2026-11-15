@@ -277,7 +277,18 @@ export function renderBlockers(m: Matrix): string {
     '|---|---|---|---|---|---|---|',
     ...b.map((r) => `| ${r.id} | ${cell(r.name_zh)} | ${r.status} | ${r.r2_conditions.join('、')} | ${cell(r.blocker_reason)} | ${defects(r)} | ${r.owner_decision ?? '—'} |`),
   ];
-  return out.join('\n');
+  return out.join('\n') + renderOptIn(m);
+}
+
+/** the opt-in (default-off) candidate world kinds, shown under the generated tables so that a reader of the matrix
+ *  sees them and sees that they do not count as 已接入 (empty string when there is none) */
+export function renderOptIn(m: Matrix): string {
+  const oc = m.candidate_world?.opt_in_candidates ?? [];
+  if (oc.length === 0) return '';
+  return ['', '', '**預設關閉候選（不計入已接入；下列各列的狀態不因此改變）**', '',
+    '| 候選世界種類 | 標示 | 涉及的列（狀態不變） | 文件 | 測試 |', '|---|---|---|---|---|',
+    ...oc.map((c) => `| \`${c.id}\` | 預設關閉候選，不計入已接入 | ${c.rows.map((id) => `${id}（${m.rows.find((r) => r.id === id)?.status ?? '?'}）`).join('、')} | \`${c.doc}\` | ${c.tests.map((t) => `\`${t}\``).join(' ')} |`),
+  ].join('\n');
 }
 
 /** the full matrix table quoted in the spec (generated) */
@@ -286,7 +297,7 @@ export function renderTable(m: Matrix): string {
     '| 列 | 模組 | 狀態 | 阻擋 R2 | 測試 | 文獻 | 缺陷 |',
     '|---|---|---|---|---|---|---|',
     ...m.rows.map((r) => `| ${r.id} | ${cell(r.name_zh)} | ${r.status} | ${r.blocks_r2 ? '是' : '否'} | ${r.tests.length} | ${r.evidence_refs.length ? r.evidence_refs.join(' ') : '—'} | ${defects(r)} |`),
-  ].join('\n');
+  ].join('\n') + renderOptIn(m);
 }
 
 /** is the row on the 「尚未模擬／簡化代理」 list (未接入 except exempt / disclosure rows; every 簡化代理) */

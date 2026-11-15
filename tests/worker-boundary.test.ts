@@ -161,6 +161,9 @@ const allowedEngine = [...real.keys()].filter((f) => f.startsWith('engine/') && 
 ok(allowedEngine.includes('engine/rng.ts'), 'allowlisted engine modules found');
 const probe = new Map(real);
 probe.set(`${B.worker_entry_dir}/__allowlist_closure_probe__.ts`, allowedEngine.map((f) => `import '${path.posix.relative(B.worker_entry_dir, f)}';`).join('\n'));
+// the colony-candidate allowlist entries exist as real modules and are covered by this closure probe (purity,
+// deterministic maths, no denied import), whether or not a Worker module imports them yet
+for (const f of ['engine/colony/members.ts', 'engine/day0/founding-sampler.ts']) ok(allowedEngine.includes(f), `allowlisted colony-candidate module ${f} exists and is probed`);
 const closure = checkBoundary(probe, B);
 ok(closure.violations.length === 0, `allowlist is closed under imports (${JSON.stringify(closure.violations.slice(0, 5))})`);
 ok(allowedEngine.every((f) => closure.reached.includes(f)), 'closure probe reached every allowlisted engine module');
