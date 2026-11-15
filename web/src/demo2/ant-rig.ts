@@ -16,6 +16,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { buildAntGeometry, MINOR_MORPH, type AntMorph } from '../three/ant-model.ts';
+import { RIG, CUTICLE, glf } from './rig-params.ts';
 
 export type RigCaste = 'minor' | 'major' | 'queen';
 /** scale = body scale relative to the minor worker (applied to the instance) */
@@ -25,48 +26,50 @@ export const MORPHS: Record<RigCaste, { morph: AntMorph; scale: number; note_zh:
   queen: { morph: { head: 1.02, headWide: 1.05, lobes: false, antenna: 0.85, gaster: [1.55, 1.45, 1.5], meso: [1.3, 1.45] }, scale: 2.5, note_zh: '蟻后：體型為展示假設（repo 文獻沒有本種蟻后尺寸）' },
 };
 
-const RIG = /* glsl */ `
+const K = RIG, f = glf;
+/** the GLSL rig of the WebGL 2 renderer; every number comes from rig-params.ts (shared with the TSL rig) */
+export const RIG_GLSL = /* glsl */ `
 attribute vec3 aPart;
 attribute vec3 aPivot;
 attribute vec4 aAnim;
 attribute vec4 aPose;
 uniform float uTime;
-float qn(float t, float s) { return 0.5 * sin(t + s * 6.2831) + 0.3 * sin(t * 1.6180339 + s * 2.71828) + 0.2 * sin(t * 2.4142136 + s * 4.1231); }
+float qn(float t, float s) { return ${f(K.qn.amp[0])} * sin(t * ${f(K.qn.freq[0])} + s * ${f(K.qn.phase[0])}) + ${f(K.qn.amp[1])} * sin(t * ${f(K.qn.freq[1])} + s * ${f(K.qn.phase[1])}) + ${f(K.qn.amp[2])} * sin(t * ${f(K.qn.freq[2])} + s * ${f(K.qn.phase[2])}); }
 mat3 rY(float a) { float c = cos(a), s = sin(a); return mat3(c, 0.0, -s, 0.0, 1.0, 0.0, s, 0.0, c); }
 mat3 rZ(float a) { float c = cos(a), s = sin(a); return mat3(c, s, 0.0, -s, c, 0.0, 0.0, 0.0, 1.0); }
 vec3 antRig(vec3 p, out mat3 R) {
   float kind = aPart.x, idx = aPart.y, w = aPart.z;
   float ph = aAnim.x, walk = aAnim.y, seed = aAnim.z, t = uTime;
   float crop = aPose.x, pitch = aPose.y, antUp = aPose.z, crouch = aPose.w;
-  float act = aAnim.w * (0.55 + 0.45 * qn(t * 0.13, seed + 0.9));
+  float act = aAnim.w * (${f(K.act.base)} + ${f(K.act.mod)} * qn(t * ${f(K.act.freq)}, seed + ${f(K.act.seed)}));
   float still = 1.0 - walk;
-  float drop = 0.04 * crouch;
-  vec3 off = vec3(0.0, 0.006 * walk * sin(2.0 * ph) + 0.003 * act * still * qn(t * 0.7, seed + 0.3) - drop, 0.0);
+  float drop = ${f(K.body.drop)} * crouch;
+  vec3 off = vec3(0.0, ${f(K.body.bob)} * walk * sin(2.0 * ph) + ${f(K.body.idleBob)} * act * still * qn(t * ${f(K.body.idleFreq)}, seed + ${f(K.body.idleSeed)}) - drop, 0.0);
   R = mat3(1.0);
-  vec3 headPiv = vec3(0.245, 0.205, 0.0);
-  mat3 Rh = rY(0.07 * act * qn(t * 0.55, seed + 0.11)) * rZ(0.05 * act * qn(t * 0.8, seed + 0.37) - 0.02 * walk - pitch);
+  vec3 headPiv = vec3(${K.headPivot.map(f).join(', ')});
+  mat3 Rh = rY(${f(K.head.yaw)} * act * qn(t * ${f(K.head.yawFreq)}, seed + ${f(K.head.yawSeed)})) * rZ(${f(K.head.nod)} * act * qn(t * ${f(K.head.nodFreq)}, seed + ${f(K.head.nodSeed)}) - ${f(K.head.walk)} * walk - pitch);
   if (kind < 0.5) {
     return p + off;
   } else if (kind < 1.5) {
     R = Rh; return headPiv + Rh * (p - headPiv) + off;
   } else if (kind < 2.5) {
-    R = rZ(0.045 * act * qn(t * 0.35, seed + 0.5) - 0.03 * walk * sin(2.0 * ph) + 0.12 * pitch);
-    vec3 d = (p - aPivot) * vec3(1.0 + 0.1 * crop, 1.0 + 0.36 * crop, 1.0 + 0.36 * crop);
+    R = rZ(${f(K.gaster.idle)} * act * qn(t * ${f(K.gaster.idleFreq)}, seed + ${f(K.gaster.idleSeed)}) - ${f(K.gaster.walk)} * walk * sin(2.0 * ph) + ${f(K.gaster.pitch)} * pitch);
+    vec3 d = (p - aPivot) * vec3(1.0 + ${f(K.gaster.cropX)} * crop, 1.0 + ${f(K.gaster.cropYZ)} * crop, 1.0 + ${f(K.gaster.cropYZ)} * crop);
     return aPivot + R * d + off;
   } else if (kind < 3.5) {
     float side = idx < 2.5 ? 1.0 : -1.0;
     float pair = mod(idx, 3.0);
     float grp = abs(pair - 1.0) < 0.5 ? (side > 0.0 ? 1.0 : 0.0) : (side > 0.0 ? 0.0 : 1.0);
     float lp = ph + grp * 3.14159265;
-    float ang = side * (0.42 * walk * sin(lp) + 0.06 * act * still * qn(t * 0.23, seed + idx * 0.173));
+    float ang = side * (${f(K.leg.swing)} * walk * sin(lp) + ${f(K.leg.idle)} * act * still * qn(t * ${f(K.leg.idleFreq)}, seed + idx * ${f(K.leg.idleSeed)}));
     R = rY(ang);
     vec3 q = aPivot + R * (p - aPivot);
-    q.y += w * (0.09 * walk * max(0.0, cos(lp)) + 0.02 * act * still * max(0.0, qn(t * 0.31, seed + idx * 0.29) - 0.55));
+    q.y += w * (${f(K.leg.lift)} * walk * max(0.0, cos(lp)) + ${f(K.leg.idleLift)} * act * still * max(0.0, qn(t * ${f(K.leg.idleLiftFreq)}, seed + idx * ${f(K.leg.idleLiftSeed)}) - ${f(K.leg.idleGate)}));
     q.y += drop * w; // the feet stay planted while the body crouches
     return q + off;
   } else {
     float side = idx < 0.5 ? 1.0 : -1.0;
-    mat3 Ra = rY(side * (0.24 * act * qn(t * 1.3, seed + idx * 0.43) + 0.12 * walk * sin(ph * 0.5))) * rZ(0.2 * act * qn(t * 0.97, seed + idx * 0.71 + 0.2) - 0.05 * walk + 0.45 * antUp);
+    mat3 Ra = rY(side * (${f(K.antenna.yaw)} * act * qn(t * ${f(K.antenna.yawFreq)}, seed + idx * ${f(K.antenna.yawSeed)}) + ${f(K.antenna.walkYaw)} * walk * sin(ph * 0.5))) * rZ(${f(K.antenna.nod)} * act * qn(t * ${f(K.antenna.nodFreq)}, seed + idx * ${f(K.antenna.nodSeed)} + ${f(K.antenna.nodSeed0)}) - ${f(K.antenna.walkNod)} * walk + ${f(K.antenna.up)} * antUp);
     R = Rh * Ra;
     vec3 q = aPivot + Ra * (p - aPivot);
     return headPiv + Rh * (q - headPiv) + off;
@@ -75,33 +78,41 @@ vec3 antRig(vec3 p, out mat3 R) {
 `;
 /** PBR cuticle material with the rig injected (WebGL: onBeforeCompile). uTime is shared and frozen while paused. */
 export function rigMaterial(uTime: { value: number }): THREE.MeshStandardMaterial {
-  const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.36, metalness: 0.05 });
+  const m = new THREE.MeshStandardMaterial({ vertexColors: true, ...CUTICLE });
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uTime = uTime;
-    sh.vertexShader = RIG + sh.vertexShader
+    sh.vertexShader = RIG_GLSL + sh.vertexShader
       .replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\n  mat3 antR; vec3 antP = antRig(position, antR);\n  objectNormal = antR * objectNormal;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\n  transformed = antP;');
   };
-  m.customProgramCacheKey = () => 'antempire-demo2-rig-v1';
+  m.customProgramCacheKey = () => 'antempire-demo2-rig-v2';
   return m;
 }
 
 /** one caste at one level of detail: InstancedMesh + per-instance aAnim / aPose */
 export class RigLayer {
-  readonly mesh: THREE.InstancedMesh; readonly anim: THREE.InstancedBufferAttribute; readonly pose: THREE.InstancedBufferAttribute;
+  readonly mesh: THREE.InstancedMesh; readonly anim: THREE.InterleavedBufferAttribute; readonly pose: THREE.InterleavedBufferAttribute;
+  /** per instance: unit quaternion (xyz w) and uniform scale of the instance transform — the same rotation and scale as
+   *  instanceMatrix. Only the TSL rig reads it (three's node pipeline applies the instance matrix BEFORE positionNode,
+   *  so the rig, which works in model space, has to carry its joint offsets into instance space itself). */
+  readonly xf: THREE.InterleavedBufferAttribute; readonly scl: THREE.InterleavedBufferAttribute;
+  /** the four per-instance attributes share ONE interleaved buffer (WebGPU allows 8 vertex buffers per pipeline) */
+  private readonly inst: THREE.InstancedInterleavedBuffer;
   readonly caste: RigCaste; readonly triangles: number;
   constructor(caste: RigCaste, level: 'hi' | 'lo', capacity: number, mat: THREE.Material) {
     const g = buildAntGeometry(level, MORPHS[caste].morph);
     this.caste = caste;
-    this.anim = new THREE.InstancedBufferAttribute(new Float32Array(capacity * 4), 4); this.anim.setUsage(THREE.DynamicDrawUsage); g.setAttribute('aAnim', this.anim);
-    this.pose = new THREE.InstancedBufferAttribute(new Float32Array(capacity * 4), 4); this.pose.setUsage(THREE.DynamicDrawUsage); g.setAttribute('aPose', this.pose);
+    this.inst = new THREE.InstancedInterleavedBuffer(new Float32Array(capacity * 13), 13); this.inst.setUsage(THREE.DynamicDrawUsage);
+    this.anim = new THREE.InterleavedBufferAttribute(this.inst, 4, 0); this.pose = new THREE.InterleavedBufferAttribute(this.inst, 4, 4);
+    this.xf = new THREE.InterleavedBufferAttribute(this.inst, 4, 8); this.scl = new THREE.InterleavedBufferAttribute(this.inst, 1, 12);
+    g.setAttribute('aAnim', this.anim); g.setAttribute('aPose', this.pose); g.setAttribute('aXf', this.xf); g.setAttribute('aScl', this.scl);
     this.mesh = new THREE.InstancedMesh(g, mat, capacity);
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.mesh.setColorAt(0, new THREE.Color(1, 1, 1)); this.mesh.instanceColor!.setUsage(THREE.DynamicDrawUsage);
     this.mesh.frustumCulled = false; this.mesh.count = 0;
     this.triangles = (g.index ? g.index.count : g.attributes.position.count) / 3;
   }
-  commit(n: number) { this.mesh.count = n; this.mesh.instanceMatrix.needsUpdate = true; this.mesh.instanceColor!.needsUpdate = true; this.anim.needsUpdate = true; this.pose.needsUpdate = true; }
+  commit(n: number) { this.mesh.count = n; this.mesh.instanceMatrix.needsUpdate = true; this.mesh.instanceColor!.needsUpdate = true; this.inst.needsUpdate = true; }
 }
 
 const ell = (c: [number, number, number], r: [number, number, number], ws: number, hs: number) => new THREE.SphereGeometry(1, ws, hs).scale(r[0], r[1], r[2]).translate(c[0], c[1], c[2]);
