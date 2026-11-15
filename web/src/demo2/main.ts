@@ -39,6 +39,7 @@ import { rigNodeMaterial, type RigNodeMaterial } from './ant-rig-tsl.ts';
 import { buildScene, type Quality, type Scene2 } from './scene.ts';
 import { Hd2dPipeline, PIXEL_FACTORS, type Hd2dEffects } from './hd2d.ts';
 import { CUE_FRESH_S, CUE_HOLD_S, CUE_MAX, EventLedger, GROUPS, GROUP_LABEL, SOURCE_CUE, type ClassGroup } from './events.ts';
+import { OwnHistory, asWorkerRecord, larvaRecordView, recordHtml, workerRecordView } from './record.ts';
 import { nextShot, tourMayRun, TOUR_IDLE_S, TOUR_REASON_ZH, type TourCue, type TourShot } from './tour.ts';
 
 const q = new URLSearchParams(location.search);
@@ -125,6 +126,8 @@ const antLen = () => MINOR_LEN_CM * mag;
 let drawn: DrawnAnt[] = [], selected: string | null = null, following: string | null = null, disclosure: NotSimulatedView | null = null, saveUi: SaveUiState | null = null;
 let eventsSeen = 0;
 /** D2E-1: every engine event the page receives — classified, counted (exactly), listed and cued (events.ts; read only) */
+/** D2E-2: per-individual history of the events the page received (record.ts; read only) */
+const ownHist = new OwnHistory();
 const ledger = new EventLedger(narrow() ? CUE_MAX.narrow : CUE_MAX.wide);
 /** the cue clock: wall seconds that pass only while the world runs (a paused page keeps its cue labels readable) */
 let cueT = 0, cueLast = performance.now();
@@ -251,6 +254,11 @@ function stepCamera(dt: number) {
 let followRealm: 'surface' | 'nest' | null = null;
 /** the worker the Worker was last asked to report with each frame (observation only); 自動導覽 never changes it */
 let observed: string | null = null;
+const isWorkerId = (id: string | null): id is string => !!id && !!frame?.workers.some((w) => w.id === id);
+/** ask the Worker to send this worker's own record with each frame (the existing `follow` observation command: a read-only
+ *  copy, tests/p0a2-frame-projection.test.ts; it cannot change the world). Sent only when the target changes, and only
+ *  for a worker the USER selected or follows — never by the idle camera tour. */
+function observe(id: string | null) { if (observed === id) return; observed = id; void client.follow(id).catch(() => {}); }
 /** byTour = the idle camera tour is following (or letting go of) a worker: CAMERA ONLY, nothing is sent to the Worker */
 function setFollow(id: string | null, byTour = false) {
   if (!byTour && tour) endTour();
@@ -261,7 +269,7 @@ function setFollow(id: string | null, byTour = false) {
     if (a && !byTour) { const dir = camera.position.clone().sub(controls.target).normalize(), d = Math.max(antLen() * 11, 20); controls.target.set(a.x, a.y, a.z); camera.position.copy(controls.target).addScaledVector(dir, d); followRealm = a.realm; followAdjust = 1.6; }
   }
   // observation only: the Worker sends this worker's own record with each frame (never for a tour follow)
-  if (!byTour && (id !== null || observed !== null)) { observed = id; void client.follow(id).catch(() => {}); }
+  if (!byTour) observe(id ?? (userSel && isWorkerId(selected) ? selected : null));
   renderCard();
 }
 /** 下一隻／上一隻 while following: the next worker id in order */
@@ -444,14 +452,14 @@ function updateLabels() {
     const a = drawn.find((x) => x.id === c.on), st = a ? null : statics.find((x) => x.ind.id === c.on), src = c.on === SOURCE_CUE ? world.anchors.hostPlant : null;
     if (a && (a.pose === 'troph' || a.pose === 'brood')) continue;
     const p = a ? { x: a.x, y: a.y + antLen() * 0.9, z: a.z } : st ? { x: st.p.x, y: st.p.y + antLen() * 0.9, z: st.p.z } : src ? { x: src.x, y: src.y - antLen() * 0.5, z: src.z } : null; if (!p) continue;
-    items.push({ key: `cue-${c.on}`, p, text: `${CUE_MARK} ${c.text}`, cls: 'act', face: a ? a.realm === 'nest' : !!st, prio: 70 }); cued = true;
+    items.push({ key: `cue-${c.on}`, p, text: compact ? `${CUE_MARK} ${c.text}` : `${CUE_MARK} ${c.text}（引擎事件）`, cls: 'act', face: a ? a.realm === 'nest' : !!st, prio: 70 }); cued = true;
   }
   const selA = drawn.find((a) => a.id === selected), selS = statics.find((s) => s.ind.id === selected);
   if (selA) items.push({ key: 'pin', p: { x: selA.x, y: selA.y + antLen() * (selA.realm === 'nest' ? 1.0 : 0.9), z: selA.z }, text: `▼ ${selA.id}`, cls: 'pin', face: false, prio: 100 });
   else if (selS) items.push({ key: 'pin', p: { x: selS.p.x, y: selS.p.y + antLen() * 0.9, z: selS.p.z }, text: `▼ ${selS.ind.id}`, cls: 'pin', face: false, prio: 100 });
   const off = camera.position.clone().sub(controls.target), dist = off.length(), frontal = off.z / dist, seen = new Set<string>();
   // one-line legend under the scene (narrow screens): what ※ means, and that the nest can be dragged sideways
-  const partial = compact && !nestOnScreen().inside, legend = [marked ? `${NS_MARK}＝引擎個體，生理與行為尚未模擬` : '', cued ? `${CUE_MARK}＝引擎事件（標籤位置與停留＝畫面）` : '', partial ? '左右拖曳可看其他巢室' : ''].filter(Boolean).join('｜');
+  const partial = compact && !nestOnScreen().inside, legend = [marked ? `${NS_MARK}＝引擎個體，生理與行為尚未模擬` : '', cued && compact ? `${CUE_MARK}＝引擎事件（標籤位置與停留＝畫面）` : '', partial ? '左右拖曳可看其他巢室' : ''].filter(Boolean).join('｜');
   if (ui.lblLegend.textContent !== legend) ui.lblLegend.textContent = legend; ui.lblLegend.hidden = !legend;
   const boxes: LabelBox[] = [], els = new Map<string, HTMLElement>(), rightLimit = !compact && !document.body.classList.contains('side-closed') ? ui.side.getBoundingClientRect().left - 4 : w - 2;
   for (const it of items) {
@@ -616,8 +624,11 @@ let perfCtlNow = '';
 function renderCard() {
   if (!frame || !selected) { hideCard(); return; }
   const a = drawn.find((x) => x.id === selected), w = frame.workers.find((x) => x.id === selected), st = statics.find((x) => x.ind.id === selected);
-  let html = '', sum = '';
+  let html = '', sum = '', rec = '';
   if (a && w) {
+    // D2E-2: the worker's OWN engine record (only while the Worker reports it: a user selection / follow) and its own events
+    const own = observed === a.id ? asWorkerRecord(followedView, a.id) : null;
+    rec = recordHtml(workerRecordView(w, own, ownHist, clockOf), observed === a.id ? REC_LOADING : REC_BY_TOUR);
     const place = a.realm === 'surface' ? a.place : a.place === 'tunnel' ? '通道' : graph.chamber(a.place).label_zh;
     sum = `<b>${esc(a.id)}</b> 小工蟻・${esc(STATE_LABEL[w.state] ?? w.state)}<br><span class="muted">${tourFollows() && tour!.shot.kind === 'follow' ? `自動導覽：選取時${TOUR_REASON_ZH[tour!.shot.reason]}` : `嗉囊 ${(w.crop_fill * 100).toFixed(0)}%（引擎）｜${esc(place)}`}</span>`;
     html = `<b>${esc(a.id)}</b>　<span class="tag engine">引擎個體</span>小工蟻
@@ -629,6 +640,7 @@ function renderCard() {
   } else if (st) {
     const d = st.ind, ch = st.chamber ? graph.chamber(st.chamber).label_zh : '';
     sum = `<b>${esc(d.id)}</b> ${CASTE_LABEL[d.caste]}・${d.source === 'engine' ? '引擎個體' : '示範資料'}<br><span class="muted">${esc(ch)}${d.source === 'engine' && d.caste === 'larva' ? `｜腸道 ${((d.fill ?? 0) * 100).toFixed(0)}%（引擎）` : d.notes ? '｜生理與行為尚未模擬' : ''}</span>`;
+    if (d.source === 'engine' && d.caste === 'larva') rec = recordHtml(larvaRecordView(d.id, d.fill ?? 0, ownHist, clockOf), '');
     html = d.source === 'engine' && d.caste === 'larva'
       ? `<b>${esc(d.id)}</b>　<span class="tag engine">引擎個體</span>${CASTE_LABEL[d.caste]}<br>腸道量：${((d.fill ?? 0) * 100).toFixed(0)}%（引擎）${stage.fedNow(d.id, tNow) ? '　正在被餵食（引擎事件；畫面演出）' : ''}<br>位置：${esc(ch)}（展示假設）<br><span class="muted">幼蟲只被餵食與代謝；發育、化蛹、羽化尚未模擬</span>`
       : d.notes ? `<b>${esc(d.id)}</b>　<span class="tag engine">引擎個體</span><span class="tag assume">候選世界・數量為情境假設</span>${CASTE_LABEL[d.caste]}<br>狀態：${esc(d.state ?? '')}<br>位置：${esc(ch)}（展示假設；引擎沒有巢內座標）<br>此個體<b>尚未模擬</b>的項目（${d.notes.length}）：<ul style="margin:2px 0;padding-left:18px">${d.notes.map((x) => `<li>${esc(x)}</li>`).join('')}</ul><span class="muted">原地微動作只是畫面</span>`
@@ -637,10 +649,13 @@ function renderCard() {
   const canFollow = !!(a && w), fol = canFollow && following === selected;
   // three parts, each rewritten only when it changes (a tap must not land on a replaced button):
   // .sum = the phone's two-line summary, .detail = the full card (wide screens; phones show it in the sheet's 個體 tab), .row = buttons
-  const [sumEl, detailEl, rowEl] = ui.card.children as unknown as HTMLElement[];
+  const sumEl = ui.card.querySelector<HTMLElement>('.sum')!, detailEl = ui.card.querySelector<HTMLElement>('.detail')!, recEl = ui.card.querySelector<HTMLElement>('.rec')!, rowEl = ui.card.querySelector<HTMLElement>('.row')!;
   if (ui.card.hidden) { ui.card.hidden = false; layoutChrome(); }
   if (sum !== cardNow.sum) { cardNow.sum = sum; sumEl.innerHTML = sum; }
-  if (html !== cardNow.detail) { cardNow.detail = html; detailEl.innerHTML = html; ui.paneAnt.innerHTML = html; }
+  // the record lives in its own persistent, scrollable boxes (the card on wide screens, the 個體 tab on phones): rewriting
+  // their content keeps the scroll position and never replaces a button
+  if (html !== cardNow.detail) { cardNow.detail = html; detailEl.innerHTML = html; paneBase.innerHTML = html; }
+  if (rec !== cardNow.rec) { cardNow.rec = rec; recEl.innerHTML = rec; recEl.hidden = !rec; paneRec.innerHTML = rec; }
   const btn = `${selected}|${canFollow}|${fol}`;
   if (btn === cardNow.btn) return;
   cardNow.btn = btn;
@@ -652,9 +667,12 @@ function renderCard() {
   $('cardClose').onclick = () => select(null);
 }
 const NO_ANT_HTML = '<div class="muted">還沒有選取個體：點一下畫面上的螞蟻、幼蟲、蟻后、卵或蛹。</div>';
-const cardNow = { sum: '', detail: '', btn: '' };
-function hideCard() { if (!ui.card.hidden) { ui.card.hidden = true; layoutChrome(); } if (cardNow.detail !== '' || ui.paneAnt.innerHTML === '') { cardNow.sum = cardNow.detail = cardNow.btn = ''; ui.paneAnt.innerHTML = NO_ANT_HTML; } }
-function select(id: string | null) { cardNow.btn = ''; selected = id; userSel = !!id; if (!id) { hideCard(); if (following) setFollow(null); if (tab === 'ant' && narrow() && sheet !== 'peek') openSide(null); } else renderCard(); }
+const cardNow = { sum: '', detail: '', btn: '', rec: '' };
+const REC_LOADING = '正在向 Worker 讀取牠自己的紀錄…', REC_BY_TOUR = '這隻是自動導覽選的：導覽只動鏡頭、不向 Worker 送任何訊息，所以沒有讀取牠的個體紀錄（下面只有本頁收到、與牠有關的事件）。點一下牠或按「跟隨」就會顯示。';
+ui.paneAnt.innerHTML = '<div id="antBase"></div><div id="antRec" class="rec"></div>';
+const paneBase = $('antBase'), paneRec = $('antRec');
+function hideCard() { if (!ui.card.hidden) { ui.card.hidden = true; layoutChrome(); } if (cardNow.detail !== '' || paneBase.innerHTML === '') { cardNow.sum = cardNow.detail = cardNow.btn = cardNow.rec = ''; paneBase.innerHTML = NO_ANT_HTML; paneRec.innerHTML = ''; } }
+function select(id: string | null) { cardNow.btn = ''; selected = id; userSel = !!id; if (!following || !id) observe(isWorkerId(id) ? id : null); if (!id) { hideCard(); if (following) setFollow(null); if (tab === 'ant' && narrow() && sheet !== 'peek') openSide(null); } else renderCard(); }
 
 // picking: nearest drawn individual on screen
 function pick(sx: number, sy: number): string | null {
@@ -680,7 +698,7 @@ function setMode(m: Mode) {
 }
 
 // ---------- world lifecycle (Worker scheduling + SAVE-2 session) ----------
-function onWorldStart() { frame = null; pacing = null; lastT = null; drawn = []; statics = []; gaits.clear(); quats.clear(); stage?.reset(antLen()); eventsSeen = 0; ledger.reset(); evNow = ''; disclosure = null; selected = null; following = null; userSel = false; endTour(); tourCues.length = 0; tourLog.length = 0; tourLast = null; hideCard(); }
+function onWorldStart() { frame = null; pacing = null; lastT = null; drawn = []; statics = []; gaits.clear(); quats.clear(); stage?.reset(antLen()); eventsSeen = 0; ledger.reset(); ownHist.reset(); observed = null; evNow = ''; disclosure = null; selected = null; following = null; userSel = false; endTour(); tourCues.length = 0; tourLog.length = 0; tourLast = null; hideCard(); }
 async function afterWorldReady(startAt: number | null) {
   if (startAt !== null && (frame?.t_sim ?? 0) < startAt) await client.stepUntil(startAt);
   await new Promise<void>((r) => { const w = () => (frame ? r() : setTimeout(w, 20)); w(); });
@@ -784,7 +802,7 @@ async function main() {
   buildMeshes();
 
   client.onState = (fr, p, fol) => { if (!isP0a2Frame(fr) || fr.world_id === PROBE_ID) return; if (p.running && frame && fr.t_sim !== frame.t_sim) session?.markDirty(); frame = fr; pacing = p; frameAt = performance.now(); followedView = fol; if (rost) rost = roster(mode, fr, demoSeed); };
-  client.onEvents = (evs: EventMsg[]) => { if (evs[0]?.world_id === PROBE_ID) return; eventsSeen += evs.length; ledger.onEvents(evs, wallS()); stage.onEvents(evs); noteCues(evs); session?.markDirty(); };
+  client.onEvents = (evs: EventMsg[]) => { if (evs[0]?.world_id === PROBE_ID) return; eventsSeen += evs.length; ledger.onEvents(evs, wallS()); ownHist.onEvents(evs); stage.onEvents(evs); noteCues(evs); session?.markDirty(); };
   client.onProtocolError = (why) => toast(`Worker：${why}`, 8000);
 
   ui.speed.innerHTML = SPEEDS.map((s) => `<option value="${s}">${s}×</option>`).join(''); ui.seedIn.value = String(DEFAULT_SEED);
@@ -915,6 +933,8 @@ const hooks: Record<string, unknown> = {
   },
   /** D2E-1: the page's exact engine-event counts (by class, by raw kind), the listed window and the cue budget */
   events: () => ({ total: ledger.total, gaps: ledger.gaps, first_seq: ledger.first_seq, last_seq: ledger.last_seq, first_t: ledger.first_t, last_t: ledger.last_t, classes: ledger.countsObject(), kinds: ledger.kindsObject(), ticker: ledger.ticker.length, cues_shown: ledger.cues_shown, cues_dropped: ledger.cues_dropped, cue_max: ledger.cueMax, cues_on: cuesOn, active: ledger.activeCues(wallS(), tNow, CUE_FRESH_S + CUE_HOLD_S * speed).map((c) => ({ ...c })), stage: { ...stage.stats } }),
+  /** D2E-2: the observed worker, the Worker's record of it as received, and the page's own-event history of an individual */
+  record: (id?: string) => { const k = id ?? selected ?? ''; return { observed, selected, followed: followedView, totals: ownHist.totalsOf(k), last: ownHist.lastOf(k), larva: ownHist.larvaOf(k), html: paneRec.innerHTML }; },
   setCues: (on: boolean) => { cuesOn = on; ledger.cueMax = cueBudget(); evNow = ''; },
   nestOnScreen: () => nestOnScreen(),
   /** phone layout: the sheet state and the part of the page height the scene keeps (below the top bar, above the sheet) */

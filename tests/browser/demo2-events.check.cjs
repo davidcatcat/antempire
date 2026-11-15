@@ -137,7 +137,8 @@ const { chromium, devices } = require('playwright');
     await page.evaluate(() => window.__demo2.openSide('events'));
     let most = 0, texts = [];
     for (let i = 0; i < 14; i++) { await page.waitForTimeout(500); const c = await cueLabels(page); if (c.n > most) { most = c.n; texts = c.texts; } check(c.n <= c.max, `desktop at 10×: ${c.n} cue labels ≤ budget ${c.max}`); }
-    check(most > 0, `desktop: cues appear beside the open panel (${JSON.stringify(texts)})`);
+    const dl = await page.evaluate(() => { const e = document.querySelector('#lblLegend'); return e.hidden ? '' : e.textContent; });
+    check(most > 0 && texts.every((t) => t.startsWith('◆ ') && t.endsWith('（引擎事件）')) && dl === '', `desktop: cues appear beside the open panel and say 引擎事件 on the label itself; wide screens keep no legend line (${JSON.stringify(texts)})`);
     for (let i = 0; i < 100; i++) { await page.waitForTimeout(150); if ((await cueLabels(page)).n >= 2) break; }
     await page.evaluate(() => window.__demo2.setRunning(false)); await page.waitForTimeout(900);
     await shot(page, 'demo2-events-desktop');

@@ -42,3 +42,26 @@ export function replayLines(seed: number, tMs: number, scenario = 'taichung-marc
   const raw = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, '../../prototypes/p0a2-24h/params.json'), 'utf8'));
   return runTo(raw, scenario, seed, tMs, { captureLog: true }).lines!;
 }
+
+/** per-individual totals from the log lines (D2E-2 reconciliation; independent of web/src/demo2/record.ts): what each
+ *  worker did / received and what each larva received, over the lines with position in [fromSeq, toSeq) */
+export interface ReplayOwn { exits: number; takes: number; empties: number; taken_up: number; gave: number; gave_up: number; got: number; got_up: number; fed_larvae: number; fed_up: number; woken: number; contacts_made: number; contacted_by: number }
+export function replayOwn(lines: readonly string[], fromSeq = 0, toSeq = Infinity): { workers: Record<string, ReplayOwn>; larvae: Record<string, { touched: number; touched_idle: number; fed: number; fed_up: number }> } {
+  const W: Record<string, ReplayOwn> = {}, L: Record<string, { touched: number; touched_idle: number; fed: number; fed_up: number }> = {};
+  const w = (id: string) => (W[id] ??= { exits: 0, takes: 0, empties: 0, taken_up: 0, gave: 0, gave_up: 0, got: 0, got_up: 0, fed_larvae: 0, fed_up: 0, woken: 0, contacts_made: 0, contacted_by: 0 });
+  const l = (id: string) => (L[id] ??= { touched: 0, touched_idle: 0, fed: 0, fed_up: 0 });
+  lines.forEach((line, seq) => {
+    if (seq < fromSeq || seq >= toSeq) return;
+    const e = JSON.parse(line) as { k: string; a: string; p: Record<string, any> }, p = e.p;
+    if (e.k === 'at_entrance' && p.choice === 'exit') w(e.a).exits++;
+    if ((e.k === 'arrive_source' || (e.k === 'search_end' && p.found)) && !p.heat) { if (p.take > 0) { w(e.a).takes++; w(e.a).taken_up += p.take; } else w(e.a).empties++; }
+    if (e.k === 'arrive_nest') for (const x of p.touched) {
+      w(e.a).contacts_made++; w(x.worker).contacted_by++;
+      if (x.amount > 0) { w(e.a).gave++; w(e.a).gave_up += x.amount; w(x.worker).got++; w(x.worker).got_up += x.amount; }
+      if (x.woke) w(x.worker).woken++;
+    }
+    for (const x of p.larvae ?? []) { l(x.larva).touched++; if (x.fed > 0) { l(x.larva).fed++; l(x.larva).fed_up += x.fed; w(e.a).fed_larvae++; w(e.a).fed_up += x.fed; } }
+    for (const x of p.idle_larvae ?? []) l(x.larva).touched_idle++;
+  });
+  return { workers: W, larvae: L };
+}
