@@ -170,9 +170,9 @@ const { chromium, devices } = require('playwright');
     // samples are taken inside ONE in-page call, within the idle time (after it the tour may rightly start again; on a
     // slow runner two separate calls can straddle that moment, so a late sample is retaken, never accepted).
     // takeOver(kind): wait until the tour is in a shot of that kind (for 'view': while its camera move is still running), tap, sample
-    // "stays where it is": OrbitControls rebuilds position and target from spherical coordinates every frame, which
-    // moves the last floating-point digit; 1e-6 cm is far below anything visible (a running camera move is centimetres)
-    const STILL_CM = 1e-6, still = (p, q2) => Math.hypot(p[0] - q2[0], p[1] - q2[1], p[2] - q2[2]) < STILL_CM;
+    // "stays where it is" is EXACT: a camera at rest is bit-identical from frame to frame (the page puts back the
+    // last-digit noise of OrbitControls.update(); main.ts REST_EPS_CM). `moved` is the distance, for the message.
+    const still = (p, q2) => JSON.stringify(p) === JSON.stringify(q2), moved = (x, y) => Math.max(Math.hypot(x.cam[0] - y.cam[0], x.cam[1] - y.cam[1], x.cam[2] - y.cam[2]), Math.hypot(x.target[0] - y.target[0], x.target[1] - y.target[1], x.target[2] - y.target[2]));
     const takeOver = async (kind) => {
     let stop = null, taps = 0, moving = null;
     for (; taps < 4; ) {
@@ -189,20 +189,21 @@ const { chromium, devices } = require('playwright');
         // the elapsed time is measured, not assumed)
         const a = snap(), t0 = performance.now(), room = () => a.t.idle_s - D.tour().idle_for_s;
         if (room() < 2.5) return { a, b: null, hold: 0 };
-        while (performance.now() - t0 < 900 && room() > 2) await new Promise((r) => setTimeout(r, 50));
-        return { a, b: snap(), hold: performance.now() - t0 };
+        let frames = 0; const count = () => { frames++; if (performance.now() - t0 < 900) requestAnimationFrame(count); }; requestAnimationFrame(count);
+        while ((performance.now() - t0 < 900 || frames < 3) && room() > 2) await new Promise((r) => setTimeout(r, 50));
+        return { a, b: snap(), hold: performance.now() - t0, frames };
       });
-      if (stop.b && stop.b.t.idle_for_s < stop.b.t.idle_s) break; // both samples lie inside the idle window
+      if (stop.b && stop.b.t.idle_for_s < stop.b.t.idle_s && stop.frames >= 3) break; // both samples lie inside the idle window, with frames drawn in between
     }
     return { stop, taps, moving };
     };
     const { stop, taps } = await takeOver('follow');
     const sa = stop.a, sb = stop.b;
-    check(!!sb && sb.t.idle_for_s < sb.t.idle_s && stop.hold >= 300, `tour ${tag}: both samples after the tap were taken within the idle time (${sb ? sb.t.idle_for_s.toFixed(2) : '—'} s of ${sa.t.idle_s} s; ${taps} tap${taps > 1 ? 's' : ''})`);
-    check(!!sb && !sa.t.active && sa.chip && sa.s.following === null && sa.s.running && !sb.t.active && sb.chip && sb.s.following === null && sb.s.running && sb.s.frame_t >= sa.s.frame_t && still(sb.s.cam, sa.s.cam) && still(sb.s.target, sa.s.target), `tour ${tag}: one tap stops the tour (chip gone, the camera stays where it is for the next ${Math.round(stop.hold)} ms, the world keeps running) ${JSON.stringify(sb ? { a: [sa.t.active, sa.chip, sa.s.following, sa.s.running, sa.s.cam, sa.s.target, sa.s.frame_t], b: [sb.t.active, sb.chip, sb.s.following, sb.s.running, sb.s.cam, sb.s.target, sb.s.frame_t] } : null)}`);
+    check(!!sb && sb.t.idle_for_s < sb.t.idle_s && stop.hold >= 300 && stop.frames >= 3, `tour ${tag}: both samples after the tap were taken within the idle time, ${stop.frames} frames apart (${sb ? sb.t.idle_for_s.toFixed(2) : '—'} s of ${sa.t.idle_s} s; ${taps} tap${taps > 1 ? 's' : ''})`);
+    check(!!sb && !sa.t.active && sa.chip && sa.s.following === null && sa.s.running && !sb.t.active && sb.chip && sb.s.following === null && sb.s.running && sb.s.frame_t >= sa.s.frame_t && still(sb.s.cam, sa.s.cam) && still(sb.s.target, sa.s.target), `tour ${tag}: one tap stops the tour (chip gone, the camera stays exactly where it is for the next ${Math.round(stop.hold)} ms — moved ${sb ? moved(sb.s, sa.s).toExponential(1) : '?'} cm — the world keeps running) ${JSON.stringify(sb ? { a: [sa.t.active, sa.chip, sa.s.following, sa.s.running, sa.s.cam, sa.s.target, sa.s.frame_t], b: [sb.t.active, sb.chip, sb.s.following, sb.s.running, sb.s.cam, sb.s.target, sb.s.frame_t] } : null)}`);
     // … and the same while an overview move is under way (the tour starts again after the idle time; its first shot is an overview)
     const v = await takeOver('view'), va = v.stop.a, vb = v.stop.b;
-    check(!!vb && v.moving && v.moving.moved && vb.t.idle_for_s < vb.t.idle_s && v.stop.hold >= 300 && !va.t.active && va.chip && !vb.t.active && vb.s.running && still(vb.s.cam, va.s.cam) && still(vb.s.target, va.s.target), `tour ${tag}: a tap during an overview move stops the camera where it is (it was moving; then still for ${Math.round(v.stop.hold)} ms; ${v.taps} tap${v.taps > 1 ? 's' : ''}) ${JSON.stringify(vb ? { moving: v.moving, a: [va.t.active, va.chip, va.s.cam, va.s.target], b: [vb.t.active, vb.t.idle_for_s, vb.s.running, vb.s.cam, vb.s.target] } : null)}`);
+    check(!!vb && v.moving && v.moving.moved && vb.t.idle_for_s < vb.t.idle_s && v.stop.hold >= 300 && v.stop.frames >= 3 && !va.t.active && va.chip && !vb.t.active && vb.s.running && still(vb.s.cam, va.s.cam) && still(vb.s.target, va.s.target), `tour ${tag}: a tap during an overview move stops the camera where it is (it was moving; then exactly still for ${Math.round(v.stop.hold)} ms, moved ${vb ? moved(vb.s, va.s).toExponential(1) : '?'} cm; ${v.taps} tap${v.taps > 1 ? 's' : ''}) ${JSON.stringify(vb ? { moving: v.moving, a: [va.t.active, va.chip, va.s.cam, va.s.target], b: [vb.t.active, vb.t.idle_for_s, vb.s.running, vb.s.cam, vb.s.target] } : null)}`);
     if (tag === 'desktop') {
       // the same run with the tour OFF: the Worker received exactly the same messages, and the worlds are the same
       const off = await open(opts, 'seed=1&quality=low&speed=10&tour=0', 'tour-off', LOG);

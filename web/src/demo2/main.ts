@@ -235,9 +235,19 @@ function stepCamera(dt: number) {
     }
   }
   // keep the view on the block
+  const rest = !tween && !following && !userBusy; if (rest) { restPos.copy(camera.position); restTgt.copy(controls.target); restQuat.copy(camera.quaternion); }
   controls.target.x = Math.max(BLOCK.x0, Math.min(BLOCK.x1, controls.target.x)); controls.target.z = Math.max(BLOCK.z0, Math.min(BLOCK.z1 + 2, controls.target.z)); controls.target.y = Math.max(BLOCK.bottom - 120, Math.min(40, controls.target.y));
   controls.update();
+  // A camera at rest stays bit-identical. OrbitControls rebuilds position and target from spherical coordinates on
+  // every update, which moves the last floating-point digit each frame (measured: about 1e-14 cm per frame). When
+  // nothing is moving the camera and the update changed it by less than REST_EPS_CM, the values are put back.
+  // Anything larger — the damping tail of a drag or a zoom, the clamp above — is real motion and is kept.
+  if (rest && camera.position.distanceToSquared(restPos) < REST_EPS_CM * REST_EPS_CM && controls.target.distanceToSquared(restTgt) < REST_EPS_CM * REST_EPS_CM) { camera.position.copy(restPos); controls.target.copy(restTgt); camera.quaternion.copy(restQuat); }
 }
+/** below this change per frame (cm) a camera nobody is moving is at rest: five orders of magnitude above the float
+ *  noise of an update, and far below anything visible (at the closest zoom one pixel is about 0.003 cm) */
+const REST_EPS_CM = 1e-9;
+const restPos = new THREE.Vector3(), restTgt = new THREE.Vector3(), restQuat = new THREE.Quaternion();
 let followRealm: 'surface' | 'nest' | null = null;
 /** the worker the Worker was last asked to report with each frame (observation only); 自動導覽 never changes it */
 let observed: string | null = null;
