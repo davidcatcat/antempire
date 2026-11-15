@@ -1,0 +1,45 @@
+{
+  "schema": "antempire.demo2-nest-layout.v1",
+  "scenario_assumption": true,
+  "assumption": true,
+  "basis": "遊戲假設",
+  "label_zh": "展示假設：固定巢體幾何（不是引擎模擬的結果，也不是任何實測蟻巢）",
+  "provenance": {
+    "what_is_assumed_zh": "入口、通道走向、巢室的數量、位置、深度、寬高與用途分配全部是為了展示而畫的固定幾何。P0-A2 實驗世界沒有巢內座標、沒有挖掘、沒有巢室容量；引擎只記錄每隻工蟻的活動狀態與時刻。",
+    "scale_note_zh": "螞蟻在畫面上被放大（預設約 10 倍），通道與巢室也依同一放大後的體型畫寬，所以通道寬度（約 3.4 cm）與巢室尺寸不是自然尺度；地表路線長度 200 cm 是引擎參數、不放大。",
+    "literature_direction_zh": "方向參考（只取「淺巢、扁平巢室、分支」的定性描述，不取任何數值）：docs/references.md R290（Forel 1893，H. H. Smith 野外筆記，本種，軼聞等級）。巢室用途分配（休息、育幼、蟻后、蛹、食物交換）沒有本種文獻數值，屬遊戲假設。",
+    "not_measured": true
+  },
+  "units": "cm; x east, y up (0 = ground level at the entrance)",
+  "depth": {
+    "face_z": 2.4,
+    "back_z": -3.0,
+    "note_zh": "剖面前緣與巢腔後壁的位置（展示假設）"
+  },
+  "tunnel_width_cm": 3.4,
+  "entrance": {
+    "id": "E",
+    "x": 0,
+    "y": 0,
+    "label_zh": "巢口"
+  },
+  "chambers": [
+    { "id": "A", "role": "entry", "label_zh": "巢口前室", "x0": 4, "x1": 15, "floor": -9.5, "height": 4.0 },
+    { "id": "P", "role": "pupa", "label_zh": "蛹室", "x0": 24, "x1": 35, "floor": -8, "height": 3.6 },
+    { "id": "F", "role": "exchange", "label_zh": "食物交換區", "x0": -20, "x1": -5, "floor": -15.5, "height": 4.4 },
+    { "id": "B", "role": "brood", "label_zh": "育幼室", "x0": 20, "x1": 40, "floor": -17.5, "height": 5.4 },
+    { "id": "R1", "role": "rest", "label_zh": "休息室（西）", "x0": -38, "x1": -21, "floor": -24.5, "height": 4.8 },
+    { "id": "Q", "role": "queen", "label_zh": "蟻后室", "x0": -8, "x1": 10, "floor": -31, "height": 5.0 },
+    { "id": "R2", "role": "rest", "label_zh": "休息室（東）", "x0": 30, "x1": 48, "floor": -28, "height": 4.6 }
+  ],
+  "tunnels": [
+    { "id": "t-entrance", "from": "E", "to": "A.L", "via": [[0.2, -3.4], [1.6, -7]] },
+    { "id": "t-A-F", "from": "A.L", "to": "F.R", "via": [[0.5, -11.8], [-2.5, -14]] },
+    { "id": "t-A-B", "from": "A.R", "to": "B.L", "via": [[17.5, -12], [19, -15.2]] },
+    { "id": "t-F-R1", "from": "F.L", "to": "R1.R", "via": [[-21.6, -19], [-20.2, -22.5]] },
+    { "id": "t-F-Q", "from": "F.R", "to": "Q.L", "via": [[-8.8, -20.5], [-10.2, -27]] },
+    { "id": "t-B-Q", "from": "B.L", "to": "Q.R", "via": [[17, -22], [13.5, -27.5]] },
+    { "id": "t-B-P", "from": "B.R", "to": "P.R", "via": [[42.5, -14], [39.5, -10]] },
+    { "id": "t-B-R2", "from": "B.R", "to": "R2.R", "via": [[44, -19.5], [48.6, -23.5]] }
+  ]
+}

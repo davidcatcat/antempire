@@ -91,7 +91,7 @@ try {
       // relative imports must stay inside web/src (so never engine/, cli/ or the Worker dir); the Three.js 3D prototype
       // (web/src/three/, #256) may also import the vendored, import-mapped three build — nothing else bare
       const inside = (m[1].startsWith('./') || m[1].startsWith('../')) && !path.posix.relative('web/src', path.posix.normalize(path.posix.join('web/src', path.posix.dirname(f), m[1]))).startsWith('..');
-      const vendoredThree = f.startsWith('three/') && THREE_SPECIFIERS.includes(m[1]);
+      const vendoredThree = (f.startsWith('three/') || f.startsWith('demo2/')) && THREE_SPECIFIERS.includes(m[1]);
       ok(inside || vendoredThree, `web/src/${f} imports only viewer modules (${m[1]})`);
     }
     ok(!/Math\.random|localStorage\.setItem|method:\s*'(POST|PUT|DELETE)'/.test(code), `web/src/${f}: no randomness, no storage writes, no write requests`);
