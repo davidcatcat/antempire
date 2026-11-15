@@ -30,6 +30,7 @@ import { BLOCK, FOLD_CM, fold, ground, surfacePose, corridor3 } from '../web/src
 import { roster, colonyOf, engineFeed, demoFeed, missingCastes, engineCastes, DEMO_COUNTS, DEMO_BADGE, NATURAL_BADGE, DEMO_FOOD_PROPS } from '../web/src/demo2/feed.ts';
 import { larvaSpot, carerSpot, queenSpot, eggSpot, pupaSpot, majorSpot } from '../web/src/demo2/places.ts';
 import { newGait, stepGait, STRIDE_PER_BODY, POSE_TARGET } from '../web/src/demo2/gait.ts';
+import { placeLabels, anyOverlap, type LabelBox } from '../web/src/demo2/labels.ts';
 
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
 const read = (p: string) => fs.readFileSync(path.join(REPO_ROOT, p), 'utf8');
@@ -181,6 +182,21 @@ function run(seed: number, t0: number, t1: number, dt = 0.1, every = 2): { trace
   const C = corridor3(vis); ok(C.every((p) => p.x > BLOCK.x0 + 5 && p.x < BLOCK.x1 - 5 && p.z > BLOCK.z0 + 5 && p.z < BLOCK.z1), 'the whole display route lies on the block');
 }
 
+// 4b. label placement: placed labels never overlap, stay inside the area, deterministic; crowded anchors are separated
+{
+  const area = { left: 2, top: 130, right: 410, bottom: 800 }, rnd = (i: number) => ((Math.imul(i + 1, 2654435761) >>> 0) / 4294967296);
+  for (let k = 0; k < 40; k++) {
+    const items: LabelBox[] = Array.from({ length: 14 }, (_, i) => ({ key: `l${i}`, x: 20 + rnd(k * 31 + i) * 380, y: 300 + rnd(k * 57 + i * 3) * 120, w: 50 + rnd(k + i * 7) * 110, h: 16, prio: i % 3 }));
+    const P = placeLabels(items, area), Q = placeLabels([...items].reverse(), area);
+    ok(!anyOverlap(P) && P.every((p) => p.left >= area.left - 1e-9 && p.left + p.w <= area.right + 1e-9 && p.top >= area.top - 1e-9 && p.bottom <= area.bottom + 1e-9), 'placed labels do not overlap and stay inside the area');
+    ok(JSON.stringify(P) === JSON.stringify(Q) && P.length >= 10, `label placement is order-independent and keeps most labels (${P.length} of 14)`);
+  }
+  const same = placeLabels([{ key: 'a', x: 200, y: 400, w: 80, h: 16, prio: 2 }, { key: 'b', x: 200, y: 400, w: 80, h: 16, prio: 1 }, { key: 'c', x: 205, y: 401, w: 80, h: 16, prio: 1 }], area);
+  ok(same.length === 3 && !anyOverlap(same) && same[0].key === 'a' && same[0].bottom === 400, 'labels with the same anchor are moved apart; the highest priority keeps its place');
+  ok(placeLabels([{ key: 'wide', x: 5, y: 10, w: 100, h: 16, prio: 1 }], area)[0].left === area.left && placeLabels([{ key: 'big', x: 5, y: 10, w: 999, h: 16, prio: 1 }], area).length === 0, 'a label is clamped into the area; one that cannot fit is dropped');
+  ok(anyOverlap([{ left: 0, top: 0, w: 10, h: 10 }, { left: 5, top: 5, w: 10, h: 10 }]) && !anyOverlap([{ left: 0, top: 0, w: 10, h: 10 }, { left: 10, top: 0, w: 10, h: 10 }]), 'overlap test');
+}
+
 // 5. source scans
 {
   const dir = 'web/src/demo2', files = fs.readdirSync(path.join(REPO_ROOT, dir)).filter((x) => x.endsWith('.ts')), html = read('web/demo2.html'), main = read(`${dir}/main.ts`);
@@ -189,7 +205,7 @@ function run(seed: number, t0: number, t1: number, dt = 0.1, every = 2): { trace
     const code = read(`${dir}/${x}`);
     for (const m of code.matchAll(/from\s+'([^']+)'/g)) ok(m[1] === 'three' || m[1].startsWith('three/addons/') || ((m[1].startsWith('./') || m[1].startsWith('../')) && !/engine\/|cli\/|prototypes\/|worker-dist/.test(m[1]) && !path.posix.normalize(path.posix.join(dir, m[1])).startsWith('web/src/../')), `${x}: imports only viewer modules and vendored three (${m[1]})`);
     ok(!/Math\.random|Date\.now\(\)\s*[*%]|new Worker\(/.test(code), `${x}: no unseeded randomness, no Worker of its own`);
-    if (['nest-graph.ts', 'stage.ts', 'surface.ts', 'feed.ts', 'places.ts', 'gait.ts'].includes(x)) ok(!/from 'three|document\.|window\.|performance\.|worker-client|session\.ts|save-store/.test(code), `${x}: pure (no DOM, no three, no Worker client, no save store)`);
+    if (['nest-graph.ts', 'stage.ts', 'surface.ts', 'feed.ts', 'places.ts', 'gait.ts', 'labels.ts'].includes(x)) ok(!/from 'three|document\.|window\.|performance\.|worker-client|session\.ts|save-store/.test(code), `${x}: pure (no DOM, no three, no Worker client, no save store)`);
   }
   const cmds = new Set([...main.matchAll(/client\.(\w+)\(/g)].map((m) => m[1]));
   ok([...cmds].every((c) => ['init', 'stepUntil', 'start', 'pause', 'resume', 'setSpeed', 'follow', 'snapshot'].includes(c)), `main.ts sends only scheduling / observation commands (${[...cmds].join(', ')})`);
