@@ -18,7 +18,7 @@
  *  - labels never overlap each other and stay on screen; the status line is not clipped; soil reaches the bottom edge;
  *    with the panel open no scene label lies under it;
  *  - phone: no horizontal scroll; short labels with ※ + legend; legible ants at the default portrait framing; the panel
- *    opens as a bottom sheet.
+ *    opens as a bottom sheet (the phone layout itself is checked by demo2-ui.check.cjs).
  * Writes demo2-<profile>-*.jpg (and, with DEMO2_VIDEO=1, demo2-desktop-follow.webm) into <outDir>; prints a JSON
  * report (performance numbers are software-rendered: NOT device results).
  */
@@ -39,6 +39,8 @@ const { chromium, devices } = require('playwright');
   for (const [tag, opts] of profiles) {
     const mobile = tag === 'pixel7';
     const ctx = await browser.newContext(opts), page = await ctx.newPage();
+    // phones keep 展示情境／跟隨／面板 in the 更多 menu (one compact control row); wide screens have them in the bar
+    const bar = async (sel) => { if (mobile) await page.click('#moreBtn'); await page.click(sel); };
     page.on('pageerror', (e) => errors.push(`${tag}: ${e.stack || e}`)); page.on('console', (m) => { if (m.type() === 'error') errors.push(`${tag}: ${m.text()}`); });
     await page.goto(new URL(`demo2.html?seed=1&quality=${mobile ? 'medium' : 'high'}&speed=5`, base).href);
     await ready(page); await page.waitForTimeout(2500);
@@ -99,13 +101,13 @@ const { chromium, devices } = require('playwright');
     if (mobile) check(L1.px >= 18 && L1.keys.includes('ch-A'), `${tag}: 地下 (portrait) shows the entry chamber with legible ants (${L1.px.toFixed(0)} px)`); else check(fr1.inside, `${tag}: 地下 frames the whole nest (${JSON.stringify(fr1.box)})`);
 
     // 展示情境 toggle
-    await page.click('#modeBtn'); await page.waitForTimeout(900);
+    await bar('#modeBtn'); await page.waitForTimeout(900);
     const dm = await page.evaluate(() => ({ s: window.__demo2.state(), badge: document.querySelector('#modeBadge').textContent, labels: document.querySelector('#labels').textContent, r: window.__demo2.roster(), demoClass: document.body.classList.contains('demo') }));
     check(dm.s.mode === 'demo' && dm.badge === '展示情境・示範資料' && dm.demoClass && (col ? dm.s.queens === col.q && dm.s.majors === col.m && dm.s.eggs === col.e && dm.s.pupae === col.p && dm.r.individuals.every((x) => x.source === 'engine') : dm.s.queens === 2 && dm.s.majors === 4 && dm.s.eggs === 36 && dm.s.pupae === 9) && /示範/.test(dm.labels), `${tag}: 展示情境 badge and labelled demo individuals (queens ${dm.s.queens}, majors ${dm.s.majors}, eggs ${dm.s.eggs}, pupae ${dm.s.pupae})`);
     check(dm.s.ants === 30 && dm.r.counts.minor.engine === 30 && dm.r.counts.minor.demo === 0 && dm.r.individuals.filter((x) => x.source === 'demo').every((x) => x.id.startsWith('demo-')), `${tag}: the 30 engine workers are unchanged in 展示情境`);
     await shot(page, `demo2-${tag}-scenario`);
     if (!mobile) { await page.evaluate(() => window.__demo2.view([4, -27.5, 24], [1, -28.6, 0])); await page.waitForTimeout(900); await shot(page, 'demo2-desktop-scenario-queens'); await page.evaluate(() => window.__demo2.setView('under')); }
-    await page.click('#modeBtn'); await page.waitForTimeout(600);
+    await bar('#modeBtn'); await page.waitForTimeout(600);
     const nm = await S(page);
     check(nm.mode === 'natural' && (col ? nm.queens === col.q : nm.queens === 0 && nm.majors === 0 && nm.eggs === 0 && nm.pupae === 0) && (await page.textContent('#modeBadge')).includes('自然模式'), `${tag}: back to natural mode: no demo individual left`);
 
@@ -132,7 +134,7 @@ const { chromium, devices } = require('playwright');
     check(!p2.s.running && p2.s.t === p1.s.t && p2.s.uTime === p1.s.uTime && JSON.stringify(p2.a) === JSON.stringify(p1.a) && (await page.textContent('#play')).includes('繼續'), `${tag}: paused — world time, micro-motion clock and every drawn point frozen`);
 
     // panel
-    await page.click('#sideBtn'); await page.waitForTimeout(500);
+    await bar('#sideBtn'); await page.waitForTimeout(500);
     const pane = await page.evaluate(() => ({ stats: document.querySelector('#pane-stats').textContent, box: document.querySelector('#side').getBoundingClientRect().toJSON(), w: innerWidth, h: innerHeight }));
     check(['引擎', '示範資料', '尚未模擬', '小工蟻', '巢內休息'].every((s) => pane.stats.includes(s)) && (mobile ? pane.box.width >= pane.w - 2 && pane.box.bottom >= pane.h - 2 : pane.box.width < 400), `${tag}: stats panel (engine vs demo counts, states)${mobile ? ' as a bottom sheet' : ''}`);
     await page.waitForTimeout(600);
@@ -142,7 +144,7 @@ const { chromium, devices } = require('playwright');
     for (const t of ['legend', 'notsim', 'perf']) await page.click(`#tabs button[data-tab="${t}"]`);
     const panes = await page.evaluate(() => ({ legend: document.querySelector('#pane-legend').textContent, ns: document.querySelector('#pane-notsim').textContent, perf: document.querySelector('#pane-perf').textContent }));
     check(['引擎', '顯示插值', '展示假設', '示範資料', '費洛蒙：尚未模擬', 'R290'].every((s) => panes.legend.includes(s)) && /尚未模擬（未接入）\d+ 項/.test(panes.ns) && panes.ns.includes('蟻后') && panes.perf.includes('WebGL 2') && panes.perf.includes('NOT a device result'), `${tag}: legend, the world's own 尚未模擬 list, and the performance panel`);
-    await page.click('#sideBtn');
+    await bar('#sideBtn');
     report[tag] = { perf: await page.evaluate(() => window.__demo2.perf()), viewport: await page.evaluate(() => ({ w: innerWidth, h: innerHeight, dpr: devicePixelRatio })) };
 
     // one worker followed through a full trip (desktop; scheduling only: step_until while paused)
