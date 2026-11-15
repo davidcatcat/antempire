@@ -77,6 +77,10 @@ jobs:
         run: |
           set -o pipefail
           node tests/browser/demo2-hd2d.check.cjs "$RUNNER_TEMP/demo2-shots" http://localhost:8782/ | tee "$RUNNER_TEMP/demo2-shots/demo2-hd2d-results.json"
+      - name: Demo 2 performance test smoke (30 individuals, 1 s warm-up + 2 s - render-only with synthetic data and no Worker, full simulation with engine workers; the result must be classified software and labelled as not a device result; not a performance gate)
+        run: |
+          set -o pipefail
+          node tests/browser/demo2-bench.run.cjs "$RUNNER_TEMP/demo2-shots/demo2-bench-smoke.json" http://localhost:8782/ --smoke
       - name: Upload screenshots and results
         if: always()
         continue-on-error: true
@@ -167,7 +171,7 @@ jobs:
           cp web/index.html web/analysis.html "$P/site/" && cp -r web/dist web/data "$P/site/"
           # experiment Worker build + the 3D prototype page and its vendored three (built by npm run web:build above)
           # Demo 2 (web/demo2.html) needs the same vendor directory: vendor/three and vendor/demo2/nest-layout.json
-          cp web/experiment.html web/three.html web/demo2.html "$P/site/" && cp -r web/worker-dist web/vendor "$P/site/"
+          cp web/experiment.html web/three.html web/demo2.html web/demo2-bench.html "$P/site/" && cp -r web/worker-dist web/vendor "$P/site/"
           cp "$RUNNER_TEMP"/viewer-shots/three-*.jpg "$RUNNER_TEMP"/viewer-shots/demo2-*.jpg "$P/screenshots/" 2>/dev/null || true
           cp docs/demo2.md "$P/" 2>/dev/null || true
           cp web/PREVIEW.md "$P/README.md"

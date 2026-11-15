@@ -38,6 +38,7 @@ import { MORPHS, RigLayer, rigMaterial, larvaGeometry, pupaGeometry, eggGeometry
 import { rigNodeMaterial, type RigNodeMaterial } from './ant-rig-tsl.ts';
 import { buildScene, type Quality, type Scene2 } from './scene.ts';
 import { Hd2dPipeline, PIXEL_FACTORS, type Hd2dEffects } from './hd2d.ts';
+import { adapterRecord, classifyGpu, gpuLine, webglStrings, CLASS_LABEL_ZH, type GpuIdentity } from './bench-report.ts';
 
 const q = new URLSearchParams(location.search);
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -98,6 +99,8 @@ function webgpuLost(why: string) {
 function swapCanvas() { const c = ui.canvas.cloneNode(false) as HTMLCanvasElement; ui.canvas.replaceWith(c); ui.canvas = c; bindCanvas(); }
 function webgl2Available(): boolean { try { return !!document.createElement('canvas').getContext('webgl2'); } catch { return false; } }
 let renderer: THREE.WebGLRenderer, glInfo = '', backend = '';
+/** what really draws, as the browser reports it (API from the backend object; classification rule: bench-report.ts) */
+let gpuId: GpuIdentity = { api: 'webgl2', webgl_unmasked_vendor: null, webgl_unmasked_renderer: null, webgl_vendor: null, webgl_renderer: null, webgpu_adapter: null };
 const qParam = q.get('quality') as Quality | null, qualityLocked = qParam === 'high' || qParam === 'medium' || qParam === 'low';
 let quality: Quality = qualityLocked ? qParam! : narrow() || (navigator.hardwareConcurrency ?? 8) <= 4 ? 'medium' : 'high';
 const scene = new THREE.Scene();
@@ -356,6 +359,7 @@ function tick(now: number) {
   requestAnimationFrame(tick);
 }
 const QUALITY_LABEL: Record<Quality, string> = { high: '高', medium: '中', low: '低' };
+const gpuV = () => classifyGpu(gpuId);
 /** what has and has not been verified about the WebGPU path (shown in the 效能 tab; docs/demo2.md) */
 const WEBGPU_STATUS = 'WebGPU 路徑目前只在軟體 WebGPU（無頭 Chromium＋SwiftShader）上以離屏繪圖驗證過（著色器、螞蟻關節、instancing、draw call 數）；畫面直接呈現到螢幕、以及真實 GPU，都未在真實 GPU 的 WebGPU 上驗證，待 Owner 實機確認。';
 
@@ -470,7 +474,7 @@ function renderPerf() {
   const s = summarise(frameIv.slice(-240), cpuMs.slice(-240)), info = rInfo(), mem = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory;
   const nums = `<table><tr><td>FPS（平均／p5 低）</td><td class="n">${s.fps_mean.toFixed(0)}／${s.fps_p5_low.toFixed(0)}</td></tr><tr><td>幀時間 p50／p95</td><td class="n">${s.frame_ms.p50.toFixed(1)}／${s.frame_ms.p95.toFixed(1)} ms</td></tr><tr><td>本頁 CPU p50</td><td class="n">${s.cpu_ms.p50.toFixed(1)} ms</td></tr><tr><td>draw calls</td><td class="n">${info.calls}</td></tr><tr><td>三角形</td><td class="n">${(info.triangles / 1000).toFixed(0)}k</td></tr><tr><td>畫質／DPR</td><td class="n">${QUALITY_LABEL[quality]}${qualityLocked ? '（固定）' : '（自動）'}／${renderer.getPixelRatio().toFixed(2)}</td></tr><tr><td>JS heap</td><td class="n">${mem ? (mem.usedJSHeapSize / 1048576).toFixed(0) + ' MB' : '—'}</td></tr></table>`;
   // the controls are rebuilt only when they change (a click must not land on a replaced button); the numbers every time
-  const ctl = `<h2>繪圖後端</h2><div id="backendNow">${esc(backend)}</div><div class="muted">GPU：${esc(glInfo)}</div>${rendererNote ? `<div class="tag none" style="white-space:normal">${esc(rendererNote)}</div>` : ''}
+  const ctl = `<h2>繪圖後端</h2><div id="backendNow">${esc(backend)}</div><div class="muted">GPU：${esc(glInfo)}</div><div class="muted" id="gpuId">GPU 辨識｜${esc(gpuLine(gpuId))}</div><div id="gpuClass"><span class="tag ${gpuV().class === 'real_gpu' ? 'engine' : gpuV().class === 'software' ? 'none' : 'interp'}">${gpuV().class}</span>${esc(CLASS_LABEL_ZH[gpuV().class])}<span class="muted">（依據：${esc(gpuV().rule)}）</span></div>${rendererNote ? `<div class="tag none" style="white-space:normal">${esc(rendererNote)}</div>` : ''}
 <div class="row">渲染器 <span class="seg"><button type="button" data-r="webgl2" aria-pressed="${rendererKind === 'webgl2'}">WebGL 2（預設）</button><button type="button" data-r="webgpu" aria-pressed="${rendererKind !== 'webgl2'}">WebGPU（實驗）</button></span></div>
 <div class="muted">${WEBGPU_STATUS}切換會重新載入頁面（世界由存檔接續；臨時世界會重開）。兩種渲染器畫的是同一份引擎狀態與同一份顯示位置，只有繪圖方式不同。</div>
 <h2>畫面</h2><div id="perfNums"></div>
@@ -478,6 +482,7 @@ function renderPerf() {
 <div class="row" ${style === 'hd2d' ? '' : 'hidden'}>像素化 <span class="seg">${PIXEL_FACTORS.map((k) => `<button type="button" data-px="${k}" aria-pressed="${pxFactor === k}">${k === 1 ? '關' : `${k}×`}</button>`).join('')}</span><label><input type="checkbox" id="fxDof" ${fx.dof ? 'checked' : ''}> 景深</label><label><input type="checkbox" id="fxBloom" ${fx.bloom ? 'checked' : ''}> 泛光</label></div>
 <div class="muted" id="fxNow">作用中的畫面效果：${fxText()}。HD-2D 只是畫面效果：同一份引擎狀態、同一份顯示位置；光線方向與顏色仍依引擎的光照狀態。</div>
 <div class="row">畫質 <span class="seg">${(['high', 'medium', 'low'] as const).map((k) => `<button type="button" data-q="${k}" aria-pressed="${quality === k}">${QUALITY_LABEL[k]}</button>`).join('')}</span></div>
+<div class="row"><a class="btn" id="benchLink" href="demo2-bench.html?auto=1${wantWebGPU ? '&renderer=webgpu' : ''}">一鍵跑效能測試（30／100／300／1,000 隻）</a><a class="btn" id="benchOpen" href="demo2-bench.html${wantWebGPU ? '?renderer=webgpu' : ''}">只開測試頁</a><span class="muted">會離開這個畫面到獨立的測試頁：純渲染（合成資料，非模擬）與完整模擬分開量，結束後有可複製的 JSON；不讀取、不影響這個世界（離開時照常自動存檔）。</span></div>
 <div class="muted">量測類別：${measurementClass(glInfo, automated)}。軟體繪圖或自動化環境的數字不是實機結果。模擬時間與畫面更新分開：畫面變慢不會改變任何事件。</div>`;
   if (ctl !== perfCtlNow) {
     perfCtlNow = ctl; ui.perf.innerHTML = ctl;
@@ -608,6 +613,7 @@ async function main() {
     const gpu = (navigator as unknown as { gpu?: { requestAdapter(): Promise<{ info?: { vendor?: string; architecture?: string; description?: string } } | null> } }).gpu;
     let adapter: { info?: { vendor?: string; architecture?: string; description?: string } } | null = null;
     if (!forceNodeGL) { try { adapter = gpu ? await gpu.requestAdapter() : null; } catch { adapter = null; } }
+    gpuId.webgpu_adapter = adapterRecord(adapter);
     if (adapter || forceNodeGL) {
       try {
         const G = await import('three/webgpu'), T = await import('three/tsl');
@@ -627,6 +633,10 @@ async function main() {
     if (!webgl2Available()) { fatal('這個瀏覽器或裝置無法使用 WebGL 2，Demo 2 的 3D 畫面無法顯示。'); return; }
     try { renderer = new THREE.WebGLRenderer({ canvas: ui.canvas, antialias: quality !== 'low', powerPreference: 'high-performance' }); } catch (e) { fatal(`無法建立 WebGL 繪圖環境（${esc((e as Error).message)}）。`); return; }
     const gl = renderer.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info'); glInfo = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : String(gl.getParameter(gl.RENDERER));
+  }
+  { // GPU identification: the API in use and the strings of a WebGL context (the renderer's own, or a probe under WebGPU)
+    let gl: WebGL2RenderingContext | null = null; try { gl = rendererKind === 'webgl2' ? renderer.getContext() as WebGL2RenderingContext : document.createElement('canvas').getContext('webgl2'); } catch { gl = null; }
+    gpuId = { ...gpuId, api: rendererKind === 'webgpu' ? 'webgpu' : 'webgl2', ...webglStrings(gl) };
   }
   renderer.info.autoReset = false;
   if (rendererKind === 'webgl2') hd2d = new Hd2dPipeline(renderer); else if (style === 'hd2d') { style = 'standard'; rendererNote = rendererNote || `${HD2D_ONLY_WEBGL2}（已改用標準畫面）`; }
@@ -743,7 +753,7 @@ const hooks: Record<string, unknown> = {
   sampleNow: () => { if (!frame || !vis) return null; tNow = frame.t_sim; drawn = stage.update(frame, vis, tNow, 0); return { t: tNow, ants: drawn.map((a) => ({ id: a.id, state: a.state, realm: a.realm, x: a.x, y: a.y, z: a.z, place: a.place, pose: a.pose, absorbed: a.absorbed })) }; },
   save: async () => { const r = await session?.request('manual'); return r ? (r.ok ? { ok: true } : { ok: false, code: r.code, message: r.message }) : { ok: false, code: 'no_session', message: '' }; },
   view: (pos: number[], tgt: number[]) => { tween = null; camera.position.fromArray(pos); controls.target.fromArray(tgt); controls.update(); },
-  perf: () => ({ ...summarise(frameIv.slice(-240), cpuMs.slice(-240)), ...rInfo(), renderer: rendererKind, backend, quality, dpr: renderer.getPixelRatio(), gl: glInfo, measurement_class: measurementClass(glInfo, automated), scene_triangles: world?.triangles() ?? 0 }),
+  perf: () => ({ ...summarise(frameIv.slice(-240), cpuMs.slice(-240)), ...rInfo(), renderer: rendererKind, backend, quality, dpr: renderer.getPixelRatio(), gl: glInfo, measurement_class: measurementClass(glInfo, automated), gpu: gpuId, gpu_class: gpuV().class, gpu_rule: gpuV().rule, scene_triangles: world?.triangles() ?? 0 }),
 };
 (window as unknown as { __demo2: Record<string, unknown> }).__demo2 = hooks;
 main().catch((e) => { console.error(e); fatal(`載入失敗：${esc((e as Error).message)}`); });
