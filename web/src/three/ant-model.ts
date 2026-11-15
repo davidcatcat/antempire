@@ -56,11 +56,29 @@ const LEGS: { hip: V3; knee: V3; foot: V3; tip: V3 }[] = [
 ];
 const zs = (p: V3, side: number): V3 => [p[0], p[1], p[2] * side];
 
+/**
+ * Body proportions of a caste relative to the minor worker geometry (Demo 2; a DRAWING, not a measurement).
+ * head: head scale about the neck; headWide: extra head width; lobes: the cordate (heart-shaped) occiput of the major;
+ * antenna: antenna length scale about its socket; gaster: gaster scale [x, y, z] about the waist; meso: mesosoma
+ * girth [y, z] about its axis. The legs, the rig pivots and the hip positions are unchanged.
+ */
+export interface AntMorph { head: number; headWide: number; lobes: boolean; antenna: number; gaster: [number, number, number]; meso: [number, number] }
+export const MINOR_MORPH: AntMorph = { head: 1, headWide: 1, lobes: false, antenna: 1, gaster: [1, 1, 1], meso: [1, 1] };
+
 /** build one level of detail: hi = smooth enough for close-up / follow, lo = cheap for distant ants */
-export function buildAntGeometry(level: 'hi' | 'lo'): THREE.BufferGeometry {
+export function buildAntGeometry(level: 'hi' | 'lo', morph: AntMorph = MINOR_MORPH): THREE.BufferGeometry {
   const hi = level === 'hi', S = hi ? 14 : 7, T = hi ? 10 : 5, R = hi ? 6 : 3, parts: THREE.BufferGeometry[] = [];
-  const add = (g: THREE.BufferGeometry, kind: number, idx: number, pivot: V3, c: THREE.Color, reach = 0) => parts.push(tag(g, kind, idx, pivot, c, reach));
   const neck: V3 = [0.245, 0.205, 0], waist: V3 = [-0.06, 0.18, 0];
+  // caste proportions: scale a part about a point (head and antennae about the neck / socket, gaster about the waist)
+  const about = (g: THREE.BufferGeometry, c: V3, sc: V3) => g.translate(-c[0], -c[1], -c[2]).scale(sc[0], sc[1], sc[2]).translate(c[0], c[1], c[2]);
+  const hs: V3 = [morph.head, morph.head, morph.head * morph.headWide], headPt = (p: V3): V3 => [neck[0] + (p[0] - neck[0]) * hs[0], neck[1] + (p[1] - neck[1]) * hs[1], neck[2] + (p[2] - neck[2]) * hs[2]];
+  const add = (g: THREE.BufferGeometry, kind: number, idx: number, pivot: V3, c: THREE.Color, reach = 0) => {
+    if (kind === KIND.head) about(g, neck, hs);
+    else if (kind === KIND.gaster) about(g, waist, morph.gaster);
+    else if (kind === KIND.body) about(g, [0, 0.18, 0], [1, morph.meso[0], morph.meso[1]]);
+    else if (kind === KIND.antenna) { const q = headPt(pivot); g.translate(q[0] - pivot[0], q[1] - pivot[1], q[2] - pivot[2]); about(g, q, [morph.antenna, morph.antenna, morph.antenna]); pivot = q; reach *= morph.antenna; }
+    parts.push(tag(g, kind, idx, pivot, c, reach));
+  };
   // gaster (+ postpetiole) — pivots at the waist
   add(ellipsoid([-0.31, 0.175, 0], [0.165, 0.118, 0.128], S, T), KIND.gaster, 0, waist, COL.gaster);
   add(ellipsoid([-0.125, 0.175, 0], [0.045, 0.042, 0.05], hi ? 10 : 6, hi ? 8 : 4), KIND.gaster, 0, waist, COL.meso);
@@ -74,6 +92,8 @@ export function buildAntGeometry(level: 'hi' | 'lo'): THREE.BufferGeometry {
   add(rod([0.22, 0.2, 0], neck, 0.03, 0.03, R), KIND.body, 0, [0, 0, 0], COL.meso);
   // head (+ eyes, mandibles, clypeus)
   add(ellipsoid([0.335, 0.2, 0], [0.098, 0.078, 0.088], S, T), KIND.head, 0, neck, COL.head);
+  // major worker: the two occipital lobes of the heart-shaped head (Pheidole megacephala major; drawing)
+  if (morph.lobes) for (const s of [1, -1]) add(ellipsoid([0.292, 0.212, 0.047 * s], [0.07, 0.066, 0.052], hi ? 12 : 6, hi ? 8 : 4), KIND.head, 0, neck, COL.head);
   for (const s of [1, -1]) {
     add(ellipsoid([0.35, 0.225, 0.08 * s], [0.018, 0.016, 0.012], hi ? 8 : 4, hi ? 6 : 3), KIND.head, 0, neck, COL.eye);
     add(rod([0.415, 0.17, 0.035 * s], [0.468, 0.162, 0.008 * s], 0.017, 0.006, hi ? 5 : 3), KIND.head, 0, neck, COL.mand);

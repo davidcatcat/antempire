@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>螞蟻帝國・Demo 2（地表＋地下同一世界）</title>
+<!-- Three.js is served from this site (vendor/three, copied from node_modules by npm run web:build); no CDN -->
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
+</script>
+<style>
+  :root { --bar: rgba(22,16,11,0.72); --panel: rgba(24,18,12,0.93); --ink: #f3ead6; --muted: #cbbd9f; --accent: #e9b949; --line: rgba(243,234,214,0.22); --demo: #7fd0ff; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #1d1712; color: var(--ink); font-family: system-ui, -apple-system, "Noto Sans TC", "PingFang TC", sans-serif; overflow: hidden; }
+  #scene { position: fixed; inset: 0; width: 100vw; height: 100dvh; display: block; touch-action: none; }
+  #top { position: fixed; left: 0; right: 0; top: 0; z-index: 3; background: var(--bar); backdrop-filter: blur(4px); display: flex; flex-wrap: wrap; gap: 5px 7px; align-items: center; padding: calc(5px + env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) 5px max(10px, env(safe-area-inset-left, 0px)); }
+  h1 { font-size: 15px; margin: 0 2px 0 0; letter-spacing: 0.03em; white-space: nowrap; }
+  select, button, a.btn, input[type=text] { font: inherit; font-size: 13px; min-height: 34px; color: var(--ink); background: rgba(255,255,255,0.09); border: 1px solid var(--line); border-radius: 8px; padding: 0 10px; }
+  button { cursor: pointer; } button:disabled { opacity: 0.45; cursor: default; }
+  button.primary { background: var(--accent); color: #2a1d0b; border-color: var(--accent); font-weight: 600; min-width: 62px; }
+  button[aria-pressed="true"] { background: rgba(233,185,73,0.28); border-color: var(--accent); }
+  option { color: #1d160e; }
+  a { color: var(--accent); } a.btn { display: inline-flex; align-items: center; text-decoration: none; }
+  .seg { display: inline-flex; } .seg button { border-radius: 0; margin-left: -1px; } .seg button:first-child { border-radius: 8px 0 0 8px; margin-left: 0; } .seg button:last-child { border-radius: 0 8px 8px 0; }
+  .chip { font-size: 11.5px; font-weight: 700; border-radius: 6px; padding: 3px 8px; white-space: nowrap; }
+  #flag { color: #2a1d0b; background: #f0b25a; }
+  #modeBadge { color: #16222b; background: #cfe3c0; } body.demo #modeBadge { background: var(--demo); }
+  #hud { flex-basis: 100%; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #side { position: fixed; z-index: 3; right: max(8px, env(safe-area-inset-right, 0px)); top: 96px; bottom: 10px; width: 340px; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  body.side-closed #side { display: none; }
+  #tabs { display: flex; flex-wrap: wrap; gap: 3px; padding: 6px; border-bottom: 1px solid var(--line); }
+  #tabs button { min-height: 30px; padding: 0 8px; font-size: 12.5px; }
+  .pane { flex: 1 1 auto; overflow: auto; padding: 8px 12px 14px; font-size: 13px; line-height: 1.6; -webkit-overflow-scrolling: touch; }
+  .pane h2 { font-size: 13.5px; margin: 10px 0 4px; color: var(--accent); } .pane h2:first-child { margin-top: 2px; }
+  .pane ul { margin: 4px 0; padding-left: 18px; } .pane li { margin: 2px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; } th, td { text-align: left; padding: 2px 6px 2px 0; border-bottom: 1px solid rgba(243,234,214,0.1); } td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .muted { color: var(--muted); font-size: 12px; } .tag { display: inline-block; font-size: 11px; border-radius: 4px; padding: 0 5px; margin-right: 4px; background: rgba(255,255,255,0.12); }
+  .tag.engine { background: #3f6b3a; } .tag.interp { background: #6b5a2a; } .tag.assume { background: #5a4a6b; } .tag.demo { background: #24566f; } .tag.none { background: #6b3030; }
+  .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 6px 0; }
+  #card { position: fixed; z-index: 4; left: max(10px, env(safe-area-inset-left, 0px)); top: 96px; width: min(380px, calc(100vw - 20px)); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 11px; font-size: 13px; line-height: 1.6; }
+  #labels { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+  .lbl { position: absolute; left: 0; top: 0; font-size: 11.5px; color: #f6ead0; background: rgba(28,18,10,0.72); border-radius: 5px; padding: 1px 6px; white-space: nowrap; }
+  .lbl.ns { border: 1px dashed rgba(255,170,150,0.8); color: #ffd9cf; } .lbl.demo { border: 1px solid var(--demo); color: #d8f1ff; } .lbl.pin { background: var(--accent); color: #2a1d0b; font-weight: 700; } .lbl.act { background: rgba(60,100,60,0.85); }
+  #toast { position: fixed; left: 50%; top: 22%; transform: translateX(-50%); max-width: min(560px, calc(100vw - 24px)); background: rgba(20,15,10,0.9); border: 1px solid var(--line); border-radius: 10px; padding: 8px 13px; font-size: 13px; z-index: 6; }
+  #fatal { position: fixed; inset: 0; z-index: 9; background: #1d1712; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center; font-size: 15px; line-height: 1.8; }
+  #sheetBtn { display: none; }
+  [hidden] { display: none !important; }
+  @media (max-width: 760px) {
+    .lbl { white-space: normal; max-width: 46vw; font-size: 10.5px; line-height: 1.25; text-align: center; padding: 1px 4px; }
+    h1 { font-size: 13.5px; } .chip { font-size: 10.5px; padding: 2px 6px; } #hud { font-size: 11px; white-space: normal; max-height: 2.8em; }
+    select, button, a.btn { min-height: 36px; padding: 0 8px; font-size: 12.5px; }
+
+    #side { left: 0; right: 0; top: auto; bottom: 0; width: auto; height: 44dvh; border-radius: 14px 14px 0 0; border-width: 1px 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
+    #card { top: auto; bottom: 12px; max-height: 34dvh; overflow: auto; font-size: 12.5px; line-height: 1.5; } body:not(.side-closed) #card { display: none; }
+  }
+</style>
+</head>
+<body class="side-closed">
+<canvas id="scene" aria-label="Demo 2：同一個世界的花園地表與地下蟻巢剖面"></canvas>
+<div id="labels"></div>
+<div id="top">
+  <h1>螞蟻帝國 Demo 2</h1><span id="flag" class="chip">非正式實驗世界</span><span id="modeBadge" class="chip">載入中…</span>
+  <button id="play" class="primary" type="button">暫停</button>
+  <select id="speed" aria-label="模擬速度（只改排程）"></select>
+  <span class="seg" role="group" aria-label="視角"><button id="viewFull" type="button" aria-pressed="true">完整剖面</button><button id="viewSurface" type="button" aria-pressed="false">地表</button><button id="viewUnder" type="button" aria-pressed="false">地下</button></span>
+  <button id="modeBtn" type="button" aria-pressed="false">展示情境</button>
+  <button id="followBtn" type="button" aria-pressed="false">跟隨螞蟻</button>
+  <button id="sideBtn" type="button" aria-expanded="false">統計／說明／存檔</button>
+  <div id="hud">載入中…</div>
+</div>
+<div id="card" hidden></div>
+<aside id="side" aria-label="觀察面板">
+  <div id="tabs" role="tablist">
+    <button type="button" data-tab="stats" aria-pressed="true">統計</button><button type="button" data-tab="legend" aria-pressed="false">資料分類</button><button type="button" data-tab="notsim" aria-pressed="false">尚未模擬</button><button type="button" data-tab="saves" aria-pressed="false">存檔／重開</button><button type="button" data-tab="perf" aria-pressed="false">效能</button>
+  </div>
+  <div class="pane" id="pane-stats"></div>
+  <div class="pane" id="pane-legend" hidden></div>
+  <div class="pane" id="pane-notsim" hidden></div>
+  <div class="pane" id="pane-saves" hidden>
+    <h2>目前世界</h2><div id="worldInfo" class="muted"></div>
+    <div class="row"><button id="saveBtn" type="button">立即儲存</button><span id="saveStatus" class="muted"></span></div>
+    <h2>重新開始 Demo（新世界）</h2>
+    <div class="row"><label>種子 <input id="seedIn" type="text" inputmode="numeric" size="10" aria-label="新世界種子"></label><button id="restartBtn" type="button">重新開始</button></div>
+    <div class="muted">新世界從實驗第 0 天 00:00 建立，再只用排程指令快轉到 09:00；相同種子＝相同世界。</div>
+    <h2>展示情境</h2>
+    <div class="row"><button id="resetDemoBtn" type="button">重設展示情境</button><span id="demoInfo" class="muted"></span></div>
+    <h2>已儲存的實驗世界（本機）</h2><div id="saveList" class="muted">讀取中…</div>
+    <div class="row"><button id="importBtn" type="button">匯入存檔檔案</button><input id="importFile" type="file" accept=".json,application/json" hidden></div>
+    <div class="muted">存檔只保存 Worker 在事件邊界產生的引擎快照（非正式實驗世界）；示範資料、鏡頭與畫面狀態不會存入。存檔狀態：本機可玩／完整性檢查通過，未經 Node 重算驗證。</div>
+  </div>
+  <div class="pane" id="pane-perf" hidden></div>
+</aside>
+<div id="toast" hidden></div>
+<div id="fatal" hidden></div>
+<script type="module" src="dist/demo2/main.js"></script>
+</body>
+</html>
