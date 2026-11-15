@@ -278,7 +278,7 @@ Owner 2026-11-15 在自己的手機上開啟本頁，效能面板的截圖顯示
 
 `docs/vis/demo2/`：`demo2-desktop-full.jpg`（完整剖面）、`-surface.jpg`（地表）、`-underground.jpg`（地下）、`-follow.jpg`（跟隨近景）、`-engine-queen.jpg`（點選引擎蟻后、資訊卡列出尚未模擬項目）、`-scenario.jpg`／`-scenario-queens.jpg`（展示情境）、`-panel.jpg`、`-saves.jpg`、`demo2-pixel7-*.jpg`（手機）、`demo2-desktop-follow.webm`（短片，候選世界 p0a2-colony）。全部由 `tests/browser/demo2.check.cjs` 產生（軟體繪圖）。
 
-動作（第 4 輪）的修改前／後短片與截圖在 `docs/vis/demo2/motion/`：`before-*`／`after-*` 各四段（`junction`：近景跟隨工蟻走過岔路；`meet`：通道裡兩隻相遇；`rest`：休息室；`surface`：地表往返），桌面 1440×900 與 Pixel 7 各一組，另有對應的 `.jpg`。兩邊用同一個世界、同一個時刻、同一個鏡頭；軟體繪圖錄製，畫面更新率很低（每秒數格），**流暢度不代表實機**——要看的是姿勢、轉向與排列。產生方式：`tests/browser/demo2-motion-clips.cjs`（手動執行，不在 CI）。
+動作（第 4 輪）的修改前／後短片與截圖在 `docs/vis/demo2/motion/`：`before-*`／`after-*` 各四段（`junction`：近景跟隨工蟻走過岔路；`meet`：跟隨一隻往巢口上行的工蟻，此時另一隻正從地表回來；`rest`：休息室；`surface`：地表往返），桌面 1440×900 與 Pixel 7 各一組，另有對應的 `.jpg`。兩邊用同一個世界、同一隻工蟻、同一個鏡頭、同一個起始時刻（Pixel 7 的岔路那段兩邊差 1 秒：挑選條件含畫面位置）；「修改前」是 main `4853204`（手機介面更新之前）；軟體繪圖錄製，畫面更新率很低（每秒數格），**流暢度不代表實機**——要看的是姿勢、轉向與排列。產生方式：`tests/browser/demo2-motion-clips.cjs`（手動執行，不在 CI）。
 
 ## 還沒做到的（對照 Owner 需求）
 
