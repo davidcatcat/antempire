@@ -2,7 +2,7 @@
 //
 // The same world, the same instants and the same camera for both builds, so the clips can be compared side by side:
 //   junction  a close follow of a worker walking through the tunnel junctions on its way to the entrance
-//   meet      the entrance tunnel while a returning worker comes in and another one goes out
+//   meet      a follow of a worker going up the entrance tunnel while a returning worker comes in
 //   rest      a resting chamber at night
 //   surface   a close follow of a worker on its trip along the display route
 // The world is PAUSED and stepped (scheduling only: step_until) 0.1 simulated seconds per captured frame, so a clip
@@ -10,12 +10,12 @@
 // turning and arrangement — not the frame rate of a real device.
 //
 //   npm run web:build && node cli/web-serve.ts 8787 &
-//   node tests/browser/demo2-motion-clips.cjs <outDir> http://localhost:8787/ <before|after> [desktop|pixel7|both]
+//   node tests/browser/demo2-motion-clips.cjs <outDir> http://localhost:8787/ <before|after> [desktop|pixel7|both] [clip,clip]
 // Needs ffmpeg on PATH (frames → WebM).
 const { chromium, devices } = require('playwright');
 const fs = require('fs'), path = require('path'), os = require('os'), { execFileSync } = require('child_process');
 
-const [outDir, base = 'http://localhost:8787/', tag = 'after', which = 'both'] = process.argv.slice(2);
+const [outDir, base = 'http://localhost:8787/', tag = 'after', which = 'both', only = ''] = process.argv.slice(2);
 if (!outDir) { console.error('usage: demo2-motion-clips.cjs <outDir> <baseUrl> <before|after> [desktop|pixel7|both]'); process.exit(2); }
 fs.mkdirSync(outDir, { recursive: true });
 const FRAMES = 80, STEP = 0.1, WARM = 30;
@@ -24,8 +24,9 @@ const FRAMES = 80, STEP = 0.1, WARM = 30;
 const CLIPS = [
   { name: 'junction', t0: 9 * 3600 + 120, delay: 8, cam: { desktop: [0, 1.3, 8.5], pixel7: [0, 1.6, 11] },
     pick: () => { const a = window.__demo2.ants().filter((x) => x.state === 'to_entrance' && x.realm === 'nest' && x.y < -14).sort((p, q) => (p.id < q.id ? -1 : 1))[0]; return a ? { id: a.id } : null; } },
-  { name: 'meet', t0: 9 * 3600 + 300, delay: 0, cam: { desktop: [0, 0.6, 10], pixel7: [0, 0.6, 13] },
-    pick: () => { const A = window.__demo2.ants(), out = A.some((x) => x.state === 'to_entrance' && x.realm === 'nest' && x.y > -9.5), back = A.some((x) => x.state === 'returning' && x.realm === 'surface' && Math.hypot(x.x, x.z) < 7); return out && back ? { fixed: [0.9, -4.6, 0] } : null; } },
+  { name: 'meet', t0: 9 * 3600 + 300, delay: 0, cam: { desktop: [0, 0.4, 12], pixel7: [0, 0.4, 14] },
+    // a worker on its way up the entrance tunnel, at a moment when another one is about to come in from the surface
+    pick: () => { const A = window.__demo2.ants(), out = A.filter((x) => x.state === 'to_entrance' && x.realm === 'nest' && x.y > -8.5 && x.y < -3).sort((p, q) => (p.id < q.id ? -1 : 1))[0], back = A.some((x) => x.state === 'returning' && x.realm === 'surface' && Math.hypot(x.x, x.z) < 7); return out && back ? { id: out.id } : null; } },
   { name: 'rest', t0: 22 * 3600 + 300, delay: 0, cam: { desktop: [0, 0.9, 17], pixel7: [0, 0.9, 21] }, pick: () => ({ fixed: [39, -26.4, 0] }) },
   { name: 'surface', t0: 10 * 3600 + 60, delay: 0, cam: { desktop: [-2.5, 5, 7.5], pixel7: [-2.5, 6, 9.5] },
     pick: () => { const a = window.__demo2.ants().filter((x) => x.state === 'outbound' && x.realm === 'surface' && Math.hypot(x.x, x.z) > 12 && Math.hypot(x.x, x.z) < 60).sort((p, q) => (p.id < q.id ? -1 : 1))[0]; return a ? { id: a.id } : null; } },
@@ -35,7 +36,7 @@ const CLIPS = [
   const browser = await chromium.launch();
   const log = [];
   for (const dev of which === 'both' ? ['desktop', 'pixel7'] : [which]) {
-    for (const clip of CLIPS) {
+    for (const clip of CLIPS.filter((c) => !only || only.split(',').includes(c.name))) {
       const ctx = await browser.newContext(dev === 'pixel7' ? { ...devices['Pixel 7'] } : { viewport: { width: 1280, height: 800 } });
       const page = await ctx.newPage(), errs = []; page.on('pageerror', (e) => errs.push(e.message));
       await page.goto(`${base}demo2.html?autostart=0&quality=medium&t=${clip.t0 - WARM}`);
