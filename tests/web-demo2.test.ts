@@ -31,6 +31,9 @@ import { roster, colonyOf, engineFeed, demoFeed, missingCastes, engineCastes, DE
 import { larvaSpot, carerSpot, queenSpot, eggSpot, pupaSpot, majorSpot } from '../web/src/demo2/places.ts';
 import { newGait, stepGait, STRIDE_PER_BODY, POSE_TARGET } from '../web/src/demo2/gait.ts';
 import { placeLabels, anyOverlap, type LabelBox } from '../web/src/demo2/labels.ts';
+import { RIG, glf } from '../web/src/demo2/rig-params.ts';
+/** the GLSL rig text, taken from ant-rig.ts without loading three in Node: the template is evaluated with the shared table */
+const RIG_GLSL_TEXT = (): string => { const src = fs.readFileSync(path.join(REPO_ROOT, 'web/src/demo2/ant-rig.ts'), 'utf8'), a = src.indexOf('export const RIG_GLSL = /* glsl */ `') + 'export const RIG_GLSL = /* glsl */ `'.length, b = src.indexOf('`;', a); return new Function('K', 'f', 'return `' + src.slice(a, b) + '`;')(RIG, glf) as string; };
 
 let checks = 0; const ok = (c: unknown, why: string) => { assert.ok(c, why); checks++; };
 const read = (p: string) => fs.readFileSync(path.join(REPO_ROOT, p), 'utf8');
@@ -197,15 +200,32 @@ function run(seed: number, t0: number, t1: number, dt = 0.1, every = 2): { trace
   ok(anyOverlap([{ left: 0, top: 0, w: 10, h: 10 }, { left: 5, top: 5, w: 10, h: 10 }]) && !anyOverlap([{ left: 0, top: 0, w: 10, h: 10 }, { left: 10, top: 0, w: 10, h: 10 }]), 'overlap test');
 }
 
+// 4c. one rig, two shader languages; the renderer never reaches the display director
+{
+  const glsl = RIG_GLSL_TEXT(), tsl = read('web/src/demo2/ant-rig-tsl.ts'), params = read('web/src/demo2/rig-params.ts');
+  const nums: number[] = []; const walk = (v: unknown) => { if (typeof v === 'number') nums.push(v); else if (v && typeof v === 'object') Object.values(v).forEach(walk); }; walk(RIG);
+  ok(nums.length > 40 && nums.every((v) => glsl.includes(glf(v))), `every rig number of rig-params.ts appears in the GLSL rig (${nums.length} numbers)`);
+  ok(/import \{ RIG, CUTICLE \} from '\.\/rig-params\.ts'/.test(tsl) && /import \{ RIG, CUTICLE, glf \} from '\.\/rig-params\.ts'/.test(read('web/src/demo2/ant-rig.ts')), 'both rigs import the one parameter table');
+  // the TSL rig holds no amplitude / frequency of its own: its only numeric literals are structural (0, 1, 2, 3, 0.5, part-kind thresholds)
+  const lits = [...tsl.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '').matchAll(/(?<![\w.\]])(\d+\.\d+|\d+)(?![\w.])/g)].map((m) => Number(m[1]));
+  const structural = new Set([0, 1, 2, 3, 4, 0.5, 1.5, 2.5, 3.5]);
+  ok(lits.length > 10 && lits.every((v) => structural.has(v)), `the TSL rig has no constants of its own (literals: ${[...new Set(lits)].join(', ')})`);
+  ok(glf(1) === '1.0' && glf(0.42) === '0.42' && /qn: \{ amp:/.test(params), 'GLSL float literals');
+  for (const x of ['nest-graph.ts', 'stage.ts', 'surface.ts', 'feed.ts', 'places.ts', 'gait.ts', 'labels.ts', 'rig-params.ts']) ok(!/renderer|webgpu|webgl/i.test(read(`web/src/demo2/${x}`).replace(/\/\*[\s\S]*?\*\//g, '')), `${x}: no reference to any renderer (the director's output cannot depend on it)`);
+  const main = read('web/src/demo2/main.ts');
+  ok(/stage\.update\(frame, vis, tNow, dtAnim\)/.test(main) && !/stage\.update\([^)]*(renderer|rendererKind|rigNode)/.test(main) && !/new ColonyStage\([^)]*(renderer|rendererKind)/.test(main), 'main.ts passes only the frame, the display model and time to the director');
+  ok(/isWebGPUBackend === true/.test(main) && /不是 WebGPU/.test(main) && /已改用 WebGL 2/.test(main) && /待 Owner 實機確認/.test(main), 'main.ts reports the ACTUAL backend, says when it fell back, and states what is not verified');
+}
+
 // 5. source scans
 {
   const dir = 'web/src/demo2', files = fs.readdirSync(path.join(REPO_ROOT, dir)).filter((x) => x.endsWith('.ts')), html = read('web/demo2.html'), main = read(`${dir}/main.ts`);
-  ok(['nest-graph.ts', 'stage.ts', 'surface.ts', 'feed.ts', 'places.ts', 'gait.ts', 'ant-rig.ts', 'scene.ts', 'main.ts'].every((x) => files.includes(x)), 'Demo 2 modules present');
+  ok(['nest-graph.ts', 'stage.ts', 'surface.ts', 'feed.ts', 'places.ts', 'gait.ts', 'ant-rig.ts', 'ant-rig-tsl.ts', 'rig-params.ts', 'labels.ts', 'scene.ts', 'main.ts'].every((x) => files.includes(x)), 'Demo 2 modules present');
   for (const x of files) {
     const code = read(`${dir}/${x}`);
-    for (const m of code.matchAll(/from\s+'([^']+)'/g)) ok(m[1] === 'three' || m[1].startsWith('three/addons/') || ((m[1].startsWith('./') || m[1].startsWith('../')) && !/engine\/|cli\/|prototypes\/|worker-dist/.test(m[1]) && !path.posix.normalize(path.posix.join(dir, m[1])).startsWith('web/src/../')), `${x}: imports only viewer modules and vendored three (${m[1]})`);
+    for (const m of code.matchAll(/from\s+'([^']+)'/g)) ok(m[1] === 'three' || m[1].startsWith('three/addons/') || (x === 'ant-rig-tsl.ts' && (m[1] === 'three/webgpu' || m[1] === 'three/tsl')) || ((m[1].startsWith('./') || m[1].startsWith('../')) && !/engine\/|cli\/|prototypes\/|worker-dist/.test(m[1]) && !path.posix.normalize(path.posix.join(dir, m[1])).startsWith('web/src/../')), `${x}: imports only viewer modules and vendored three (${m[1]})`);
     ok(!/Math\.random|Date\.now\(\)\s*[*%]|new Worker\(/.test(code), `${x}: no unseeded randomness, no Worker of its own`);
-    if (['nest-graph.ts', 'stage.ts', 'surface.ts', 'feed.ts', 'places.ts', 'gait.ts', 'labels.ts'].includes(x)) ok(!/from 'three|document\.|window\.|performance\.|worker-client|session\.ts|save-store/.test(code), `${x}: pure (no DOM, no three, no Worker client, no save store)`);
+    if (['nest-graph.ts', 'stage.ts', 'surface.ts', 'feed.ts', 'places.ts', 'gait.ts', 'labels.ts', 'rig-params.ts'].includes(x)) ok(!/from 'three|document\.|window\.|performance\.|worker-client|session\.ts|save-store/.test(code), `${x}: pure (no DOM, no three, no Worker client, no save store)`);
   }
   const cmds = new Set([...main.matchAll(/client\.(\w+)\(/g)].map((m) => m[1]));
   ok([...cmds].every((c) => ['init', 'stepUntil', 'start', 'pause', 'resume', 'setSpeed', 'follow', 'snapshot'].includes(c)), `main.ts sends only scheduling / observation commands (${[...cmds].join(', ')})`);
@@ -213,7 +233,7 @@ function run(seed: number, t0: number, t1: number, dt = 0.1, every = 2): { trace
   ok(!/(roster|rost|demo|statics)[\w.]*\)?\s*\)?;?\s*$/m.test('') && !/store\.(createWorld|saveSnapshot)/.test(main) && !/session\.(request|newGame|open)\([^)]*(rost|demo|statics|mode)/.test(main), 'demo data, mode and camera never go to the save store or the session');
   for (const s of ['非正式實驗世界', '展示情境', '完整剖面', '地表', '地下', '跟隨螞蟻', '尚未模擬', '資料分類', '存檔']) ok(html.includes(s), `demo2.html shows 「${s}」`);
   for (const s of ['引擎', '顯示插值', '展示假設', '示範資料', '尚未模擬', '費洛蒙：尚未模擬', 'WebGL 2', 'WebGPU']) ok(main.includes(s), `main.ts labels 「${s}」`);
-  ok(!/https?:\/\/(?!localhost)/.test(html.replace(/<!--[\s\S]*?-->/g, '')) && html.includes('"three": "./vendor/three/three.module.js"'), 'no CDN: three from the local vendor copy');
+  ok(!/https?:\/\/(?!localhost)/.test(html.replace(/<!--[\s\S]*?-->/g, '')) && html.includes('"three": "./vendor/three/three.module.js"') && html.includes('"three/webgpu": "./vendor/three/three.webgpu.js"') && read('cli/web-vendor-three.ts').includes("'build/three.webgpu.js'") && read('cli/web-vendor-three.ts').includes("'build/three.tsl.js'"), 'no CDN: three from the local vendor copy');
   ok(read('package.json').includes('node cli/web-demo2-data.ts') && read('cli/web-demo2-data.ts').includes('parseLayout'), 'web:build copies the validated layout');
 }
 

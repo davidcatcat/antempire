@@ -35,6 +35,7 @@ import { eggSpot, larvaSpot, majorSpot, pupaSpot, queenSpot } from './places.ts'
 import { newGait, stepGait, type Gait } from './gait.ts';
 import { placeLabels, type LabelBox } from './labels.ts';
 import { MORPHS, RigLayer, rigMaterial, larvaGeometry, pupaGeometry, eggGeometry, type RigCaste } from './ant-rig.ts';
+import { rigNodeMaterial, type RigNodeMaterial } from './ant-rig-tsl.ts';
 import { buildScene, type Quality, type Scene2 } from './scene.ts';
 
 const q = new URLSearchParams(location.search);
@@ -57,7 +58,28 @@ function toast(s: string, ms = 3800) { ui.toast.textContent = s; ui.toast.hidden
 let toastH = 0;
 function fatal(html: string) { ui.fatal.innerHTML = `<div>${html}<br><a class="btn" href="experiment.html">改開 2D 實驗頁</a></div>`; ui.fatal.hidden = false; }
 
-// ---------- renderer (WebGL 2; see docs/demo2.md for the WebGPU decision) ----------
+// ---------- renderer: WebGL 2 by default; `?renderer=webgpu` opts into three's WebGPURenderer (docs/demo2.md) ----------
+/** what actually draws: 'webgl2' = THREE.WebGLRenderer; 'webgpu' = WebGPURenderer on a real WebGPU backend;
+ *  'webgpu-webgl2' = WebGPURenderer on ITS WebGL 2 backend (only with ?backend=webgl2: the node-material path, not WebGPU) */
+type RendererKind = 'webgl2' | 'webgpu' | 'webgpu-webgl2';
+let rendererKind: RendererKind = 'webgl2', rendererNote = '', rigNode: RigNodeMaterial | null = null;
+const wantWebGPU = q.get('renderer') === 'webgpu', forceNodeGL = wantWebGPU && q.get('backend') === 'webgl2';
+/** verification only (`?renderer=webgpu&present=offscreen`): draw into a texture instead of the canvas and read it back
+ *  (headless Chromium's software WebGPU cannot present to a canvas; see docs/demo2.md) */
+const offscreen = wantWebGPU && q.get('present') === 'offscreen';
+let offRT: THREE.RenderTarget | null = null;
+/** draw calls and triangles of the last frame, whichever renderer runs */
+const rInfo = () => { const r = renderer.info.render as unknown as { calls: number; drawCalls?: number; triangles: number }; return { calls: r.drawCalls ?? r.calls, triangles: r.triangles }; };
+/** the WebGPU device was lost (or a draw failed): stop drawing, say so, offer the WebGL 2 page. The world keeps running. */
+let gpuLost = false;
+function webgpuLost(why: string) {
+  if (gpuLost) return; gpuLost = true;
+  rendererNote = `WebGPU 裝置遺失或無法在這個環境呈現畫面（${why || '沒有訊息'}）：畫面已停止更新；模擬與存檔不受影響`;
+  const u = new URL(location.href); u.searchParams.delete('renderer'); u.searchParams.delete('backend'); u.searchParams.delete('present');
+  ui.fatal.innerHTML = `<div>${esc(rendererNote)}<br><a class="btn" href="${esc(u.href)}">改用 WebGL 2 重新載入</a></div>`; ui.fatal.hidden = false;
+}
+/** a fresh canvas in place of the current one (a canvas that already gave out a context cannot serve another renderer) */
+function swapCanvas() { const c = ui.canvas.cloneNode(false) as HTMLCanvasElement; ui.canvas.replaceWith(c); ui.canvas = c; bindCanvas(); }
 function webgl2Available(): boolean { try { return !!document.createElement('canvas').getContext('webgl2'); } catch { return false; } }
 let renderer: THREE.WebGLRenderer, glInfo = '', backend = '';
 const qParam = q.get('quality') as Quality | null, qualityLocked = qParam === 'high' || qParam === 'medium' || qParam === 'low';
@@ -107,9 +129,9 @@ function basis(fx: number, fy: number, fz: number, ux: number, uy: number, uz: n
 const NEST_FOOT_DROP = 0.3;
 
 function buildMeshes() {
-  rigMat = rigMaterial(uTime);
+  rigMat = rigNode ? rigNode.material as unknown as THREE.MeshStandardMaterial : rigMaterial(uTime); // same rig, GLSL or TSL (rig-params.ts)
   layers.minorHi = new RigLayer('minor', 'hi', 256, rigMat); layers.minorLo = new RigLayer('minor', 'lo', 256, rigMat);
-  layers.major = new RigLayer('major', 'hi', 32, rigMat); layers.queen = new RigLayer('queen', 'hi', 8, rigMat);
+  layers.major = new RigLayer('major', 'hi', 32, rigMat); layers.queen = new RigLayer('queen', 'hi', 32, rigMat);
   for (const l of Object.values(layers)) scene.add(l.mesh);
   const soft = new THREE.MeshStandardMaterial({ roughness: 0.5, metalness: 0 });
   larvaMesh = new THREE.InstancedMesh(larvaGeometry(), soft, 96); pupaMesh = new THREE.InstancedMesh(pupaGeometry(), soft, 96); eggMesh = new THREE.InstancedMesh(eggGeometry(), soft, 256);
@@ -222,7 +244,7 @@ let lastNow = performance.now(), lowFpsSince = 0;
 
 function place(layer: RigLayer, i: number, p: P3, qt: THREE.Quaternion, scale: number, color: THREE.Color, g: Gait, crop: number, seed: number) {
   M4.compose(V.set(p.x, p.y, p.z), qt, S.setScalar(scale)); layer.mesh.setMatrixAt(i, M4); layer.mesh.setColorAt(i, color);
-  layer.anim.setXYZW(i, g.phase, g.walk, seed, g.act); layer.pose.setXYZW(i, crop, g.pitch, g.antUp, g.crouch);
+  layer.anim.setXYZW(i, g.phase, g.walk, seed, g.act); layer.pose.setXYZW(i, crop, g.pitch, g.antUp, g.crouch); layer.xf.setXYZW(i, qt.x, qt.y, qt.z, qt.w); layer.scl.setX(i, scale);
 }
 const floorPoint = (pos: Pos): P3 => { const p = graph.point(pos); return { x: p.x, y: p.y - NEST_FOOT_DROP, z: p.z }; };
 
@@ -267,7 +289,7 @@ function tick(now: number) {
   const c0 = performance.now(), dtAnim = running ? dtReal : 0;
   if (frame && vis) {
     const run = !!pacing?.running; tNow = displayTime(frame.t_sim, run, pacing?.speed ?? speed, performance.now() - frameAt, lastT); lastT = run ? tNow : null;
-    uTime.value += dtAnim; // micro-motion clock: frozen while the world is paused
+    uTime.value += dtAnim; rigNode?.setTime(uTime.value); // micro-motion clock: frozen while the world is paused
     drawn = stage.update(frame, vis, tNow, dtAnim);
     const L = antLen(), sc = L / MODEL_LEN, pxPerCm = ui.canvas.clientHeight / 2 / Math.tan((camera.fov * Math.PI) / 360);
     let nh = 0, nl = 0, nb = 0;
@@ -290,7 +312,11 @@ function tick(now: number) {
     planLine.visible = plan.length > 1; if (planLine.visible) { planLine.geometry.dispose(); planLine.geometry = new THREE.BufferGeometry().setFromPoints(plan.map((p) => new THREE.Vector3(p.x, p.y + 0.25, p.z + 0.1))); planLine.computeLineDistances(); }
   }
   stepCamera(dtWall); // camera moves follow the wall clock (a slow frame must not stretch a view change)
-  if (renderOn) renderer.render(scene, camera);
+  if (renderOn && !gpuLost) {
+    if (offRT) renderer.setRenderTarget(offRT as unknown as THREE.WebGLRenderTarget);
+    if (rendererKind === 'webgl2') renderer.render(scene, camera);
+    else try { renderer.render(scene, camera); } catch (e) { webgpuLost((e as Error).message); } // a lost WebGPU device must not stop the page
+  }
   cpuMs.push(performance.now() - c0); if (cpuMs.length > 600) cpuMs.shift();
   updateLabels(); updateHud(now);
   // automatic quality: step down when the frame rate stays low (never while a level is forced by ?quality=)
@@ -301,6 +327,8 @@ function tick(now: number) {
   requestAnimationFrame(tick);
 }
 const QUALITY_LABEL: Record<Quality, string> = { high: '高', medium: '中', low: '低' };
+/** what has and has not been verified about the WebGPU path (shown in the 效能 tab; docs/demo2.md) */
+const WEBGPU_STATUS = 'WebGPU 路徑目前只在軟體 WebGPU（無頭 Chromium＋SwiftShader）上以離屏繪圖驗證過（著色器、螞蟻關節、instancing、draw call 數）；畫面直接呈現到螢幕、以及真實 GPU，都未在真實 GPU 的 WebGPU 上驗證，待 Owner 實機確認。';
 
 // ---------- labels (HTML overlay, projected) ----------
 const labelEls = new Map<string, HTMLElement>();
@@ -409,13 +437,23 @@ function renderNotSim() {
   ui.notsim.innerHTML = !d ? '<div class="muted">讀取中…</div>' : !d.ok ? `<div>${esc(d.reason)}</div>` : `<div class="muted">${esc(d.note_zh)}（來源：${esc(d.source)}；清單取自此世界的存檔中繼資料）</div><h2>尚未模擬（未接入）${d.unwired.length} 項</h2><ul>${d.unwired.map((x) => `<li>${esc(x.label_zh)}</li>`).join('')}</ul><h2>簡化代理 ${d.proxies.length} 項</h2><ul>${d.proxies.map((x) => `<li>${esc(x.label_zh)}</li>`).join('')}</ul>`;
 }
 function renderPerf() {
-  const s = summarise(frameIv.slice(-240), cpuMs.slice(-240)), info = renderer.info.render, mem = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory;
-  ui.perf.innerHTML = `<h2>繪圖後端</h2><div>${esc(backend)}</div><div class="muted">GPU：${esc(glInfo)}</div>
-<h2>畫面</h2><table><tr><td>FPS（平均／p5 低）</td><td class="n">${s.fps_mean.toFixed(0)}／${s.fps_p5_low.toFixed(0)}</td></tr><tr><td>幀時間 p50／p95</td><td class="n">${s.frame_ms.p50.toFixed(1)}／${s.frame_ms.p95.toFixed(1)} ms</td></tr><tr><td>本頁 CPU p50</td><td class="n">${s.cpu_ms.p50.toFixed(1)} ms</td></tr><tr><td>draw calls</td><td class="n">${info.calls}</td></tr><tr><td>三角形</td><td class="n">${(info.triangles / 1000).toFixed(0)}k</td></tr><tr><td>畫質／DPR</td><td class="n">${QUALITY_LABEL[quality]}${qualityLocked ? '（固定）' : '（自動）'}／${renderer.getPixelRatio().toFixed(2)}</td></tr><tr><td>JS heap</td><td class="n">${mem ? (mem.usedJSHeapSize / 1048576).toFixed(0) + ' MB' : '—'}</td></tr></table>
+  const s = summarise(frameIv.slice(-240), cpuMs.slice(-240)), info = rInfo(), mem = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory;
+  const nums = `<table><tr><td>FPS（平均／p5 低）</td><td class="n">${s.fps_mean.toFixed(0)}／${s.fps_p5_low.toFixed(0)}</td></tr><tr><td>幀時間 p50／p95</td><td class="n">${s.frame_ms.p50.toFixed(1)}／${s.frame_ms.p95.toFixed(1)} ms</td></tr><tr><td>本頁 CPU p50</td><td class="n">${s.cpu_ms.p50.toFixed(1)} ms</td></tr><tr><td>draw calls</td><td class="n">${info.calls}</td></tr><tr><td>三角形</td><td class="n">${(info.triangles / 1000).toFixed(0)}k</td></tr><tr><td>畫質／DPR</td><td class="n">${QUALITY_LABEL[quality]}${qualityLocked ? '（固定）' : '（自動）'}／${renderer.getPixelRatio().toFixed(2)}</td></tr><tr><td>JS heap</td><td class="n">${mem ? (mem.usedJSHeapSize / 1048576).toFixed(0) + ' MB' : '—'}</td></tr></table>`;
+  // the controls are rebuilt only when they change (a click must not land on a replaced button); the numbers every time
+  const ctl = `<h2>繪圖後端</h2><div id="backendNow">${esc(backend)}</div><div class="muted">GPU：${esc(glInfo)}</div>${rendererNote ? `<div class="tag none" style="white-space:normal">${esc(rendererNote)}</div>` : ''}
+<div class="row">渲染器 <span class="seg"><button type="button" data-r="webgl2" aria-pressed="${rendererKind === 'webgl2'}">WebGL 2（預設）</button><button type="button" data-r="webgpu" aria-pressed="${rendererKind !== 'webgl2'}">WebGPU（實驗）</button></span></div>
+<div class="muted">${WEBGPU_STATUS}切換會重新載入頁面（世界由存檔接續；臨時世界會重開）。兩種渲染器畫的是同一份引擎狀態與同一份顯示位置，只有繪圖方式不同。</div>
+<h2>畫面</h2><div id="perfNums"></div>
 <div class="row">畫質 <span class="seg">${(['high', 'medium', 'low'] as const).map((k) => `<button type="button" data-q="${k}" aria-pressed="${quality === k}">${QUALITY_LABEL[k]}</button>`).join('')}</span></div>
 <div class="muted">量測類別：${measurementClass(glInfo, automated)}。軟體繪圖或自動化環境的數字不是實機結果。模擬時間與畫面更新分開：畫面變慢不會改變任何事件。</div>`;
-  ui.perf.querySelectorAll<HTMLButtonElement>('button[data-q]').forEach((b) => { b.onclick = () => { applyQuality(b.dataset.q as Quality); renderPerf(); }; });
+  if (ctl !== perfCtlNow) {
+    perfCtlNow = ctl; ui.perf.innerHTML = ctl;
+    ui.perf.querySelectorAll<HTMLButtonElement>('button[data-r]').forEach((b) => { b.onclick = () => { const u = new URL(location.href); if (b.dataset.r === 'webgpu') u.searchParams.set('renderer', 'webgpu'); else { u.searchParams.delete('renderer'); u.searchParams.delete('backend'); } u.searchParams.set('panel', 'perf'); location.href = u.href; }; });
+    ui.perf.querySelectorAll<HTMLButtonElement>('button[data-q]').forEach((b) => { b.onclick = () => { applyQuality(b.dataset.q as Quality); renderPerf(); }; });
+  }
+  $('perfNums').innerHTML = nums;
 }
+let perfCtlNow = '';
 function renderCard() {
   if (!frame || !selected) { ui.card.hidden = true; return; }
   const a = drawn.find((x) => x.id === selected), w = frame.workers.find((x) => x.id === selected), st = statics.find((x) => x.ind.id === selected);
@@ -454,7 +492,7 @@ function pick(sx: number, sy: number): string | null {
   for (const s of statics) test(s.ind.id, s.p.x, s.p.y, s.p.z, true);
   return best;
 }
-function resize() { const w = innerWidth, h = innerHeight, sh = sheetPx(); renderer.setSize(w, h, false); camera.aspect = w / h; if (sh > 0) camera.setViewOffset(w, h, 0, Math.round(sh / 2), w, h); else camera.clearViewOffset(); camera.updateProjectionMatrix(); }
+function resize() { const w = innerWidth, h = innerHeight, sh = sheetPx(); renderer.setSize(w, h, false); if (offscreen && rendererKind === 'webgpu') { const pr = renderer.getPixelRatio(); if (!offRT) offRT = new THREE.RenderTarget(Math.round(w * pr), Math.round(h * pr), { depthBuffer: true }); else offRT.setSize(Math.round(w * pr), Math.round(h * pr)); } camera.aspect = w / h; if (sh > 0) camera.setViewOffset(w, h, 0, Math.round(sh / 2), w, h); else camera.clearViewOffset(); camera.updateProjectionMatrix(); }
 
 // ---------- mode (自然 / 展示情境) ----------
 function setMode(m: Mode) {
@@ -528,11 +566,33 @@ async function setSpeed(s: number) { speed = s; ui.speed.value = String(s); awai
 
 // ---------- start ----------
 async function main() {
-  if (!webgl2Available()) { fatal('這個瀏覽器或裝置無法使用 WebGL 2，Demo 2 的 3D 畫面無法顯示。'); return; }
-  try { renderer = new THREE.WebGLRenderer({ canvas: ui.canvas, antialias: quality !== 'low', powerPreference: 'high-performance' }); } catch (e) { fatal(`無法建立 WebGL 繪圖環境（${esc((e as Error).message)}）。`); return; }
-  renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.98; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  { const gl = renderer.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info'); glInfo = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : String(gl.getParameter(gl.RENDERER)); }
-  backend = `WebGL 2（three r${THREE.REVISION} WebGLRenderer）｜WebGPU：此瀏覽器${'gpu' in navigator ? '有提供' : '未提供'}，本頁目前不使用（見 docs/demo2.md）`;
+  if (wantWebGPU) {
+    // opt-in: three's WebGPURenderer, only on a REAL WebGPU backend (never reported as WebGPU when three falls back to WebGL 2)
+    const gpu = (navigator as unknown as { gpu?: { requestAdapter(): Promise<{ info?: { vendor?: string; architecture?: string; description?: string } } | null> } }).gpu;
+    let adapter: { info?: { vendor?: string; architecture?: string; description?: string } } | null = null;
+    if (!forceNodeGL) { try { adapter = gpu ? await gpu.requestAdapter() : null; } catch { adapter = null; } }
+    if (adapter || forceNodeGL) {
+      try {
+        const G = await import('three/webgpu'), T = await import('three/tsl');
+        const r = new G.WebGPURenderer({ canvas: ui.canvas, antialias: quality !== 'low', forceWebGL: forceNodeGL });
+        await r.init();
+        const real = (r.backend as unknown as { isWebGPUBackend?: boolean }).isWebGPUBackend === true;
+        if (real || forceNodeGL) {
+          renderer = r as unknown as THREE.WebGLRenderer; rendererKind = real ? 'webgpu' : 'webgpu-webgl2'; rigNode = rigNodeMaterial(G, T);
+          if (real) void (r.backend as unknown as { device?: { lost: Promise<{ message: string }> } }).device?.lost.then((i) => webgpuLost(i.message));
+          glInfo = real ? `WebGPU adapter：${[adapter?.info?.vendor, adapter?.info?.architecture, adapter?.info?.description].filter(Boolean).join(' ') || '（瀏覽器未提供 adapter 資訊）'}` : '（three WebGPURenderer 的 WebGL 2 backend）';
+        } else { r.dispose(); swapCanvas(); rendererNote = 'WebGPU 初始化後 three 改用了它的 WebGL 2 backend：本頁已改回 WebGL 2 渲染器（不是 WebGPU）'; }
+      } catch (e) { swapCanvas(); rendererNote = `WebGPU 渲染器建立失敗（${(e as Error).message}）：已改用 WebGL 2`; }
+    } else rendererNote = gpu ? '這個瀏覽器有 navigator.gpu 但拿不到 WebGPU adapter：已改用 WebGL 2' : '這個瀏覽器沒有提供 WebGPU（navigator.gpu）：已改用 WebGL 2';
+    if (rendererNote) toast(rendererNote, 9000);
+  }
+  if (rendererKind === 'webgl2') {
+    if (!webgl2Available()) { fatal('這個瀏覽器或裝置無法使用 WebGL 2，Demo 2 的 3D 畫面無法顯示。'); return; }
+    try { renderer = new THREE.WebGLRenderer({ canvas: ui.canvas, antialias: quality !== 'low', powerPreference: 'high-performance' }); } catch (e) { fatal(`無法建立 WebGL 繪圖環境（${esc((e as Error).message)}）。`); return; }
+    const gl = renderer.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info'); glInfo = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : String(gl.getParameter(gl.RENDERER));
+  }
+  renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.98; renderer.shadowMap.type = rendererKind === 'webgl2' ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
+  backend = rendererKind === 'webgpu' ? `WebGPU（three r${THREE.REVISION} WebGPURenderer；實際 backend＝WebGPU）｜實驗` : rendererKind === 'webgpu-webgl2' ? `three r${THREE.REVISION} WebGPURenderer 的 WebGL 2 backend（node material 路徑；不是 WebGPU）` : `WebGL 2（three r${THREE.REVISION} WebGLRenderer）｜WebGPU：此瀏覽器${'gpu' in navigator ? '有提供' : '未提供'}${wantWebGPU ? '（要求了 WebGPU，但已退回 WebGL 2）' : '，可在此面板切換（實驗）'}`;
   ui.canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); toast('繪圖環境遺失（WebGL context lost）：請重新整理頁面；模擬與存檔不受影響', 10000); });
   controls = new OrbitControls(camera, ui.canvas);
   controls.enableDamping = true; controls.dampingFactor = 0.1; controls.screenSpacePanning = true; controls.minDistance = 4; controls.maxDistance = 700;
@@ -604,14 +664,17 @@ ui.resetDemoBtn.onclick = () => { demoSeed = DEFAULT_SEED; for (const k of [...g
 ui.importBtn.onclick = () => ui.importFile.click();
 ui.importFile.onchange = async () => { const f = ui.importFile.files?.[0]; ui.importFile.value = ''; if (!f || !session) return; const text = await f.text(), r = await session.store.importWorld(text, await session.runtimeForImport(text)); toast(r.ok ? '已匯入：可在清單中載入' : `匯入失敗（${r.code}）：${r.message}`, 6000); void refreshSaveList(); };
 let down: { x: number; y: number; t: number } | null = null;
-ui.canvas.addEventListener('pointerdown', (e) => { down = { x: e.offsetX, y: e.offsetY, t: performance.now() }; });
-ui.canvas.addEventListener('pointerup', (e) => { if (down && Math.hypot(e.offsetX - down.x, e.offsetY - down.y) < 7 && performance.now() - down.t < 500) select(pick(e.offsetX, e.offsetY)); down = null; });
+function bindCanvas() {
+  ui.canvas.addEventListener('pointerdown', (e) => { down = { x: e.offsetX, y: e.offsetY, t: performance.now() }; });
+  ui.canvas.addEventListener('pointerup', (e) => { if (down && Math.hypot(e.offsetX - down.x, e.offsetY - down.y) < 7 && performance.now() - down.t < 500) select(pick(e.offsetX, e.offsetY)); down = null; });
+}
+bindCanvas();
 
 // test / automation hooks: read-only views of the page; only scheduling / observation commands reach the Worker
 const hooks: Record<string, unknown> = {
   ready: false, three: THREE.REVISION,
   backend: () => backend, gl: () => glInfo,
-  state: () => ({ running, speed, mode, view, quality, selected, following, mag, t: tNow, frame_t: frame?.t_sim ?? null, seed: frame?.seed ?? null, world_id: frame?.world_id ?? null, temp: tempMode, ants: drawn.length, hi: layers.minorHi?.mesh.count ?? 0, lo: layers.minorLo?.mesh.count ?? 0, queens: layers.queen?.mesh.count ?? 0, majors: layers.major?.mesh.count ?? 0, eggs: eggMesh?.count ?? 0, pupae: pupaMesh?.count ?? 0, larvae: larvaMesh?.count ?? 0, uTime: uTime.value, cam: camera.position.toArray(), target: controls?.target.toArray(), events: eventsSeen, stats: { ...stage.stats }, save: saveUi, calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, followed: followedView !== null }),
+  state: () => ({ running, speed, mode, view, quality, selected, following, mag, t: tNow, frame_t: frame?.t_sim ?? null, seed: frame?.seed ?? null, world_id: frame?.world_id ?? null, temp: tempMode, ants: drawn.length, hi: layers.minorHi?.mesh.count ?? 0, lo: layers.minorLo?.mesh.count ?? 0, queens: layers.queen?.mesh.count ?? 0, majors: layers.major?.mesh.count ?? 0, eggs: eggMesh?.count ?? 0, pupae: pupaMesh?.count ?? 0, larvae: larvaMesh?.count ?? 0, uTime: uTime.value, cam: camera.position.toArray(), target: controls?.target.toArray(), events: eventsSeen, stats: { ...stage.stats }, save: saveUi, calls: rInfo().calls, triangles: rInfo().triangles, renderer: rendererKind, rendererNote, followed: followedView !== null }),
   ants: () => drawn.map((a) => ({ ...a, phase: gaits.get(a.id)?.phase ?? null, walk: gaits.get(a.id)?.walk ?? null })),
   roster: () => rost, statics: () => statics.map((s) => ({ id: s.ind.id, caste: s.ind.caste, source: s.ind.source, ...s.p })),
   frame: () => frame, sdf: (x: number, y: number) => graph.sdf(x, y), faceZ: () => graph.faceZ,
@@ -619,6 +682,14 @@ const hooks: Record<string, unknown> = {
   select: (id: string | null) => select(id), follow: (id: string | null) => setFollow(id), setRunning: (on: boolean) => setRunning(on), setSpeed: (s: number) => setSpeed(s),
   setView: (v: View, instant = true) => goView(v, instant), setMode: (m: Mode) => setMode(m), setQuality: (k: Quality) => applyQuality(k), openSide: (t: string | null) => openSide(t),
   setRender: (on: boolean) => { renderOn = on; },
+  /** verification only: the offscreen WebGPU image as a JPEG data URL (linear → sRGB here; no tone mapping) */
+  grab: async (q2 = 0.8) => {
+    if (!offRT) return null;
+    const w = offRT.width, h = offRT.height, px = await (renderer as unknown as { readRenderTargetPixelsAsync(rt: unknown, x: number, y: number, w: number, h: number): Promise<Uint8Array> }).readRenderTargetPixelsAsync(offRT, 0, 0, w, h);
+    const c = document.createElement('canvas'); c.width = w; c.height = h; const g2 = c.getContext('2d')!, img = g2.createImageData(w, h), lut = new Uint8ClampedArray(256); for (let i = 0; i < 256; i++) lut[i] = Math.round(255 * Math.pow(i / 255, 1 / 2.2));
+    let lit = 0; for (let i = 0; i < w * h * 4; i += 4) { img.data[i] = lut[px[i]]; img.data[i + 1] = lut[px[i + 1]]; img.data[i + 2] = lut[px[i + 2]]; img.data[i + 3] = 255; if (px[i] + px[i + 1] + px[i + 2] > 24) lit++; }
+    g2.putImageData(img, 0, 0); return { url: c.toDataURL('image/jpeg', q2), w, h, lit_fraction: lit / (w * h) };
+  },
   nestOnScreen: () => nestOnScreen(),
   /** screen rectangles of the visible in-scene labels and of the legend line */
   labelRects: () => [...labelEls.entries()].filter(([, el]) => !el.hidden).map(([key, el]) => { const r = el.getBoundingClientRect(); return { key, text: el.textContent, left: r.left, top: r.top, w: r.width, h: r.height }; }),
@@ -631,7 +702,7 @@ const hooks: Record<string, unknown> = {
   sampleNow: () => { if (!frame || !vis) return null; tNow = frame.t_sim; drawn = stage.update(frame, vis, tNow, 0); return { t: tNow, ants: drawn.map((a) => ({ id: a.id, state: a.state, realm: a.realm, x: a.x, y: a.y, z: a.z, place: a.place, pose: a.pose, absorbed: a.absorbed })) }; },
   save: async () => { const r = await session?.request('manual'); return r ? (r.ok ? { ok: true } : { ok: false, code: r.code, message: r.message }) : { ok: false, code: 'no_session', message: '' }; },
   view: (pos: number[], tgt: number[]) => { tween = null; camera.position.fromArray(pos); controls.target.fromArray(tgt); controls.update(); },
-  perf: () => ({ ...summarise(frameIv.slice(-240), cpuMs.slice(-240)), calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, quality, dpr: renderer.getPixelRatio(), gl: glInfo, measurement_class: measurementClass(glInfo, automated), scene_triangles: world?.triangles() ?? 0 }),
+  perf: () => ({ ...summarise(frameIv.slice(-240), cpuMs.slice(-240)), ...rInfo(), renderer: rendererKind, backend, quality, dpr: renderer.getPixelRatio(), gl: glInfo, measurement_class: measurementClass(glInfo, automated), scene_triangles: world?.triangles() ?? 0 }),
 };
 (window as unknown as { __demo2: Record<string, unknown> }).__demo2 = hooks;
 main().catch((e) => { console.error(e); fatal(`載入失敗：${esc((e as Error).message)}`); });

@@ -82,7 +82,8 @@ try {
     checks += 4;
   }
   // 6. separation
-  const THREE_SPECIFIERS = ['three', 'three/addons/controls/OrbitControls.js', 'three/addons/utils/BufferGeometryUtils.js'];
+  // 'three/webgpu' and 'three/tsl': the same pinned, vendored build, for Demo 2's opt-in WebGPU renderer (same rule, new specifiers)
+  const THREE_SPECIFIERS = ['three', 'three/addons/controls/OrbitControls.js', 'three/addons/utils/BufferGeometryUtils.js', 'three/webgpu', 'three/tsl'];
   // recursive: sub-directories such as web/src/experimental/ are checked too
   const srcFiles = (d: string): string[] => fs.readdirSync(path.join(REPO_ROOT, 'web/src', d), { withFileTypes: true }).flatMap((e) => e.isDirectory() ? srcFiles(path.posix.join(d, e.name)) : [path.posix.join(d, e.name)]);
   for (const f of srcFiles('')) {

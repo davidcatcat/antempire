@@ -89,12 +89,29 @@ npm ci && npm run web:build && node cli/web-serve.ts
 - **候選世界 `p0a2-colony`（#263，已合併；`docs/colony-candidate-world.md`）是 Demo 2 新世界的預設種類**。它的 frame 仍是 P0-A2 frame，另外帶 `colony`：蟻后、大工蟻、卵、蛹是**引擎個體**（數量全部是情境假設），但在引擎中不進食、不產卵、不發育、不移動。本頁以 protocol 的 `isP0a2ColonyFrame` 讀取：這些個體靜態放在對應巢室（位置＝展示假設，只有原地微動作），可點選，資訊卡標「引擎個體」「候選世界・數量為情境假設」並逐項列出該個體 `not_simulated` 的項目；巢室標籤寫「蟻后 N（引擎個體；生理與行為尚未模擬）」，不寫成已模擬。展示情境此時只補引擎仍沒有的東西（食物道具），不會重複出現示範蟻后／大工蟻。存檔清單會列出並可重新開啟候選世界的存檔。`?world=p0a2` 改用原本的 P0-A2 世界：那些階級在自然模式標「尚未模擬」，在展示情境以示範資料顯示。
 - 大工蟻、蟻后要在巢內移動時（引擎提供行為後），再把它們接進 `stage.ts`（目前只有小工蟻走動）。
 
-## 繪圖後端的決定：目前 WebGL 2，WebGPU 的路
+## 繪圖後端：預設 WebGL 2；可選用 WebGPU（實驗）
 
-- 現況：`THREE.WebGLRenderer`（WebGL 2，three r187），效能面板顯示後端字串與 GPU。WebGL 2 不可用時顯示清楚訊息與 2D 實驗頁連結。
-- 評估（2026-11-15，無頭 Chromium）：three 0.187 的 `WebGPURenderer` 可以初始化，沒有 WebGPU 時自動改用 WebGL2 backend；但它**不呼叫 `onBeforeCompile`**（實測），螞蟻的關節 rig（頂點著色器，`web/src/demo2/ant-rig.ts`）必須改寫成 TSL／node material 才能用。這個環境的 Chromium 沒有 `navigator.gpu`，改寫後也無法在真正的 WebGPU backend 上驗證。
-- 決定：這個里程碑維持 WebGL 2，不引入無法驗證的後端。
-- 之後的路：(1) 把 rig 改寫成 TSL（約 60 行 GLSL：每個 instance 的 `aAnim`／`aPose` → `instancedBufferAttribute` node，`positionNode`／`normalNode`）；(2) 以 `cli/web-vendor-three.ts` 加入 `three.webgpu.js`／`three.tsl.js`；(3) 場景材質已是 Lambert／Standard，可直接沿用；(4) 在有 WebGPU 的實機（Android Chrome 121+、桌機 Chrome）量測後再切換預設，並保留 WebGL 2 fallback。
+- **預設**：`THREE.WebGLRenderer`（WebGL 2，three r187）。WebGL 2 不可用時顯示清楚訊息與 2D 實驗頁連結。
+- **選用**：`demo2.html?renderer=webgpu`，或在「效能」分頁按「WebGPU（實驗）」（會帶參數重新載入）。使用 three 的 `WebGPURenderer`，而且只在**真正的 WebGPU backend** 上（`renderer.backend.isWebGPUBackend`）：
+  - 瀏覽器沒有 `navigator.gpu`、拿不到 adapter、或建立失敗 → 退回 WebGL 2，並在畫面與效能分頁寫明原因；頁面絕不把 three 自己退到 WebGL 2 backend 的情況報成 WebGPU。
+  - WebGPU 裝置遺失（或無法把畫面呈現到 canvas）→ 停止繪圖、顯示訊息與「改用 WebGL 2 重新載入」的連結；模擬與存檔不受影響。
+  - 效能分頁兩種渲染器都顯示：實際後端、GPU／adapter 字串、FPS、幀時間、draw calls、三角形，方便在同一台裝置上比較。
+- **螞蟻關節 rig 有兩種著色語言、一份參數**：`WebGPURenderer` 不呼叫 `onBeforeCompile`，所以 WebGL 2 用 GLSL（`ant-rig.ts`），WebGPU 用 TSL node material（`ant-rig-tsl.ts`）；兩者的每一個振幅、頻率、相位、支點都來自 `rig-params.ts`（測試檢查 TSL 檔沒有自己的常數、GLSL 含有表中每個數字）。步態與姿勢的 CPU 計算（`gait.ts`）與顯示導演（`stage.ts`）完全共用，渲染器選擇不會進入它們。
+  - 實作上的一個差異：three 的 node 管線在 `positionNode` **之前**就套用 instance 矩陣，所以 TSL rig 以原始幾何（`positionGeometry`）在模型空間計算，再把關節位移用每個 instance 的旋轉與縮放（`aXf`／`aScl`，與 instance 矩陣同值）帶到 instance 空間。四個 per-instance 屬性共用一個 interleaved buffer（WebGPU 每條管線最多 8 個 vertex buffer）。這兩點都是在驗證時發現並修正的（先前蟻后的頭與腹部位置錯誤、螞蟻在真正的 WebGPU 上不畫）。
+- 其他材質（Lambert、Standard、Basic、虛線）是標準材質，`WebGPURenderer` 自動轉成 node material，沒有另外改寫。
+
+### WebGPU 路徑驗證到哪裡（2026-11-15）
+
+| 項目 | 狀態 |
+|---|---|
+| 沒有 WebGPU 時退回 WebGL 2 並說明 | 已驗證（無頭 Chromium，預設旗標） |
+| node material／TSL rig 在 `WebGPURenderer` 的 **WebGL 2 backend** 上（`&backend=webgl2`，畫面標示「不是 WebGPU」）：畫面、點選、跟隨 | 已驗證（螢幕截圖；與 GLSL rig 的蟻后近景做像素比較，明顯不同的像素 0.01%） |
+| **真正的 WebGPU backend**、軟體 adapter（Chromium `--enable-unsafe-webgpu`，SwiftShader），**離屏**畫到貼圖再讀回（`&present=offscreen`）：管線建立、場景、30 隻有關節的工蟻與蟻后、draw calls／三角形 | 已驗證（`docs/vis/demo2/demo2-webgpu-offscreen-*.jpg`；讀回的圖沒有 tone mapping） |
+| 三種渲染路徑下顯示導演輸出（每隻工蟻的位置、姿勢、所在處）在同一模擬時刻完全相同 | 已驗證（瀏覽器測試逐字比較） |
+| 真正的 WebGPU **直接呈現到螢幕** | **未驗證**：這個無頭 Chromium 的軟體 WebGPU 一呈現到 canvas，GPU instance 就被丟棄（連最小的三角形範例也一樣）；頁面此時會顯示裝置遺失訊息（已驗證）。 |
+| **真實 GPU**（手機／桌機）上的 WebGPU：畫面、效能、陰影 | **未在真實 WebGPU 上驗證，待 Owner 實機確認**。頁面的效能分頁也這樣寫。 |
+
+所以目前不能說「WebGPU 可以用」，只能說：著色器與管線在一個真正的（軟體）WebGPU backend 上能建立並畫出正確的畫面；請 Owner 在手機上開 `?renderer=webgpu`，看效能分頁的後端是否顯示「實際 backend＝WebGPU」、畫面是否正常，並與 WebGL 2 的數字比較。
 
 ## 效能
 
@@ -154,6 +171,6 @@ Owner 2026-11-15 在自己的手機上開啟本頁，效能面板的截圖顯示
 - 交哺只演出一部分（受巢內路徑與引擎期限限制）；交哺雙方沒有口器對接的細部動畫，只有頭對頭與觸角前伸的姿勢。
 - 固體食物搬運姿勢沒有做（引擎沒有固體食物）。
 - 搜尋成功時畫面會從搜尋區跳到食源（引擎限制，已列出）。
-- WebGPU 尚未使用（見上）。實機效能尚未量測。
+- WebGPU 是選用的實驗路徑：只在軟體 WebGPU 上離屏驗證過，螢幕呈現與真實 GPU 待 Owner 實機確認（見上）。
 - 三維地形沒有碰撞：地表工蟻會直接走過落葉、石頭旁的裝飾物之間（景物避開顯示路線，但不是障礙物）。
 - `web/three.html`（3D 原型）保留不動；Demo 2 重用它的地形雜訊、螞蟻模型與效能統計模組。

@@ -12,6 +12,9 @@ const SRC = path.join(ROOT, 'node_modules/three'), OUT = path.join(ROOT, 'web/ve
 export const FILES: [string, string][] = [
   ['build/three.module.js', 'three.module.js'],
   ['build/three.core.js', 'three.core.js'],
+  // Demo 2's opt-in WebGPU renderer (?renderer=webgpu): loaded only when asked for
+  ['build/three.webgpu.js', 'three.webgpu.js'],
+  ['build/three.tsl.js', 'three.tsl.js'],
   ['examples/jsm/controls/OrbitControls.js', 'addons/controls/OrbitControls.js'],
   ['examples/jsm/utils/BufferGeometryUtils.js', 'addons/utils/BufferGeometryUtils.js'],
   ['LICENSE', 'LICENSE'],
