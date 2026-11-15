@@ -58,6 +58,17 @@ V6-2 UI ──► Worker Client (web/src/experimental/worker-client.ts)
 - **介接方式**：Worker 目錄內的薄轉接層 `prototypes/continuous-world/worker/p0a2-world.ts`（不改 P0-A2 任何行為檔），見 [`experimental-worker-runtime.md`](experimental-worker-runtime.md) §9。P0-A2 核心仍是平台無關（`prototypes/p0a2-24h/tsconfig.json`：無 DOM、無 Node 型別），Worker 的獨立 tsconfig 只多列這些檔案。
 - 規則指紋包含 P0-A2 參數檔 SHA-256 與「程式碼 SHA-256」（P0-A2 轉接層的執行期匯入圖中每個 TypeScript 檔，`prototypes/continuous-world/tools/p0a2-code-hash.ts` 產生、`tests/worker-runtime.test.ts` 檢查是否過期）；任何一個檔案改變，舊存檔載入時都會被拒絕（`FINGERPRINT_MISMATCH`），不會在不同規則下默默接續。
 
+## 4e. 蟻群成員候選世界的白名單擴充（規則更新 2026-11-15；#202、#219、#222）
+
+依 CLAUDE.md §9 B，白名單擴充單獨一張 PR；使用這些模組的候選世界轉接層在另一張（疊在本 PR 之上的）規則更新 PR。
+
+- **加入白名單**：`engine/colony/`（CQ-1 蟻群成員 `members.ts`；候選名冊模組隨後一張 PR 加入同一目錄）與**單一檔案** `engine/day0/founding-sampler.ts`（#202 取樣器）。沒有加入 `engine/day0/` 整個目錄、`scenarios/`、`prototypes/colony-members/` 或 BP-1（`prototypes/p0a2-24h/brood/`）。
+- **用途限定**：只供預設關閉的候選世界種類 `p0a2-colony-v1` 使用。本 PR 合併時 Worker 目錄內**沒有任何模組匯入它們**；預設 P0-A2 世界的匯入圖（`p0a2-code-hash.ts` 的 17 個檔）不含這些模組，程式雜湊與規則指紋不變。
+- **純度與決定性數學**：這些模組都在 `engine/` 之下，套用 `forbidden_in_engine_modules` 與 `deterministic_math_in_worker_graph`（只用 `Math.floor`／`round`／`min`，對數均勻抽樣走 `detLog`／`detExp`）。因為還沒有匯入者，證據來自 `tests/worker-boundary.test.ts` 第 4 段的「白名單封閉性探針」：探針模組匯入每一個白名單內的 engine 模組（含這兩個），整張圖必須零違規；`tests/day0-initial-conditions.test.ts` 第 7 項另以探針證明取樣器通過邊界、移除該項就被拒絕、`engine/day0/` 的其他模組仍被拒絕。
+- **負面樣本**（`tests/worker-boundary.test.ts` 新增 10 個，全部必須失敗）：蟻群模組用 `Math.random`、`Date.now`（engine-impurity）、`Math.pow`（approximated-math）、儲存 API（forbidden-global）、匯入正式每日迴圈（denied-module）或未列入白名單的 `engine/queen.ts`（not-allowlisted）；匯入 `engine/day0/` 的其他模組（not-allowlisted）；取樣器用 `Math.log`（approximated-math）；Worker 直接匯入情境檔或 CQ-1 研究參數檔（not-allowlisted）。
+- **授權**：依 Owner 2026-11-12 授權自審並附上述邊界測試證據（CLAUDE.md §9 B）；獨立審查待恢復後另行安排。
+- **匯入者（疊放的候選世界 PR 加入）**：唯一匯入者是預設關閉的候選世界轉接層 `worker/p0a2-colony-world.ts`；`engine/colony/roster.ts`（候選名冊）加入同一目錄。情境檔不進 Worker：轉接層讀工具產生的摘錄 `worker/p0a2-colony-scenario.ts`（含整份情境檔的 checksum）。真實 Worker 圖到達這三個模組並通過全部檢查（`tests/worker-boundary.test.ts` 第 3 段）；`tests/p0a2-colony-world.test.ts` 第 13 段另有 11 個負面樣本（含匯入 BP-1、`fetch`、正式存檔路徑字樣）。說明文件：[`colony-candidate-world.md`](colony-candidate-world.md)。
+
 ## 4b. 實驗世界本地存檔例外（SAVE）
 
 Owner 2026-11-08 授權非正式實驗世界的本地即時存檔：

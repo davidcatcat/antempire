@@ -143,18 +143,30 @@ ok(items.length === 8 && items.every((i) => i.provisional && i.before_activation
 ok(cand.owner_ruling_202.columns.provisional === '暫准開發的假設' && cand.owner_ruling_202.columns.before_activation === '正式啟用前必須滿足', '6: column names match the Owner ruling table');
 ok(cand.activation.activated === false && cand.activation.go_issue === '#201', '6: not activated (#201 pending)');
 
-// 7. Worker readiness (deterministic maths) — but not allowlisted / not wired
+// 7. Worker readiness (deterministic maths). The sampler is allowlisted as ONE exact file (rules update of 2026-11-15,
+//    docs/experimental-worker-boundary.md §4e) for the opt-in colony-members candidate world; the default P0-A2 world
+//    does not use it (its save_meta carries no scenario seed / PRNG / checksum).
 const B: Boundary & Record<string, Any> = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'prototypes/continuous-world/worker-boundary.json'), 'utf8'));
 const walk = (dir: string): string[] => fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(path.join(dir, e.name)) : /\.(ts|js|mjs|json)$/.test(e.name) ? [path.join(dir, e.name)] : []) : [];
 const files = new Map<string, string>();
 for (const d of ['engine', B.worker_entry_dir, 'prototypes/p0a2-24h']) for (const f of walk(path.join(REPO_ROOT, d))) files.set(path.relative(REPO_ROOT, f).split(path.sep).join('/'), fs.readFileSync(f, 'utf8'));
-ok(!B.allowed_import_prefixes.some((p: string) => SAMPLER.startsWith(p)), '7: the sampler is NOT on the Worker allowlist yet (separate rules PR with the save wiring)');
-ok(![...files].some(([f, src]) => f.startsWith(B.worker_entry_dir) && /day0\/founding-sampler/.test(src)), '7: the Worker does not import the sampler yet');
+ok(B.allowed_import_prefixes.includes(SAMPLER) && !B.allowed_import_prefixes.includes('engine/day0/'), '7: the sampler is allowlisted as exactly one file (not the whole engine/day0/ directory)');
+{ // importers inside the Worker directory: none, or only the opt-in colony-members candidate adapter (stacked PR)
+  const importers = [...files].filter(([f, src]) => f.startsWith(B.worker_entry_dir) && /\bfrom\s*'[^']*day0\/founding-sampler/.test(src)).map(([f]) => f);
+  ok(importers.join() === `${B.worker_entry_dir}/p0a2-colony-world.ts`, `7: the only Worker module that imports the sampler is the opt-in colony-members candidate adapter (${importers.join() || 'none'})`);
+  ok(/p0a2-world\.ts/.test(files.get(`${B.worker_entry_dir}/p0a2-code-hash.ts`)!) && !/day0\/founding-sampler|engine\/colony|p0a2-colony/.test(files.get(`${B.worker_entry_dir}/p0a2-code-hash.ts`)!) && !/founding-sampler|p0a2-colony/.test(files.get(`${B.worker_entry_dir}/p0a2-world.ts`)!), '7: the default P0-A2 world (its code graph and adapter) does not use the sampler');
+}
 const probe = new Map(files), hypothetical = { ...B, allowed_import_prefixes: [...B.allowed_import_prefixes, 'engine/day0/'] };
 probe.set(`${B.worker_entry_dir}/__day0_sampler_probe__.ts`, `import { sampleInitialConditions } from '${path.posix.relative(B.worker_entry_dir, SAMPLER)}';\nexport const p = sampleInitialConditions;`);
 const r = checkBoundary(probe, hypothetical);
 ok(r.violations.length === 0 && r.reached.includes(SAMPLER), `7: if allowlisted, the sampler passes the Worker boundary incl. deterministic_math_in_worker_graph (${JSON.stringify(r.violations.slice(0, 3))})`);
-ok(checkBoundary(probe, B).violations.length > 0, '7: with the current allowlist the same probe is refused (the boundary is not widened here)');
+{ // the allowlist entry is the single file: without it the same probe is refused, and another engine/day0 module still is
+  const without = { ...B, allowed_import_prefixes: B.allowed_import_prefixes.filter((p: string) => p !== SAMPLER) };
+  ok(checkBoundary(probe, without).violations.some((x) => x.rule === 'not-allowlisted'), '7: without the allowlist entry the same probe is refused');
+  ok(checkBoundary(probe, B).violations.length === 0, '7: with the allowlist entry the probe passes the boundary incl. deterministic maths');
+  const other = new Map(files); other.set('engine/day0/other-module.ts', 'export const o = 1;'); other.set(`${B.worker_entry_dir}/__day0_other_probe__.ts`, "import { o } from '../../../engine/day0/other-module.ts';\nexport const p = o;");
+  ok(checkBoundary(other, B).violations.some((x) => x.rule === 'not-allowlisted' && x.file === 'engine/day0/other-module.ts'), '7: any other engine/day0 module is still outside the allowlist');
+}
 checks += r.checks;
 
 // 8. purity, no rules change

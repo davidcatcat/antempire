@@ -89,7 +89,7 @@ interface WorldKind {
 interface VerifiableWorld { advanceToExact(end, maxBatches?); nowExact(); seqNo(); chainState(); snapshot(); }
 ```
 
-目前登錄 `synthetic-v1`（合成實驗世界，`core.ts`）與 `p0a2-24h-v1`（P0-A2 24 小時個體行為世界，`p0a2-world.ts`，§5b）。新世界接入時新增一個符合 `WorldKind` 的項目，並在其 payload 寫入同樣的 `save_meta`（含自己的 species／environment 指紋）與 `chain`；驗證器不需要改。`runtime.ts` 不需要改（仍由指令分派器使用目前的世界）。
+目前登錄 `synthetic-v1`（合成實驗世界，`core.ts`）、`p0a2-24h-v1`（P0-A2 24 小時個體行為世界，`p0a2-world.ts`，§5b）與預設關閉的候選 `p0a2-colony-v1`（蟻群成員候選世界，`p0a2-colony-world.ts`，§5c）。新世界接入時新增一個符合 `WorldKind` 的項目，並在其 payload 寫入同樣的 `save_meta`（含自己的 species／environment 指紋）與 `chain`；驗證器不需要改。`runtime.ts` 不需要改（仍由指令分派器使用目前的世界）。
 
 ## 5b. P0-A2 世界（`p0a2-24h-v1`）
 
@@ -107,6 +107,16 @@ interface VerifiableWorld { advanceToExact(end, maxBatches?); nowExact(); seqNo(
 - **結構 1 的 P0-A2 存檔**：Worker 拒絕（`SCHEMA_MISMATCH`，訊息說明沒有事件鏈承諾、沒有遷移路徑），儲存模組回報 `no_migration_path`／`migration_failed` 並保留原檔，驗證器回報 `invalid`（`NO_CHAIN`）。
 - **瀏覽器產生的 P0-A2 存檔可由 Node 重算驗證（已解決，規則更新 detmath-exp，2026-11-12）**。原本的限制（保留紀錄）：P0-A2 環境記錄的相對溼度 `rh_percent` 經由 `engine/clock/weather-input.ts` 的飽和水氣壓計算使用 `Math.exp`（實作近似函式），Node 與 Chromium Worker 在部分 `env_sample` 事件差 1 ulp（兩個種子 48 h、42 480 個事件中 12 個，最大差 1.4×10⁻¹⁴ %），事件鏈 head 與 P0-A2 日誌雜湊鏈因此不同，瀏覽器推進的存檔交給 Node 驗證時如實回報 `mismatch`。修正：Worker 匯入圖中所有 `exp`／`log`／`**`／`sin` 改用 `engine/clock/detmath.ts` 的 fdlibm 移植（`detExp`／`detLog`／`detPow`／`detSin`），並以靜態規則禁止匯入圖再使用實作近似函式（[`solar-cross-env-check.md`](solar-cross-env-check.md) §8）。證據（x64 Linux、Node 22.23.4 vs. Chromium 153.0.8010.12 headless）：`tests/browser/worker-runtime.check.cjs` 兩個種子 48 h 的 42 480／42 480 個事件、日誌雜湊鏈、事件鏈 head 與整份 payload 逐位元組相同（`rh_percent`／`chain.head` 例外已移除）；`tests/browser/save2-acceptance.check.cjs` 在 Chromium Worker 以 3600× 推進新世界到 t = 94 032.577 s（13 155 個鏈事件）、手動存檔、由選單匯出，`node cli/verify-save.ts` → `node_verified`（同一檢查在修正前的程式上 → `mismatch`）。驗證器沒有放寬。**未驗證**：ARM64、Firefox、Safari、實體手機瀏覽器；在這些環境不得宣稱瀏覽器存檔可由 Node 驗證。
 - **成本**（Node 22、x64 測試機，未在手機量測）：48 h、18 595 個事件，加入鏈之前約 1.0 s，之後約 1.9 s（各一次量測）。
+
+## 5c. 蟻群成員候選世界（`p0a2-colony-v1`，預設關閉）
+
+規則更新 2026-11-15，見 [`colony-candidate-world.md`](colony-candidate-world.md)。這是**另一個世界種類**，不是 `p0a2-24h-v1` 的新版本：預設世界的引擎版本、規則指紋、payload 與所有釘選雜湊都沒有變。
+
+- **建立**：只有 `init` 指令指定 `kind: 'p0a2-colony'` 才會建立；還原時依引擎版本前綴 `experiment-p0a2-colony/` 分派。
+- **payload**（schema 2）：`world_kind: 'p0a2-colony'`、`base`（未修改的 P0-A2 世界的**完整快照**，由 `P0a2ExperimentWorld.restore` 驗證）、`colony`（名冊狀態：蟻后、大工蟻、卵、蛹）、`save_meta`、`chain`，以及標頭欄位。
+- **`save_meta`**：`world_kind: 'p0a2-colony-v1'`；`initial.params_sha256` = 基底參數檔、候選參數檔與整份候選情境檔 checksum 的合併雜湊；`colony` 區塊記錄情境 id／schema／checksum、PRNG id 與具名亂數流、種子、該種子的抽樣值、套用與未套用的數量、標示假設的參數與名冊雜湊；`not_simulated` 是預設清單改寫 M09／M15／M16／M18 四列文字後的版本（狀態不變）。
+- **事件鏈**：名冊事件（t = 0）在前，基底世界事件在後（`seq` 位移名冊事件數）；genesis 用 `world_kind: 'p0a2-colony-v1'` 與本種類的規則指紋。
+- **驗證**：`world-kinds.ts` 登錄後，`cli/verify-save.ts` 不需修改即可重算（`node_verified`）；本版名冊沒有動態，還原要求名冊等於由種子重建的名冊。
 
 ## 6. 版本邊界、遷移與 fork
 

@@ -48,6 +48,28 @@ mutate('未接入 while one of probe.any is in the Worker world', (x) => { row(x
 mutate('簡化代理 without an approximation range', (x) => { row(x, 'weather').limits = '沒有說明'; }, /近似範圍/);
 mutate('簡化代理 food source without an approximation range', (x) => { row(x, 'food_sources').limits = '單一情境蜜露源，固定產出。'; }, /M07: 簡化代理 must state its approximation range/);
 mutate('簡化代理 without a probe', (x) => { delete row(x, 'individual_behaviour').probe; }, /簡化代理 needs a wiring probe/);
+// opt-in (default-off) candidate world kinds: declared, narrow, never a status by themselves
+{
+  const oc = m.candidate_world.opt_in_candidates ?? [];
+  ok(oc.length === 1 && oc[0].id === 'p0a2-colony-v1' && oc[0].default_off === true && JSON.stringify(oc[0].rows) === '["M09","M15","M16","M18"]', 'the matrix declares the colony-members candidate world as an opt-in, default-off kind for M09 / M15 / M16 / M18');
+  for (const id of oc[0].rows) { const r = m.rows.find((y) => y.id === id)!; ok(r.status === '未接入' && r.candidate_world_now.includes('p0a2-colony-v1') && r.candidate_world_now.includes('預設關閉') && r.blocks_r2 === true, `${id}: still 未接入 and blocking; the row records the default-off candidate`); }
+  ok(oc[0].files.every((f) => !/p0a2-world\.ts$|not-simulated\.ts$|prototypes\/p0a2-24h\//.test(f)), 'no file of the default world is declared as an opt-in file');
+  // the generated documents show the candidate, labelled as not counted
+  for (const file of [GO_NO_GO_FILE, SPEC_FILE]) { const t = fs.readFileSync(path.join(REPO_ROOT, file), 'utf8'); ok(t.includes('| `p0a2-colony-v1` | 預設關閉候選，不計入已接入 | M09（未接入）、M15（未接入）、M16（未接入）、M18（未接入） |'), `${file} lists the opt-in candidate as 預設關閉候選，不計入已接入 with its rows' unchanged statuses`); }
+  { const x = structuredClone(m); x.candidate_world.opt_in_candidates![0].rows = ['M09']; ok(staleBlocks(x).length >= 2, 'a changed opt-in declaration makes the generated documents stale'); }
+}
+mutate('an opt-in candidate that is not default-off', (x) => { x.candidate_world.opt_in_candidates![0].default_off = false; }, /must be default_off: true/);
+mutate('an opt-in candidate file that belongs to the default world\'s code graph', (x) => { x.candidate_world.opt_in_candidates![0].files.push('prototypes/p0a2-24h/world.ts'); }, /is part of the DEFAULT world's code graph/);
+mutate('an opt-in candidate file outside the candidate-world sources', (x) => { x.candidate_world.opt_in_candidates![0].files.push('engine/colony/roster.ts'); }, /is not a candidate-world source/);
+mutate('an opt-in candidate without its implementation file (probe hit outside the declared files)', (x) => { x.candidate_world.opt_in_candidates![0].files = x.candidate_world.opt_in_candidates![0].files.filter((f) => !f.endsWith('p0a2-colony-world.ts')); }, /M15: marked 未接入 but "oviposit" appears in candidate-world source prototypes\/continuous-world\/worker\/p0a2-colony-world\.ts/);
+mutate('an opt-in candidate that does not list a row it touches', (x) => { x.candidate_world.opt_in_candidates![0].rows = ['M09', 'M15', 'M16']; }, /M18: marked 未接入 but "major" appears/);
+mutate('removing the opt-in declaration while the candidate files exist', (x) => { delete x.candidate_world.opt_in_candidates; }, /M15: marked 未接入 but "oviposit" appears/);
+mutate('an opt-in candidate used as the basis of 已接入', (x) => { const r = row(x, 'caste'); r.status = '已接入'; r.tests = ['tests/p0a2-colony-world.test.ts']; delete r.disclosure_zh; }, /row M18 is 已接入: an opt-in candidate cannot be the basis of 已接入/);
+mutate('an opt-in candidate row whose notes do not record it', (x) => { const r = row(x, 'caste'); r.candidate_world_now = '個體不分階級（P0-A2 只有小工蟻）。'; }, /row M18 does not name p0a2-colony-v1/);
+mutate('an opt-in candidate without a BLOCKING test', (x) => { x.candidate_world.opt_in_candidates![0].tests = ['tests/run-all.ts']; }, /must be an existing BLOCKING tests/);
+mutate('an opt-in candidate without a document', (x) => { x.candidate_world.opt_in_candidates![0].doc = 'docs/no-such-doc.md'; }, /doc docs\/no-such-doc\.md does not exist/);
+// the exception is per row: a row that the candidate does not declare still trips on the candidate's files
+mutate('another 未接入 row whose probe appears in an opt-in file', (x) => { row(x, 'death_consumption').probe!.any = ['rosterAudit']; }, /M17: marked 未接入 but "rosterAudit" appears in candidate-world source prototypes\/continuous-world\/worker\/p0a2-colony-world\.ts/);
 // Owner #212 Q2 a: completeness relaxed, honesty and the non-relaxable requirements not
 mutate('a 未接入 row that does not declare 「尚未模擬」', (x) => { row(x, 'open_ecology').player_view = '未顯示。'; }, /M08: 未接入 must declare in player_view/);
 mutate('a non-relaxable row (conservation) unblocked while not 已接入', (x) => { row(x, 'energy_mass_ledger').blocks_r2 = false; }, /energy_mass_ledger is non-relaxable/);
