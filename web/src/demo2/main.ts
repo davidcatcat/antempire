@@ -444,14 +444,14 @@ function updateLabels() {
     const a = drawn.find((x) => x.id === c.on), st = a ? null : statics.find((x) => x.ind.id === c.on), src = c.on === SOURCE_CUE ? world.anchors.hostPlant : null;
     if (a && (a.pose === 'troph' || a.pose === 'brood')) continue;
     const p = a ? { x: a.x, y: a.y + antLen() * 0.9, z: a.z } : st ? { x: st.p.x, y: st.p.y + antLen() * 0.9, z: st.p.z } : src ? { x: src.x, y: src.y - antLen() * 0.5, z: src.z } : null; if (!p) continue;
-    items.push({ key: `cue-${c.on}`, p, text: `${CUE_MARK} ${c.text}`, cls: 'act', face: a ? a.realm === 'nest' : !!st, prio: 70 }); cued = true;
+    items.push({ key: `cue-${c.on}`, p, text: compact ? `${CUE_MARK} ${c.text}` : `${CUE_MARK} ${c.text}（引擎事件）`, cls: 'act', face: a ? a.realm === 'nest' : !!st, prio: 70 }); cued = true;
   }
   const selA = drawn.find((a) => a.id === selected), selS = statics.find((s) => s.ind.id === selected);
   if (selA) items.push({ key: 'pin', p: { x: selA.x, y: selA.y + antLen() * (selA.realm === 'nest' ? 1.0 : 0.9), z: selA.z }, text: `▼ ${selA.id}`, cls: 'pin', face: false, prio: 100 });
   else if (selS) items.push({ key: 'pin', p: { x: selS.p.x, y: selS.p.y + antLen() * 0.9, z: selS.p.z }, text: `▼ ${selS.ind.id}`, cls: 'pin', face: false, prio: 100 });
   const off = camera.position.clone().sub(controls.target), dist = off.length(), frontal = off.z / dist, seen = new Set<string>();
   // one-line legend under the scene (narrow screens): what ※ means, and that the nest can be dragged sideways
-  const partial = compact && !nestOnScreen().inside, legend = [marked ? `${NS_MARK}＝引擎個體，生理與行為尚未模擬` : '', cued ? `${CUE_MARK}＝引擎事件（標籤位置與停留＝畫面）` : '', partial ? '左右拖曳可看其他巢室' : ''].filter(Boolean).join('｜');
+  const partial = compact && !nestOnScreen().inside, legend = [marked ? `${NS_MARK}＝引擎個體，生理與行為尚未模擬` : '', cued && compact ? `${CUE_MARK}＝引擎事件` : '', partial ? '左右拖曳可看其他巢室' : ''].filter(Boolean).join('｜');
   if (ui.lblLegend.textContent !== legend) ui.lblLegend.textContent = legend; ui.lblLegend.hidden = !legend;
   const boxes: LabelBox[] = [], els = new Map<string, HTMLElement>(), rightLimit = !compact && !document.body.classList.contains('side-closed') ? ui.side.getBoundingClientRect().left - 4 : w - 2;
   for (const it of items) {
