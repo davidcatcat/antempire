@@ -40,6 +40,7 @@ import { MORPHS, RigLayer, rigMaterial, larvaGeometry, pupaGeometry, eggGeometry
 import { rigNodeMaterial, type RigNodeMaterial } from './ant-rig-tsl.ts';
 import { buildScene, type Quality, type Scene2 } from './scene.ts';
 import { Hd2dPipeline, PIXEL_FACTORS, type Hd2dEffects } from './hd2d.ts';
+import { CUE_FRESH_S, CUE_HOLD_S, CUE_MAX, EventLedger, GROUPS, GROUP_LABEL, SOURCE_CUE, type ClassGroup } from './events.ts';
 import { nextShot, tourMayRun, TOUR_IDLE_S, TOUR_REASON_ZH, type TourCue, type TourShot } from './tour.ts';
 
 const q = new URLSearchParams(location.search);
@@ -48,7 +49,7 @@ const ui = {
   canvas: $<HTMLCanvasElement>('scene'), badge: $('modeBadge'), play: $<HTMLButtonElement>('play'), speed: $<HTMLSelectElement>('speed'), hud: $('hud'),
   viewFull: $<HTMLButtonElement>('viewFull'), viewSurface: $<HTMLButtonElement>('viewSurface'), viewUnder: $<HTMLButtonElement>('viewUnder'), modeBtn: $<HTMLButtonElement>('modeBtn'),
   followBtn: $<HTMLButtonElement>('followBtn'), sideBtn: $<HTMLButtonElement>('sideBtn'), card: $('card'), labels: $('labels'), lblLegend: $('lblLegend'), top: $('top'), side: $('side'), toast: $('toast'), fatal: $('fatal'),
-  stats: $('pane-stats'), legend: $('pane-legend'), notsim: $('pane-notsim'), perf: $('pane-perf'), worldInfo: $('worldInfo'), saveBtn: $<HTMLButtonElement>('saveBtn'), saveStatus: $('saveStatus'),
+  stats: $('pane-stats'), events: $('pane-events'), legend: $('pane-legend'), notsim: $('pane-notsim'), perf: $('pane-perf'), worldInfo: $('worldInfo'), saveBtn: $<HTMLButtonElement>('saveBtn'), saveStatus: $('saveStatus'),
   more: $('more'), moreBtn: $<HTMLButtonElement>('moreBtn'), tourBtn: $<HTMLButtonElement>('tourBtn'), perfBtn: $<HTMLButtonElement>('perfBtn'), tourChip: $<HTMLButtonElement>('tourChip'), statusRow: $('statusRow'), peek: $('peek'), grip: $('grip'), peekText: $('peekText'), paneAnt: $('pane-ant'),
   seedIn: $<HTMLInputElement>('seedIn'), restartBtn: $<HTMLButtonElement>('restartBtn'), resetDemoBtn: $<HTMLButtonElement>('resetDemoBtn'), demoInfo: $('demoInfo'), saveList: $('saveList'), importBtn: $<HTMLButtonElement>('importBtn'), importFile: $<HTMLInputElement>('importFile'),
 };
@@ -125,6 +126,15 @@ let mag = Number(q.get('mag') ?? (narrow() ? 12 : 10));
 const antLen = () => MINOR_LEN_CM * mag;
 let drawn: DrawnAnt[] = [], selected: string | null = null, following: string | null = null, disclosure: NotSimulatedView | null = null, saveUi: SaveUiState | null = null;
 let eventsSeen = 0;
+/** D2E-1: every engine event the page receives — classified, counted (exactly), listed and cued (events.ts; read only) */
+const ledger = new EventLedger(narrow() ? CUE_MAX.narrow : CUE_MAX.wide);
+/** the cue clock: wall seconds that pass only while the world runs (a paused page keeps its cue labels readable) */
+let cueT = 0, cueLast = performance.now();
+function wallS(): number { const n = performance.now(); if (running) cueT += (n - cueLast) / 1000; cueLast = n; return cueT; }
+/** in-scene event cues on / off (display only; `?cues=0`): the counts and the list are the same either way */
+let cuesOn = q.get('cues') !== '0';
+const cueBudget = () => (!cuesOn ? 0 : narrow() ? CUE_MAX.narrow : CUE_MAX.wide);
+ledger.cueMax = cueBudget();
 type View = 'full' | 'surface' | 'under';
 let view: View = 'full';
 /** static individuals drawn this frame (larvae and demo individuals): for picking and the card */
@@ -443,12 +453,21 @@ function updateLabels() {
   if (mode === 'demo') { items.push({ key: 'nectar', p: world.anchors.nectar, text: compact ? '花蜜（示範道具）' : DEMO_FOOD_PROPS[0].label_zh, cls: 'demo', face: false, prio: 20 }); items.push({ key: 'insect', p: world.anchors.insect, text: compact ? '昆蟲屍體（示範道具）' : DEMO_FOOD_PROPS[1].label_zh, cls: 'demo', face: false, prio: 20 }); }
   for (const a of drawn) if (a.pose === 'troph' && a.partner && a.id < a.partner) items.push({ key: `tr-${a.id}`, p: { x: a.x, y: a.y + antLen() * 0.9, z: a.z }, text: '交哺（引擎事件）', cls: 'act', face: true, prio: 80 });
   for (const a of drawn) if (a.pose === 'brood' && a.partner && stage.fedNow(a.partner, tNow)) items.push({ key: `br-${a.id}`, p: { x: a.x, y: a.y + antLen() * 0.9, z: a.z }, text: '餵幼蟲（引擎事件）', cls: 'act', face: true, prio: 80 });
+  // D2E-1 cues: an engine event shown on the individual it belongs to (the event = engine; where the label floats and how
+  // long it stays = display). Budgeted in events.ts; a worker already posed for a staged meeting keeps that label instead.
+  let cued = false; ledger.cueMax = cueBudget();
+  for (const c of cuesOn ? ledger.activeCues(wallS(), tNow, CUE_FRESH_S + CUE_HOLD_S * speed) : []) {
+    const a = drawn.find((x) => x.id === c.on), st = a ? null : statics.find((x) => x.ind.id === c.on), src = c.on === SOURCE_CUE ? world.anchors.hostPlant : null;
+    if (a && (a.pose === 'troph' || a.pose === 'brood')) continue;
+    const p = a ? { x: a.x, y: a.y + antLen() * 0.9, z: a.z } : st ? { x: st.p.x, y: st.p.y + antLen() * 0.9, z: st.p.z } : src ? { x: src.x, y: src.y - antLen() * 0.5, z: src.z } : null; if (!p) continue;
+    items.push({ key: `cue-${c.on}`, p, text: compact ? `${CUE_MARK} ${c.text}` : `${CUE_MARK} ${c.text}（引擎事件）`, cls: 'act', face: a ? a.realm === 'nest' : !!st, prio: 70 }); cued = true;
+  }
   const selA = drawn.find((a) => a.id === selected), selS = statics.find((s) => s.ind.id === selected);
   if (selA) items.push({ key: 'pin', p: { x: selA.x, y: selA.y + antLen() * (selA.realm === 'nest' ? 1.0 : 0.9), z: selA.z }, text: `▼ ${selA.id}`, cls: 'pin', face: false, prio: 100 });
   else if (selS) items.push({ key: 'pin', p: { x: selS.p.x, y: selS.p.y + antLen() * 0.9, z: selS.p.z }, text: `▼ ${selS.ind.id}`, cls: 'pin', face: false, prio: 100 });
   const off = camera.position.clone().sub(controls.target), dist = off.length(), frontal = off.z / dist, seen = new Set<string>();
   // one-line legend under the scene (narrow screens): what ※ means, and that the nest can be dragged sideways
-  const partial = compact && !nestOnScreen().inside, legend = [marked ? `${NS_MARK}＝引擎個體，生理與行為尚未模擬` : '', partial ? '左右拖曳可看其他巢室' : ''].filter(Boolean).join('｜');
+  const partial = compact && !nestOnScreen().inside, legend = [marked ? `${NS_MARK}＝引擎個體，生理與行為尚未模擬` : '', cued && compact ? `${CUE_MARK}＝引擎事件` : '', partial ? '左右拖曳可看其他巢室' : ''].filter(Boolean).join('｜');
   if (ui.lblLegend.textContent !== legend) ui.lblLegend.textContent = legend; ui.lblLegend.hidden = !legend;
   const boxes: LabelBox[] = [], els = new Map<string, HTMLElement>(), rightLimit = !compact && !document.body.classList.contains('side-closed') ? ui.side.getBoundingClientRect().left - 4 : w - 2;
   for (const it of items) {
@@ -467,7 +486,7 @@ function updateLabels() {
   for (const [k, el] of els) if (!got.has(k)) el.hidden = true;
   for (const [k, el] of labelEls) if (!seen.has(k)) el.hidden = true;
 }
-const NS_MARK = '※';
+const NS_MARK = '※', CUE_MARK = '◆';
 /** the height of the bottom sheet covering the scene (narrow screens with the panel open), else 0 */
 const sheetPx = () => narrow() ? coverNow : 0;
 /** phone bottom sheet: closed ('peek': only a small floating pill with key counts), half, full; the selected
@@ -513,7 +532,7 @@ function updateHud(now: number) {
   const peek = `▲ 巢外 ${out}・巢內 ${drawn.length - out}`; // phone: key counts on the pill that opens the sheet
   if (ui.peekText.textContent !== peek) ui.peekText.textContent = peek;
   if (selected) renderCard();
-  if (!document.body.classList.contains('side-closed')) { if (tab === 'stats') renderStats(); else if (tab === 'perf') renderPerf(); else if (tab === 'saves') renderSaveStatus(); }
+  if (!document.body.classList.contains('side-closed')) { if (tab === 'stats') renderStats(); else if (tab === 'events') renderEvents(); else if (tab === 'perf') renderPerf(); else if (tab === 'saves') renderSaveStatus(); }
 }
 function renderStats() {
   if (!frame || !rost) return;
@@ -526,9 +545,47 @@ function renderStats() {
 <h2>工蟻行為狀態（引擎）</h2><table>${Object.keys(STATE_LABEL).map((s) => `<tr><td>${STATE_LABEL[s]}</td><td class="n">${by.get(s) ?? 0}</td></tr>`).join('')}</table>
 <h2>畫面位置（展示假設／顯示）</h2><table>${[...places].sort((a, b) => b[1] - a[1]).map(([k, n]) => `<tr><td>${esc(k)}</td><td class="n">${n}</td></tr>`).join('')}</table>
 <h2>本頁開啟後觀察到的引擎事件</h2><table><tr><td>交哺（有食物轉移）</td><td class="n">${st.troph_events}</td></tr><tr><td>　其中畫面演出</td><td class="n">${st.troph_shown}</td></tr><tr><td>餵食幼蟲</td><td class="n">${st.larva_feeds}</td></tr><tr><td>　育幼探視畫面演出</td><td class="n">${st.larva_visits_shown}</td></tr><tr><td>事件總數</td><td class="n">${eventsSeen}</td></tr></table>
-<div class="muted">交哺與餵食的時刻、對象與量是引擎事件；畫面只在巢內路徑與時間允許時演出（顯示），未演出的事件仍然發生。</div>
+<div class="muted">交哺與餵食的時刻、對象與量是引擎事件；畫面只在巢內路徑與時間允許時演出（顯示），未演出的事件仍然發生。每一類引擎事件的完整計數與清單在「事件」分頁。</div>
 <h2>環境（引擎；天氣為合成情境）</h2><div>蜜露來源存量 ${frame.source.stock_portions.toFixed(2)} 份｜路線長度 ${frame.layout.source_distance_cm} cm｜氣溫 ${frame.env.temperature_c?.toFixed(1) ?? '—'}°C｜相對濕度 ${frame.env.rh_percent?.toFixed(0) ?? '—'}%</div>`;
 }
+/** the 事件 tab: exact counts of every engine event class the page received, and the last events as a list (D2E-1).
+ *  Counts never depend on the speed, the panel or the cue budget; the list is a bounded window of the same events. */
+let evFilter: ClassGroup | 'all' = 'all', evNow = '', evHold = 0;
+function renderEvents() {
+  // the frame of the tab (filter buttons, the cue switch, the fixed notes) is built ONCE: a tap must never land on a
+  // replaced control. Only the numbers and the list are rewritten, and the list not while a finger / the mouse is on it.
+  if (!ui.events.firstChild) ui.events.innerHTML = `<h2>引擎事件（本頁開啟後收到的全部）</h2>
+<div class="muted"><span class="tag engine">引擎事件</span>每一筆都是 Worker 送來的引擎事件，數字是完整計數（不受速度、面板或畫面標籤數量影響）。<span id="evSpan"></span></div>
+<div class="row"><span class="seg" role="group" aria-label="事件分類">${(['all', ...GROUPS] as const).map((g) => `<button type="button" data-evg="${g}" aria-pressed="${evFilter === g}">${g === 'all' ? '全部' : GROUP_LABEL[g]}</button>`).join('')}</span></div>
+<table id="evCounts"></table>
+<div class="muted">「接觸」在引擎中是機率抽樣，不是身體接觸；沒有發生過的類別仍列出（0）。「到食源：是空的」是引擎的實際結果，如實顯示。</div>
+<h2>畫面呈現（顯示）</h2><table id="evShown"></table>
+<div class="row"><label><input type="checkbox" id="cuesOn" ${cuesOn ? 'checked' : ''}> 在場景中顯示引擎事件的提示標籤（${CUE_MARK}）</label></div>
+<div class="muted"><span class="tag assume">顯示</span>提示標籤一次最多 ${narrow() ? CUE_MAX.narrow : CUE_MAX.wide} 個、停留約 2 秒（牆鐘時間，任何速度都一樣；暫停時不消失）；超過上限時只少畫標籤，上面的事件計數不會少。標籤的位置是畫面位置，不代表引擎有巢內座標。</div>
+<h2 id="evListTitle">最近的事件</h2><div id="evList"></div>
+<div class="muted">清單只保留最近的事件（計數不受影響）；點一筆可選取該個體。</div>`;
+  const st = stage.stats, key = `${evFilter}|${cuesOn}|${ledger.total}|${st.troph_shown}|${st.larva_visits_shown}|${ledger.cues_dropped}`;
+  if (key === evNow) return; evNow = key;
+  const rows = ledger.rows().filter((r) => evFilter === 'all' || r.def.group === evFilter);
+  $('evSpan').textContent = ledger.first_t === null ? '尚未收到事件' : `範圍：${fmtWorldTime(ledger.first_t)} → ${fmtWorldTime(ledger.last_t!)}｜事件總數 ${ledger.total}｜序號缺漏 ${ledger.gaps}`;
+  ui.events.querySelectorAll<HTMLButtonElement>('button[data-evg]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.evg === evFilter)));
+  $<HTMLInputElement>('cuesOn').checked = cuesOn;
+  $('evCounts').innerHTML = `<tr><th>事件類別</th><th class="n">引擎事件數</th></tr>${rows.map((r) => `<tr data-evk="${esc(r.def.key)}"><td>${esc(r.def.label_zh)}${r.def.unit === 'part' ? ' <span class="muted">（次）</span>' : ''}</td><td class="n">${r.n}</td></tr>`).join('')}`;
+  $('evShown').innerHTML = `<tr><td>交哺：畫面走位演出／引擎事件</td><td class="n">${st.troph_shown}／${st.troph_events}</td></tr><tr><td>育幼探視：畫面演出</td><td class="n">${st.larva_visits_shown}</td></tr><tr><td>場景提示標籤（${CUE_MARK}）：已顯示／因數量上限未顯示</td><td class="n">${ledger.cues_shown}／${ledger.cues_dropped}</td></tr>`;
+  if (performance.now() < evHold) { evNow = ''; return; }
+  const lines = ledger.ticker.filter((x) => evFilter === 'all' || x.group === evFilter).slice(-60).reverse();
+  $('evListTitle').textContent = `最近的事件${evFilter === 'all' ? '' : `（${GROUP_LABEL[evFilter]}）`}`;
+  $('evList').innerHTML = lines.length ? lines.map((x) => `<button type="button" class="ev" ${x.entity ? `data-ent="${esc(x.entity)}"` : 'disabled'} title="${esc(x.event_id)}"><span class="muted">${clockOf(x.t_sim)}</span> ${esc(x.text)}</button>`).join('') : '<div class="muted">這個分類目前沒有事件</div>';
+}
+ui.events.addEventListener('pointerdown', (e) => { if ((e.target as HTMLElement).closest('#evList')) evHold = performance.now() + 900; });
+ui.events.addEventListener('click', (e) => {
+  const t = e.target as HTMLElement, g = t.closest<HTMLElement>('[data-evg]'), row = t.closest<HTMLElement>('[data-ent]'); evHold = 0;
+  if (t.id === 'cuesOn') { cuesOn = (t as HTMLInputElement).checked; ledger.cueMax = cueBudget(); evNow = ''; renderEvents(); return; }
+  if (t.closest('label')) return;
+  if (g) { evFilter = g.dataset.evg as ClassGroup | 'all'; evNow = ''; renderEvents(); return; }
+  if (row && frame?.workers.some((w) => w.id === row.dataset.ent)) { select(row.dataset.ent!); if (narrow()) setSheet('half'); }
+  evNow = ''; renderEvents();
+});
 function renderLegend() {
   const L = graph.layout, prov = L.provenance as Record<string, string>;
   ui.legend.innerHTML = `<h2>畫面上的四類資料</h2><ul>
@@ -537,6 +594,7 @@ function renderLegend() {
 <li><span class="tag assume">展示假設</span>${esc(L.label_zh)}。巢內每個位置與走法：引擎沒有巢內座標，狀態改變後工蟻沿通道走到新狀態的位置，每段走動最長 ${CATCHUP_MAX_S} 秒（模擬時間）；途中演出交哺時先走到對象旁，合計上限 ${2 * CATCHUP_MAX_S + 6} 秒；休息的工蟻站定不走；「巢內走動」的閒逛路線、同通道的前後錯位（避讓）、步態、轉身、觸角與姿勢都只是畫面。螞蟻放大 ${mag} 倍（2.5 mm 畫成 ${(MINOR_LEN_CM * mag * 10).toFixed(0)} mm），通道也依放大後體型畫寬；路線長度不放大。花園景物（土、石、草、落葉、磚、盆栽、寄主植物外形）是裝飾，不是障礙物。搜尋中的位置是示意（搜尋沒有空間模型）。</li>
 <li><span class="tag demo">示範資料</span>只在「展示情境」模式：蟻后 2（Owner #202 暫定 2～3）、大工蟻、卵、蛹與兩個不可取食的食物道具。固定種子、可重現、${esc(DEMO_ROUTINE_LABEL)}；不存檔、不送進 Worker。自然模式完全不畫。</li></ul>
 <h2>畫面效果（HD-2D 風格，選用）</h2><div class="muted">「效能」分頁可切換「畫面風格：標準／HD-2D」。HD-2D 只改繪圖：降低內部解析度再放大（像素化）、景深（焦點＝鏡頭目標或跟隨的螞蟻）、泛光、色調、暗角，以及加密的草葉、落葉與地被葉、空中的浮塵、光束。這些全部是<b>畫面效果／裝飾</b>：不是生物、不是食物來源、螞蟻不感知；沒有加入任何蝴蝶、螢火蟲、其他昆蟲或會被當成蜜源的花。光線方向與顏色仍然依引擎的光照狀態（日／曙暮光／夜），夜間不畫光束；HD-2D 不會改變時間。${HD2D_ONLY_WEBGL2}。</div>
+<h2>引擎事件的提示標籤（${CUE_MARK}）</h2><div class="muted">出現在個體或食源旁、以 ${CUE_MARK} 開頭的綠色標籤是<b>引擎事件</b>（例如「食源是空的」「取食 0.05 份」「收到 0.28 份」「被喚醒」）：事件的對象、時刻與量來自引擎；標籤飄在哪裡、停留多久是<b>畫面</b>。標籤有數量上限，超過時只少畫標籤；完整計數與清單在「事件」分頁。引擎的「接觸」是機率抽樣，不是身體接觸；被標示的雙方在畫面上不一定相鄰。</div>
 <h2>沒有畫的東西</h2><ul><li>費洛蒙：尚未模擬，畫面不畫任何氣味路徑；黃色虛線只是「顯示路線」（長度＝引擎路線長度，方向示意）。</li><li>固體食物搬運、其他食物種類（花蜜、昆蟲屍體）：引擎尚未模擬；只在展示情境當不可取食的道具。</li><li>身體碰撞與巢口容量：尚未模擬；畫面上的錯位只是顯示。</li></ul>
 <h2>已列出的畫面跳位</h2><ul>${STAGE_DISCONTINUITIES.map((d) => `<li>${esc(d.label_zh)}</li>`).join('')}</ul>
 <h2>動作都是畫面，不是引擎</h2><ul>${MOTION_NOTES.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
@@ -639,7 +697,7 @@ function setMode(m: Mode) {
 }
 
 // ---------- world lifecycle (Worker scheduling + SAVE-2 session) ----------
-function onWorldStart() { frame = null; pacing = null; lastT = null; drawn = []; statics = []; stage?.reset(antLen()); eventsSeen = 0; disclosure = null; selected = null; following = null; userSel = false; endTour(); tourCues.length = 0; tourLog.length = 0; tourLast = null; hideCard(); }
+function onWorldStart() { frame = null; pacing = null; lastT = null; drawn = []; statics = []; stage?.reset(antLen()); eventsSeen = 0; ledger.reset(); evNow = ''; disclosure = null; selected = null; following = null; userSel = false; endTour(); tourCues.length = 0; tourLog.length = 0; tourLast = null; hideCard(); }
 async function afterWorldReady(startAt: number | null) {
   if (startAt !== null && (frame?.t_sim ?? 0) < startAt) await client.stepUntil(startAt);
   await new Promise<void>((r) => { const w = () => (frame ? r() : setTimeout(w, 20)); w(); });
@@ -743,7 +801,7 @@ async function main() {
   buildMeshes();
 
   client.onState = (fr, p, fol) => { if (!isP0a2Frame(fr) || fr.world_id === PROBE_ID) return; if (p.running && frame && fr.t_sim !== frame.t_sim) session?.markDirty(); frame = fr; pacing = p; frameAt = performance.now(); followedView = fol; if (rost) rost = roster(mode, fr, demoSeed); };
-  client.onEvents = (evs: EventMsg[]) => { if (evs[0]?.world_id === PROBE_ID) return; eventsSeen += evs.length; stage.onEvents(evs); noteCues(evs); session?.markDirty(); };
+  client.onEvents = (evs: EventMsg[]) => { if (evs[0]?.world_id === PROBE_ID) return; eventsSeen += evs.length; ledger.onEvents(evs, wallS()); stage.onEvents(evs); noteCues(evs); session?.markDirty(); };
   client.onProtocolError = (why) => toast(`Worker：${why}`, 8000);
 
   ui.speed.innerHTML = SPEEDS.map((s) => `<option value="${s}">${s}×</option>`).join(''); ui.seedIn.value = String(DEFAULT_SEED);
@@ -798,7 +856,7 @@ function openSide(t: string | null) {
   openTab(t);
 }
 function openTab(t: string) {
-  { tab = t; document.querySelectorAll<HTMLButtonElement>('#tabs button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tab === t))); for (const k of ['ant', 'stats', 'legend', 'notsim', 'saves', 'perf']) $(`pane-${k}`).hidden = k !== t; if (t === 'stats') renderStats(); if (t === 'perf') renderPerf(); if (t === 'saves') { renderSaveStatus(); void refreshSaveList(); } }
+  { tab = t; document.querySelectorAll<HTMLButtonElement>('#tabs button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tab === t))); for (const k of ['ant', 'stats', 'events', 'legend', 'notsim', 'saves', 'perf']) $(`pane-${k}`).hidden = k !== t; if (t === 'stats') renderStats(); if (t === 'events') { evNow = ''; renderEvents(); } if (t === 'perf') renderPerf(); if (t === 'saves') { renderSaveStatus(); void refreshSaveList(); } }
 }
 const openTabName = () => (tab === 'ant' && (!selected || !narrow()) ? 'stats' : tab);
 ui.sideBtn.onclick = () => openSide(document.body.classList.contains('side-closed') ? openTabName() : null);
@@ -872,6 +930,9 @@ const hooks: Record<string, unknown> = {
     let lit = 0; for (let i = 0; i < w * h * 4; i += 4) { img.data[i] = lut[px[i]]; img.data[i + 1] = lut[px[i + 1]]; img.data[i + 2] = lut[px[i + 2]]; img.data[i + 3] = 255; if (px[i] + px[i + 1] + px[i + 2] > 24) lit++; }
     g2.putImageData(img, 0, 0); return { url: c.toDataURL('image/jpeg', q2), w, h, lit_fraction: lit / (w * h) };
   },
+  /** D2E-1: the page's exact engine-event counts (by class, by raw kind), the listed window and the cue budget */
+  events: () => ({ total: ledger.total, gaps: ledger.gaps, first_seq: ledger.first_seq, last_seq: ledger.last_seq, first_t: ledger.first_t, last_t: ledger.last_t, classes: ledger.countsObject(), kinds: ledger.kindsObject(), ticker: ledger.ticker.length, cues_shown: ledger.cues_shown, cues_dropped: ledger.cues_dropped, cue_max: ledger.cueMax, cues_on: cuesOn, active: ledger.activeCues(wallS(), tNow, CUE_FRESH_S + CUE_HOLD_S * speed).map((c) => ({ ...c })), stage: { ...stage.stats } }),
+  setCues: (on: boolean) => { cuesOn = on; ledger.cueMax = cueBudget(); evNow = ''; },
   nestOnScreen: () => nestOnScreen(),
   /** phone layout: the sheet state and the part of the page height the scene keeps (below the top bar, above the sheet) */
   layout: () => { const top = ui.top.getBoundingClientRect().bottom; return { narrow: narrow(), sheet, sheet_px: sheetPx(), top_px: top, scene_fraction: (innerHeight - top - sheetPx()) / innerHeight, hud_open: hudOpen }; },
