@@ -90,7 +90,9 @@ const summary: Record<string, unknown> = {};
   // everything the tour does in main.ts: no Worker command, no session call
   const a = main.indexOf('// ---------- 自動導覽: idle camera tour'), b = main.indexOf('// ---------- per frame ----------');
   ok(a > 0 && b > a && !/client\.|session\.|postMessage/.test(main.slice(a, b)), 'the tour code in main.ts never talks to the Worker or the session');
-  ok(/if \(!byTour && \(id !== null \|\| observed !== null\)\) \{ observed = id; void client\.follow\(id\)/.test(main) && (main.match(/client\.follow\(/g) ?? []).length === 1, 'client.follow is sent from ONE place and never for a tour follow');
+  // D2E-2: the one place is observe() (a user selection also asks for the worker's own record); setFollow reaches it only when
+  // the call is not the tour's, and nothing between the tour banner and the per-frame banner calls it (checked above: no client.)
+  ok(/function observe\(id: string \| null\) \{ if \(observed === id\) return; observed = id; void client\.follow\(id\)/.test(main) && (main.match(/client\.follow\(/g) ?? []).length === 1 && /if \(!byTour\) observe\(/.test(main) && !/observe\(/.test(main.slice(a, b)), 'client.follow is sent from ONE place and never for a tour follow');
   ok(/setFollow\(shot\.id, true\)/.test(main) && /if \(following\) setFollow\(null, true\)/.test(main) && /if \(wasFollow\) setFollow\(null, true\)/.test(main), 'the tour starts and ends its follow with byTour = true');
   ok(/nextShot\(k, frame\.seed, frame\.t_sim, frame\.workers, tourCues, tourLast\)/.test(main), 'the shot comes from the frame (seed, time, worker states) and the received engine events only');
   ok(/let tourOn = tourParam !== null \? tourParam !== '0' : !automated;/.test(main), 'on by default; ?tour=0 switches it off; under automation it runs only when asked for');
