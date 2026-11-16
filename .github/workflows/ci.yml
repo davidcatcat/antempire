@@ -81,6 +81,14 @@ jobs:
         run: |
           set -o pipefail
           node tests/browser/demo2-ui.check.cjs "$RUNNER_TEMP/demo2-shots" http://localhost:8782/ | tee "$RUNNER_TEMP/demo2-shots/demo2-ui-results.json"
+      - name: Demo 2 engine events on screen (D2E-1 - page event counts by class equal a Node replay of the same events after the fast-forward, a step, 5x and 60x, for the candidate and the plain world; event tab on Pixel 7 with 44 px controls; in-scene cues within their budget; the Worker message log and the world are identical with the feature used and off)
+        run: |
+          set -o pipefail
+          node tests/browser/demo2-events.check.cjs "$RUNNER_TEMP/demo2-shots" http://localhost:8782/ | tee "$RUNNER_TEMP/demo2-shots/demo2-events-results.json"
+      - name: Demo 2 individual record card (D2E-2 - the card repeats the Worker's own record of the selected worker and the page's per-individual totals equal a Node replay; what the ant does not know is stated; hunger shown as a diagnostic; compact card keeps the scene at least 80 percent on Pixel 7; reading records sends only the existing follow command and leaves the world identical)
+        run: |
+          set -o pipefail
+          node tests/browser/demo2-record.check.cjs "$RUNNER_TEMP/demo2-shots" http://localhost:8782/ | tee "$RUNNER_TEMP/demo2-shots/demo2-record-results.json"
       - name: Upload screenshots and results
         if: always()
         continue-on-error: true

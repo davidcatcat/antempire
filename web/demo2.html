@@ -37,6 +37,10 @@
   table { border-collapse: collapse; width: 100%; font-size: 12.5px; } th, td { text-align: left; padding: 2px 6px 2px 0; border-bottom: 1px solid rgba(243,234,214,0.1); } td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
   .muted { color: var(--muted); font-size: 12px; } .tag { display: inline-block; font-size: 11px; border-radius: 4px; padding: 0 5px; margin-right: 4px; background: rgba(255,255,255,0.12); }
   .tag.engine { background: #3f6b3a; } .tag.interp { background: #6b5a2a; } .tag.assume { background: #5a4a6b; } .tag.demo { background: #24566f; } .tag.none { background: #6b3030; }
+  .rec h2 { font-size: 13px; margin: 9px 0 3px; color: var(--accent); } .rec .why p { margin: 3px 0; } .rec .notknown { border-left: 3px solid var(--accent); padding-left: 7px; margin: 5px 0; } .rec .reclist { margin: 3px 0; padding-left: 16px; font-size: 12.5px; font-variant-numeric: tabular-nums; } .rec .recmissing { color: #ffd9cf; }
+  #card { max-height: calc(100dvh - 110px); display: flex; flex-direction: column; } #card .rec { overflow: auto; flex: 1 1 auto; min-height: 0; border-top: 1px solid var(--line); margin-top: 5px; -webkit-overflow-scrolling: touch; } #card .row { flex: 0 0 auto; }
+  #evList { display: flex; flex-direction: column; gap: 2px; margin: 4px 0; } #evList .ev { text-align: left; min-height: 30px; height: auto; padding: 3px 8px; font-size: 12.5px; line-height: 1.45; white-space: normal; border-radius: 6px; } #evList .ev:disabled { opacity: 0.8; }
+  #pane-events .seg { flex-wrap: wrap; }
   .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 6px 0; }
   #card { position: fixed; z-index: 4; left: max(10px, env(safe-area-inset-left, 0px)); top: 96px; width: min(380px, calc(100vw - 20px)); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 11px; font-size: 13px; line-height: 1.6; }
   #labels { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
@@ -80,11 +84,13 @@
     #peek { position: fixed; z-index: 3; right: max(8px, env(safe-area-inset-right, 0px)); bottom: calc(6px + env(safe-area-inset-bottom, 0px)); max-width: 160px; border-radius: 22px; background: var(--panel); font-size: 12px; white-space: nowrap; touch-action: none; }
     body.pill #peek { display: inline-flex; align-items: center; } body.dragging #peek { display: inline-flex; opacity: 0; }
     #tabs { flex-wrap: nowrap; overflow-x: auto; flex: 0 0 auto; } #tabs button { min-height: 44px; flex: 0 0 auto; } #tabs button[data-tab="ant"] { display: inline-block; }
+    #evList .ev { min-height: 44px; }
     .pane label { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; } .pane input[type=checkbox] { width: 22px; height: 22px; }
     /* the individual card on phones: a two-line summary + 跟隨 / 詳情, lying on the bottom edge (or on top of the open sheet); details open in the sheet */
     #card { left: 0; right: 0; top: auto; bottom: var(--card-bottom, 0px); width: auto; height: 56px; z-index: 4; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 10px; border-radius: 14px 14px 0 0; border-width: 1px 0 0; font-size: 12.5px; line-height: 1.35; }
+    #card { max-height: none; flex-direction: row; }
     body.sheet-full #card { display: none; }
-    #card .sum { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: 1 1 0; min-width: 0; } #card .detail, #cardClose { display: none; }
+    #card .sum { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: 1 1 0; min-width: 0; } #card .detail, #card .rec, #cardClose { display: none; }
     #card .row { margin: 0; flex: 0 0 auto; flex-wrap: nowrap; gap: 4px; } #cardDetail { display: inline-block; }
   }
   @media (max-width: 380px) { #flag { order: 9; margin-right: 0; } }
@@ -112,15 +118,16 @@
   <div id="statusRow"><span id="modeBadge" class="chip">載入中…</span><div id="hud" role="button" tabindex="0" aria-expanded="false" aria-label="狀態列（點一下展開）">載入中…</div></div>
 </div>
 <button id="tourChip" type="button" hidden>自動導覽中・點一下接手</button>
-<div id="card" hidden><div class="sum"></div><div class="detail"></div><div class="row"></div></div>
+<div id="card" hidden><div class="sum"></div><div class="detail"></div><div class="rec" hidden></div><div class="row"></div></div>
 <button id="peek" type="button" aria-label="開啟面板：統計／說明／存檔（點一下或往上拖）"><span id="peekText">▲ 面板</span></button>
 <aside id="side" aria-label="觀察面板">
   <div id="grip" role="button" tabindex="0" aria-label="面板把手（點一下收合，拖曳調整高度）"></div>
   <div id="tabs" role="tablist">
-    <button type="button" data-tab="ant" aria-pressed="false">個體</button><button type="button" data-tab="stats" aria-pressed="true">統計</button><button type="button" data-tab="legend" aria-pressed="false">資料分類</button><button type="button" data-tab="notsim" aria-pressed="false">尚未模擬</button><button type="button" data-tab="saves" aria-pressed="false">存檔／重開</button><button type="button" data-tab="perf" aria-pressed="false">效能</button>
+    <button type="button" data-tab="ant" aria-pressed="false">個體</button><button type="button" data-tab="stats" aria-pressed="true">統計</button><button type="button" data-tab="events" aria-pressed="false">事件</button><button type="button" data-tab="legend" aria-pressed="false">資料分類</button><button type="button" data-tab="notsim" aria-pressed="false">尚未模擬</button><button type="button" data-tab="saves" aria-pressed="false">存檔／重開</button><button type="button" data-tab="perf" aria-pressed="false">效能</button>
   </div>
   <div class="pane" id="pane-ant" hidden></div>
   <div class="pane" id="pane-stats"></div>
+  <div class="pane" id="pane-events" hidden></div>
   <div class="pane" id="pane-legend" hidden></div>
   <div class="pane" id="pane-notsim" hidden></div>
   <div class="pane" id="pane-saves" hidden>
