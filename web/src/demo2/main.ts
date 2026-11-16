@@ -31,8 +31,10 @@ import { NestGraph, parseLayout, type P3, type Pos } from './nest-graph.ts';
 import { ColonyStage, CLASS_LABEL, STAGE_DISCONTINUITIES, CATCHUP_MAX_S, type DrawnAnt } from './stage.ts';
 import { BLOCK, corridor3, ground, source3 } from './surface.ts';
 import { roster, colonyOf, CASTES, CASTE_LABEL, DEMO_BADGE, NATURAL_BADGE, DEMO_FOOD_PROPS, DEMO_ROUTINE_LABEL, type Individual, type Mode, type Roster } from './feed.ts';
-import { eggSpot, larvaSpot, majorSpot, pupaSpot, queenSpot } from './places.ts';
-import { newGait, stepGait, type Gait } from './gait.ts';
+import { eggSpot, larvaSpot, majorSpot, pupaSpot, queenPlace } from './places.ts';
+import type { Body } from './separate.ts';
+import { POSE_TARGET, gaitPhase, stanceAmp, strideCm, type PoseValues } from './gait.ts';
+import { CLOCK_WRAP_S } from './rig-params.ts';
 import { placeLabels, type LabelBox } from './labels.ts';
 import { MORPHS, RigLayer, rigMaterial, larvaGeometry, pupaGeometry, eggGeometry, type RigCaste } from './ant-rig.ts';
 import { rigNodeMaterial, type RigNodeMaterial } from './ant-rig-tsl.ts';
@@ -147,7 +149,8 @@ const uTime = { value: 0 };
 let rigMat: THREE.MeshStandardMaterial;
 const layers = {} as Record<'minorHi' | 'minorLo' | 'major' | 'queen', RigLayer>;
 let larvaMesh: THREE.InstancedMesh, pupaMesh: THREE.InstancedMesh, eggMesh: THREE.InstancedMesh, blobs: THREE.InstancedMesh, planLine: THREE.Line;
-const gaits = new Map<string, Gait>(), quats = new Map<string, THREE.Quaternion>();
+/** wall-clock seconds for scenery only (grass sway); everything about an ant follows simulated time */
+let sceneClock = 0;
 const M4 = new THREE.Matrix4(), Qa = new THREE.Quaternion(), Qb = new THREE.Quaternion(), V = new THREE.Vector3(), S = new THREE.Vector3(), C = new THREE.Color(), X = new THREE.Vector3(), Y = new THREE.Vector3(), Z = new THREE.Vector3();
 
 function basis(fx: number, fy: number, fz: number, ux: number, uy: number, uz: number, out: THREE.Quaternion): THREE.Quaternion {
@@ -158,6 +161,16 @@ function basis(fx: number, fy: number, fz: number, ux: number, uy: number, uz: n
 }
 /** how far the body is set below the walk line inside the nest so the feet touch the drawn floor (cm; display) */
 const NEST_FOOT_DROP = 0.3;
+/** what the viewer is told about the drawn motion (round 4): all of it is a display rule; evidence labels in docs/demo2.md §動作 */
+const MOTION_NOTES = [
+  '引擎沒有步行運動學、身體接觸與觸角接觸（整合矩陣 M21、M22：尚未模擬）。六足步態、轉向、觸角擺動、互相避讓、休息時的排列，全部是畫面規則，不是模擬結果，也不回寫引擎。',
+  '步態：交替三腳步態，著地的腳不動、身體往前；步伐相位只跟「畫面上走過的距離」走，站著就不踏步。步長每隻略有不同（固定種子）。',
+  '轉向：身體不會瞬間掉頭；大角度先原地轉身再走，轉彎與岔路會放慢。引擎時刻（出發、抵達）不變。',
+  '觸角：行走時左右交替探索，休息時靜止。只有引擎有事件的接觸（交哺、接觸或餵食幼蟲）才畫成觸角朝向對方（姿勢是畫面演出；引擎記錄的是事件，不是觸角接觸）。兩隻只是在畫面上錯身而過時，不畫任何觸角接觸姿勢。',
+  '避讓：兩隻螞蟻的身體不畫在一起——巢內只沿剖面深度錯開，不會被推進土裡；休息中的螞蟻不被推動。巢口一次只容一隻通過的瞬間仍可能重疊。',
+  '休息與堆放：休息位置、朝向、幼蟲／蛹／卵堆都是固定種子的不規則排列（展示假設），部分休息位置在巢室後壁上。',
+  '同一個世界時刻，不論畫面更新率或播放速度，畫出來的姿勢相同；暫停時完全靜止。',
+];
 
 function buildMeshes() {
   rigMat = rigNode ? rigNode.material as unknown as THREE.MeshStandardMaterial : rigMaterial(uTime); // same rig, GLSL or TSL (rig-params.ts)
@@ -316,13 +329,16 @@ const frameIv: number[] = [], cpuMs: number[] = [];
 let renderOn = true;
 let lastNow = performance.now(), lowFpsSince = 0;
 
-function place(layer: RigLayer, i: number, p: P3, qt: THREE.Quaternion, scale: number, color: THREE.Color, g: Gait, crop: number, seed: number) {
+/** one rig instance. Everything is a value of THIS simulated instant (stage.ts / gait.ts): gait phase from the odometer,
+ *  stance amplitude from the stride, pose values from the display pose — nothing is integrated per rendered frame. */
+function place(layer: RigLayer, i: number, p: P3, qt: THREE.Quaternion, scale: number, color: THREE.Color, phase: number, walk: number, amp: number, pv: PoseValues, crop: number, seed: number) {
   M4.compose(V.set(p.x, p.y, p.z), qt, S.setScalar(scale)); layer.mesh.setMatrixAt(i, M4); layer.mesh.setColorAt(i, color);
-  layer.anim.setXYZW(i, g.phase, g.walk, seed, g.act); layer.pose.setXYZW(i, crop, g.pitch, g.antUp, g.crouch); layer.xf.setXYZW(i, qt.x, qt.y, qt.z, qt.w); layer.scl.setX(i, scale);
+  layer.anim.setXYZW(i, phase % (Math.PI * 4), walk, seed, pv.act); layer.pose.setXYZW(i, crop, pv.pitch, pv.antUp, pv.crouch); layer.xf.setXYZW(i, qt.x, qt.y, qt.z, qt.w); layer.scl.setX(i, scale);
+  layer.more.setXYZW(i, pv.legs, pv.scan, pv.conv, amp);
 }
 const floorPoint = (pos: Pos): P3 => { const p = graph.point(pos); return { x: p.x, y: p.y - NEST_FOOT_DROP, z: p.z }; };
 
-function drawStatics(dtAnim: number) {
+function drawStatics() {
   if (!frame || !rost) return;
   const L = antLen(), sc = L / MODEL_LEN, larvae = rost.individuals.filter((x) => x.caste === 'larva'), out: StaticDraw[] = [];
   const brood = graph.chambersOf('brood')[0].id, qc = graph.chambersOf('queen')[0].id, pc = graph.chambersOf('pupa')[0].id;
@@ -336,15 +352,17 @@ function drawStatics(dtAnim: number) {
   // queens, majors, eggs, pupae: ENGINE individuals when the world supplies them (candidate world; the engine has no
   // nest coordinates and they do not move: static in their chamber, in-place micro-motion only), otherwise — 展示情境
   // only — labelled demo individuals (示範資料)
-  let nq = 0, nm = 0, ne = 0, np = 0;
+  let nq = 0, nm = 0, ne = 0, np = 0; const bodies: Body[] = [];
   const demo = rost.individuals.filter((x) => x.caste !== 'minor' && x.caste !== 'larva'), count = (c: string) => demo.filter((x) => x.caste === c).length;
   for (const d of demo) {
-    const g = gaits.get(d.id) ?? newGait(); gaits.set(d.id, g); const seed = (hash32(d.id) % 9973) / 9973, sel = d.id === selected;
+    const seed = (hash32(d.id) % 9973) / 9973, sel = d.id === selected;
     if (d.caste === 'queen' || d.caste === 'major') {
-      const spot = d.caste === 'queen' ? { pos: queenSpot(graph, d.index, count('queen'), L), faceEast: d.index % 2 === 0 } : majorSpot(graph, d.index, demoSeed, L), p = floorPoint(spot.pos);
-      stepGait(g, { ...p, moving: false, pose: d.caste === 'queen' ? 'rest' : 'stand' }, dtAnim, L); if (d.caste === 'queen') g.crouch = 0.2;
-      const layer = d.caste === 'queen' ? layers.queen : layers.major, tone = d.caste === 'queen' ? 0.92 : 0.98;
-      place(layer, d.caste === 'queen' ? nq++ : nm++, p, basis(spot.faceEast ? 1 : -1, 0, 0.12 * (seed - 0.5), 0, 1, 0, Qa), sc * MORPHS[d.caste as RigCaste].scale, sel ? C.setRGB(1.4, 1.25, 0.8) : C.setRGB(tone, tone * 0.97, tone * 0.94), g, d.caste === 'queen' ? 0.6 : 0, seed);
+      const spot = d.caste === 'queen' ? queenPlace(graph, d.index, count('queen'), L) : majorSpot(graph, d.index, demoSeed, L), p = floorPoint(spot.pos), fx = Math.cos(spot.yaw), fz = Math.sin(spot.yaw);
+      const layer = d.caste === 'queen' ? layers.queen : layers.major, tone = d.caste === 'queen' ? 0.92 : 0.98, k = MORPHS[d.caste as RigCaste].scale;
+      // static engine individuals (the engine has no place or movement for them): standing still, in-place micro-motion only
+      const pv = d.caste === 'queen' ? { ...POSE_TARGET.rest, crouch: 0.2, legs: 1 } : POSE_TARGET.stand;
+      place(layer, d.caste === 'queen' ? nq++ : nm++, p, basis(fx, 0, fz, 0, 1, 0, Qa), sc * k, sel ? C.setRGB(1.4, 1.25, 0.8) : C.setRGB(tone, tone * 0.97, tone * 0.94), gaitPhase(d.id, 0, L * k), 0, stanceAmp(strideCm(d.id, L * k), L * k), pv, d.caste === 'queen' ? 0.6 : 0, seed);
+      const gp = graph.point(spot.pos); bodies.push({ id: d.id, realm: 'nest', x: gp.x, y: gp.y, z: gp.z, fx, fy: 0, fz, len: L * k, mob: 0, zLo: gp.z, zHi: gp.z, partner: null });
       out.push({ ind: d, p: { x: p.x, y: p.y + L * 0.3, z: p.z }, chamber: graph.edges[spot.pos.edge].chamber ?? '' });
     } else if (d.caste === 'egg') {
       const p = floorPoint(eggSpot(graph, d.index, demoSeed, L)); M4.compose(V.set(p.x, p.y + L * 0.04 + (d.index % 3) * L * 0.035, p.z), Qa.setFromAxisAngle(Y.set(0, 1, 0), seed * 6.28), S.setScalar(L * 0.2)); eggMesh.setMatrixAt(ne, M4); eggMesh.setColorAt(ne++, sel ? C.setRGB(1.3, 1.2, 0.7) : C.setRGB(0.97, 0.96, 0.9)); out.push({ ind: d, p, chamber: qc });
@@ -355,7 +373,7 @@ function drawStatics(dtAnim: number) {
   layers.queen.commit(nq); layers.major.commit(nm);
   eggMesh.count = ne; eggMesh.instanceMatrix.needsUpdate = true; if (eggMesh.instanceColor) eggMesh.instanceColor.needsUpdate = true;
   pupaMesh.count = np; pupaMesh.instanceMatrix.needsUpdate = true; if (pupaMesh.instanceColor) pupaMesh.instanceColor.needsUpdate = true;
-  statics = out;
+  statics = out; stage.setStatics(bodies);
 }
 
 function tick(now: number) {
@@ -363,24 +381,22 @@ function tick(now: number) {
   const c0 = performance.now(), dtAnim = running ? dtReal : 0;
   if (frame && vis) {
     const run = !!pacing?.running; tNow = displayTime(frame.t_sim, run, pacing?.speed ?? speed, performance.now() - frameAt, lastT); lastT = run ? tNow : null;
-    uTime.value += dtAnim; rigNode?.setTime(uTime.value); // micro-motion clock: frozen while the world is paused
+    // micro-motion clock = SIMULATED time (wrapped): the same world instant draws the same pose at any frame rate or speed
+    uTime.value = tNow % CLOCK_WRAP_S; rigNode?.setTime(uTime.value); sceneClock += dtAnim;
     drawn = stage.update(frame, vis, tNow, dtAnim);
     const L = antLen(), sc = L / MODEL_LEN, pxPerCm = ui.canvas.clientHeight / 2 / Math.tan((camera.fov * Math.PI) / 360);
     let nh = 0, nl = 0, nb = 0;
     for (const a of drawn) {
-      let g = gaits.get(a.id); if (!g) { g = newGait(); gaits.set(a.id, g); }
-      stepGait(g, a, dtAnim, L);
       const depth = a.realm === 'nest' ? Math.min(1, Math.max(0, (ground(0, 0) - a.y) / 2)) * NEST_FOOT_DROP : 0, p = { x: a.x - a.ux * depth, y: a.y - a.uy * depth, z: a.z - a.uz * depth };
-      const want = basis(a.fx, a.fy, a.fz, a.ux, a.uy, a.uz, Qb); let qt = quats.get(a.id);
-      if (!qt || g.cut) { qt = want.clone(); quats.set(a.id, qt); } else if (dtAnim > 0) qt.slerp(want, 1 - Math.exp(-dtAnim * 11));
+      const qt = basis(a.fx, a.fy, a.fz, a.ux, a.uy, a.uz, Qb); // the director's frame as it is: turning is bounded there, in simulated time
       const dist = camera.position.distanceTo(V.set(p.x, p.y, p.z)), px = (L / Math.max(0.01, dist)) * pxPerCm, sel = a.id === selected, hi = px > (quality === 'low' ? 34 : 18) || sel;
       const h = hash32(a.id), tone = 0.9 + ((h % 1000) / 1000) * 0.22;
       if (sel) C.setRGB(1.4, 1.25, 0.78); else C.setRGB(tone, tone * (0.97 + ((h >>> 10) % 100) / 2000), tone * 0.95);
-      place(hi ? layers.minorHi : layers.minorLo, hi ? nh++ : nl++, p, qt, sc, C, g, Math.max(0, Math.min(1, a.crop)), (h % 9973) / 9973);
+      place(hi ? layers.minorHi : layers.minorLo, hi ? nh++ : nl++, p, qt, sc, C, a.phase, a.walk, a.amp, a.pv, Math.max(0, Math.min(1, a.crop)), (h % 9973) / 9973);
       if (a.realm === 'surface') { M4.compose(V.set(a.x, a.y + 0.05, a.z), Qa.identity(), S.set(L * 0.95, 1, L * 0.6)); blobs.setMatrixAt(nb++, M4); }
     }
     layers.minorHi.commit(nh); layers.minorLo.commit(nl); blobs.count = nb; blobs.instanceMatrix.needsUpdate = true;
-    drawStatics(dtAnim);
+    drawStatics();
     // the planned display route of the selected worker inside the nest (display)
     const plan = selected ? stage.plannedRoute(selected, tNow) : [];
     planLine.visible = plan.length > 1; if (planLine.visible) { planLine.geometry.dispose(); planLine.geometry = new THREE.BufferGeometry().setFromPoints(plan.map((p) => new THREE.Vector3(p.x, p.y + 0.25, p.z + 0.1))); planLine.computeLineDistances(); }
@@ -394,7 +410,7 @@ function tick(now: number) {
       // focus plane: the followed ant, else the camera target (distance along the view direction)
       const fa = following ? drawn.find((x) => x.id === following) : null, fp = fa ? V.set(fa.x, fa.y, fa.z) : V.copy(controls.target);
       const focus = Math.max(camera.near * 2, fp.sub(camera.position).dot(camera.getWorldDirection(X)));
-      if (frame && world) world.setAtmosphere(frame.env.light, Y.copy(sun.position).sub(sunTarget.position).normalize(), sun.color, uTime.value);
+      if (frame && world) world.setAtmosphere(frame.env.light, Y.copy(sun.position).sub(sunTarget.position).normalize(), sun.color, sceneClock);
       hd2d!.render(scene, camera, focus, frame?.env.light ?? 'day', fx);
     } else if (rendererKind === 'webgl2') { renderer.setRenderTarget(null); renderer.render(scene, camera); }
     else try { renderer.render(scene, camera); } catch (e) { webgpuLost((e as Error).message); } // a lost WebGPU device must not stop the page
@@ -589,6 +605,7 @@ function renderLegend() {
 <h2>引擎事件的提示標籤（${CUE_MARK}）</h2><div class="muted">出現在個體或食源旁、以 ${CUE_MARK} 開頭的綠色標籤是<b>引擎事件</b>（例如「食源是空的」「取食 0.05 份」「收到 0.28 份」「被喚醒」）：事件的對象、時刻與量來自引擎；標籤飄在哪裡、停留多久是<b>畫面</b>。標籤有數量上限，超過時只少畫標籤；完整計數與清單在「事件」分頁。引擎的「接觸」是機率抽樣，不是身體接觸；被標示的雙方在畫面上不一定相鄰。</div>
 <h2>沒有畫的東西</h2><ul><li>費洛蒙：尚未模擬，畫面不畫任何氣味路徑；黃色虛線只是「顯示路線」（長度＝引擎路線長度，方向示意）。</li><li>固體食物搬運、其他食物種類（花蜜、昆蟲屍體）：引擎尚未模擬；只在展示情境當不可取食的道具。</li><li>身體碰撞與巢口容量：尚未模擬；畫面上的錯位只是顯示。</li></ul>
 <h2>已列出的畫面跳位</h2><ul>${STAGE_DISCONTINUITIES.map((d) => `<li>${esc(d.label_zh)}</li>`).join('')}</ul>
+<h2>動作都是畫面，不是引擎</h2><ul>${MOTION_NOTES.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
 <h2>巢體幾何的來源</h2><div class="muted">${esc(prov.what_is_assumed_zh)}<br>${esc(prov.scale_note_zh)}<br>${esc(prov.literature_direction_zh)}</div>
 <h2>階級外形</h2><div class="muted">${Object.values(MORPHS).map((m) => esc(m.note_zh)).join('；')}。幼蟲、蛹、卵的外形為一般形態示意。</div>`;
 }
@@ -698,7 +715,7 @@ function setMode(m: Mode) {
 }
 
 // ---------- world lifecycle (Worker scheduling + SAVE-2 session) ----------
-function onWorldStart() { frame = null; pacing = null; lastT = null; drawn = []; statics = []; gaits.clear(); quats.clear(); stage?.reset(antLen()); eventsSeen = 0; ledger.reset(); ownHist.reset(); observed = null; evNow = ''; disclosure = null; selected = null; following = null; userSel = false; endTour(); tourCues.length = 0; tourLog.length = 0; tourLast = null; hideCard(); }
+function onWorldStart() { frame = null; pacing = null; lastT = null; drawn = []; statics = []; stage?.reset(antLen()); eventsSeen = 0; ledger.reset(); ownHist.reset(); observed = null; evNow = ''; disclosure = null; selected = null; following = null; userSel = false; endTour(); tourCues.length = 0; tourLog.length = 0; tourLast = null; hideCard(); }
 async function afterWorldReady(startAt: number | null) {
   if (startAt !== null && (frame?.t_sim ?? 0) < startAt) await client.stepUntil(startAt);
   await new Promise<void>((r) => { const w = () => (frame ? r() : setTimeout(w, 20)); w(); });
@@ -899,7 +916,7 @@ ui.modeBtn.onclick = () => setMode(mode === 'demo' ? 'natural' : 'demo');
 ui.followBtn.onclick = () => { if (following) setFollow(null); else { const id = selected && drawn.some((a) => a.id === selected) ? selected : interestingAnt(); if (id) setFollow(id); } };
 ui.saveBtn.onclick = async () => { const r = await session?.request('manual'); renderSaveStatus(); toast(r && r.ok ? '已儲存（引擎快照；示範資料與鏡頭不存）' : '儲存未完成'); void refreshSaveList(); };
 ui.restartBtn.onclick = () => { if (tempMode || !session) { location.search = `?seed=${encodeURIComponent(ui.seedIn.value || String(DEFAULT_SEED))}`; return; } void newWorld(ui.seedIn.value || String(DEFAULT_SEED)); };
-ui.resetDemoBtn.onclick = () => { demoSeed = DEFAULT_SEED; for (const k of [...gaits.keys()]) if (k.startsWith('demo-')) gaits.delete(k); setMode('demo'); toast('展示情境已重設（示範資料回到固定種子的初始排列；引擎世界不受影響）'); };
+ui.resetDemoBtn.onclick = () => { demoSeed = DEFAULT_SEED; setMode('demo'); toast('展示情境已重設（示範資料回到固定種子的初始排列；引擎世界不受影響）'); };
 ui.importBtn.onclick = () => ui.importFile.click();
 ui.importFile.onchange = async () => { const f = ui.importFile.files?.[0]; ui.importFile.value = ''; if (!f || !session) return; const text = await f.text(), r = await session.store.importWorld(text, await session.runtimeForImport(text)); toast(r.ok ? '已匯入：可在清單中載入' : `匯入失敗（${r.code}）：${r.message}`, 6000); void refreshSaveList(); };
 let down: { x: number; y: number; t: number } | null = null;
@@ -914,7 +931,7 @@ const hooks: Record<string, unknown> = {
   ready: false, three: THREE.REVISION,
   backend: () => backend, gl: () => glInfo,
   state: () => ({ running, speed, mode, view, quality, selected, following, mag, t: tNow, frame_t: frame?.t_sim ?? null, seed: frame?.seed ?? null, world_id: frame?.world_id ?? null, temp: tempMode, ants: drawn.length, hi: layers.minorHi?.mesh.count ?? 0, lo: layers.minorLo?.mesh.count ?? 0, queens: layers.queen?.mesh.count ?? 0, majors: layers.major?.mesh.count ?? 0, eggs: eggMesh?.count ?? 0, pupae: pupaMesh?.count ?? 0, larvae: larvaMesh?.count ?? 0, uTime: uTime.value, cam: camera.position.toArray(), target: controls?.target.toArray(), events: eventsSeen, stats: { ...stage.stats }, save: saveUi, calls: rInfo().calls, triangles: rInfo().triangles, renderer: rendererKind, rendererNote, followed: followedView !== null }),
-  ants: () => drawn.map((a) => ({ ...a, phase: gaits.get(a.id)?.phase ?? null, walk: gaits.get(a.id)?.walk ?? null })),
+  ants: () => drawn.map((a) => ({ ...a })),
   roster: () => rost, statics: () => statics.map((s) => ({ id: s.ind.id, caste: s.ind.caste, source: s.ind.source, ...s.p })),
   frame: () => frame, sdf: (x: number, y: number) => graph.sdf(x, y), faceZ: () => graph.faceZ,
   screenOf: (id: string) => { const a = drawn.find((x) => x.id === id) ?? statics.map((s) => ({ id: s.ind.id, ...s.p })).find((x) => x.id === id); if (!a) return null; const p = new THREE.Vector3(a.x, a.y, a.z).project(camera); return { x: ((p.x + 1) / 2) * ui.canvas.clientWidth, y: ((1 - p.y) / 2) * ui.canvas.clientHeight, z: p.z }; },
