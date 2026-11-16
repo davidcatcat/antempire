@@ -248,19 +248,22 @@ function stepCamera(dt: number) {
     }
   }
   // keep the view on the block
-  const rest = !tween && !following && !userBusy; if (rest) { restPos.copy(camera.position); restTgt.copy(controls.target); restQuat.copy(camera.quaternion); }
   controls.target.x = Math.max(BLOCK.x0, Math.min(BLOCK.x1, controls.target.x)); controls.target.z = Math.max(BLOCK.z0, Math.min(BLOCK.z1 + 2, controls.target.z)); controls.target.y = Math.max(BLOCK.bottom - 120, Math.min(40, controls.target.y));
-  controls.update();
   // A camera at rest stays bit-identical. OrbitControls rebuilds position and target from spherical coordinates on
-  // every update, which moves the last floating-point digit each frame (measured: about 1e-14 cm per frame). When
-  // nothing is moving the camera and the update changed it by less than REST_EPS_CM, the values are put back.
-  // Anything larger — the damping tail of a drag or a zoom, the clamp above — is real motion and is kept.
-  if (rest && camera.position.distanceToSquared(restPos) < REST_EPS_CM * REST_EPS_CM && controls.target.distanceToSquared(restTgt) < REST_EPS_CM * REST_EPS_CM) { camera.position.copy(restPos); controls.target.copy(restTgt); camera.quaternion.copy(restQuat); }
+  // every update(), which moves the last floating-point digit each frame (measured: about 1e-14 cm per frame). The
+  // guard covers the update() call ALONE: the pose is taken immediately before it — after every view transition,
+  // follow step and clamp of this frame — so no move made by the page can be undone. When nothing is moving the camera
+  // and update() itself changed it by less than REST_EPS_CM, position and target are put back and the orientation is
+  // derived from them again (never from a saved orientation: that one would predate this frame's moves). Anything
+  // larger — the damping tail of a drag or a zoom — is real motion and is kept.
+  const rest = !tween && !following && !userBusy; restPos.copy(camera.position); restTgt.copy(controls.target);
+  controls.update();
+  if (rest && camera.position.distanceToSquared(restPos) < REST_EPS_CM * REST_EPS_CM && controls.target.distanceToSquared(restTgt) < REST_EPS_CM * REST_EPS_CM) { camera.position.copy(restPos); controls.target.copy(restTgt); camera.lookAt(controls.target); }
 }
-/** below this change per frame (cm) a camera nobody is moving is at rest: five orders of magnitude above the float
+/** below this change per update (cm) a camera nobody is moving is at rest: five orders of magnitude above the float
  *  noise of an update, and far below anything visible (at the closest zoom one pixel is about 0.003 cm) */
 const REST_EPS_CM = 1e-9;
-const restPos = new THREE.Vector3(), restTgt = new THREE.Vector3(), restQuat = new THREE.Quaternion();
+const restPos = new THREE.Vector3(), restTgt = new THREE.Vector3();
 let followRealm: 'surface' | 'nest' | null = null;
 /** the worker the Worker was last asked to report with each frame (observation only); 自動導覽 never changes it */
 let observed: string | null = null;
@@ -883,6 +886,8 @@ const hooks: Record<string, unknown> = {
     g2.putImageData(img, 0, 0); return { url: c.toDataURL('image/jpeg', q2), w, h, lit_fraction: lit / (w * h) };
   },
   nestOnScreen: () => nestOnScreen(),
+  /** angle (rad) between the camera's forward axis and the line from the camera to its target: 0 when the orientation belongs to the pose */
+  camAim: () => { const f = camera.getWorldDirection(new THREE.Vector3()), d = controls.target.clone().sub(camera.position); return Math.atan2(f.clone().cross(d).length(), f.dot(d)); }, // atan2 of cross and dot: accurate near 0 (acos is not)
   /** phone layout: the sheet state and the part of the page height the scene keeps (below the top bar, above the sheet) */
   layout: () => { const top = ui.top.getBoundingClientRect().bottom; return { narrow: narrow(), sheet, sheet_px: sheetPx(), top_px: top, scene_fraction: (innerHeight - top - sheetPx()) / innerHeight, hud_open: hudOpen }; },
   setSheet: (s: Sheet) => { if (s === 'peek') openSide(null); else { setSheet(s); openSide(openTabName()); } },

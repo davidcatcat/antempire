@@ -16,6 +16,8 @@
  *    its chip, takes overview shots and follows a worker chosen from ENGINE states / events; one tap hands the camera back;
  *  - the camera never changes the world (#144): the complete log of messages posted to the Worker is IDENTICAL with
  *    the tour on and off, and the two worlds are identical at the same simulation instant;
+ *  - every view switch (instant and animated) lands on its framing and the camera looks at its target; so do the
+ *    takeover, follow, sheet and resize states (the camera-at-rest guard must never undo or distort a move);
  *  - desktop 1440×900 and a landscape phone do not regress (all controls in the bar, no 更多 button, floating card).
  * Writes demo2-ui-*.jpg (and, with DEMO2_VIDEO=1, demo2-ui-pixel7-idle-tour.webm) into <outDir>; prints a JSON report.
  * Software rendering under automation: nothing here is a device performance result.
@@ -47,6 +49,30 @@ const { chromium, devices } = require('playwright');
     return { small, flag: chip('#flag'), mode: chip('#modeBadge'), noScroll: document.documentElement.scrollWidth <= innerWidth && document.body.scrollWidth <= innerWidth, layout: window.__demo2.layout() };
   });
   const marks = (a, mode = '自然模式') => !!a.flag && a.flag.includes('非正式實驗世界') && !!a.mode && a.mode.includes(mode);
+  /** every view switch lands on its framing, and the camera's orientation belongs to its pose (the rest guard of
+   *  main.ts must never undo or distort a move): the instant switch is the reference, the animated one must end on it */
+  const AIM_RAD = 1e-9;
+  const pose = (page) => page.evaluate(() => { const D = window.__demo2, s = D.state(); return { view: s.view, cam: s.cam, target: s.target, aim: D.camAim(), box: D.nestOnScreen().box, labels: D.labelRects().length }; });
+  const framing = async (page, tag, tap) => {
+    const ref = {}, got = {}, d3 = (p, q2) => Math.hypot(p[0] - q2[0], p[1] - q2[1], p[2] - q2[2]);
+    for (const v of ['surface', 'under', 'full']) { await page.evaluate((x) => window.__demo2.setView(x, true), v); await page.waitForTimeout(700); ref[v] = await pose(page); }
+    for (const [v, id] of [['surface', '#viewSurface'], ['under', '#viewUnder'], ['full', '#viewFull']]) {
+      if (tap) await page.tap(id); else await page.click(id);
+      await page.waitForFunction(({ c, v2 }) => { const s = window.__demo2.state(); return s.view === v2 && Math.hypot(s.cam[0] - c[0], s.cam[1] - c[1], s.cam[2] - c[2]) < 1e-6; }, { c: ref[v].cam, v2: v }, { timeout: 30000 }).catch(() => {});
+      await page.waitForTimeout(700); got[v] = await pose(page);
+    }
+    const bad = [];
+    for (const v of ['surface', 'under', 'full']) {
+      const r = ref[v], g = got[v];
+      if (!(r.aim < AIM_RAD)) bad.push(`${v}: instant switch aims ${r.aim.toExponential(1)} rad off its target`);
+      if (!(g.aim < AIM_RAD)) bad.push(`${v}: animated switch aims ${g.aim.toExponential(1)} rad off its target`);
+      if (!(g.view === v && d3(g.cam, r.cam) < 1e-9 && d3(g.target, r.target) < 1e-9)) bad.push(`${v}: animated switch did not end on the view's pose`);
+      if (!g.box.every((x, i) => Math.abs(x - r.box[i]) <= 1)) bad.push(`${v}: nest framed at ${JSON.stringify(g.box)} instead of ${JSON.stringify(r.box)}`);
+      if (g.labels !== r.labels || (v !== 'surface' && g.labels < 2)) bad.push(`${v}: ${g.labels} labels (instant switch: ${r.labels})`);
+    }
+    check(bad.length === 0, `${tag}: every view switch (地表／地下／完整, instant and animated) lands on its framing and the camera looks at its target (${JSON.stringify(Object.fromEntries(Object.entries(got).map(([k, g]) => [k, g.box])))}) ${JSON.stringify(bad)}`);
+  };
+  const aimed = async (page, what, tag) => { const a = await page.evaluate(() => window.__demo2.camAim()); check(a < AIM_RAD, `${tag}: ${what} — the camera looks at its target (${a.toExponential(1)} rad off)`); };
   const labelsUnder = (page) => page.evaluate(() => { const D = window.__demo2, L = D.layout(), limit = innerHeight - L.sheet_px + 0.5, lg = document.querySelector('#lblLegend'), lb = lg.hidden ? null : lg.getBoundingClientRect(); return { under: D.labelRects().filter((x) => x.top + x.h > limit).map((x) => x.text), legendUnder: !!lb && lb.bottom > limit, n: D.labelRects().length }; });
 
   // ---------- Pixel 7, portrait ----------
@@ -84,6 +110,7 @@ const { chromium, devices } = require('playwright');
     await page.tap('#moreBtn'); await page.waitForTimeout(200); await page.touchscreen.tap(60, vp.height * 0.6); await page.waitForTimeout(300);
     check(!(await page.evaluate(() => document.body.classList.contains('more-open'))), 'pixel7: a tap outside closes the 更多 menu');
 
+    await framing(page, 'pixel7', true);
     // individual observation: tap → compact card (跟隨, 詳情) → stepper → details in the sheet → tap empty space dismisses
     await page.evaluate(() => window.__demo2.setRunning(false)); await page.waitForTimeout(400);
     const target = await page.evaluate(() => { for (const x of window.__demo2.ants().filter((y) => y.realm === 'nest' && !y.moving)) { const p = window.__demo2.screenOf(x.id); if (p && p.x > 60 && p.x < innerWidth - 60 && p.y > 150 && p.y < innerHeight - 140) return { id: x.id, ...p }; } return null; });
@@ -105,6 +132,7 @@ const { chromium, devices } = require('playwright');
     check(f2.s.following && f2.s.following !== card.sel && f2.s.selected === f2.s.following && f2.sum.includes(f2.s.following) && f2.d < 3 && f3.following === card.sel, `pixel7: 下一隻 moves the follow to ${f2.s.following} (camera on it), 上一隻 back to ${f3.following}`);
     a = await audit(page); check(a.small.length === 0 && a.noScroll, `pixel7: following — stepper and buttons ≥ 44 px, no horizontal scroll ${JSON.stringify(a.small)}`);
     await shot(page, 'demo2-ui-pixel7-follow');
+    await aimed(page, 'following, after the stepper', 'pixel7');
     await page.tap('#cardDetail'); await page.waitForTimeout(600);
     const det = await page.evaluate(() => { const p = document.querySelector('#pane-ant'), r = p.getBoundingClientRect(); return { L: window.__demo2.layout(), vis: !p.hidden && r.height > 40, t: p.textContent, tab: document.querySelector('#tabs button[data-tab="ant"]').getAttribute('aria-pressed') }; });
     check(det.L.sheet === 'half' && det.vis && det.tab === 'true' && ['引擎個體', '引擎狀態', '展示假設', '嗉囊'].every((s) => det.t.includes(s)), 'pixel7: 詳情 opens the full card (data-category labels) in the sheet\'s 個體 tab');
@@ -128,16 +156,19 @@ const { chromium, devices } = require('playwright');
     check(half.L.sheet === 'half' && half.stats > 100 && half.side.bottom >= vp.height - 1 && half.side.width >= vp.width - 1 && Math.abs(half.L.sheet_px - half.side.height) < 1.5 && half.fr < fr0 - 200 && half.soil && /^rgb\(/.test(half.bg), `pixel7: a tap on the pill opens the sheet half (${half.L.sheet_px.toFixed(0)} px, opaque); the scene is re-framed into the free ${half.fr.toFixed(0)} px`);
     check(lu.under.length === 0 && !lu.legendUnder && lu.n >= 2 && marks(a) && a.small.length === 0 && a.noScroll, `pixel7: sheet half — ${lu.n} labels, none under the sheet; markings visible; controls ≥ 44 px ${JSON.stringify(a.small.concat(lu.under))}`);
     await shot(page, 'demo2-ui-pixel7-sheet-half');
+    await aimed(page, 'sheet half (scene re-framed)', 'pixel7');
     const drag = async (dy) => { const g = await page.evaluate(() => { const r = document.querySelector('#grip').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + 6 }; }); const cdp = await ctx.newCDPSession(page), pt = (y) => [{ x: g.x, y, id: 1 }]; await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: pt(g.y) }); for (let i = 1; i <= 8; i++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: pt(g.y + (dy * i) / 8) }); await page.waitForTimeout(20); } await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await cdp.detach(); await page.waitForTimeout(500); };
     await drag(-320);
     a = await audit(page); lu = await labelsUnder(page);
     check(a.layout.sheet === 'full' && a.layout.sheet_px > vp.height * 0.8 && marks(a) && lu.under.length === 0 && a.noScroll, `pixel7: dragging the grip up opens the sheet full (${a.layout.sheet_px.toFixed(0)} px); the bar and both markings stay visible; no label shows through ${JSON.stringify([a.layout.sheet, a.flag, a.mode, a.noScroll, lu])}`);
     await shot(page, 'demo2-ui-pixel7-sheet-full');
+    await aimed(page, 'sheet full', 'pixel7');
     for (const t of ['legend', 'notsim', 'saves', 'perf']) { await page.tap(`#tabs button[data-tab="${t}"]`); await page.waitForTimeout(250); const s = await audit(page); check(s.small.length === 0 && s.noScroll, `pixel7: sheet tab ${t} — controls ≥ 44 px, no horizontal scroll ${JSON.stringify(s.small)}`); }
     await page.tap('#tabs button[data-tab="stats"]');
     await drag(700);
     a = await audit(page);
     check(a.layout.sheet === 'peek' && a.layout.sheet_px === 0 && Math.abs((await page.evaluate(() => window.__demo2.nestOnScreen().h)) - fr0) < 1, 'pixel7: dragging the grip down closes the sheet; the scene gets the whole height back');
+    await aimed(page, 'sheet closed again', 'pixel7');
     await page.tap('#moreBtn'); await page.tap('#perfBtn'); await page.waitForTimeout(400);
     const pf = await page.evaluate(() => ({ L: window.__demo2.layout(), t: document.querySelector('#pane-perf').textContent, hidden: document.querySelector('#pane-perf').hidden }));
     check(pf.L.sheet === 'half' && !pf.hidden && pf.t.includes('畫面風格') && pf.t.includes('渲染器') && pf.t.includes('WebGL 2'), 'pixel7: 更多 → 畫面風格／渲染器／效能 opens that tab (style and renderer toggles live in the sheet)');
@@ -184,7 +215,7 @@ const { chromium, devices } = require('playwright');
       if (tag === 'pixel7') await page.touchscreen.tap(cp.x, cp.y); else await page.mouse.click(cp.x, cp.y);
       taps++;
       stop = await page.evaluate(async () => {
-        const D = window.__demo2, snap = () => ({ t: D.tour(), s: D.state(), chip: document.querySelector('#tourChip').hidden });
+        const D = window.__demo2, snap = () => ({ t: D.tour(), s: D.state(), aim: D.camAim(), chip: document.querySelector('#tourChip').hidden });
         // hold for up to 900 ms of REAL time, but never past the idle window (timers run late on a loaded machine:
         // the elapsed time is measured, not assumed)
         const a = snap(), t0 = performance.now(), room = () => a.t.idle_s - D.tour().idle_for_s;
@@ -200,10 +231,10 @@ const { chromium, devices } = require('playwright');
     const { stop, taps } = await takeOver('follow');
     const sa = stop.a, sb = stop.b;
     check(!!sb && sb.t.idle_for_s < sb.t.idle_s && stop.hold >= 300 && stop.frames >= 3, `tour ${tag}: both samples after the tap were taken within the idle time, ${stop.frames} frames apart (${sb ? sb.t.idle_for_s.toFixed(2) : '—'} s of ${sa.t.idle_s} s; ${taps} tap${taps > 1 ? 's' : ''})`);
-    check(!!sb && !sa.t.active && sa.chip && sa.s.following === null && sa.s.running && !sb.t.active && sb.chip && sb.s.following === null && sb.s.running && sb.s.frame_t >= sa.s.frame_t && still(sb.s.cam, sa.s.cam) && still(sb.s.target, sa.s.target), `tour ${tag}: one tap stops the tour (chip gone, the camera stays exactly where it is for the next ${Math.round(stop.hold)} ms — moved ${sb ? moved(sb.s, sa.s).toExponential(1) : '?'} cm — the world keeps running) ${JSON.stringify(sb ? { a: [sa.t.active, sa.chip, sa.s.following, sa.s.running, sa.s.cam, sa.s.target, sa.s.frame_t], b: [sb.t.active, sb.chip, sb.s.following, sb.s.running, sb.s.cam, sb.s.target, sb.s.frame_t] } : null)}`);
+    check(!!sb && !sa.t.active && sa.chip && sa.s.following === null && sa.s.running && !sb.t.active && sb.chip && sb.s.following === null && sb.s.running && sb.s.frame_t >= sa.s.frame_t && still(sb.s.cam, sa.s.cam) && still(sb.s.target, sa.s.target) && sa.aim < AIM_RAD && sb.aim < AIM_RAD, `tour ${tag}: one tap stops the tour (chip gone, the camera stays exactly where it is for the next ${Math.round(stop.hold)} ms — moved ${sb ? moved(sb.s, sa.s).toExponential(1) : '?'} cm — the world keeps running) ${JSON.stringify(sb ? { a: [sa.t.active, sa.chip, sa.s.following, sa.s.running, sa.s.cam, sa.s.target, sa.s.frame_t], b: [sb.t.active, sb.chip, sb.s.following, sb.s.running, sb.s.cam, sb.s.target, sb.s.frame_t] } : null)}`);
     // … and the same while an overview move is under way (the tour starts again after the idle time; its first shot is an overview)
     const v = await takeOver('view'), va = v.stop.a, vb = v.stop.b;
-    check(!!vb && v.moving && v.moving.moved && vb.t.idle_for_s < vb.t.idle_s && v.stop.hold >= 300 && v.stop.frames >= 3 && !va.t.active && va.chip && !vb.t.active && vb.s.running && still(vb.s.cam, va.s.cam) && still(vb.s.target, va.s.target), `tour ${tag}: a tap during an overview move stops the camera where it is (it was moving; then exactly still for ${Math.round(v.stop.hold)} ms, moved ${vb ? moved(vb.s, va.s).toExponential(1) : '?'} cm; ${v.taps} tap${v.taps > 1 ? 's' : ''}) ${JSON.stringify(vb ? { moving: v.moving, a: [va.t.active, va.chip, va.s.cam, va.s.target], b: [vb.t.active, vb.t.idle_for_s, vb.s.running, vb.s.cam, vb.s.target] } : null)}`);
+    check(!!vb && v.moving && v.moving.moved && vb.t.idle_for_s < vb.t.idle_s && v.stop.hold >= 300 && v.stop.frames >= 3 && !va.t.active && va.chip && !vb.t.active && vb.s.running && still(vb.s.cam, va.s.cam) && still(vb.s.target, va.s.target) && va.aim < AIM_RAD && vb.aim < AIM_RAD, `tour ${tag}: a tap during an overview move stops the camera where it is (it was moving; then exactly still for ${Math.round(v.stop.hold)} ms, moved ${vb ? moved(vb.s, va.s).toExponential(1) : '?'} cm; ${v.taps} tap${v.taps > 1 ? 's' : ''}) ${JSON.stringify(vb ? { moving: v.moving, a: [va.t.active, va.chip, va.s.cam, va.s.target], b: [vb.t.active, vb.t.idle_for_s, vb.s.running, vb.s.cam, vb.s.target] } : null)}`);
     if (tag === 'desktop') {
       // the same run with the tour OFF: the Worker received exactly the same messages, and the worlds are the same
       const off = await open(opts, 'seed=1&quality=low&speed=10&tour=0', 'tour-off', LOG);
@@ -231,6 +262,11 @@ const { chromium, devices } = require('playwright');
     const d = await page.evaluate(() => { const w = (s) => document.querySelector(s).getBoundingClientRect(); return { L: window.__demo2.layout(), tour: window.__demo2.tour(), bar: ['#play', '#speed', '#viewFull', '#viewSurface', '#viewUnder', '#modeBtn', '#followBtn', '#tourBtn', '#sideBtn'].map((s) => [s, w(s).width > 0 && w(s).bottom <= w('#top').bottom]), gone: ['#moreBtn', '#peek', '#grip', '#perfBtn'].every((s) => w(s).width === 0), h1: w('h1').width > 50, full: document.querySelector('#viewFull').textContent, order: w('h1').left < w('#flag').left && w('#flag').left < w('#modeBadge').left && w('#modeBadge').left < w('#play').left, hud: document.querySelector('#hud').textContent, noScroll: document.documentElement.scrollWidth <= innerWidth }; });
     check(!d.L.narrow && d.bar.every((x) => x[1]) && d.gone && d.h1 && d.order && d.full === '完整剖面' && d.L.top_px < 80 && d.hud.includes('非正式') && d.noScroll, `desktop: the bar keeps its layout (title, markings, then all controls in the bar; no 更多／pill; ${d.L.top_px.toFixed(0)} px) ${JSON.stringify(d.bar.filter((x) => !x[1]))}`);
     check(!d.tour.on, 'desktop: under automation the tour is off unless ?tour= asks for it (the other checks keep their own camera)');
+    await framing(page, 'desktop', false);
+    await page.setViewportSize({ width: 1200, height: 760 }); await page.waitForTimeout(700); await aimed(page, 'after a window resize', 'desktop');
+    await page.evaluate(() => window.__demo2.setView('full', true)); await page.waitForTimeout(500);
+    check((await page.evaluate(() => window.__demo2.nestOnScreen().inside)), 'desktop: after the resize 完整剖面 frames the whole nest again');
+    await page.setViewportSize({ width: 1440, height: 900 }); await page.waitForTimeout(700); await page.evaluate(() => window.__demo2.setView('full', true)); await page.waitForTimeout(400);
     await page.evaluate(() => window.__demo2.setRunning(false)); await page.waitForTimeout(300);
     const id = await page.evaluate(() => window.__demo2.ants().find((y) => y.realm === 'nest' && !y.moving).id);
     await page.evaluate((x) => window.__demo2.select(x), id); await page.waitForTimeout(300);
@@ -241,7 +277,8 @@ const { chromium, devices } = require('playwright');
     const n1 = await page.evaluate(() => window.__demo2.state());
     check(n0.t.includes('下一隻') && n0.f === '停止跟隨' && n1.following && n1.following !== id, `desktop: while following, 上一隻／下一隻 step to the next worker (${id} → ${n1.following})`);
     await shot(page, 'demo2-ui-desktop-follow');
-    await page.evaluate(() => window.__demo2.select(null));
+    await aimed(page, 'following', 'desktop');
+    await page.evaluate(() => window.__demo2.select(null)); await page.waitForTimeout(500); await aimed(page, 'after the follow ended', 'desktop');
     await page.click('#sideBtn'); await page.waitForTimeout(300);
     const sd = await page.evaluate(() => { const r = document.querySelector('#side').getBoundingClientRect(); return { w: r.width, right: innerWidth - r.right, ant: document.querySelector('#tabs button[data-tab="ant"]').getBoundingClientRect().width, L: window.__demo2.layout() }; });
     check(sd.w === 340 && sd.right < 12 && sd.ant === 0 && sd.L.sheet_px === 0, 'desktop: the side panel is unchanged (340 px on the right; no 個體 tab; the scene is not re-framed)');
