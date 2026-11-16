@@ -14,8 +14,9 @@
  *  - in-scene cues (◆): appear on drawn individuals / the source, never more than the budget at once (also at 60×),
  *    never under the sheet; switching them off removes the labels and changes no count;
  *  - nothing from the not-to-be-shown list is worded as happening;
- *  - #144: with cues on + the 事件 tab used, and with cues off + the panel never opened, the complete log of messages
- *    posted to the Worker is IDENTICAL and the two worlds are identical at the same simulation instant.
+ *  - #144: with cues on + the 事件 tab used, and with cues off + the panel never opened, the messages posted to the
+ *    Worker are IDENTICAL (apart from `follow` for a worker selected from the list, D2E-2) and the two worlds are
+ *    identical at the same simulation instant.
  * Writes demo2-events-*.jpg (and, with DEMO2_VIDEO=1, demo2-events-pixel7.webm) into <outDir>; prints a JSON report.
  * Software rendering under automation: nothing here is a device performance result.
  */
@@ -161,7 +162,11 @@ const { chromium, devices } = require('playwright');
     const at = async (p) => p.evaluate(async (T) => { const D = window.__demo2; await D.setRunning(false); await D.stepUntil(T); await new Promise((r) => setTimeout(r, 500)); const f = D.frame(); return { t: f.t_sim, json: JSON.stringify(f), log: window.__workerLog.slice(), ev: D.events() }; }, T_CMP);
     const A = await at(on.page), B = await at(off.page);
     const types = (log) => [...new Set(log.map((m) => JSON.parse(m).type))].sort().join(',');
-    check(JSON.stringify(A.log) === JSON.stringify(B.log) && A.log.length > 4, `#144: the messages posted to the Worker are identical with the feature used and with it off (${A.log.length} / ${B.log.length} messages; types ${types(A.log)})`);
+    // D2E-2: selecting a worker from the list also asks the Worker for that worker's own record (`follow`, the existing
+    // read-only observation command; tests/browser/demo2-record.check.cjs). Everything else must be identical.
+    const strip = (log) => log.map((m) => JSON.parse(m)).filter((m) => m.type !== 'follow').map((m) => { const { req, ...rest } = m; return JSON.stringify(rest); });
+    check(B.log.every((m) => JSON.parse(m).type !== 'follow') && A.log.map((m) => JSON.parse(m)).filter((m) => m.type === 'follow').length <= 2, '#144: the page that never selected a worker sent no follow; the other sent it only for the selected worker and its release');
+    check(JSON.stringify(strip(A.log)) === JSON.stringify(strip(B.log)) && B.log.length > 4, `#144: the messages posted to the Worker are identical with the feature used and with it off (${A.log.length} / ${B.log.length} messages; types ${types(A.log)})`);
     check(A.t === T_CMP && B.t === T_CMP && A.json === B.json && A.json.length > 2000, `#144: the two worlds are identical at t = ${T_CMP} s (frame JSON ${A.json.length} bytes equal)`);
     check(JSON.stringify(A.ev.classes) === JSON.stringify(B.ev.classes) && A.ev.total === B.ev.total && B.ev.cues_shown === 0 && A.ev.cues_shown > 0, `#144: both pages counted the same ${A.ev.total} events; only the display differs (cues shown ${A.ev.cues_shown} vs ${B.ev.cues_shown})`);
     await on.ctx.close(); await off.ctx.close();
