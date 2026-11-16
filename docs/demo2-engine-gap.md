@@ -193,7 +193,7 @@ Worker 把世界的**每一行事件紀錄**原樣送到頁面（`P0a2Experiment
 | **D2E-11** 蟻后餵食與產卵、死亡 | 連續時間的事件子模型 | 設計先行 | 候選世界規則更新；數值取捨**需 Owner** | — | — |
 | **D2E-12** 空間與運動學（VIS-7c） | 共用幾何、KIN-2D 接入、旅行時間由運動學決定；之後才有巢口容量、碰撞、費洛蒙 | 依 roadmap §3f VIS-7 | **涉及核心架構，需 Owner** | 依 VIS-7 | — |
 
-**進度（2026-11-15 更新）**：D2E-1 已實作（`web/src/demo2/events.ts`、「事件」分頁、場景提示標籤 ◆；對帳測試 `tests/web-demo2-events.test.ts` 與 `tests/browser/demo2-events.check.cjs`；說明見 [`demo2.md`](demo2.md)「引擎事件全量上畫面」）。與原規劃的差別：未走位的交哺以受方的「收到 n 份」標籤與事件清單呈現；「遇到某類事件自動降速」仍屬 D2E-4。D2E-2 已實作（`web/src/demo2/record.ts`：個體卡取自該工蟻自己的引擎紀錄與牠參與的事件；`tests/web-demo2-record.test.ts`、`tests/browser/demo2-record.check.cjs`；說明見 `demo2.md`「個體紀錄卡」）。與原規劃的差別：沒有畫嗉囊的時間曲線（狀態框沒有歷史），改列牠的嗉囊進出事件；「為什麼」只列引擎讀取的輸入與目前值，不重建機率。D2E-3 進行中；D2E-4～D2E-12 未開始。
+**進度（2026-11-15 更新）**：D2E-1 已實作（`web/src/demo2/events.ts`、「事件」分頁、場景提示標籤 ◆；對帳測試 `tests/web-demo2-events.test.ts` 與 `tests/browser/demo2-events.check.cjs`；說明見 [`demo2.md`](demo2.md)「引擎事件全量上畫面」）。與原規劃的差別：未走位的交哺以受方的「收到 n 份」標籤與事件清單呈現；「遇到某類事件自動降速」仍屬 D2E-4。D2E-2 已實作（`web/src/demo2/record.ts`：個體卡取自該工蟻自己的引擎紀錄與牠參與的事件；`tests/web-demo2-record.test.ts`、`tests/browser/demo2-record.check.cjs`；說明見 `demo2.md`「個體紀錄卡」）。與原規劃的差別：沒有畫嗉囊的時間曲線（狀態框沒有歷史），改列牠的嗉囊進出事件；「為什麼」只列引擎讀取的輸入與目前值，不重建機率。D2E-3 已實作（`web/src/demo2/timeline.ts`、「環境」分頁：食源與環境的引擎狀態、24 小時小倍數時間軸；`tests/web-demo2-timeline.test.ts`、`tests/browser/demo2-env.check.cjs`；說明見 `demo2.md`「食源、環境與 24 小時時間軸」）。與原規劃的差別：蜜露滴出以 D2E-1 的場景提示標籤與食源標籤呈現，沒有另外做滴落的立體動畫（不動 `scene.ts`）。D2E-4～D2E-12 未開始。
 
 **建議先做 D2E-1、D2E-2、D2E-3**：三者不改引擎、不需要裁示、互不依賴，而且直接回應「把真實行為接上畫面」——目前引擎每個模擬日產生約 9,000～9,700 個事件（3 個種子各 3 日的合計為 26,840～29,233 個），畫面只演出其中交哺的一部分與育幼。D2E-1 同時建立「畫面計數＝引擎計數」的對帳測試，之後每個工作包都能沿用。D2E-6 建議排在 D2E-1～3 之後，並與下一次必要的引擎版本更新合併，避免重複讓本機存檔失效。
 

@@ -65,3 +65,24 @@ export function replayOwn(lines: readonly string[], fromSeq = 0, toSeq = Infinit
   });
   return { workers: W, larvae: L };
 }
+
+/** hourly counts from the log lines (D2E-3 reconciliation; independent of web/src/demo2/timeline.ts): per world hour
+ *  (floor(t / 3 600 000 ms)) the exits, arrivals with / without food, transfers, larva feeds (brood care), drops, and the
+ *  hourly weather record at the hour start; plus the source totals. Lines with position in [fromSeq, toSeq). */
+export interface ReplayHour { exit: number; empty: number; take: number; transfer: number; larva_fed: number; produce: number; temp_c: number | null }
+export function replayHourly(lines: readonly string[], fromSeq = 0, toSeq = Infinity): { hours: Record<number, ReplayHour>; source: { drops: number; dropped_up: number; taken_up: number; arrivals_take: number; arrivals_empty: number; last_drop_ms: number | null }; light: { t_ms: number; to: string }[] } {
+  const H: Record<number, ReplayHour> = {}, src = { drops: 0, dropped_up: 0, taken_up: 0, arrivals_take: 0, arrivals_empty: 0, last_drop_ms: null as number | null }, light: { t_ms: number; to: string }[] = [];
+  lines.forEach((line, seq) => {
+    if (seq < fromSeq || seq >= toSeq) return;
+    const e = JSON.parse(line) as { t: number; k: string; p: Record<string, any> }, p = e.p, h = Math.floor(e.t / 3_600_000);
+    const b = (H[h] ??= { exit: 0, empty: 0, take: 0, transfer: 0, larva_fed: 0, produce: 0, temp_c: null });
+    if (e.k === 'at_entrance' && p.choice === 'exit') b.exit++;
+    if ((e.k === 'arrive_source' || (e.k === 'search_end' && p.found)) && !p.heat) { if (p.take > 0) { b.take++; src.arrivals_take++; src.taken_up += p.take; } else { b.empty++; src.arrivals_empty++; } }
+    if (e.k === 'arrive_nest') b.transfer += p.touched.filter((x: any) => x.amount > 0).length;
+    b.larva_fed += (p.larvae ?? []).filter((x: any) => x.fed > 0).length;
+    if (e.k === 'produce') { b.produce++; src.drops++; src.dropped_up += p.amount; src.last_drop_ms = e.t; }
+    if (e.k === 'env_sample' && e.t === h * 3_600_000) b.temp_c = p.temp_c;
+    if (e.k === 'env_light') light.push({ t_ms: e.t, to: p.to });
+  });
+  return { hours: H, source: src, light };
+}

@@ -42,6 +42,7 @@ import { buildScene, type Quality, type Scene2 } from './scene.ts';
 import { Hd2dPipeline, PIXEL_FACTORS, type Hd2dEffects } from './hd2d.ts';
 import { CUE_FRESH_S, CUE_HOLD_S, CUE_MAX, EventLedger, GROUPS, GROUP_LABEL, SOURCE_CUE, type ClassGroup } from './events.ts';
 import { OwnHistory, asWorkerRecord, larvaRecordView, recordHtml, workerRecordView } from './record.ts';
+import { Timeline, timelineChart, type Light } from './timeline.ts';
 import { nextShot, tourMayRun, TOUR_IDLE_S, TOUR_REASON_ZH, type TourCue, type TourShot } from './tour.ts';
 
 const q = new URLSearchParams(location.search);
@@ -50,7 +51,7 @@ const ui = {
   canvas: $<HTMLCanvasElement>('scene'), badge: $('modeBadge'), play: $<HTMLButtonElement>('play'), speed: $<HTMLSelectElement>('speed'), hud: $('hud'),
   viewFull: $<HTMLButtonElement>('viewFull'), viewSurface: $<HTMLButtonElement>('viewSurface'), viewUnder: $<HTMLButtonElement>('viewUnder'), modeBtn: $<HTMLButtonElement>('modeBtn'),
   followBtn: $<HTMLButtonElement>('followBtn'), sideBtn: $<HTMLButtonElement>('sideBtn'), card: $('card'), labels: $('labels'), lblLegend: $('lblLegend'), top: $('top'), side: $('side'), toast: $('toast'), fatal: $('fatal'),
-  stats: $('pane-stats'), events: $('pane-events'), legend: $('pane-legend'), notsim: $('pane-notsim'), perf: $('pane-perf'), worldInfo: $('worldInfo'), saveBtn: $<HTMLButtonElement>('saveBtn'), saveStatus: $('saveStatus'),
+  stats: $('pane-stats'), events: $('pane-events'), env: $('pane-env'), legend: $('pane-legend'), notsim: $('pane-notsim'), perf: $('pane-perf'), worldInfo: $('worldInfo'), saveBtn: $<HTMLButtonElement>('saveBtn'), saveStatus: $('saveStatus'),
   more: $('more'), moreBtn: $<HTMLButtonElement>('moreBtn'), tourBtn: $<HTMLButtonElement>('tourBtn'), perfBtn: $<HTMLButtonElement>('perfBtn'), tourChip: $<HTMLButtonElement>('tourChip'), statusRow: $('statusRow'), peek: $('peek'), grip: $('grip'), peekText: $('peekText'), paneAnt: $('pane-ant'),
   seedIn: $<HTMLInputElement>('seedIn'), restartBtn: $<HTMLButtonElement>('restartBtn'), resetDemoBtn: $<HTMLButtonElement>('resetDemoBtn'), demoInfo: $('demoInfo'), saveList: $('saveList'), importBtn: $<HTMLButtonElement>('importBtn'), importFile: $<HTMLInputElement>('importFile'),
 };
@@ -128,6 +129,8 @@ const antLen = () => MINOR_LEN_CM * mag;
 let drawn: DrawnAnt[] = [], selected: string | null = null, following: string | null = null, disclosure: NotSimulatedView | null = null, saveUi: SaveUiState | null = null;
 let eventsSeen = 0;
 /** D2E-1: every engine event the page receives — classified, counted (exactly), listed and cued (events.ts; read only) */
+/** D2E-3: hourly bins of the engine events, the source's drops and arrivals, the light / temperature record (timeline.ts) */
+const timeline = new Timeline();
 /** D2E-2: per-individual history of the events the page received (record.ts; read only) */
 const ownHist = new OwnHistory();
 const ledger = new EventLedger(narrow() ? CUE_MAX.narrow : CUE_MAX.wide);
@@ -457,7 +460,7 @@ function updateLabels() {
   }
   items.push({ key: 'face', p: { x: -24, y: -7, z: graph.faceZ }, text: compact ? `巢體＝展示假設｜${part('major')}` : `巢體幾何＝展示假設${ns('major') ? (mode === 'demo' ? `｜大工蟻 ${n('major').demo}（示範資料）` : '｜大工蟻：尚未模擬') : `｜${eng('major')}`}`, cls: ns('major') && mode !== 'demo' ? 'ns' : mode === 'demo' ? 'demo' : '', face: true, prio: 40 });
   items.push({ key: 'entrance', p: { x: 0, y: ground(0, 0) + 3.2, z: 0 }, text: '巢口', cls: '', face: false, prio: 60 });
-  items.push({ key: 'host', p: world.anchors.hostPlant, text: compact ? `蜜露來源（引擎）${frame.source.stock_portions.toFixed(1)} 份` : `蜜露來源（引擎）存量 ${frame.source.stock_portions.toFixed(1)} 份｜寄主植物外形＝裝飾`, cls: '', face: false, prio: 30 });
+  items.push({ key: 'host', p: world.anchors.hostPlant, text: sourceLabel(compact), cls: '', face: false, prio: 30 });
   if (mode === 'demo') { items.push({ key: 'nectar', p: world.anchors.nectar, text: compact ? '花蜜（示範道具）' : DEMO_FOOD_PROPS[0].label_zh, cls: 'demo', face: false, prio: 20 }); items.push({ key: 'insect', p: world.anchors.insect, text: compact ? '昆蟲屍體（示範道具）' : DEMO_FOOD_PROPS[1].label_zh, cls: 'demo', face: false, prio: 20 }); }
   for (const a of drawn) if (a.pose === 'troph' && a.partner && a.id < a.partner) items.push({ key: `tr-${a.id}`, p: { x: a.x, y: a.y + antLen() * 0.9, z: a.z }, text: '交哺（引擎事件）', cls: 'act', face: true, prio: 80 });
   for (const a of drawn) if (a.pose === 'brood' && a.partner && stage.fedNow(a.partner, tNow)) items.push({ key: `br-${a.id}`, p: { x: a.x, y: a.y + antLen() * 0.9, z: a.z }, text: '餵幼蟲（引擎事件）', cls: 'act', face: true, prio: 80 });
@@ -495,6 +498,13 @@ function updateLabels() {
   for (const [k, el] of labelEls) if (!seen.has(k)) el.hidden = true;
 }
 const NS_MARK = '※', CUE_MARK = '◆';
+/** the source's label in the scene: the engine's stock now — an empty source is said to be empty (D2E-3) */
+function sourceLabel(compact: boolean): string {
+  const st = frame!.source.stock_portions, empty = st <= 0, last = timeline.source.last_drop_t;
+  if (compact) return empty ? '蜜露來源（引擎）空的' : `蜜露來源（引擎）${fmtPortions(st)} 份`;
+  return `蜜露來源（引擎・合成情境）${empty ? `現在是空的${last !== null ? `｜上次滴出 ${clockOf(last)}` : ''}` : `存量 ${fmtPortions(st)} 份`}｜寄主植物外形＝裝飾`;
+}
+const fmtPortions = (p: number) => (p >= 0.1 || p === 0 ? p.toFixed(2) : p.toFixed(3));
 /** the height of the bottom sheet covering the scene (narrow screens with the panel open), else 0 */
 const sheetPx = () => narrow() ? coverNow : 0;
 /** phone bottom sheet: closed ('peek': only a small floating pill with key counts), half, full; the selected
@@ -530,7 +540,7 @@ let hudAt = 0, tab = 'stats', hudOpen = false;
 function updateHud(now: number) {
   if (now - hudAt < 300) return; hudAt = now;
   if (!frame) return;
-  setLight(frame);
+  setLight(frame); timeline.noteFrame(frame.t_sim, frame.env.light as Light);
   const out = drawn.filter((a) => a.realm === 'surface').length, temp = frame.env.temperature_c === null ? '—' : frame.env.temperature_c.toFixed(1);
   // narrow screens: ONE short status line (the 非正式 chip above carries the status label); a tap expands it
   const short = `第 ${Math.floor(tNow / 86400)} 天 ${clockOf(tNow)}｜${P0_LIGHT_LABEL[frame.env.light]} ${temp}°C（合成）｜${running ? `${speed}×` : '暫停'}`;
@@ -540,7 +550,7 @@ function updateHud(now: number) {
   const peek = `▲ 巢外 ${out}・巢內 ${drawn.length - out}`; // phone: key counts on the pill that opens the sheet
   if (ui.peekText.textContent !== peek) ui.peekText.textContent = peek;
   if (selected) renderCard();
-  if (!document.body.classList.contains('side-closed')) { if (tab === 'stats') renderStats(); else if (tab === 'events') renderEvents(); else if (tab === 'perf') renderPerf(); else if (tab === 'saves') renderSaveStatus(); }
+  if (!document.body.classList.contains('side-closed')) { if (tab === 'stats') renderStats(); else if (tab === 'events') renderEvents(); else if (tab === 'env') renderEnv(); else if (tab === 'perf') renderPerf(); else if (tab === 'saves') renderSaveStatus(); }
 }
 function renderStats() {
   if (!frame || !rost) return;
@@ -594,6 +604,55 @@ ui.events.addEventListener('click', (e) => {
   if (row && frame?.workers.some((w) => w.id === row.dataset.ent)) { select(row.dataset.ent!); if (narrow()) setSheet('half'); }
   evNow = ''; renderEvents();
 });
+/** the 環境 tab (D2E-3): the food source and the environment as the engine has them, and the 24-hour timeline of engine
+ *  events. The frame of the tab is built once; the numbers and the chart are rewritten. */
+let envNow = '', tlSel: number | null = null;
+function renderEnv() {
+  if (!frame) return;
+  if (!ui.env.firstChild) ui.env.innerHTML = `<h2>食源（引擎；合成情境）</h2><table id="envSource"></table>
+<div class="muted">食源是情境假設：固定間隔滴出固定的量，不隨溫度、寄主或蟻群改變（半翅目、花蜜、獵物尚未模擬）。寄主植物的外形是裝飾。工蟻要親自走到才知道有沒有食物；這裡的存量是玩家視角。</div>
+<h2>環境（引擎；天氣是合成情境，不是觀測）</h2><table id="envNowT"></table>
+<div class="muted" id="envVariant"></div>
+<h2>最近 24 小時（引擎事件，依世界時間每小時）</h2>
+<div class="muted"><span class="tag engine">引擎事件</span>每一格是該小時內本頁收到的引擎事件數（完整計數）；每一列有自己的刻度。本頁開啟前的小時沒有資料，標「無資料」，不是 0。最右邊是進行中的小時。</div>
+<div id="tlBox"></div><div id="tlTip" class="muted" aria-live="polite">點一下或移到某個小時上，看那一小時的數字。</div>
+<details id="tlDetails"><summary>以表格顯示同一份數字</summary><div id="tlTable"></div></details>`;
+  const S = timeline.source, e = frame.env, st = frame.source.stock_portions, hour = Math.floor(tNow / 3600), w = Math.max(280, Math.floor(ui.env.clientWidth - 26));
+  const key = `${ledger.total}|${hour}|${st.toFixed(4)}|${e.light}|${e.temperature_c?.toFixed(1)}|${w}|${tlSel}`;
+  if (key === envNow) return; envNow = key;
+  const arr = S.arrivals_take + S.arrivals_empty, up = (x: number) => fmtPortions(x / 1_000_000);
+  $('envSource').innerHTML = `<tr><td><span class="tag engine">引擎狀態</span>現在的存量</td><td class="n">${st <= 0 ? '<b>空的</b>（0 份）' : `${fmtPortions(st)} 份`}</td></tr>
+<tr><td><span class="tag engine">引擎事件</span>上次滴出</td><td class="n">${S.last_drop_t === null ? '本頁開啟後還沒有' : `${clockOf(S.last_drop_t)}｜${up(S.last_drop_up ?? 0)} 份（滴出後存量 ${S.stock_after_last_drop_up === null ? '—' : up(S.stock_after_last_drop_up)} 份）`}</td></tr>
+<tr><td><span class="tag engine">引擎事件</span>上次滴出之後到場的工蟻</td><td class="n">有取食 ${S.since_drop_take}｜是空的 ${S.since_drop_empty}</td></tr>
+<tr><td><span class="tag engine">引擎事件</span>本頁開啟後：滴出</td><td class="n">${S.drops} 次（共 ${up(S.dropped_up)} 份）</td></tr>
+<tr><td><span class="tag engine">引擎事件</span>本頁開啟後：到場有取食</td><td class="n">${S.arrivals_take} 次（共 ${up(S.taken_up)} 份）</td></tr>
+<tr><td><span class="tag engine">引擎事件</span>本頁開啟後：到場是空的</td><td class="n">${S.arrivals_empty} 次${arr ? `（占到場的 ${((100 * S.arrivals_empty) / arr).toFixed(0)}%）` : ''}</td></tr>`;
+  $('envNowT').innerHTML = `<tr><td><span class="tag engine">引擎狀態</span>世界時間</td><td class="n">${esc(fmtWorldTime(tNow))}（情境日期 ${esc(e.date)}）</td></tr>
+<tr><td><span class="tag engine">引擎狀態</span>光照（工蟻在巢口感受到的）</td><td class="n">${esc(P0_LIGHT_LABEL[e.light])}｜太陽高度 ${e.sun_altitude_deg.toFixed(0)}°（一般方法）</td></tr>
+<tr><td><span class="tag assume">合成</span>氣溫</td><td class="n">${e.temperature_c === null ? '—' : `${e.temperature_c.toFixed(1)}°C`}</td></tr>
+<tr><td><span class="tag assume">合成</span>巢口與食源的溫度（工蟻感受到的）</td><td class="n">${e.site_temperature_c === null ? '—' : `${e.site_temperature_c.toFixed(1)}°C`}</td></tr>
+<tr><td><span class="tag assume">合成</span>相對濕度（只記錄；沒有任何決定讀它）</td><td class="n">${e.rh_percent === null ? '—' : `${e.rh_percent.toFixed(0)}%`}</td></tr>
+<tr><td>降雨</td><td class="n">無資料（情境沒有雨；降雨反應尚未模擬）</td></tr>`;
+  $('envVariant').textContent = `行為變體：${frame.model.variant_label}｜${frame.model.variant_status}`;
+  const c = timelineChart(timeline, { width: w, now: tNow });
+  $('tlBox').innerHTML = c.svg; if ($<HTMLDetailsElement>('tlDetails').open) $('tlTable').innerHTML = c.table;
+  if (tlSel !== null) showTip(tlSel);
+}
+function showTip(i: number) {
+  const hit = $('tlBox').querySelector<SVGRectElement>(`.tl-hit[data-i="${i}"]`); if (!hit) return;
+  $('tlBox').querySelectorAll('.tl-hit').forEach((r) => r.setAttribute('fill', r === hit ? 'rgba(240,239,236,0.10)' : 'transparent'));
+  $('tlTip').textContent = hit.dataset.tip ?? '';
+}
+/** the hour column under a pointer (by coordinates: the SVG is rewritten while the world runs) */
+function tlPick(ev: PointerEvent | MouseEvent) {
+  const svg = $('tlBox').querySelector('svg'); if (!svg) return;
+  const r = svg.getBoundingClientRect(), hits = svg.querySelectorAll('.tl-hit'), i = Math.floor(((ev.clientX - r.left) / r.width) * hits.length);
+  if (ev.clientY < r.top || ev.clientY > r.bottom || i < 0 || i >= hits.length) return;
+  tlSel = i; showTip(i);
+}
+ui.env.addEventListener('pointermove', (ev) => { if ((ev.target as HTMLElement).closest('#tlBox')) tlPick(ev); });
+ui.env.addEventListener('click', (ev) => { if ((ev.target as HTMLElement).closest('#tlBox')) tlPick(ev); });
+ui.env.addEventListener('toggle', () => { envNow = ''; renderEnv(); }, true);
 function renderLegend() {
   const L = graph.layout, prov = L.provenance as Record<string, string>;
   ui.legend.innerHTML = `<h2>畫面上的四類資料</h2><ul>
@@ -715,7 +774,7 @@ function setMode(m: Mode) {
 }
 
 // ---------- world lifecycle (Worker scheduling + SAVE-2 session) ----------
-function onWorldStart() { frame = null; pacing = null; lastT = null; drawn = []; statics = []; stage?.reset(antLen()); eventsSeen = 0; ledger.reset(); ownHist.reset(); observed = null; evNow = ''; disclosure = null; selected = null; following = null; userSel = false; endTour(); tourCues.length = 0; tourLog.length = 0; tourLast = null; hideCard(); }
+function onWorldStart() { frame = null; pacing = null; lastT = null; drawn = []; statics = []; stage?.reset(antLen()); eventsSeen = 0; ledger.reset(); ownHist.reset(); timeline.reset(); observed = null; evNow = ''; envNow = ''; disclosure = null; selected = null; following = null; userSel = false; endTour(); tourCues.length = 0; tourLog.length = 0; tourLast = null; hideCard(); }
 async function afterWorldReady(startAt: number | null) {
   if (startAt !== null && (frame?.t_sim ?? 0) < startAt) await client.stepUntil(startAt);
   await new Promise<void>((r) => { const w = () => (frame ? r() : setTimeout(w, 20)); w(); });
@@ -819,7 +878,7 @@ async function main() {
   buildMeshes();
 
   client.onState = (fr, p, fol) => { if (!isP0a2Frame(fr) || fr.world_id === PROBE_ID) return; if (p.running && frame && fr.t_sim !== frame.t_sim) session?.markDirty(); frame = fr; pacing = p; frameAt = performance.now(); followedView = fol; if (rost) rost = roster(mode, fr, demoSeed); };
-  client.onEvents = (evs: EventMsg[]) => { if (evs[0]?.world_id === PROBE_ID) return; eventsSeen += evs.length; ledger.onEvents(evs, wallS()); ownHist.onEvents(evs); stage.onEvents(evs); noteCues(evs); session?.markDirty(); };
+  client.onEvents = (evs: EventMsg[]) => { if (evs[0]?.world_id === PROBE_ID) return; eventsSeen += evs.length; ledger.onEvents(evs, wallS()); ownHist.onEvents(evs); timeline.onEvents(evs); stage.onEvents(evs); noteCues(evs); session?.markDirty(); };
   client.onProtocolError = (why) => toast(`Worker：${why}`, 8000);
 
   ui.speed.innerHTML = SPEEDS.map((s) => `<option value="${s}">${s}×</option>`).join(''); ui.seedIn.value = String(DEFAULT_SEED);
@@ -874,7 +933,7 @@ function openSide(t: string | null) {
   openTab(t);
 }
 function openTab(t: string) {
-  { tab = t; document.querySelectorAll<HTMLButtonElement>('#tabs button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tab === t))); for (const k of ['ant', 'stats', 'events', 'legend', 'notsim', 'saves', 'perf']) $(`pane-${k}`).hidden = k !== t; if (t === 'stats') renderStats(); if (t === 'events') { evNow = ''; renderEvents(); } if (t === 'perf') renderPerf(); if (t === 'saves') { renderSaveStatus(); void refreshSaveList(); } }
+  { tab = t; document.querySelectorAll<HTMLButtonElement>('#tabs button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tab === t))); for (const k of ['ant', 'stats', 'events', 'env', 'legend', 'notsim', 'saves', 'perf']) $(`pane-${k}`).hidden = k !== t; if (t === 'stats') renderStats(); if (t === 'events') { evNow = ''; renderEvents(); } if (t === 'env') { envNow = ''; renderEnv(); } if (t === 'perf') renderPerf(); if (t === 'saves') { renderSaveStatus(); void refreshSaveList(); } }
 }
 const openTabName = () => (tab === 'ant' && (!selected || !narrow()) ? 'stats' : tab);
 ui.sideBtn.onclick = () => openSide(document.body.classList.contains('side-closed') ? openTabName() : null);
@@ -952,6 +1011,8 @@ const hooks: Record<string, unknown> = {
   events: () => ({ total: ledger.total, gaps: ledger.gaps, first_seq: ledger.first_seq, last_seq: ledger.last_seq, first_t: ledger.first_t, last_t: ledger.last_t, classes: ledger.countsObject(), kinds: ledger.kindsObject(), ticker: ledger.ticker.length, cues_shown: ledger.cues_shown, cues_dropped: ledger.cues_dropped, cue_max: ledger.cueMax, cues_on: cuesOn, active: ledger.activeCues(wallS(), tNow, CUE_FRESH_S + CUE_HOLD_S * speed).map((c) => ({ ...c })), stage: { ...stage.stats } }),
   /** D2E-2: the observed worker, the Worker's record of it as received, and the page's own-event history of an individual */
   record: (id?: string) => { const k = id ?? selected ?? ''; return { observed, selected, followed: followedView, totals: ownHist.totalsOf(k), last: ownHist.lastOf(k), larva: ownHist.larvaOf(k), html: paneRec.innerHTML }; },
+  /** D2E-3: the page's hourly bins, the source's record and the chart as drawn */
+  timeline: () => { const c = timelineChart(timeline, { width: 360, now: tNow }); return { bins: timeline.all(), source: { ...timeline.source }, light: timeline.light.slice(), first_t: timeline.first_t, last_t: timeline.last_t, rows: c.rows, hours: c.hours, tip: document.getElementById('tlTip')?.textContent ?? '' }; },
   setCues: (on: boolean) => { cuesOn = on; ledger.cueMax = cueBudget(); evNow = ''; },
   nestOnScreen: () => nestOnScreen(),
   /** phone layout: the sheet state and the part of the page height the scene keeps (below the top bar, above the sheet) */
